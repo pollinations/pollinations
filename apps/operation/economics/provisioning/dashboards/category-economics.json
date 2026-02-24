@@ -1,0 +1,1008 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "description": "Per-category contribution margin analysis: tier subsidy (cost) vs pack revenue by APPS.md category. Auto-generated from APPS.md mappings.",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 1,
+            "panels": [],
+            "title": "Category Economics Overview",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Total pollen consumed by apps in known APPS.md categories.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 0,
+                "y": 1
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT sum(total_price) as total FROM (SELECT total_price, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['ai_studio', 'gaming', 'education', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'integrations', 'integrations', 'education', 'ai_studio', 'ai_studio', 'image_gen', 'chat', 'vibe_coding', 'ai_studio'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['ai_studio', 'business', 'education', 'audio_video', 'chat', 'content', 'image_gen', 'design', 'business', 'content', 'integrations', 'image_gen', 'image_gen', 'chat', 'education', 'audio_video', 'image_gen', 'content', 'business', 'design', 'business', 'ai_studio', 'content', 'image_gen', 'image_gen', 'ai_studio', 'gaming', 'dev_tools', 'design', 'bots', 'image_gen', 'content', 'business', 'design', 'business', 'education', 'ai_studio', 'integrations', 'integrations', 'chat', 'integrations', 'design', 'design', 'audio_video', 'ai_studio', 'lifestyle', 'vibe_coding', 'education', 'design', 'storytelling', 'chat', 'bots', 'design', 'business', 'integrations', 'content', 'ai_studio', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'image_gen', 'gaming', 'bots', 'integrations', 'integrations', 'integrations', 'storytelling', 'bots', 'bots', 'integrations', 'storytelling', 'dev_tools', 'gaming', 'image_gen', 'vibe_coding', 'business', 'chat', 'content', 'image_gen', 'bots', 'education', 'content', 'audio_video', 'image_gen', 'chat', 'audio_video', 'image_gen', 'audio_video', 'lifestyle', 'chat', 'chat', 'education', 'gaming', 'image_gen', 'chat', 'ai_studio', 'education', 'image_gen', 'bots', 'design', 'audio_video', 'content', 'integrations', 'image_gen', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'storytelling', 'design', 'gaming', 'business', 'dev_tools', 'content', 'chat', 'ai_studio', 'education', 'storytelling', 'design', 'ai_studio', 'bots', 'bots', 'business', 'audio_video', 'image_gen', 'content', 'content', 'ai_studio', 'business', 'lifestyle', 'education', 'storytelling', 'design', 'education', 'dev_tools', 'lifestyle', 'lifestyle', 'ai_studio', 'education', 'image_gen', 'design', 'storytelling', 'bots', 'lifestyle', 'gaming', 'bots', 'ai_studio', 'audio_video', 'gaming', 'content', 'bots', 'education', 'business', 'chat', 'audio_video', 'image_gen', 'design', 'design', 'image_gen', 'gaming', 'dev_tools', 'lifestyle', 'image_gen', 'education', 'business', 'business', 'chat', 'ai_studio', 'audio_video', 'image_gen', 'chat', 'ai_studio', 'lifestyle', 'education', 'design', 'image_gen', 'lifestyle', 'bots', 'chat', 'storytelling', 'content', 'business', 'design', 'image_gen', 'image_gen', 'integrations', 'image_gen', 'image_gen', 'ai_studio', 'bots', 'design', 'lifestyle', 'education', 'chat', 'chat', 'education', 'dev_tools', 'business', 'design', 'image_gen', 'dev_tools', 'audio_video', 'vibe_coding', 'content', 'chat', 'image_gen', 'business', 'ai_studio', 'image_gen', 'lifestyle', 'ai_studio', 'education', 'audio_video', 'bots', 'storytelling', 'dev_tools', 'storytelling', 'content', 'lifestyle', 'content', 'dev_tools', 'image_gen', 'bots', 'image_gen', 'gaming', 'gaming', 'gaming', 'bots', 'storytelling', 'audio_video', 'design', 'content', 'bots', 'dev_tools', 'ai_studio', 'lifestyle', 'image_gen', 'audio_video', 'education', 'image_gen', 'bots', 'design', 'education', 'dev_tools', 'ai_studio', 'chat', 'ai_studio', 'content', 'design', 'dev_tools', 'image_gen', 'content', 'dev_tools', 'content', 'chat', 'design', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'design', 'chat', 'storytelling', 'content', 'image_gen', 'image_gen', 'image_gen', 'integrations', 'gaming', 'bots', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'chat', 'content', 'bots', 'ai_studio', 'ai_studio', 'gaming', 'content', 'image_gen', 'dev_tools', 'business', 'design', 'ai_studio', 'design', 'gaming', 'image_gen', 'dev_tools', 'chat', 'image_gen', 'image_gen', 'image_gen', 'ai_studio', 'chat', 'ai_studio', 'dev_tools', 'education', 'dev_tools', 'storytelling', 'dev_tools', 'image_gen', 'image_gen', 'image_gen', 'image_gen', 'education', 'dev_tools', 'image_gen', 'ai_studio', 'ai_studio', 'ai_studio', 'ai_studio', 'gaming', 'dev_tools', 'bots', 'content', 'chat', 'image_gen', 'ai_studio', 'image_gen', 'ai_studio', 'design', 'ai_studio', 'image_gen', 'dev_tools', 'content', 'gaming', 'storytelling', 'content', 'dev_tools', 'content', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'ai_studio', 'vibe_coding', 'gaming', 'dev_tools', 'dev_tools', 'vibe_coding', 'design', 'integrations', 'storytelling', 'integrations', 'gaming', 'chat', 'chat', 'audio_video', 'education', 'ai_studio', 'dev_tools', 'lifestyle', 'vibe_coding', 'dev_tools', 'design', 'lifestyle', 'gaming', 'dev_tools', 'audio_video', 'storytelling', 'chat', 'dev_tools', 'storytelling', 'image_gen', 'ai_studio', 'bots', 'image_gen', 'ai_studio', 'storytelling', 'dev_tools', 'integrations', 'gaming', 'ai_studio', 'ai_studio', 'dev_tools', 'dev_tools', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'image_gen', 'vibe_coding', 'image_gen', 'gaming', 'education', 'integrations', 'education', 'ai_studio', 'dev_tools', 'ai_studio', 'gaming', 'bots', 'gaming', 'lifestyle', 'education', 'storytelling', 'design', 'chat', 'image_gen', 'ai_studio', 'dev_tools', 'ai_studio', 'storytelling', 'ai_studio', 'vibe_coding', 'integrations', 'ai_studio', 'integrations', 'integrations', 'integrations', 'vibe_coding', 'ai_studio', 'ai_studio'], '')) as category FROM generation_event WHERE $__timeFilter(start_time)\n      AND environment = 'production'\n      AND response_status >= 200 AND response_status < 300\n      AND total_price > 0\n      AND user_github_id != '241978997'\n      AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))) WHERE category != ''",
+                    "refId": "A"
+                }
+            ],
+            "title": "Categorized Pollen",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Percentage of total platform pollen attributable to known APPS.md apps.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "blue",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "blue",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "percentunit"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 6,
+                "y": 1
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT if(total > 0, categorized / total, 0) as coverage FROM (SELECT sum(total_price) as total, sumIf(total_price, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['ai_studio', 'gaming', 'education', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'integrations', 'integrations', 'education', 'ai_studio', 'ai_studio', 'image_gen', 'chat', 'vibe_coding', 'ai_studio'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['ai_studio', 'business', 'education', 'audio_video', 'chat', 'content', 'image_gen', 'design', 'business', 'content', 'integrations', 'image_gen', 'image_gen', 'chat', 'education', 'audio_video', 'image_gen', 'content', 'business', 'design', 'business', 'ai_studio', 'content', 'image_gen', 'image_gen', 'ai_studio', 'gaming', 'dev_tools', 'design', 'bots', 'image_gen', 'content', 'business', 'design', 'business', 'education', 'ai_studio', 'integrations', 'integrations', 'chat', 'integrations', 'design', 'design', 'audio_video', 'ai_studio', 'lifestyle', 'vibe_coding', 'education', 'design', 'storytelling', 'chat', 'bots', 'design', 'business', 'integrations', 'content', 'ai_studio', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'image_gen', 'gaming', 'bots', 'integrations', 'integrations', 'integrations', 'storytelling', 'bots', 'bots', 'integrations', 'storytelling', 'dev_tools', 'gaming', 'image_gen', 'vibe_coding', 'business', 'chat', 'content', 'image_gen', 'bots', 'education', 'content', 'audio_video', 'image_gen', 'chat', 'audio_video', 'image_gen', 'audio_video', 'lifestyle', 'chat', 'chat', 'education', 'gaming', 'image_gen', 'chat', 'ai_studio', 'education', 'image_gen', 'bots', 'design', 'audio_video', 'content', 'integrations', 'image_gen', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'storytelling', 'design', 'gaming', 'business', 'dev_tools', 'content', 'chat', 'ai_studio', 'education', 'storytelling', 'design', 'ai_studio', 'bots', 'bots', 'business', 'audio_video', 'image_gen', 'content', 'content', 'ai_studio', 'business', 'lifestyle', 'education', 'storytelling', 'design', 'education', 'dev_tools', 'lifestyle', 'lifestyle', 'ai_studio', 'education', 'image_gen', 'design', 'storytelling', 'bots', 'lifestyle', 'gaming', 'bots', 'ai_studio', 'audio_video', 'gaming', 'content', 'bots', 'education', 'business', 'chat', 'audio_video', 'image_gen', 'design', 'design', 'image_gen', 'gaming', 'dev_tools', 'lifestyle', 'image_gen', 'education', 'business', 'business', 'chat', 'ai_studio', 'audio_video', 'image_gen', 'chat', 'ai_studio', 'lifestyle', 'education', 'design', 'image_gen', 'lifestyle', 'bots', 'chat', 'storytelling', 'content', 'business', 'design', 'image_gen', 'image_gen', 'integrations', 'image_gen', 'image_gen', 'ai_studio', 'bots', 'design', 'lifestyle', 'education', 'chat', 'chat', 'education', 'dev_tools', 'business', 'design', 'image_gen', 'dev_tools', 'audio_video', 'vibe_coding', 'content', 'chat', 'image_gen', 'business', 'ai_studio', 'image_gen', 'lifestyle', 'ai_studio', 'education', 'audio_video', 'bots', 'storytelling', 'dev_tools', 'storytelling', 'content', 'lifestyle', 'content', 'dev_tools', 'image_gen', 'bots', 'image_gen', 'gaming', 'gaming', 'gaming', 'bots', 'storytelling', 'audio_video', 'design', 'content', 'bots', 'dev_tools', 'ai_studio', 'lifestyle', 'image_gen', 'audio_video', 'education', 'image_gen', 'bots', 'design', 'education', 'dev_tools', 'ai_studio', 'chat', 'ai_studio', 'content', 'design', 'dev_tools', 'image_gen', 'content', 'dev_tools', 'content', 'chat', 'design', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'design', 'chat', 'storytelling', 'content', 'image_gen', 'image_gen', 'image_gen', 'integrations', 'gaming', 'bots', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'chat', 'content', 'bots', 'ai_studio', 'ai_studio', 'gaming', 'content', 'image_gen', 'dev_tools', 'business', 'design', 'ai_studio', 'design', 'gaming', 'image_gen', 'dev_tools', 'chat', 'image_gen', 'image_gen', 'image_gen', 'ai_studio', 'chat', 'ai_studio', 'dev_tools', 'education', 'dev_tools', 'storytelling', 'dev_tools', 'image_gen', 'image_gen', 'image_gen', 'image_gen', 'education', 'dev_tools', 'image_gen', 'ai_studio', 'ai_studio', 'ai_studio', 'ai_studio', 'gaming', 'dev_tools', 'bots', 'content', 'chat', 'image_gen', 'ai_studio', 'image_gen', 'ai_studio', 'design', 'ai_studio', 'image_gen', 'dev_tools', 'content', 'gaming', 'storytelling', 'content', 'dev_tools', 'content', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'ai_studio', 'vibe_coding', 'gaming', 'dev_tools', 'dev_tools', 'vibe_coding', 'design', 'integrations', 'storytelling', 'integrations', 'gaming', 'chat', 'chat', 'audio_video', 'education', 'ai_studio', 'dev_tools', 'lifestyle', 'vibe_coding', 'dev_tools', 'design', 'lifestyle', 'gaming', 'dev_tools', 'audio_video', 'storytelling', 'chat', 'dev_tools', 'storytelling', 'image_gen', 'ai_studio', 'bots', 'image_gen', 'ai_studio', 'storytelling', 'dev_tools', 'integrations', 'gaming', 'ai_studio', 'ai_studio', 'dev_tools', 'dev_tools', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'image_gen', 'vibe_coding', 'image_gen', 'gaming', 'education', 'integrations', 'education', 'ai_studio', 'dev_tools', 'ai_studio', 'gaming', 'bots', 'gaming', 'lifestyle', 'education', 'storytelling', 'design', 'chat', 'image_gen', 'ai_studio', 'dev_tools', 'ai_studio', 'storytelling', 'ai_studio', 'vibe_coding', 'integrations', 'ai_studio', 'integrations', 'integrations', 'integrations', 'vibe_coding', 'ai_studio', 'ai_studio'], '')) != '') as categorized FROM generation_event WHERE $__timeFilter(start_time)\n      AND environment = 'production'\n      AND response_status >= 200 AND response_status < 300\n      AND total_price > 0\n      AND user_github_id != '241978997'\n      AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Coverage",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Free tier pollen consumed by categorized apps — this is our cost.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "orange",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "orange",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 5,
+                "x": 10,
+                "y": 1
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT sum(total_price) as tier_cost FROM (SELECT total_price, selected_meter_slug, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['ai_studio', 'gaming', 'education', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'integrations', 'integrations', 'education', 'ai_studio', 'ai_studio', 'image_gen', 'chat', 'vibe_coding', 'ai_studio'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['ai_studio', 'business', 'education', 'audio_video', 'chat', 'content', 'image_gen', 'design', 'business', 'content', 'integrations', 'image_gen', 'image_gen', 'chat', 'education', 'audio_video', 'image_gen', 'content', 'business', 'design', 'business', 'ai_studio', 'content', 'image_gen', 'image_gen', 'ai_studio', 'gaming', 'dev_tools', 'design', 'bots', 'image_gen', 'content', 'business', 'design', 'business', 'education', 'ai_studio', 'integrations', 'integrations', 'chat', 'integrations', 'design', 'design', 'audio_video', 'ai_studio', 'lifestyle', 'vibe_coding', 'education', 'design', 'storytelling', 'chat', 'bots', 'design', 'business', 'integrations', 'content', 'ai_studio', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'image_gen', 'gaming', 'bots', 'integrations', 'integrations', 'integrations', 'storytelling', 'bots', 'bots', 'integrations', 'storytelling', 'dev_tools', 'gaming', 'image_gen', 'vibe_coding', 'business', 'chat', 'content', 'image_gen', 'bots', 'education', 'content', 'audio_video', 'image_gen', 'chat', 'audio_video', 'image_gen', 'audio_video', 'lifestyle', 'chat', 'chat', 'education', 'gaming', 'image_gen', 'chat', 'ai_studio', 'education', 'image_gen', 'bots', 'design', 'audio_video', 'content', 'integrations', 'image_gen', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'storytelling', 'design', 'gaming', 'business', 'dev_tools', 'content', 'chat', 'ai_studio', 'education', 'storytelling', 'design', 'ai_studio', 'bots', 'bots', 'business', 'audio_video', 'image_gen', 'content', 'content', 'ai_studio', 'business', 'lifestyle', 'education', 'storytelling', 'design', 'education', 'dev_tools', 'lifestyle', 'lifestyle', 'ai_studio', 'education', 'image_gen', 'design', 'storytelling', 'bots', 'lifestyle', 'gaming', 'bots', 'ai_studio', 'audio_video', 'gaming', 'content', 'bots', 'education', 'business', 'chat', 'audio_video', 'image_gen', 'design', 'design', 'image_gen', 'gaming', 'dev_tools', 'lifestyle', 'image_gen', 'education', 'business', 'business', 'chat', 'ai_studio', 'audio_video', 'image_gen', 'chat', 'ai_studio', 'lifestyle', 'education', 'design', 'image_gen', 'lifestyle', 'bots', 'chat', 'storytelling', 'content', 'business', 'design', 'image_gen', 'image_gen', 'integrations', 'image_gen', 'image_gen', 'ai_studio', 'bots', 'design', 'lifestyle', 'education', 'chat', 'chat', 'education', 'dev_tools', 'business', 'design', 'image_gen', 'dev_tools', 'audio_video', 'vibe_coding', 'content', 'chat', 'image_gen', 'business', 'ai_studio', 'image_gen', 'lifestyle', 'ai_studio', 'education', 'audio_video', 'bots', 'storytelling', 'dev_tools', 'storytelling', 'content', 'lifestyle', 'content', 'dev_tools', 'image_gen', 'bots', 'image_gen', 'gaming', 'gaming', 'gaming', 'bots', 'storytelling', 'audio_video', 'design', 'content', 'bots', 'dev_tools', 'ai_studio', 'lifestyle', 'image_gen', 'audio_video', 'education', 'image_gen', 'bots', 'design', 'education', 'dev_tools', 'ai_studio', 'chat', 'ai_studio', 'content', 'design', 'dev_tools', 'image_gen', 'content', 'dev_tools', 'content', 'chat', 'design', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'design', 'chat', 'storytelling', 'content', 'image_gen', 'image_gen', 'image_gen', 'integrations', 'gaming', 'bots', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'chat', 'content', 'bots', 'ai_studio', 'ai_studio', 'gaming', 'content', 'image_gen', 'dev_tools', 'business', 'design', 'ai_studio', 'design', 'gaming', 'image_gen', 'dev_tools', 'chat', 'image_gen', 'image_gen', 'image_gen', 'ai_studio', 'chat', 'ai_studio', 'dev_tools', 'education', 'dev_tools', 'storytelling', 'dev_tools', 'image_gen', 'image_gen', 'image_gen', 'image_gen', 'education', 'dev_tools', 'image_gen', 'ai_studio', 'ai_studio', 'ai_studio', 'ai_studio', 'gaming', 'dev_tools', 'bots', 'content', 'chat', 'image_gen', 'ai_studio', 'image_gen', 'ai_studio', 'design', 'ai_studio', 'image_gen', 'dev_tools', 'content', 'gaming', 'storytelling', 'content', 'dev_tools', 'content', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'ai_studio', 'vibe_coding', 'gaming', 'dev_tools', 'dev_tools', 'vibe_coding', 'design', 'integrations', 'storytelling', 'integrations', 'gaming', 'chat', 'chat', 'audio_video', 'education', 'ai_studio', 'dev_tools', 'lifestyle', 'vibe_coding', 'dev_tools', 'design', 'lifestyle', 'gaming', 'dev_tools', 'audio_video', 'storytelling', 'chat', 'dev_tools', 'storytelling', 'image_gen', 'ai_studio', 'bots', 'image_gen', 'ai_studio', 'storytelling', 'dev_tools', 'integrations', 'gaming', 'ai_studio', 'ai_studio', 'dev_tools', 'dev_tools', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'image_gen', 'vibe_coding', 'image_gen', 'gaming', 'education', 'integrations', 'education', 'ai_studio', 'dev_tools', 'ai_studio', 'gaming', 'bots', 'gaming', 'lifestyle', 'education', 'storytelling', 'design', 'chat', 'image_gen', 'ai_studio', 'dev_tools', 'ai_studio', 'storytelling', 'ai_studio', 'vibe_coding', 'integrations', 'ai_studio', 'integrations', 'integrations', 'integrations', 'vibe_coding', 'ai_studio', 'ai_studio'], '')) as category FROM generation_event WHERE $__timeFilter(start_time)\n      AND environment = 'production'\n      AND response_status >= 200 AND response_status < 300\n      AND total_price > 0\n      AND user_github_id != '241978997'\n      AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))) WHERE category != '' AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+                    "refId": "A"
+                }
+            ],
+            "title": "Tier ρ (Subsidy)",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Paid pack pollen consumed by categorized apps — this is revenue.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 5,
+                "x": 15,
+                "y": 1
+            },
+            "id": 5,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT sum(total_price) as pack_rev FROM (SELECT total_price, selected_meter_slug, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['ai_studio', 'gaming', 'education', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'integrations', 'integrations', 'education', 'ai_studio', 'ai_studio', 'image_gen', 'chat', 'vibe_coding', 'ai_studio'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['ai_studio', 'business', 'education', 'audio_video', 'chat', 'content', 'image_gen', 'design', 'business', 'content', 'integrations', 'image_gen', 'image_gen', 'chat', 'education', 'audio_video', 'image_gen', 'content', 'business', 'design', 'business', 'ai_studio', 'content', 'image_gen', 'image_gen', 'ai_studio', 'gaming', 'dev_tools', 'design', 'bots', 'image_gen', 'content', 'business', 'design', 'business', 'education', 'ai_studio', 'integrations', 'integrations', 'chat', 'integrations', 'design', 'design', 'audio_video', 'ai_studio', 'lifestyle', 'vibe_coding', 'education', 'design', 'storytelling', 'chat', 'bots', 'design', 'business', 'integrations', 'content', 'ai_studio', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'image_gen', 'gaming', 'bots', 'integrations', 'integrations', 'integrations', 'storytelling', 'bots', 'bots', 'integrations', 'storytelling', 'dev_tools', 'gaming', 'image_gen', 'vibe_coding', 'business', 'chat', 'content', 'image_gen', 'bots', 'education', 'content', 'audio_video', 'image_gen', 'chat', 'audio_video', 'image_gen', 'audio_video', 'lifestyle', 'chat', 'chat', 'education', 'gaming', 'image_gen', 'chat', 'ai_studio', 'education', 'image_gen', 'bots', 'design', 'audio_video', 'content', 'integrations', 'image_gen', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'storytelling', 'design', 'gaming', 'business', 'dev_tools', 'content', 'chat', 'ai_studio', 'education', 'storytelling', 'design', 'ai_studio', 'bots', 'bots', 'business', 'audio_video', 'image_gen', 'content', 'content', 'ai_studio', 'business', 'lifestyle', 'education', 'storytelling', 'design', 'education', 'dev_tools', 'lifestyle', 'lifestyle', 'ai_studio', 'education', 'image_gen', 'design', 'storytelling', 'bots', 'lifestyle', 'gaming', 'bots', 'ai_studio', 'audio_video', 'gaming', 'content', 'bots', 'education', 'business', 'chat', 'audio_video', 'image_gen', 'design', 'design', 'image_gen', 'gaming', 'dev_tools', 'lifestyle', 'image_gen', 'education', 'business', 'business', 'chat', 'ai_studio', 'audio_video', 'image_gen', 'chat', 'ai_studio', 'lifestyle', 'education', 'design', 'image_gen', 'lifestyle', 'bots', 'chat', 'storytelling', 'content', 'business', 'design', 'image_gen', 'image_gen', 'integrations', 'image_gen', 'image_gen', 'ai_studio', 'bots', 'design', 'lifestyle', 'education', 'chat', 'chat', 'education', 'dev_tools', 'business', 'design', 'image_gen', 'dev_tools', 'audio_video', 'vibe_coding', 'content', 'chat', 'image_gen', 'business', 'ai_studio', 'image_gen', 'lifestyle', 'ai_studio', 'education', 'audio_video', 'bots', 'storytelling', 'dev_tools', 'storytelling', 'content', 'lifestyle', 'content', 'dev_tools', 'image_gen', 'bots', 'image_gen', 'gaming', 'gaming', 'gaming', 'bots', 'storytelling', 'audio_video', 'design', 'content', 'bots', 'dev_tools', 'ai_studio', 'lifestyle', 'image_gen', 'audio_video', 'education', 'image_gen', 'bots', 'design', 'education', 'dev_tools', 'ai_studio', 'chat', 'ai_studio', 'content', 'design', 'dev_tools', 'image_gen', 'content', 'dev_tools', 'content', 'chat', 'design', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'design', 'chat', 'storytelling', 'content', 'image_gen', 'image_gen', 'image_gen', 'integrations', 'gaming', 'bots', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'chat', 'content', 'bots', 'ai_studio', 'ai_studio', 'gaming', 'content', 'image_gen', 'dev_tools', 'business', 'design', 'ai_studio', 'design', 'gaming', 'image_gen', 'dev_tools', 'chat', 'image_gen', 'image_gen', 'image_gen', 'ai_studio', 'chat', 'ai_studio', 'dev_tools', 'education', 'dev_tools', 'storytelling', 'dev_tools', 'image_gen', 'image_gen', 'image_gen', 'image_gen', 'education', 'dev_tools', 'image_gen', 'ai_studio', 'ai_studio', 'ai_studio', 'ai_studio', 'gaming', 'dev_tools', 'bots', 'content', 'chat', 'image_gen', 'ai_studio', 'image_gen', 'ai_studio', 'design', 'ai_studio', 'image_gen', 'dev_tools', 'content', 'gaming', 'storytelling', 'content', 'dev_tools', 'content', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'ai_studio', 'vibe_coding', 'gaming', 'dev_tools', 'dev_tools', 'vibe_coding', 'design', 'integrations', 'storytelling', 'integrations', 'gaming', 'chat', 'chat', 'audio_video', 'education', 'ai_studio', 'dev_tools', 'lifestyle', 'vibe_coding', 'dev_tools', 'design', 'lifestyle', 'gaming', 'dev_tools', 'audio_video', 'storytelling', 'chat', 'dev_tools', 'storytelling', 'image_gen', 'ai_studio', 'bots', 'image_gen', 'ai_studio', 'storytelling', 'dev_tools', 'integrations', 'gaming', 'ai_studio', 'ai_studio', 'dev_tools', 'dev_tools', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'image_gen', 'vibe_coding', 'image_gen', 'gaming', 'education', 'integrations', 'education', 'ai_studio', 'dev_tools', 'ai_studio', 'gaming', 'bots', 'gaming', 'lifestyle', 'education', 'storytelling', 'design', 'chat', 'image_gen', 'ai_studio', 'dev_tools', 'ai_studio', 'storytelling', 'ai_studio', 'vibe_coding', 'integrations', 'ai_studio', 'integrations', 'integrations', 'integrations', 'vibe_coding', 'ai_studio', 'ai_studio'], '')) as category FROM generation_event WHERE $__timeFilter(start_time)\n      AND environment = 'production'\n      AND response_status >= 200 AND response_status < 300\n      AND total_price > 0\n      AND user_github_id != '241978997'\n      AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))) WHERE category != '' AND selected_meter_slug IN ('v1:meter:pack', 'local:pack')",
+                    "refId": "A"
+                }
+            ],
+            "title": "Pack ρ (Revenue)",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Total apps tracked in APPS.md across all categories.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "purple",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "purple",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 20,
+                "y": 1
+            },
+            "id": 6,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT 542 as apps",
+                    "refId": "A"
+                }
+            ],
+            "title": "542 Apps",
+            "type": "stat"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 5
+            },
+            "id": 7,
+            "panels": [],
+            "title": "Category Contribution Margin",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Per-category economics: tier pollen (subsidy cost) vs pack pollen (revenue). Subsidy rate = what fraction of consumption is free tier.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "filterable": true,
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "category_label"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Category"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 160
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "category"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.hideFrom",
+                                "value": {
+                                    "legend": true,
+                                    "tooltip": true,
+                                    "viz": true
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "apps"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Apps"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 60
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Tier ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Pack ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Total ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "color-background",
+                                    "mode": "gradient"
+                                }
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "continuous-GrYlRd"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "subsidy_rate"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Subsidy %"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percentunit"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 0
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "color-background",
+                                    "mode": "gradient"
+                                }
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "continuous-GrYlRd"
+                                }
+                            },
+                            {
+                                "id": "min",
+                                "value": 0
+                            },
+                            {
+                                "id": "max",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Requests"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "unique_users"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Users"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 70
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 14,
+                "w": 24,
+                "x": 0,
+                "y": 6
+            },
+            "id": 8,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": false,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Total ρ"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "SELECT category, transform(category, ['image_gen', 'ai_studio', 'dev_tools', 'integrations', 'chat', 'design', 'content', 'education', 'gaming', 'bots', 'storytelling', 'audio_video', 'vibe_coding', 'business', 'lifestyle'], ['🖼️ Image Gen', '🎨 AI Studio', '🛠️ Dev Tools', '📦 Integrations', '💬 Chat', '🪄 Design', '✍️ Content', '📚 Education', '🎮 Gaming', '🤖 Bots', '📖 Storytelling', '🎬 Audio & Video', '✨ Vibe Coding', '💼 Business', '🌿 Lifestyle'], category) as category_label, transform(category, ['image_gen', 'ai_studio', 'dev_tools', 'integrations', 'chat', 'design', 'content', 'education', 'gaming', 'bots', 'storytelling', 'audio_video', 'vibe_coding', 'business', 'lifestyle'], [76, 69, 49, 23, 40, 42, 36, 35, 35, 27, 23, 24, 17, 20, 26], 0) as apps, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen, sum(total_price) as total_pollen, if(total_pollen > 0, tier_pollen / total_pollen, 0) as subsidy_rate, count() as requests, countDistinct(user_github_id) as unique_users FROM (SELECT total_price, selected_meter_slug, user_github_id, api_key_type, api_key_name, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['ai_studio', 'gaming', 'education', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'integrations', 'integrations', 'education', 'ai_studio', 'ai_studio', 'image_gen', 'chat', 'vibe_coding', 'ai_studio'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['ai_studio', 'business', 'education', 'audio_video', 'chat', 'content', 'image_gen', 'design', 'business', 'content', 'integrations', 'image_gen', 'image_gen', 'chat', 'education', 'audio_video', 'image_gen', 'content', 'business', 'design', 'business', 'ai_studio', 'content', 'image_gen', 'image_gen', 'ai_studio', 'gaming', 'dev_tools', 'design', 'bots', 'image_gen', 'content', 'business', 'design', 'business', 'education', 'ai_studio', 'integrations', 'integrations', 'chat', 'integrations', 'design', 'design', 'audio_video', 'ai_studio', 'lifestyle', 'vibe_coding', 'education', 'design', 'storytelling', 'chat', 'bots', 'design', 'business', 'integrations', 'content', 'ai_studio', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'image_gen', 'gaming', 'bots', 'integrations', 'integrations', 'integrations', 'storytelling', 'bots', 'bots', 'integrations', 'storytelling', 'dev_tools', 'gaming', 'image_gen', 'vibe_coding', 'business', 'chat', 'content', 'image_gen', 'bots', 'education', 'content', 'audio_video', 'image_gen', 'chat', 'audio_video', 'image_gen', 'audio_video', 'lifestyle', 'chat', 'chat', 'education', 'gaming', 'image_gen', 'chat', 'ai_studio', 'education', 'image_gen', 'bots', 'design', 'audio_video', 'content', 'integrations', 'image_gen', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'storytelling', 'design', 'gaming', 'business', 'dev_tools', 'content', 'chat', 'ai_studio', 'education', 'storytelling', 'design', 'ai_studio', 'bots', 'bots', 'business', 'audio_video', 'image_gen', 'content', 'content', 'ai_studio', 'business', 'lifestyle', 'education', 'storytelling', 'design', 'education', 'dev_tools', 'lifestyle', 'lifestyle', 'ai_studio', 'education', 'image_gen', 'design', 'storytelling', 'bots', 'lifestyle', 'gaming', 'bots', 'ai_studio', 'audio_video', 'gaming', 'content', 'bots', 'education', 'business', 'chat', 'audio_video', 'image_gen', 'design', 'design', 'image_gen', 'gaming', 'dev_tools', 'lifestyle', 'image_gen', 'education', 'business', 'business', 'chat', 'ai_studio', 'audio_video', 'image_gen', 'chat', 'ai_studio', 'lifestyle', 'education', 'design', 'image_gen', 'lifestyle', 'bots', 'chat', 'storytelling', 'content', 'business', 'design', 'image_gen', 'image_gen', 'integrations', 'image_gen', 'image_gen', 'ai_studio', 'bots', 'design', 'lifestyle', 'education', 'chat', 'chat', 'education', 'dev_tools', 'business', 'design', 'image_gen', 'dev_tools', 'audio_video', 'vibe_coding', 'content', 'chat', 'image_gen', 'business', 'ai_studio', 'image_gen', 'lifestyle', 'ai_studio', 'education', 'audio_video', 'bots', 'storytelling', 'dev_tools', 'storytelling', 'content', 'lifestyle', 'content', 'dev_tools', 'image_gen', 'bots', 'image_gen', 'gaming', 'gaming', 'gaming', 'bots', 'storytelling', 'audio_video', 'design', 'content', 'bots', 'dev_tools', 'ai_studio', 'lifestyle', 'image_gen', 'audio_video', 'education', 'image_gen', 'bots', 'design', 'education', 'dev_tools', 'ai_studio', 'chat', 'ai_studio', 'content', 'design', 'dev_tools', 'image_gen', 'content', 'dev_tools', 'content', 'chat', 'design', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'design', 'chat', 'storytelling', 'content', 'image_gen', 'image_gen', 'image_gen', 'integrations', 'gaming', 'bots', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'chat', 'content', 'bots', 'ai_studio', 'ai_studio', 'gaming', 'content', 'image_gen', 'dev_tools', 'business', 'design', 'ai_studio', 'design', 'gaming', 'image_gen', 'dev_tools', 'chat', 'image_gen', 'image_gen', 'image_gen', 'ai_studio', 'chat', 'ai_studio', 'dev_tools', 'education', 'dev_tools', 'storytelling', 'dev_tools', 'image_gen', 'image_gen', 'image_gen', 'image_gen', 'education', 'dev_tools', 'image_gen', 'ai_studio', 'ai_studio', 'ai_studio', 'ai_studio', 'gaming', 'dev_tools', 'bots', 'content', 'chat', 'image_gen', 'ai_studio', 'image_gen', 'ai_studio', 'design', 'ai_studio', 'image_gen', 'dev_tools', 'content', 'gaming', 'storytelling', 'content', 'dev_tools', 'content', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'ai_studio', 'vibe_coding', 'gaming', 'dev_tools', 'dev_tools', 'vibe_coding', 'design', 'integrations', 'storytelling', 'integrations', 'gaming', 'chat', 'chat', 'audio_video', 'education', 'ai_studio', 'dev_tools', 'lifestyle', 'vibe_coding', 'dev_tools', 'design', 'lifestyle', 'gaming', 'dev_tools', 'audio_video', 'storytelling', 'chat', 'dev_tools', 'storytelling', 'image_gen', 'ai_studio', 'bots', 'image_gen', 'ai_studio', 'storytelling', 'dev_tools', 'integrations', 'gaming', 'ai_studio', 'ai_studio', 'dev_tools', 'dev_tools', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'image_gen', 'vibe_coding', 'image_gen', 'gaming', 'education', 'integrations', 'education', 'ai_studio', 'dev_tools', 'ai_studio', 'gaming', 'bots', 'gaming', 'lifestyle', 'education', 'storytelling', 'design', 'chat', 'image_gen', 'ai_studio', 'dev_tools', 'ai_studio', 'storytelling', 'ai_studio', 'vibe_coding', 'integrations', 'ai_studio', 'integrations', 'integrations', 'integrations', 'vibe_coding', 'ai_studio', 'ai_studio'], '')) as category FROM generation_event WHERE $__timeFilter(start_time)\n      AND environment = 'production'\n      AND response_status >= 200 AND response_status < 300\n      AND total_price > 0\n      AND user_github_id != '241978997'\n      AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))) WHERE category != '' GROUP BY category ORDER BY total_pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "title": "Category P&L",
+            "type": "table"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 20
+            },
+            "id": 9,
+            "panels": [],
+            "title": "Distribution",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Share of total pollen consumed per category.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "mappings": [],
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 0,
+                "y": 21
+            },
+            "id": 10,
+            "options": {
+                "displayLabels": [
+                    "name",
+                    "percent"
+                ],
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "right",
+                    "showLegend": true,
+                    "values": [
+                        "value",
+                        "percent"
+                    ]
+                },
+                "pieType": "pie",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "SELECT transform(category, ['image_gen', 'ai_studio', 'dev_tools', 'integrations', 'chat', 'design', 'content', 'education', 'gaming', 'bots', 'storytelling', 'audio_video', 'vibe_coding', 'business', 'lifestyle'], ['🖼️ Image Gen', '🎨 AI Studio', '🛠️ Dev Tools', '📦 Integrations', '💬 Chat', '🪄 Design', '✍️ Content', '📚 Education', '🎮 Gaming', '🤖 Bots', '📖 Storytelling', '🎬 Audio & Video', '✨ Vibe Coding', '💼 Business', '🌿 Lifestyle'], category) as category_label, sum(total_price) as pollen FROM (SELECT total_price, api_key_type, api_key_name, user_github_id, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['ai_studio', 'gaming', 'education', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'integrations', 'integrations', 'education', 'ai_studio', 'ai_studio', 'image_gen', 'chat', 'vibe_coding', 'ai_studio'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['ai_studio', 'business', 'education', 'audio_video', 'chat', 'content', 'image_gen', 'design', 'business', 'content', 'integrations', 'image_gen', 'image_gen', 'chat', 'education', 'audio_video', 'image_gen', 'content', 'business', 'design', 'business', 'ai_studio', 'content', 'image_gen', 'image_gen', 'ai_studio', 'gaming', 'dev_tools', 'design', 'bots', 'image_gen', 'content', 'business', 'design', 'business', 'education', 'ai_studio', 'integrations', 'integrations', 'chat', 'integrations', 'design', 'design', 'audio_video', 'ai_studio', 'lifestyle', 'vibe_coding', 'education', 'design', 'storytelling', 'chat', 'bots', 'design', 'business', 'integrations', 'content', 'ai_studio', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'image_gen', 'gaming', 'bots', 'integrations', 'integrations', 'integrations', 'storytelling', 'bots', 'bots', 'integrations', 'storytelling', 'dev_tools', 'gaming', 'image_gen', 'vibe_coding', 'business', 'chat', 'content', 'image_gen', 'bots', 'education', 'content', 'audio_video', 'image_gen', 'chat', 'audio_video', 'image_gen', 'audio_video', 'lifestyle', 'chat', 'chat', 'education', 'gaming', 'image_gen', 'chat', 'ai_studio', 'education', 'image_gen', 'bots', 'design', 'audio_video', 'content', 'integrations', 'image_gen', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'storytelling', 'design', 'gaming', 'business', 'dev_tools', 'content', 'chat', 'ai_studio', 'education', 'storytelling', 'design', 'ai_studio', 'bots', 'bots', 'business', 'audio_video', 'image_gen', 'content', 'content', 'ai_studio', 'business', 'lifestyle', 'education', 'storytelling', 'design', 'education', 'dev_tools', 'lifestyle', 'lifestyle', 'ai_studio', 'education', 'image_gen', 'design', 'storytelling', 'bots', 'lifestyle', 'gaming', 'bots', 'ai_studio', 'audio_video', 'gaming', 'content', 'bots', 'education', 'business', 'chat', 'audio_video', 'image_gen', 'design', 'design', 'image_gen', 'gaming', 'dev_tools', 'lifestyle', 'image_gen', 'education', 'business', 'business', 'chat', 'ai_studio', 'audio_video', 'image_gen', 'chat', 'ai_studio', 'lifestyle', 'education', 'design', 'image_gen', 'lifestyle', 'bots', 'chat', 'storytelling', 'content', 'business', 'design', 'image_gen', 'image_gen', 'integrations', 'image_gen', 'image_gen', 'ai_studio', 'bots', 'design', 'lifestyle', 'education', 'chat', 'chat', 'education', 'dev_tools', 'business', 'design', 'image_gen', 'dev_tools', 'audio_video', 'vibe_coding', 'content', 'chat', 'image_gen', 'business', 'ai_studio', 'image_gen', 'lifestyle', 'ai_studio', 'education', 'audio_video', 'bots', 'storytelling', 'dev_tools', 'storytelling', 'content', 'lifestyle', 'content', 'dev_tools', 'image_gen', 'bots', 'image_gen', 'gaming', 'gaming', 'gaming', 'bots', 'storytelling', 'audio_video', 'design', 'content', 'bots', 'dev_tools', 'ai_studio', 'lifestyle', 'image_gen', 'audio_video', 'education', 'image_gen', 'bots', 'design', 'education', 'dev_tools', 'ai_studio', 'chat', 'ai_studio', 'content', 'design', 'dev_tools', 'image_gen', 'content', 'dev_tools', 'content', 'chat', 'design', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'design', 'chat', 'storytelling', 'content', 'image_gen', 'image_gen', 'image_gen', 'integrations', 'gaming', 'bots', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'chat', 'content', 'bots', 'ai_studio', 'ai_studio', 'gaming', 'content', 'image_gen', 'dev_tools', 'business', 'design', 'ai_studio', 'design', 'gaming', 'image_gen', 'dev_tools', 'chat', 'image_gen', 'image_gen', 'image_gen', 'ai_studio', 'chat', 'ai_studio', 'dev_tools', 'education', 'dev_tools', 'storytelling', 'dev_tools', 'image_gen', 'image_gen', 'image_gen', 'image_gen', 'education', 'dev_tools', 'image_gen', 'ai_studio', 'ai_studio', 'ai_studio', 'ai_studio', 'gaming', 'dev_tools', 'bots', 'content', 'chat', 'image_gen', 'ai_studio', 'image_gen', 'ai_studio', 'design', 'ai_studio', 'image_gen', 'dev_tools', 'content', 'gaming', 'storytelling', 'content', 'dev_tools', 'content', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'ai_studio', 'vibe_coding', 'gaming', 'dev_tools', 'dev_tools', 'vibe_coding', 'design', 'integrations', 'storytelling', 'integrations', 'gaming', 'chat', 'chat', 'audio_video', 'education', 'ai_studio', 'dev_tools', 'lifestyle', 'vibe_coding', 'dev_tools', 'design', 'lifestyle', 'gaming', 'dev_tools', 'audio_video', 'storytelling', 'chat', 'dev_tools', 'storytelling', 'image_gen', 'ai_studio', 'bots', 'image_gen', 'ai_studio', 'storytelling', 'dev_tools', 'integrations', 'gaming', 'ai_studio', 'ai_studio', 'dev_tools', 'dev_tools', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'image_gen', 'vibe_coding', 'image_gen', 'gaming', 'education', 'integrations', 'education', 'ai_studio', 'dev_tools', 'ai_studio', 'gaming', 'bots', 'gaming', 'lifestyle', 'education', 'storytelling', 'design', 'chat', 'image_gen', 'ai_studio', 'dev_tools', 'ai_studio', 'storytelling', 'ai_studio', 'vibe_coding', 'integrations', 'ai_studio', 'integrations', 'integrations', 'integrations', 'vibe_coding', 'ai_studio', 'ai_studio'], '')) as category FROM generation_event WHERE $__timeFilter(start_time)\n      AND environment = 'production'\n      AND response_status >= 200 AND response_status < 300\n      AND total_price > 0\n      AND user_github_id != '241978997'\n      AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))) WHERE category != '' GROUP BY category, category_label ORDER BY pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "transformations": [
+                {
+                    "id": "rowsToFields",
+                    "options": {
+                        "mappings": [
+                            {
+                                "fieldName": "category_label",
+                                "handlerKey": "field.name"
+                            },
+                            {
+                                "fieldName": "pollen",
+                                "handlerKey": "field.value"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "title": "Pollen by Category",
+            "type": "piechart"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Tier (free subsidy, orange) vs Pack (paid, green) per category. Categories with more green are more profitable.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Tier ρ"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Pack ρ"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 12,
+                "y": 21
+            },
+            "id": 11,
+            "options": {
+                "barRadius": 0.1,
+                "barWidth": 0.8,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                    "calcs": [
+                        "sum"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "horizontal",
+                "showValue": "auto",
+                "stacking": "normal",
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "SELECT transform(category, ['image_gen', 'ai_studio', 'dev_tools', 'integrations', 'chat', 'design', 'content', 'education', 'gaming', 'bots', 'storytelling', 'audio_video', 'vibe_coding', 'business', 'lifestyle'], ['🖼️ Image Gen', '🎨 AI Studio', '🛠️ Dev Tools', '📦 Integrations', '💬 Chat', '🪄 Design', '✍️ Content', '📚 Education', '🎮 Gaming', '🤖 Bots', '📖 Storytelling', '🎬 Audio & Video', '✨ Vibe Coding', '💼 Business', '🌿 Lifestyle'], category) as category_label, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen FROM (SELECT total_price, selected_meter_slug, api_key_type, api_key_name, user_github_id, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['ai_studio', 'gaming', 'education', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'integrations', 'integrations', 'education', 'ai_studio', 'ai_studio', 'image_gen', 'chat', 'vibe_coding', 'ai_studio'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['ai_studio', 'business', 'education', 'audio_video', 'chat', 'content', 'image_gen', 'design', 'business', 'content', 'integrations', 'image_gen', 'image_gen', 'chat', 'education', 'audio_video', 'image_gen', 'content', 'business', 'design', 'business', 'ai_studio', 'content', 'image_gen', 'image_gen', 'ai_studio', 'gaming', 'dev_tools', 'design', 'bots', 'image_gen', 'content', 'business', 'design', 'business', 'education', 'ai_studio', 'integrations', 'integrations', 'chat', 'integrations', 'design', 'design', 'audio_video', 'ai_studio', 'lifestyle', 'vibe_coding', 'education', 'design', 'storytelling', 'chat', 'bots', 'design', 'business', 'integrations', 'content', 'ai_studio', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'image_gen', 'gaming', 'bots', 'integrations', 'integrations', 'integrations', 'storytelling', 'bots', 'bots', 'integrations', 'storytelling', 'dev_tools', 'gaming', 'image_gen', 'vibe_coding', 'business', 'chat', 'content', 'image_gen', 'bots', 'education', 'content', 'audio_video', 'image_gen', 'chat', 'audio_video', 'image_gen', 'audio_video', 'lifestyle', 'chat', 'chat', 'education', 'gaming', 'image_gen', 'chat', 'ai_studio', 'education', 'image_gen', 'bots', 'design', 'audio_video', 'content', 'integrations', 'image_gen', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'storytelling', 'design', 'gaming', 'business', 'dev_tools', 'content', 'chat', 'ai_studio', 'education', 'storytelling', 'design', 'ai_studio', 'bots', 'bots', 'business', 'audio_video', 'image_gen', 'content', 'content', 'ai_studio', 'business', 'lifestyle', 'education', 'storytelling', 'design', 'education', 'dev_tools', 'lifestyle', 'lifestyle', 'ai_studio', 'education', 'image_gen', 'design', 'storytelling', 'bots', 'lifestyle', 'gaming', 'bots', 'ai_studio', 'audio_video', 'gaming', 'content', 'bots', 'education', 'business', 'chat', 'audio_video', 'image_gen', 'design', 'design', 'image_gen', 'gaming', 'dev_tools', 'lifestyle', 'image_gen', 'education', 'business', 'business', 'chat', 'ai_studio', 'audio_video', 'image_gen', 'chat', 'ai_studio', 'lifestyle', 'education', 'design', 'image_gen', 'lifestyle', 'bots', 'chat', 'storytelling', 'content', 'business', 'design', 'image_gen', 'image_gen', 'integrations', 'image_gen', 'image_gen', 'ai_studio', 'bots', 'design', 'lifestyle', 'education', 'chat', 'chat', 'education', 'dev_tools', 'business', 'design', 'image_gen', 'dev_tools', 'audio_video', 'vibe_coding', 'content', 'chat', 'image_gen', 'business', 'ai_studio', 'image_gen', 'lifestyle', 'ai_studio', 'education', 'audio_video', 'bots', 'storytelling', 'dev_tools', 'storytelling', 'content', 'lifestyle', 'content', 'dev_tools', 'image_gen', 'bots', 'image_gen', 'gaming', 'gaming', 'gaming', 'bots', 'storytelling', 'audio_video', 'design', 'content', 'bots', 'dev_tools', 'ai_studio', 'lifestyle', 'image_gen', 'audio_video', 'education', 'image_gen', 'bots', 'design', 'education', 'dev_tools', 'ai_studio', 'chat', 'ai_studio', 'content', 'design', 'dev_tools', 'image_gen', 'content', 'dev_tools', 'content', 'chat', 'design', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'design', 'chat', 'storytelling', 'content', 'image_gen', 'image_gen', 'image_gen', 'integrations', 'gaming', 'bots', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'chat', 'content', 'bots', 'ai_studio', 'ai_studio', 'gaming', 'content', 'image_gen', 'dev_tools', 'business', 'design', 'ai_studio', 'design', 'gaming', 'image_gen', 'dev_tools', 'chat', 'image_gen', 'image_gen', 'image_gen', 'ai_studio', 'chat', 'ai_studio', 'dev_tools', 'education', 'dev_tools', 'storytelling', 'dev_tools', 'image_gen', 'image_gen', 'image_gen', 'image_gen', 'education', 'dev_tools', 'image_gen', 'ai_studio', 'ai_studio', 'ai_studio', 'ai_studio', 'gaming', 'dev_tools', 'bots', 'content', 'chat', 'image_gen', 'ai_studio', 'image_gen', 'ai_studio', 'design', 'ai_studio', 'image_gen', 'dev_tools', 'content', 'gaming', 'storytelling', 'content', 'dev_tools', 'content', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'ai_studio', 'vibe_coding', 'gaming', 'dev_tools', 'dev_tools', 'vibe_coding', 'design', 'integrations', 'storytelling', 'integrations', 'gaming', 'chat', 'chat', 'audio_video', 'education', 'ai_studio', 'dev_tools', 'lifestyle', 'vibe_coding', 'dev_tools', 'design', 'lifestyle', 'gaming', 'dev_tools', 'audio_video', 'storytelling', 'chat', 'dev_tools', 'storytelling', 'image_gen', 'ai_studio', 'bots', 'image_gen', 'ai_studio', 'storytelling', 'dev_tools', 'integrations', 'gaming', 'ai_studio', 'ai_studio', 'dev_tools', 'dev_tools', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'image_gen', 'vibe_coding', 'image_gen', 'gaming', 'education', 'integrations', 'education', 'ai_studio', 'dev_tools', 'ai_studio', 'gaming', 'bots', 'gaming', 'lifestyle', 'education', 'storytelling', 'design', 'chat', 'image_gen', 'ai_studio', 'dev_tools', 'ai_studio', 'storytelling', 'ai_studio', 'vibe_coding', 'integrations', 'ai_studio', 'integrations', 'integrations', 'integrations', 'vibe_coding', 'ai_studio', 'ai_studio'], '')) as category FROM generation_event WHERE $__timeFilter(start_time)\n      AND environment = 'production'\n      AND response_status >= 200 AND response_status < 300\n      AND total_price > 0\n      AND user_github_id != '241978997'\n      AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))) WHERE category != '' GROUP BY category, category_label ORDER BY tier_pollen + pack_pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "title": "Tier vs Pack by Category",
+            "type": "barchart"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 31
+            },
+            "id": 12,
+            "panels": [],
+            "title": "Trends",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily pollen consumption by category. Stacked to show total and relative contribution.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "Pollen",
+                        "axisPlacement": "left",
+                        "barAlignment": 0,
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 32
+            },
+            "id": 13,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum",
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 200
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "range": true,
+                    "rawSql": "SELECT\n    toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n      sumIf(total_price, category = 'image_gen') as \"🖼️ Image Gen\",\n      sumIf(total_price, category = 'ai_studio') as \"🎨 AI Studio\",\n      sumIf(total_price, category = 'dev_tools') as \"🛠️ Dev Tools\",\n      sumIf(total_price, category = 'integrations') as \"📦 Integrations\",\n      sumIf(total_price, category = 'chat') as \"💬 Chat\",\n      sumIf(total_price, category = 'design') as \"🪄 Design\",\n      sumIf(total_price, category = 'content') as \"✍️ Content\",\n      sumIf(total_price, category = 'education') as \"📚 Education\",\n      sumIf(total_price, category = 'gaming') as \"🎮 Gaming\",\n      sumIf(total_price, category = 'bots') as \"🤖 Bots\",\n      sumIf(total_price, category = 'storytelling') as \"📖 Storytelling\",\n      sumIf(total_price, category = 'audio_video') as \"🎬 Audio & Video\",\n      sumIf(total_price, category = 'vibe_coding') as \"✨ Vibe Coding\",\n      sumIf(total_price, category = 'business') as \"💼 Business\",\n      sumIf(total_price, category = 'lifestyle') as \"🌿 Lifestyle\"\n    FROM (\n      SELECT start_time, total_price, api_key_type, api_key_name, user_github_id,\n        if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['ai_studio', 'gaming', 'education', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'integrations', 'integrations', 'education', 'ai_studio', 'ai_studio', 'image_gen', 'chat', 'vibe_coding', 'ai_studio'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['ai_studio', 'business', 'education', 'audio_video', 'chat', 'content', 'image_gen', 'design', 'business', 'content', 'integrations', 'image_gen', 'image_gen', 'chat', 'education', 'audio_video', 'image_gen', 'content', 'business', 'design', 'business', 'ai_studio', 'content', 'image_gen', 'image_gen', 'ai_studio', 'gaming', 'dev_tools', 'design', 'bots', 'image_gen', 'content', 'business', 'design', 'business', 'education', 'ai_studio', 'integrations', 'integrations', 'chat', 'integrations', 'design', 'design', 'audio_video', 'ai_studio', 'lifestyle', 'vibe_coding', 'education', 'design', 'storytelling', 'chat', 'bots', 'design', 'business', 'integrations', 'content', 'ai_studio', 'education', 'audio_video', 'audio_video', 'vibe_coding', 'image_gen', 'ai_studio', 'dev_tools', 'education', 'design', 'image_gen', 'image_gen', 'gaming', 'bots', 'integrations', 'integrations', 'integrations', 'storytelling', 'bots', 'bots', 'integrations', 'storytelling', 'dev_tools', 'gaming', 'image_gen', 'vibe_coding', 'business', 'chat', 'content', 'image_gen', 'bots', 'education', 'content', 'audio_video', 'image_gen', 'chat', 'audio_video', 'image_gen', 'audio_video', 'lifestyle', 'chat', 'chat', 'education', 'gaming', 'image_gen', 'chat', 'ai_studio', 'education', 'image_gen', 'bots', 'design', 'audio_video', 'content', 'integrations', 'image_gen', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'storytelling', 'design', 'gaming', 'business', 'dev_tools', 'content', 'chat', 'ai_studio', 'education', 'storytelling', 'design', 'ai_studio', 'bots', 'bots', 'business', 'audio_video', 'image_gen', 'content', 'content', 'ai_studio', 'business', 'lifestyle', 'education', 'storytelling', 'design', 'education', 'dev_tools', 'lifestyle', 'lifestyle', 'ai_studio', 'education', 'image_gen', 'design', 'storytelling', 'bots', 'lifestyle', 'gaming', 'bots', 'ai_studio', 'audio_video', 'gaming', 'content', 'bots', 'education', 'business', 'chat', 'audio_video', 'image_gen', 'design', 'design', 'image_gen', 'gaming', 'dev_tools', 'lifestyle', 'image_gen', 'education', 'business', 'business', 'chat', 'ai_studio', 'audio_video', 'image_gen', 'chat', 'ai_studio', 'lifestyle', 'education', 'design', 'image_gen', 'lifestyle', 'bots', 'chat', 'storytelling', 'content', 'business', 'design', 'image_gen', 'image_gen', 'integrations', 'image_gen', 'image_gen', 'ai_studio', 'bots', 'design', 'lifestyle', 'education', 'chat', 'chat', 'education', 'dev_tools', 'business', 'design', 'image_gen', 'dev_tools', 'audio_video', 'vibe_coding', 'content', 'chat', 'image_gen', 'business', 'ai_studio', 'image_gen', 'lifestyle', 'ai_studio', 'education', 'audio_video', 'bots', 'storytelling', 'dev_tools', 'storytelling', 'content', 'lifestyle', 'content', 'dev_tools', 'image_gen', 'bots', 'image_gen', 'gaming', 'gaming', 'gaming', 'bots', 'storytelling', 'audio_video', 'design', 'content', 'bots', 'dev_tools', 'ai_studio', 'lifestyle', 'image_gen', 'audio_video', 'education', 'image_gen', 'bots', 'design', 'education', 'dev_tools', 'ai_studio', 'chat', 'ai_studio', 'content', 'design', 'dev_tools', 'image_gen', 'content', 'dev_tools', 'content', 'chat', 'design', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'design', 'chat', 'storytelling', 'content', 'image_gen', 'image_gen', 'image_gen', 'integrations', 'gaming', 'bots', 'design', 'image_gen', 'dev_tools', 'ai_studio', 'chat', 'content', 'bots', 'ai_studio', 'ai_studio', 'gaming', 'content', 'image_gen', 'dev_tools', 'business', 'design', 'ai_studio', 'design', 'gaming', 'image_gen', 'dev_tools', 'chat', 'image_gen', 'image_gen', 'image_gen', 'ai_studio', 'chat', 'ai_studio', 'dev_tools', 'education', 'dev_tools', 'storytelling', 'dev_tools', 'image_gen', 'image_gen', 'image_gen', 'image_gen', 'education', 'dev_tools', 'image_gen', 'ai_studio', 'ai_studio', 'ai_studio', 'ai_studio', 'gaming', 'dev_tools', 'bots', 'content', 'chat', 'image_gen', 'ai_studio', 'image_gen', 'ai_studio', 'design', 'ai_studio', 'image_gen', 'dev_tools', 'content', 'gaming', 'storytelling', 'content', 'dev_tools', 'content', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'ai_studio', 'vibe_coding', 'gaming', 'dev_tools', 'dev_tools', 'vibe_coding', 'design', 'integrations', 'storytelling', 'integrations', 'gaming', 'chat', 'chat', 'audio_video', 'education', 'ai_studio', 'dev_tools', 'lifestyle', 'vibe_coding', 'dev_tools', 'design', 'lifestyle', 'gaming', 'dev_tools', 'audio_video', 'storytelling', 'chat', 'dev_tools', 'storytelling', 'image_gen', 'ai_studio', 'bots', 'image_gen', 'ai_studio', 'storytelling', 'dev_tools', 'integrations', 'gaming', 'ai_studio', 'ai_studio', 'dev_tools', 'dev_tools', 'ai_studio', 'gaming', 'image_gen', 'lifestyle', 'ai_studio', 'image_gen', 'education', 'image_gen', 'vibe_coding', 'image_gen', 'gaming', 'education', 'integrations', 'education', 'ai_studio', 'dev_tools', 'ai_studio', 'gaming', 'bots', 'gaming', 'lifestyle', 'education', 'storytelling', 'design', 'chat', 'image_gen', 'ai_studio', 'dev_tools', 'ai_studio', 'storytelling', 'ai_studio', 'vibe_coding', 'integrations', 'ai_studio', 'integrations', 'integrations', 'integrations', 'vibe_coding', 'ai_studio', 'ai_studio'], '')) as category\n      FROM generation_event\n      WHERE $__timeFilter(start_time)\n      AND environment = 'production'\n      AND response_status >= 200 AND response_status < 300\n      AND total_price > 0\n      AND user_github_id != '241978997'\n      AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n    )\n    WHERE category != ''\n    GROUP BY time\n    ORDER BY time",
+                    "refId": "A"
+                }
+            ],
+            "title": "Daily Pollen by Category",
+            "type": "timeseries"
+        }
+    ],
+    "schemaVersion": 40,
+    "tags": [
+        "economics",
+        "category",
+        "apps"
+    ],
+    "templating": {
+        "list": []
+    },
+    "time": {
+        "from": "now-30d",
+        "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "utc",
+    "title": "Category Economics",
+    "uid": "category-economics",
+    "version": 1
+}

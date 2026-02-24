@@ -1,0 +1,34 @@
+{
+  "pr_number": 8538,
+  "title": "feat: capture full redirect URL in BYOP API key metadata",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8538",
+  "merged_at": "2026-02-24T21:28:38Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Tracing the source",
+    "blurb": "We're now capturing the full journey. API keys generated via BYOP now remember their specific redirect URL, giving us better maps of where traffic flows.",
+    "summary": "Updated the authorization flow to capture the full redirect URL in API key metadata instead of just the hostname.",
+    "impact": "This enables precise tracking of which specific application pages or routes are generating keys, improving analytics and attribution.",
+    "keywords": [
+      "auth",
+      "byop",
+      "analytics",
+      "metadata",
+      "attribution"
+    ],
+    "visual_concept": "Polly the bee acting as a detective or cartographer, tracing a line from a key back to a specific point on a map. The idea of 'origin' or 'source'.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot holding a golden key with a long digital tag attached to it, looking at a pixelated map on the wall. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Bee mascot with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text: 'ORIGIN'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T21:29:44.078110+00:00"
+}

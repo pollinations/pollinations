@@ -451,17 +451,7 @@ function RouteComponent() {
                 {tierData && (
                     <div className="flex flex-col gap-2">
                         <h2 className="font-bold">Tier</h2>
-                        <TierPanel
-                            {...{
-                                ...tierData,
-                                active: {
-                                    tier: "spore" as const,
-                                    displayName: "Spore",
-                                    pollen: 1.5,
-                                    cadence: "weekly" as const,
-                                },
-                            }}
-                        />
+                        <TierPanel {...tierData} />
                     </div>
                 )}
                 <ApiKeyList

@@ -38,6 +38,8 @@ export type CreateApiKey = {
     expiryDays?: number | null;
     /** Account permissions: ["balance", "usage"]. null = no permissions */
     accountPermissions?: string[] | null;
+    /** Bot protection settings (only for publishable keys) */
+    turnstile?: { enabled: boolean; hostnames: string[] };
 };
 
 export type CreateApiKeyResponse = ApiKey & {

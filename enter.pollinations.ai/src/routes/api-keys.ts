@@ -68,6 +68,58 @@ function parseMetadata(metadata: string): Record<string, unknown> | null {
 }
 
 /**
+ * Parse metadata from DB row, handling invalid JSON gracefully.
+ */
+function parseExistingMetadata(
+    raw: string | null | undefined,
+): Record<string, unknown> {
+    if (!raw) return {};
+    try {
+        return JSON.parse(String(raw));
+    } catch {
+        return {};
+    }
+}
+
+/**
+ * Verify the authenticated user owns the API key, returning the key row.
+ * Throws 404 if not found or not owned by the user.
+ */
+async function requireOwnedKey(
+    db: ReturnType<typeof drizzle>,
+    keyId: string,
+    userId: string,
+) {
+    const key = await db.query.apikey.findFirst({
+        where: and(
+            eq(schema.apikey.id, keyId),
+            eq(schema.apikey.userId, userId),
+        ),
+    });
+    if (!key) {
+        throw new HTTPException(404, { message: "API key not found" });
+    }
+    return key;
+}
+
+/**
+ * Update metadata on an API key row, merging with existing metadata.
+ */
+async function updateKeyMetadata(
+    db: ReturnType<typeof drizzle>,
+    keyId: string,
+    metadataPatch: Record<string, unknown>,
+    existingRaw: string | null | undefined,
+): Promise<Record<string, unknown>> {
+    const merged = { ...parseExistingMetadata(existingRaw), ...metadataPatch };
+    await db
+        .update(schema.apikey)
+        .set({ metadata: JSON.stringify(merged), updatedAt: new Date() })
+        .where(eq(schema.apikey.id, keyId));
+    return merged;
+}
+
+/**
  * Schema for updating an API key.
  * Uses better-auth's server API which supports server-only fields like permissions.
  *
@@ -99,6 +151,23 @@ const UpdateApiKeySchema = z.object({
         .optional()
         .transform((val) => (val ? new Date(val) : val))
         .describe("Expiration date for the key. null = no expiry"),
+});
+
+/**
+ * Schema for updating Turnstile settings on an API key.
+ */
+const TurnstileSettingsSchema = z.object({
+    enabled: z.boolean(),
+    hostnames: z.array(z.string().min(1)).default([]),
+});
+
+/**
+ * Schema for updating metadata on an API key.
+ */
+const UpdateMetadataSchema = z.object({
+    description: z.string().optional(),
+    keyType: z.string().optional(),
+    plaintextKey: z.string().optional(),
 });
 
 /**
@@ -170,18 +239,8 @@ export const apiKeysRoutes = new Hono<Env>()
                 expiresAt,
             } = c.req.valid("json");
 
-            // Verify ownership before updating
             const db = drizzle(c.env.DB, { schema });
-            const existingKey = await db.query.apikey.findFirst({
-                where: and(
-                    eq(schema.apikey.id, id),
-                    eq(schema.apikey.userId, user.id),
-                ),
-            });
-
-            if (!existingKey) {
-                throw new HTTPException(404, { message: "API key not found" });
-            }
+            const existingKey = await requireOwnedKey(db, id, user.id);
 
             const existingPermissions = existingKey.permissions
                 ? JSON.parse(existingKey.permissions as string)
@@ -239,5 +298,93 @@ export const apiKeysRoutes = new Hono<Env>()
                 pollenBalance: finalKey?.pollenBalance ?? null,
                 expiresAt: finalKey?.expiresAt ?? null,
             });
+        },
+    )
+    /**
+     * Update metadata for an API key directly via DB.
+     */
+    .post(
+        "/:id/metadata",
+        describeRoute({
+            tags: ["Account"],
+            description: "Update metadata for an API key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("json", UpdateMetadataSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+            const metadataUpdate = c.req.valid("json");
+
+            const db = drizzle(c.env.DB, { schema });
+            const existingKey = await requireOwnedKey(db, id, user.id);
+            const metadata = await updateKeyMetadata(
+                db,
+                id,
+                metadataUpdate,
+                existingKey.metadata,
+            );
+
+            return c.json({ id, metadata });
+        },
+    )
+    /**
+     * Update Turnstile settings for an API key.
+     * Stores settings in the metadata field (no schema migration needed).
+     */
+    .post(
+        "/:id/turnstile",
+        describeRoute({
+            tags: ["Account"],
+            description:
+                "Update Turnstile bot protection settings for an API key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("json", TurnstileSettingsSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+            const turnstileSettings = c.req.valid("json");
+
+            const db = drizzle(c.env.DB, { schema });
+            const existingKey = await requireOwnedKey(db, id, user.id);
+            await updateKeyMetadata(
+                db,
+                id,
+                { turnstile: turnstileSettings },
+                existingKey.metadata,
+            );
+
+            return c.json({ id, turnstile: turnstileSettings });
+        },
+    )
+    /**
+     * Get Turnstile settings for an API key.
+     */
+    .get(
+        "/:id/turnstile",
+        describeRoute({
+            tags: ["Account"],
+            description:
+                "Get Turnstile bot protection settings for an API key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+
+            const db = drizzle(c.env.DB, { schema });
+            const existingKey = await requireOwnedKey(db, id, user.id);
+            const metadata = parseExistingMetadata(existingKey.metadata);
+
+            const turnstile = (metadata.turnstile as {
+                enabled: boolean;
+                hostnames: string[];
+            }) || {
+                enabled: false,
+                hostnames: [],
+            };
+
+            return c.json({ id, turnstile });
         },
     );

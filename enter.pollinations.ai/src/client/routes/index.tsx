@@ -116,14 +116,26 @@ function RouteComponent() {
 
         // Store plaintext key for publishable keys
         if (isPublishable) {
-            await authClient.apiKey.update({
-                keyId: apiKey.id,
-                metadata: {
+            await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
                     description: formState.description,
                     keyType,
                     plaintextKey: apiKey.key,
-                },
+                }),
             });
+
+            // Save turnstile settings if provided
+            if (formState.turnstile) {
+                await fetch(`/api/api-keys/${apiKey.id}/turnstile`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(formState.turnstile),
+                });
+            }
         }
 
         // Set permissions and budget if provided

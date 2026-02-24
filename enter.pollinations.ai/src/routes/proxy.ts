@@ -1,6 +1,5 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";
@@ -12,6 +11,7 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
+import { turnstile } from "@/middleware/turnstile.ts";
 import type { Env } from "../env.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
@@ -287,6 +287,8 @@ export const proxyRoutes = new Hono<Env>()
     )
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth({ allowApiKey: true, allowSessionCookie: false }))
+    // Turnstile bot protection: verify tokens for API keys that opt-in
+    .use(turnstile())
     .use(frontendKeyRateLimit)
     .use(balance)
     // Request deduplication: prevents duplicate concurrent requests by sharing promises

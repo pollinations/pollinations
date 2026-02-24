@@ -1,0 +1,33 @@
+{
+  "pr_number": 8543,
+  "title": "fix: resolve APPS.md conflict markers and restore 18 missing apps",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8543",
+  "merged_at": "2026-02-24T18:41:56Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The lost flowers return",
+    "blurb": "We found 18 missing apps hiding behind some merge conflicts. The garden is full again.",
+    "summary": "Resolved merge conflicts in the apps registry, restoring 18 missing community submissions and standardizing categories.",
+    "impact": "The showcase now correctly displays all 561 apps with up-to-date information.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "fix"
+    ],
+    "visual_concept": "Polly the bee finding lost flower pots (representing apps) behind a glitchy barrier and restoring them to the garden.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot discovering colorful pixel flower pots hidden behind a glitchy digital hedge. She is placing them back into a neat garden row. Lime green (#ecf874) and pastel peach background. Warm lighting, wholesome vibes like Stardew Valley. Text in pixel font: 'FOUND THEM'. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T18:42:38.291005+00:00"
+}

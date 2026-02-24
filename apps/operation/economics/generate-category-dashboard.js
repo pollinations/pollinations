@@ -7,6 +7,9 @@
  * BYOP hostname → Category), then generates a dashboard JSON with inline
  * ClickHouse transform() lookups.
  *
+ * IMPORTANT: All SQL must query generation_event directly (no subqueries).
+ * Tinybird scoped tokens don't allow subqueries on datasources.
+ *
  * Usage: node apps/operation/economics/generate-category-dashboard.js
  */
 
@@ -43,14 +46,8 @@ const CH_DATASOURCE = {
 };
 
 // Standard data quality filters (from existing dashboards)
-const FILTERS = [
-    "$__timeFilter(start_time)",
-    "environment = 'production'",
-    "response_status >= 200 AND response_status < 300",
-    "total_price > 0",
-    "user_github_id != '241978997'",
-    "(start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
-].join("\n      AND ");
+const FILTERS =
+    "$__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))";
 
 // ---------------------------------------------------------------------------
 // Parse APPS.md
@@ -76,9 +73,7 @@ function parseAppsMarkdown() {
 
     const headers = lines[headerIdx].split("|").map((h) => h.trim());
     const col = (name) =>
-        headers.findIndex(
-            (h) => h.toLowerCase() === name.toLowerCase(),
-        );
+        headers.findIndex((h) => h.toLowerCase() === name.toLowerCase());
 
     const COL = {
         category: col("Category"),
@@ -117,7 +112,6 @@ function parseAppsMarkdown() {
 // ---------------------------------------------------------------------------
 
 function buildMappings(apps) {
-    // github_id → [{category, requests}] — pick dominant category per user
     const userApps = new Map();
     const hostnameToCategory = new Map();
     const categoryAppCounts = {};
@@ -140,7 +134,6 @@ function buildMappings(apps) {
         }
     }
 
-    // Resolve to dominant category (highest requests)
     const githubIdToCategory = new Map();
     for (const [id, list] of userApps) {
         list.sort((a, b) => b.requests - a.requests);
@@ -168,11 +161,14 @@ function buildTransformArrays(mapping) {
     return { keys: keys.join(", "), vals: vals.join(", ") };
 }
 
+/**
+ * Build the category assignment SQL expression.
+ * BYOP: match hostname in api_key_name; otherwise match user_github_id.
+ */
 function buildCategoryExpr(githubIdToCategory, hostnameToCategory) {
     const gh = buildTransformArrays(githubIdToCategory);
     const hn = buildTransformArrays(hostnameToCategory);
 
-    // BYOP: match hostname; otherwise match github_id
     if (hn.keys) {
         return (
             `if(api_key_type = 'secret' AND api_key_name LIKE '%.%', ` +
@@ -183,22 +179,18 @@ function buildCategoryExpr(githubIdToCategory, hostnameToCategory) {
     return `transform(user_github_id, [${gh.keys}], [${gh.vals}], '')`;
 }
 
-function buildLabelExpr() {
-    const cats = Object.keys(CATEGORY_META);
-    const keys = cats.map((c) => `'${c}'`).join(", ");
-    const labels = cats
-        .map((c) => `'${CATEGORY_META[c].emoji} ${CATEGORY_META[c].label}'`)
-        .join(", ");
-    return `transform(category, [${keys}], [${labels}], category)`;
-}
-
-function buildAppCountExpr(categoryAppCounts) {
-    const cats = Object.keys(CATEGORY_META);
-    const keys = cats.map((c) => `'${c}'`).join(", ");
-    const counts = cats
-        .map((c) => String(categoryAppCounts[c] || 0))
-        .join(", ");
-    return `transform(category, [${keys}], [${counts}], 0)`;
+/**
+ * Build Grafana value mappings for category column (raw key → emoji label).
+ */
+function buildCategoryValueMappings() {
+    const options = {};
+    for (const [key, meta] of Object.entries(CATEGORY_META)) {
+        options[key] = {
+            text: `${meta.emoji} ${meta.label}`,
+            index: Object.keys(options).length,
+        };
+    }
+    return [{ type: "value", options }];
 }
 
 // ---------------------------------------------------------------------------
@@ -252,10 +244,9 @@ function statPanel(id, title, description, sql, gridPos, color, unit) {
 }
 
 function buildPanels(categoryExpr, categoryAppCounts) {
-    const labelExpr = buildLabelExpr();
-    const appCountExpr = buildAppCountExpr(categoryAppCounts);
     const panels = [];
     let nextId = 1;
+    const valueMappings = buildCategoryValueMappings();
 
     // Row: Overview
     panels.push({
@@ -267,13 +258,13 @@ function buildPanels(categoryExpr, categoryAppCounts) {
         type: "row",
     });
 
-    // Stat: Total categorized pollen
+    // Stat: Total categorized pollen — flat query, no subquery
     panels.push(
         statPanel(
             nextId++,
             "Categorized Pollen",
             "Total pollen consumed by apps in known APPS.md categories.",
-            `SELECT sum(total_price) as total FROM (SELECT total_price, ${categoryExpr} as category FROM generation_event WHERE ${FILTERS}) WHERE category != ''`,
+            `SELECT sumIf(total_price, ${categoryExpr} != '') as total\nFROM generation_event\nWHERE ${FILTERS}`,
             { h: 4, w: 6, x: 0, y: 1 },
             "green",
         ),
@@ -285,7 +276,7 @@ function buildPanels(categoryExpr, categoryAppCounts) {
             nextId++,
             "Coverage",
             "Percentage of total platform pollen attributable to known APPS.md apps.",
-            `SELECT if(total > 0, categorized / total, 0) as coverage FROM (SELECT sum(total_price) as total, sumIf(total_price, ${categoryExpr} != '') as categorized FROM generation_event WHERE ${FILTERS})`,
+            `SELECT if(sum(total_price) > 0, sumIf(total_price, ${categoryExpr} != '') / sum(total_price), 0) as coverage\nFROM generation_event\nWHERE ${FILTERS}`,
             { h: 4, w: 4, x: 6, y: 1 },
             "blue",
             "percentunit",
@@ -298,7 +289,7 @@ function buildPanels(categoryExpr, categoryAppCounts) {
             nextId++,
             "Tier \u03c1 (Subsidy)",
             "Free tier pollen consumed by categorized apps — this is our cost.",
-            `SELECT sum(total_price) as tier_cost FROM (SELECT total_price, selected_meter_slug, ${categoryExpr} as category FROM generation_event WHERE ${FILTERS}) WHERE category != '' AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')`,
+            `SELECT sumIf(total_price, ${categoryExpr} != '' AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_cost\nFROM generation_event\nWHERE ${FILTERS}`,
             { h: 4, w: 5, x: 10, y: 1 },
             "orange",
         ),
@@ -310,7 +301,7 @@ function buildPanels(categoryExpr, categoryAppCounts) {
             nextId++,
             "Pack \u03c1 (Revenue)",
             "Paid pack pollen consumed by categorized apps — this is revenue.",
-            `SELECT sum(total_price) as pack_rev FROM (SELECT total_price, selected_meter_slug, ${categoryExpr} as category FROM generation_event WHERE ${FILTERS}) WHERE category != '' AND selected_meter_slug IN ('v1:meter:pack', 'local:pack')`,
+            `SELECT sumIf(total_price, ${categoryExpr} != '' AND selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_rev\nFROM generation_event\nWHERE ${FILTERS}`,
             { h: 4, w: 5, x: 15, y: 1 },
             "green",
         ),
@@ -343,8 +334,15 @@ function buildPanels(categoryExpr, categoryAppCounts) {
         type: "row",
     });
 
-    // Table: Category P&L
-    const pnlTableId = nextId++;
+    // App count static mapping (tiny, 15 entries)
+    const catKeys = Object.keys(CATEGORY_META)
+        .map((c) => `'${c}'`)
+        .join(", ");
+    const catCounts = Object.keys(CATEGORY_META)
+        .map((c) => String(categoryAppCounts[c] || 0))
+        .join(", ");
+
+    // Table: Category P&L — flat query, GROUP BY + HAVING on computed alias
     panels.push({
         datasource: CH_DATASOURCE,
         description:
@@ -366,23 +364,11 @@ function buildPanels(categoryExpr, categoryAppCounts) {
             },
             overrides: [
                 {
-                    matcher: { id: "byName", options: "category_label" },
+                    matcher: { id: "byName", options: "category" },
                     properties: [
                         { id: "displayName", value: "Category" },
                         { id: "custom.width", value: 160 },
-                    ],
-                },
-                {
-                    matcher: { id: "byName", options: "category" },
-                    properties: [
-                        {
-                            id: "custom.hideFrom",
-                            value: {
-                                legend: true,
-                                tooltip: true,
-                                viz: true,
-                            },
-                        },
+                        { id: "mappings", value: valueMappings },
                     ],
                 },
                 {
@@ -469,7 +455,7 @@ function buildPanels(categoryExpr, categoryAppCounts) {
             ],
         },
         gridPos: { h: 14, w: 24, x: 0, y: 6 },
-        id: pnlTableId,
+        id: nextId++,
         options: {
             cellHeight: "sm",
             footer: {
@@ -487,7 +473,22 @@ function buildPanels(categoryExpr, categoryAppCounts) {
             {
                 datasource: CH_DATASOURCE,
                 format: 1,
-                rawSql: `SELECT category, ${labelExpr} as category_label, ${appCountExpr} as apps, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen, sum(total_price) as total_pollen, if(total_pollen > 0, tier_pollen / total_pollen, 0) as subsidy_rate, count() as requests, countDistinct(user_github_id) as unique_users FROM (SELECT total_price, selected_meter_slug, user_github_id, api_key_type, api_key_name, ${categoryExpr} as category FROM generation_event WHERE ${FILTERS}) WHERE category != '' GROUP BY category ORDER BY total_pollen DESC`,
+                rawSql: [
+                    "SELECT",
+                    `  ${categoryExpr} as category,`,
+                    `  transform(category, [${catKeys}], [${catCounts}], 0) as apps,`,
+                    "  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,",
+                    "  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen,",
+                    "  sum(total_price) as total_pollen,",
+                    "  if(total_pollen > 0, tier_pollen / total_pollen, 0) as subsidy_rate,",
+                    "  count() as requests,",
+                    "  countDistinct(user_github_id) as unique_users",
+                    "FROM generation_event",
+                    `WHERE ${FILTERS}`,
+                    "GROUP BY category",
+                    "HAVING category != ''",
+                    "ORDER BY total_pollen DESC",
+                ].join("\n"),
                 refId: "A",
             },
         ],
@@ -512,7 +513,7 @@ function buildPanels(categoryExpr, categoryAppCounts) {
         fieldConfig: {
             defaults: {
                 color: { mode: "palette-classic" },
-                mappings: [],
+                mappings: valueMappings,
                 unit: "currencyUSD",
             },
             overrides: [],
@@ -540,7 +541,16 @@ function buildPanels(categoryExpr, categoryAppCounts) {
             {
                 datasource: CH_DATASOURCE,
                 format: 1,
-                rawSql: `SELECT ${labelExpr} as category_label, sum(total_price) as pollen FROM (SELECT total_price, api_key_type, api_key_name, user_github_id, ${categoryExpr} as category FROM generation_event WHERE ${FILTERS}) WHERE category != '' GROUP BY category, category_label ORDER BY pollen DESC`,
+                rawSql: [
+                    "SELECT",
+                    `  ${categoryExpr} as category,`,
+                    "  sum(total_price) as pollen",
+                    "FROM generation_event",
+                    `WHERE ${FILTERS}`,
+                    "GROUP BY category",
+                    "HAVING category != ''",
+                    "ORDER BY pollen DESC",
+                ].join("\n"),
                 refId: "A",
             },
         ],
@@ -549,7 +559,10 @@ function buildPanels(categoryExpr, categoryAppCounts) {
                 id: "rowsToFields",
                 options: {
                     mappings: [
-                        { fieldName: "category_label", handlerKey: "field.name" },
+                        {
+                            fieldName: "category",
+                            handlerKey: "field.name",
+                        },
                         { fieldName: "pollen", handlerKey: "field.value" },
                     ],
                 },
@@ -644,7 +657,17 @@ function buildPanels(categoryExpr, categoryAppCounts) {
             {
                 datasource: CH_DATASOURCE,
                 format: 1,
-                rawSql: `SELECT ${labelExpr} as category_label, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen FROM (SELECT total_price, selected_meter_slug, api_key_type, api_key_name, user_github_id, ${categoryExpr} as category FROM generation_event WHERE ${FILTERS}) WHERE category != '' GROUP BY category, category_label ORDER BY tier_pollen + pack_pollen DESC`,
+                rawSql: [
+                    "SELECT",
+                    `  ${categoryExpr} as category,`,
+                    "  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,",
+                    "  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen",
+                    "FROM generation_event",
+                    `WHERE ${FILTERS}`,
+                    "GROUP BY category",
+                    "HAVING category != ''",
+                    "ORDER BY tier_pollen + pack_pollen DESC",
+                ].join("\n"),
                 refId: "A",
             },
         ],
@@ -662,15 +685,7 @@ function buildPanels(categoryExpr, categoryAppCounts) {
         type: "row",
     });
 
-    // Time series: Daily pollen by category (wide format with sumIf per category)
-    const categories = Object.keys(CATEGORY_META);
-    const sumIfCols = categories
-        .map(
-            (c) =>
-                `sumIf(total_price, category = '${c}') as "${CATEGORY_META[c].emoji} ${CATEGORY_META[c].label}"`,
-        )
-        .join(",\n      ");
-
+    // Time series: Daily pollen by category — long format + Grafana pivot
     panels.push({
         datasource: CH_DATASOURCE,
         description:
@@ -729,10 +744,25 @@ function buildPanels(categoryExpr, categoryAppCounts) {
         targets: [
             {
                 datasource: CH_DATASOURCE,
-                format: 0,
-                range: true,
-                rawSql: `SELECT\n    toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n      ${sumIfCols}\n    FROM (\n      SELECT start_time, total_price, api_key_type, api_key_name, user_github_id,\n        ${categoryExpr} as category\n      FROM generation_event\n      WHERE ${FILTERS}\n    )\n    WHERE category != ''\n    GROUP BY time\n    ORDER BY time`,
+                format: 1,
+                rawSql: [
+                    "SELECT",
+                    "  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,",
+                    `  ${categoryExpr} as category,`,
+                    "  sum(total_price) as pollen",
+                    "FROM generation_event",
+                    `WHERE ${FILTERS}`,
+                    "GROUP BY time, category",
+                    "HAVING category != ''",
+                    "ORDER BY time",
+                ].join("\n"),
                 refId: "A",
+            },
+        ],
+        transformations: [
+            {
+                id: "prepareTimeSeries",
+                options: { format: "many" },
             },
         ],
         title: "Daily Pollen by Category",
@@ -754,10 +784,10 @@ function main() {
     const { githubIdToCategory, hostnameToCategory, categoryAppCounts } =
         buildMappings(apps);
     console.log(
-        `  GitHub ID mappings: ${githubIdToCategory.size} users → category`,
+        `  GitHub ID mappings: ${githubIdToCategory.size} users \u2192 category`,
     );
     console.log(
-        `  BYOP hostname mappings: ${hostnameToCategory.size} hostnames → category`,
+        `  BYOP hostname mappings: ${hostnameToCategory.size} hostnames \u2192 category`,
     );
 
     // Log multi-category users

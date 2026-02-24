@@ -1,5 +1,5 @@
 {
-  "name": "@pollinations_ai/omp",
+  "name": "@pollinations_ai/ompc",
   "version": "2.0.1",
   "description": "Pre-configured OpenCode + oh-my-opencode with Pollinations AI models",
   "type": "module",

@@ -99,8 +99,7 @@ function parseAppsMarkdown() {
             githubId: (cols[COL.githubId] || "").trim(),
             hostname: extractHostname((cols[COL.webUrl] || "").trim()),
             isBYOP: (cols[COL.byop] || "").trim() === "true",
-            requests:
-                parseInt((cols[COL.requests] || "0").trim(), 10) || 0,
+            requests: parseInt((cols[COL.requests] || "0").trim(), 10) || 0,
         });
     }
 

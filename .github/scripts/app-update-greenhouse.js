@@ -22,13 +22,15 @@ const THIRTY_DAYS_MS = 30 * 86400000;
 const TOP_N = 10;
 
 const CATEGORIES = [
-    { id: "creative", label: "Creative", emoji: "🎨" },
+    { id: "image", label: "Image", emoji: "🖼️" },
+    { id: "video_audio", label: "Video & Audio", emoji: "🎬" },
+    { id: "writing", label: "Write", emoji: "✍️" },
     { id: "chat", label: "Chat", emoji: "💬" },
-    { id: "games", label: "Games", emoji: "🎲" },
-    { id: "dev_tools", label: "Dev Tools", emoji: "🛠️" },
-    { id: "vibes", label: "Vibes", emoji: "✨" },
-    { id: "social_bots", label: "Social Bots", emoji: "🤖" },
+    { id: "games", label: "Play", emoji: "🎮" },
     { id: "learn", label: "Learn", emoji: "📚" },
+    { id: "bots", label: "Bots", emoji: "🤖" },
+    { id: "build", label: "Build", emoji: "🛠️" },
+    { id: "business", label: "Business", emoji: "💼" },
 ];
 
 // ── Parse ───────────────────────────────────────────────────────────────────

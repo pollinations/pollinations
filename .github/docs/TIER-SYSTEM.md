@@ -331,13 +331,15 @@ flowchart TD
 
 | Category | Description |
 |----------|-------------|
-| Vibes | No-code / describe-to-code playgrounds |
-| Creative | Images, video, music, design, slides |
-| Games | AI-powered play, interactive fiction |
-| Dev_Tools | SDKs, extensions, dashboards, MCP servers |
-| Chat | Chat UIs / multi-model playgrounds |
-| Social_Bots | Discord / Telegram / WhatsApp bots |
-| Learn | Tutorials, guides, educational demos |
+| Image (`image`) | Image gen, editing, design, avatars, stickers |
+| Video & Audio (`video_audio`) | Video gen, animation, music, TTS |
+| Write (`writing`) | Content creation, storytelling, copy, slides |
+| Chat (`chat`) | Assistants, companions, AI studio, multi-modal chat |
+| Play (`games`) | AI games, roleplay, interactive fiction |
+| Learn (`learn`) | Education, tutoring, language learning |
+| Bots (`bots`) | Discord, Telegram, WhatsApp bots |
+| Build (`build`) | Dev tools, SDKs, integrations, vibe coding |
+| Business (`business`) | Productivity, finance, marketing, health, food |
 
 ---
 

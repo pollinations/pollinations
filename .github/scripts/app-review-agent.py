@@ -232,7 +232,7 @@ Discord: {parsed['discord']}
 Respond with ONLY a JSON object (no markdown, no explanation):
 {{
     "emoji": "single emoji that represents this app",
-    "category": "one of: Creative, Chat, Games, Dev_Tools, Vibes, Social_Bots, Learn",
+    "category": "one of: image, video_audio, writing, chat, games, learn, bots, build, business",
     "language": "ISO code like en, zh-CN, es, ja"
 }}"""
 
@@ -250,12 +250,12 @@ Respond with ONLY a JSON object (no markdown, no explanation):
         print(f"   ⚠️ Could not parse LLM response, using defaults")
         llm_data = {
             "emoji": "🚀",
-            "category": parsed['category'] or "Dev_Tools",
+            "category": parsed['category'] or "build",
             "language": "en"
         }
 
     emoji = llm_data.get("emoji", "🚀")
-    category = llm_data.get("category", "Dev_Tools")
+    category = llm_data.get("category", "build")
     language = llm_data.get("language", "en")
 
     print(f"   Emoji: {emoji}")

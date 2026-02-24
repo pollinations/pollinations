@@ -4,15 +4,16 @@ The pollinations.ai tier system rewards contributors with increasing API credits
 
 ## Tier Hierarchy
 
-| Tier | Pollen/Day | How to Get |
-|------|------------|------------|
-| **Microbe** | 0.1 | Entry tier (auto-upgrades once verified) |
-| **Spore** | 1 | Verified account |
-| **Seed** | 3 | Automatic via GitHub activity |
-| **Flower** | 10 | Contributor |
-| **Nectar** | 20 | Coming soon |
+| Tier | Pollen | Cadence | Notes |
+|------|--------|---------|-------|
+| Microbe* | 0 | — | Internal: Account under review |
+| Spore* | 1.5 | Weekly (Mon) | Internal: Verified account |
+| **Seed** | 3 | Daily | Automatic via GitHub activity |
+| **Flower** | 10 | Daily | Contributor (app submission) |
+| **Nectar** | 20 | Daily | Coming soon |
 
-> **Note:** Tier balance refills daily at midnight UTC via Cloudflare cron trigger. No rollover.
+> **Note:** *Microbe/Spore are internal-only. Public UI shows "Account under review" / "Weekly pollen (1.5/week)".
+> Refills at midnight UTC via Cloudflare cron. No rollover.
 
 ---
 

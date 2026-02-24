@@ -44,12 +44,12 @@ const MicrobeLimitedPanel: FC = () => (
         <div className="flex flex-col gap-3">
             <div className="text-sm text-gray-600 leading-relaxed">
                 <p>
-                    Your tier is determined dynamically based on your activity
-                    and account history.
+                    Your account is being reviewed by a human. This usually
+                    takes a few days.
                 </p>
                 <p>
-                    It can change at any time, initial review can take up to a
-                    week.
+                    Once approved, you'll receive free weekly Pollen to start
+                    using the API.
                 </p>
             </div>
             <p className="text-sm">

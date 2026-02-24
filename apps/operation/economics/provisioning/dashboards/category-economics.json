@@ -1,0 +1,1087 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "description": "Per-category contribution margin analysis: tier subsidy (cost) vs pack revenue by APPS.md category. Auto-generated from APPS.md mappings.",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 1,
+            "panels": [],
+            "title": "Category Economics Overview",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Total pollen consumed by apps in known APPS.md categories.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 0,
+                "y": 1
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT sumIf(total_price, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['chat', 'games', 'learn', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'build', 'build', 'learn', 'chat', 'chat', 'image', 'chat', 'build', 'chat'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['chat', 'business', 'learn', 'video_audio', 'chat', 'writing', 'image', 'image', 'business', 'writing', 'build', 'image', 'image', 'chat', 'learn', 'video_audio', 'image', 'writing', 'business', 'image', 'business', 'chat', 'writing', 'image', 'image', 'chat', 'games', 'build', 'image', 'bots', 'image', 'writing', 'business', 'image', 'business', 'learn', 'chat', 'build', 'build', 'chat', 'build', 'image', 'image', 'video_audio', 'chat', 'chat', 'build', 'learn', 'image', 'writing', 'chat', 'bots', 'image', 'business', 'build', 'writing', 'chat', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'image', 'games', 'bots', 'build', 'build', 'build', 'writing', 'bots', 'bots', 'build', 'writing', 'build', 'games', 'image', 'build', 'business', 'chat', 'writing', 'image', 'bots', 'learn', 'writing', 'video_audio', 'image', 'chat', 'video_audio', 'image', 'video_audio', 'chat', 'chat', 'chat', 'learn', 'games', 'image', 'chat', 'chat', 'learn', 'image', 'bots', 'image', 'video_audio', 'writing', 'build', 'image', 'chat', 'games', 'image', 'chat', 'writing', 'image', 'games', 'business', 'build', 'writing', 'chat', 'chat', 'learn', 'writing', 'image', 'chat', 'bots', 'bots', 'business', 'video_audio', 'image', 'writing', 'writing', 'chat', 'business', 'chat', 'learn', 'writing', 'image', 'learn', 'build', 'business', 'chat', 'chat', 'learn', 'image', 'image', 'writing', 'bots', 'business', 'games', 'bots', 'chat', 'video_audio', 'games', 'writing', 'bots', 'learn', 'business', 'chat', 'video_audio', 'image', 'image', 'image', 'image', 'games', 'build', 'business', 'image', 'learn', 'business', 'business', 'chat', 'chat', 'video_audio', 'image', 'chat', 'chat', 'business', 'learn', 'image', 'image', 'chat', 'bots', 'chat', 'writing', 'writing', 'business', 'image', 'image', 'image', 'build', 'image', 'image', 'chat', 'bots', 'image', 'business', 'learn', 'chat', 'chat', 'learn', 'build', 'business', 'image', 'image', 'build', 'video_audio', 'build', 'writing', 'chat', 'image', 'business', 'chat', 'image', 'chat', 'chat', 'learn', 'video_audio', 'bots', 'writing', 'build', 'writing', 'writing', 'business', 'writing', 'build', 'image', 'bots', 'image', 'games', 'games', 'games', 'bots', 'writing', 'video_audio', 'image', 'writing', 'bots', 'build', 'chat', 'chat', 'image', 'video_audio', 'learn', 'image', 'bots', 'image', 'learn', 'build', 'chat', 'chat', 'chat', 'writing', 'image', 'build', 'image', 'writing', 'build', 'writing', 'chat', 'image', 'image', 'image', 'build', 'chat', 'image', 'chat', 'writing', 'writing', 'image', 'image', 'image', 'build', 'games', 'bots', 'image', 'image', 'build', 'chat', 'chat', 'writing', 'bots', 'chat', 'chat', 'games', 'writing', 'image', 'build', 'business', 'image', 'chat', 'image', 'games', 'image', 'build', 'chat', 'image', 'image', 'image', 'chat', 'chat', 'chat', 'build', 'learn', 'build', 'writing', 'build', 'image', 'image', 'image', 'image', 'learn', 'build', 'image', 'chat', 'chat', 'chat', 'chat', 'games', 'build', 'bots', 'writing', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'build', 'writing', 'games', 'writing', 'writing', 'build', 'writing', 'chat', 'chat', 'image', 'learn', 'chat', 'build', 'games', 'build', 'build', 'build', 'image', 'build', 'writing', 'build', 'games', 'chat', 'chat', 'video_audio', 'learn', 'chat', 'build', 'chat', 'build', 'build', 'image', 'business', 'games', 'build', 'video_audio', 'writing', 'chat', 'build', 'writing', 'image', 'chat', 'bots', 'image', 'chat', 'writing', 'build', 'build', 'games', 'chat', 'chat', 'build', 'build', 'chat', 'games', 'image', 'business', 'chat', 'image', 'learn', 'image', 'build', 'image', 'games', 'learn', 'build', 'learn', 'chat', 'build', 'chat', 'games', 'bots', 'games', 'business', 'learn', 'writing', 'image', 'chat', 'image', 'chat', 'build', 'chat', 'writing', 'chat', 'build', 'build', 'chat', 'build', 'build', 'build', 'build', 'chat', 'chat'], '')) != '') as total\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Categorized Pollen",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Percentage of total platform pollen attributable to known APPS.md apps.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "blue",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "blue",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "percentunit"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 6,
+                "y": 1
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT if(sum(total_price) > 0, sumIf(total_price, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['chat', 'games', 'learn', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'build', 'build', 'learn', 'chat', 'chat', 'image', 'chat', 'build', 'chat'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['chat', 'business', 'learn', 'video_audio', 'chat', 'writing', 'image', 'image', 'business', 'writing', 'build', 'image', 'image', 'chat', 'learn', 'video_audio', 'image', 'writing', 'business', 'image', 'business', 'chat', 'writing', 'image', 'image', 'chat', 'games', 'build', 'image', 'bots', 'image', 'writing', 'business', 'image', 'business', 'learn', 'chat', 'build', 'build', 'chat', 'build', 'image', 'image', 'video_audio', 'chat', 'chat', 'build', 'learn', 'image', 'writing', 'chat', 'bots', 'image', 'business', 'build', 'writing', 'chat', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'image', 'games', 'bots', 'build', 'build', 'build', 'writing', 'bots', 'bots', 'build', 'writing', 'build', 'games', 'image', 'build', 'business', 'chat', 'writing', 'image', 'bots', 'learn', 'writing', 'video_audio', 'image', 'chat', 'video_audio', 'image', 'video_audio', 'chat', 'chat', 'chat', 'learn', 'games', 'image', 'chat', 'chat', 'learn', 'image', 'bots', 'image', 'video_audio', 'writing', 'build', 'image', 'chat', 'games', 'image', 'chat', 'writing', 'image', 'games', 'business', 'build', 'writing', 'chat', 'chat', 'learn', 'writing', 'image', 'chat', 'bots', 'bots', 'business', 'video_audio', 'image', 'writing', 'writing', 'chat', 'business', 'chat', 'learn', 'writing', 'image', 'learn', 'build', 'business', 'chat', 'chat', 'learn', 'image', 'image', 'writing', 'bots', 'business', 'games', 'bots', 'chat', 'video_audio', 'games', 'writing', 'bots', 'learn', 'business', 'chat', 'video_audio', 'image', 'image', 'image', 'image', 'games', 'build', 'business', 'image', 'learn', 'business', 'business', 'chat', 'chat', 'video_audio', 'image', 'chat', 'chat', 'business', 'learn', 'image', 'image', 'chat', 'bots', 'chat', 'writing', 'writing', 'business', 'image', 'image', 'image', 'build', 'image', 'image', 'chat', 'bots', 'image', 'business', 'learn', 'chat', 'chat', 'learn', 'build', 'business', 'image', 'image', 'build', 'video_audio', 'build', 'writing', 'chat', 'image', 'business', 'chat', 'image', 'chat', 'chat', 'learn', 'video_audio', 'bots', 'writing', 'build', 'writing', 'writing', 'business', 'writing', 'build', 'image', 'bots', 'image', 'games', 'games', 'games', 'bots', 'writing', 'video_audio', 'image', 'writing', 'bots', 'build', 'chat', 'chat', 'image', 'video_audio', 'learn', 'image', 'bots', 'image', 'learn', 'build', 'chat', 'chat', 'chat', 'writing', 'image', 'build', 'image', 'writing', 'build', 'writing', 'chat', 'image', 'image', 'image', 'build', 'chat', 'image', 'chat', 'writing', 'writing', 'image', 'image', 'image', 'build', 'games', 'bots', 'image', 'image', 'build', 'chat', 'chat', 'writing', 'bots', 'chat', 'chat', 'games', 'writing', 'image', 'build', 'business', 'image', 'chat', 'image', 'games', 'image', 'build', 'chat', 'image', 'image', 'image', 'chat', 'chat', 'chat', 'build', 'learn', 'build', 'writing', 'build', 'image', 'image', 'image', 'image', 'learn', 'build', 'image', 'chat', 'chat', 'chat', 'chat', 'games', 'build', 'bots', 'writing', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'build', 'writing', 'games', 'writing', 'writing', 'build', 'writing', 'chat', 'chat', 'image', 'learn', 'chat', 'build', 'games', 'build', 'build', 'build', 'image', 'build', 'writing', 'build', 'games', 'chat', 'chat', 'video_audio', 'learn', 'chat', 'build', 'chat', 'build', 'build', 'image', 'business', 'games', 'build', 'video_audio', 'writing', 'chat', 'build', 'writing', 'image', 'chat', 'bots', 'image', 'chat', 'writing', 'build', 'build', 'games', 'chat', 'chat', 'build', 'build', 'chat', 'games', 'image', 'business', 'chat', 'image', 'learn', 'image', 'build', 'image', 'games', 'learn', 'build', 'learn', 'chat', 'build', 'chat', 'games', 'bots', 'games', 'business', 'learn', 'writing', 'image', 'chat', 'image', 'chat', 'build', 'chat', 'writing', 'chat', 'build', 'build', 'chat', 'build', 'build', 'build', 'build', 'chat', 'chat'], '')) != '') / sum(total_price), 0) as coverage\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Coverage",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Free tier pollen consumed by categorized apps — this is our cost.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "orange",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "orange",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 5,
+                "x": 10,
+                "y": 1
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT sumIf(total_price, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['chat', 'games', 'learn', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'build', 'build', 'learn', 'chat', 'chat', 'image', 'chat', 'build', 'chat'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['chat', 'business', 'learn', 'video_audio', 'chat', 'writing', 'image', 'image', 'business', 'writing', 'build', 'image', 'image', 'chat', 'learn', 'video_audio', 'image', 'writing', 'business', 'image', 'business', 'chat', 'writing', 'image', 'image', 'chat', 'games', 'build', 'image', 'bots', 'image', 'writing', 'business', 'image', 'business', 'learn', 'chat', 'build', 'build', 'chat', 'build', 'image', 'image', 'video_audio', 'chat', 'chat', 'build', 'learn', 'image', 'writing', 'chat', 'bots', 'image', 'business', 'build', 'writing', 'chat', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'image', 'games', 'bots', 'build', 'build', 'build', 'writing', 'bots', 'bots', 'build', 'writing', 'build', 'games', 'image', 'build', 'business', 'chat', 'writing', 'image', 'bots', 'learn', 'writing', 'video_audio', 'image', 'chat', 'video_audio', 'image', 'video_audio', 'chat', 'chat', 'chat', 'learn', 'games', 'image', 'chat', 'chat', 'learn', 'image', 'bots', 'image', 'video_audio', 'writing', 'build', 'image', 'chat', 'games', 'image', 'chat', 'writing', 'image', 'games', 'business', 'build', 'writing', 'chat', 'chat', 'learn', 'writing', 'image', 'chat', 'bots', 'bots', 'business', 'video_audio', 'image', 'writing', 'writing', 'chat', 'business', 'chat', 'learn', 'writing', 'image', 'learn', 'build', 'business', 'chat', 'chat', 'learn', 'image', 'image', 'writing', 'bots', 'business', 'games', 'bots', 'chat', 'video_audio', 'games', 'writing', 'bots', 'learn', 'business', 'chat', 'video_audio', 'image', 'image', 'image', 'image', 'games', 'build', 'business', 'image', 'learn', 'business', 'business', 'chat', 'chat', 'video_audio', 'image', 'chat', 'chat', 'business', 'learn', 'image', 'image', 'chat', 'bots', 'chat', 'writing', 'writing', 'business', 'image', 'image', 'image', 'build', 'image', 'image', 'chat', 'bots', 'image', 'business', 'learn', 'chat', 'chat', 'learn', 'build', 'business', 'image', 'image', 'build', 'video_audio', 'build', 'writing', 'chat', 'image', 'business', 'chat', 'image', 'chat', 'chat', 'learn', 'video_audio', 'bots', 'writing', 'build', 'writing', 'writing', 'business', 'writing', 'build', 'image', 'bots', 'image', 'games', 'games', 'games', 'bots', 'writing', 'video_audio', 'image', 'writing', 'bots', 'build', 'chat', 'chat', 'image', 'video_audio', 'learn', 'image', 'bots', 'image', 'learn', 'build', 'chat', 'chat', 'chat', 'writing', 'image', 'build', 'image', 'writing', 'build', 'writing', 'chat', 'image', 'image', 'image', 'build', 'chat', 'image', 'chat', 'writing', 'writing', 'image', 'image', 'image', 'build', 'games', 'bots', 'image', 'image', 'build', 'chat', 'chat', 'writing', 'bots', 'chat', 'chat', 'games', 'writing', 'image', 'build', 'business', 'image', 'chat', 'image', 'games', 'image', 'build', 'chat', 'image', 'image', 'image', 'chat', 'chat', 'chat', 'build', 'learn', 'build', 'writing', 'build', 'image', 'image', 'image', 'image', 'learn', 'build', 'image', 'chat', 'chat', 'chat', 'chat', 'games', 'build', 'bots', 'writing', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'build', 'writing', 'games', 'writing', 'writing', 'build', 'writing', 'chat', 'chat', 'image', 'learn', 'chat', 'build', 'games', 'build', 'build', 'build', 'image', 'build', 'writing', 'build', 'games', 'chat', 'chat', 'video_audio', 'learn', 'chat', 'build', 'chat', 'build', 'build', 'image', 'business', 'games', 'build', 'video_audio', 'writing', 'chat', 'build', 'writing', 'image', 'chat', 'bots', 'image', 'chat', 'writing', 'build', 'build', 'games', 'chat', 'chat', 'build', 'build', 'chat', 'games', 'image', 'business', 'chat', 'image', 'learn', 'image', 'build', 'image', 'games', 'learn', 'build', 'learn', 'chat', 'build', 'chat', 'games', 'bots', 'games', 'business', 'learn', 'writing', 'image', 'chat', 'image', 'chat', 'build', 'chat', 'writing', 'chat', 'build', 'build', 'chat', 'build', 'build', 'build', 'build', 'chat', 'chat'], '')) != '' AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Tier ρ (Subsidy)",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Paid pack pollen consumed by categorized apps — this is revenue.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 5,
+                "x": 15,
+                "y": 1
+            },
+            "id": 5,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT sumIf(total_price, if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['chat', 'games', 'learn', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'build', 'build', 'learn', 'chat', 'chat', 'image', 'chat', 'build', 'chat'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['chat', 'business', 'learn', 'video_audio', 'chat', 'writing', 'image', 'image', 'business', 'writing', 'build', 'image', 'image', 'chat', 'learn', 'video_audio', 'image', 'writing', 'business', 'image', 'business', 'chat', 'writing', 'image', 'image', 'chat', 'games', 'build', 'image', 'bots', 'image', 'writing', 'business', 'image', 'business', 'learn', 'chat', 'build', 'build', 'chat', 'build', 'image', 'image', 'video_audio', 'chat', 'chat', 'build', 'learn', 'image', 'writing', 'chat', 'bots', 'image', 'business', 'build', 'writing', 'chat', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'image', 'games', 'bots', 'build', 'build', 'build', 'writing', 'bots', 'bots', 'build', 'writing', 'build', 'games', 'image', 'build', 'business', 'chat', 'writing', 'image', 'bots', 'learn', 'writing', 'video_audio', 'image', 'chat', 'video_audio', 'image', 'video_audio', 'chat', 'chat', 'chat', 'learn', 'games', 'image', 'chat', 'chat', 'learn', 'image', 'bots', 'image', 'video_audio', 'writing', 'build', 'image', 'chat', 'games', 'image', 'chat', 'writing', 'image', 'games', 'business', 'build', 'writing', 'chat', 'chat', 'learn', 'writing', 'image', 'chat', 'bots', 'bots', 'business', 'video_audio', 'image', 'writing', 'writing', 'chat', 'business', 'chat', 'learn', 'writing', 'image', 'learn', 'build', 'business', 'chat', 'chat', 'learn', 'image', 'image', 'writing', 'bots', 'business', 'games', 'bots', 'chat', 'video_audio', 'games', 'writing', 'bots', 'learn', 'business', 'chat', 'video_audio', 'image', 'image', 'image', 'image', 'games', 'build', 'business', 'image', 'learn', 'business', 'business', 'chat', 'chat', 'video_audio', 'image', 'chat', 'chat', 'business', 'learn', 'image', 'image', 'chat', 'bots', 'chat', 'writing', 'writing', 'business', 'image', 'image', 'image', 'build', 'image', 'image', 'chat', 'bots', 'image', 'business', 'learn', 'chat', 'chat', 'learn', 'build', 'business', 'image', 'image', 'build', 'video_audio', 'build', 'writing', 'chat', 'image', 'business', 'chat', 'image', 'chat', 'chat', 'learn', 'video_audio', 'bots', 'writing', 'build', 'writing', 'writing', 'business', 'writing', 'build', 'image', 'bots', 'image', 'games', 'games', 'games', 'bots', 'writing', 'video_audio', 'image', 'writing', 'bots', 'build', 'chat', 'chat', 'image', 'video_audio', 'learn', 'image', 'bots', 'image', 'learn', 'build', 'chat', 'chat', 'chat', 'writing', 'image', 'build', 'image', 'writing', 'build', 'writing', 'chat', 'image', 'image', 'image', 'build', 'chat', 'image', 'chat', 'writing', 'writing', 'image', 'image', 'image', 'build', 'games', 'bots', 'image', 'image', 'build', 'chat', 'chat', 'writing', 'bots', 'chat', 'chat', 'games', 'writing', 'image', 'build', 'business', 'image', 'chat', 'image', 'games', 'image', 'build', 'chat', 'image', 'image', 'image', 'chat', 'chat', 'chat', 'build', 'learn', 'build', 'writing', 'build', 'image', 'image', 'image', 'image', 'learn', 'build', 'image', 'chat', 'chat', 'chat', 'chat', 'games', 'build', 'bots', 'writing', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'build', 'writing', 'games', 'writing', 'writing', 'build', 'writing', 'chat', 'chat', 'image', 'learn', 'chat', 'build', 'games', 'build', 'build', 'build', 'image', 'build', 'writing', 'build', 'games', 'chat', 'chat', 'video_audio', 'learn', 'chat', 'build', 'chat', 'build', 'build', 'image', 'business', 'games', 'build', 'video_audio', 'writing', 'chat', 'build', 'writing', 'image', 'chat', 'bots', 'image', 'chat', 'writing', 'build', 'build', 'games', 'chat', 'chat', 'build', 'build', 'chat', 'games', 'image', 'business', 'chat', 'image', 'learn', 'image', 'build', 'image', 'games', 'learn', 'build', 'learn', 'chat', 'build', 'chat', 'games', 'bots', 'games', 'business', 'learn', 'writing', 'image', 'chat', 'image', 'chat', 'build', 'chat', 'writing', 'chat', 'build', 'build', 'chat', 'build', 'build', 'build', 'build', 'chat', 'chat'], '')) != '' AND selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_rev\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Pack ρ (Revenue)",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Total apps tracked in APPS.md across all categories.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "purple",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "purple",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 20,
+                "y": 1
+            },
+            "id": 6,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT 542 as apps",
+                    "refId": "A"
+                }
+            ],
+            "title": "542 Apps",
+            "type": "stat"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 5
+            },
+            "id": 7,
+            "panels": [],
+            "title": "Category Contribution Margin",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Per-category economics: tier pollen (subsidy cost) vs pack pollen (revenue). Subsidy rate = what fraction of consumption is free tier.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "filterable": true,
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "category"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Category"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 160
+                            },
+                            {
+                                "id": "mappings",
+                                "value": [
+                                    {
+                                        "type": "value",
+                                        "options": {
+                                            "image": {
+                                                "text": "🖼️ Image",
+                                                "index": 0
+                                            },
+                                            "video_audio": {
+                                                "text": "🎬 Video & Audio",
+                                                "index": 1
+                                            },
+                                            "writing": {
+                                                "text": "✍️ Writing",
+                                                "index": 2
+                                            },
+                                            "chat": {
+                                                "text": "💬 Chat",
+                                                "index": 3
+                                            },
+                                            "games": {
+                                                "text": "🎮 Games",
+                                                "index": 4
+                                            },
+                                            "learn": {
+                                                "text": "📚 Learn",
+                                                "index": 5
+                                            },
+                                            "bots": {
+                                                "text": "🤖 Bots",
+                                                "index": 6
+                                            },
+                                            "build": {
+                                                "text": "🛠️ Build",
+                                                "index": 7
+                                            },
+                                            "business": {
+                                                "text": "💼 Business",
+                                                "index": 8
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "apps"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Apps"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 60
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Tier ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Pack ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Total ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "color-background",
+                                    "mode": "gradient"
+                                }
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "continuous-GrYlRd"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "subsidy_rate"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Subsidy %"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percentunit"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 0
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "color-background",
+                                    "mode": "gradient"
+                                }
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "continuous-GrYlRd"
+                                }
+                            },
+                            {
+                                "id": "min",
+                                "value": 0
+                            },
+                            {
+                                "id": "max",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Requests"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "unique_users"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Users"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 70
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 14,
+                "w": 24,
+                "x": 0,
+                "y": 6
+            },
+            "id": 8,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": false,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Total ρ"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "SELECT\n  if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['chat', 'games', 'learn', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'build', 'build', 'learn', 'chat', 'chat', 'image', 'chat', 'build', 'chat'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['chat', 'business', 'learn', 'video_audio', 'chat', 'writing', 'image', 'image', 'business', 'writing', 'build', 'image', 'image', 'chat', 'learn', 'video_audio', 'image', 'writing', 'business', 'image', 'business', 'chat', 'writing', 'image', 'image', 'chat', 'games', 'build', 'image', 'bots', 'image', 'writing', 'business', 'image', 'business', 'learn', 'chat', 'build', 'build', 'chat', 'build', 'image', 'image', 'video_audio', 'chat', 'chat', 'build', 'learn', 'image', 'writing', 'chat', 'bots', 'image', 'business', 'build', 'writing', 'chat', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'image', 'games', 'bots', 'build', 'build', 'build', 'writing', 'bots', 'bots', 'build', 'writing', 'build', 'games', 'image', 'build', 'business', 'chat', 'writing', 'image', 'bots', 'learn', 'writing', 'video_audio', 'image', 'chat', 'video_audio', 'image', 'video_audio', 'chat', 'chat', 'chat', 'learn', 'games', 'image', 'chat', 'chat', 'learn', 'image', 'bots', 'image', 'video_audio', 'writing', 'build', 'image', 'chat', 'games', 'image', 'chat', 'writing', 'image', 'games', 'business', 'build', 'writing', 'chat', 'chat', 'learn', 'writing', 'image', 'chat', 'bots', 'bots', 'business', 'video_audio', 'image', 'writing', 'writing', 'chat', 'business', 'chat', 'learn', 'writing', 'image', 'learn', 'build', 'business', 'chat', 'chat', 'learn', 'image', 'image', 'writing', 'bots', 'business', 'games', 'bots', 'chat', 'video_audio', 'games', 'writing', 'bots', 'learn', 'business', 'chat', 'video_audio', 'image', 'image', 'image', 'image', 'games', 'build', 'business', 'image', 'learn', 'business', 'business', 'chat', 'chat', 'video_audio', 'image', 'chat', 'chat', 'business', 'learn', 'image', 'image', 'chat', 'bots', 'chat', 'writing', 'writing', 'business', 'image', 'image', 'image', 'build', 'image', 'image', 'chat', 'bots', 'image', 'business', 'learn', 'chat', 'chat', 'learn', 'build', 'business', 'image', 'image', 'build', 'video_audio', 'build', 'writing', 'chat', 'image', 'business', 'chat', 'image', 'chat', 'chat', 'learn', 'video_audio', 'bots', 'writing', 'build', 'writing', 'writing', 'business', 'writing', 'build', 'image', 'bots', 'image', 'games', 'games', 'games', 'bots', 'writing', 'video_audio', 'image', 'writing', 'bots', 'build', 'chat', 'chat', 'image', 'video_audio', 'learn', 'image', 'bots', 'image', 'learn', 'build', 'chat', 'chat', 'chat', 'writing', 'image', 'build', 'image', 'writing', 'build', 'writing', 'chat', 'image', 'image', 'image', 'build', 'chat', 'image', 'chat', 'writing', 'writing', 'image', 'image', 'image', 'build', 'games', 'bots', 'image', 'image', 'build', 'chat', 'chat', 'writing', 'bots', 'chat', 'chat', 'games', 'writing', 'image', 'build', 'business', 'image', 'chat', 'image', 'games', 'image', 'build', 'chat', 'image', 'image', 'image', 'chat', 'chat', 'chat', 'build', 'learn', 'build', 'writing', 'build', 'image', 'image', 'image', 'image', 'learn', 'build', 'image', 'chat', 'chat', 'chat', 'chat', 'games', 'build', 'bots', 'writing', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'build', 'writing', 'games', 'writing', 'writing', 'build', 'writing', 'chat', 'chat', 'image', 'learn', 'chat', 'build', 'games', 'build', 'build', 'build', 'image', 'build', 'writing', 'build', 'games', 'chat', 'chat', 'video_audio', 'learn', 'chat', 'build', 'chat', 'build', 'build', 'image', 'business', 'games', 'build', 'video_audio', 'writing', 'chat', 'build', 'writing', 'image', 'chat', 'bots', 'image', 'chat', 'writing', 'build', 'build', 'games', 'chat', 'chat', 'build', 'build', 'chat', 'games', 'image', 'business', 'chat', 'image', 'learn', 'image', 'build', 'image', 'games', 'learn', 'build', 'learn', 'chat', 'build', 'chat', 'games', 'bots', 'games', 'business', 'learn', 'writing', 'image', 'chat', 'image', 'chat', 'build', 'chat', 'writing', 'chat', 'build', 'build', 'chat', 'build', 'build', 'build', 'build', 'chat', 'chat'], '')) as category,\n  transform(category, ['image', 'video_audio', 'writing', 'chat', 'games', 'learn', 'bots', 'build', 'business'], [118, 24, 59, 123, 35, 35, 27, 89, 32], 0) as apps,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen,\n  sum(total_price) as total_pollen,\n  if(total_pollen > 0, tier_pollen / total_pollen, 0) as subsidy_rate,\n  count() as requests,\n  countDistinct(user_github_id) as unique_users\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY category\nHAVING category != ''\nORDER BY total_pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "title": "Category P&L",
+            "type": "table"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 20
+            },
+            "id": 9,
+            "panels": [],
+            "title": "Distribution",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Share of total pollen consumed per category.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "image": {
+                                    "text": "🖼️ Image",
+                                    "index": 0
+                                },
+                                "video_audio": {
+                                    "text": "🎬 Video & Audio",
+                                    "index": 1
+                                },
+                                "writing": {
+                                    "text": "✍️ Writing",
+                                    "index": 2
+                                },
+                                "chat": {
+                                    "text": "💬 Chat",
+                                    "index": 3
+                                },
+                                "games": {
+                                    "text": "🎮 Games",
+                                    "index": 4
+                                },
+                                "learn": {
+                                    "text": "📚 Learn",
+                                    "index": 5
+                                },
+                                "bots": {
+                                    "text": "🤖 Bots",
+                                    "index": 6
+                                },
+                                "build": {
+                                    "text": "🛠️ Build",
+                                    "index": 7
+                                },
+                                "business": {
+                                    "text": "💼 Business",
+                                    "index": 8
+                                }
+                            }
+                        }
+                    ],
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 0,
+                "y": 21
+            },
+            "id": 10,
+            "options": {
+                "displayLabels": [
+                    "name",
+                    "percent"
+                ],
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "right",
+                    "showLegend": true,
+                    "values": [
+                        "value",
+                        "percent"
+                    ]
+                },
+                "pieType": "pie",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "SELECT\n  if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['chat', 'games', 'learn', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'build', 'build', 'learn', 'chat', 'chat', 'image', 'chat', 'build', 'chat'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['chat', 'business', 'learn', 'video_audio', 'chat', 'writing', 'image', 'image', 'business', 'writing', 'build', 'image', 'image', 'chat', 'learn', 'video_audio', 'image', 'writing', 'business', 'image', 'business', 'chat', 'writing', 'image', 'image', 'chat', 'games', 'build', 'image', 'bots', 'image', 'writing', 'business', 'image', 'business', 'learn', 'chat', 'build', 'build', 'chat', 'build', 'image', 'image', 'video_audio', 'chat', 'chat', 'build', 'learn', 'image', 'writing', 'chat', 'bots', 'image', 'business', 'build', 'writing', 'chat', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'image', 'games', 'bots', 'build', 'build', 'build', 'writing', 'bots', 'bots', 'build', 'writing', 'build', 'games', 'image', 'build', 'business', 'chat', 'writing', 'image', 'bots', 'learn', 'writing', 'video_audio', 'image', 'chat', 'video_audio', 'image', 'video_audio', 'chat', 'chat', 'chat', 'learn', 'games', 'image', 'chat', 'chat', 'learn', 'image', 'bots', 'image', 'video_audio', 'writing', 'build', 'image', 'chat', 'games', 'image', 'chat', 'writing', 'image', 'games', 'business', 'build', 'writing', 'chat', 'chat', 'learn', 'writing', 'image', 'chat', 'bots', 'bots', 'business', 'video_audio', 'image', 'writing', 'writing', 'chat', 'business', 'chat', 'learn', 'writing', 'image', 'learn', 'build', 'business', 'chat', 'chat', 'learn', 'image', 'image', 'writing', 'bots', 'business', 'games', 'bots', 'chat', 'video_audio', 'games', 'writing', 'bots', 'learn', 'business', 'chat', 'video_audio', 'image', 'image', 'image', 'image', 'games', 'build', 'business', 'image', 'learn', 'business', 'business', 'chat', 'chat', 'video_audio', 'image', 'chat', 'chat', 'business', 'learn', 'image', 'image', 'chat', 'bots', 'chat', 'writing', 'writing', 'business', 'image', 'image', 'image', 'build', 'image', 'image', 'chat', 'bots', 'image', 'business', 'learn', 'chat', 'chat', 'learn', 'build', 'business', 'image', 'image', 'build', 'video_audio', 'build', 'writing', 'chat', 'image', 'business', 'chat', 'image', 'chat', 'chat', 'learn', 'video_audio', 'bots', 'writing', 'build', 'writing', 'writing', 'business', 'writing', 'build', 'image', 'bots', 'image', 'games', 'games', 'games', 'bots', 'writing', 'video_audio', 'image', 'writing', 'bots', 'build', 'chat', 'chat', 'image', 'video_audio', 'learn', 'image', 'bots', 'image', 'learn', 'build', 'chat', 'chat', 'chat', 'writing', 'image', 'build', 'image', 'writing', 'build', 'writing', 'chat', 'image', 'image', 'image', 'build', 'chat', 'image', 'chat', 'writing', 'writing', 'image', 'image', 'image', 'build', 'games', 'bots', 'image', 'image', 'build', 'chat', 'chat', 'writing', 'bots', 'chat', 'chat', 'games', 'writing', 'image', 'build', 'business', 'image', 'chat', 'image', 'games', 'image', 'build', 'chat', 'image', 'image', 'image', 'chat', 'chat', 'chat', 'build', 'learn', 'build', 'writing', 'build', 'image', 'image', 'image', 'image', 'learn', 'build', 'image', 'chat', 'chat', 'chat', 'chat', 'games', 'build', 'bots', 'writing', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'build', 'writing', 'games', 'writing', 'writing', 'build', 'writing', 'chat', 'chat', 'image', 'learn', 'chat', 'build', 'games', 'build', 'build', 'build', 'image', 'build', 'writing', 'build', 'games', 'chat', 'chat', 'video_audio', 'learn', 'chat', 'build', 'chat', 'build', 'build', 'image', 'business', 'games', 'build', 'video_audio', 'writing', 'chat', 'build', 'writing', 'image', 'chat', 'bots', 'image', 'chat', 'writing', 'build', 'build', 'games', 'chat', 'chat', 'build', 'build', 'chat', 'games', 'image', 'business', 'chat', 'image', 'learn', 'image', 'build', 'image', 'games', 'learn', 'build', 'learn', 'chat', 'build', 'chat', 'games', 'bots', 'games', 'business', 'learn', 'writing', 'image', 'chat', 'image', 'chat', 'build', 'chat', 'writing', 'chat', 'build', 'build', 'chat', 'build', 'build', 'build', 'build', 'chat', 'chat'], '')) as category,\n  sum(total_price) as pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY category\nHAVING category != ''\nORDER BY pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "transformations": [
+                {
+                    "id": "rowsToFields",
+                    "options": {
+                        "mappings": [
+                            {
+                                "fieldName": "category",
+                                "handlerKey": "field.name"
+                            },
+                            {
+                                "fieldName": "pollen",
+                                "handlerKey": "field.value"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "title": "Pollen by Category",
+            "type": "piechart"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Tier (free subsidy, orange) vs Pack (paid, green) per category. Categories with more green are more profitable.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Tier ρ"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Pack ρ"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 12,
+                "y": 21
+            },
+            "id": 11,
+            "options": {
+                "barRadius": 0.1,
+                "barWidth": 0.8,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                    "calcs": [
+                        "sum"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "horizontal",
+                "showValue": "auto",
+                "stacking": "normal",
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "SELECT\n  if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['chat', 'games', 'learn', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'build', 'build', 'learn', 'chat', 'chat', 'image', 'chat', 'build', 'chat'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['chat', 'business', 'learn', 'video_audio', 'chat', 'writing', 'image', 'image', 'business', 'writing', 'build', 'image', 'image', 'chat', 'learn', 'video_audio', 'image', 'writing', 'business', 'image', 'business', 'chat', 'writing', 'image', 'image', 'chat', 'games', 'build', 'image', 'bots', 'image', 'writing', 'business', 'image', 'business', 'learn', 'chat', 'build', 'build', 'chat', 'build', 'image', 'image', 'video_audio', 'chat', 'chat', 'build', 'learn', 'image', 'writing', 'chat', 'bots', 'image', 'business', 'build', 'writing', 'chat', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'image', 'games', 'bots', 'build', 'build', 'build', 'writing', 'bots', 'bots', 'build', 'writing', 'build', 'games', 'image', 'build', 'business', 'chat', 'writing', 'image', 'bots', 'learn', 'writing', 'video_audio', 'image', 'chat', 'video_audio', 'image', 'video_audio', 'chat', 'chat', 'chat', 'learn', 'games', 'image', 'chat', 'chat', 'learn', 'image', 'bots', 'image', 'video_audio', 'writing', 'build', 'image', 'chat', 'games', 'image', 'chat', 'writing', 'image', 'games', 'business', 'build', 'writing', 'chat', 'chat', 'learn', 'writing', 'image', 'chat', 'bots', 'bots', 'business', 'video_audio', 'image', 'writing', 'writing', 'chat', 'business', 'chat', 'learn', 'writing', 'image', 'learn', 'build', 'business', 'chat', 'chat', 'learn', 'image', 'image', 'writing', 'bots', 'business', 'games', 'bots', 'chat', 'video_audio', 'games', 'writing', 'bots', 'learn', 'business', 'chat', 'video_audio', 'image', 'image', 'image', 'image', 'games', 'build', 'business', 'image', 'learn', 'business', 'business', 'chat', 'chat', 'video_audio', 'image', 'chat', 'chat', 'business', 'learn', 'image', 'image', 'chat', 'bots', 'chat', 'writing', 'writing', 'business', 'image', 'image', 'image', 'build', 'image', 'image', 'chat', 'bots', 'image', 'business', 'learn', 'chat', 'chat', 'learn', 'build', 'business', 'image', 'image', 'build', 'video_audio', 'build', 'writing', 'chat', 'image', 'business', 'chat', 'image', 'chat', 'chat', 'learn', 'video_audio', 'bots', 'writing', 'build', 'writing', 'writing', 'business', 'writing', 'build', 'image', 'bots', 'image', 'games', 'games', 'games', 'bots', 'writing', 'video_audio', 'image', 'writing', 'bots', 'build', 'chat', 'chat', 'image', 'video_audio', 'learn', 'image', 'bots', 'image', 'learn', 'build', 'chat', 'chat', 'chat', 'writing', 'image', 'build', 'image', 'writing', 'build', 'writing', 'chat', 'image', 'image', 'image', 'build', 'chat', 'image', 'chat', 'writing', 'writing', 'image', 'image', 'image', 'build', 'games', 'bots', 'image', 'image', 'build', 'chat', 'chat', 'writing', 'bots', 'chat', 'chat', 'games', 'writing', 'image', 'build', 'business', 'image', 'chat', 'image', 'games', 'image', 'build', 'chat', 'image', 'image', 'image', 'chat', 'chat', 'chat', 'build', 'learn', 'build', 'writing', 'build', 'image', 'image', 'image', 'image', 'learn', 'build', 'image', 'chat', 'chat', 'chat', 'chat', 'games', 'build', 'bots', 'writing', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'build', 'writing', 'games', 'writing', 'writing', 'build', 'writing', 'chat', 'chat', 'image', 'learn', 'chat', 'build', 'games', 'build', 'build', 'build', 'image', 'build', 'writing', 'build', 'games', 'chat', 'chat', 'video_audio', 'learn', 'chat', 'build', 'chat', 'build', 'build', 'image', 'business', 'games', 'build', 'video_audio', 'writing', 'chat', 'build', 'writing', 'image', 'chat', 'bots', 'image', 'chat', 'writing', 'build', 'build', 'games', 'chat', 'chat', 'build', 'build', 'chat', 'games', 'image', 'business', 'chat', 'image', 'learn', 'image', 'build', 'image', 'games', 'learn', 'build', 'learn', 'chat', 'build', 'chat', 'games', 'bots', 'games', 'business', 'learn', 'writing', 'image', 'chat', 'image', 'chat', 'build', 'chat', 'writing', 'chat', 'build', 'build', 'chat', 'build', 'build', 'build', 'build', 'chat', 'chat'], '')) as category,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY category\nHAVING category != ''\nORDER BY tier_pollen + pack_pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "title": "Tier vs Pack by Category",
+            "type": "barchart"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 31
+            },
+            "id": 12,
+            "panels": [],
+            "title": "Trends",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily pollen consumption by category. Stacked to show total and relative contribution.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "Pollen",
+                        "axisPlacement": "left",
+                        "barAlignment": 0,
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 32
+            },
+            "id": 13,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum",
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 200
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  if(api_key_type = 'secret' AND api_key_name LIKE '%.%', transform(api_key_name, ['pollinations-chat.vercel.app', 'polli-game.netlify.app', 'mrlearner1606.github.io', 'ail-solver.vercel.app', 'faststoryboard.cloud', 'strudel-ai-repl.pages.dev', 'pollincoder.vercel.app', '7studio.edgeone.app', 'ai-studio.puter.site', 'dseeker.github.io', 'proyectodescartes.org', 'perchance.org', 'try.bp5.ai', 'openclaw.pollinations.ai', 'ai-sdk-pollinations-example.vercel.app', 'mindscape-free.vercel.app', 'zlkcyber.tech', 'hey-hi.space', 'bloomstudio.fun', 'ventarys.net', 'netsim.us.to', 'g4f.dev'], ['chat', 'games', 'learn', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'build', 'build', 'learn', 'chat', 'chat', 'image', 'chat', 'build', 'chat'], ''), transform(user_github_id, ['178960782', '128564349', '69321575', '124109443', '159653318', '138353847', '19501588', '181247504', '16772052', '90742387', '19820046', '3970079', '724629', '104010970', '177012111', '96740937', '127058889', '155642882', '56907515', '577666', '250524427', '42637803', '145397220', '181748869', '124004535', '69896576', '254064362', '123081329', '228744927', '16942845', '58911305', '142320245', '165459115', '121799615', '202450182', '143262732', '100053535', '194648035', '80639411', '239057403', '198622496', '127594151', '143883097', '99347805', '87775970', '104598349', '197344995', '112171502', '14052993', '179432470', '189873015', '110830921', '20738824', '160179762', '188256078', '23713984', '186086959', '91405849', '138054605', '5099901', '84981998', '260466024', '189940253', '11655138', '218693055', '17982932', '239949870', '122867998', '118118458', '84096539', '86964862', '44446037', '127265280', '69013710', '143140806', '143122409', '3390868', '176168773', '104397473', '108882883', '253995477', '246980312', '29887333', '236226459', '134840520', '216855486', '244879637', '212730413', '233967085', '23549587', '243748394', '252299401', '63120884', '99467494', '128488087', '117417663', '248336595', '232032755', '164393080', '84176918', '158580315', '246719390', '198447394', '110301452', '250964003', '226871090', '93316453', '49927529', '397832', '144630403', '225994461', '88219725', '207649098', '74301576', '24270524', '253264090', '250243258', '188479485', '239730701', '177395948', '216027211', '253618666', '140431009', '53889849', '210614874', '9786469', '223671957', '246473499', '48875358', '68784419', '147908475', '10137', '165932537', '73719688', '27807431', '32060692', '233752263', '170215991', '254517286', '17268074', '182921398', '14363905', '1457297', '51115759', '75646500', '3896699', '215448601', '106588083', '75684463', '182555207', '32392391', '93172229', '70700766', '198387496', '170572248', '169554770', '111300071', '96337419', '18280574', '219682273', '155243506', '16681524', '120893410', '28300167', '233627442', '18553488', '112860827', '194654075', '131967410', '66400566', '117306878', '245772669', '200644679', '223874692', '198614530', '84654298', '226748656', '123736861', '201688872', '148182171', '229843388', '166109853', '107534793', '156988377', '52311979', '203511571', '114693506', '85725773', '8065019', '141694618', '33285947', '198278372', '91419945', '117796240', '124496945', '132278645', '86719527', '2124491', '3524511', '17338720', '221657868', '139231923', '33893625', '54139970', '70167116', '68620518', '55681575', '232026792', '84656302', '218142674', '1376740', '250923803', '84017865', '71541701', '187246741', '241312854', '201380514', '179805902', '2303210', '182334773', '201248601', '111608485', '196457929', '218483266', '242399330', '88440500', '40912973', '93585075', '213310788', '63034235', '242214873', '17072806', '1322593', '3988944', '931187', '113301075', '48322', '67720278', '130744635', '192802511', '184856372', '219972263', '222821332', '242216523', '145294387', '185407964', '246602484', '17407994', '214496978', '243130287', '145450949', '128309234', '200601215', '26866597', '72816664', '84773310', '147928812', '139655396', '137272', '108380065', '43525222', '141633522', '57538101', '85416220', '159620541', '224747761', '124221189', '36034305', '113566110', '235101097', '100742995', '239333172', '213131348', '177894736', '166801529', '176319088', '186916468', '6848328', '236373619', '45357531', '78080880', '206368475', '111233339', '236240476', '5527539', '52772574', '31517075', '45455716', '166749819', '101270144', '148776148', '85289832', '182732973', '113588714', '197366900', '71227235', '14055181', '226309659', '227718714', '31207473', '247793354', '158210657', '173496186', '72861602', '143613269', '211590330', '30747200', '144468754', '126710', '30174244', '30941595', '510114', '128053102', '130518306', '4136088', '56418619', '130162684', '12013771', '226712284', '98457889', '3846471', '95847507', '132673557', '113578582', '197427877', '116184991', '131885955', '59172162', '149804185', '99506772', '192782247', '179716477', '109086253', '66713844', '22415449', '59178854', '74118071', '94631653', '32812881', '144946727', '36562655', '156637224', '117667228', '69885286', '102848425', '197413666', '170126024', '20807973', '87645745', '188023941', '137462576', '133982347', '152851285', '130377422', '125183882', '44306450', '26858586', '189115938', '36392751', '28731080', '145918331', '95312338', '40638837', '19683155', '75165772', '179707557', '183616870', '83734728', '211489147', '30528539', '66430340', '22412972', '72347950', '4928832', '175475141', '161109909', '207506018', '7268234', '72049678', '26300479', '36768254', '243495', '19946', '148573993', '102143503', '68687892', '63375371', '122692223', '45037860', '19439409', '203163722', '154442734', '203693069', '219204043', '17427385', '109853484', '34243893', '6671779', '8871996', '19424471', '2811756', '85327306', '20380447', '49863951', '106510429', '92591383', '128580843', '158111', '185975703', '131470832', '173428057', '40081309', '12270934', '103292141', '8710166', '983577', '136475777', '195895956', '182441602', '11457008', '151645294', '119525616', '141221163', '134869877', '188018989'], ['chat', 'business', 'learn', 'video_audio', 'chat', 'writing', 'image', 'image', 'business', 'writing', 'build', 'image', 'image', 'chat', 'learn', 'video_audio', 'image', 'writing', 'business', 'image', 'business', 'chat', 'writing', 'image', 'image', 'chat', 'games', 'build', 'image', 'bots', 'image', 'writing', 'business', 'image', 'business', 'learn', 'chat', 'build', 'build', 'chat', 'build', 'image', 'image', 'video_audio', 'chat', 'chat', 'build', 'learn', 'image', 'writing', 'chat', 'bots', 'image', 'business', 'build', 'writing', 'chat', 'learn', 'video_audio', 'video_audio', 'build', 'image', 'chat', 'build', 'learn', 'image', 'image', 'image', 'games', 'bots', 'build', 'build', 'build', 'writing', 'bots', 'bots', 'build', 'writing', 'build', 'games', 'image', 'build', 'business', 'chat', 'writing', 'image', 'bots', 'learn', 'writing', 'video_audio', 'image', 'chat', 'video_audio', 'image', 'video_audio', 'chat', 'chat', 'chat', 'learn', 'games', 'image', 'chat', 'chat', 'learn', 'image', 'bots', 'image', 'video_audio', 'writing', 'build', 'image', 'chat', 'games', 'image', 'chat', 'writing', 'image', 'games', 'business', 'build', 'writing', 'chat', 'chat', 'learn', 'writing', 'image', 'chat', 'bots', 'bots', 'business', 'video_audio', 'image', 'writing', 'writing', 'chat', 'business', 'chat', 'learn', 'writing', 'image', 'learn', 'build', 'business', 'chat', 'chat', 'learn', 'image', 'image', 'writing', 'bots', 'business', 'games', 'bots', 'chat', 'video_audio', 'games', 'writing', 'bots', 'learn', 'business', 'chat', 'video_audio', 'image', 'image', 'image', 'image', 'games', 'build', 'business', 'image', 'learn', 'business', 'business', 'chat', 'chat', 'video_audio', 'image', 'chat', 'chat', 'business', 'learn', 'image', 'image', 'chat', 'bots', 'chat', 'writing', 'writing', 'business', 'image', 'image', 'image', 'build', 'image', 'image', 'chat', 'bots', 'image', 'business', 'learn', 'chat', 'chat', 'learn', 'build', 'business', 'image', 'image', 'build', 'video_audio', 'build', 'writing', 'chat', 'image', 'business', 'chat', 'image', 'chat', 'chat', 'learn', 'video_audio', 'bots', 'writing', 'build', 'writing', 'writing', 'business', 'writing', 'build', 'image', 'bots', 'image', 'games', 'games', 'games', 'bots', 'writing', 'video_audio', 'image', 'writing', 'bots', 'build', 'chat', 'chat', 'image', 'video_audio', 'learn', 'image', 'bots', 'image', 'learn', 'build', 'chat', 'chat', 'chat', 'writing', 'image', 'build', 'image', 'writing', 'build', 'writing', 'chat', 'image', 'image', 'image', 'build', 'chat', 'image', 'chat', 'writing', 'writing', 'image', 'image', 'image', 'build', 'games', 'bots', 'image', 'image', 'build', 'chat', 'chat', 'writing', 'bots', 'chat', 'chat', 'games', 'writing', 'image', 'build', 'business', 'image', 'chat', 'image', 'games', 'image', 'build', 'chat', 'image', 'image', 'image', 'chat', 'chat', 'chat', 'build', 'learn', 'build', 'writing', 'build', 'image', 'image', 'image', 'image', 'learn', 'build', 'image', 'chat', 'chat', 'chat', 'chat', 'games', 'build', 'bots', 'writing', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'chat', 'image', 'build', 'writing', 'games', 'writing', 'writing', 'build', 'writing', 'chat', 'chat', 'image', 'learn', 'chat', 'build', 'games', 'build', 'build', 'build', 'image', 'build', 'writing', 'build', 'games', 'chat', 'chat', 'video_audio', 'learn', 'chat', 'build', 'chat', 'build', 'build', 'image', 'business', 'games', 'build', 'video_audio', 'writing', 'chat', 'build', 'writing', 'image', 'chat', 'bots', 'image', 'chat', 'writing', 'build', 'build', 'games', 'chat', 'chat', 'build', 'build', 'chat', 'games', 'image', 'business', 'chat', 'image', 'learn', 'image', 'build', 'image', 'games', 'learn', 'build', 'learn', 'chat', 'build', 'chat', 'games', 'bots', 'games', 'business', 'learn', 'writing', 'image', 'chat', 'image', 'chat', 'build', 'chat', 'writing', 'chat', 'build', 'build', 'chat', 'build', 'build', 'build', 'build', 'chat', 'chat'], '')) as category,\n  sum(total_price) as pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time, category\nHAVING category != ''\nORDER BY time",
+                    "refId": "A"
+                }
+            ],
+            "transformations": [
+                {
+                    "id": "prepareTimeSeries",
+                    "options": {
+                        "format": "many"
+                    }
+                }
+            ],
+            "title": "Daily Pollen by Category",
+            "type": "timeseries"
+        }
+    ],
+    "schemaVersion": 40,
+    "tags": [
+        "economics",
+        "category",
+        "apps"
+    ],
+    "templating": {
+        "list": []
+    },
+    "time": {
+        "from": "now-30d",
+        "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "utc",
+    "title": "Category Economics",
+    "uid": "category-economics",
+    "version": 1
+}

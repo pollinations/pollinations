@@ -1,0 +1,34 @@
+{
+  "pr_number": 7331,
+  "title": "Add jdunyara to Social_Bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7331",
+  "merged_at": "2026-02-24T17:42:07Z",
+  "labels": [
+    "TIER-APP-REVIEW-PR"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Paper planes and pixels",
+    "blurb": "A new Telegram bot has landed in the showcase. jdunyara brings chat and image generation to your favorite messenger.",
+    "summary": "Added jdunyara, a Telegram AI bot for chat and image generation, to the Social_Bots showcase.",
+    "impact": "Users can now access AI chat and image generation features through this new Telegram integration.",
+    "keywords": [
+      "telegram",
+      "bot",
+      "community",
+      "showcase",
+      "social_bots"
+    ],
+    "visual_concept": "The Pollinations bee interacting with a paper plane (Telegram symbol). The plane is flying through a sky of pixelated chat bubbles.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot riding a large paper plane through a sky filled with soft pixel clouds and chat bubbles. Lime green (#ecf874) and pastel blue gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like A Short Hike. Emotionally warm and adventurous."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T17:42:49.505321+00:00"
+}

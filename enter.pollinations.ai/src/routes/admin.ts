@@ -302,10 +302,13 @@ export const adminRoutes = new Hono<Env>()
         // Calculate tier breakdown for response
         const tierBreakdown = calculateTierBreakdown(usersToRefill);
 
-        // Send per-user events to Tinybird
+        // Send per-user events to Tinybird (exclude spore on non-Monday)
+        const usersForEvents = isMonday
+            ? usersToRefill
+            : usersToRefill.filter((u) => u.tier !== "spore");
         c.executionCtx.waitUntil(
             sendBulkTierRefillEvents(
-                usersToRefill,
+                usersForEvents,
                 timestamp,
                 c.env.ENVIRONMENT || "unknown",
                 c.env.TINYBIRD_TIER_INGEST_URL,

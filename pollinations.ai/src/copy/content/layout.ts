@@ -16,12 +16,6 @@ export const LAYOUT = {
     privacyLink: "Privacy",
     emailLink: "Email",
     copiedLabel: "Copied!",
-    footerBranding: "Pollinations.AI - 2025",
+    footerBranding: "pollinations.ai - 2026",
     footerTagline: "Open source AI innovation from Berlin",
-};
-
-// Beta banner
-export const BETA_BANNER = {
-    message: "Welcome to our new platform! Still in beta —",
-    linkText: "visit the old one",
 };

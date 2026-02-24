@@ -9,40 +9,13 @@ import { removeUnset } from "@/util.ts";
 import { Logger } from "@logtape/logtape";
 
 /**
- * Apply model-specific caching rules to the URL
- * @param {URL} url - The URL object to transform
- * @returns {URL} - The transformed URL object
- */
-function applyModelSpecificRules(url: URL): URL {
-    // Get the model parameter
-    const model = url.searchParams.get("model");
-
-    // Define model-specific rules that return new URL parameters
-    const modelRules: Record<string, (currentUrl: URL) => URL> = {
-        gptimage: (currentUrl: URL) => {
-            // For gptimage, always use the same seed for consistent caching
-            const newUrl = new URL(currentUrl);
-            newUrl.searchParams.set("seed", "42");
-            return newUrl;
-        },
-        // Add more model rules here as needed
-    };
-
-    // Apply the rule if it exists for this model, otherwise return original
-    return model && modelRules[model] ? modelRules[model](url) : url;
-}
-
-/**
  * Generate a consistent cache key from URL
  * @param {URL} url - The URL object
  * @returns {string} - The cache key
  */
 export function generateCacheKey(url: URL): string {
-    // Apply model-specific rules first
-    const transformedUrl = applyModelSpecificRules(url);
-
     // Normalize the URL by sorting query parameters
-    const normalizedUrl = new URL(transformedUrl);
+    const normalizedUrl = new URL(url);
     const params = Array.from(normalizedUrl.searchParams.entries()).sort(
         ([keyA], [keyB]) => keyA.localeCompare(keyB),
     );

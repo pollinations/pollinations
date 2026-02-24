@@ -1,0 +1,24 @@
+DESCRIPTION >
+    Daily revenue from Stripe payments (checkout.session.completed events)
+
+TOKEN model_usage READ
+
+NODE daily_stripe_revenue_node
+SQL >
+    %
+    SELECT
+        toDate(timestamp) AS date,
+        round(sum(amount_cents) / 100, 2) AS revenue,
+        count() AS purchases
+    FROM stripe_event
+    WHERE
+        payment_status = 'paid'
+        AND event_type = 'checkout.session.completed'
+        AND timestamp >= toDate('2025-10-01')
+        {% if defined(days_back) %}
+        AND timestamp >= today() - INTERVAL {{ Int32(days_back, 90) }} DAY
+        {% end %}
+    GROUP BY date
+    ORDER BY date ASC
+
+TYPE endpoint

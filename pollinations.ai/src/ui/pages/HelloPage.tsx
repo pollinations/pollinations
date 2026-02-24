@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { LINKS } from "../../copy/content/socialLinks";
 import { usePageCopy } from "../../hooks/usePageCopy";
@@ -11,7 +12,6 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { RoadmapItem } from "../components/ui/roadmap-item";
 import { SubCard } from "../components/ui/sub-card";
-import { TierCard } from "../components/ui/tier-card";
 import { Body, Heading, Title } from "../components/ui/typography";
 
 function HelloPage() {
@@ -134,7 +134,7 @@ function HelloPage() {
                                     variant="secondary"
                                     size="sm"
                                 >
-                                    Contribute on GitHub
+                                    {pageCopy.contributeOnGitHubButton}
                                     <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                                 </Button>
                                 <Button
@@ -145,7 +145,7 @@ function HelloPage() {
                                     variant="secondary"
                                     size="sm"
                                 >
-                                    Submit Your App
+                                    {pageCopy.submitYourAppButton}
                                     <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                                 </Button>
                             </div>
@@ -163,40 +163,64 @@ function HelloPage() {
                             >
                                 {pageCopy.tiersSubtitle}
                             </Heading>
-                            <Body size="sm" spacing="comfortable">
-                                {pageCopy.tiersDescription}
-                            </Body>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <TierCard
-                                    tier="spore"
-                                    emoji="🦠"
-                                    title={pageCopy.tierSporeTitle}
-                                    description={pageCopy.tierSporeDescription}
-                                />
-                                <TierCard
-                                    tier="seed"
-                                    emoji="🌱"
-                                    title={pageCopy.tierSeedTitle}
-                                    description={pageCopy.tierSeedDescription}
-                                />
-                                <TierCard
-                                    tier="flower"
-                                    emoji="🌸"
-                                    title={pageCopy.tierFlowerTitle}
-                                    description={pageCopy.tierFlowerDescription}
-                                />
-                                <TierCard
-                                    tier="nectar"
-                                    emoji="🍯"
-                                    title={pageCopy.tierNectarTitle}
-                                    description={pageCopy.tierNectarDescription}
-                                />
+                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                {[
+                                    {
+                                        emoji: "🍄",
+                                        name: pageCopy.tierWeeklyTitle,
+                                        pollen: pageCopy.tierWeeklyPollen,
+                                        desc: pageCopy.tierWeeklyDescription,
+                                    },
+                                    {
+                                        emoji: "🌱",
+                                        name: pageCopy.tierSeedTitle,
+                                        pollen: pageCopy.tierSeedPollen,
+                                        desc: pageCopy.tierSeedDescription,
+                                    },
+                                    {
+                                        emoji: "🌸",
+                                        name: pageCopy.tierFlowerTitle,
+                                        pollen: pageCopy.tierFlowerPollen,
+                                        desc: pageCopy.tierFlowerDescription,
+                                    },
+                                    {
+                                        emoji: "🍯",
+                                        name: pageCopy.tierNectarTitle,
+                                        pollen: pageCopy.tierNectarPollen,
+                                        desc: pageCopy.tierNectarDescription,
+                                    },
+                                ].map((tier) => (
+                                    <div
+                                        key={tier.name}
+                                        className="flex flex-col items-center text-center px-3 py-4 rounded-lg bg-surface-card border border-border-subtle"
+                                    >
+                                        <span className="text-3xl mb-2">
+                                            {tier.emoji}
+                                        </span>
+                                        <p className="text-sm font-semibold text-text-body-main">
+                                            {tier.name}
+                                        </p>
+                                        <p className="text-xs text-text-body-secondary mt-1">
+                                            {tier.pollen} pollen/
+                                            {tier.name === "Spore"
+                                                ? "week"
+                                                : "day"}
+                                        </p>
+                                        <p className="text-[10px] text-text-body-tertiary mt-0.5">
+                                            {tier.desc}
+                                        </p>
+                                    </div>
+                                ))}
                             </div>
+                            {/* Beta note */}
+                            <p className="text-sm text-text-highlight mt-4">
+                                {pageCopy.tiersBetaNote}
+                            </p>
                             {/* Tiers CTA */}
                             <div className="mt-4">
                                 <Button
                                     as="a"
-                                    href="https://enter.pollinations.ai"
+                                    href="https://enter.pollinations.ai#how-do-pollen-grants-work"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     variant="secondary"
@@ -259,8 +283,8 @@ function HelloPage() {
                     </ul>
                     <div className="mt-6">
                         <Button
-                            as="a"
-                            href="/apps"
+                            as={Link}
+                            to="/apps"
                             variant="secondary"
                             size="default"
                         >
@@ -280,8 +304,8 @@ function HelloPage() {
                         {pageCopy.communityDescription}
                     </Body>
                     <Button
-                        as="a"
-                        href="/community"
+                        as={Link}
+                        to="/community"
                         variant="secondary"
                         size="default"
                     >

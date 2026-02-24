@@ -2,7 +2,7 @@ import type { FC } from "react";
 import { useState, useEffect, useCallback } from "react";
 import { Dialog } from "@ark-ui/react/dialog";
 import { Button } from "./button.tsx";
-import { ModelPermissions } from "./model-permissions.tsx";
+import { ModelPermissions } from "./api-keys/model-permissions.tsx";
 import {
     TurnstileSettings,
     type TurnstileSettingsData,

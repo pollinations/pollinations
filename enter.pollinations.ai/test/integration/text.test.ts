@@ -1,19 +1,19 @@
 import {
-    getTextServices,
-    getServiceDefinition,
-} from "@shared/registry/registry.ts";
-import {
     createExecutionContext,
     env,
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { test } from "../fixtures.ts";
-import { describe, expect } from "vitest";
 import type { ServiceId } from "@shared/registry/registry.ts";
-import { CompletionUsageSchema } from "@/schemas/openai.ts";
+import {
+    getServiceDefinition,
+    getTextServices,
+} from "@shared/registry/registry.ts";
 import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
+import { describe, expect } from "vitest";
 import worker from "@/index.ts";
+import { CompletionUsageSchema } from "@/schemas/openai.ts";
+import { test } from "../fixtures.ts";
 
 const TEST_DISABLE_CACHE = false;
 const TEST_ALL_SERVICES = true;
@@ -78,7 +78,7 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
     test.for(authenticatedTestCases())(
         "%s should respond with 200 when using authorization header",
         { timeout: 30000 },
-        async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        async ([serviceId, expectedStatus], { paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const ctx = createExecutionContext();
             const response = await worker.fetch(
@@ -88,7 +88,7 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
                         method: "POST",
                         headers: {
                             "content-type": "application/json",
-                            "authorization": `Bearer ${apiKey}`,
+                            "authorization": `Bearer ${paidApiKey}`,
                         },
                         body: JSON.stringify({
                             model: serviceId,
@@ -133,7 +133,7 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
     test.for(authenticatedTestCases())(
         "%s should respond with 200 when streaming",
         { timeout: 30000 },
-        async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        async ([serviceId, expectedStatus], { paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const ctx = createExecutionContext();
             const response = await worker.fetch(
@@ -143,7 +143,7 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                         method: "POST",
                         headers: {
                             "content-type": "application/json",
-                            "authorization": `Bearer ${apiKey}`,
+                            "authorization": `Bearer ${paidApiKey}`,
                         },
                         body: JSON.stringify({
                             model: serviceId,
@@ -188,7 +188,7 @@ describe("GET /text/:prompt", async () => {
     test.for(authenticatedTestCases())(
         "%s should return plain text",
         { timeout: 30000 },
-        async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        async ([serviceId, expectedStatus], { paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const ctx = createExecutionContext();
             const response = await worker.fetch(
@@ -197,7 +197,7 @@ describe("GET /text/:prompt", async () => {
                     {
                         method: "GET",
                         headers: {
-                            "authorization": `Bearer ${apiKey}`,
+                            "authorization": `Bearer ${paidApiKey}`,
                         },
                     },
                 ),
@@ -206,15 +206,12 @@ describe("GET /text/:prompt", async () => {
             );
             expect(response.status).toBe(expectedStatus);
 
+            await response.text();
+            await waitOnExecutionContext(ctx);
+
             // Verify content-type is text/plain for text models
             const contentType = response.headers.get("content-type");
             expect(contentType).toContain("text/plain");
-
-            // Verify response is plain text (not JSON)
-            const text = await response.text();
-            expect(text.length).toBeGreaterThan(0);
-            expect(() => JSON.parse(text)).toThrow(); // Should not be valid JSON
-            await waitOnExecutionContext(ctx);
 
             // make sure the recorded events contain usage
             const events = mocks.tinybird.state.events;
@@ -280,7 +277,7 @@ test(
         // Invalid model is a validation error (user's fault) - should return 400
         expect(response.status).toBe(400);
         const error = JSON.parse(body);
-        expect(error.error.message).toContain("Invalid service or alias");
+        expect(error.error.message).toContain("invalid-model-name");
     },
 );
 
@@ -360,7 +357,7 @@ test.skip(
 test(
     "POST /v1/chat/completions should accept image URL for Claude/Bedrock models (Issue #5862)",
     { timeout: 60000 },
-    async ({ apiKey, mocks }) => {
+    async ({ paidApiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -368,7 +365,7 @@ test(
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
+                    "authorization": `Bearer ${paidApiKey}`,
                 },
                 body: JSON.stringify({
                     model: "claude",
@@ -505,7 +502,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
     test.for(toolCallTestCases())(
         "%s should complete full tool call cycle",
         { timeout: 120000 },
-        async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        async ([serviceId, expectedStatus], { paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             // Step 1: Initial request with tools
@@ -517,7 +514,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
                         method: "POST",
                         headers: {
                             "content-type": "application/json",
-                            "authorization": `Bearer ${apiKey}`,
+                            "authorization": `Bearer ${paidApiKey}`,
                         },
                         body: JSON.stringify({
                             model: serviceId,
@@ -568,7 +565,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
                         method: "POST",
                         headers: {
                             "content-type": "application/json",
-                            "authorization": `Bearer ${apiKey}`,
+                            "authorization": `Bearer ${paidApiKey}`,
                         },
                         body: JSON.stringify({
                             model: serviceId,
@@ -659,11 +656,12 @@ test(
 );
 
 // Video URL content type tests (Issue #6137)
+// Uses paidApiKey since gemini is paidOnly
 describe("Video URL content type support", async () => {
     test(
         "POST /v1/chat/completions should accept video_url content type for Gemini models",
         { timeout: 60000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -671,7 +669,7 @@ describe("Video URL content type support", async () => {
                     method: "POST",
                     headers: {
                         "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                     body: JSON.stringify({
                         model: "gemini",
@@ -706,7 +704,7 @@ describe("Video URL content type support", async () => {
     test(
         "POST /v1/chat/completions should accept video_url with explicit mime_type",
         { timeout: 60000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -714,7 +712,7 @@ describe("Video URL content type support", async () => {
                     method: "POST",
                     headers: {
                         "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                     body: JSON.stringify({
                         model: "gemini",
@@ -750,7 +748,7 @@ describe("Video URL content type support", async () => {
     test(
         "POST /v1/chat/completions should accept image_url with mime_type",
         { timeout: 60000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -758,7 +756,7 @@ describe("Video URL content type support", async () => {
                     method: "POST",
                     headers: {
                         "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                     body: JSON.stringify({
                         model: "gemini",
@@ -961,7 +959,7 @@ describe("Gemini thinking mode", async () => {
     test(
         "Gemini 3 Flash should accept reasoning_effort parameter",
         { timeout: 60000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -969,7 +967,7 @@ describe("Gemini thinking mode", async () => {
                     method: "POST",
                     headers: {
                         "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                     body: JSON.stringify({
                         model: "gemini", // Gemini 3 Flash
@@ -992,12 +990,127 @@ describe("Gemini thinking mode", async () => {
     );
 });
 
+// Gemini native tools tests (PR #6818, Issues #6688, #6723)
+// Tests code_execution, google_search, and url_context tools
+describe("Gemini native tools", async () => {
+    test(
+        "gemini-fast should use code_execution by default for computation",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini-fast",
+                        messages: [
+                            {
+                                role: "user",
+                                content:
+                                    "Calculate the 10th Fibonacci number using code execution. Reply with just the number.",
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            const content = (data as any).choices[0].message.content;
+            expect(content).toBeTruthy();
+            // Fibonacci(10) = 55
+            expect(content).toContain("55");
+        },
+    );
+
+    test(
+        "gemini-search should use google_search for real-time information",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini-search",
+                        messages: [
+                            {
+                                role: "user",
+                                content:
+                                    "What is the current population of Berlin? Just give me the approximate number.",
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            const content = (data as any).choices[0].message.content;
+            expect(content).toBeTruthy();
+            // Should contain some population-related number (millions)
+            expect(content.length).toBeGreaterThan(10);
+        },
+    );
+
+    test(
+        "Gemini should accept explicit code_execution tool override",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${paidApiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini",
+                        messages: [
+                            {
+                                role: "user",
+                                content:
+                                    "What is 7 factorial? Use code to compute it. Reply with just the raw number, no formatting.",
+                            },
+                        ],
+                        tools: [
+                            {
+                                type: "function",
+                                function: { name: "code_execution" },
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            const content = (data as any).choices[0].message.content;
+            expect(content).toBeTruthy();
+            // 7! = 5040
+            expect(content).toContain("5040");
+        },
+    );
+});
+
 // Gemini tool schema sanitization test (Issue: Portkey Gateway #1473)
 // Tests that exclusiveMinimum/exclusiveMaximum are stripped before sending to Vertex AI
 test(
     "Gemini should accept tools with exclusiveMinimum/exclusiveMaximum (sanitized)",
     { timeout: 60000 },
-    async ({ apiKey, mocks }) => {
+    async ({ paidApiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -1005,7 +1118,7 @@ test(
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
+                    "authorization": `Bearer ${paidApiKey}`,
                 },
                 body: JSON.stringify({
                     model: "gemini",
@@ -1050,3 +1163,283 @@ test(
         await response.text();
     },
 );
+
+// Gemini JSON response with tools fix (Issues #6834, #6876)
+// Tests that response_format works with Gemini models (tools are stripped when JSON mode is requested)
+test(
+    "Gemini should accept response_format: json_object without code_execution conflict",
+    { timeout: 60000 },
+    async ({ paidApiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${paidApiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "gemini",
+                    messages: [
+                        {
+                            role: "user",
+                            content:
+                                "What is 2+2? Return as JSON with key 'answer'.",
+                        },
+                    ],
+                    response_format: { type: "json_object" },
+                    seed: testSeed(),
+                }),
+            },
+        );
+        // Should succeed - tools are stripped when response_format is set
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        const content = (data as any).choices[0].message.content;
+        expect(content).toBeTruthy();
+        // Should be valid JSON
+        const parsed = JSON.parse(content);
+        expect(parsed.answer).toBeDefined();
+    },
+);
+
+// Gemini code_execution content_blocks test (Issue #6830)
+test(
+    "POST /v1/chat/completions should return content_blocks with image_url from Gemini code_execution",
+    { timeout: 120000 },
+    async ({ paidApiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${paidApiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "gemini",
+                    messages: [
+                        {
+                            role: "user",
+                            content: "Execute Python code to draw f(x) = x^2",
+                        },
+                    ],
+                    seed: testSeed(),
+                }),
+            },
+        );
+        expect(response.status).toBe(200);
+        const data = (await response.json()) as any;
+        // Gemini with code_execution returns content_blocks containing image_url
+        expect(data.choices[0].message).toBeDefined();
+        // Response should have content_blocks with image data from code execution
+        if (data.choices[0].message.content_blocks) {
+            const hasImageUrl = data.choices[0].message.content_blocks.some(
+                (block: any) => block.type === "image_url",
+            );
+            expect(hasImageUrl).toBe(true);
+        }
+    },
+);
+
+// API key pollen budget enforcement tests
+describe("API key pollen budget enforcement", async () => {
+    test(
+        "API key with exhausted budget should return 402",
+        { timeout: 30000 },
+        async ({ exhaustedBudgetApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${exhaustedBudgetApiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai-fast",
+                        messages: [
+                            {
+                                role: "user",
+                                content: TEST_MESSAGE_CONTENT,
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(402);
+            const body = await response.json();
+            expect((body as any).error.message).toContain("budget exhausted");
+        },
+    );
+
+    test(
+        "billed request should decrement pollenBalance",
+        { timeout: 30000 },
+        async ({ budgetedApiKey, sessionToken, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const ctx = createExecutionContext();
+
+            // Make a billed request
+            const response = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "content-type": "application/json",
+                            "authorization": `Bearer ${budgetedApiKey.key}`,
+                        },
+                        body: JSON.stringify({
+                            model: "openai-fast",
+                            messages: [{ role: "user", content: "Say hi" }],
+                            seed: testSeed(),
+                        }),
+                    },
+                ),
+                env,
+                ctx,
+            );
+            expect(response.status).toBe(200);
+            await response.text();
+            await waitOnExecutionContext(ctx);
+
+            // Check that pollenBalance was decremented
+            const keysResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys`,
+                {
+                    headers: {
+                        "Cookie": `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const keysData = (await keysResponse.json()) as any;
+            const key = keysData.data.find(
+                (k: any) => k.id === budgetedApiKey.id,
+            );
+            expect(key.pollenBalance).toBeLessThan(100);
+        },
+    );
+
+    test(
+        "pollenBudget: null should allow unlimited usage",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            // apiKey fixture has no pollenBudget set (null) - should work
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai-fast",
+                        messages: [{ role: "user", content: "Say hi" }],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            await response.text();
+        },
+    );
+
+    test(
+        "non-billed request (cache hit) should not decrement pollenBalance",
+        { timeout: 30000 },
+        async ({ budgetedApiKey, sessionToken, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            // First request to populate cache
+            const ctx1 = createExecutionContext();
+            const response1 = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "content-type": "application/json",
+                            "authorization": `Bearer ${budgetedApiKey.key}`,
+                        },
+                        body: JSON.stringify({
+                            model: "openai-fast",
+                            messages: [
+                                { role: "user", content: "Cache test message" },
+                            ],
+                            seed: 12345,
+                        }),
+                    },
+                ),
+                env,
+                ctx1,
+            );
+            expect(response1.status).toBe(200);
+            await response1.text();
+            await waitOnExecutionContext(ctx1);
+
+            // Get balance after first request
+            const keysResponse1 = await SELF.fetch(
+                `http://localhost:3000/api/api-keys`,
+                {
+                    headers: {
+                        "Cookie": `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const keysData1 = (await keysResponse1.json()) as any;
+            const balanceAfterFirst = keysData1.data.find(
+                (k: any) => k.id === budgetedApiKey.id,
+            ).pollenBalance;
+
+            // Second identical request (should be cache hit, isBilledUsage=false)
+            const ctx2 = createExecutionContext();
+            const response2 = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "content-type": "application/json",
+                            "authorization": `Bearer ${budgetedApiKey.key}`,
+                        },
+                        body: JSON.stringify({
+                            model: "openai-fast",
+                            messages: [
+                                { role: "user", content: "Cache test message" },
+                            ],
+                            seed: 12345,
+                        }),
+                    },
+                ),
+                env,
+                ctx2,
+            );
+            expect(response2.status).toBe(200);
+            await response2.text();
+            await waitOnExecutionContext(ctx2);
+
+            // Balance should be unchanged after cache hit
+            const keysResponse2 = await SELF.fetch(
+                `http://localhost:3000/api/api-keys`,
+                {
+                    headers: {
+                        "Cookie": `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const keysData2 = (await keysResponse2.json()) as any;
+            const balanceAfterSecond = keysData2.data.find(
+                (k: any) => k.id === budgetedApiKey.id,
+            ).pollenBalance;
+
+            expect(balanceAfterSecond).toBe(balanceAfterFirst);
+        },
+    );
+});

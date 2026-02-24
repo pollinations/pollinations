@@ -61,35 +61,33 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "566",
+      "content-length": "549",
       "content-type": "application/json; charset=utf-8",
-      "date": "Tue, 23 Dec 2025 13:56:51 GMT",
-      "etag": "W/\"236-j9qn7zT0z0mWJ0MKZDAREP4Mdto\"",
+      "date": "Wed, 07 Jan 2026 04:25:18 GMT",
+      "etag": "W/\"225-jfRHtzha2slFJKIf8OEGvYrfHSo\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+      "x-model-used": "claude-opus-4-5-20251101",
       "x-powered-by": "Express",
       "x-usage-completion-text-tokens": "70",
-      "x-usage-prompt-text-tokens": "1003",
-      "x-usage-total-tokens": "1073"
+      "x-usage-prompt-text-tokens": "1010",
+      "x-usage-total-tokens": "1080"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_d52013f79e418f9fb520c3f81316c1ee",
+        "id": "pllns_ba4092719c1ce84ba2b95a6656548ca3",
         "object": "chat.completion",
-        "created": 1766498211,
-        "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        "provider": "bedrock",
+        "created": 1767759918,
+        "model": "claude-opus-4-5-20251101",
+        "provider": "vertex-ai",
         "choices": [
           {
-            "index": 0,
             "message": {
               "role": "assistant",
               "content": "",
-              "content_blocks": [],
               "tool_calls": [
                 {
-                  "id": "tooluse_rx5nfqdBQcW5JpbuGYI25w",
+                  "id": "toolu_vrtx_01UkFX1ak8nNhJUwP4w8kexR",
                   "type": "function",
                   "function": {
                     "name": "calculator",
@@ -98,13 +96,15 @@
                 }
               ]
             },
-            "finish_reason": "tool_use"
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "tool_calls"
           }
         ],
         "usage": {
-          "prompt_tokens": 1003,
+          "prompt_tokens": 1010,
           "completion_tokens": 70,
-          "total_tokens": 1073,
+          "total_tokens": 1080,
           "prompt_tokens_details": {
             "cached_tokens": 0
           }

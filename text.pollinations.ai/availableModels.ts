@@ -1,27 +1,22 @@
 // Import transform functions
-import { createMessageTransform } from "./transforms/createMessageTransform.js";
-import {
-    createSystemPromptTransform,
-    removeSystemMessages,
-} from "./transforms/createSystemPromptTransform.js";
-import { pipe } from "./transforms/pipe.js";
-import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
-import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
-import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 
-// Import persona prompts
-import midijourneyPrompt from "./personas/midijourney.js";
-import chickyTutorPrompt from "./personas/chickytutor.js";
-
-// Import system prompts
-import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
-
+import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
+// Import registry for validation
+import type { TEXT_SERVICES } from "../shared/registry/text.ts";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
-
-// Import registry for validation
-import type { TEXT_SERVICES } from "../shared/registry/text.js";
-import { resolveServiceId, type ModelId } from "../shared/registry/registry.js";
+import chickyTutorPrompt from "./personas/chickytutor.js";
+// Import persona prompts
+import midijourneyPrompt from "./personas/midijourney.js";
+// Import system prompts
+import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
+import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
+import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
+import { createMessageTransform } from "./transforms/createMessageTransform.js";
+import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
+import { pipe } from "./transforms/pipe.js";
+import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
+import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 
 // Type constraint: model names must exist in registry
 type ValidServiceName = keyof typeof TEXT_SERVICES;
@@ -35,7 +30,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-mini-2025-08-07"],
+        config: portkeyConfig["gpt-5-mini"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -50,7 +45,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-coder",
-        config: portkeyConfig["qwen2.5-coder-32b-instruct"],
+        config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
@@ -60,7 +55,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["myceli-deepseek-v3.2"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -74,17 +69,22 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude-fast",
-        config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
+        config: portkeyConfig["claude-haiku-4-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude",
-        config: portkeyConfig["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
+        config: portkeyConfig["claude-sonnet-4-6"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude-large",
-        config: portkeyConfig["global.anthropic.claude-opus-4-5-20251101-v1:0"],
+        config: portkeyConfig["claude-opus-4-6"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "claude-legacy",
+        config: portkeyConfig["claude-opus-4-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -93,7 +93,8 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -103,7 +104,6 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -118,12 +118,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        config: portkeyConfig["gpt-4.1-2025-04-14"],
+        config: portkeyConfig["gpt-5.2-2025-12-11"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
         name: "chickytutor",
-        config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
+        config: portkeyConfig["claude-3-5-haiku"],
         transform: createMessageTransform(chickyTutorPrompt),
     },
     {
@@ -137,8 +137,8 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "kimi-k2-thinking",
-        config: portkeyConfig["kimi-k2-thinking-maas"],
+        name: "kimi",
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -147,14 +147,53 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
-        name: "nova-micro",
-        config: portkeyConfig["amazon.nova-micro-v1:0"],
+        name: "gemini-legacy",
+        config: portkeyConfig["gemini-2.5-pro"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
+            createGeminiThinkingTransform("v2.5"),
+        ),
+    },
+    {
+        name: "nova-fast",
+        config: portkeyConfig["nova-micro-fallback"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "glm",
+        config: portkeyConfig["accounts/fireworks/models/glm-5"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "minimax",
+        config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "nomnom",
+        config: portkeyConfig["nomnom"],
+    },
+    {
+        name: "polly",
+        config: portkeyConfig["polly"],
+    },
+    {
+        name: "qwen-safety",
+        config: portkeyConfig["Qwen3Guard-Gen-8B"],
+    },
+    {
+        name: "qwen-character",
+        config: portkeyConfig["qwen-character"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.character),
     },
 ];
 
@@ -176,7 +215,7 @@ export function findModelByName(modelName: string) {
 
     // Try resolving via registry (handles aliases)
     try {
-        const resolvedServiceId = resolveServiceId(modelName, "generate.text");
+        const resolvedServiceId = resolveServiceId(modelName);
         return (
             availableModels.find((model) => model.name === resolvedServiceId) ||
             null

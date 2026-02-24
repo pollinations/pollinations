@@ -1,21 +1,104 @@
-import { Hono } from "hono";
-import { auth } from "../middleware/auth.ts";
-import { validator } from "../middleware/validator.ts";
-import type { Env } from "../env.ts";
-import { z } from "zod";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import * as schema from "../db/schema/better-auth.ts";
-import { eq, and } from "drizzle-orm";
+import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
+import { z } from "zod";
+import * as schema from "../db/schema/better-auth.ts";
+import type { Env } from "../env.ts";
+import { auth } from "../middleware/auth.ts";
+import { validator } from "../middleware/validator.ts";
+
+/**
+ * Build updated permissions object based on changes
+ */
+function buildUpdatedPermissions(
+    existing: Record<string, string[]>,
+    allowedModels?: string[] | null,
+    accountPermissions?: string[] | null,
+): Record<string, string[]> | undefined {
+    const updated = { ...existing };
+    let hasChanges = false;
+
+    // Update models permission
+    if (allowedModels !== undefined) {
+        if (allowedModels === null || allowedModels.length === 0) {
+            delete updated.models;
+        } else {
+            updated.models = allowedModels;
+        }
+        hasChanges = true;
+    }
+
+    // Update account permissions
+    if (accountPermissions !== undefined) {
+        if (accountPermissions === null || accountPermissions.length === 0) {
+            delete updated.account;
+        } else {
+            updated.account = accountPermissions;
+        }
+        hasChanges = true;
+    }
+
+    return hasChanges ? updated : undefined;
+}
+
+/**
+ * Parse permissions JSON, returning null for empty objects or invalid JSON.
+ */
+function parsePermissions(raw: string): Record<string, string[]> | null {
+    try {
+        const parsed = JSON.parse(raw);
+        return Object.keys(parsed).length > 0 ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Parse potentially double-serialized JSON metadata
+ */
+function parseMetadata(metadata: string): Record<string, unknown> | null {
+    try {
+        const parsed = JSON.parse(metadata);
+        return typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+    } catch {
+        return null;
+    }
+}
 
 /**
  * Schema for updating an API key.
  * Uses better-auth's server API which supports server-only fields like permissions.
+ *
+ * Permissions format: { models?: string[], account?: string[] }
+ * - models: ["flux", "openai"] = restrict to specific models
+ * - account: ["balance", "usage"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
-    // null = unrestricted (all models), [] or [...models] = restricted
-    allowedModels: z.array(z.string()).nullable().optional(),
+    name: z.string().optional().describe("Name for the API key"),
+    allowedModels: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe("Model IDs this key can access. null = all models allowed"),
+    pollenBudget: z
+        .number()
+        .nullable()
+        .optional()
+        .describe("Pollen budget cap for this key. null = unlimited"),
+    accountPermissions: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe('Account permissions: ["balance", "usage"]. null = none'),
+    expiresAt: z
+        .string()
+        .datetime()
+        .nullable()
+        .optional()
+        .transform((val) => (val ? new Date(val) : val))
+        .describe("Expiration date for the key. null = no expiry"),
 });
 
 /**
@@ -28,7 +111,6 @@ const TurnstileSettingsSchema = z.object({
 
 /**
  * Schema for updating metadata on an API key.
- * Used to bypass better-auth's buggy serializeApiKey which corrupts string metadata.
  */
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
@@ -44,15 +126,16 @@ const UpdateMetadataSchema = z.object({
 export const apiKeysRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
     /**
-     * List all API keys for the current user with properly parsed metadata.
-     * Returns all data in one call, bypassing better-auth's buggy metadata handling.
+     * List all API keys for the current user with pollenBalance from D1.
+     * Extends better-auth's native list with custom D1 columns.
      */
     .get(
         "/",
         describeRoute({
-            tags: ["Auth"],
+            tags: ["Account"],
             description:
-                "List all API keys with full metadata including turnstile settings.",
+                "List all API keys for the current user with pollenBalance.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
@@ -63,58 +146,21 @@ export const apiKeysRoutes = new Hono<Env>()
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
 
-            // Parse metadata and permissions for each key
-            const parsedKeys = keys.map((key) => {
-                // Parse metadata from JSON string
-                let metadata: Record<string, unknown> = {};
-                if (key.metadata) {
-                    try {
-                        metadata = JSON.parse(String(key.metadata));
-                    } catch {
-                        metadata = {};
-                    }
-                }
-
-                // Parse permissions from JSON string
-                let permissions: { models?: string[] } | null = null;
-                if (key.permissions) {
-                    try {
-                        permissions = JSON.parse(String(key.permissions));
-                    } catch {
-                        permissions = null;
-                    }
-                }
-
-                // Extract turnstile from metadata
-                const turnstile = metadata.turnstile as
-                    | { enabled: boolean; hostnames: string[] }
-                    | undefined;
-
-                return {
+            return c.json({
+                data: keys.map((key) => ({
                     id: key.id,
                     name: key.name,
-                    prefix: key.prefix,
                     start: key.start,
-                    enabled: key.enabled,
                     createdAt: key.createdAt,
-                    updatedAt: key.updatedAt,
-                    expiresAt: key.expiresAt,
                     lastRequest: key.lastRequest,
-                    requestCount: key.requestCount,
-                    // Parsed fields
-                    metadata: {
-                        description: metadata.description as string | undefined,
-                        keyType: metadata.keyType as string | undefined,
-                        plaintextKey: metadata.plaintextKey as
-                            | string
-                            | undefined,
-                    },
-                    permissions,
-                    turnstile: turnstile || { enabled: false, hostnames: [] },
-                };
+                    expiresAt: key.expiresAt,
+                    permissions: key.permissions
+                        ? parsePermissions(key.permissions)
+                        : null,
+                    metadata: key.metadata ? parseMetadata(key.metadata) : null,
+                    pollenBalance: key.pollenBalance,
+                })),
             });
-
-            return c.json({ keys: parsedKeys });
         },
     )
     /**
@@ -124,8 +170,8 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/update",
         describeRoute({
-            tags: ["Auth"],
-            description: "Update an API key's permissions (allowed models).",
+            tags: ["Account"],
+            description: "Update an API key's permissions and budget.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("json", UpdateApiKeySchema),
@@ -133,7 +179,13 @@ export const apiKeysRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const authClient = c.var.auth.client;
             const { id } = c.req.param();
-            const { allowedModels } = c.req.valid("json");
+            const {
+                name,
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                expiresAt,
+            } = c.req.valid("json");
 
             // Verify ownership before updating
             const db = drizzle(c.env.DB, { schema });
@@ -148,55 +200,73 @@ export const apiKeysRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "API key not found" });
             }
 
-            // Build permissions object
-            // null = remove restrictions (all models allowed)
-            // [] or [...models] = restricted to specific models
-            const permissions =
-                allowedModels === null
-                    ? null
-                    : allowedModels && allowedModels.length > 0
-                      ? { models: allowedModels }
-                      : undefined;
+            const existingPermissions = existingKey.permissions
+                ? JSON.parse(existingKey.permissions as string)
+                : {};
 
-            console.log(
-                "[PERMISSIONS UPDATE] Before update, existingKey.metadata:",
-                existingKey.metadata,
-                "type:",
-                typeof existingKey.metadata,
+            const updatedPermissions = buildUpdatedPermissions(
+                existingPermissions,
+                allowedModels,
+                accountPermissions,
             );
 
-            // Use better-auth's server API to update permissions
-            // userId is required for server-side calls to bypass auth checks
-            const updatedKey = await authClient.api.updateApiKey({
-                body: {
-                    keyId: id,
-                    userId: user.id,
-                    permissions,
-                },
+            if (updatedPermissions) {
+                await authClient.api.updateApiKey({
+                    body: {
+                        keyId: id,
+                        userId: user.id,
+                        permissions: updatedPermissions,
+                    },
+                });
+            }
+
+            const d1Updates: Record<string, string | number | Date | null> = {};
+            if (name !== undefined) d1Updates.name = name;
+            if (pollenBudget !== undefined)
+                d1Updates.pollenBalance = pollenBudget;
+            if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
+
+            if (Object.keys(d1Updates).length > 0) {
+                const keyForCache = await db.query.apikey.findFirst({
+                    where: eq(schema.apikey.id, id),
+                });
+
+                await db
+                    .update(schema.apikey)
+                    .set(d1Updates)
+                    .where(eq(schema.apikey.id, id));
+
+                // Invalidate better-auth's KV cache
+                await c.env.KV.delete(`auth:api-key:${id}`);
+
+                if (keyForCache?.key) {
+                    await c.env.KV.delete(`auth:api-key:${keyForCache.key}`);
+                }
+            }
+
+            // Fetch updated key to return current state
+            const finalKey = await db.query.apikey.findFirst({
+                where: eq(schema.apikey.id, id),
             });
 
-            console.log(
-                "[PERMISSIONS UPDATE] After update, updatedKey:",
-                updatedKey,
-            );
-
             return c.json({
-                id: updatedKey.id,
-                name: updatedKey.name,
-                permissions: updatedKey.permissions,
+                id: finalKey?.id ?? id,
+                name: finalKey?.name,
+                permissions: finalKey?.permissions,
+                pollenBalance: finalKey?.pollenBalance ?? null,
+                expiresAt: finalKey?.expiresAt ?? null,
             });
         },
     )
     /**
      * Update metadata for an API key directly via DB.
-     * Bypasses better-auth's buggy serializeApiKey which corrupts string metadata.
      */
     .post(
         "/:id/metadata",
         describeRoute({
-            tags: ["Auth"],
-            description:
-                "Update metadata for an API key (bypasses better-auth bug).",
+            tags: ["Account"],
+            description: "Update metadata for an API key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("json", UpdateMetadataSchema),
         async (c) => {
@@ -221,9 +291,8 @@ export const apiKeysRoutes = new Hono<Env>()
             // Parse existing metadata
             let existingMetadata: Record<string, unknown> = {};
             if (existingKey.metadata) {
-                const metadataStr = String(existingKey.metadata);
                 try {
-                    existingMetadata = JSON.parse(metadataStr);
+                    existingMetadata = JSON.parse(String(existingKey.metadata));
                 } catch {
                     existingMetadata = {};
                 }
@@ -257,9 +326,10 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/turnstile",
         describeRoute({
-            tags: ["Auth"],
+            tags: ["Account"],
             description:
                 "Update Turnstile bot protection settings for an API key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("json", TurnstileSettingsSchema),
         async (c) => {
@@ -281,35 +351,11 @@ export const apiKeysRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "API key not found" });
             }
 
-            // Parse existing metadata - handle string (from DB) case
-            // IMPORTANT: Always parse as string first since DB stores as TEXT
-            // The metadata column is TEXT type, so drizzle returns a string
-            console.log(
-                "[TURNSTILE POST] existingKey.metadata raw:",
-                existingKey.metadata,
-                "type:",
-                typeof existingKey.metadata,
-                "isString:",
-                typeof existingKey.metadata === "string",
-                "constructor:",
-                existingKey.metadata?.constructor?.name,
-            );
             let existingMetadata: Record<string, unknown> = {};
             if (existingKey.metadata) {
-                // Always try to parse as JSON string first
-                // Use String() to ensure we have a primitive string, not a String object
-                const metadataStr = String(existingKey.metadata);
                 try {
-                    existingMetadata = JSON.parse(metadataStr);
-                    console.log(
-                        "[TURNSTILE POST] Parsed metadata:",
-                        existingMetadata,
-                    );
-                } catch (e) {
-                    console.log(
-                        "[TURNSTILE POST] Failed to parse metadata:",
-                        e,
-                    );
+                    existingMetadata = JSON.parse(String(existingKey.metadata));
+                } catch {
                     existingMetadata = {};
                 }
             }
@@ -318,13 +364,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 ...existingMetadata,
                 turnstile: turnstileSettings,
             };
-            console.log("[TURNSTILE POST] New metadata to save:", newMetadata);
-            console.log(
-                "[TURNSTILE POST] Stringified:",
-                JSON.stringify(newMetadata),
-            );
 
-            // Update the metadata field directly
             await db
                 .update(schema.apikey)
                 .set({
@@ -332,7 +372,6 @@ export const apiKeysRoutes = new Hono<Env>()
                     updatedAt: new Date(),
                 })
                 .where(eq(schema.apikey.id, id));
-            console.log("[TURNSTILE POST] Saved successfully for key:", id);
 
             return c.json({
                 id,
@@ -346,9 +385,10 @@ export const apiKeysRoutes = new Hono<Env>()
     .get(
         "/:id/turnstile",
         describeRoute({
-            tags: ["Auth"],
+            tags: ["Account"],
             description:
                 "Get Turnstile bot protection settings for an API key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
@@ -367,29 +407,14 @@ export const apiKeysRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "API key not found" });
             }
 
-            // Parse metadata - always parse as JSON string since DB stores as TEXT
-            console.log(
-                "[TURNSTILE GET] existingKey.metadata raw:",
-                existingKey.metadata,
-                "type:",
-                typeof existingKey.metadata,
-            );
             let metadata: Record<string, unknown> = {};
             if (existingKey.metadata) {
-                // Always try to parse as JSON string
-                const metadataStr = String(existingKey.metadata);
                 try {
-                    metadata = JSON.parse(metadataStr);
-                    console.log("[TURNSTILE GET] Parsed metadata:", metadata);
-                } catch (e) {
-                    console.log("[TURNSTILE GET] Failed to parse metadata:", e);
+                    metadata = JSON.parse(String(existingKey.metadata));
+                } catch {
                     metadata = {};
                 }
             }
-            console.log(
-                "[TURNSTILE GET] Final turnstile value:",
-                metadata.turnstile,
-            );
 
             return c.json({
                 id,

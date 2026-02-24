@@ -8,7 +8,7 @@ log "Starting service installation script"
 
 # Pull the latest Docker images
 log "Pulling latest Docker images"
-docker pull voodoohop/flux-svdquant:latest || { log "ERROR: Failed to pull flux-svdquant Docker image"; exit 1; }
+docker pull pollinations/flux-svdquant:latest || { log "ERROR: Failed to pull flux-svdquant Docker image"; exit 1; }
 docker pull libretranslate/libretranslate:latest || { log "ERROR: Failed to pull LibreTranslate Docker image"; exit 1; }
 
 # Copy service files to systemd directory

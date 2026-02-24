@@ -23,12 +23,12 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "434",
+      "content-length": "381",
       "content-type": "application/json; charset=utf-8",
-      "date": "Tue, 23 Dec 2025 13:54:58 GMT",
-      "etag": "W/\"1b2-5wwt6W//ESPc1rFQw/Aw+kEkT9M\"",
+      "date": "Wed, 07 Jan 2026 04:24:00 GMT",
+      "etag": "W/\"17d-0zzgp/NKyWaoUWo7exIMFeP7u7Y\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "x-model-used": "claude-sonnet-4-5-20250929",
       "x-powered-by": "Express",
       "x-usage-completion-text-tokens": "5",
       "x-usage-prompt-text-tokens": "289",
@@ -37,25 +37,20 @@
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_7c6628ea0540f0efc52e9c93b81b919d",
+        "id": "pllns_6ca62e47a435156f585b75c8c16b51c5",
         "object": "chat.completion",
-        "created": 1766498098,
-        "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        "provider": "bedrock",
+        "created": 1767759840,
+        "model": "claude-sonnet-4-5-20250929",
+        "provider": "vertex-ai",
         "choices": [
           {
-            "index": 0,
             "message": {
               "role": "assistant",
-              "content": "Yes.",
-              "content_blocks": [
-                {
-                  "type": "text",
-                  "text": "Yes."
-                }
-              ]
+              "content": "Yes."
             },
-            "finish_reason": "end_turn"
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "stop"
           }
         ],
         "usage": {

@@ -1,5 +1,4 @@
 .tinyb
-observability/fixtures/*.ndjson
 user_logs/
 .kiro
 logging/analysis/

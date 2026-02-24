@@ -449,6 +449,58 @@ describe("Text Cache Integration Tests", () => {
     );
 
     test(
+        "seed=-1 bypasses cache (random seed convention)",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const requestBody = JSON.stringify({
+                model: "openai-fast",
+                messages: [{ role: "user", content: "Seed bypass test" }],
+                seed: -1,
+            });
+
+            // First request with seed=-1 - should bypass cache (no X-Cache header)
+            const responseA = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: requestBody,
+                },
+            );
+            expect(responseA.status).toBe(200);
+            await responseA.text();
+
+            // seed=-1 should bypass cache entirely (no X-Cache header)
+            const xCacheA = responseA.headers.get("X-Cache");
+            expect(xCacheA).toBeNull();
+
+            // Second identical request - should also bypass (not HIT)
+            const responseB = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: requestBody,
+                },
+            );
+            expect(responseB.status).toBe(200);
+            await responseB.text();
+
+            // Should still bypass cache (no HIT)
+            const xCacheB = responseB.headers.get("X-Cache");
+            expect(xCacheB).toBeNull();
+        },
+    );
+
+    test(
         "Cache-Control header is set to immutable for cached responses",
         { timeout: 30000 },
         async ({ apiKey, mocks }) => {

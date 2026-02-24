@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Dedup test 1769310283631"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1690",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 25 Jan 2026 03:04:46 GMT",
+      "etag": "W/\"69a-tr7ADa9WEqq1dCyNg2TJh6yTHq8\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "128",
+      "x-usage-completion-text-tokens": "124",
+      "x-usage-prompt-text-tokens": "256"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Got it — dedup test 1769310283631 received. What do you want me to do with it?\n\nOptions I can help with:\n- Check for duplicates (need the dataset: CSV, DB, or sample rows)\n- Suggest matching criteria (exact match, fuzzy on name/email, normalized phone/address)\n- Produce a dedup plan or SQL/script to run\n- Generate a sample dedup report or show before/after examples\n\nTell me where the data is and which fields matter, or paste a small sample and I’ll suggest the next step.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1769310284,
+        "id": "pllns_ab6e39a5817a1f60cf3b648ba288a458",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 252,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 128,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 256,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 508
+        }
+      }
+    }
+  }
+}

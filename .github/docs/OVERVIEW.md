@@ -2,14 +2,13 @@
 
 ## Documentation Index
 
-| Document                        | Description                                      |
-| ------------------------------- | ------------------------------------------------ |
-| [Labels](LABELS.md)             | Label system reference (inbox, tier, PR labels)  |
-| [Tier Upgrade](TIER-UPGRADE.md) | App submissions & contributor tier system        |
-| [News & Social](NEWS-SOCIAL.md) | Weekly news, Discord, Instagram, Reddit          |
-| [Triage](TRIAGE.md)             | Issue/PR labeling, AI agents, project management |
-| [Deployment](DEPLOYMENT.md)     | Deploy pipelines (Cloudflare, EC2)               |
-| [Maintenance](MAINTENANCE.md)   | Branch cleanup, CI/testing                       |
+| Document                            | Description                                      |
+| ----------------------------------- | ------------------------------------------------ |
+| [Labels](LABELS.md)                 | Label system reference (inbox, tier, PR labels)  |
+| [Tier System](TIER-SYSTEM.md)       | Tier upgrades, app submission & Flower tier      |
+| [Triage](TRIAGE.md)                 | Issue/PR labeling, AI agents, project management |
+| [Deployment](DEPLOYMENT.md)         | Deploy pipelines (Cloudflare, EC2)               |
+| [Maintenance](MAINTENANCE.md)       | Branch cleanup, CI/testing                       |
 
 ---
 
@@ -21,27 +20,26 @@
 
 | Part       | Description              | Examples                                                  |
 | ---------- | ------------------------ | --------------------------------------------------------- |
-| **Entity** | What is being acted upon | `issue`, `pr`, `discord`, `website`, `app`, `branch`      |
+| **Entity** | What is being acted upon | `issue`, `pr`, `website`, `app`, `branch`                 |
 | **Action** | The verb/operation       | `create`, `post`, `generate`, `update`, `review`, `label` |
 | **What**   | The target/result        | `weekly-news`, `merged-pr`, `external`, `code`            |
 
 **Examples:**
 
--   `discord-post-merged-pr` → Discord / post / merged PR
--   `issue-label-external` → Issue / label / external
--   `pr-create-weekly-news` → PR / create / weekly news
--   `branch-delete-stale` → Branch / delete / stale
+- `issue-label-external` → Issue / label / external
+- `branch-delete-stale` → Branch / delete / stale
+- `app-deploy` → App / deploy
 
 **Entity = Effect** (what is affected/created, not what triggers it).
 
 ### Scripts
 
-Scripts follow a similar pattern but with underscores:
+Scripts follow a similar pattern:
 
 | Pattern                 | Examples                                                |
 | ----------------------- | ------------------------------------------------------- |
-| `entity_action_what.py` | `discord_post_merged_pr.py`, `pr_create_weekly_news.py` |
-| `tier-apps-action.js`   | `tier-apps-prepend.js`, `tier-apps-check-links.js`      |
+| `entity_action_what.py` | `app_check_duplicate.py`, `app_prepend_row.py`          |
+| `app-action-what.js`    | `app-prepend-row.js`, `app-check-links.js`              |
 
 ---
 
@@ -51,9 +49,9 @@ Most workflows use **Polly Bot** (GitHub App) for authentication instead of pers
 
 **Benefits:**
 
--   Better security (scoped permissions)
--   Actions appear as bot, not a user
--   No PAT expiration issues
+- Better security (scoped permissions)
+- Actions appear as bot, not a user
+- No PAT expiration issues
 
 ---
 
@@ -64,9 +62,9 @@ Most workflows use **Polly Bot** (GitHub App) for authentication instead of pers
 | `POLLY_BOT_APP_ID`      | GitHub App ID          | Most workflows    |
 | `POLLY_BOT_PRIVATE_KEY` | GitHub App private key | Most workflows    |
 | `GITHUB_TOKEN`          | GitHub API access      | Scripts           |
-| `DISCORD_WEBHOOK_URL`   | Discord posting        | Discord scripts   |
-| `INSTAGRAM_*`           | Instagram Graph API    | Instagram scripts |
 | `CLOUDFLARE_*`          | Cloudflare deployment  | Deploy workflows  |
+
+> **Note:** Social media secrets (Discord, Instagram, Buffer) are documented in `social/README.md`
 
 ---
 
@@ -76,7 +74,6 @@ Most workflows use **Polly Bot** (GitHub App) for authentication instead of pers
 .github/
 ├── docs/               # This documentation
 ├── scripts/            # Python/JS scripts called by workflows
-│   └── reddit_workflow/  # Devvit Reddit bot (self-hosted)
 ├── workflows/          # GitHub Actions YAML files
 └── ISSUE_TEMPLATE/     # Issue templates
 ```

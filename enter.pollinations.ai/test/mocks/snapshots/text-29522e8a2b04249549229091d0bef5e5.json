@@ -1,0 +1,80 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 2+2? Return as JSON with key 'answer'."
+          }
+        ],
+        "response_format": {
+          "type": "json_object"
+        },
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "532",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Tue, 06 Jan 2026 14:46:23 GMT",
+      "etag": "W/\"214-RwK2g9ulH8di7Forxf8P3ytg0c4\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-flash-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "268",
+      "x-usage-prompt-text-tokens": "268",
+      "x-usage-total-tokens": "536"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_d83dbafa8e757e906bc13512794bfa04",
+        "object": "chat.completion",
+        "created": 1767710783,
+        "model": "gemini-3-flash-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "{\n  \"answer\": 4\n}",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "{\n  \"answer\": 4\n}"
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 268,
+          "completion_tokens": 10,
+          "total_tokens": 546,
+          "completion_tokens_details": {
+            "reasoning_tokens": 268,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

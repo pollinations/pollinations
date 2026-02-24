@@ -18,7 +18,7 @@ export const HELLO_PAGE = {
     // Pollen Section
     pollenTitle: "Pollen",
     pollenDescription:
-        "Running AI models costs money. Pollen is how we keep the servers humming without ads or selling your data. One simple credit across all models — predictable, transparent, no surprises.",
+        "Running AI models costs money. Pollen is how we keep the servers humming without ads or selling your data. One simple credit across all models — predictable, transparent, no surprises. Note: Premium models (claude-large, veo, seedream-pro) require paid balance only.",
 
     // Get Pollen Section
     getPollenTitle: "How to Get Pollen",
@@ -32,19 +32,21 @@ export const HELLO_PAGE = {
         "Ship an app, help in Discord, fix bugs, improve docs — every contribution earns you Pollen. We notice and we share.",
 
     // Earn Pollen: Sponsorship Tiers
-    tiersSubtitle: "Grow",
-    tiersDescription: "Start small, contribute, watch your Pollen grow:",
-    tierSporeTitle: "Spore — Just arrived",
-    tierSporeDescription: "Welcome! Here's some Pollen to play with.",
-    tierSeedTitle: "Seed — Part of the community",
-    tierSeedDescription:
-        "You're on GitHub or Discord, you've said hi. More Pollen for you.",
-    tierFlowerTitle: "Flower — You shipped something",
-    tierFlowerDescription:
-        "You built an app with pollinations.ai. Nice! Even more Pollen.",
-    tierNectarTitle: "Nectar — Community pillar",
-    tierNectarDescription:
-        "Your work helps others. You're part of what makes this place good.",
+    tiersSubtitle: "Grow Through Our Tier System",
+    tiersBetaNote:
+        "⚠️ We're in beta — tiers, rewards, and values may change as we fine-tune the ecosystem.",
+    tierWeeklyTitle: "Spore",
+    tierWeeklyDescription: "Verified user",
+    tierWeeklyPollen: "1.5",
+    tierSeedTitle: "Seed",
+    tierSeedDescription: "GitHub activity",
+    tierSeedPollen: "3",
+    tierFlowerTitle: "Flower",
+    tierFlowerDescription: "Contributor",
+    tierFlowerPollen: "10",
+    tierNectarTitle: "Nectar",
+    tierNectarDescription: "Soon",
+    tierNectarPollen: "20",
 
     // Earn Pollen: Quests
     questsSubtitle: "Ways to Contribute",
@@ -107,6 +109,8 @@ export const HELLO_PAGE = {
     viewPricingButton: "View Pricing",
     exploreTiersButton: "Learn More About Tiers",
     seeAppsButton: "See Featured Apps",
+    contributeOnGitHubButton: "Contribute on GitHub",
+    submitYourAppButton: "Submit Your App",
 
     // Badges
     newBadge: "New",

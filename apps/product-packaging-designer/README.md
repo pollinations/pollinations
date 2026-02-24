@@ -7,6 +7,7 @@ Transform your product photos into professional packaging mockups using AI. Uplo
 This React app uses Pollinations AI to generate realistic product packaging mockups from your product images. Perfect for entrepreneurs, designers, and marketers who need quick packaging visualizations.
 
 **Key Features:**
+
 - 🖼️ Image upload with drag & drop
 - 📦 Multiple packaging types (Box, Bottle, Bag, Can)
 - 🎨 5 design styles (Minimalist, Vintage, Luxury, Eco-friendly, Japanese)
@@ -16,14 +17,13 @@ This React app uses Pollinations AI to generate realistic product packaging mock
 - 💾 High-resolution download
 - 📱 Fully responsive design
 
-
 ## Screenshots
 
 ![App Screenshot](https://res.cloudinary.com/dwzvfzqs7/image/upload/v1759940485/cr4gbhlvx5ybfscgszug.png)
-*Main interface *
+_Main interface _
 
 ![Generated Packaging](https://res.cloudinary.com/dwzvfzqs7/image/upload/v1759939178/p6bjg0grgyzsh5bmh9sj.jpg)
-*Generated luxury camera packaging example*
+_Generated luxury camera packaging example_
 
 ## How to Use
 
@@ -47,27 +47,32 @@ This React app uses Pollinations AI to generate realistic product packaging mock
 ## Installation & Setup
 
 ### Prerequisites
+
 - Node.js 16+ and npm
 
 ### Local Development
 
 1. **Clone the repository:**
+
 ```bash
 git clone https://github.com/pollinations/pollinations.git
 cd pollinations/apps/product-packaging-designer
 ```
 
 2. **Install dependencies:**
+
 ```bash
 npm install
 ```
 
 3. **Start development server:**
+
 ```bash
 npm run dev
 ```
 
 4. **Open in browser:**
+
 ```
 http://localhost:5173
 ```
@@ -88,6 +93,7 @@ https://image.pollinations.ai/prompt/{prompt}?model=nanobanana&image={product_im
 ```
 
 **Features used:**
+
 - Image-to-image generation with product integration
 - Custom prompting for different packaging styles
 - High-quality output optimization
@@ -113,6 +119,7 @@ product-packaging-designer/
 ## Features in Detail
 
 ### 🎨 Design Styles
+
 - **Minimalist**: Clean, simple, modern aesthetics
 - **Vintage**: Retro, classic design elements
 - **Luxury**: Premium, elegant gold accents
@@ -121,12 +128,14 @@ product-packaging-designer/
 - **Custom**: Describe your own unique style
 
 ### 📦 Packaging Types
+
 - **Box**: Product boxes and containers
 - **Bottle**: Liquid products and beverages
 - **Bag**: Flexible packaging and pouches
 - **Can**: Cylindrical containers and tins
 
 ### 🔧 Advanced Features
+
 - **File Validation**: Automatic image format and size checking
 - **Error Handling**: Comprehensive error messages and fallbacks
 - **Loading States**: Smooth animations during generation
@@ -162,13 +171,13 @@ This app is part of the Pollinations Hacktoberfest 2025 collection. See the main
 
 ## Credits
 
-- **AI Generation**: [Pollinations.AI](https://pollinations.ai)
+- **AI Generation**: [pollinations.ai](https://pollinations.ai)
 - **Icons**: [Lucide React](https://lucide.dev)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com)
 - **Build Tool**: [Vite](https://vitejs.dev)
 
 ---
 
-**Made with 💜 by [Pollinations.AI](https://pollinations.ai)**
+**Made with 💜 by [pollinations.ai](https://pollinations.ai)**
 
-*Part of Hacktoberfest 2025 - Building the future of AI-powered creativity!*
+_Part of Hacktoberfest 2025 - Building the future of AI-powered creativity!_

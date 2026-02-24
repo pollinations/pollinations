@@ -2,8 +2,8 @@
 
 import { z } from "zod";
 import {
-    DEFAULT_TEXT_MODEL,
     AUDIO_VOICES,
+    DEFAULT_TEXT_MODEL,
 } from "../../../shared/registry/text.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
@@ -272,7 +272,10 @@ const ThinkingSchema = z
 
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
-    model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+    model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+        description:
+            "AI model for text generation. See /v1/models for full list.",
+    }),
     modalities: z.array(z.enum(["text", "audio"])).optional(),
     audio: z
         .object({
@@ -307,7 +310,7 @@ export const CreateChatCompletionRequestSchema = z.object({
     seed: z
         .number()
         .int()
-        .min(0)
+        .min(-1)
         .max(Number.MAX_SAFE_INTEGER)
         .nullable()
         .optional(),
@@ -342,8 +345,13 @@ export const CreateChatCompletionRequestSchema = z.object({
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
+    ChatCompletionRequestMessageContentPartImageSchema,
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
+    // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
+    z
+        .object({ type: z.string() })
+        .passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({

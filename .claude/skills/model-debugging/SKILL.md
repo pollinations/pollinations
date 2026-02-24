@@ -7,7 +7,7 @@ description: Debug and diagnose model errors in Pollinations services. Analyze l
 
 Use this skill when:
 - Investigating model failures, high error rates, or service issues
-- Finding users affected by errors (403 quota, 500 backend)
+- Finding users affected by errors (402 billing, 403 permissions, 500 backend)
 - Analyzing Tinybird/Cloudflare logs for patterns
 - Diagnosing specific request failures
 
@@ -22,14 +22,15 @@ Use this skill when:
 The Model Monitor at https://monitor.pollinations.ai shows **all real-world traffic**, including:
 
 - **401 errors**: Anonymous users without API keys (most common)
-- **403 errors**: Users with insufficient pollen balance
+- **402 errors**: Users with insufficient pollen balance or exhausted API key budget
+- **403 errors**: Users denied access to specific models (API key restrictions)
 - **400 errors**: Invalid request parameters (e.g., `openai-audio` without `modalities` param)
 - **429 errors**: Rate-limited requests
 - **500/504 errors**: Actual backend failures (investigate these)
 
 When you test manually with a valid secret key (`sk_`), you bypass auth/quota issues, so models appear to work fine.
 
-**Key insight**: High 401/403/400 rates are **expected** from real-world usage. Focus investigation on 500/504 errors.
+**Key insight**: High 401/402/403/400 rates are **expected** from real-world usage. Focus investigation on 500/504 errors.
 
 ---
 
@@ -444,7 +445,7 @@ The Tinybird token is a read-only public token found in:
 
 1. **Check Model Monitor** - https://monitor.pollinations.ai
    - Identify which models have high error rates
-   - Note the error code breakdown (401, 403, 400, 500, etc.)
+   - Note the error code breakdown (401, 402, 403, 400, 500, etc.)
 
 2. **Query Cloudflare Logs** - Use the API queries above
    - Get raw error events with full details
@@ -613,7 +614,8 @@ Helper scripts for common debugging tasks. Run from repo root.
 # Notes
 
 - **401 errors**: User authentication issues (no API key) - **expected from anonymous traffic**
-- **403 errors**: Pollen/quota issues (user ran out of credits) - **expected**
+- **402 errors**: Pollen/billing issues (user ran out of credits or key budget) - **expected**
+- **403 errors**: Permission issues (model not allowed for API key) - **expected**
 - **400 errors**: Usually user input errors (bad prompts, invalid params) - **expected**
 - **500 errors**: Backend/infrastructure issues - **investigate these**
 - **504 errors**: Timeouts (model too slow or hung) - **investigate these**

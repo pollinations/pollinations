@@ -1,0 +1,36 @@
+DESCRIPTION >
+    User segment breakdown - distribution by tier, paying status, and activity level.
+    Useful for understanding user composition.
+
+TOKEN model_usage READ
+
+NODE user_segments_node
+SQL >
+    %
+    WITH user_stats AS (
+        SELECT
+            user_id,
+            user_tier,
+            count() AS request_count,
+            sum(total_price) AS total_spent,
+            max(start_time) AS last_active
+        FROM generation_event
+        WHERE start_time >= now() - INTERVAL 30 DAY
+        AND environment = 'production'
+        AND user_id != 'undefined'
+        AND user_id != ''
+        GROUP BY user_id, user_tier
+    )
+    SELECT
+        user_tier AS tier,
+        count() AS user_count,
+        countIf(total_spent > 0) AS paying_users,
+        countIf(last_active >= now() - INTERVAL 7 DAY) AS active_last_7d,
+        countIf(last_active >= now() - INTERVAL 1 DAY) AS active_last_1d,
+        avg(request_count) AS avg_requests,
+        sum(total_spent) AS total_revenue
+    FROM user_stats
+    GROUP BY user_tier
+    ORDER BY user_count DESC
+
+TYPE endpoint

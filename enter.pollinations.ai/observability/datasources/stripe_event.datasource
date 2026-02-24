@@ -1,0 +1,27 @@
+TOKEN stripe_event_append APPEND
+TOKEN stripe_event_read READ
+
+DESCRIPTION >
+Stripe checkout webhook events (payments) with full JSON payload
+
+SCHEMA >
+`timestamp` DateTime `json:$.timestamp` DEFAULT now(),
+`event_type` LowCardinality(String) `json:$.event_type` DEFAULT '',
+`event_id` String `json:$.event_id` DEFAULT '',
+`session_id` String `json:$.session_id` DEFAULT '',
+`user_id` String `json:$.user_id` DEFAULT '',
+`amount_cents` Int32 `json:$.amount_cents` DEFAULT 0,
+`currency` LowCardinality(String) `json:$.currency` DEFAULT '',
+`payment_status` LowCardinality(String) `json:$.payment_status` DEFAULT '',
+`payment_method` LowCardinality(String) `json:$.payment_method` DEFAULT '',
+`customer_email` String `json:$.customer_email` DEFAULT '',
+`livemode` UInt8 `json:$.livemode` DEFAULT 0,
+`payload` String `json:$.payload`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, event_type, user_id"
+ENGINE_PRIMARY_KEY "timestamp, event_type"
+
+FORWARD_QUERY >
+    SELECT timestamp, event_type, event_id, session_id, user_id, amount_cents, currency, payment_status, payment_method, defaultValueOfTypeName('String') AS customer_email, defaultValueOfTypeName('UInt8') AS livemode, payload

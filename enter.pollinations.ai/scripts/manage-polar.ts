@@ -1,6 +1,6 @@
-import { Polar } from "@polar-sh/sdk";
-import { command, number, run, string, boolean } from "@drizzle-team/brocli";
 import { inspect } from "node:util";
+import { boolean, command, number, run, string } from "@drizzle-team/brocli";
+import { Polar } from "@polar-sh/sdk";
 import { applyColor, applyStyle } from "../src/util.ts";
 
 const VERSION = "v1";
@@ -660,7 +660,7 @@ const customerMigrate = command({
             email: opts.email,
             limit: 100,
         });
-        let createdCustomers: any[] = [];
+        const createdCustomers: any[] = [];
         for await (const page of paginator) {
             for (const customer of page.result.items) {
                 if (customer.deletedAt) {
@@ -690,6 +690,7 @@ const tierSlugMap = {
 };
 
 // Production tier product IDs
+// Note: microbe tier doesn't have a Polar product (it's for flagged/suspicious users)
 const TIER_PRODUCT_IDS = {
     production: {
         spore: "01a31c1a-7af7-4958-9b73-c10e2fac5f70",
@@ -707,7 +708,7 @@ const TIER_PRODUCT_IDS = {
     },
 } as const;
 
-type TierName = "spore" | "seed" | "flower" | "nectar" | "router";
+type TierName = "microbe" | "spore" | "seed" | "flower" | "nectar" | "router";
 
 const userUpdateTier = command({
     name: "update-tier",

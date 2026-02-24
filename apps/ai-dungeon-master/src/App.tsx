@@ -5,10 +5,10 @@ import { StoryHistory } from "./components/StoryHistory.tsx";
 
 // API Configuration
 const API_URL = {
-  story: 'https://text.pollinations.ai/openai',
-  image: 'https://image.pollinations.ai/prompt/',
+  story: 'https://gen.pollinations.ai/v1/chat/completions',
+  image: 'https://gen.pollinations.ai/image',
 };
-
+const PLN_APPS_KEY = 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A';
 // Enhanced interfaces
 interface Character {
   name: string;
@@ -202,6 +202,7 @@ export default function App() {
       const response = await fetch(API_URL.story, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${PLN_APPS_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -276,7 +277,7 @@ export default function App() {
         .substring(0, 200); // Limit length
 
       const imagePrompt = `fantasy rpg scene, ${cleanDescription}, digital art, detailed, atmospheric, high quality`;
-      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}`;
+      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}&key=${PLN_APPS_KEY}`;
 
 
       // Test if the image URL is accessible (basic validation)
@@ -290,14 +291,14 @@ export default function App() {
   // Generate fallback image when main image generation fails
   const generateFallbackImage = (_description: string): string => {
     const fallbackPrompt = `fantasy rpg, medieval, atmospheric, digital art`;
-    return `${API_URL.image}${encodeURIComponent(fallbackPrompt)}?width=1024&height=768&model=flux&seed=fallback`;
+    return `${API_URL.image}${encodeURIComponent(fallbackPrompt)}?width=1024&height=768&model=flux&seed=fallback&key=${PLN_APPS_KEY}`;
   };
 
   // Fetch AI-generated character avatar
   const fetchCharacterAvatar = async (character: { name: string; class: string; backstory: string }): Promise<string> => {
     try {
       const avatarPrompt = `fantasy character portrait, ${character.name} the ${character.class}, ${character.backstory}, medieval fantasy art, detailed face, character design, portrait style`;
-      const avatarUrl = `${API_URL.image}${encodeURIComponent(avatarPrompt)}?width=512&height=512&model=flux`;
+      const avatarUrl = `${API_URL.image}${encodeURIComponent(avatarPrompt)}?width=512&height=512&model=flux&key=${PLN_APPS_KEY}`;
       return avatarUrl;
     } catch (error) {
       console.error('Error fetching character avatar:', error);
@@ -336,6 +337,7 @@ export default function App() {
       const response = await fetch(API_URL.story, {
         method: 'POST',
         headers: {
+          'Authorization' : `Bearer ${PLN_APPS_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -414,6 +416,7 @@ export default function App() {
       const response = await fetch(API_URL.story, {
         method: 'POST',
         headers: {
+          'Authorization' : `Bearer ${PLN_APPS_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -472,7 +475,7 @@ export default function App() {
   const fetchItemImage = async (itemName: string, itemType: string): Promise<string> => {
     try {
       const imagePrompt = `fantasy RPG item, ${itemName}, ${itemType}, detailed game asset, item icon, clean background`;
-      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=256&height=256&model=flux`;
+      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=256&height=256&model=flux&key=${PLN_APPS_KEY}`;
       return imageUrl;
     } catch (error) {
       console.error('Error fetching item image:', error);

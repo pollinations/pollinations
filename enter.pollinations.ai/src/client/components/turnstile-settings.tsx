@@ -161,7 +161,9 @@ export const TurnstileSettingsDialog: FC<{
                 credentials: "include",
             });
             if (response.ok) {
-                const data = await response.json();
+                const data = (await response.json()) as {
+                    turnstile: TurnstileSettingsData;
+                };
                 setSettings(data.turnstile);
             }
         } catch (err) {

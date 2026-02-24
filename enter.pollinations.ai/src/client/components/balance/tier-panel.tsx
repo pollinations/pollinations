@@ -1,9 +1,5 @@
 import type { FC } from "react";
-import {
-    getTierColor,
-    getTierEmoji,
-    type TierStatus,
-} from "@/tier-config.ts";
+import { getTierColor, getTierEmoji, type TierStatus } from "@/tier-config.ts";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -29,7 +25,8 @@ const TIER_BADGE_COLOR: Record<
 
 const BetaNoticeText: FC = () => (
     <p className="text-sm font-medium text-gray-900 mt-3">
-        🧪 <strong>We're in beta!</strong> Pollen values and tier rules may evolve as we learn what works best.
+        🧪 <strong>We're in beta!</strong> Pollen values and tier rules may
+        evolve as we learn what works best.
     </p>
 );
 
@@ -184,7 +181,8 @@ const TierScreen: FC<{
     daily_pollen: number;
 }> = ({ tier, active_tier_name, daily_pollen }) => {
     const tierEmoji = getTierEmoji(tier);
-    const tierColor = tier !== "none" ? getTierColor(tier as any) : getTierColor("spore");
+    const tierColor =
+        tier !== "none" ? getTierColor(tier as any) : getTierColor("spore");
 
     return (
         <Panel color={tierColor as any}>

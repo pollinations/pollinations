@@ -99,7 +99,10 @@ export const FAQ: FC = () => {
                     setTimeout(() => {
                         const element = document.getElementById(hash);
                         if (element) {
-                            element.scrollIntoView({ behavior: "smooth", block: "start" });
+                            element.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start",
+                            });
                         }
                     }, 100);
                 }
@@ -146,30 +149,32 @@ export const FAQ: FC = () => {
                                     onClick={() => toggleQuestion(index)}
                                     className="w-full text-left flex justify-between items-start gap-4 text-violet-950 hover:text-violet-800 transition-colors"
                                 >
-                                <span
-                                    className="flex-1 text-pink-500"
-                                    style={{ fontWeight: 700 }}
-                                >
-                                    {item.question}
-                                </span>
-                                <span className="text-2xl flex-shrink-0 font-normal">
-                                    {openIndices.has(index) ? "−" : "+"}
-                                </span>
-                            </button>
-                            {openIndices.has(index) && (
-                                <Card
-                                    color="violet"
-                                    bg="bg-white/30"
-                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800"
-                                >
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {item.answer}
-                                    </ReactMarkdown>
-                                    {item.question.includes(
-                                        "What can I create with Pollen",
-                                    ) && <PollenExamples />}
-                                </Card>
-                            )}
+                                    <span
+                                        className="flex-1 text-pink-500"
+                                        style={{ fontWeight: 700 }}
+                                    >
+                                        {item.question}
+                                    </span>
+                                    <span className="text-2xl flex-shrink-0 font-normal">
+                                        {openIndices.has(index) ? "−" : "+"}
+                                    </span>
+                                </button>
+                                {openIndices.has(index) && (
+                                    <Card
+                                        color="violet"
+                                        bg="bg-white/30"
+                                        className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800"
+                                    >
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                        >
+                                            {item.answer}
+                                        </ReactMarkdown>
+                                        {item.question.includes(
+                                            "What can I create with Pollen",
+                                        ) && <PollenExamples />}
+                                    </Card>
+                                )}
                             </div>
                         );
                     })}

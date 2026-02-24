@@ -1,11 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import {
-    getTierEmoji,
-    getTierPollen,
-    type TierName,
-    tierNames,
-} from "../../tier-config.ts";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -63,9 +57,6 @@ function RouteComponent() {
     const [downloadOpen, setDownloadOpen] = useState(false);
     const [downloadingDetailed, setDownloadingDetailed] = useState(false);
     const downloadRef = useRef<HTMLDivElement>(null);
-
-    // DEV: Tier switcher for testing UI with different tiers
-    const [tierOverride, setTierOverride] = useState<TierName | null>(null);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -459,59 +450,8 @@ function RouteComponent() {
                 </div>
                 {tierData && (
                     <div className="flex flex-col gap-2">
-                        <div className="flex flex-col sm:flex-row justify-between gap-3">
-                            <h2 className="font-bold flex-1">Tier</h2>
-                            {/* DEV: Tier switcher for testing */}
-                            <div className="flex items-center gap-2">
-                                <label
-                                    htmlFor="tier-switcher"
-                                    className="text-sm text-gray-600"
-                                >
-                                    DEV:
-                                </label>
-                                <select
-                                    id="tier-switcher"
-                                    value={tierOverride || tierData.active.tier}
-                                    onChange={(e) =>
-                                        setTierOverride(
-                                            e.target.value ===
-                                                tierData.active.tier
-                                                ? null
-                                                : (e.target.value as TierName),
-                                        )
-                                    }
-                                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                >
-                                    {tierNames.map((tier) => (
-                                        <option key={tier} value={tier}>
-                                            {getTierEmoji(tier)} {tier} (
-                                            {getTierPollen(tier)} pollen)
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                        <TierPanel
-                            {...(tierOverride
-                                ? {
-                                      ...tierData,
-                                      active: {
-                                          tier: tierOverride,
-                                          displayName:
-                                              tierOverride
-                                                  .charAt(0)
-                                                  .toUpperCase() +
-                                              tierOverride.slice(1),
-                                          pollen: getTierPollen(tierOverride),
-                                          cadence:
-                                              tierOverride === "spore" ||
-                                              tierOverride === "microbe"
-                                                  ? ("weekly" as const)
-                                                  : ("daily" as const),
-                                      },
-                                  }
-                                : tierData)}
-                        />
+                        <h2 className="font-bold">Tier</h2>
+                        <TierPanel {...tierData} />
                     </div>
                 )}
                 <ApiKeyList

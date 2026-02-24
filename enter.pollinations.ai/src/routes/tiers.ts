@@ -6,7 +6,6 @@ import { z } from "zod";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import {
     getTierPollen,
-    TIERS,
     type TierName,
     type TierStatus,
     tierNames,
@@ -20,7 +19,7 @@ const TierStatusSchema = z.object({
     target: z.literal(tierNames),
     active: z.object({
         tier: z.literal([...tierNames, "none"]),
-        displayName: z.string().nullable(),
+        displayName: z.string(),
         pollen: z.number(),
         cadence: z.enum(["daily", "weekly"]),
     }),

@@ -267,7 +267,7 @@ export const adminRoutes = new Hono<Env>()
                     WHEN 'flower' THEN ${TIER_POLLEN.flower}
                     WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
                     WHEN 'router' THEN ${TIER_POLLEN.router}
-                    ELSE ${TIER_POLLEN.spore}
+                    ELSE 0
                 END,
                 last_tier_grant = ${Date.now()}
             WHERE tier IS NOT NULL AND tier != 'spore'

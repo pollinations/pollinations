@@ -20,7 +20,7 @@ const TIER_BADGE_COLOR: Record<
     flower: "pink",
     nectar: "amber",
     router: "blue",
-    spore: "yellow",
+    spore: "blue",
 };
 
 const BetaNoticeText: FC = () => (
@@ -66,7 +66,7 @@ const MicrobeLimitedPanel: FC = () => (
 const SporeGrantInfo: FC = () => (
     <div className="flex flex-col gap-3">
         <p className="text-3xl font-bold text-gray-900">
-            🐝 Free Weekly : 1.5 pollen
+            🐝 Free Weekly: 1.5 pollen
         </p>
         <p className="text-sm text-gray-500">
             Refreshes every Monday at 00:00 UTC. Use it across any{" "}
@@ -143,37 +143,7 @@ const SporeTierPanel: FC = () => (
     </Panel>
 );
 
-// ─── Creator tiers & fallback ────────────────────────────────
-
-const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
-    has_polar_error,
-}) => (
-    <Panel color="amber">
-        <div className="flex flex-col gap-3">
-            {has_polar_error ? (
-                <Card color="red" bg="bg-red-50">
-                    <p className="text-sm text-red-700 leading-relaxed">
-                        ❌ <strong>Unable to Fetch Subscription Status:</strong>{" "}
-                        We couldn't connect to the subscription service. Please
-                        refresh the page or try again later.
-                    </p>
-                </Card>
-            ) : (
-                <Card color="yellow" bg="bg-yellow-50">
-                    <p className="text-sm text-yellow-900 leading-relaxed">
-                        ⏳ <strong>Setting Up Your Subscription:</strong> Your
-                        subscription is being activated. Please refresh the page
-                        in 1-2 minutes.
-                    </p>
-                </Card>
-            )}
-            <Card color="amber">
-                <TierExplanation />
-                <BetaNoticeText />
-            </Card>
-        </div>
-    </Panel>
-);
+// ─── Creator tiers ────────────────────────────────
 
 const TierScreen: FC<{
     tier: TierStatus;

@@ -44,8 +44,8 @@ function transformOpenAPISchema(
     if (!paths) return schema;
 
     const newPaths: Record<string, unknown> = {};
+
     for (const [path, value] of Object.entries(paths)) {
-        // Strip /generate prefix: /generate/v1/models → /v1/models
         const cleanPath = path.replace(/^\/generate/, "");
         newPaths[cleanPath] = value;
     }

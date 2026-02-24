@@ -1,14 +1,18 @@
 import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
+    createAirforceModelConfig,
+    createAnthropicConfig,
     createAzureModelConfig,
-    createScalewayModelConfig,
-    createBedrockLambdaModelConfig,
     createBedrockNativeConfig,
-    createMyceliGrok4FastConfig,
-    createPerplexityModelConfig,
-    createOVHcloudModelConfig,
     createFireworksModelConfig,
+    createMyceliGrok4FastConfig,
+    createNomNomConfig,
+    createOVHcloudMistralConfig,
+    createOVHcloudModelConfig,
+    createPerplexityModelConfig,
+    createPollyConfig,
+    createScalewayModelConfig,
 } from "./providerConfigs.js";
 
 dotenv.config();
@@ -22,13 +26,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     // Azure (Myceli) - openai, openai-large, openai-audio
     // ============================================================================
-    "gpt-5-mini-2025-08-07": () => ({
+    "gpt-5-mini": () => ({
         ...createAzureModelConfig(
-            process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
-            process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
-            "gpt-5-mini-2025-08-07",
+            process.env.AZURE_PF_GPT5MINI_API_KEY,
+            process.env.AZURE_PF_GPT5MINI_ENDPOINT,
+            "gpt-5-mini",
         ),
-        "max-completion-tokens": 1024,
+        "max-completion-tokens": 16384,
     }),
     "gpt-5.2-2025-12-11": () => ({
         ...createAzureModelConfig(
@@ -46,17 +50,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
         "max-completion-tokens": 2048,
     }),
-    "deepseek-v3.2-maas": () => ({
-        provider: "openai",
-        authKey: googleCloudAuth.getAccessToken,
-        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GOOGLE_PROJECT_ID}/locations/global/endpoints/openapi`,
-        "strict-openai-compliance": "false",
-        model: "deepseek-ai/deepseek-v3.2-maas",
-    }),
     "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
 
     // ============================================================================
-    // Azure-2 (PointsFlyer) - openai-fast, midijourney
+    // Azure-2 (PointsFlyer) - openai-fast
     // ============================================================================
     "gpt-5-nano-2025-08-07": () => ({
         ...createAzureModelConfig(
@@ -66,35 +63,28 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
         "max-completion-tokens": 512,
     }),
-    "gpt-4.1-2025-04-14": () => ({
-        ...createAzureModelConfig(
-            process.env.AZURE_PF_GPT41_API_KEY,
-            process.env.AZURE_PF_GPT41_ENDPOINT,
-            "gpt-4.1-2025-04-14",
-        ),
-        "max-tokens": 512,
-        "max-completion-tokens": 512,
-    }),
 
     // ============================================================================
-    // Scaleway - mistral, qwen-coder
+    // Scaleway - qwen-coder (legacy)
     // ============================================================================
-    "mistral-small-3.2-24b-instruct-2506": () =>
-        createScalewayModelConfig({
-            "max-tokens": 8192,
-            model: "mistral-small-3.2-24b-instruct-2506",
-        }),
     "qwen2.5-coder-32b-instruct": () =>
         createScalewayModelConfig({
-            "max-tokens": 8000,
             model: "qwen2.5-coder-32b-instruct",
+        }),
+
+    // ============================================================================
+    // OVHcloud - Mistral
+    // ============================================================================
+    "mistral-small-3.2-24b-instruct-2506": () =>
+        createOVHcloudMistralConfig({
+            model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),
 
     // ============================================================================
     // AWS Bedrock - claude-fast, claude, claude-large, chickytutor, nova-fast
     // ============================================================================
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
-        createBedrockLambdaModelConfig({
+        createBedrockNativeConfig({
             model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         }),
     "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
@@ -105,9 +95,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({
             model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         }),
+    "us.anthropic.claude-sonnet-4-6": () =>
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-sonnet-4-6",
+        }),
     "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        }),
+    "global.anthropic.claude-opus-4-6-v1": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-4-6-v1",
         }),
 
     // ============================================================================
@@ -120,78 +118,69 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-region": "europe-west1",
         "vertex-model-id": "anthropic.claude-opus-4-5@20251101",
         "strict-open-ai-compliance": "true",
-        defaultOptions: { max_tokens: 64000 },
     }),
-    "claude-sonnet-4-5-vertex": () => ({
+    "claude-sonnet-4-6-vertex": () => ({
         provider: "vertex-ai",
         authKey: googleCloudAuth.getAccessToken,
         "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "europe-west1",
-        "vertex-model-id": "anthropic.claude-sonnet-4-5@20250929",
+        "vertex-model-id": "anthropic.claude-sonnet-4-6",
         "strict-open-ai-compliance": "true",
-        defaultOptions: { max_tokens: 64000 },
     }),
 
     // ============================================================================
-    // Fallback Configs - AWS Bedrock primary, Google Vertex AI fallback
-    // Uses snake_case for x-portkey-config JSON format
+    // Claude Models - Direct Anthropic API (primary)
     // ============================================================================
-    "claude-sonnet-4-5-fallback": () => ({
-        strategy: { mode: "fallback" },
-        targets: [
-            // Primary: AWS Bedrock (native)
-            {
-                provider: "bedrock",
-                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
-                aws_region: process.env.AWS_REGION || "us-east-1",
-                override_params: {
-                    model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-                },
-            },
-            // Fallback: Google Vertex AI
-            {
-                provider: "vertex-ai",
-                authKey: googleCloudAuth.getAccessToken,
-                vertex_project_id: process.env.GOOGLE_PROJECT_ID,
-                vertex_region: "europe-west1",
-                override_params: {
-                    model: "anthropic.claude-sonnet-4-5@20250929",
-                },
-            },
-        ],
-        defaultOptions: { max_tokens: 64000 },
-    }),
-    "claude-opus-4-5-fallback": () => ({
-        strategy: { mode: "fallback" },
-        targets: [
-            // Primary: AWS Bedrock (native)
-            {
-                provider: "bedrock",
-                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
-                aws_region: process.env.AWS_REGION || "us-east-1",
-                override_params: {
-                    model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
-                },
-            },
-            // Fallback: Google Vertex AI
-            {
-                provider: "vertex-ai",
-                authKey: googleCloudAuth.getAccessToken,
-                vertex_project_id: process.env.GOOGLE_PROJECT_ID,
-                vertex_region: "europe-west1",
-                override_params: {
-                    model: "anthropic.claude-opus-4-5@20251101",
-                },
-            },
-        ],
-        defaultOptions: { max_tokens: 64000 },
-    }),
+    "claude-sonnet-4-6": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-4-6",
+        }),
+    "claude-opus-4-6": () =>
+        createAnthropicConfig({
+            model: "claude-opus-4-6",
+        }),
+    "claude-opus-4-5": () =>
+        createAnthropicConfig({
+            model: "claude-opus-4-5-20251101",
+        }),
+    "claude-haiku-4-5": () =>
+        createAnthropicConfig({
+            model: "claude-haiku-4-5-20251001",
+        }),
+    "claude-3-5-haiku": () =>
+        createAnthropicConfig({
+            model: "claude-3-haiku-20240307",
+        }),
     "amazon.nova-micro-v1:0": () =>
-        createBedrockLambdaModelConfig({
+        createBedrockNativeConfig({
             model: "amazon.nova-micro-v1:0",
         }),
+    // Nova Micro with Nova Lite fallback for rate limiting
+    "nova-micro-fallback": () => ({
+        strategy: { mode: "fallback" },
+        targets: [
+            // Primary: Nova Micro (cheapest)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "amazon.nova-micro-v1:0",
+                },
+            },
+            // Fallback: Nova Lite (multimodal, slightly more expensive but still cheap)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "amazon.nova-lite-v1:0",
+                },
+            },
+        ],
+    }),
 
     // ============================================================================
     // Google Vertex AI - gemini, gemini-fast, gemini-large, gemini-search, kimi-k2-thinking
@@ -220,6 +209,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-model-id": "gemini-3-pro-preview",
         "strict-openai-compliance": "false",
     }),
+    "gemini-2.5-pro": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "us-central1",
+        "vertex-model-id": "gemini-2.5-pro",
+        "strict-openai-compliance": "false",
+    }),
     "kimi-k2-thinking-maas": () => ({
         provider: "openai",
         authKey: googleCloudAuth.getAccessToken,
@@ -245,19 +242,27 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // OVHcloud AI Endpoints - qwen3-coder
+    // OVHcloud AI Endpoints - qwen3-coder, qwen3guard
     // ============================================================================
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({
             model: "Qwen3-Coder-30B-A3B-Instruct",
         }),
+    "Qwen3Guard-Gen-8B": () =>
+        createOVHcloudMistralConfig({
+            model: "Qwen3Guard-Gen-8B",
+        }),
 
     // ============================================================================
-    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2
+    // Fireworks AI - glm-5, minimax-m2.1, deepseek-v3.2, kimi-k2.5
     // ============================================================================
-    "accounts/fireworks/models/glm-4p7": () =>
+    "accounts/fireworks/models/kimi-k2p5": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-4p7",
+            model: "accounts/fireworks/models/kimi-k2p5",
+        }),
+    "accounts/fireworks/models/glm-5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-5",
         }),
     "accounts/fireworks/models/minimax-m2p1": () =>
         createFireworksModelConfig({
@@ -267,4 +272,25 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v3p2",
         }),
+
+    // ============================================================================
+    // Community Models
+    // ============================================================================
+    "nomnom": () =>
+        createNomNomConfig({
+            model: "nomnom",
+        }),
+    "polly": () =>
+        createPollyConfig({
+            model: "polly",
+        }),
+
+    // ============================================================================
+    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
+    // api.airforce - qwen-character (RP/character model)
+    // ============================================================================
+    // "qwen-character": () =>
+    //     createAirforceModelConfig({
+    //         model: "qwen-character",
+    //     }),
 };

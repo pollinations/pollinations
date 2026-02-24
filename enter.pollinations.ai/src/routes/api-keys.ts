@@ -377,10 +377,13 @@ export const apiKeysRoutes = new Hono<Env>()
             const existingKey = await requireOwnedKey(db, id, user.id);
             const metadata = parseExistingMetadata(existingKey.metadata);
 
-            const defaultTurnstile = { enabled: false, hostnames: [] };
-            const turnstile =
-                (metadata.turnstile as typeof defaultTurnstile) ||
-                defaultTurnstile;
+            const turnstile = (metadata.turnstile as {
+                enabled: boolean;
+                hostnames: string[];
+            }) || {
+                enabled: false,
+                hostnames: [],
+            };
 
             return c.json({ id, turnstile });
         },

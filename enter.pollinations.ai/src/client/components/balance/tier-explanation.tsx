@@ -64,13 +64,13 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 pollinations.ai. Level up to earn more daily pollen.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {/* Free (Spore) */}
+                {/* Spore */}
                 <div
                     className={`rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.spore].bg} ${currentTier === "spore" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.spore].ring}` : ""}`}
                 >
                     <div className="flex items-center gap-1.5">
-                        <span>🐝</span>
-                        <strong className="text-gray-800 text-sm">Free</strong>
+                        <span>{TIER_EMOJIS.spore}</span>
+                        <strong className="text-gray-800 text-sm">Spore</strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
                         {TIER_POLLEN.spore} pollen/week

@@ -57,5 +57,7 @@ export function getTierColor(tier: string): string {
 export function getTierCadence(tier: TierName): "daily" | "weekly";
 export function getTierCadence(tier: string): "daily" | "weekly";
 export function getTierCadence(tier: string): "daily" | "weekly" {
-    return isValidTier(tier) ? TIERS[tier].cadence : TIERS[DEFAULT_TIER].cadence;
+    return isValidTier(tier)
+        ? TIERS[tier].cadence
+        : TIERS[DEFAULT_TIER].cadence;
 }

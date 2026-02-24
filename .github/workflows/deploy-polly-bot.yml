@@ -1,0 +1,67 @@
+name: Deploy Polly Discord Bot
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/polly/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: apps/polly
+
+      - name: Copy source to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DISCORD_POLLY_HOST }}
+          username: ${{ secrets.DISCORD_POLLY_USER }}
+          key: ${{ secrets.DISCORD_POLLY_SSH_KEY }}
+          source: "apps/polly/"
+          target: "/tmp/polly-deploy"
+          strip_components: 2
+          overwrite: true
+
+      - name: Deploy and restart service
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DISCORD_POLLY_HOST }}
+          username: ${{ secrets.DISCORD_POLLY_USER }}
+          key: ${{ secrets.DISCORD_POLLY_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "Syncing source to /root/polly..."
+            rsync -av --delete \
+              --exclude '.env' \
+              --exclude 'data/' \
+              --exclude 'venv/' \
+              --exclude '.git/' \
+              --exclude '*.pem' \
+              /tmp/polly-deploy/ /root/polly/
+
+            echo "Installing dependencies..."
+            cd /root/polly
+            ./venv/bin/python -m pip install -r requirements.txt -q
+
+            echo "Fixing systemd service path..."
+            sed -i 's|/root/Polly|/root/polly|g' /etc/systemd/system/polly.service
+            systemctl daemon-reload
+
+            echo "Restarting polly service..."
+            systemctl restart polly.service
+            sleep 5
+
+            systemctl is-active polly.service || exit 1
+            echo "Polly bot deployed successfully"
+
+            rm -rf /tmp/polly-deploy

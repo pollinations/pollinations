@@ -1,16 +1,17 @@
+import crypto from "node:crypto";
 import bodyParser from "body-parser";
 import cors from "cors";
-import crypto from "crypto";
 import debug from "debug";
 import dotenv from "dotenv";
 import express from "express";
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
-import { getServiceDefinition } from "../shared/registry/registry.js";
+import { logIp } from "../shared/ipLogger.js";
+import { getServiceDefinition } from "../shared/registry/registry.ts";
 import {
     buildUsageHeaders,
-    openaiUsageToTokenUsage,
-} from "../shared/registry/usage-headers.js";
+    openaiUsageToUsage,
+} from "../shared/registry/usage-headers.ts";
 import { availableModels } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { getRequestData } from "./requestUtils.js";
@@ -32,6 +33,14 @@ const authLog = debug("pollinations:auth");
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
 
+// IP logging middleware - log all incoming request IPs for security investigation
+app.use((req, _res, next) => {
+    const ip = getIp(req);
+    const model = req.body?.model || req.query?.model || "unknown";
+    logIp(ip, "text", `path=${req.path} model=${model}`);
+    next();
+});
+
 // Middleware to verify PLN_ENTER_TOKEN (after CORS for consistency)
 app.use((req, res, next) => {
     const token = req.headers["x-enter-token"];
@@ -52,7 +61,7 @@ app.use((req, res, next) => {
     next();
 });
 // New route handler for root path
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
     res.redirect(
         301,
         "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md",
@@ -60,7 +69,7 @@ app.get("/", (req, res) => {
 });
 
 // Serve crossdomain.xml for Flash connections
-app.get("/crossdomain.xml", (req, res) => {
+app.get("/crossdomain.xml", (_req, res) => {
     res.setHeader("Content-Type", "application/xml");
     res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
@@ -85,7 +94,7 @@ app.get("/models", (req, res) => {
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
-    const startTime = Date.now();
+    const _startTime = Date.now();
     log(
         "Request: model=%s referrer=%s",
         requestData.model,
@@ -122,7 +131,7 @@ async function handleRequest(req, res, requestData) {
         }
 
         // Capture the originally requested model before any mapping/overrides
-        const requestedModel = requestData.model;
+        const _requestedModel = requestData.model;
 
         // Use request data as-is (no user-specific model mapping)
         const finalRequestData = requestData;
@@ -137,6 +146,8 @@ async function handleRequest(req, res, requestData) {
                 referrer: requestData.referrer || "unknown",
                 cf_ray: req.headers["cf-ray"] || "",
             },
+            // Pass user's API key for community models that need billing passthrough (e.g., NomNom)
+            userApiKey: req.headers["x-user-api-key"] || "",
         };
 
         const completion = await generateTextBasedOnModel(
@@ -248,6 +259,11 @@ export async function sendErrorResponse(
     const errorDetails = error.details || error.response?.data;
     if (errorDetails) errorResponse.details = errorDetails;
 
+    // For ImageFetchError, include the problematic URL for debugging
+    if (error.url) {
+        errorResponse.imageUrl = error.url;
+    }
+
     // Extract client information (for logs only)
     const clientInfo = {
         ip: getIp(req) || "unknown",
@@ -356,8 +372,8 @@ export function sendOpenAIResponse(res, completion) {
 
     // Add usage headers if available (GitHub issue #4638)
     if (completion.usage && completion.model) {
-        const tokenUsage = openaiUsageToTokenUsage(completion.usage);
-        const usageHeaders = buildUsageHeaders(completion.model, tokenUsage);
+        const usage = openaiUsageToUsage(completion.usage);
+        const usageHeaders = buildUsageHeaders(completion.model, usage);
 
         for (const [key, value] of Object.entries(usageHeaders)) {
             res.setHeader(key, value);
@@ -384,8 +400,8 @@ export function sendContentResponse(res, completion) {
         completion.usage &&
         completion.model
     ) {
-        const tokenUsage = openaiUsageToTokenUsage(completion.usage);
-        const usageHeaders = buildUsageHeaders(completion.model, tokenUsage);
+        const usage = openaiUsageToUsage(completion.usage);
+        const usageHeaders = buildUsageHeaders(completion.model, usage);
 
         for (const [key, value] of Object.entries(usageHeaders)) {
             res.setHeader(key, value);
@@ -400,7 +416,7 @@ export function sendContentResponse(res, completion) {
     }
 
     // Only handle OpenAI-style responses (with choices array)
-    if (completion.choices && completion.choices[0]) {
+    if (completion.choices?.[0]) {
         const message = completion.choices[0].message;
 
         // If message is a string, send it directly
@@ -424,7 +440,7 @@ export function sendContentResponse(res, completion) {
         }
 
         // If the message contains audio, send the audio data as binary
-        if (message.audio && message.audio.data) {
+        if (message.audio?.data) {
             res.setHeader("Content-Type", "audio/mpeg");
             res.setHeader(
                 "Cache-Control",
@@ -550,10 +566,10 @@ app.post("/", async (req, res) => {
     }
 });
 
-app.get("/openai/models", (req, res) => {
+app.get("/openai/models", (_req, res) => {
     const models = availableModels.map((model) => {
         // Get provider from cost data using the model's config
-        const config =
+        const _config =
             typeof model.config === "function" ? model.config() : model.config;
         return {
             id: model.name,
@@ -692,7 +708,7 @@ async function generateTextBasedOnModel(messages, options) {
                     role: m.role,
                     content:
                         typeof m.content === "string"
-                            ? m.content.substring(0, 50) + "..."
+                            ? `${m.content.substring(0, 50)}...`
                             : "[non-string content]",
                 })),
             ),

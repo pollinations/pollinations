@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import faqMarkdown from "../../../POLLEN_FAQ.md?raw";
@@ -11,6 +11,16 @@ import { Panel } from "./ui/panel.tsx";
 type FAQItem = {
     question: string;
     answer: string;
+};
+
+// Generate URL-friendly slug from question text
+const generateSlug = (text: string): string => {
+    return text
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "") // Remove special chars
+        .replace(/\s+/g, "-") // Replace spaces with hyphens
+        .replace(/-+/g, "-") // Replace multiple hyphens with single
+        .trim();
 };
 
 // Parse markdown content into FAQ items
@@ -68,6 +78,32 @@ export const FAQ: FC = () => {
         });
     };
 
+    // Auto-expand FAQ item when navigating via anchor link
+    useEffect(() => {
+        const handleHashChange = () => {
+            const hash = window.location.hash.slice(1); // Remove #
+            if (hash) {
+                const index = faqData.findIndex(
+                    (item) => generateSlug(item.question) === hash,
+                );
+                if (index !== -1) {
+                    setOpenIndices((prev) => {
+                        const next = new Set(prev);
+                        next.add(index);
+                        return next;
+                    });
+                }
+            }
+        };
+
+        // Check on mount
+        handleHashChange();
+
+        // Listen for hash changes
+        window.addEventListener("hashchange", handleHashChange);
+        return () => window.removeEventListener("hashchange", handleHashChange);
+    }, []);
+
     return (
         <div className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row justify-between gap-3">
@@ -87,13 +123,19 @@ export const FAQ: FC = () => {
             </div>
             <Panel color="violet" className="p-8">
                 <div className="flex flex-col gap-4">
-                    {faqData.map((item, index) => (
-                        <div key={item.question} className="pb-4 last:pb-0">
-                            <button
-                                type="button"
-                                onClick={() => toggleQuestion(index)}
-                                className="w-full text-left flex justify-between items-start gap-4 text-violet-950 hover:text-violet-800 transition-colors"
+                    {faqData.map((item, index) => {
+                        const questionId = generateSlug(item.question);
+                        return (
+                            <div
+                                key={item.question}
+                                id={questionId}
+                                className="pb-4 last:pb-0 scroll-mt-4"
                             >
+                                <button
+                                    type="button"
+                                    onClick={() => toggleQuestion(index)}
+                                    className="w-full text-left flex justify-between items-start gap-4 text-violet-950 hover:text-violet-800 transition-colors"
+                                >
                                 <span
                                     className="flex-1 text-pink-500"
                                     style={{ fontWeight: 700 }}
@@ -118,8 +160,9 @@ export const FAQ: FC = () => {
                                     ) && <PollenExamples />}
                                 </Card>
                             )}
-                        </div>
-                    ))}
+                            </div>
+                        );
+                    })}
                 </div>
             </Panel>
         </div>

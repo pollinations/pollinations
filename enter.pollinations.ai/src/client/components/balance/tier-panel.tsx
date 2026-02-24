@@ -113,7 +113,7 @@ const SporeCreatorNudge: FC = () => (
                     </div>
                     <div>
                         <a
-                            href="#what-are-tiers"
+                            href="#how-do-pollen-grants-work"
                             className="text-blue-600 underline hover:text-blue-800 font-medium"
                         >
                             How do tiers work? &rarr;

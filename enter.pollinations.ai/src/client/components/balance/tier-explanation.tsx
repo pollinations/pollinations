@@ -8,6 +8,7 @@ import {
 import { Tooltip } from "../pricing/Tooltip.tsx";
 
 const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
+    blue: { bg: "bg-blue-100/60", ring: "ring-blue-400" },
     green: { bg: "bg-green-100/60", ring: "ring-green-400" },
     pink: { bg: "bg-pink-100/60", ring: "ring-pink-400" },
     amber: { bg: "bg-amber-100/60", ring: "ring-amber-400" },
@@ -62,7 +63,24 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 📈 <strong>Grow Your Tier:</strong> For developers building with
                 pollinations.ai. Level up to earn more daily pollen.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {/* Free (Spore) */}
+                <div
+                    className={`rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.spore].bg} ${currentTier === "spore" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.spore].ring}` : ""}`}
+                >
+                    <div className="flex items-center gap-1.5">
+                        <span>🐝</span>
+                        <strong className="text-gray-800 text-sm">Free</strong>
+                    </div>
+                    <p className="text-xs font-mono text-gray-600 mt-1">
+                        {TIER_POLLEN.spore} pollen/week
+                    </p>
+                    <div className="mt-1.5 border-t border-gray-200 pt-1.5">
+                        <p className={requirementLabelStyle}>To unlock</p>
+                        <p className="text-xs text-gray-500">Verify account</p>
+                    </div>
+                </div>
+
                 {/* Seed */}
                 <div
                     className={`rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.seed].bg} ${currentTier === "seed" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.seed].ring}` : ""}`}

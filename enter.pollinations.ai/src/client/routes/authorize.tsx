@@ -14,6 +14,7 @@ type Attribution = {
     found: boolean;
     userId?: string;
     userName?: string;
+    githubUsername?: string;
     appName?: string;
     appUrl?: string;
 };
@@ -251,16 +252,37 @@ function AuthorizeComponent() {
                         ) : (
                             <>
                                 <div className="bg-green-200 rounded-lg p-4">
-                                    <p className="font-semibold text-green-950">
-                                        {attribution?.appName ||
-                                            redirectHostname}
-                                    </p>
-                                    {attribution?.appName && (
-                                        <p className="text-xs text-green-700 mt-0.5">
+                                    {attribution?.appName ? (
+                                        <>
+                                            <p className="font-bold text-green-950 text-lg">
+                                                {attribution.appName}
+                                            </p>
+                                            {attribution.githubUsername && (
+                                                <p className="text-sm text-green-700 mt-0.5">
+                                                    by{" "}
+                                                    <a
+                                                        href={`https://github.com/${attribution.githubUsername}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="font-medium underline hover:text-green-950"
+                                                    >
+                                                        @
+                                                        {
+                                                            attribution.githubUsername
+                                                        }
+                                                    </a>
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-green-800 font-mono mt-1">
+                                                {redirectHostname}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <p className="font-semibold text-green-950">
                                             {redirectHostname}
                                         </p>
                                     )}
-                                    <p className="text-xs text-green-800">
+                                    <p className="text-xs text-green-800 mt-1">
                                         wants to connect to your account
                                     </p>
                                 </div>
@@ -322,16 +344,43 @@ function AuthorizeComponent() {
                     ) : (
                         <>
                             <div className="bg-green-200 rounded-lg p-4">
-                                <p className="font-semibold text-green-950 mb-1">
-                                    🔑 Create and share my API key with{" "}
-                                    <span className="font-mono bg-green-300 rounded px-1.5 py-0.5 text-green-950">
-                                        {attribution?.appName ||
-                                            redirectHostname}
-                                    </span>
-                                </p>
+                                {attribution?.appName ? (
+                                    <>
+                                        <p className="text-xs text-green-700 mb-1">
+                                            🔑 Share your API key with
+                                        </p>
+                                        <p className="font-bold text-green-950 text-lg">
+                                            {attribution.appName}
+                                        </p>
+                                        {attribution.githubUsername && (
+                                            <p className="text-sm text-green-700 mt-0.5">
+                                                by{" "}
+                                                <a
+                                                    href={`https://github.com/${attribution.githubUsername}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="font-medium underline hover:text-green-950"
+                                                >
+                                                    @
+                                                    {attribution.githubUsername}
+                                                </a>
+                                            </p>
+                                        )}
+                                        <p className="text-xs text-green-800 font-mono mt-1">
+                                            {redirectHostname}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <p className="font-semibold text-green-950 mb-1">
+                                        🔑 Create and share my API key with{" "}
+                                        <span className="font-mono bg-green-300 rounded px-1.5 py-0.5 text-green-950">
+                                            {redirectHostname}
+                                        </span>
+                                    </p>
+                                )}
                                 <p className="text-xs text-green-800 mt-2">
                                     Same as copy-pasting your key into their app
-                                    💚 Only you can use it
+                                    ⚠️ Only share with apps you trust
                                 </p>
                             </div>
 

@@ -1,0 +1,36 @@
+{
+  "pr_number": 8488,
+  "title": "feat(audio): support custom ElevenLabs voice IDs alongside presets for eleven_v3",
+  "author": "neiledwinjjmg002-boop",
+  "url": "https://github.com/pollinations/pollinations/pull/8488",
+  "merged_at": "2026-02-25T11:00:47Z",
+  "labels": [
+    "AUDIO",
+    "API",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Your voice, your rules",
+    "blurb": "Added support for custom ElevenLabs voice IDs. Now you can bring your own cloned voices to the API, not just the presets.",
+    "summary": "Updated the audio API to accept custom ElevenLabs voice UUIDs alongside existing presets, enabling the use of cloned and custom voices.",
+    "impact": "Users can now generate speech using their own custom voice clones by passing the specific voice ID, while existing preset names continue to work unchanged.",
+    "keywords": [
+      "audio",
+      "elevenlabs",
+      "voice-cloning",
+      "api",
+      "tts"
+    ],
+    "visual_concept": "The bee mascot recording audio into a retro microphone, symbolizing the input of custom voices. A digital waveform represents the cloned output.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot holding a retro microphone, recording audio. A digital waveform floats in the air above, glowing lime green (#ecf874). A small robot with a monitor head listens intently. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'VOICE ID'. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-25T11:01:35.994887+00:00"
+}

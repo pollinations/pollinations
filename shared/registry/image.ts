@@ -282,6 +282,21 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "grok-imagine": {
+        aliases: [],
+        modelId: "grok-imagine",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-02-16").getTime(),
+                completionImageTokens: 0.0025, // $0.0025 per image
+            },
+        ],
+        description: "Grok Imagine (api.airforce) - xAI image gen",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "grok-video": {
         aliases: ["grok-imagine-video"],
         modelId: "grok-video",

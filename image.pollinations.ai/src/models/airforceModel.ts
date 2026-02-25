@@ -196,7 +196,10 @@ function buildRequestBody(
         if (imageUrl) {
             requestBody.image = imageUrl;
         }
-    } else if (airforceModel === "imagen-4") {
+    } else if (
+        airforceModel === "imagen-4" ||
+        airforceModel === "grok-imagine"
+    ) {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
     } else if (safeParams.width && safeParams.height) {

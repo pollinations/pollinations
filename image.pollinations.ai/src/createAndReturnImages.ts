@@ -1155,7 +1155,10 @@ const generateImage = async (
     }
 
     // api.airforce image models
-    if (safeParams.model === "imagen-4") {
+    if (
+        safeParams.model === "imagen-4" ||
+        safeParams.model === "grok-imagine"
+    ) {
         return await callAirforceImageAPI(
             prompt,
             safeParams,

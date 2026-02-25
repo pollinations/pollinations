@@ -30,13 +30,17 @@ function getLatencyColor(latencySec) {
 }
 
 // Compute health status from stats
-// Based on 5xx error rate against total requests (4xx are user errors, not model failures)
+// Based on 5xx error rate against model requests (4xx are user errors, not model failures)
 function computeHealthStatus(stats) {
     if (!stats || !stats.total_requests) return "on";
 
-    const total = stats.total_requests;
+    const success = stats.status_2xx || 0;
     const total5xx = stats.total_5xx || 0;
-    const pct5xx = (total5xx / total) * 100;
+    const modelRequests = success + total5xx;
+
+    if (modelRequests < 3) return "on";
+
+    const pct5xx = (total5xx / modelRequests) * 100;
 
     // OFF: 5xx >= 50% of total requests (model is mostly broken)
     if (pct5xx >= 50) return "off";

@@ -200,7 +200,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "Generate text, images, and videos using AI models",
                         },
                         {
-                            name: "rhizome.pollinations.ai",
+                            name: "media.pollinations.ai",
                             description:
                                 "Content-addressed media storage (images, audio, video)",
                         },
@@ -223,39 +223,39 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 any
             >;
 
-            // Merge rhizome.pollinations.ai spec (3 endpoints) into unified view
+            // Merge media.pollinations.ai spec (3 endpoints) into unified view
             try {
-                const rhizomeRes = await fetch(
-                    "https://rhizome.pollinations.ai/openapi.json",
+                const mediaRes = await fetch(
+                    "https://media.pollinations.ai/openapi.json",
                 );
-                if (rhizomeRes.ok) {
-                    const rhizome = (await rhizomeRes.json()) as Record<
+                if (mediaRes.ok) {
+                    const media = (await mediaRes.json()) as Record<
                         string,
                         any
                     >;
-                    if (rhizome.paths) {
-                        // Add path-level servers so Scalar targets rhizome, not gen
-                        for (const ops of Object.values(rhizome.paths)) {
+                    if (media.paths) {
+                        // Add path-level servers so Scalar targets media, not gen
+                        for (const ops of Object.values(media.paths)) {
                             (ops as any).servers = [
                                 {
-                                    url: "https://rhizome.pollinations.ai",
+                                    url: "https://media.pollinations.ai",
                                 },
                             ];
                         }
                         transformed.paths = {
                             ...transformed.paths,
-                            ...rhizome.paths,
+                            ...media.paths,
                         };
                     }
-                    if (rhizome.components?.schemas) {
+                    if (media.components?.schemas) {
                         transformed.components.schemas = {
                             ...transformed.components.schemas,
-                            ...rhizome.components.schemas,
+                            ...media.components.schemas,
                         };
                     }
                 }
             } catch {
-                // Rhizome unavailable — skip, main docs still work
+                // Media service unavailable — skip, main docs still work
             }
 
             return c.json(transformed);

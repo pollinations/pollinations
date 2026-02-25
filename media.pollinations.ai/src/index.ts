@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
 
-const DOMAIN = "rhizome.pollinations.ai";
+const DOMAIN = "media.pollinations.ai";
 const ENTER_VERIFY_URL = "https://gen.pollinations.ai/api/account/key";
 
 interface Env {
@@ -60,7 +60,7 @@ const api = new Hono<{ Bindings: Env }>();
 api.post(
     "/upload",
     describeRoute({
-        tags: ["rhizome.pollinations.ai"],
+        tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description: "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.",
         responses: {
@@ -191,7 +191,7 @@ api.post(
 api.get(
     "/:hash",
     describeRoute({
-        tags: ["rhizome.pollinations.ai"],
+        tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description: "Get a file by its content hash. No authentication required. Responses are cached immutably.",
         responses: {
@@ -236,7 +236,7 @@ api.on(
     "HEAD",
     "/:hash",
     describeRoute({
-        tags: ["rhizome.pollinations.ai"],
+        tags: ["media.pollinations.ai"],
         summary: "Check if media exists",
         description: "Check existence and metadata without downloading the file.",
         responses: {
@@ -310,7 +310,7 @@ app.get("/openapi.json", async (c, next) => {
     const handler = openAPIRouteHandler(api, {
         documentation: {
             info: {
-                title: "rhizome.pollinations.ai",
+                title: "media.pollinations.ai",
                 version: "1.0.0",
                 description: "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public.",
             },

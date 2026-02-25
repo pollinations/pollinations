@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-const BASE_URL = process.env.RHIZOME_URL || "https://rhizome.pollinations.ai";
-const API_KEY = process.env.RHIZOME_API_KEY || process.env.ENTER_API_TOKEN_REMOTE;
+const BASE_URL = process.env.MEDIA_URL || "https://media.pollinations.ai";
+const API_KEY = process.env.MEDIA_API_KEY || process.env.ENTER_API_TOKEN_REMOTE;
 
 // 1x1 red PNG (67 bytes)
 const TINY_PNG = new Uint8Array([
@@ -13,12 +13,12 @@ const TINY_PNG = new Uint8Array([
     0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
 ]);
 
-describe("rhizome.pollinations.ai", () => {
+describe("media.pollinations.ai", () => {
     it("GET / returns service info", async () => {
         const res = await fetch(BASE_URL);
         const body = await res.json();
         expect(res.status).toBe(200);
-        expect(body.service).toBe("rhizome.pollinations.ai");
+        expect(body.service).toBe("media.pollinations.ai");
         expect(body.endpoints.upload).toBeDefined();
     });
 
@@ -44,7 +44,7 @@ describe("rhizome.pollinations.ai", () => {
     });
 
     it("upload, retrieve, and deduplicate", async () => {
-        if (!API_KEY) throw new Error("Set RHIZOME_API_KEY or ENTER_API_TOKEN_REMOTE");
+        if (!API_KEY) throw new Error("Set MEDIA_API_KEY or ENTER_API_TOKEN_REMOTE");
 
         // Upload
         const uploadRes = await fetch(`${BASE_URL}/upload`, {
@@ -100,7 +100,7 @@ describe("rhizome.pollinations.ai", () => {
     });
 
     it("rejects non-media content types", async () => {
-        if (!API_KEY) throw new Error("Set RHIZOME_API_KEY or ENTER_API_TOKEN_REMOTE");
+        if (!API_KEY) throw new Error("Set MEDIA_API_KEY or ENTER_API_TOKEN_REMOTE");
 
         const res = await fetch(`${BASE_URL}/upload`, {
             method: "POST",

@@ -17,6 +17,8 @@ import { User } from "../components/layout/user.tsx";
 import { Pricing } from "../components/pricing";
 import { UsageGraph } from "../components/usage-analytics";
 
+const SECONDS_PER_DAY = 24 * 60 * 60;
+
 export const Route = createFileRoute("/")({
     component: RouteComponent,
     beforeLoad: getUserOrRedirect,
@@ -72,8 +74,8 @@ function RouteComponent() {
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleSignOut = async () => {
-        if (isSigningOut) return; // Prevent double-clicks
+    async function handleSignOut(): Promise<void> {
+        if (isSigningOut) return;
         setIsSigningOut(true);
         try {
             await authClient.signOut();
@@ -83,7 +85,7 @@ function RouteComponent() {
         } finally {
             setIsSigningOut(false);
         }
-    };
+    }
 
     async function handleCreateApiKey(
         formState: CreateApiKey,
@@ -91,8 +93,6 @@ function RouteComponent() {
         const keyType = formState.keyType || "secret";
         const isPublishable = keyType === "publishable";
 
-        // Create key via better-auth's native API
-        const SECONDS_PER_DAY = 24 * 60 * 60;
         const createResult = await authClient.apiKey.create({
             name: formState.name,
             prefix: isPublishable ? "pk" : "sk",
@@ -198,10 +198,9 @@ function RouteComponent() {
         router.invalidate();
     }
 
-    const handleBuyPollen = (amount: number) => {
-        // Navigate to Stripe checkout endpoint with amount in USD
+    function handleBuyPollen(amount: number): void {
         window.location.href = `/api/stripe/checkout/${amount}`;
-    };
+    }
 
     return (
         <div className="flex flex-col gap-6">

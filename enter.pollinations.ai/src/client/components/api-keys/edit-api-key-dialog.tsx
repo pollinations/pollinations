@@ -38,16 +38,16 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
     useScrollLock();
 
-    const handleCopyKey = async () => {
+    async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
         try {
             await navigator.clipboard.writeText(plaintextKey);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch (_err) {
-            // Silently fail
+        } catch {
+            // Clipboard API may fail in some contexts
         }
-    };
+    }
 
     const expiryDays = apiKey.expiresAt
         ? Math.ceil(
@@ -77,21 +77,19 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             });
 
             // Save app settings for publishable keys
-            if (isPublishable) {
-                const appUrlChanged = appUrl !== initialAppUrl;
-                const byopChanged = byopEnabled !== initialByop;
-
-                if (appUrlChanged || byopChanged) {
-                    await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify({
-                            appUrl: appUrl || undefined,
-                            byop: byopEnabled || undefined,
-                        }),
-                    });
-                }
+            if (
+                isPublishable &&
+                (appUrl !== initialAppUrl || byopEnabled !== initialByop)
+            ) {
+                await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        appUrl: appUrl || undefined,
+                        byop: byopEnabled,
+                    }),
+                });
             }
 
             onClose();

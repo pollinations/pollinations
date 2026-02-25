@@ -11,37 +11,34 @@ import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 /**
- * Build updated permissions object based on changes
+ * Build updated permissions object based on changes.
+ * Returns undefined if no permission fields were provided.
  */
 function buildUpdatedPermissions(
     existing: Record<string, string[]>,
     allowedModels?: string[] | null,
     accountPermissions?: string[] | null,
 ): Record<string, string[]> | undefined {
+    if (allowedModels === undefined && accountPermissions === undefined) {
+        return undefined;
+    }
     const updated = { ...existing };
-    let hasChanges = false;
+    applyPermissionField(updated, "models", allowedModels);
+    applyPermissionField(updated, "account", accountPermissions);
+    return updated;
+}
 
-    // Update models permission
-    if (allowedModels !== undefined) {
-        if (allowedModels === null || allowedModels.length === 0) {
-            delete updated.models;
-        } else {
-            updated.models = allowedModels;
-        }
-        hasChanges = true;
+function applyPermissionField(
+    target: Record<string, string[]>,
+    key: string,
+    value: string[] | null | undefined,
+): void {
+    if (value === undefined) return;
+    if (value === null || value.length === 0) {
+        delete target[key];
+    } else {
+        target[key] = value;
     }
-
-    // Update account permissions
-    if (accountPermissions !== undefined) {
-        if (accountPermissions === null || accountPermissions.length === 0) {
-            delete updated.account;
-        } else {
-            updated.account = accountPermissions;
-        }
-        hasChanges = true;
-    }
-
-    return hasChanges ? updated : undefined;
 }
 
 /**

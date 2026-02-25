@@ -12,6 +12,14 @@ import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
 
+function getHostname(url: string): string {
+    try {
+        return new URL(url).hostname;
+    } catch {
+        return url;
+    }
+}
+
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
     onCreate,
@@ -21,12 +29,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
-    const handleDelete = async () => {
+    async function handleDelete(): Promise<void> {
         if (deleteId) {
             await onDelete(deleteId);
             setDeleteId(null);
         }
-    };
+    }
 
     const sortedKeys = [...apiKeys].sort(
         (a, b) =>
@@ -49,14 +57,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     <Panel color="blue" compact>
                         <div className="flex flex-col gap-3">
                             {sortedKeys.map((apiKey) => {
-                                const keyType = apiKey.metadata?.["keyType"] as
-                                    | string
-                                    | undefined;
-                                const isPublishable = keyType === "publishable";
-                                const plaintextKey = apiKey.metadata?.[
-                                    "plaintextKey"
-                                ] as string | undefined;
-                                const appUrl = apiKey.metadata?.["appUrl"] as
+                                const isPublishable =
+                                    apiKey.metadata?.keyType === "publishable";
+                                const plaintextKey = apiKey.metadata
+                                    ?.plaintextKey as string | undefined;
+                                const appUrl = apiKey.metadata?.appUrl as
                                     | string
                                     | undefined;
 
@@ -164,15 +169,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         rel="noopener noreferrer"
                                                         className="text-blue-600 hover:underline truncate max-w-[200px] inline-block align-bottom"
                                                     >
-                                                        {(() => {
-                                                            try {
-                                                                return new URL(
-                                                                    appUrl,
-                                                                ).hostname;
-                                                            } catch {
-                                                                return appUrl;
-                                                            }
-                                                        })()}
+                                                        {getHostname(appUrl)}
                                                     </a>
                                                 </span>
                                             )}
@@ -205,7 +202,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             })}
                         </div>
                         {apiKeys.some(
-                            (k) => k.metadata?.["keyType"] === "publishable",
+                            (k) => k.metadata?.keyType === "publishable",
                         ) && (
                             <div className="flex justify-center mt-4">
                                 <p className="text-xs text-blue-700 bg-blue-100/60 px-4 py-2 rounded-full text-center">

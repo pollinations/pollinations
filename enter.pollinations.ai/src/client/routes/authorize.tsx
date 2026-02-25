@@ -10,20 +10,36 @@ import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
-const parseList = (val: unknown): string[] | null => {
+type Attribution = {
+    found: boolean;
+    userId?: string;
+    userName?: string;
+    appName?: string;
+    appUrl?: string;
+};
+
+function parseList(val: unknown): string[] | null {
     if (!val || typeof val !== "string") return null;
     const items = val
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
     return items.length ? items : null;
-};
+}
 
-const parseNumber = (val: unknown): number | null => {
+function parseNumber(val: unknown): number | null {
     if (!val) return null;
     const n = Number(val);
     return Number.isFinite(n) ? n : null;
-};
+}
+
+function safeParseUrl(url: string): URL | null {
+    try {
+        return new URL(url);
+    } catch {
+        return null;
+    }
+}
 
 export const Route = createFileRoute("/authorize")({
     component: AuthorizeComponent,
@@ -76,15 +92,12 @@ function AuthorizeComponent() {
     const [isAuthorizing, setIsAuthorizing] = useState(false);
     const [isSigningIn, setIsSigningIn] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [redirectHostname, setRedirectHostname] = useState<string>("");
-    const [isValidUrl, setIsValidUrl] = useState(false);
-    const [attribution, setAttribution] = useState<{
-        found: boolean;
-        userId?: string;
-        userName?: string;
-        appName?: string;
-        appUrl?: string;
-    } | null>(null);
+    const [attribution, setAttribution] = useState<Attribution | null>(null);
+
+    // Derive URL validity and hostname from redirect_url (no state needed)
+    const parsedRedirectUrl = safeParseUrl(redirect_url);
+    const isValidUrl = parsedRedirectUrl !== null;
+    const redirectHostname = parsedRedirectUrl?.hostname ?? "";
 
     const keyPermissions = useKeyPermissions({
         allowedModels: models,
@@ -95,59 +108,40 @@ function AuthorizeComponent() {
 
     useScrollLock();
 
-    // Fetch attribution info (best-effort)
-    useEffect(() => {
-        const params = new URLSearchParams();
-        if (app_key) params.set("app_key", app_key);
-        else if (redirect_url) params.set("redirect_url", redirect_url);
-
-        if (params.toString()) {
-            fetch(`/api/app-lookup?${params}`)
-                .then((r) => r.json())
-                .then((data) =>
-                    setAttribution(
-                        data as {
-                            found: boolean;
-                            userId?: string;
-                            userName?: string;
-                            appName?: string;
-                            appUrl?: string;
-                        },
-                    ),
-                )
-                .catch(() => {});
-        }
-    }, [app_key, redirect_url]);
-
+    // Validate redirect_url and fetch attribution info on mount
     useEffect(() => {
         if (!redirect_url) {
             setError("No redirect URL provided");
             return;
         }
-
-        try {
-            const url = new URL(redirect_url);
-            setRedirectHostname(url.hostname);
-            setIsValidUrl(true);
-        } catch {
+        if (!safeParseUrl(redirect_url)) {
             setError("Invalid redirect URL format");
+            return;
         }
-    }, [redirect_url]);
 
-    const handleSignIn = async () => {
+        const params = new URLSearchParams();
+        if (app_key) params.set("app_key", app_key);
+        else params.set("redirect_url", redirect_url);
+
+        fetch(`/api/app-lookup?${params}`)
+            .then((r) => r.json())
+            .then((data) => setAttribution(data as Attribution))
+            .catch(() => {});
+    }, [app_key, redirect_url]);
+
+    async function handleSignIn(): Promise<void> {
         setIsSigningIn(true);
-        const callbackURL = window.location.href;
         const { error } = await authClient.signIn.social({
             provider: "github",
-            callbackURL,
+            callbackURL: window.location.href,
         });
         if (error) {
             setIsSigningIn(false);
             setError("Sign in failed. Please try again.");
         }
-    };
+    }
 
-    const handleAuthorize = async () => {
+    async function handleAuthorize(): Promise<void> {
         if (!isValidUrl || isAuthorizing) return;
 
         setIsAuthorizing(true);
@@ -198,9 +192,9 @@ function AuthorizeComponent() {
                     },
                 );
                 if (!response.ok) {
-                    const error = await response.json();
+                    const errBody = await response.json();
                     throw new Error(
-                        `Key created but failed to set permissions: ${(error as { message?: string }).message || "Unknown error"}`,
+                        `Key created but failed to set permissions: ${(errBody as { message?: string }).message || "Unknown error"}`,
                     );
                 }
             }
@@ -212,15 +206,15 @@ function AuthorizeComponent() {
             setError(e instanceof Error ? e.message : "Authorization failed");
             setIsAuthorizing(false);
         }
-    };
+    }
 
-    const handleCancel = () => {
+    function handleCancel(): void {
         if (isValidUrl) {
             window.location.href = redirect_url;
         } else {
             navigate({ to: "/" });
         }
-    };
+    }
 
     if (isPending) {
         return (

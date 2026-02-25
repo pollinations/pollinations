@@ -1,5 +1,8 @@
 import type { Logger } from "@logtape/logtape";
-import { ELEVENLABS_VOICES, resolveElevenLabsVoiceId } from "@shared/registry/audio.ts";
+import {
+    ELEVENLABS_VOICES,
+    resolveElevenLabsVoiceId,
+} from "@shared/registry/audio.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -39,7 +42,7 @@ const CreateSpeechRequestSchema = z
             .default("alloy")
             .meta({
                 description: `The voice to use. Can be any preset name (${ELEVENLABS_VOICES.join(", ")}) OR a custom ElevenLabs voice ID (UUID from your dashboard).`,
-                example: "rachel OR your-custom-voice-uuid-1234567890abcdef",
+                example: "rachel",
             }),
         response_format: z
             .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])

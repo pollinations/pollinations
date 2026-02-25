@@ -102,7 +102,7 @@
         "type": "yesoreyeram-infinity-datasource",
         "uid": "P33A123E5D474E8F3"
       },
-      "description": "Breakdown of registered users by their subscription tier. Tiers determine daily free usage limits: Microbe ($0.10), Spore ($1), Seed ($3), Flower ($10), Nectar ($20).",
+      "description": "Breakdown of registered users by their subscription tier. Tiers determine free usage limits: Microbe ($0), Spore ($1.5/wk), Seed ($3/day), Flower ($10/day), Nectar ($20/day).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -273,7 +273,7 @@
         "type": "yesoreyeram-infinity-datasource",
         "uid": "P33A123E5D474E8F3"
       },
-      "description": "THEORETICAL MAXIMUM daily cost if every user fully consumed their tier allowance. Calculated as: (Microbe users × $0.10) + (Spore × $1) + (Seed × $3) + (Flower × $10) + (Nectar × $20). In practice, actual costs are much lower.",
+      "description": "THEORETICAL MAXIMUM daily cost if every user fully consumed their tier allowance. Calculated as: (Microbe users × $0) + (Spore × $1.5/week) + (Seed × $3) + (Flower × $10) + (Nectar × $20). In practice, actual costs are much lower.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -335,7 +335,7 @@
         "url_options": {
           "body_content_type": "application/json",
           "body_type": "raw",
-          "data": "{\"sql\":\"SELECT SUM(CASE tier WHEN 'microbe' THEN 0.1 WHEN 'spore' THEN 1 WHEN 'seed' THEN 3 WHEN 'flower' THEN 10 WHEN 'nectar' THEN 20 ELSE 0 END) as max_daily_liability FROM user\"}",
+          "data": "{\"sql\":\"SELECT SUM(CASE tier WHEN 'microbe' THEN 0 WHEN 'spore' THEN 1.5/7.0 WHEN 'seed' THEN 3 WHEN 'flower' THEN 10 WHEN 'nectar' THEN 20 ELSE 0 END) as max_daily_liability FROM user\"}",
           "method": "POST"
         }
       }],
@@ -539,7 +539,7 @@
             },
             "properties": [{
               "id": "displayName",
-              "value": "Microbe ($0.10/day)"
+              "value": "Microbe ($0/day)"
             }, {
               "id": "color",
               "value": {
@@ -555,7 +555,7 @@
             },
             "properties": [{
               "id": "displayName",
-              "value": "Spore ($1/day)"
+              "value": "Spore ($1.5/week)"
             }, {
               "id": "color",
               "value": {
@@ -652,7 +652,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "EFFICIENCY METRIC: What percentage of their daily allowance do users actually consume? Lower % = users don't use their full allocation = we save money. Example: If Spore users get $1/day but only use $0.33 on average, that's 33% usage rate.",
+      "description": "EFFICIENCY METRIC: What percentage of their allowance do users actually consume? Lower % = users don't use their full allocation = we save money. Example: If Spore users get $1.5/week (~$0.21/day) but only use $0.07 on average, that's 33% usage rate.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -683,7 +683,7 @@
             },
             "properties": [{
               "id": "displayName",
-              "value": "Microbe ($0.10/day)"
+              "value": "Microbe ($0/day)"
             }]
           },
           {
@@ -693,7 +693,7 @@
             },
             "properties": [{
               "id": "displayName",
-              "value": "Spore ($1/day)"
+              "value": "Spore ($1.5/week)"
             }]
           },
           {
@@ -759,7 +759,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 0.1)) * 100 as Microbe FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'microbe' AND is_billed_usage = true AND selected_meter_slug = 'v1:meter:tier'",
+          "rawSql": "SELECT (SUM(total_price) / NULLIF(uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 0, 0)) * 100 as Microbe FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'microbe' AND is_billed_usage = true AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "E"
         },
         {
@@ -769,7 +769,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 1)) * 100 as Spore FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'spore' AND is_billed_usage = true AND selected_meter_slug = 'v1:meter:tier'",
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * (1.5/7.0))) * 100 as Spore FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'spore' AND is_billed_usage = true AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "A"
         },
         {
@@ -816,7 +816,7 @@
       },
       "id": 300,
       "panels": [],
-      "title": "Financial Forecasting",
+      "title": "Tier Cost Analysis",
       "type": "row"
     },
     {
@@ -879,7 +879,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 33
+        "y": 29
       },
       "id": 8,
       "options": {
@@ -939,8 +939,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 12,
+        "w": 8,
+        "x": 0,
         "y": 25
       },
       "id": 9,
@@ -995,8 +995,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
+        "w": 8,
+        "x": 8,
         "y": 25
       },
       "id": 10,
@@ -1024,68 +1024,6 @@
         "refId": "A"
       }],
       "title": "Period Total Cost",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PAD1A0A25CD30D456"
-      },
-      "description": "SIMPLE PROJECTION: Takes average daily cost from selected period and multiplies by 30 days. Assumes usage stays constant (no growth). Formula: Avg Daily × 30.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }, {
-              "color": "yellow",
-              "value": 3000
-            }, {
-              "color": "red",
-              "value": 10000
-            }]
-          },
-          "unit": "currencyUSD"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 29
-      },
-      "id": 11,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 0,
-        "range": true,
-        "rawSql": "SELECT AVG(daily_cost) * 30 as projected_monthly_cost FROM (SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND selected_meter_slug = 'v1:meter:tier' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time)",
-        "refId": "A"
-      }],
-      "title": "Projected Monthly (30d)",
       "type": "stat"
     },
     {
@@ -1148,7 +1086,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 33
+        "y": 29
       },
       "id": 12,
       "options": {
@@ -1293,7 +1231,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 37
       },
       "id": 13,
       "options": {
@@ -1327,7 +1265,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "PROJECTIONS based on average daily cost: Next 30 Days = avg × 30, Next 90 Days = avg × 90. These assume constant usage rate. For growth-adjusted forecasts, multiply by expected user growth rate.",
+      "description": "PROJECTIONS based on average daily cost: Next 30 Days = avg × 30, Next 90 Days = avg × 90. Assumes constant usage rate (no growth factor).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1353,9 +1291,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 29
+        "w": 8,
+        "x": 16,
+        "y": 25
       },
       "id": 14,
       "options": {
@@ -1381,7 +1319,7 @@
         "rawSql": "SELECT\n  'Next 30 Days' as period,\n  AVG(daily_cost) * 30 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)\nUNION ALL\nSELECT\n  'Next 90 Days' as period,\n  AVG(daily_cost) * 90 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)",
         "refId": "A"
       }],
-      "title": "Growth-Adjusted Projections",
+      "title": "Projections (30d / 90d)",
       "type": "stat"
     },
     {
@@ -1390,7 +1328,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 49
+        "y": 45
       },
       "id": 400,
       "panels": [],
@@ -1938,7 +1876,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Top models used by Spore tier users ($1/day allowance). Shows request count and cost breakdown by tier vs pack meters.",
+      "description": "Top models used by Spore tier users ($1.5/week allowance). Shows request count and cost breakdown by tier vs pack meters.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2052,7 +1990,7 @@
         "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'spore'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
-      "title": "Spore ($1/day)",
+      "title": "Spore ($1.5/week)",
       "type": "table"
     },
     {
@@ -2060,7 +1998,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Top models used by Microbe tier users ($0.10/day allowance). Shows request count and cost breakdown by tier vs pack meters.",
+      "description": "Top models used by Microbe tier users ($0/day allowance). Shows request count and cost breakdown by tier vs pack meters.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2174,7 +2112,7 @@
         "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'microbe'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
-      "title": "Microbe ($0.10/day)",
+      "title": "Microbe ($0/day)",
       "type": "table"
     }
   ],

@@ -352,3 +352,5 @@ debugsession_*/
 # Agent communication file (temporary)
 agent-communication.md
 .claude/settings.local.json
+.claude/MAIN.md
+.claude/SETUP.md

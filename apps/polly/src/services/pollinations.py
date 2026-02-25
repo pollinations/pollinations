@@ -551,8 +551,9 @@ class PollinationsClient:
         last_error = None
 
         for attempt in range(MAX_RETRIES):
-            # Generate new random seed for each attempt (unless caller specified one)
-            seed = (api_params or {}).get("seed") or random.randint(0, MAX_SEED)
+            # Use caller's seed if provided (default 42), otherwise random per attempt
+            caller_seed = (api_params or {}).get("seed") if api_params else None
+            seed = caller_seed if caller_seed is not None else 42
 
             payload = {
                 "model": config.pollinations_model,

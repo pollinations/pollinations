@@ -76,6 +76,34 @@ class ChatRequest(BaseModel):
     model_config = {"extra": "ignore"}
 
 
+# OpenAI params to pass through to the underlying LLM
+_PASSTHROUGH_KEYS = (
+    "temperature",
+    "max_tokens",
+    "top_p",
+    "top_k",
+    "frequency_penalty",
+    "presence_penalty",
+    "repetition_penalty",
+    "logit_bias",
+    "stop",
+    "seed",
+    "n",
+    "response_format",
+    "reasoning_effort",
+    "thinking",
+    "thinking_budget",
+    "modalities",
+    "audio",
+    "logprobs",
+    "top_logprobs",
+    "parallel_tool_calls",
+    "user",
+    "function_call",
+    "functions",
+)
+
+
 def create_api_app(pollinations_client, config):
     """Create FastAPI app that shares the bot's services.
 
@@ -108,6 +136,12 @@ def create_api_app(pollinations_client, config):
             )
         _auth_override.set(auth_header)
 
+        if request.stream:
+            raise HTTPException(
+                status_code=400,
+                detail="Streaming is not supported for the polly model. Use stream=false.",
+            )
+
         thread_history = None
 
         if len(request.messages) > 1:
@@ -122,31 +156,6 @@ def create_api_app(pollinations_client, config):
 
         # Collect ALL OpenAI params to pass through to the underlying model
         api_params: dict[str, Any] = {}
-        _PASSTHROUGH_KEYS = (
-            "temperature",
-            "max_tokens",
-            "top_p",
-            "top_k",
-            "frequency_penalty",
-            "presence_penalty",
-            "repetition_penalty",
-            "logit_bias",
-            "stop",
-            "seed",
-            "n",
-            "response_format",
-            "reasoning_effort",
-            "thinking",
-            "thinking_budget",
-            "modalities",
-            "audio",
-            "logprobs",
-            "top_logprobs",
-            "parallel_tool_calls",
-            "user",
-            "function_call",
-            "functions",
-        )
         for key in _PASSTHROUGH_KEYS:
             val = getattr(request, key, None)
             if val is not None:
@@ -192,7 +201,7 @@ def create_api_app(pollinations_client, config):
                     {
                         "index": 0,
                         "message": message,
-                        "finish_reason": "stop",
+                        "finish_reason": "tool_calls" if tool_calls else "stop",
                     }
                 ],
                 "usage": usage,

@@ -576,23 +576,22 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         isSpecialized: true,
     },
-    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
-    // "qwen-character": {
-    //     aliases: [],
-    //     modelId: "qwen-character",
-    //     provider: "airforce",
-    //     cost: [
-    //         {
-    //             date: new Date("2026-02-09").getTime(),
-    //             promptTextTokens: perMillion(0.01), // $0.01/M via api.airforce
-    //             completionTextTokens: perMillion(0.01),
-    //         },
-    //     ],
-    //     description:
-    //         "Qwen Character (api.airforce) - roleplay & character chat",
-    //     inputModalities: ["text"],
-    //     outputModalities: ["text"],
-    //     isSpecialized: true,
-    //     alpha: true,
-    // },
+    "qwen-character": {
+        aliases: [],
+        modelId: "qwen-character",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-02-09").getTime(),
+                promptTextTokens: perMillion(0.01), // $0.01/M via api.airforce
+                completionTextTokens: perMillion(0.01),
+            },
+        ],
+        description:
+            "Qwen Character (api.airforce) - roleplay & character chat",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        isSpecialized: true,
+        alpha: true,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

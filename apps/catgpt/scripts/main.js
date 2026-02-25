@@ -6,7 +6,7 @@ import { downloadMeme, shareMeme } from './interactions.js';
 import { handleImageUpload, setUploadedImageUrl, clearUploadedImageUrl } from './imageHandler.js';
 import { loadUserMemes, loadExamples } from './memeLoader.js';
 import { cleanupOldMemes, getSavedMemes } from './storage.js';
-import { getURLPrompt, setURLPrompt, getRandomItem, showNotification } from './utilities.js';
+import { getURLPrompt, getRandomItem, showNotification } from './utilities.js';
 import { addFloatingEmojis, addAnimationStyles } from './animations.js';
 import { KONAMI_SEQUENCE, CAT_FACTS } from './config.js';
 

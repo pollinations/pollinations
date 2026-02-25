@@ -1,11 +1,11 @@
-name = "pollinations-media"
+name = "pollinations-rhizome"
 main = "src/index.ts"
 compatibility_date = "2025-11-12"
 compatibility_flags = ["nodejs_compat"]
 
 # Local development server
 [env.development]
-name = "pollinations-media-dev"
+name = "pollinations-rhizome-dev"
 
 [env.development.vars]
 MAX_FILE_SIZE = "10485760"  # 10MB in bytes
@@ -16,10 +16,13 @@ bucket_name = "pollinations-media-dev"
 
 # Production environment
 [env.production]
-name = "pollinations-media-prod"
+name = "pollinations-rhizome-prod"
+
+[env.production.vars]
+MAX_FILE_SIZE = "10485760"  # 10MB in bytes
 
 [[env.production.routes]]
-pattern = "media.pollinations.ai"
+pattern = "rhizome.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 

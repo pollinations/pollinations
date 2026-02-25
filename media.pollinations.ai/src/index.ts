@@ -1,9 +1,39 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
+const DOMAIN = "rhizome.pollinations.ai";
+const ENTER_VERIFY_URL = "https://gen.pollinations.ai/api/account/key";
+
 interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
+}
+
+interface AuthResult {
+    valid: boolean;
+    type: string;
+    name: string | null;
+}
+
+async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
+    try {
+        const res = await fetch(ENTER_VERIFY_URL, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (!res.ok) return null;
+        const data = await res.json<AuthResult>();
+        return data.valid ? data : null;
+    } catch {
+        return null;
+    }
+}
+
+function extractApiKey(req: Request): string | null {
+    const auth = req.headers.get("authorization");
+    const match = auth?.match(/^Bearer (.+)$/);
+    if (match?.[1]) return match[1];
+    const url = new URL(req.url);
+    return url.searchParams.get("key");
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -12,18 +42,18 @@ app.use(
     "*",
     cors({
         origin: "*",
-        allowMethods: ["GET", "POST", "OPTIONS"],
-        allowHeaders: ["Content-Type"],
+        allowMethods: ["GET", "POST", "HEAD", "OPTIONS"],
+        allowHeaders: ["Content-Type", "Authorization"],
         exposeHeaders: ["X-Content-Hash", "X-Content-Type", "X-Content-Size"],
     }),
 );
 
 app.get("/", (c) => {
     return c.json({
-        service: "media.pollinations.ai",
+        service: DOMAIN,
         version: "1.0.0",
         endpoints: {
-            upload: "POST /upload",
+            upload: "POST /upload (requires API key)",
             retrieve: "GET /:hash",
         },
         limits: {
@@ -34,6 +64,15 @@ app.get("/", (c) => {
 });
 
 app.post("/upload", async (c) => {
+    const apiKey = extractApiKey(c.req.raw);
+    if (!apiKey) {
+        return c.json({ error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>" }, 401);
+    }
+    const authResult = await verifyApiKey(apiKey);
+    if (!authResult) {
+        return c.json({ error: "Invalid or expired API key" }, 401);
+    }
+
     const maxSize = parseInt(c.env.MAX_FILE_SIZE || "10485760");
 
     let fileBuffer: ArrayBuffer;
@@ -45,88 +84,49 @@ app.post("/upload", async (c) => {
     try {
         if (requestContentType.includes("multipart/form-data")) {
             const formData = await c.req.formData();
-            const file : any = formData.get("file");
+            const file: any = formData.get("file");
 
             if (!file || !(file instanceof File)) {
-                return c.json(
-                    {
-                        error: "No file provided. Use 'file' field in form-data.",
-                    },
-                    400,
-                );
+                return c.json({ error: "No file provided. Use 'file' field in form-data." }, 400);
             }
 
             if (file.size > maxSize) {
-                return c.json(
-                    {
-                        error: `File too large. Max size: ${maxSize / 1024 / 1024}MB`,
-                    },
-                    413,
-                );
+                return c.json({ error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` }, 413);
             }
 
             fileBuffer = await file.arrayBuffer();
             contentType = file.type || detectContentType(file.name);
             fileName = file.name;
         } else if (requestContentType.includes("application/json")) {
-            try {
-                const body = await c.req.json<{
-                    data: string;
-                    contentType?: string;
-                    name?: string;
-                }>();
+            const body = await c.req.json<{ data: string; contentType?: string; name?: string }>();
 
-                if (!body.data) {
-                    return c.json(
-                        { error: "Missing 'data' field in JSON body" },
-                        400,
-                    );
-                }
-
-                const base64Data = body.data.includes(",")
-                    ? body.data.split(",")[1]
-                    : body.data;
-
-                const binaryString = atob(base64Data);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                fileBuffer = bytes.buffer;
-
-                if (fileBuffer.byteLength > maxSize) {
-                    return c.json(
-                        {
-                            error: `File too large. Max size: ${maxSize / 1024 / 1024}MB`,
-                        },
-                        413,
-                    );
-                }
-
-                if (fileBuffer.byteLength === 0) {
-                    return c.json({ error: "Empty file" }, 400);
-                }
-
-                contentType = body.contentType || "application/octet-stream";
-                fileName = body.name;
-            } catch (parseError) {
-                return c.json(
-                    { error: "Invalid JSON or base64 data" },
-                    400,
-                );
+            if (!body.data) {
+                return c.json({ error: "Missing 'data' field in JSON body" }, 400);
             }
+
+            const base64Data = body.data.includes(",") ? body.data.split(",")[1] : body.data;
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            fileBuffer = bytes.buffer;
+
+            if (fileBuffer.byteLength > maxSize) {
+                return c.json({ error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` }, 413);
+            }
+            if (fileBuffer.byteLength === 0) {
+                return c.json({ error: "Empty file" }, 400);
+            }
+
+            contentType = body.contentType || "application/octet-stream";
+            fileName = body.name;
         } else {
             fileBuffer = await c.req.arrayBuffer();
 
             if (fileBuffer.byteLength > maxSize) {
-                return c.json(
-                    {
-                        error: `File too large. Max size: ${maxSize / 1024 / 1024}MB`,
-                    },
-                    413,
-                );
+                return c.json({ error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` }, 413);
             }
-
             if (fileBuffer.byteLength === 0) {
                 return c.json({ error: "Empty file" }, 400);
             }
@@ -135,13 +135,10 @@ app.post("/upload", async (c) => {
         }
 
         if (!isValidMediaType(contentType)) {
-            return c.json(
-                {
-                    error: "Invalid file type. Supported: image/*, audio/*, video/*",
-                    received: contentType,
-                },
-                415,
-            );
+            return c.json({
+                error: "Invalid file type. Supported: image/*, audio/*, video/*",
+                received: contentType,
+            }, 415);
         }
 
         const hash = await generateHash(fileBuffer);
@@ -150,7 +147,7 @@ app.post("/upload", async (c) => {
         if (existing) {
             return c.json({
                 id: hash,
-                url: `https://media.pollinations.ai/${hash}`,
+                url: `https://${DOMAIN}/${hash}`,
                 contentType: existing.httpMetadata?.contentType || contentType,
                 size: existing.size,
                 duplicate: true,
@@ -165,12 +162,14 @@ app.post("/upload", async (c) => {
             customMetadata: {
                 uploadedAt: new Date().toISOString(),
                 originalName: fileName || "",
+                uploadedBy: authResult.name || "",
+                keyType: authResult.type,
             },
         });
 
         return c.json({
             id: hash,
-            url: `https://media.pollinations.ai/${hash}`,
+            url: `https://${DOMAIN}/${hash}`,
             contentType,
             size: fileBuffer.byteLength,
             duplicate: false,
@@ -196,10 +195,7 @@ app.get("/:hash", async (c) => {
         }
 
         const headers = new Headers();
-        headers.set(
-            "Content-Type",
-            object.httpMetadata?.contentType || "application/octet-stream",
-        );
+        headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
         headers.set("Cache-Control", "public, max-age=31536000, immutable");
         headers.set("X-Content-Hash", hash);
         headers.set("X-Content-Size", object.size.toString());
@@ -230,10 +226,7 @@ app.on("HEAD", "/:hash", async (c) => {
         }
 
         const headers = new Headers();
-        headers.set(
-            "Content-Type",
-            object.httpMetadata?.contentType || "application/octet-stream",
-        );
+        headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
         headers.set("Content-Length", object.size.toString());
         headers.set("Cache-Control", "public, max-age=31536000, immutable");
         headers.set("X-Content-Hash", hash);

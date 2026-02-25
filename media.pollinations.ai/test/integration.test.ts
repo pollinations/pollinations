@@ -57,7 +57,7 @@ describe("media.pollinations.ai", () => {
         });
         expect(uploadRes.status).toBe(200);
         const upload = await uploadRes.json() as any;
-        expect(upload.id).toMatch(/^[a-f0-9]{12}$/);
+        expect(upload.id).toMatch(/^[a-f0-9]{16}$/);
         expect(upload.url).toContain(upload.id);
         expect(upload.contentType).toBe("image/png");
         expect(upload.size).toBe(TINY_PNG.length);
@@ -95,7 +95,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("GET /:nonexistent-hash returns 404", async () => {
-        const res = await fetch(`${BASE_URL}/000000000000`);
+        const res = await fetch(`${BASE_URL}/0000000000000000`);
         expect(res.status).toBe(404);
     });
 

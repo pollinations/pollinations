@@ -41,7 +41,7 @@ function extractApiKey(req: Request): string | null {
 // --- Zod schemas ---
 
 const UploadResponseSchema = z.object({
-    id: z.string().describe("12-char hex content hash"),
+    id: z.string().describe("16-char hex content hash"),
     url: z.string().describe("Public retrieval URL"),
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
@@ -66,7 +66,7 @@ api.post(
         responses: {
             200: { description: "Upload successful", content: { "application/json": { schema: resolver(UploadResponseSchema) } } },
             401: { description: "Missing or invalid API key", content: { "application/json": { schema: resolver(ErrorSchema) } } },
-            413: { description: "File too large (max 10MB)", content: { "application/json": { schema: resolver(ErrorSchema) } } },
+            413: { description: "File too large (max 24MB)", content: { "application/json": { schema: resolver(ErrorSchema) } } },
             415: { description: "Unsupported media type", content: { "application/json": { schema: resolver(ErrorSchema) } } },
         },
     }),
@@ -80,7 +80,13 @@ api.post(
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
 
-        const maxSize = parseInt(c.env.MAX_FILE_SIZE || "10485760");
+        const maxSize = parseInt(c.env.MAX_FILE_SIZE || "25165824", 10);
+
+        // Fail fast: reject oversized requests before reading the body into memory
+        const contentLength = parseInt(c.req.header("content-length") || "0", 10);
+        if (contentLength > maxSize) {
+            return c.json({ error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` }, 413);
+        }
 
         let fileBuffer: ArrayBuffer;
         let contentType: string;
@@ -91,9 +97,9 @@ api.post(
         try {
             if (requestContentType.includes("multipart/form-data")) {
                 const formData = await c.req.formData();
-                const file: any = formData.get("file");
+                const file = formData.get("file") as File | null;
 
-                if (!file || !(file instanceof File)) {
+                if (!(file instanceof File)) {
                     return c.json({ error: "No file provided. Use 'file' field in form-data." }, 400);
                 }
 
@@ -203,7 +209,7 @@ api.get(
     async (c) => {
         const hash = c.req.param("hash");
 
-        if (!/^[a-f0-9]{12}$/i.test(hash)) {
+        if (!/^[a-f0-9]{16}$/i.test(hash)) {
             return c.json({ error: "Invalid hash format" }, 400);
         }
 
@@ -248,7 +254,7 @@ api.on(
     async (c) => {
         const hash = c.req.param("hash");
 
-        if (!/^[a-f0-9]{12}$/i.test(hash)) {
+        if (!/^[a-f0-9]{16}$/i.test(hash)) {
             return new Response(null, { status: 400 });
         }
 
@@ -300,7 +306,7 @@ app.get("/", (c) => {
             docs: "GET /openapi.json",
         },
         limits: {
-            maxFileSize: "10MB",
+            maxFileSize: "24MB",
             supportedTypes: ["image/*", "audio/*", "video/*"],
         },
     });
@@ -339,11 +345,12 @@ app.route("/", api);
 
 // --- Helpers ---
 
+// 16 hex chars = 64 bits → collision expected ~4B files (birthday paradox)
 async function generateHash(buffer: ArrayBuffer): Promise<string> {
     const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const fullHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-    return fullHash.substring(0, 12);
+    return fullHash.substring(0, 16);
 }
 
 function isValidMediaType(contentType: string): boolean {

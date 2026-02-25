@@ -30,7 +30,7 @@ function Tip({
     return (
         <div className="group/tip relative">
             {children}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-surface-card text-text-body-main text-[10px] rounded-tag shadow-lg border border-border-main opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-input-background text-text-body-main text-[10px] rounded-tag shadow-lg border border-border-main opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                 {label}
             </div>
         </div>

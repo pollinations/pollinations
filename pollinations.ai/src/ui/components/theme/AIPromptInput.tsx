@@ -184,9 +184,9 @@ export const ${capitalizedName}BackgroundHtml = ${
                         {copy.themeLoginPrompt}
                     </span>
                 </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                     {copy.themeLoginTooltip}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-surface-card" />
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
                 </div>
             </div>
         );

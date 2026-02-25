@@ -73,7 +73,7 @@ function Layout() {
                                 >
                                     <Logo className="w-20 h-20 object-contain" />
                                 </button>
-                                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-surface-card text-text-body-main text-[10px] rounded-tag shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-input-background text-text-body-main text-[10px] rounded-tag shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {layoutCopy.changeThemeTooltip}
                                 </div>
                             </div>

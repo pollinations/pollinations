@@ -91,40 +91,13 @@ Keep your cats happy with premium pet food from our sponsor [PuraPep](https://ww
 4. Watch as CatGPT responds with feline wisdom!
 5. Download or share your creation
 
-## 💻 Local Development
-
-```bash
-# Clone the repository
-git clone https://github.com/pollinations/catgpt.git
-
-# Navigate to the app
-cd catgpt
-
-# Open in your browser
-open index.html
-# or use a local server
-python -m http.server 8000
-```
-
-## 🚀 Deployment
-
-### GitHub Pages (Recommended)
-
-1. Go to your forked repository on GitHub
-2. Click on **Settings** → **Pages**
-3. Under **Source**, select **Deploy from a branch**
-4. Choose **main** branch and **/ (root)** folder
-5. Click **Save**
-6. Your site will be live at `https://[organization].github.io/catgpt/`
-
-The site should be available within a few minutes!
-
 ## 🤝 Credits & Collaboration
 
 - **Original CatGPT Creator**: [Tanika Godbole](https://www.instagram.com/tanikagodbole/)
 - **AI Technology**: [pollinations.ai](https://pollinations.ai)
 - **Idea Credit**: Dr. Julia Degen
 - **Sponsor**: [PuraPep](https://www.purapep.de/) - Premium pet food for happy cats 🐾
+- Developed By [Ayushman Bhattacharya](https://github.com/Circuit-Overtime) & [Thomash Haferlach](https://github.com/voodoohop)
 
 ## 📝 License
 

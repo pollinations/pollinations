@@ -55,10 +55,126 @@ app.get("/", (c) => {
         endpoints: {
             upload: "POST /upload (requires API key)",
             retrieve: "GET /:hash",
+            docs: "GET /openapi.json",
         },
         limits: {
             maxFileSize: "10MB",
             supportedTypes: ["image/*", "audio/*", "video/*"],
+        },
+    });
+});
+
+app.get("/openapi.json", (c) => {
+    return c.json({
+        openapi: "3.1.0",
+        info: {
+            title: "rhizome.pollinations.ai",
+            version: "1.0.0",
+            description: "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public.",
+        },
+        servers: [{ url: `https://${DOMAIN}` }],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: "http",
+                    scheme: "bearer",
+                    bearerFormat: "API Key",
+                    description: "pollinations.ai API key (pk_ or sk_)",
+                },
+            },
+        },
+        paths: {
+            "/upload": {
+                post: {
+                    summary: "Upload media",
+                    description: "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.",
+                    security: [{ bearerAuth: [] }],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            "multipart/form-data": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        file: { type: "string", format: "binary", description: "Media file (image/*, audio/*, video/*)" },
+                                    },
+                                    required: ["file"],
+                                },
+                            },
+                            "image/*": { schema: { type: "string", format: "binary" } },
+                            "audio/*": { schema: { type: "string", format: "binary" } },
+                            "video/*": { schema: { type: "string", format: "binary" } },
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: { type: "string", description: "Base64-encoded file data (with or without data URI prefix)" },
+                                        contentType: { type: "string", description: "MIME type (e.g. image/png)" },
+                                        name: { type: "string", description: "Original filename" },
+                                    },
+                                    required: ["data"],
+                                },
+                            },
+                        },
+                    },
+                    responses: {
+                        "200": {
+                            description: "Upload successful",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            id: { type: "string", description: "12-char hex hash", example: "a1b2c3d4e5f6" },
+                                            url: { type: "string", description: "Public retrieval URL" },
+                                            contentType: { type: "string" },
+                                            size: { type: "integer", description: "File size in bytes" },
+                                            duplicate: { type: "boolean", description: "true if file already existed" },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        "401": { description: "Missing or invalid API key" },
+                        "413": { description: "File too large (max 10MB)" },
+                        "415": { description: "Unsupported media type" },
+                    },
+                },
+            },
+            "/{hash}": {
+                get: {
+                    summary: "Retrieve media",
+                    description: "Get a file by its content hash. No authentication required. Responses are cached immutably.",
+                    parameters: [{
+                        name: "hash",
+                        in: "path",
+                        required: true,
+                        schema: { type: "string", pattern: "^[a-f0-9]{12}$" },
+                        description: "12-character hex content hash",
+                    }],
+                    responses: {
+                        "200": { description: "File content with appropriate Content-Type" },
+                        "400": { description: "Invalid hash format" },
+                        "404": { description: "File not found" },
+                    },
+                },
+                head: {
+                    summary: "Check if media exists",
+                    description: "Check existence and metadata without downloading the file.",
+                    parameters: [{
+                        name: "hash",
+                        in: "path",
+                        required: true,
+                        schema: { type: "string", pattern: "^[a-f0-9]{12}$" },
+                        description: "12-character hex content hash",
+                    }],
+                    responses: {
+                        "200": { description: "File exists (headers include Content-Type, Content-Length, X-Content-Hash)" },
+                        "400": { description: "Invalid hash format" },
+                        "404": { description: "File not found" },
+                    },
+                },
+            },
         },
     });
 });

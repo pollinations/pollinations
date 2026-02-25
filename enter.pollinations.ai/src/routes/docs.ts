@@ -66,6 +66,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 theme: "saturn",
                 sources: [
                     { url: "/api/docs/open-api/generate-schema", title: "API" },
+                    { url: "https://rhizome.pollinations.ai/openapi.json", title: "Rhizome" },
                     // Include better-auth docs only in development mode
                     ...(c.env.ENVIRONMENT === "development"
                         ? [

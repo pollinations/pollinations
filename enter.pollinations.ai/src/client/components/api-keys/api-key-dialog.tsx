@@ -63,6 +63,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useScrollLock(isOpen);
 
@@ -82,6 +83,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setIsSubmitting(true);
+        setError(null);
         try {
             const isPublishable = keyType === "publishable";
             const newKey = await onSubmit({
@@ -92,6 +94,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 ...(isPublishable && appUrl && { appUrl }),
             });
             setCreatedKey(newKey);
+        } catch (err) {
+            setError(
+                err instanceof Error ? err.message : "Failed to create key",
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -135,6 +141,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 if (open) {
                     setCreatedKey(null);
                     setCopied(false);
+                    setError(null);
                     setName(generateFunName());
                     setAppUrl("");
                     setKeyType(simplified ? "publishable" : "secret");
@@ -185,6 +192,11 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 overscrollBehavior: "contain",
                             }}
                         >
+                            {error && (
+                                <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+                                    {error}
+                                </p>
+                            )}
                             {!simplified && (
                                 <Field.Root>
                                     <div className="grid grid-cols-2 gap-3">

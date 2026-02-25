@@ -1,32 +1,32 @@
 // Error Handling and Retry Logic
 
-import { showNotification, getRandomItem } from './utilities.js';
-import { startCatAnimation, stopCatAnimation } from './animations.js';
-import { ERROR_MESSAGES } from './config.js';
+import { startCatAnimation, stopCatAnimation } from "./animations.js";
+import { ERROR_MESSAGES } from "./config.js";
+import { getRandomItem, showNotification } from "./utilities.js";
 
 export function handleImageError(errorType = 'general') {
     const randomMessage = getRandomItem(ERROR_MESSAGES);
-    
+
     let specificMessage;
-    if (errorType === 'timeout') {
+    if (errorType === "timeout") {
         specificMessage = `⏰ This cat took too long to respond... probably distracted by a laser pointer! ${randomMessage}`;
     } else {
         specificMessage = randomMessage;
     }
-    
-    showNotification(specificMessage, 'error');
+
+    showNotification(specificMessage, "error");
     stopCatAnimation();
-    
+
     startRetryCountdown();
 }
 
 export function startRetryCountdown() {
     let countdown = 10;
-    
-    startCatAnimation('retry');
-    
-    const retryContainer = document.createElement('div');
-    retryContainer.id = 'retryContainer';
+
+    startCatAnimation("retry");
+
+    const retryContainer = document.createElement("div");
+    retryContainer.id = "retryContainer";
     retryContainer.style.cssText = `
         position: fixed;
         top: 50%;
@@ -83,34 +83,34 @@ export function startRetryCountdown() {
         margin-top: 1rem;
         transition: all 0.3s;
     `;
-    
+
     retryContainer.appendChild(title);
     retryContainer.appendChild(countdownDisplay);
     retryContainer.appendChild(subtitle);
     retryContainer.appendChild(cancelBtn);
     document.body.appendChild(retryContainer);
-    
+
     const countdownInterval = setInterval(() => {
         countdown--;
         countdownDisplay.textContent = countdown;
-        
+
         if (countdown <= 0) {
             clearInterval(countdownInterval);
             retryContainer.remove();
             stopCatAnimation();
-            
+
             // Import and call generateMeme to retry
-            import('./generator.js').then(({ generateMeme }) => {
+            import("./generator.js").then(({ generateMeme }) => {
                 generateMeme();
             });
         }
     }, 1000);
-    
-    cancelBtn.addEventListener('click', () => {
+
+    cancelBtn.addEventListener("click", () => {
         clearInterval(countdownInterval);
         retryContainer.remove();
         stopCatAnimation();
     });
-    
+
     countdownDisplay.textContent = countdown;
 }

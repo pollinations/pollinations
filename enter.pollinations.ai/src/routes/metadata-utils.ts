@@ -7,8 +7,9 @@ export function parseMetadata(
 ): Record<string, unknown> {
     if (!raw) return {};
     try {
-        const parsed = JSON.parse(raw);
-        return typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+        let parsed = JSON.parse(raw);
+        if (typeof parsed === "string") parsed = JSON.parse(parsed);
+        return parsed && typeof parsed === "object" ? parsed : {};
     } catch {
         return {};
     }

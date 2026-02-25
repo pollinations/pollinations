@@ -283,6 +283,22 @@ export const apiKeysRoutes = new Hono<Env>()
 
             const db = drizzle(c.env.DB, { schema });
             const existingKey = await requireOwnedKey(db, id, user.id);
+
+            // Check for duplicate appUrl across all keys
+            if (metadataUpdate.appUrl) {
+                const allKeys = await db.query.apikey.findMany();
+                const duplicate = allKeys.find((k) => {
+                    if (k.id === id) return false;
+                    const meta = parseMetadata(k.metadata);
+                    return meta.appUrl === metadataUpdate.appUrl;
+                });
+                if (duplicate) {
+                    throw new HTTPException(409, {
+                        message: `This URL is already registered. Please use a different URL.`,
+                    });
+                }
+            }
+
             const metadata = await updateKeyMetadata(
                 db,
                 id,

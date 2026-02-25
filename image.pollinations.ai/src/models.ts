@@ -104,7 +104,7 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // Alibaba Wan 2.6 - Video generation with audio (DashScope only, airforce disabled)
+    // Alibaba Wan 2.6 - Video generation with audio
     wan: {
         type: "alibaba-dashscope-video",
         enhance: false,

@@ -65,17 +65,12 @@ function HelloPage() {
 
                 <Divider />
 
-                {/* Section — For builders */}
+                {/* Section — Flywheel & Tiers */}
                 <div className="mb-12">
-                    <Heading variant="section" spacing="comfortable">
-                        {pageCopy.buildersTitle}
-                    </Heading>
-                    <Body spacing="comfortable">{pageCopy.buildersBody}</Body>
-
                     {/* Row 1: Flywheel (left) + explanation (right) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mb-10">
                         <FlywheelRing pageCopy={pageCopy} />
-                        <div>
+                        <div className="max-w-xs md:ml-8">
                             <Body spacing="comfortable">
                                 {pageCopy.flywheelBody}
                             </Body>
@@ -86,14 +81,22 @@ function HelloPage() {
                     </div>
 
                     {/* Row 2: Explanation (left) + Tier cards (right) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                         {/* Tier explanation */}
-                        <div>
+                        <div className="max-w-sm md:ml-8">
                             <Body spacing="comfortable">
                                 {pageCopy.tierBody}
                             </Body>
-                            <div className="bg-border-accent/10 border-2 border-border-accent/30 border-r-4 border-b-4 p-4 mb-4">
-                                <span className="font-headline text-base font-black text-text-accent">
+                            <a
+                                href={LINKS.enterTiersFaq}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-headline text-base font-black text-text-highlight hover:underline mb-4 inline-block"
+                            >
+                                {pageCopy.tierHowLink}
+                            </a>
+                            <div className="bg-border-accent/10 border-2 border-border-accent/30 border-r-4 border-b-4 p-4 inline-block text-left">
+                                <span className="font-headline text-xl font-black text-yellow">
                                     {pageCopy.usersTitle}
                                 </span>
                                 <Body
@@ -115,7 +118,7 @@ function HelloPage() {
                         </div>
 
                         {/* Tier ladder: Nectar (top) → Flower → Seed (bottom) */}
-                        <div className="relative flex flex-col gap-4 pl-6 max-w-[300px] lg:mx-auto">
+                        <div className="relative flex flex-col gap-4 pl-6 max-w-[300px] md:ml-8">
                             {/* Gradient progression line */}
                             <div
                                 className="absolute left-0 top-2 bottom-2 w-[3px]"
@@ -182,14 +185,6 @@ function HelloPage() {
                             ))}
                         </div>
                     </div>
-                    <a
-                        href={LINKS.enterTiersFaq}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-headline text-base font-black text-text-highlight hover:underline mt-4 inline-block"
-                    >
-                        {pageCopy.tierHowLink}
-                    </a>
                 </div>
 
                 <Divider />
@@ -218,7 +213,7 @@ function HelloPage() {
                                         className="py-1"
                                     >
                                         <p className="font-body text-base text-text-body-secondary leading-relaxed">
-                                            <span className="shrink-0 bg-button-primary-bg text-text-on-color px-1.5 py-0.5 font-mono font-black text-xs rounded-tag mr-2">
+                                            <span className="shrink-0 text-yellow font-mono font-black text-xs mr-2">
                                                 {item.date}
                                             </span>
                                             <span className="mr-2">

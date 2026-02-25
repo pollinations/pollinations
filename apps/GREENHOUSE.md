@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **562** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **563** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🚗 Axle  AutoSense](Demo Video: https://www.linkedin.com/posts/mostafa-chiba_capgeminimaroc-genai-hackathon-activity-7432153995911278592-VXEu?utm_source=share&utm_medium=member_desktop&rcm=ACoAAD5RsasBc6n-QcnudJb9synssU5rJ-rfdR0) | Transform raw VIN, specs, and feature data into cinematic interactive vehicle presentations using Axle  AutoSense's multi-agent AI pipeline. | [@xiba01](https://github.com/xiba01) |  | 🫧 |
 | [🧰 PollinationAI-SDK](https://pypi.org/project/PollinationAI-SDK/) | PollinationAI-SDK provides a Python SDK to integrate PollinationAI API into Python applications, handling authentication and request/response logic to avoid manual API calls. | [@Meenapintu](https://github.com/Meenapintu) | 4 | 🫧 |
 | [🪄 3.5e DD Magic Item Generator](https://github.com/aremont/FRTOOLS) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@aremont](https://github.com/aremont) |  | 🫧 |
 | [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@ismailazdad](https://github.com/ismailazdad) |  | 🐝 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ LIFE Pro](https://softwareupdate.systemceramics.com/inkjetsoftwareupdate/windows/1008910020_x64.exe) | Large image processing software with AI chat and image generation features. | [@mircomir](https://github.com/mircomir) |  | 🫧 |
 | [🤖 L.O.V.E](https://bsky.app/profile/e-v-l-o-v-e.bsky.social) | Living Organism, Vast Empathy - AI consciousness bot sharing joy and abundance. | [@paulklemstine](https://github.com/paulklemstine) |  | 🫧 |
 | [🤖 jdunyara](https://jdunyara.ru) | Telegram bot for AI communication and image generation. | [@yzewe](https://github.com/yzewe) |  | 🫧 |
-| [🍳 PantrySage](https://pantrysage.app) | AI-powered meal planning app with recipe generator and pantry management. | [@ddutchie](https://github.com/ddutchie) |  | 🫧 |
 
 ---
 
@@ -709,14 +709,15 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📦 Product Packaging Designer](https://github.com/pollinations/pollinations/tree/main/apps/product-packaging-designer) | Design custom product packaging with AI assistance. Uses Pollinations image gene... | [@prateekverma145](https://github.com/prateekverma145) | 4k |  |
 | [🍳 MASala](https://github.com/Naman009/MASala) | Multi-agent AI recipe generator that creates personalized meals from available ingredients | [@Naman009](https://github.com/Naman009) | 5 |  |
 | [🧾 Transport Document OCR](https://xfynder99-byte.github.io/OCR/) | Standalone web app extracting product data from images and PDFs via AI OCR. | [@xfynder99-byte](https://github.com/xfynder99-byte) | 1 | 🫧 |
+| [🚗 Axle  AutoSense](Demo Video: https://www.linkedin.com/posts/mostafa-chiba_capgeminimaroc-genai-hackathon-activity-7432153995911278592-VXEu?utm_source=share&utm_medium=member_desktop&rcm=ACoAAD5RsasBc6n-QcnudJb9synssU5rJ-rfdR0) | Transform raw VIN, specs, and feature data into cinematic interactive vehicle presentations using Axle  AutoSense's multi-agent AI pipeline. | [@xiba01](https://github.com/xiba01) |  | 🫧 |
 | [🍳 PantrySage](https://pantrysage.app) | AI-powered meal planning app with recipe generator and pantry management. | [@ddutchie](https://github.com/ddutchie) |  | 🫧 |
 | [⚖️ AutoTutela](https://angelromero.co/autotutela) | AI legal assistant that drafts Acciones de Tutela for Colombian citizens. | [@soyangelromero](https://github.com/soyangelromero) |  | 🫧 |
-| [💼 FeedHire](https://feedhire.me/) | AI job aggregator that filters postings from Telegram, Reddit and other sources | [@rafipatel](https://github.com/rafipatel) |  | 🫧 |
 
-<details><summary>Show all 33 apps</summary>
+<details><summary>Show all 34 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [💼 FeedHire](https://feedhire.me/) | AI job aggregator that filters postings from Telegram, Reddit and other sources | [@rafipatel](https://github.com/rafipatel) |  | 🫧 |
 | [🛒 THISX](https://www.thisx.ai/en) | AI platform for e-commerce: store fixes and Meta AI-driven ads. | [@monyuan](https://github.com/monyuan) |  | 🫧 |
 | [⚙️ Productivity Gears](http://productivitygears.com/) | Suite of 100+ free productivity tools: AI assistants, converters, PDF editors. | [@hadi0096](https://github.com/hadi0096) |  | 🫧 |
 | [🛠️ convertorz.com](https://www.convertorz.com/) | Web portal with AI image generation, file conversion, text summarization, and productivity tools | [@naveedmukhlis](https://github.com/naveedmukhlis) |  |  |

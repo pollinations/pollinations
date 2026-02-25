@@ -194,7 +194,10 @@ function buildRequestBody(
         if (safeParams.image && safeParams.image.length > 0) {
             requestBody.image_urls = safeParams.image;
         }
-    } else if (airforceModel === "imagen-4") {
+    } else if (
+        airforceModel === "imagen-4" ||
+        airforceModel === "grok-imagine"
+    ) {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
     } else if (safeParams.width && safeParams.height) {

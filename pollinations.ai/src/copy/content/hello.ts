@@ -4,7 +4,7 @@ export const HELLO_PAGE = {
     // Section 1 — Hero
     heroTitle: "The open platform for AI builders.",
     heroBody:
-        "One API. 40+ models. Text, image, audio, video. Daily compute grants. You bring the idea — we handle the rest.",
+        "One API. 40+ models. Text, image, audio, video  — all on one Pollen balance. Daily compute grants. You bring the idea — we handle the rest.",
     heroStat1: "500+",
     heroStat1Label: "live apps",
     heroStat2: "3M",
@@ -27,11 +27,6 @@ export const HELLO_PAGE = {
     loopEarnEmoji: "💰",
     flywheelCenter: "Your Apps",
     comingSoonBadge: "coming soon",
-
-    // Section — For builders
-    buildersTitle: "For builders",
-    buildersBody:
-        "One API. Text, image, audio, video — all on one Pollen balance.",
 
     // Flywheel explanation (right column)
     flywheelTitle: "The flywheel",

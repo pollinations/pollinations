@@ -45,11 +45,20 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         <>
             <div className="flex flex-col gap-2">
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
-                    <h2 className="font-bold flex-1">API Keys</h2>
+                    <h2 className="font-bold flex-1">Keys</h2>
                     <div className="flex gap-3">
                         <ApiKeyDialog
                             onSubmit={onCreate}
                             onComplete={() => {}}
+                            triggerLabel="🖥️ + App Key"
+                            triggerColor="blue"
+                            simplified
+                        />
+                        <ApiKeyDialog
+                            onSubmit={onCreate}
+                            onComplete={() => {}}
+                            triggerLabel="🔑 + API Key"
+                            triggerColor="blue"
                         />
                     </div>
                 </div>
@@ -76,12 +85,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 className={cn(
                                                     "px-2 py-0.5 rounded text-xs font-medium shrink-0",
                                                     isPublishable
-                                                        ? "bg-blue-100 text-blue-700"
+                                                        ? appUrl
+                                                            ? "bg-amber-100 text-amber-700"
+                                                            : "bg-blue-100 text-blue-700"
                                                         : "bg-purple-100 text-purple-700",
                                                 )}
                                             >
                                                 {isPublishable
-                                                    ? "🌐 Publishable"
+                                                    ? appUrl
+                                                        ? "🖥️ App"
+                                                        : "🌐 Publishable"
                                                     : "🔒 Secret"}
                                             </span>
                                             <span

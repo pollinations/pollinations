@@ -150,9 +150,10 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/v1/models",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["Models"],
+            summary: "List Text Models (OpenAI-compatible)",
             description:
-                "Get available text models (OpenAI-compatible). If an API key with model restrictions is provided, only allowed models are returned.",
+                "Returns available text models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models` instead.",
             responses: {
                 200: {
                     description: "Success",
@@ -185,9 +186,10 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/image/models",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["Models"],
+            summary: "List Image & Video Models",
             description:
-                "Get a list of available image generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models.",
             responses: {
                 200: {
                     description: "Success",
@@ -224,9 +226,10 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/text/models",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["Models"],
+            summary: "List Text Models (Detailed)",
             description:
-                "Get a list of available text generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
+                "Returns all available text generation models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support.",
             responses: {
                 200: {
                     description: "Success",
@@ -256,9 +259,10 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/audio/models",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["Models"],
+            summary: "List Audio Models",
             description:
-                "Get a list of available audio models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
+                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata.",
             responses: {
                 200: {
                     description: "Success",
@@ -295,20 +299,12 @@ export const proxyRoutes = new Hono<Env>()
         "/v1/chat/completions",
         textCache,
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["Text Generation"],
+            summary: "Chat Completions",
             description: [
-                "OpenAI-compatible chat completions endpoint.",
+                "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
-                "**Legacy endpoint:** `/openai` (deprecated, use `/v1/chat/completions` instead)",
-                "",
-                "**Authentication (Secret Keys Only):**",
-                "",
-                "Include your API key in the `Authorization` header as a Bearer token:",
-                "",
-                "`Authorization: Bearer YOUR_API_KEY`",
-                "",
-                "API keys can be created from your dashboard at enter.pollinations.ai.",
-                "Both key types consume Pollen. Secret keys have no rate limits.",
+                "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
             ].join("\n"),
             responses: {
                 200: {
@@ -330,17 +326,12 @@ export const proxyRoutes = new Hono<Env>()
         "/text/:prompt",
         textCache,
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["Text Generation"],
+            summary: "Simple Text Generation",
             description: [
-                "Generates text from text prompts.",
+                "Generate text from a prompt via a simple GET request. Returns plain text.",
                 "",
-                "**Authentication:**",
-                "",
-                "Include your API key either:",
-                "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
-                "- As a query parameter: `?key=YOUR_API_KEY`",
-                "",
-                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions` endpoint — ideal for quick prototyping or simple integrations.",
             ].join("\n"),
             responses: {
                 200: {
@@ -416,23 +407,16 @@ export const proxyRoutes = new Hono<Env>()
         "/image/:prompt{[\\s\\S]+}",
         imageCache,
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["Image Generation", "Video Generation"],
+            summary: "Generate Image or Video",
             description: [
                 "Generate an image or video from a text prompt.",
                 "",
-                "**Image Models:** `flux` (default), `turbo`, `gptimage`, `kontext`, `seedream`, `nanobanana`, `nanobanana-pro`",
+                "**For images:** Use models like `flux`, `gptimage`, `seedream`, `kontext`, `nanobanana`, and more. Returns JPEG or PNG.",
                 "",
-                "**Video Models:** `veo`, `seedance`",
-                "- `veo`: Text-to-video only (4-8 seconds)",
-                "- `seedance`: Text-to-video and image-to-video (2-10 seconds)",
+                "**For videos:** Use models like `veo`, `seedance`, `wan`, `ltx-2`. Returns MP4. Set `duration` for video length.",
                 "",
-                "**Authentication:**",
-                "",
-                "Include your API key either:",
-                "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
-                "- As a query parameter: `?key=YOUR_API_KEY`",
-                "",
-                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),
             responses: {
                 200: {
@@ -522,27 +506,18 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/audio/:text",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["Audio"],
+            summary: "Generate Audio",
             description: [
-                "Generate audio from text — speech (TTS) or music.",
+                "Generate speech or music from text via a simple GET request.",
                 "",
-                "**Models:** Use `model` query param to select:",
-                "- TTS (default): `elevenlabs`, `tts-1`, etc.",
-                "- Music: `elevenmusic` (or `music`)",
+                "**Text-to-speech (default):** Returns spoken audio in the selected voice and format.",
                 "",
-                `**TTS Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
-                "**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm",
+                "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music options:** `duration` in seconds (3-300), `instrumental=true`",
-                "",
-                "**Authentication:**",
-                "",
-                "Include your API key either:",
-                "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
-                "- As a query parameter: `?key=YOUR_API_KEY`",
-                "",
-                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "**Music generation:** Set `model=elevenmusic` to generate music instead of speech. Supports `duration` (3-300 seconds) and `instrumental` mode.",
             ].join("\n"),
             responses: {
                 200: {

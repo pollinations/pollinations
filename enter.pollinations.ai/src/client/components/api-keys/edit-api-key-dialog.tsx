@@ -32,9 +32,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
     const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
-    const initialByop = !!apiKey.metadata?.byop;
     const [appUrl, setAppUrl] = useState(initialAppUrl);
-    const [byopEnabled, setByopEnabled] = useState(initialByop);
 
     useScrollLock();
 
@@ -77,17 +75,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             });
 
             // Save app settings for publishable keys
-            if (
-                isPublishable &&
-                (appUrl !== initialAppUrl || byopEnabled !== initialByop)
-            ) {
+            if (isPublishable && appUrl !== initialAppUrl) {
                 await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
                     body: JSON.stringify({
                         appUrl: appUrl || undefined,
-                        byop: byopEnabled,
                     }),
                 });
             }
@@ -177,8 +171,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 <PublishableKeySettings
                                     appUrl={appUrl}
                                     onAppUrlChange={setAppUrl}
-                                    byopEnabled={byopEnabled}
-                                    onByopEnabledChange={setByopEnabled}
                                     disabled={isSubmitting}
                                 />
                             )}

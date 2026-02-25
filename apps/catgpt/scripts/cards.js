@@ -39,7 +39,7 @@ export function createUserMemeCard(prompt, index, imageUrl) {
         margin-bottom: 0.5rem;
         text-align: center;
     `;
-    
+
     const promptText = document.createElement("p");
     promptText.textContent = `"${escapeHtml(prompt)}"`;
     promptText.style.fontStyle = "italic";
@@ -47,11 +47,11 @@ export function createUserMemeCard(prompt, index, imageUrl) {
     promptText.style.color = "var(--color-primary)";
     promptText.style.textAlign = "center";
     promptText.style.margin = "0.5rem 0";
-    
+
     card.appendChild(badge);
     card.appendChild(img);
     card.appendChild(promptText);
-    
+
     card.addEventListener("click", () => {
         dom.userInput.value = prompt;
         dom.userInput.scrollIntoView({ behavior: "smooth", block: "center" });

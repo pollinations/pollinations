@@ -15,14 +15,14 @@ let konamiCode = [];
 export function initializeApp() {
     // Setup animations and styles
     addAnimationStyles();
-    
+
     // Initialize data
     cleanupOldMemes(getSavedMemes());
     loadUserMemes();
     loadExamples();
     loadRandomCatFact();
     handleURLPrompt();
-    
+
     // Setup event listeners
     setupEventListeners();
     addFloatingEmojis();
@@ -33,7 +33,7 @@ function setupEventListeners() {
     dom.generateBtn.addEventListener("click", generateMeme);
     dom.downloadBtn.addEventListener("click", downloadMeme);
     dom.shareBtn.addEventListener("click", shareMeme);
-    
+
     // Image upload
     dom.imageUpload.addEventListener("change", handleImageUploadEvent);
     dom.removeImageBtn.addEventListener("click", handleRemoveImage);

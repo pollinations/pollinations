@@ -5,6 +5,9 @@ import { z } from "zod";
 
 const DOMAIN = "media.pollinations.ai";
 const ENTER_VERIFY_URL = "https://gen.pollinations.ai/api/account/key";
+const CACHE_CONTROL = "public, max-age=31536000, immutable";
+const HASH_PATTERN = /^[a-f0-9]{16}$/i;
+const DEFAULT_MAX_SIZE = 25165824; // 24 MB
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -31,14 +34,20 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
 }
 
 function extractApiKey(req: Request): string | null {
-    const auth = req.headers.get("authorization");
-    const match = auth?.match(/^Bearer (.+)$/);
-    if (match?.[1]) return match[1];
-    const url = new URL(req.url);
-    return url.searchParams.get("key");
+    const bearer = req.headers
+        .get("authorization")
+        ?.match(/^Bearer (.+)$/)?.[1];
+    if (bearer) return bearer;
+    return new URL(req.url).searchParams.get("key");
 }
 
-// --- Zod schemas ---
+function fileTooLargeError(maxSize: number): { error: string } {
+    return { error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` };
+}
+
+function mediaUrl(hash: string): string {
+    return `https://${DOMAIN}/${hash}`;
+}
 
 const UploadResponseSchema = z.object({
     id: z.string().describe("16-char hex content hash"),
@@ -52,9 +61,6 @@ const ErrorSchema = z.object({
     error: z.string(),
 });
 
-// --- App ---
-
-// API routes on a separate instance so openAPIRouteHandler can introspect them
 const api = new Hono<{ Bindings: Env }>();
 
 api.post(
@@ -62,30 +68,61 @@ api.post(
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
-        description: "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.",
+        description:
+            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.",
         responses: {
-            200: { description: "Upload successful", content: { "application/json": { schema: resolver(UploadResponseSchema) } } },
-            401: { description: "Missing or invalid API key", content: { "application/json": { schema: resolver(ErrorSchema) } } },
-            413: { description: "File too large (max 24MB)", content: { "application/json": { schema: resolver(ErrorSchema) } } },
-            415: { description: "Unsupported media type", content: { "application/json": { schema: resolver(ErrorSchema) } } },
+            200: {
+                description: "Upload successful",
+                content: {
+                    "application/json": {
+                        schema: resolver(UploadResponseSchema),
+                    },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            413: {
+                description: "File too large (max 24MB)",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            415: {
+                description: "Unsupported media type",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
         },
     }),
     async (c) => {
         const apiKey = extractApiKey(c.req.raw);
         if (!apiKey) {
-            return c.json({ error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>" }, 401);
+            return c.json(
+                {
+                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
+                },
+                401,
+            );
         }
         const authResult = await verifyApiKey(apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
 
-        const maxSize = parseInt(c.env.MAX_FILE_SIZE || "25165824", 10);
+        const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
 
         // Fail fast: reject oversized requests before reading the body into memory
-        const contentLength = parseInt(c.req.header("content-length") || "0", 10);
+        const contentLength = parseInt(
+            c.req.header("content-length") || "0",
+            10,
+        );
         if (contentLength > maxSize) {
-            return c.json({ error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` }, 413);
+            return c.json(fileTooLargeError(maxSize), 413);
         }
 
         let fileBuffer: ArrayBuffer;
@@ -100,24 +137,38 @@ api.post(
                 const file = formData.get("file") as File | null;
 
                 if (!(file instanceof File)) {
-                    return c.json({ error: "No file provided. Use 'file' field in form-data." }, 400);
+                    return c.json(
+                        {
+                            error: "No file provided. Use 'file' field in form-data.",
+                        },
+                        400,
+                    );
                 }
 
                 if (file.size > maxSize) {
-                    return c.json({ error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` }, 413);
+                    return c.json(fileTooLargeError(maxSize), 413);
                 }
 
                 fileBuffer = await file.arrayBuffer();
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
             } else if (requestContentType.includes("application/json")) {
-                const body = await c.req.json<{ data: string; contentType?: string; name?: string }>();
+                const body = await c.req.json<{
+                    data: string;
+                    contentType?: string;
+                    name?: string;
+                }>();
 
                 if (!body.data) {
-                    return c.json({ error: "Missing 'data' field in JSON body" }, 400);
+                    return c.json(
+                        { error: "Missing 'data' field in JSON body" },
+                        400,
+                    );
                 }
 
-                const base64Data = body.data.includes(",") ? body.data.split(",")[1] : body.data;
+                const base64Data = body.data.includes(",")
+                    ? body.data.split(",")[1]
+                    : body.data;
                 const binaryString = atob(base64Data);
                 const bytes = new Uint8Array(binaryString.length);
                 for (let i = 0; i < binaryString.length; i++) {
@@ -126,7 +177,7 @@ api.post(
                 fileBuffer = bytes.buffer;
 
                 if (fileBuffer.byteLength > maxSize) {
-                    return c.json({ error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` }, 413);
+                    return c.json(fileTooLargeError(maxSize), 413);
                 }
                 if (fileBuffer.byteLength === 0) {
                     return c.json({ error: "Empty file" }, 400);
@@ -138,7 +189,7 @@ api.post(
                 fileBuffer = await c.req.arrayBuffer();
 
                 if (fileBuffer.byteLength > maxSize) {
-                    return c.json({ error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` }, 413);
+                    return c.json(fileTooLargeError(maxSize), 413);
                 }
                 if (fileBuffer.byteLength === 0) {
                     return c.json({ error: "Empty file" }, 400);
@@ -148,10 +199,13 @@ api.post(
             }
 
             if (!isValidMediaType(contentType)) {
-                return c.json({
-                    error: "Invalid file type. Supported: image/*, audio/*, video/*",
-                    received: contentType,
-                }, 415);
+                return c.json(
+                    {
+                        error: "Invalid file type. Supported: image/*, audio/*, video/*",
+                        received: contentType,
+                    },
+                    415,
+                );
             }
 
             const hash = await generateHash(fileBuffer);
@@ -160,8 +214,9 @@ api.post(
             if (existing) {
                 return c.json({
                     id: hash,
-                    url: `https://${DOMAIN}/${hash}`,
-                    contentType: existing.httpMetadata?.contentType || contentType,
+                    url: mediaUrl(hash),
+                    contentType:
+                        existing.httpMetadata?.contentType || contentType,
                     size: existing.size,
                     duplicate: true,
                 });
@@ -170,7 +225,7 @@ api.post(
             await c.env.MEDIA_BUCKET.put(hash, fileBuffer, {
                 httpMetadata: {
                     contentType,
-                    cacheControl: "public, max-age=31536000, immutable",
+                    cacheControl: CACHE_CONTROL,
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
@@ -182,7 +237,7 @@ api.post(
 
             return c.json({
                 id: hash,
-                url: `https://${DOMAIN}/${hash}`,
+                url: mediaUrl(hash),
                 contentType,
                 size: fileBuffer.byteLength,
                 duplicate: false,
@@ -199,17 +254,28 @@ api.get(
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
-        description: "Get a file by its content hash. No authentication required. Responses are cached immutably.",
+        description:
+            "Get a file by its content hash. No authentication required. Responses are cached immutably.",
         responses: {
             200: { description: "File content with appropriate Content-Type" },
-            400: { description: "Invalid hash format", content: { "application/json": { schema: resolver(ErrorSchema) } } },
-            404: { description: "File not found", content: { "application/json": { schema: resolver(ErrorSchema) } } },
+            400: {
+                description: "Invalid hash format",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            404: {
+                description: "File not found",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
         },
     }),
     async (c) => {
         const hash = c.req.param("hash");
 
-        if (!/^[a-f0-9]{16}$/i.test(hash)) {
+        if (!HASH_PATTERN.test(hash)) {
             return c.json({ error: "Invalid hash format" }, 400);
         }
 
@@ -221,14 +287,13 @@ api.get(
             }
 
             const headers = new Headers();
-            headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
-            headers.set("Cache-Control", "public, max-age=31536000, immutable");
+            headers.set(
+                "Content-Type",
+                object.httpMetadata?.contentType || "application/octet-stream",
+            );
+            headers.set("Cache-Control", CACHE_CONTROL);
             headers.set("X-Content-Hash", hash);
             headers.set("X-Content-Size", object.size.toString());
-
-            if (object.httpMetadata?.contentType) {
-                headers.set("X-Content-Type", object.httpMetadata.contentType);
-            }
 
             return new Response(object.body, { headers });
         } catch (error) {
@@ -244,9 +309,13 @@ api.on(
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Check if media exists",
-        description: "Check existence and metadata without downloading the file.",
+        description:
+            "Check existence and metadata without downloading the file.",
         responses: {
-            200: { description: "File exists (headers include Content-Type, Content-Length, X-Content-Hash)" },
+            200: {
+                description:
+                    "File exists (headers include Content-Type, Content-Length, X-Content-Hash)",
+            },
             400: { description: "Invalid hash format" },
             404: { description: "File not found" },
         },
@@ -254,7 +323,7 @@ api.on(
     async (c) => {
         const hash = c.req.param("hash");
 
-        if (!/^[a-f0-9]{16}$/i.test(hash)) {
+        if (!HASH_PATTERN.test(hash)) {
             return new Response(null, { status: 400 });
         }
 
@@ -266,9 +335,12 @@ api.on(
             }
 
             const headers = new Headers();
-            headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
+            headers.set(
+                "Content-Type",
+                object.httpMetadata?.contentType || "application/octet-stream",
+            );
             headers.set("Content-Length", object.size.toString());
-            headers.set("Cache-Control", "public, max-age=31536000, immutable");
+            headers.set("Cache-Control", CACHE_CONTROL);
             headers.set("X-Content-Hash", hash);
 
             if (object.customMetadata?.uploadedAt) {
@@ -276,13 +348,11 @@ api.on(
             }
 
             return new Response(null, { status: 200, headers });
-        } catch (error) {
+        } catch {
             return new Response(null, { status: 500 });
         }
     },
 );
-
-// --- Main app: health, docs, and mount API routes ---
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -292,7 +362,7 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["X-Content-Hash", "X-Content-Type", "X-Content-Size"],
+        exposeHeaders: ["X-Content-Hash", "X-Content-Size"],
     }),
 );
 
@@ -318,7 +388,8 @@ app.get("/openapi.json", async (c, next) => {
             info: {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
-                description: "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public.",
+                description:
+                    "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {
@@ -340,48 +411,51 @@ app.get("/openapi.json", async (c, next) => {
     return c.json(schema);
 });
 
-// Mount API routes
 app.route("/", api);
 
-// --- Helpers ---
-
-// 16 hex chars = 64 bits → collision expected ~4B files (birthday paradox)
+// 16 hex chars = 64 bits -- collision expected around ~4B files (birthday paradox)
 async function generateHash(buffer: ArrayBuffer): Promise<string> {
     const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const fullHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-    return fullHash.substring(0, 16);
+    return hashArray
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+        .substring(0, 16);
 }
 
 function isValidMediaType(contentType: string): boolean {
-    const validPrefixes = ["image/", "audio/", "video/"];
-    return validPrefixes.some((prefix) => contentType.startsWith(prefix));
+    return (
+        contentType.startsWith("image/") ||
+        contentType.startsWith("audio/") ||
+        contentType.startsWith("video/")
+    );
 }
 
+const MIME_TYPES: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+    svg: "image/svg+xml",
+    bmp: "image/bmp",
+    ico: "image/x-icon",
+    mp3: "audio/mpeg",
+    wav: "audio/wav",
+    ogg: "audio/ogg",
+    m4a: "audio/mp4",
+    flac: "audio/flac",
+    aac: "audio/aac",
+    mp4: "video/mp4",
+    webm: "video/webm",
+    mov: "video/quicktime",
+    avi: "video/x-msvideo",
+    mkv: "video/x-matroska",
+};
+
 function detectContentType(filename: string): string {
-    const ext = filename.split(".").pop()?.toLowerCase();
-    const mimeTypes: Record<string, string> = {
-        jpg: "image/jpeg",
-        jpeg: "image/jpeg",
-        png: "image/png",
-        gif: "image/gif",
-        webp: "image/webp",
-        svg: "image/svg+xml",
-        bmp: "image/bmp",
-        ico: "image/x-icon",
-        mp3: "audio/mpeg",
-        wav: "audio/wav",
-        ogg: "audio/ogg",
-        m4a: "audio/mp4",
-        flac: "audio/flac",
-        aac: "audio/aac",
-        mp4: "video/mp4",
-        webm: "video/webm",
-        mov: "video/quicktime",
-        avi: "video/x-msvideo",
-        mkv: "video/x-matroska",
-    };
-    return mimeTypes[ext || ""] || "application/octet-stream";
+    const ext = filename.split(".").pop()?.toLowerCase() || "";
+    return MIME_TYPES[ext] || "application/octet-stream";
 }
 
 export default app;

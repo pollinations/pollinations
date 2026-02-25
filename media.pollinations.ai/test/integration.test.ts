@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 const BASE_URL = process.env.MEDIA_URL || "https://media.pollinations.ai";
 const API_KEY = process.env.MEDIA_API_KEY || process.env.ENTER_API_TOKEN_REMOTE;
@@ -12,6 +12,27 @@ const TINY_PNG = new Uint8Array([
     0x00, 0x00, 0x02, 0x00, 0x01, 0xe2, 0x21, 0xbc, 0x33, 0x00, 0x00, 0x00,
     0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
 ]);
+
+interface UploadResponse {
+    id: string;
+    url: string;
+    contentType: string;
+    size: number;
+    duplicate: boolean;
+}
+
+function requireApiKey(): string {
+    if (!API_KEY)
+        throw new Error("Set MEDIA_API_KEY or ENTER_API_TOKEN_REMOTE");
+    return API_KEY;
+}
+
+function authHeaders(contentType: string): Record<string, string> {
+    return {
+        "Content-Type": contentType,
+        Authorization: `Bearer ${requireApiKey()}`,
+    };
+}
 
 describe("media.pollinations.ai", () => {
     it("GET / returns service info", async () => {
@@ -44,19 +65,13 @@ describe("media.pollinations.ai", () => {
     });
 
     it("upload, retrieve, and deduplicate", async () => {
-        if (!API_KEY) throw new Error("Set MEDIA_API_KEY or ENTER_API_TOKEN_REMOTE");
-
-        // Upload
         const uploadRes = await fetch(`${BASE_URL}/upload`, {
             method: "POST",
             body: TINY_PNG,
-            headers: {
-                "Content-Type": "image/png",
-                Authorization: `Bearer ${API_KEY}`,
-            },
+            headers: authHeaders("image/png"),
         });
         expect(uploadRes.status).toBe(200);
-        const upload = await uploadRes.json() as any;
+        const upload = (await uploadRes.json()) as UploadResponse;
         expect(upload.id).toMatch(/^[a-f0-9]{16}$/);
         expect(upload.url).toContain(upload.id);
         expect(upload.contentType).toBe("image/png");
@@ -71,7 +86,9 @@ describe("media.pollinations.ai", () => {
         expect(body.length).toBe(TINY_PNG.length);
 
         // HEAD
-        const headRes = await fetch(`${BASE_URL}/${upload.id}`, { method: "HEAD" });
+        const headRes = await fetch(`${BASE_URL}/${upload.id}`, {
+            method: "HEAD",
+        });
         expect(headRes.status).toBe(200);
         expect(headRes.headers.get("x-content-hash")).toBe(upload.id);
 
@@ -79,12 +96,9 @@ describe("media.pollinations.ai", () => {
         const dupRes = await fetch(`${BASE_URL}/upload`, {
             method: "POST",
             body: TINY_PNG,
-            headers: {
-                "Content-Type": "image/png",
-                Authorization: `Bearer ${API_KEY}`,
-            },
+            headers: authHeaders("image/png"),
         });
-        const dup = await dupRes.json() as any;
+        const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).toBe(upload.id);
         expect(dup.duplicate).toBe(true);
     });
@@ -100,15 +114,10 @@ describe("media.pollinations.ai", () => {
     });
 
     it("rejects non-media content types", async () => {
-        if (!API_KEY) throw new Error("Set MEDIA_API_KEY or ENTER_API_TOKEN_REMOTE");
-
         const res = await fetch(`${BASE_URL}/upload`, {
             method: "POST",
             body: "not media",
-            headers: {
-                "Content-Type": "text/plain",
-                Authorization: `Bearer ${API_KEY}`,
-            },
+            headers: authHeaders("text/plain"),
         });
         expect(res.status).toBe(415);
     });

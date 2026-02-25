@@ -136,8 +136,10 @@ def main():
 
     if not snippet:
         snippet = summary
-
-    # Format message with PR metadata footer
+    lines = snippet.split('\n', 1)
+    if lines:
+        lines[0] = f"### {lines[0]}"
+        snippet = '\n\n'.join(lines)
     pr_url = gist["url"]
     author = gist["author"]
 

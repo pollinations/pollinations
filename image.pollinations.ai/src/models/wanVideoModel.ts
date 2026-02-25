@@ -113,10 +113,12 @@ export async function callWanAPI(
         );
 
         // Don't fall back on client errors (4xx) — bad prompts/params will fail on DashScope too
+        // Exception: 429 rate limits should fall back since DashScope has its own quota
         if (
             error instanceof HttpError &&
             error.status >= 400 &&
-            error.status < 500
+            error.status < 500 &&
+            error.status !== 429
         ) {
             throw error;
         }

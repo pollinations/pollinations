@@ -19,7 +19,7 @@ export function showNotification(message, type = "info") {
     const notification = document.createElement("div");
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
-    
+
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -33,9 +33,9 @@ export function showNotification(message, type = "info") {
         z-index: 1000;
         animation: slideIn 0.3s ease-out;
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
         notification.style.animation = "slideOut 0.3s ease-in";
         setTimeout(() => {

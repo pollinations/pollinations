@@ -65,7 +65,7 @@ export function startFakeProgress(progressMessages) {
 
     const loadingIndicator = document.getElementById("loadingIndicator");
     loadingIndicator.appendChild(progressText);
-    
+
     progressInterval = setInterval(() => {
         if (progressStep < progressMessages.length) {
             progressText.textContent = progressMessages[progressStep];
@@ -94,7 +94,9 @@ export function celebrate() {
     for (let i = 0; i < 20; i++) {
         setTimeout(() => {
             const emoji = document.createElement("div");
-            emoji.textContent = getRandomItem(ANIMATION_CONFIG.CELEBRATION_EMOJIS);
+            emoji.textContent = getRandomItem(
+                ANIMATION_CONFIG.CELEBRATION_EMOJIS,
+            );
             emoji.style.cssText = `
                 position: fixed;
                 left: ${Math.random() * 100}%;

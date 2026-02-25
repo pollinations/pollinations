@@ -30,7 +30,7 @@ export function getSavedPrompts() {
 
 export function cleanupOldMemes(memes) {
     const now = Date.now();
-    const filtered = memes.filter((m) => (now - m.timestamp) < ONE_MONTH);
+    const filtered = memes.filter((m) => now - m.timestamp < ONE_MONTH);
     if (filtered.length !== memes.length) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
     }

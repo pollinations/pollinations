@@ -14,7 +14,7 @@ export const dom = {
     imageUploadContainer: document.getElementById("imageUploadContainer"),
     imageThumbnailContainer: document.getElementById("imageThumbnailContainer"),
     imageThumbnail: document.getElementById("imageThumbnail"),
-    removeImageBtn: document.getElementById("removeImageBtn")
+    removeImageBtn: document.getElementById("removeImageBtn"),
 };
 
 export function setButtonLoading() {

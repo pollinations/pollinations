@@ -1,0 +1,34 @@
+{
+  "pr_number": 8568,
+  "title": "fix: restore wan airforce primary with DashScope fallback",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8568",
+  "merged_at": "2026-02-25T11:44:31Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Airforce One Returns",
+    "blurb": "Wan video generation is back on the Airforce provider, bringing costs down by 4x. We've also added a safety net so the show always goes on.",
+    "summary": "Restored api.airforce as the primary provider for Wan video generation with automatic DashScope fallback to ensure reliability while lowering costs.",
+    "impact": "Video generation is now 4x cheaper, with a backup system in place to keep generations flowing smoothly.",
+    "keywords": [
+      "video",
+      "wan",
+      "pricing",
+      "reliability",
+      "optimization"
+    ],
+    "visual_concept": "Polly the Bee piloting a cute pixel plane (Airforce) with the Robot acting as ground crew. Visualizing the 'landing' of prices and the 'backup' safety net.",
+    "image_prompt": "Cozy pixel art scene of Polly the Bee piloting a small, cute pixel airplane through fluffy pastel clouds. The Robot stands on a cloud holding a '4x CHEAPER' sign. Soft lime green (#ecf874) sun rays. Warm lighting, lo-fi 8-bit aesthetic like A Short Hike. Nostalgic and airy."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-25T11:45:18.577794+00:00"
+}

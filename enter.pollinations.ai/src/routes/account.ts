@@ -103,6 +103,8 @@ const balanceResponseSchema = z.object({
         .describe(
             "Remaining pollen balance (combines tier, pack, and crypto balances)",
         ),
+    tierbalance: z.number().describe("Tier balance from daily grants"),
+    paidbalance: z.number().describe("Paid balance from purchased packs"),
 });
 
 const usageRecordSchema = z.object({
@@ -288,6 +290,8 @@ export const accountRoutes = new Hono<Env>()
                     Math.max(0, tierBalance) +
                     Math.max(0, packBalance) +
                     Math.max(0, cryptoBalance),
+                tierbalance: Math.max(0, tierBalance),
+                paidbalance: Math.max(0, packBalance),
             });
         },
     )

@@ -22,6 +22,7 @@ export const AUTH_COPY = {
     // Dropdown
     enterLink: "Dashboard",
     defaultUsername: "User",
+    tierLabel: "Tier",
 
     // BYOP CTA
     byopTitle: "Add Pollen to your app",

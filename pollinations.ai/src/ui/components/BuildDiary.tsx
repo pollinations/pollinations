@@ -1,6 +1,7 @@
 // biome-ignore-all lint/a11y/useKeyWithClickEvents: Component has global keyboard navigation via arrow keys
 // biome-ignore-all lint/a11y/noStaticElementInteractions: Interactive elements handled via global keydown
 import { useCallback, useEffect, useState } from "react";
+import { LAYOUT } from "../../copy/content/layout";
 import {
     type EntryContent,
     type PRContent,
@@ -137,7 +138,7 @@ export function BuildDiary() {
     if (loading) {
         return (
             <div className="font-body py-10 text-center text-text-body-tertiary">
-                Loading build diary...
+                {LAYOUT.loadingBuildDiary}
             </div>
         );
     }

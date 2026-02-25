@@ -54,6 +54,12 @@ export const SOCIAL_LINKS = {
 
 // Additional links (not rendered as social icons)
 export const LINKS = {
+    enter: "https://enter.pollinations.ai",
+    enterDocs: "https://enter.pollinations.ai/docs#api",
+    enterApiDocs: "https://enter.pollinations.ai/api/docs",
+    enterTiersFaq: "https://enter.pollinations.ai#what-are-tiers",
+    apidocsRaw:
+        "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
     discordPollenBeta:
         "https://discord.com/channels/885844321461485618/1432378056126894343",
     githubSubmitApp:

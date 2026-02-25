@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
+import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { FlywheelRing } from "../components/FlywheelRing";
@@ -24,7 +25,7 @@ function HelloPage() {
                 <div className="flex flex-wrap gap-3 mb-8">
                     <Button
                         as="a"
-                        href="https://enter.pollinations.ai"
+                        href={LINKS.enter}
                         target="_blank"
                         rel="noopener noreferrer"
                         variant="primary"
@@ -35,7 +36,7 @@ function HelloPage() {
                     </Button>
                     <Button
                         as="a"
-                        href="https://discord.gg/pollinations-ai-885844321461485618"
+                        href={SOCIAL_LINKS.discord.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         variant="secondary"
@@ -103,7 +104,7 @@ function HelloPage() {
                                     {pageCopy.usersBody}
                                 </Body>
                                 <a
-                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                                    href={LINKS.byopDocs}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="font-headline text-base font-black text-text-accent hover:underline mt-2 inline-block"
@@ -182,7 +183,7 @@ function HelloPage() {
                         </div>
                     </div>
                     <a
-                        href="https://enter.pollinations.ai#what-are-tiers"
+                        href={LINKS.enterTiersFaq}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-headline text-base font-black text-text-highlight hover:underline mt-4 inline-block"
@@ -289,7 +290,7 @@ function HelloPage() {
                     <div className="flex flex-wrap gap-3">
                         <Button
                             as="a"
-                            href="https://enter.pollinations.ai"
+                            href={LINKS.enter}
                             target="_blank"
                             rel="noopener noreferrer"
                             variant="primary"
@@ -316,7 +317,7 @@ function HelloPage() {
                         </Button>
                         <Button
                             as="a"
-                            href="https://enter.pollinations.ai/docs#api"
+                            href={LINKS.enterDocs}
                             target="_blank"
                             rel="noopener noreferrer"
                             variant="secondary"

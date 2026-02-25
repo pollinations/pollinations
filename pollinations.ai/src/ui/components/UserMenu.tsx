@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AUTH_COPY } from "../../copy/content/auth";
+import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { Button } from "./ui/button";
@@ -110,7 +111,7 @@ export function UserMenu() {
                     {tierEmoji && profile?.tier && (
                         <div className="mb-3">
                             <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block">
-                                Tier
+                                {copy.tierLabel}
                             </span>
                             <span className="font-headline text-base font-black text-text-body-main">
                                 {tierEmoji}{" "}
@@ -132,7 +133,7 @@ export function UserMenu() {
 
                     {/* BYOP CTA */}
                     <a
-                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                        href={LINKS.byopDocs}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block mb-4 p-2 rounded-md bg-[rgb(var(--surface-page))] hover:opacity-80 transition-opacity"
@@ -151,7 +152,7 @@ export function UserMenu() {
                     {/* Enter Dashboard */}
                     <Button
                         as="a"
-                        href="https://enter.pollinations.ai"
+                        href={LINKS.enter}
                         target="_blank"
                         rel="noopener noreferrer"
                         variant="primary"

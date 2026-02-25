@@ -131,7 +131,7 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
                         </span>
                         {node.soon && (
                             <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 font-body text-[10px] font-bold text-text-body-tertiary uppercase tracking-wider whitespace-nowrap bg-surface-card/80 border border-border-subtle rounded-tag px-1.5 py-0.5">
-                                coming soon
+                                {copy.comingSoonBadge}
                             </span>
                         )}
                     </div>

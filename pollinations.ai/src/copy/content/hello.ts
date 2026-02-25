@@ -26,6 +26,7 @@ export const HELLO_PAGE = {
     loopGrowEmoji: "📈",
     loopEarnEmoji: "💰",
     flywheelCenter: "Your Apps",
+    comingSoonBadge: "coming soon",
 
     // Section — For builders
     buildersTitle: "For builders",

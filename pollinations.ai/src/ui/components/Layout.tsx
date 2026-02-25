@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { AUTH_COPY } from "../../copy/content/auth";
 import { LAYOUT } from "../../copy/content/layout";
-import { SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -74,7 +74,7 @@ function Layout() {
                                     <Logo className="w-20 h-20 object-contain" />
                                 </button>
                                 <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-surface-card text-text-body-main text-[10px] rounded-tag shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    Change theme
+                                    {layoutCopy.changeThemeTooltip}
                                 </div>
                             </div>
                             {/* Nav + Social + Enter — wraps into rows as needed */}
@@ -122,7 +122,7 @@ function Layout() {
                                     )}
                                 <Button
                                     as="a"
-                                    href="https://enter.pollinations.ai"
+                                    href={LINKS.enter}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     variant="iconText"
@@ -258,7 +258,7 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai",
+                                            layoutCopy.contactEmail,
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
@@ -281,7 +281,7 @@ function Layout() {
                                 </Button>
                                 <Button
                                     as="a"
-                                    href="https://enter.pollinations.ai"
+                                    href={LINKS.enter}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     variant="iconText"
@@ -342,7 +342,7 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai",
+                                            layoutCopy.contactEmail,
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
@@ -425,7 +425,7 @@ function Layout() {
                                 {/* Register Button */}
                                 <Button
                                     as="a"
-                                    href="https://enter.pollinations.ai"
+                                    href={LINKS.enter}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     variant="iconText"

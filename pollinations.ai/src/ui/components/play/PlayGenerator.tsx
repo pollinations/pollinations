@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../../api.config";
 import { PLAY_PAGE } from "../../../copy/content/play";
+import { LINKS } from "../../../copy/content/socialLinks";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 import { CopyIcon } from "../../assets/CopyIcon";
@@ -105,10 +106,7 @@ export function PlayGenerator({
     // Fetch agent prompt for copy button
     useEffect(() => {
         const controller = new AbortController();
-        fetch(
-            "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
-            { signal: controller.signal },
-        )
+        fetch(LINKS.apidocsRaw, { signal: controller.signal })
             .then((res) => res.text())
             .then(setAgentPrompt)
             .catch(() => {});
@@ -746,7 +744,7 @@ export function PlayGenerator({
             <div className="flex flex-wrap gap-2 mb-6">
                 <Button
                     as="a"
-                    href="https://enter.pollinations.ai"
+                    href={LINKS.enter}
                     target="_blank"
                     rel="noopener noreferrer"
                     variant="primary"
@@ -757,7 +755,7 @@ export function PlayGenerator({
                 </Button>
                 <Button
                     as="a"
-                    href="https://enter.pollinations.ai/api/docs"
+                    href={LINKS.enterApiDocs}
                     target="_blank"
                     rel="noopener noreferrer"
                     variant="secondary"
@@ -902,7 +900,7 @@ export function PlayGenerator({
                 >
                     {copy.byopDescription}{" "}
                     <a
-                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                        href={LINKS.byopDocs}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-pink hover:underline"

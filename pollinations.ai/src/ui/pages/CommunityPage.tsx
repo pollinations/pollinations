@@ -102,7 +102,7 @@ export default function CommunityPage() {
                     </Body>
                     <Button
                         as="a"
-                        href="https://enter.pollinations.ai#what-are-tiers"
+                        href={LINKS.enterTiersFaq}
                         target="_blank"
                         rel="noopener noreferrer"
                         variant="secondary"

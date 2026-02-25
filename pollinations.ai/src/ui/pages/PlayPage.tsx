@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { PLAY_PAGE } from "../../copy/content/play";
+import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
 import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
@@ -61,7 +62,7 @@ function PlayPage() {
                     <Body className="mb-3">{pageCopy.createDescription}</Body>
                     <Button
                         as="a"
-                        href="https://enter.pollinations.ai"
+                        href={LINKS.enter}
                         target="_blank"
                         rel="noopener noreferrer"
                         variant="iconText"

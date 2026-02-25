@@ -5,8 +5,8 @@ interface FlywheelRingProps {
     pageCopy: Record<string, unknown>;
 }
 
-const CX = 170;
-const CY = 170;
+const CX = 200;
+const CY = 200;
 
 function toRad(deg: number) {
     return ((deg - 90) * Math.PI) / 180;
@@ -18,8 +18,8 @@ function pt(r: number, deg: number) {
 }
 
 // Node positions
-const NODE_R = 127;
-const NODE_SIZE = 80;
+const NODE_R = 150;
+const NODE_SIZE = 90;
 const NODE_HALF = NODE_SIZE / 2;
 
 const NODES: readonly {
@@ -49,7 +49,7 @@ const NODE_POSITIONS = NODES.map((n) => {
 // Short straight arrows between consecutive nodes
 const ARROW_SIZE = 28;
 const ARROW_HALF = ARROW_SIZE / 2;
-const ARROW_R = 95; // radius where arrows sit (between center and nodes)
+const ARROW_R = 112; // radius where arrows sit (between center and nodes)
 
 const ARROWS = [
     { angle: 45 }, // build → ship
@@ -65,8 +65,8 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
     const copy = pageCopy as Record<string, string>;
 
     return (
-        <div className="flex lg:justify-center">
-            <div className="relative w-[340px] h-[340px]">
+        <div className="flex justify-center">
+            <div className="relative w-[400px] h-[400px]">
                 {/* Short straight arrows between nodes */}
                 {ARROWS.map((arrow) => (
                     <div
@@ -99,7 +99,7 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
 
                 {/* Center label */}
                 <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                    <span className="font-headline text-sm font-black text-text-highlight tracking-wider">
+                    <span className="font-headline text-base font-black text-text-highlight tracking-wider">
                         {copy.flywheelCenter}
                     </span>
                 </div>
@@ -117,11 +117,11 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
                             justifyContent: "center",
                         }}
                     >
-                        <span className="text-[32px] leading-none">
+                        <span className="text-[40px] leading-none">
                             {copy[node.emojiKey]}
                         </span>
                         <span
-                            className={`font-headline text-[11px] font-black uppercase tracking-wider whitespace-nowrap px-2 py-0.5 rounded-full ${
+                            className={`font-headline text-xs font-black uppercase tracking-wider whitespace-nowrap px-2.5 py-1 rounded-full ${
                                 node.soon
                                     ? "bg-border-accent/15 text-text-accent border border-border-accent/50"
                                     : "bg-button-focus-ring/20 text-text-highlight border border-border-highlight shadow-shadow-highlight-sm"

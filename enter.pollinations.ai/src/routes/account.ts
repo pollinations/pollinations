@@ -103,8 +103,14 @@ const balanceResponseSchema = z.object({
         .describe(
             "Remaining pollen balance (combines tier, pack, and crypto balances)",
         ),
-    tierbalance: z.number().describe("Tier balance from daily grants"),
-    paidbalance: z.number().describe("Paid balance from purchased packs"),
+    tierbalance: z
+        .number()
+        .describe(
+            "Tier balance from daily grants"),
+    paidbalance: z
+        .number()
+        .describe(
+            "Paid balance from purchased packs"),
 });
 
 const usageRecordSchema = z.object({

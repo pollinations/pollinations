@@ -63,7 +63,7 @@ export async function fetchImageWithAuth(imageUrl) {
             } catch {
                 errorDetails = responseText || `HTTP ${response.status}`;
             }
-        } catch (e) {
+        } catch  {
             errorDetails = `HTTP ${response.status}: ${response.statusText}`;
         }
         

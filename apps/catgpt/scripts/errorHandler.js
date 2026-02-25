@@ -9,7 +9,7 @@ export function handleImageError(errorType = 'general') {
     
     let specificMessage;
     if (errorType === 'timeout') {
-        specificMessage = "⏰ This cat took too long to respond... probably distracted by a laser pointer! " + randomMessage;
+        specificMessage = `⏰ This cat took too long to respond... probably distracted by a laser pointer! ${randomMessage}`;
     } else {
         specificMessage = randomMessage;
     }

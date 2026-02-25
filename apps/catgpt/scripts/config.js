@@ -2,7 +2,7 @@
 
 export const API_CONFIG = {
     POLLINATIONS_API: 'https://gen.pollinations.ai/image',
-    ORIGINAL_CATGPT_IMAGE: 'https://raw.githubusercontent.com/pollinations/catgpt/refs/heads/main/images/original-catgpt.png',
+    ORIGINAL_CATGPT_IMAGE: 'https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png',
     CLOUDINARY_CLOUD_NAME: 'pollinations',
     CLOUDINARY_UPLOAD_PRESET: 'pollinations-image',
     CLOUDINARY_API_KEY: '939386723511927',

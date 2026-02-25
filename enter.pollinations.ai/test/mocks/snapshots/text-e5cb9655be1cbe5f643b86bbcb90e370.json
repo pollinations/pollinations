@@ -1,0 +1,48 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "polly",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "216",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 25 Feb 2026 08:16:14 GMT",
+      "etag": "W/\"d8-bC1Y0os/l2Z0DyNTZk2oLn7QA0w\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "polly",
+        "content": "Sorry, I had trouble processing that. Could you try again?",
+        "tool_calls": [],
+        "id": "pllns_70a07cdc576b5a14329f63e57ba250c7",
+        "object": "chat.completion",
+        "choices": [
+          {}
+        ],
+        "created": 1772007374532
+      }
+    }
+  }
+}

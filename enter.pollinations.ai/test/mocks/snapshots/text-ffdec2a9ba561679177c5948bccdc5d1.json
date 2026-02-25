@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sequential test 1772007839273"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1536",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 25 Feb 2026 08:24:17 GMT",
+      "etag": "W/\"600-x6ioLAevpIzfkGk/yAEOCLN3kJA\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "1408",
+      "x-usage-completion-text-tokens": "103",
+      "x-usage-prompt-text-tokens": "255"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Got the string: \"1772007839273\".\n\nDo you want me to:\n- Treat it as a Unix-milliseconds timestamp (I can convert it)?  \n- Run a numeric check (prime test, factors, hex/bin)?  \n- Echo it back or use it in a sequence?\n\nIf it's a Unix-ms timestamp, that corresponds to 2026-02-25 08:23:59.273 UTC. Which action should I take?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772007839,
+        "id": "pllns_2619b6a9a4f55fe7f66d07db6fcf5213",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1511,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1408,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 255,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1766
+        }
+      }
+    }
+  }
+}

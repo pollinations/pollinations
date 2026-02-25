@@ -1,0 +1,111 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "qwen-safety",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Wed, 25 Feb 2026 08:16:49 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-960d6d",
+          "delay": 74
+        },
+        {
+          "data": "278d6d4d37\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}],\"created\":1772007409,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-960",
+          "delay": 0
+        },
+        {
+          "data": "d6d278d6d4d37\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Safety\",\"name\":\"assistant\"}}],\"created\":1772007409,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\ndata: {\"id\":\"chatcmpl-960d6d278d6d4d37\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\":\",\"name\":\"assistant\"}}],\"created\":1772007409,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-960d6d",
+          "delay": 15
+        },
+        {
+          "data": "278d6d4d37\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" Safe\",\"name\":\"assistant\"}}],\"created\":1772007409,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-960d6d",
+          "delay": 25
+        },
+        {
+          "data": "278d6d4d37\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\\n\",\"name\":\"assistant\"}}],\"created\":1772007409,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-960d6d",
+          "delay": 15
+        },
+        {
+          "data": "278d6d4d37\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Categories\",\"name\":\"assistant\"}}],\"created\":1772007409,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-960d6d",
+          "delay": 24
+        },
+        {
+          "data": "278d6d4d37\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\":\",\"name\":\"assistant\"}}],\"created\":1772007409,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-960d6d",
+          "delay": 24
+        },
+        {
+          "data": "278d6d4d37\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" None\",\"name\":\"assistant\"}}],\"created\":1772007409,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-960d6d",
+          "delay": 16
+        },
+        {
+          "data": "278d6d4d37\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"name\":\"assistant\"},\"finish_reason\":\"stop\"}],\"created\":1772007409,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-960d",
+          "delay": 0
+        },
+        {
+          "data": "6d278d6d4d37\",\"choices\":[],\"created\":1772007409,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\",\"usage\":{\"prompt_tokens\":308,\"completion_tokens\":8,\"total_tokens\":316}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

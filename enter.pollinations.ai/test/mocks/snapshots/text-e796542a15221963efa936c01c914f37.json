@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Different message 2 - 1772007821495"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1607",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 25 Feb 2026 08:23:52 GMT",
+      "etag": "W/\"647-I1UHIuxPP94Q5ZPMFJ04mr40nfw\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "960",
+      "x-usage-completion-text-tokens": "119",
+      "x-usage-prompt-text-tokens": "258"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "That string looks like a label plus a Unix-millisecond timestamp. Interpreting 1772007821495 as milliseconds since 1970-01-01 gives:\n\n- UTC: 2026-02-25 08:23:41.495\n\nWant that shown in a different timezone or formatted differently? Or did you mean “Different message 2” as a prompt for alternate phrasings (e.g., rewrite, shorter/longer, more formal/colloquial)? Tell me which and I’ll do it.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772007822,
+        "id": "pllns_eff76e7cdbe329c8c3a014e0add6633a",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1079,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 960,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 258,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1337
+        }
+      }
+    }
+  }
+}

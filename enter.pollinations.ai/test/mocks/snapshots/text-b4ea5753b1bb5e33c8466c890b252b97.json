@@ -1,0 +1,86 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "polly",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "216",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 25 Feb 2026 08:17:49 GMT",
+      "etag": "W/\"d8-ZwKp811QzV/cxUTTRAHYH/1zMnc\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "polly",
+        "content": "Sorry, I had trouble processing that. Could you try again?",
+        "tool_calls": [],
+        "id": "pllns_799618b472b29be913d7a799919fd022",
+        "object": "chat.completion",
+        "choices": [
+          {}
+        ],
+        "created": 1772007469109
+      }
+    }
+  }
+}

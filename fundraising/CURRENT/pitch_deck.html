@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pollinations.AI — Seed Deck</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --cream: #FFFDF5; --black: #111111; --lime: #ecf874;
+    --lavender: #e8e0f0; --sky: #d6eaf8; --peach: #fff0e6;
+    --mint: #e8f5e9; --border: #ccccaa;
+  }
+  body { font-family: 'Space Mono', monospace; background: var(--cream); color: var(--black); scroll-snap-type: y mandatory; overflow-y: scroll; }
+  .slide {
+    min-height: 100vh; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center;
+    padding: 4rem 6rem; position: relative; border: 3px dashed var(--border);
+    background: linear-gradient(135deg, var(--peach) 0%, var(--cream) 40%, var(--mint) 100%);
+  }
+  .slide::before, .slide::after { content: '■'; position: absolute; color: var(--border); font-size: 8px; }
+  .slide::before { top: 8px; left: 8px; } .slide::after { bottom: 8px; right: 8px; }
+  .footer { position: absolute; bottom: 1.2rem; left: 2rem; font-size: 0.6rem; color: #999; letter-spacing: 1px; }
+  .slide-num { position: absolute; top: 1.2rem; right: 2rem; font-family: 'Press Start 2P', monospace; font-size: 0.5rem; color: #ccc; }
+  h1 { font-family: 'Press Start 2P', monospace; font-size: 2.2rem; line-height: 1.5; margin-bottom: 1.5rem; }
+  h2 { font-family: 'Press Start 2P', monospace; font-size: 1.4rem; line-height: 1.6; margin-bottom: 1.2rem; }
+  h3 { font-family: 'Press Start 2P', monospace; font-size: 0.8rem; line-height: 1.8; margin-bottom: 1rem; color: #555; }
+  p, li { font-size: 0.9rem; line-height: 1.7; max-width: 750px; }
+  .highlight { background: var(--lime); padding: 0.15em 0.4em; font-weight: 700; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1.2rem; margin: 2rem 0; }
+  .stat-card { background: white; border: 2px dashed var(--border); border-radius: 4px; padding: 1.2rem 1rem; text-align: center; }
+  .stat-card .num { font-family: 'Press Start 2P', monospace; font-size: 1.6rem; background: var(--lime); display: inline-block; padding: 0.2em 0.3em; margin-bottom: 0.5rem; }
+  .stat-card .label { font-size: 0.65rem; color: #666; line-height: 1.5; }
+  .bullet-list { list-style: none; padding: 0; margin-top: 1.5rem; }
+  .bullet-list li { padding: 0.6rem 0; padding-left: 1.5rem; position: relative; margin-bottom: 0.5rem; }
+  .bullet-list li::before { content: '▸'; position: absolute; left: 0; color: var(--lime); font-weight: bold; }
+  .table-container { margin: 2rem 0; max-width: 650px; }
+  .simple-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .simple-table th, .simple-table td { padding: 0.8rem; border: 2px solid var(--border); text-align: left; }
+  .simple-table th { background: var(--lime); font-family: 'Press Start 2P', monospace; font-size: 0.6rem; }
+  .simple-table td:first-child { font-weight: 700; background: #fffdf5; }
+  .unit-econ-table { margin: 1.5rem 0; border-collapse: collapse; max-width: 500px; background: white; }
+  .unit-econ-table th, .unit-econ-table td { padding: 0.8rem 1rem; border: 2px solid var(--border); font-size: 0.8rem; text-align: left; }
+  .unit-econ-table th { background: var(--lime); font-family: 'Press Start 2P', monospace; font-size: 0.5rem; }
+  .proof-box { background: var(--lavender); border: 2px dashed #9966cc; padding: 1rem 1.5rem; border-radius: 4px; margin-top: 2rem; font-size: 0.8rem; display: inline-block; }
+  .beta-note { display: inline-block; background: var(--lavender); padding: 0.4rem 0.8rem; font-size: 0.7rem; border-radius: 3px; margin-top: 1rem; }
+  @media (max-width: 768px) {
+    .slide { padding: 2rem 1.5rem; } h1 { font-size: 1.4rem; } h2 { font-size: 1rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Slide 1: Title -->
+<div class="slide">
+  <span class="slide-num">01</span>
+  <h1>Compute and monetization<br>for the <span class="highlight">long tail</span><br>of AI apps.</h1>
+  <p style="font-family: 'Press Start 2P', monospace; font-size: 0.7rem; color: #666; margin-top: 2rem;">Pollinations.AI — Seed Round</p>
+  <span class="footer">Pollinations.AI — Seed Deck</span>
+</div>
+
+<!-- Slide 2: Traction -->
+<div class="slide">
+  <span class="slide-num">02</span>
+  <h3>Before we explain the model —</h3>
+  <h2>Here is what is<br>happening <span class="highlight">right now.</span></h2>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="num">3M</div><div class="label">Monthly Active Users</div></div>
+    <div class="stat-card"><div class="num">1,000+</div><div class="label">Live apps in ~200 countries</div></div>
+    <div class="stat-card"><div class="num">600</div><div class="label">New creators / day</div></div>
+    <div class="stat-card"><div class="num">2M</div><div class="label">Daily API requests</div></div>
+    <div class="stat-card"><div class="num">$0</div><div class="label">Marketing spend · 100% organic</div></div>
+  </div>
+  <p style="text-align: center; font-size: 0.75rem; color: #666; margin-top: 1rem;">Discord bots, Roblox games, meme generators, AI storybooks — all built by indie creators.</p>
+  <span class="footer">Pollinations.AI — Seed Deck</span>
+</div>
+
+<!-- Slide 3: Problem -->
+<div class="slide">
+  <span class="slide-num">03</span>
+  <h2>AI made publishing apps<br><span class="highlight">expensive</span> again.</h2>
+  <ul class="bullet-list">
+    <li><strong>Indie devs always published for near-zero</strong> — a side project could reach millions with almost no hosting cost.</li>
+    <li><strong>AI changed that</strong> — every user interaction burns compute. You pay before you earn.</li>
+    <li><strong>Success is the trap</strong> — costs scale with usage. Revenue doesn't appear until much later.</li>
+    <li><strong>No monetization</strong> — most creators have no entity, can't set up Stripe, can't collect $1 at a time.</li>
+  </ul>
+  <p style="margin-top: 2rem; font-style: italic; font-weight: bold;">You either give it away and go broke, or you paywall it and kill growth.</p>
+  <span class="footer">Pollinations.AI — Seed Deck</span>
+</div>
+
+<!-- Slide 4: Solution -->
+<div class="slide">
+  <span class="slide-num">04</span>
+  <h2><span class="highlight">Pollen (1 = $1)</span></h2>
+  <h3>A universal credit across every app on our platform.</h3>
+  
+  <ul class="bullet-list">
+    <li><strong>Creators</strong> get free daily compute. 38+ models, one API. No backend needed.</li>
+    <li><strong>Users</strong> buy Pollen to use apps. Pay-as-you-go. One account, works everywhere.</li>
+    <li><strong>We</strong> cover compute, handle payments, split the revenue. No Stripe, no entity, no billing code needed.</li>
+  </ul>
+  
+  <p style="margin-top: 2rem; font-size: 0.8rem; color: #666;">We host them, distribute them, and pay creators when users show up.</p>
+  <span class="footer">Pollinations.AI — Seed Deck</span>
+</div>
+
+<!-- Slide 5: Why Now -->
+<div class="slide">
+  <span class="slide-num">05</span>
+  <h2><span class="highlight">Why now</span></h2>
+  <ul class="bullet-list">
+    <li><strong>Collapsing costs</strong> — AI models are cheap enough for anyone to build real products, not just experiments.</li>
+    <li><strong>Rise of vibe coding</strong> — Millions of non-technical people becoming creators. The builder pool is exploding.</li>
+    <li><strong>AI is fun</strong> — Digital creators are moving from content → AI-powered micro products. The next wave of entrepreneurs is already building.</li>
+  </ul>
+  <span class="footer">Pollinations.AI — Seed Deck</span>
+</div>
+
+<!-- Slide 6: Market Position -->
+<div class="slide">
+  <span class="slide-num">06</span>
+  <h2>We sell <span class="highlight">through</span> creators,<br>not to them.</h2>
+  <p style="margin-bottom: 1.5rem;">Aggregators charge developers. We support creators — and earn when their users pay.</p>
+  
+  <div class="table-container">
+    <table class="simple-table">
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Players</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Distribution + Monetization</td>
+          <td><strong>Pollinations.AI</strong></td>
+        </tr>
+        <tr>
+          <td>Aggregators / Tools</td>
+          <td>OpenRouter, Vercel</td>
+        </tr>
+        <tr>
+          <td>Suppliers</td>
+          <td>HuggingFace, Replicate, Fal</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size: 0.8rem; border-left: 3px solid var(--lime); padding-left: 1rem;"><strong>The Opportunity:</strong> 300M+ digital creators are moving from content → AI micro-products. We power the economy beneath them.</p>
+  <span class="footer">Pollinations.AI — Seed Deck</span>
+</div>
+
+<!-- Slide 7: Business Model -->
+<div class="slide">
+  <span class="slide-num">07</span>
+  <h2>Revenue scales with<br><span class="highlight">app usage.</span></h2>
+  <p style="margin-bottom: 1rem;"><strong>Revenue:</strong> Platform fee on every Pollen transaction.</p>
+  
+  <h3 style="margin-top: 1rem;">Unit Economics: Per Creator App / Month</h3>
+  <table class="unit-econ-table">
+    <tr><td>~100 users × $3 avg spend</td><td>$300/mo revenue</td></tr>
+    <tr><td>Compute (75%)</td><td>−$225</td></tr>
+    <tr><td><strong>Gross profit</strong></td><td><strong>$75</strong> (Split creator/platform)</td></tr>
+  </table>
+  
+  <div class="proof-box">
+    <strong>Proof:</strong> A single Roblox creator on Pollinations — <strong>51M visits, $12K/month</strong> user spend. We earn on every transaction.
+  </div>
+  <span class="footer">Pollinations.AI — Seed Deck</span>
+</div>
+
+<!-- Slide 8: Moat -->
+<div class="slide">
+  <span class="slide-num">08</span>
+  <h2>Switching <span class="highlight">breaks</span><br>live products.</h2>
+  
+  <ul class="bullet-list">
+    <li><strong>Lock-in:</strong> 1,000+ apps already depend on our API and wallet. Switching means killing their revenue.</li>
+    <li><strong>Two-sided network:</strong> More creators → more apps → more users → more transactions.</li>
+    <li><strong>Community as engineering:</strong> 17K Discord builders shipping integrations, onboarding, and production features. Zero acquisition cost. Zero support overhead.</li>
+  </ul>
+  <span class="footer">Pollinations.AI — Seed Deck</span>
+</div>
+
+<!-- Slide 9: Team -->
+<div class="slide">
+  <span class="slide-num">09</span>
+  <h2>Team</h2>
+  <div style="margin-bottom: 2rem;">
+    <h3 style="font-size: 1rem; color: var(--black);">Thomas Haferlach (CEO)</h3>
+    <p style="font-size: 0.75rem;">AI & CS (Edinburgh), Amazon engineer. 15+ years in AI and creative communities. <em>"I built this because I needed it at 16."</em></p>
+  </div>
+  <div style="margin-bottom: 2rem;">
+    <h3 style="font-size: 1rem; color: var(--black);">Elliot Fouchy (CPO)</h3>
+    <p style="font-size: 0.75rem;">Ops, Finance, Cloud Partnerships (ByteDance, Azure). Payment infra across 195 countries.</p>
+  </div>
+  <div style="border-top: 1px dashed var(--border); padding-top: 1rem;">
+    <h3 style="font-size: 0.8rem;">The Hidden Team</h3>
+    <p style="font-size: 0.75rem;">The open-source community. Active contributors shipping code, docs, and integrations every day.</p>
+  </div>
+  <span class="footer">Pollinations.AI — Seed Deck</span>
+</div>
+
+<!-- Slide 10: Ask -->
+<div class="slide">
+  <span class="slide-num">10</span>
+  <h2>The Ask: <span class="highlight">€2.5M Seed</span></h2>
+  <p>Accelerate: scale compute infra, grow marketplace, expand the economy, hire team.</p>
+  
+  <div class="table-container">
+    <table class="simple-table">
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Status</th>
+          <th>What</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Infrastructure</td>
+          <td>✅ DONE</td>
+          <td>38+ models, one API</td>
+        </tr>
+        <tr>
+          <td>Economy</td>
+          <td>Q2 2026</td>
+          <td>Unified wallet, creator payouts</td>
+        </tr>
+        <tr>
+          <td>Discovery</td>
+          <td>Q4 2026</td>
+          <td>App marketplace, curation</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <p style="font-size: 0.75rem; margin-top: 1rem;">50% Compute & Infra · 30% Engineering · 20% Community</p>
+  
+  <div style="margin-top: 3rem; text-align: center; font-style: italic; color: #555;">
+    A thousand seeds. We only need a few to bloom.
+  </div>
+  <span class="footer">Pollinations.AI — Seed Deck</span>
+</div>
+
+</body>
+</html>

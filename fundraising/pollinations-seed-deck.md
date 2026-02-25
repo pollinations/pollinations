@@ -1,0 +1,107 @@
+# POLLINATIONS.AI
+
+**Compute and payments for the long tail of AI apps.**
+
+Seed Round · €1.2M | pollinations.ai
+
+---
+
+## Slide 2 — Problem
+
+### AI made publishing apps expensive again.
+
+| ⚡ Success is the trap | 🔧 Can't charge users | 🔒 Everyone charges the dev |
+|---|---|---|
+| App goes viral → compute bill explodes. You pay before you earn. | No entity, no Stripe, no way to collect $1. Most indie devs are 17 or in countries without infra. | OpenRouter, Replicate, fal.ai, Together — all bill the builder. More users = more cost. |
+
+**Give it away and go broke, or paywall it and kill growth.**
+
+---
+
+## Slide 3 — Solution
+
+### 🪙 We flip the model. End users pay. Devs earn.
+
+**Pollen: 1 credit = $1. One wallet, every app. No entity needed. No Stripe. No backend.**
+
+| 🌱 INDIE DEVS | 👦 USERS | 📺 PLATFORM |
+|---|---|---|
+| Free daily compute to start. 40+ text, image, audio & video models. One API. Earn when users pay. | Buy Pollen, use any app. Pay-as-you-go. One account everywhere. | Covers compute. Handles payments. Takes a cut. |
+
+Same playbook as Steam (games), Shopify (stores), Roblox (experiences).
+
+---
+
+## Slide 4 — Traction
+
+### ✨ 1,000+ apps. 3M users. Zero paid acquisition.
+
+| 🌱 FREE PLATFORM | 💰 PAID PRODUCT |
+|---|---|
+| 3M+ end users/month | Launched Dec 2025 · exiting beta Feb '26 |
+| 1.1M daily requests | ~$140K ARR run-rate |
+| 1,000+ live apps, ~200 countries | 200+ paying users (30d) |
+| ~100 new devs/day | ~$11 avg purchase size |
+
+🐝 Discord bots · Roblox games · calorie trackers · AI storybooks · chat apps
+
+**We don't need to find customers — devs bring them. Every app is a storefront.**
+
+---
+
+## Slide 5 — Business Model
+
+### 💰 We take a cut of every transaction.
+
+| User buys Pollen | → | Compute cost | → | Platform margin |
+|---|---|---|---|---|
+| ~$11 avg per purchase | | ~75% (priced at cost today) | | ~25% (expanding as costs fall) |
+
+Beta: priced at cost to build trust. Exiting beta now — adding margin + tightening free tier.
+
+**Everyone else charges the builder. We charge the audience.**
+
+---
+
+## Slide 6 — Team
+
+### ✨ Two founders. 1.1M daily requests. Zero marketing.
+
+**Thomas Haferlach — CEO**
+AI & CS (Edinburgh). Amazon engineer. 15+ years in AI and creative tech. Built the platform from scratch.
+
+**Elliot Fouchy — CPO**
+Ops, Finance, Cloud Partnerships. ByteDance, Azure. Payment infra across 195 countries.
+
+🐝 17K Discord community. They ship integrations, onboard devs, handle support.
+
+**The next great indie dev could be a 16-year-old in Brazil with no credit card. We're their infrastructure.**
+
+---
+
+## Slide 7 — Where This Goes
+
+### 🔮 Things are moving fast. We see three big directions.
+
+| 🤖 Agentic economy | 🎯 Context-sensitive AI ads |
+|---|---|
+| Agents pay agents. Pollen settles it. | We know what users generate. Ads that match intent, not cookies. Advertisers fund the compute. |
+
+We don't need to pick one. Pollen is the rail underneath all of them.
+
+---
+
+## Slide 8 — The Ask
+
+### 🚀 €1.2M Seed
+
+**Prove devs get paid. Scale the economy.**
+
+| Status | Phase | What |
+|---|---|---|
+| ✅ DONE | Infrastructure | 40+ text/image/audio/video models, one API, 3M users |
+| 🔄 NOW | Monetization | Exit beta, tighten free tier → $140K ARR and growing |
+| Q2 '26 | Economy | Dev rev-share, in-app Pollen payments |
+| Q4 '26 | Discovery | App marketplace, curation, cross-app spend |
+
+**USE OF FUNDS:** Compute & Infra 50% · Engineering 30% · Community 20%

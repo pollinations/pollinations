@@ -4,7 +4,7 @@
 
 ---
 
-| 3M+ end-users/mo | 500+ live apps | 600+ new devs/day | 17K+ Discord | 4K GitHub stars |
+| 3M+ end-users/mo | 500+ live apps | 500+ new creators/day | 17K+ Discord | 4K GitHub stars |
 | :---: | :---: | :---: | :---: | :---: |
 
 ---
@@ -23,11 +23,11 @@
 
 ## The Problem
 
-**For creators:** Success punishes you. The more users you get, the more you pay.
+**For creators:** Without a monetization layer, success punishes you. The more users you get, the more you pay.
 
 **For users:** Every micro-app wants its own subscription. No one pays $10/month for a calorie tracker.
 
-## Pollen — One Currency for All AI Apps
+## Pollen — One Wallet for All AI Apps
 
 **1 Pollen = $1.** Think of it like electricity — we power the apps, users pay for the electricity, creators share the revenue.
 
@@ -39,7 +39,7 @@ Users buy Pollen once and spend it everywhere. More apps = more reasons to buy. 
 
 *Proof: One creator-built Roblox game — 51M visits, $12K/month in user spend. We earn on every transaction. No outbound sales.*
 
-## Why We Win
+## Why We Win — The YouTube of AI
 
 **We sell through creators, not to them.** Fal, Replicate, OpenRouter charge developers. We let creators build free, then monetize the end users they bring.
 

@@ -89,11 +89,8 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
 }
 
 /**
- * Generates a video using Alibaba DashScope API (wan-2.6)
+ * Generates a video using Airforce API (wan-2.6) with Alibaba DashScope fallback
  * Supports both text-to-video and image-to-video with optional audio
- *
- * NOTE: Airforce primary was disabled (2026-02-20) due to provider outage.
- * Now routes directly to DashScope.
  */
 export async function callWanAPI(
     prompt: string,
@@ -101,7 +98,42 @@ export async function callWanAPI(
     progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> {
-    return await callWanAlibabaAPI(prompt, safeParams, progress, requestId);
+    // Try Airforce first (primary)
+    try {
+        return await callWanAirforceAPI(
+            prompt,
+            safeParams,
+            progress,
+            requestId,
+        );
+    } catch (error) {
+        logError(
+            "Airforce API failed:",
+            error instanceof Error ? error.message : String(error),
+        );
+
+        // Don't fall back on client errors (4xx) — bad prompts/params will fail on DashScope too
+        if (
+            error instanceof HttpError &&
+            error.status >= 400 &&
+            error.status < 500
+        ) {
+            throw error;
+        }
+
+        // Fall back to DashScope on 5xx / network errors
+        if (process.env.DASHSCOPE_API_KEY) {
+            logOps("Falling back to Alibaba DashScope API");
+            return await callWanAlibabaAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+        }
+
+        throw error;
+    }
 }
 
 /**

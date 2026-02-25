@@ -86,6 +86,7 @@ app.get("/openapi.json", (c) => {
         paths: {
             "/upload": {
                 post: {
+                    tags: ["rhizome.pollinations.ai"],
                     summary: "Upload media",
                     description: "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.",
                     security: [{ bearerAuth: [] }],
@@ -143,6 +144,7 @@ app.get("/openapi.json", (c) => {
             },
             "/{hash}": {
                 get: {
+                    tags: ["rhizome.pollinations.ai"],
                     summary: "Retrieve media",
                     description: "Get a file by its content hash. No authentication required. Responses are cached immutably.",
                     parameters: [{
@@ -159,6 +161,7 @@ app.get("/openapi.json", (c) => {
                     },
                 },
                 head: {
+                    tags: ["rhizome.pollinations.ai"],
                     summary: "Check if media exists",
                     description: "Check existence and metadata without downloading the file.",
                     parameters: [{

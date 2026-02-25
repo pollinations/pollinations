@@ -27,7 +27,7 @@ function getConfigDir() {
 const OPENCODE_CONFIG = {
     "$schema": "https://opencode.ai/config.json",
     "plugin": ["oh-my-opencode"],
-    "model": "pollinations/claude-large",
+    "model": "pollinations/claude-fast",
     "small_model": "pollinations/gemini-fast",
     "provider": {
         "pollinations": {

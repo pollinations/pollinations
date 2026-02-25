@@ -163,19 +163,13 @@ function HelloPage() {
                             >
                                 {pageCopy.tiersSubtitle}
                             </Heading>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
                                 {[
                                     {
-                                        emoji: "🦠",
-                                        name: pageCopy.tierMicrobeTitle,
-                                        pollen: pageCopy.tierMicrobePollen,
-                                        desc: pageCopy.tierMicrobeDescription,
-                                    },
-                                    {
                                         emoji: "🍄",
-                                        name: pageCopy.tierSporeTitle,
-                                        pollen: pageCopy.tierSporePollen,
-                                        desc: pageCopy.tierSporeDescription,
+                                        name: pageCopy.tierWeeklyTitle,
+                                        pollen: pageCopy.tierWeeklyPollen,
+                                        desc: pageCopy.tierWeeklyDescription,
                                     },
                                     {
                                         emoji: "🌱",
@@ -207,7 +201,10 @@ function HelloPage() {
                                             {tier.name}
                                         </p>
                                         <p className="text-xs text-text-body-secondary mt-1">
-                                            {tier.pollen} pollen/day
+                                            {tier.pollen} pollen/
+                                            {tier.name === "Spore"
+                                                ? "week"
+                                                : "day"}
                                         </p>
                                         <p className="text-[10px] text-text-body-tertiary mt-0.5">
                                             {tier.desc}
@@ -223,7 +220,7 @@ function HelloPage() {
                             <div className="mt-4">
                                 <Button
                                     as="a"
-                                    href="https://enter.pollinations.ai"
+                                    href="https://enter.pollinations.ai#how-do-pollen-grants-work"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     variant="secondary"

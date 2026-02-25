@@ -19,7 +19,7 @@ const featureItemVariants = cva(
 );
 
 const iconVariants = cva(
-    "flex items-center justify-center shrink-0 rounded-lg text-base mt-0.5",
+    "flex items-center justify-center shrink-0 rounded-lg text-base",
     {
         variants: {
             variant: {
@@ -54,7 +54,7 @@ export const FeatureItem = React.forwardRef<HTMLLIElement, FeatureItemProps>(
                         {icon}
                     </span>
                 )}
-                <span className="flex-1">{children}</span>
+                <div className="flex-1">{children}</div>
             </li>
         );
     },

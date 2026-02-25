@@ -138,8 +138,31 @@ export function createNomNomConfig(additionalConfig = {}) {
     return {
         provider: "openai",
         "custom-host": "https://scrape.pollinations.ai/v1",
-        // Flag to use user's API key from x-user-api-key header for billing passthrough
         useUserApiKey: true,
+        ...additionalConfig,
+    };
+}
+
+/**
+ * Creates a Polly model configuration (community model - Pollinations AI assistant)
+ * Uses user's API key for billing passthrough - Polly calls Pollinations internally
+ */
+export function createPollyConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://polly.pollinations.ai/v1",
+        useUserApiKey: true,
+        ...additionalConfig,
+    };
+}
+
+/**
+ * Creates an Anthropic model configuration for direct Claude API access
+ */
+export function createAnthropicConfig(additionalConfig = {}) {
+    return {
+        provider: "anthropic",
+        authKey: process.env.ANTHROPIC_API_KEY,
         ...additionalConfig,
     };
 }

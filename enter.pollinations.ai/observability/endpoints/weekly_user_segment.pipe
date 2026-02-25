@@ -2,37 +2,47 @@ DESCRIPTION >
     Weekly BYOP vs non-BYOP usage metrics.
     BYOP = secret API keys with hostname-like names (contains a dot),
     matching the detection logic used by app_byop_hostnames.pipe.
+    Two-node design: inner node evaluates LIKE once per row,
+    outer node pivots back to the original column schema.
 
 TOKEN model_usage READ
 
-NODE weekly_user_segment_node
+NODE grouped_by_byop
 SQL >
     %
     SELECT
-        toStartOfWeek(start_time, 1) AS week,
-        -- BYOP: secret keys with hostname-like names (e.g. myapp.com)
-        countIf(DISTINCT user_id, api_key_type = 'secret' AND api_key_name LIKE '%.%') AS byop_users,
-        sumIf(total_price, api_key_type = 'secret' AND api_key_name LIKE '%.%') AS byop_pollen,
-        countIf(api_key_type = 'secret' AND api_key_name LIKE '%.%') AS byop_requests,
-        -- Non-BYOP: everything else
-        countIf(DISTINCT user_id, NOT (api_key_type = 'secret' AND api_key_name LIKE '%.%')) AS other_users,
-        sumIf(total_price, NOT (api_key_type = 'secret' AND api_key_name LIKE '%.%')) AS other_pollen,
-        countIf(NOT (api_key_type = 'secret' AND api_key_name LIKE '%.%')) AS other_requests,
-        -- Totals
+        formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
+        (api_key_type = 'secret' AND position(api_key_name, '.') > 0) AS is_byop,
+        uniq(user_id) AS users,
+        sum(total_price) AS pollen,
+        count() AS requests
+    FROM generation_event
+    WHERE
+        {% if defined(start_date) %}
+        start_time >= toDate({{ String(start_date) }})
+        AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY
+        {% else %}
+        start_time >= now() - INTERVAL {{ Int32(weeks_back, 12) }} WEEK
+        {% end %}
+        AND environment = 'production'
+    GROUP BY week, is_byop
+
+NODE weekly_user_segment_node
+SQL >
+    SELECT
+        week,
+        sumIf(users, is_byop = 1) AS byop_users,
+        sumIf(pollen, is_byop = 1) AS byop_pollen,
+        sumIf(requests, is_byop = 1) AS byop_requests,
+        sumIf(users, is_byop = 0) AS other_users,
+        sumIf(pollen, is_byop = 0) AS other_pollen,
+        sumIf(requests, is_byop = 0) AS other_requests,
         byop_users + other_users AS total_users,
         byop_pollen + other_pollen AS total_pollen,
         byop_requests + other_requests AS total_requests,
-        -- Percentages
         if(total_users > 0, round(byop_users / total_users * 100, 1), 0) AS byop_user_pct,
         if(total_pollen > 0, round(byop_pollen / total_pollen * 100, 1), 0) AS byop_pollen_pct
-    FROM generation_event
-    WHERE
-        environment = 'production'
-        AND response_status >= 200 AND response_status < 300
-        AND start_time >= toDate('2025-10-01')
-        {% if defined(weeks_back) %}
-        AND start_time >= toStartOfWeek(today(), 1) - INTERVAL {{ Int32(weeks_back, 12) }} WEEK
-        {% end %}
+    FROM grouped_by_byop
     GROUP BY week
     ORDER BY week ASC
 

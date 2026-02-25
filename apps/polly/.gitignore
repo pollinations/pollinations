@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+ENV/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Private keys and secrets
+*.pem
+*.key
+polly.pem
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Claude Code local settings
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data directories (local only)
+data/
+ref/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+subscriptions.json
+
+# Embeddings cache
+*.npy
+*.pkl
+chroma_db/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Others 
+Polly-starter.sh
+Polly-stopper.sh
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Dev tracking docs
+TRACKING.md

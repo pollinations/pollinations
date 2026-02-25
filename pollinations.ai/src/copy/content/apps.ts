@@ -45,39 +45,58 @@ export const badges = {
 // Genre filters — category-based
 export const GENRE_FILTERS = [
     {
-        id: "creative",
-        label: "🎨 Creative",
-        match: (app: App) => app.category === "creative",
+        id: "image",
+        label: "🖼️ Image",
+        tooltip: "Image gen, editing, design, avatars, stickers",
+        match: (app: App) => app.category === "image",
+    },
+    {
+        id: "video_audio",
+        label: "🎬 Video & Audio",
+        tooltip: "Video gen, animation, music, TTS",
+        match: (app: App) => app.category === "video_audio",
+    },
+    {
+        id: "writing",
+        label: "✍️ Write",
+        tooltip: "Content creation, storytelling, copy, slides",
+        match: (app: App) => app.category === "writing",
     },
     {
         id: "chat",
         label: "💬 Chat",
+        tooltip: "Assistants, companions, AI studio, multi-modal chat",
         match: (app: App) => app.category === "chat",
     },
     {
         id: "games",
-        label: "🎲 Games",
+        label: "🎮 Play",
+        tooltip: "AI games, interactive fiction, Roblox worlds",
         match: (app: App) => app.category === "games",
-    },
-    {
-        id: "dev_tools",
-        label: "🛠️ Dev Tools",
-        match: (app: App) => app.category === "dev_tools",
-    },
-    {
-        id: "vibes",
-        label: "✨ Vibes",
-        match: (app: App) => app.category === "vibes",
-    },
-    {
-        id: "social_bots",
-        label: "🤖 Social Bots",
-        match: (app: App) => app.category === "social_bots",
     },
     {
         id: "learn",
         label: "📚 Learn",
+        tooltip: "Education, tutoring, language learning",
         match: (app: App) => app.category === "learn",
+    },
+    {
+        id: "bots",
+        label: "🤖 Bots",
+        tooltip: "Discord, Telegram, WhatsApp bots",
+        match: (app: App) => app.category === "bots",
+    },
+    {
+        id: "build",
+        label: "🛠️ Build",
+        tooltip: "Dev tools, SDKs, integrations, vibe coding",
+        match: (app: App) => app.category === "build",
+    },
+    {
+        id: "business",
+        label: "💼 Business",
+        tooltip: "Productivity, finance, marketing, health, food",
+        match: (app: App) => app.category === "business",
     },
 ];
 

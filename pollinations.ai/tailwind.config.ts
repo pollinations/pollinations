@@ -7,14 +7,12 @@
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
 import plugin from "tailwindcss/plugin";
-import { AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCssVariables as DefaultCssVariables } from "./src/theme/presets/default";
+import { CozyCssVariables as DefaultCssVariables } from "./src/theme/presets/cozy";
 
-// Font family names
-// Font family names
 const Fonts = {
-    title: "var(--font-title, 'Maven Pro')",
-    headline: "var(--font-headline, 'Mako')",
-    body: "var(--font-body, 'Duru Sans')",
+    title: "var(--font-title, 'Pixelify Sans')",
+    headline: "var(--font-headline, 'Pixelify Sans')",
+    body: "var(--font-body, 'Outfit')",
 };
 
 export default {
@@ -124,21 +122,25 @@ export default {
                 // SEMANTIC TOKEN SHADOWS
                 // ============================================
                 // Brand shadows
-                "shadow-brand-sm": "2px 2px 0px 0px var(--shadow-brand-sm)",
-                "shadow-brand-md": "4px 4px 0px 0px var(--shadow-brand-md)",
-                "shadow-brand-lg": "6px 6px 0px 0px var(--shadow-brand-lg)",
+                "shadow-brand-sm":
+                    "2px 2px 0px 0px rgb(var(--shadow-brand-sm))",
+                "shadow-brand-md":
+                    "4px 4px 0px 0px rgb(var(--shadow-brand-md))",
+                "shadow-brand-lg":
+                    "6px 6px 0px 0px rgb(var(--shadow-brand-lg))",
 
                 // Dark shadows
-                "shadow-dark-sm": "2px 2px 0px 0px var(--shadow-dark-sm)",
-                "shadow-dark-md": "4px 4px 0px 0px var(--shadow-dark-md)",
-                "shadow-dark-lg": "6px 6px 0px 0px var(--shadow-dark-lg)",
-                "shadow-dark-xl": "12px 12px 0px 0px var(--shadow-dark-xl)",
+                "shadow-dark-sm": "2px 2px 0px 0px rgb(var(--shadow-dark-sm))",
+                "shadow-dark-md": "4px 4px 0px 0px rgb(var(--shadow-dark-md))",
+                "shadow-dark-lg": "6px 6px 0px 0px rgb(var(--shadow-dark-lg))",
+                "shadow-dark-xl":
+                    "12px 12px 0px 0px rgb(var(--shadow-dark-xl))",
 
                 // Highlight shadows
                 "shadow-highlight-sm":
-                    "2px 2px 0px 0px var(--shadow-highlight-sm)",
+                    "2px 2px 0px 0px rgb(var(--shadow-highlight-sm))",
                 "shadow-highlight-md":
-                    "4px 4px 0px 0px var(--shadow-highlight-md)",
+                    "4px 4px 0px 0px rgb(var(--shadow-highlight-md))",
             },
             borderRadius: {
                 button: "var(--radius-button)",
@@ -182,12 +184,36 @@ export default {
                 ":root": {
                     // CSS variables for Tailwind colors
                     "--color-yellow": "#ecf874",
-                    "--color-pink": "#ff69b4",
-                    "--color-cyan": "#74f8ec",
+                    "--color-lime": "#ecf874",
+                    "--color-pink": "#ffd1b3",
+                    "--color-cyan": "#a8e6cf",
                     "--color-charcoal": "#110518",
 
                     // Inject Default Theme Variables
                     ...DefaultCssVariables,
+                },
+            });
+        }),
+        // Pixel-art utility classes
+        plugin(({ addUtilities, addBase }) => {
+            // Disable font smoothing on pixel font families for crisp rendering
+            addBase({
+                ".font-title, .font-headline": {
+                    "-webkit-font-smoothing": "none",
+                    "-moz-osx-font-smoothing": "grayscale",
+                },
+            });
+            addUtilities({
+                ".font-pixel": {
+                    "-webkit-font-smoothing": "none",
+                    "-moz-osx-font-smoothing": "grayscale",
+                },
+                ".render-pixelated": {
+                    "image-rendering": "pixelated",
+                },
+                ".pixel-border": {
+                    "box-shadow":
+                        "-4px 0 0 0 currentColor, 4px 0 0 0 currentColor, 0 -4px 0 0 currentColor, 0 4px 0 0 currentColor",
                 },
             });
         }),

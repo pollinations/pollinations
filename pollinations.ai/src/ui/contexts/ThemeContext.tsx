@@ -15,8 +15,11 @@ import {
     themeToDictionary,
 } from "../../theme/style/theme-processor";
 
-// Randomly select a preset for initial theme (visual only - no copy)
-const initialPresetIndex = Math.floor(Math.random() * PRESETS.length);
+// Select "cozy" preset as default, fallback to first preset
+const initialPresetIndex = Math.max(
+    0,
+    PRESETS.findIndex((p) => p.id === "cozy"),
+);
 const initialPreset = PRESETS[initialPresetIndex];
 
 const DefaultThemeDefinition = themeToDictionary(initialPreset.theme);

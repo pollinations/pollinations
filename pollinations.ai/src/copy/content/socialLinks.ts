@@ -4,9 +4,7 @@ import {
     InstagramIcon,
     LinkedinIcon,
     RedditIcon,
-    TiktokIcon,
     XIcon,
-    YoutubeIcon,
 } from "../../ui/assets/SocialIcons";
 
 export const SOCIAL_LINKS = {
@@ -45,24 +43,10 @@ export const SOCIAL_LINKS = {
         width: "20px",
         height: "20px",
     },
-    youtube: {
-        label: "YouTube",
-        icon: YoutubeIcon,
-        url: "https://www.youtube.com/c/pollinations",
-        width: "28px",
-        height: "28px",
-    },
-    tiktok: {
-        label: "Tiktok",
-        icon: TiktokIcon,
-        url: "https://tiktok.com/@pollinations.ai",
-        width: "27px",
-        height: "27px",
-    },
     reddit: {
         label: "Reddit",
         icon: RedditIcon,
-        url: "https://www.reddit.com/r/pollinations/",
+        url: "https://www.reddit.com/r/pollinations_ai/",
         width: "24px",
         height: "24px",
     },
@@ -70,6 +54,12 @@ export const SOCIAL_LINKS = {
 
 // Additional links (not rendered as social icons)
 export const LINKS = {
+    enter: "https://enter.pollinations.ai",
+    enterDocs: "https://enter.pollinations.ai/docs#api",
+    enterApiDocs: "https://enter.pollinations.ai/api/docs",
+    enterTiersFaq: "https://enter.pollinations.ai#what-are-tiers",
+    apidocsRaw:
+        "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
     discordPollenBeta:
         "https://discord.com/channels/885844321461485618/1432378056126894343",
     githubSubmitApp:

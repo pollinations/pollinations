@@ -3,14 +3,9 @@
 export const PLAY_PAGE = {
     // Page titles and navigation
     createTitle: "Create",
-    watchTitle: "Watch",
     createDescription:
         "Try any model. This is a fun demo playground—not our main product, just a place to explore and experiment.",
     pricingLinkText: "See pricing",
-    feedDescription:
-        "Watch the global pulse of our network in real-time. See what the community is creating right now through our APIs.",
-    toggleWatchOthers: "Watch what others are making",
-    toggleBackToPlay: "Back to Play",
 
     // PlayGenerator UI labels
     modelsLabel: "Models",
@@ -52,16 +47,6 @@ export const PLAY_PAGE = {
 
     // Voice selector
     voiceLabel: "Voice",
-
-    // Image feed
-    waitingForImages: "Waiting for images...",
-    waitingForContent: "Waiting for content...",
-    listeningTo: "Listening to",
-    feedPromptLabel: "Prompt",
-    feedModelLabel: "Model",
-    noPromptAvailable: "No prompt available",
-    noPromptFallback: "No prompt",
-    noModelFallback: "-",
 
     // Auth
     loginButton: "Login",

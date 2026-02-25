@@ -38,6 +38,10 @@ export type CreateApiKey = {
     expiryDays?: number | null;
     /** Account permissions: ["balance", "usage"]. null = no permissions */
     accountPermissions?: string[] | null;
+    /** App URL for publishable keys (full URL with path) */
+    appUrl?: string;
+    /** Enable BYOP auth redirect flow */
+    byop?: boolean;
 };
 
 export type CreateApiKeyResponse = ApiKey & {

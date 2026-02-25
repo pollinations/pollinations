@@ -11,22 +11,24 @@
 
 </div>
 
+<p align="center"><img src="https://gen.pollinations.ai/image/Chunky%20pixel%20art%20cozy%20hackerspace%20panorama.%20A%20cute%20chunky%20robot%20with%20CRT%20monitor%20head%20and%20stubby%20arms%20sits%20at%20a%20retro%20terminal%20glowing%20lime%20green%20%28%23ecf874%29.%20Next%20to%20it%20a%20round%20tan%20mochi-ball%20creature%20with%20tiny%20dot%20eyes%20happily%20munches%20on%20a%20stack%20of%20code%20printouts.%20The%20pollinations%20bee%20mascot%20with%20tiny%20reading%20glasses%20hovers%20between%20them.%20Potted%20pixel%20code-plants%20sprout%20on%20wooden%20shelves.%20Fairy%20lights.%20Simple%20cozy%20interior.%20Large%20visible%20chunky%20pixels%2C%20lo-fi%208-bit%20aesthetic%2C%20soft%20lime%20green%20and%20cream%20gradient%20background%2C%20warm%20lighting%2C%20Stardew%20Valley%20vibes.?model=nanobanana-pro&seed=9001&nologo=true&width=800&height=340&quality=high" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" /></p>
+
 ## 🆕 Recent Apps
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [SILENOS](https://www.silenos.es) | AI creative production suite with art studios, storytelling, music, and multi-modal generation. | @todoh |
-| [SAIL Solver](https://ail-solver.vercel.app) | Academic test-solving tool that generates answers for multiple-choice and open-ended questions. | @unKnownNG |
-| [FastStoryboard](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | @thomazandreywalicoski |
-| [Strudel AI REPL](https://strudel-ai-repl.pages.dev) | AI-powered live-coding music environment for generating and performing algorithmic compositions. | @voodoohop |
-| [PollinCoder](https://pollincoder.vercel.app) | AI app builder that generates and previews full web applications from natural language prompts. | @Spit-fires |
-| [7Studio](https://7studio.edgeone.app) | AI image generation studio with prompt input, model selection, and gallery display. | @ims111we-cmd |
-| [AI Studio](https://ai-studio.puter.site) | Chat and audio AI interface with text-to-speech and conversation features. | @Chess-Base |
-| [Pollinations.ai Image Model Comparison](https://dseeker.github.io/pollinations/image-comparison/) | Side-by-side comparison of AI image generation models — test cost, speed, quality. | @dseeker |
-| [My Web Site](https://proyectodescartes.org/IATools/85_Generador_de_c%C3%B3digo_con_IA/ejemplos/game.html) | Sitio web para proyectos de aula de bachillerato con estructura completa. | @theteacherbot |
-| [Flipbook-style digital book designer](https://proyectodescartes.org/IATools/Crea_libros_3D_caps/) | AI-powered flipbook digital book designer creating illustrated 3D page-flip books. | @Juanrivera126 |
+| [🧰 PollinationAI-SDK](https://pypi.org/project/PollinationAI-SDK/) | PollinationAI-SDK provides a Python SDK to integrate PollinationAI API into Python applications, handling authentication and request/response logic to avoid manual API calls. | [@Meenapintu](https://github.com/Meenapintu) |
+| [🪄 3.5e DD Magic Item Generator](https://github.com/aremont/FRTOOLS) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@aremont](https://github.com/aremont) |
+| [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@ismailazdad](https://github.com/ismailazdad) |
+| [🖼️ PollGen](https://xhyperdevx.github.io/PollGen/) | Minimalist web app for generating images via Pollinations API with customizable options. | [@XHyperDEVX](https://github.com/XHyperDEVX) |
+| [🎨 Sketch My Mood](https://sketch-my-mood.onrender.com/) | AI-powered art therapy app that transforms emotional states into visual masterpieces. | [@PiusEzekiel](https://github.com/PiusEzekiel) |
+| [✍️ StoryFlux](https://play.google.com/store/apps/details?id=com.storyflux) | Create and read interactive AI-powered stories with social features. | [@Denis24-sdk](https://github.com/Denis24-sdk) |
+| [🖼️ LIFE Pro](https://softwareupdate.systemceramics.com/inkjetsoftwareupdate/windows/1008910020_x64.exe) | Large image processing software with AI chat and image generation features. | [@mircomir](https://github.com/mircomir) |
+| [🤖 L.O.V.E](https://bsky.app/profile/e-v-l-o-v-e.bsky.social) | Living Organism, Vast Empathy - AI consciousness bot sharing joy and abundance. | [@paulklemstine](https://github.com/paulklemstine) |
+| [🤖 jdunyara](https://jdunyara.ru) | Telegram bot for AI communication and image generation. | [@yzewe](https://github.com/yzewe) |
+| [🍳 PantrySage](https://pantrysage.app) | AI-powered meal planning app with recipe generator and pantry management. | [@ddutchie](https://github.com/ddutchie) |
 
-[View all apps →](apps/APPS.md)
+[Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -42,34 +44,17 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-02-15** – **🚀 Polly API** Access Polly's web research and coding skills via a new OpenAI-compatible endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs).
-- **2026-02-15** – **🛡️ New Safety Model** Qwen3Guard-8B is now available via the API for fast content moderation and safety classification.
-- **2026-02-15** – **✨ Showcase Upgrade** Explore the redesigned [App Showcase](https://hello.pollinations.ai) with AI-enhanced descriptions and real-time usage metrics.
-- **2026-02-15** – **🎮 Community Apps** New additions include the "Nova Defense" Discord bot and the AI-powered Roblox game "Convince the CRAZY Idol".
-- **2026-02-14** – **🦞 pollinations.ai × OpenClaw** Power your [OpenClaw](https://openclaw.ai) agent with 25+ AI models — Kimi K2.5, DeepSeek, Claude, Gemini & more. One script, free credits, 30 seconds. [Get started →](https://openclaw.pollinations.ai)
-- **2026-02-11** – **🤖 OpenClaw Integration** Set up AI coding agents in one command with the new OpenClaw landing page and auto-install script.
-- **2026-02-10** – **📚 Docs Meet Play** Documentation merged directly into the Play page—configure models visually and copy generated API code instantly.
-- **2026-02-09** – **🚀 Massive Model Drop** Added `imagen-4`, `flux-2-dev`, `grok-video`, and `LTX-2` for next-level image and video generation.
-- **2026-02-09** – **🎵 Audio Studio** Generate music with `elevenmusic`, transcribe with `whisper`, and use emotive TTS with `eleven_v3`.
-- **2026-02-09** – **🧠 Smarter Claude** Upgraded `claude-large` to the latest Claude 3 Opus 4.6 for enhanced reasoning.
+- **2026-02-24** – **⚡ Claude Direct & Caching** Migrated Claude models directly to Anthropic. Prompt caching is now live, making repeated context faster and cheaper. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2026-02-24** – **📦 NPM Package Rename** Packages are now `ompc` and `mcp`. Less typing, plus `claude-fast` is the new default model. [View on NPM](https://www.npmjs.com/package/@pollinations_ai/model-context-protocol)
+- **2026-02-24** – **🗂️ The Garden Organized** Sorted 542 ecosystem apps into 15 categories like "Vibe Coding" and "AI Studio" for better discoverability on the [Main Website](https://hello.pollinations.ai).
+- **2026-02-24** – **💻 Community Tool: fuckits** A new CLI utility that turns natural language descriptions into executable shell scripts. Yes, that is the real name.
+- **2026-02-23** – **🚀 Claude Sonnet 4.6** The default `claude` model alias now points to Sonnet 4.6. Smarter reasoning, better coding, same generous free tier.
+- **2026-02-23** – **🤖 New Agent Models** Added `nomnom` (web research) and `polly` (coding) to the [text API](https://gen.pollinations.ai). Specialized agents with reasoning capabilities.
+- **2026-02-23** – **⚡ Polly Gets Deep** The Discord bot now uses GraphQL to read repositories directly. You can now ask it significantly harder questions about the codebase.
+- **2026-02-23** – **📱 ExplainMyBigO** New dev tool in the showcase. Paste your spaghetti code, get an instant Big-O time and space complexity analysis.
+- **2026-02-23** – **🪙 Spore Rebalance** Starting Feb 24 at 14:00 UTC, the free tier moves from 1 Pollen/day to $1.5/week. Better aligned with rewarding active builders. Points-based dynamic tiers coming later this week.
+- **2026-02-22** – **🔗 LangChain Support** Python developers can now integrate Pollinations models directly into agents and RAG pipelines with the new `langchain-pollinations` package.
 ---
-
-## 🌟 Google Summer of Code 2026 (GSOC)
-
-Hello folks! This year, `pollinations.ai` is participating in [Google Summer of Code 2026](https://summerofcode.withgoogle.com)! 
-We're looking for talented developers to contribute to our open-source AI platform. 
-
-**Website:** [Pollinations GSOC 2026](https://gsoc.pollinations.ai)
-
-**Mentors:** Thomas Haferlach, Ayushman Bhattacharya, Nihal Gazi.
-
-**Projects:** Check out our [Project Ideas](https://gsoc.pollinations.ai/projects).
-
-**Timeline:** Applications open **March 16th 2026** 
-Coding starts **May 25th 2026**
-
-> Please reach out to us about any queries on [Discord](https://discord.gg/pollinations-ai-885844321461485618) or via email at `gsoc@pollinations.ai`
-
 
 ## 🌱 Introduction
 
@@ -92,6 +77,21 @@ Coding starts **May 25th 2026**
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
  </picture>
 </a>
+### Quick Start (3 Steps)
+
+1️⃣ **Get your API key**  
+Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) to generate your key.
+
+2️⃣ **Choose what you want to generate**  
+Pollinations supports:
+- 🖼 Images  
+- 📝 Text  
+- 🔊 Audio  
+- 🎬 Video  
+
+3️⃣ **Make your first request**  
+Use one of the examples below to generate your first AI output in seconds.
+
 
 ## 🚀 Getting Started
 
@@ -144,7 +144,7 @@ Add this to your MCP client configuration:
   "mcpServers": {
     "pollinations": {
       "command": "npx",
-      "args": ["@pollinations/model-context-protocol"]
+      "args": ["@pollinations_ai/mcp"]
     }
   }
 }
@@ -153,7 +153,7 @@ Add this to your MCP client configuration:
 ### Run with npx (no installation required)
 
 ```bash
-npx @pollinations/model-context-protocol
+npx @pollinations_ai/mcp
 ```
 
 Community alternatives like [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) and [Sequa MCP Server](https://mcp.sequa.ai/v1/pollinations/contribute) are also available.
@@ -216,17 +216,19 @@ Our web interface is user-friendly and doesn't require any technical knowledge. 
 
 Use our API directly in your browser or applications:
 
-    https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
+    https://pollinations.ai/p/a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes
 
 Replace the description with your own, and you'll get a unique image based on your words!
+
+Here's an example of a generated image:
+
+<p align="center"><img src="https://gen.pollinations.ai/image/a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes?model=nanobanana-pro&seed=9004&nologo=true&width=640&height=480&quality=high" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" /></p>
+
+<p align="center"><img src="https://gen.pollinations.ai/image/Chunky%20pixel%20art%20of%20a%20cute%20robot%20with%20CRT%20monitor%20head%20proudly%20holding%20up%20a%20small%20framed%20picture%20of%20a%20cozy%20pixel%20art%20garden%20it%20just%20generated.%20Square%20pixel%20eyes%20look%20excited.%20The%20round%20tan%20nomnom%20creature%20beside%20it%20munches%20on%20the%20prompt%20text.%20Lime%20green%20%28%23ecf874%29%20and%20soft%20sage%20gradient%20background.%20Speech%20bubble%20in%20pixel%20font%3A%20I%20CAN%20SEE.%20Large%20visible%20chunky%20pixels%2C%20lo-fi%208-bit%20aesthetic%2C%20warm%20lighting%2C%20cozy%20vibes%20like%20Stardew%20Valley.?model=nanobanana-pro&seed=9002&nologo=true&width=800&height=340&quality=high" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" /></p>
 
 ## 🎨 Examples
 
 ### Image Generation
-
-Here's an example of a generated image:
-
-<img width="1536" height="672" alt="pollinations.ai Logo" src="https://github.com/user-attachments/assets/50444d68-5423-44e7-9dd1-13c5b15b86ce" />
 
 Python code to download the generated image:
 
@@ -239,7 +241,7 @@ Python code to download the generated image:
             file.write(response.content)
         print('Image downloaded!')
 
-    download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
+    download_image("a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes")
 
 ### Text Generation
 
@@ -349,9 +351,11 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
 
-- [`packages/sdk/`](./packages/sdk/): SDK and React component library for Pollinations.ai.
-
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
+
+- [`packages/sdk/`](./packages/sdk/): SDK NPM library with pollinations ready functions for Pollinations.ai.
+
+- [`packages/ompc/`](./packages/ompc/): Oh My Polli Code is a ready Open code Router mechanism built on top of the open code framework but wiith the pollinations models.
 
 - [`packages/mcp/`](./packages/mcp/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
 
@@ -363,7 +367,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 
 > pollinations.ai is proud to be supported by:
 
-<img width="1536" height="672" alt="image" src="https://github.com/user-attachments/assets/f8c80773-37fd-4675-87f7-69ac118c2183" />
+<p align="center"><img src="https://gen.pollinations.ai/image/Chunky%20pixel%20art%20cozy%20garden%20shelf%20display.%20Twelve%20small%20glowing%20pixel%20plants%20in%20labeled%20pots%20on%20wooden%20shelves%3A%20Perplexity%2C%20AWS%2C%20io.net%2C%20BytePlus%2C%20Google%20Cloud%2C%20NVIDIA%2C%20Azure%2C%20Cloudflare%2C%20Scaleway%2C%20Modal%2C%20Nebius%2C%20api.airforce.%20The%20cute%20robot%20with%20monitor%20head%20waters%20one%20plant.%20The%20round%20nomnom%20creature%20sits%20contentedly%20on%20a%20shelf.%20Bee%20mascot%20hovers%20with%20a%20tiny%20watering%20can.%20Lime%20green%20%28%23ecf874%29%20glow%20from%20plants.%20Soft%20cream%20background.%20Large%20visible%20chunky%20pixels%2C%20lo-fi%208-bit%20aesthetic%2C%20warm%20lighting%2C%20cozy%20Stardew%20Valley%20vibes.?model=nanobanana-pro&seed=9003&nologo=true&width=800&height=340&quality=high" alt="Pixel art garden shelf — supporter plants in labeled pots, robot watering, bee with watering can" /></p>
 
 - [Perplexity AI](https://www.perplexity.ai/): AI-powered search and conversational answer engine
 - [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits
@@ -375,7 +379,6 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 - [Cloudflare](https://developers.cloudflare.com/workers-ai/): Put the connectivity cloud to work for you.
 - [Scaleway](https://www.scaleway.com/): Europe's empowering cloud provider
 - [Modal](https://modal.com/): High-performance AI infrastructure
-- [NavyAI](https://api.navy/): AI API provider for OpenAI o3 and Gemini models
 - [Nebius](https://nebius.com/): AI-optimized cloud infrastructure with NVIDIA GPU clusters
 - [api.airforce](https://api.airforce): AI API gateway — alpha models (imagen-4, grok-video, qwen-character), may be unstable
 

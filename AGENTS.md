@@ -33,13 +33,15 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 
 **Categories:**
 
-- Vibes ✨ (`Vibes`): No-code / describe-to-code playgrounds and builders
-- Creative 🎨 (`Creative`): Turn prompts into images, video, music, design, slides
-- Games 🎲 (`Games`): AI-powered play, interactive fiction, puzzle & agent worlds
-- Dev_Tools 🛠️ (`Dev_Tools`): SDKs, integration libs, extensions, dashboards, MCP servers
-- Chat 💬 (`Chat`): Standalone chat UIs / multi-model playgrounds
-- Social_Bots 🤖 (`Social_Bots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
-- Learn 📚 (`Learn`): Tutorials, guides, style books & educational demos
+- 🖼️ Image (`image`): Image gen, editing, design, avatars, stickers
+- 🎬 Video & Audio (`video_audio`): Video gen, animation, music, TTS
+- ✍️ Write (`writing`): Content creation, storytelling, copy, slides
+- 💬 Chat (`chat`): Assistants, companions, AI studio, multi-modal chat
+- 🎮 Play (`games`): AI games, interactive fiction, Roblox worlds
+- 📚 Learn (`learn`): Education, tutoring, language learning
+- 🤖 Bots (`bots`): Discord, Telegram, WhatsApp bots
+- 🛠️ Build (`build`): Dev tools, SDKs, integrations, vibe coding
+- 💼 Business (`business`): Productivity, finance, marketing, health, food
 
 ## Non-English Apps
 
@@ -67,8 +69,8 @@ pollinations/
 ├── text.pollinations.ai/      # Text generation backend (EC2)
 ├── pollinations.ai/           # Main React frontend
 ├── packages/
-│   ├── sdk/                   # @pollinations/sdk - Client library with React hooks
-│   └── mcp/                   # @pollinations/model-context-protocol - MCP server
+│   ├── sdk/                   # @pollinations_ai/sdk - Client library with React hooks
+│   └── mcp/                   # @pollinations_ai/model-context-protocol - MCP server
 ├── shared/                    # Shared utilities (auth, registry, IP queue)
 │   └── registry/              # Model registries (image.ts, text.ts, audio.ts, video.ts)
 ├── apps/                      # Community apps + APPS.md showcase
@@ -199,6 +201,19 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 - **Check which branch you're on** - Run `git branch --show-current` before starting work
 - **Check related PRs and issues** - Use GitHub MCP tools to find context before implementing
 - **Look for existing utility functions** in `shared/` before writing new ones (auth, queue, registry)
+
+## Tinybird Deployment Safety
+
+**CRITICAL — These rules apply whenever deploying to Tinybird:**
+
+- **Always validate first**: `tb --cloud deploy --check --wait` before any deploy
+- **Never use `--allow-destructive-operations`** without explicit user permission
+- **Never use `tb push`** — it's deprecated; use `tb --cloud deploy --wait`
+- **Always use `--cloud`** — without it, CLI tries Tinybird Local (Docker)
+- **Run from `enter.pollinations.ai/observability`** — not from repo root
+- **Pipes are shared** — multiple apps/dashboards may consume the same pipe. Verify all consumers before modifying any pipe
+- **Timeout mitigation**: Use `uniq()` over `uniqExact()`, avoid CTE+JOIN, prefer single-pass queries. For large time ranges, use `start_date` parameter pattern for week-by-week querying
+- Full deploy procedure: see `.claude/skills/tinybird-deploy/SKILL.md`
 
 ## Common Mistakes to Avoid
 

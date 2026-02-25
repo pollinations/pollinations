@@ -1,8 +1,8 @@
 import debug from "debug";
 // Import the new cleaning utilities
 import {
-    cleanUndefined as newCleanUndefined,
     cleanNullAndUndefined as newCleanNullAndUndefined,
+    cleanUndefined as newCleanUndefined,
 } from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:utils");
@@ -25,14 +25,12 @@ export function validateAndNormalizeMessages(messages) {
             content: msg.content || "",
         };
 
-
         if (msg.tool_calls) {
             if (msg.content != null) {
                 normalizedMsg.content = msg.content;
             } else {
                 normalizedMsg.content = null;
             }
-
         } else if (msg.role === "tool") {
             normalizedMsg.content = msg.content ?? null;
         } else {
@@ -46,8 +44,8 @@ export function validateAndNormalizeMessages(messages) {
 
         // preserve other known OpenAI compatible properties
         if (msg.function_call) normalizedMsg.function_call = msg.function_call;
-        if (msg.cache_control) normalizedMsg.cache_control = msg.cache_control;
-        if (msg.reasoning_content) normalizedMsg.reasoning_content = msg.reasoning_content;
+        if (msg.reasoning_content)
+            normalizedMsg.reasoning_content = msg.reasoning_content;
         if (msg.audio) normalizedMsg.audio = msg.audio;
 
         return normalizedMsg;

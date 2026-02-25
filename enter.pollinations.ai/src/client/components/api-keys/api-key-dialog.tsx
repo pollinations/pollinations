@@ -37,6 +37,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
     );
     const [keyType, setKeyType] = useState<"secret" | "publishable">("secret");
+    const [appUrl, setAppUrl] = useState("");
+    const [botProtection, setBotProtection] = useState(false);
+    const [byopEnabled, setByopEnabled] = useState(false);
     const keyPermissions = useKeyPermissions();
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
@@ -68,6 +71,11 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setDescription(
             newKeyType === "publishable" ? "" : `Created on ${dateStr}`,
         );
+        if (newKeyType !== "publishable") {
+            setAppUrl("");
+            setBotProtection(false);
+            setByopEnabled(false);
+        }
     };
 
     async function handleSubmit(e: React.FormEvent) {
@@ -79,6 +87,11 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 description,
                 keyType,
                 ...keyPermissions.permissions,
+                ...(keyType === "publishable" && appUrl && { appUrl }),
+                ...(keyType === "publishable" && {
+                    botProtection,
+                    byop: byopEnabled,
+                }),
             });
             setCreatedKey(newKey);
         } finally {
@@ -243,6 +256,91 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     readOnly={!!createdKey}
                                 />
                             </Field.Root>
+
+                            {keyType === "publishable" && !createdKey && (
+                                <div className="space-y-3">
+                                    <Field.Root className="flex items-center gap-3">
+                                        <Field.Label className="text-sm font-semibold shrink-0">
+                                            App URL
+                                        </Field.Label>
+                                        <Field.Input
+                                            type="url"
+                                            value={appUrl}
+                                            onChange={(e) => {
+                                                setAppUrl(e.target.value);
+                                                if (!e.target.value) {
+                                                    setBotProtection(false);
+                                                    setByopEnabled(false);
+                                                }
+                                            }}
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+                                            placeholder="https://myapp.com"
+                                            disabled={isSubmitting}
+                                        />
+                                    </Field.Root>
+
+                                    {appUrl && (
+                                        <div
+                                            className={cn(
+                                                "rounded-lg border border-gray-200 p-3 space-y-2",
+                                                isSubmitting && "opacity-50",
+                                            )}
+                                        >
+                                            <label
+                                                className={cn(
+                                                    "flex items-center gap-2 cursor-pointer",
+                                                    isSubmitting &&
+                                                        "cursor-not-allowed",
+                                                )}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={botProtection}
+                                                    onChange={(e) =>
+                                                        setBotProtection(
+                                                            e.target.checked,
+                                                        )
+                                                    }
+                                                    disabled={isSubmitting}
+                                                    className="w-4 h-4 rounded text-cyan-600"
+                                                />
+                                                <span className="text-sm">
+                                                    🛡️ Bot Protection
+                                                </span>
+                                                <span className="text-xs text-gray-400 ml-auto">
+                                                    Turnstile verification
+                                                </span>
+                                            </label>
+                                            <label
+                                                className={cn(
+                                                    "flex items-center gap-2 cursor-pointer",
+                                                    isSubmitting &&
+                                                        "cursor-not-allowed",
+                                                )}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={byopEnabled}
+                                                    onChange={(e) =>
+                                                        setByopEnabled(
+                                                            e.target.checked,
+                                                        )
+                                                    }
+                                                    disabled={isSubmitting}
+                                                    className="w-4 h-4 rounded text-green-600"
+                                                />
+                                                <span className="text-sm">
+                                                    🔗 BYOP (Bring Your Own
+                                                    Pollen)
+                                                </span>
+                                                <span className="text-xs text-gray-400 ml-auto">
+                                                    Auth redirect flow
+                                                </span>
+                                            </label>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {!createdKey && (
                                 <KeyPermissionsInputs

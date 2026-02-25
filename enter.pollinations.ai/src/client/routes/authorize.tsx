@@ -30,6 +30,7 @@ export const Route = createFileRoute("/authorize")({
     validateSearch: (search: Record<string, unknown>) => {
         const result: {
             redirect_url: string;
+            app_key?: string;
             models?: string[] | null;
             budget?: number | null;
             expiry?: number | null;
@@ -37,6 +38,10 @@ export const Route = createFileRoute("/authorize")({
         } = {
             redirect_url: (search.redirect_url as string) || "",
         };
+
+        if (search.app_key && typeof search.app_key === "string") {
+            result.app_key = search.app_key;
+        }
 
         // Only include optional params if they're present
         const models = parseList(search.models);
@@ -59,6 +64,7 @@ export const Route = createFileRoute("/authorize")({
 function AuthorizeComponent() {
     const {
         redirect_url,
+        app_key,
         models,
         budget,
         expiry,
@@ -75,6 +81,13 @@ function AuthorizeComponent() {
     const [error, setError] = useState<string | null>(null);
     const [redirectHostname, setRedirectHostname] = useState<string>("");
     const [isValidUrl, setIsValidUrl] = useState(false);
+    const [attribution, setAttribution] = useState<{
+        found: boolean;
+        userId?: string;
+        userName?: string;
+        appName?: string;
+        appUrl?: string;
+    } | null>(null);
 
     // Use shared hook for key permissions, pre-populated from URL params
     // Default to profile permission enabled unless URL explicitly overrides
@@ -96,6 +109,30 @@ function AuthorizeComponent() {
             document.documentElement.style.overflow = originalHtml;
         };
     }, []);
+
+    // Fetch attribution info (best-effort)
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (app_key) params.set("app_key", app_key);
+        else if (redirect_url) params.set("redirect_url", redirect_url);
+
+        if (params.toString()) {
+            fetch(`/api/app-lookup?${params}`)
+                .then((r) => r.json())
+                .then((data) =>
+                    setAttribution(
+                        data as {
+                            found: boolean;
+                            userId?: string;
+                            userName?: string;
+                            appName?: string;
+                            appUrl?: string;
+                        },
+                    ),
+                )
+                .catch(() => {}); // Attribution is best-effort
+        }
+    }, [app_key, redirect_url]);
 
     // Parse and validate the redirect URL
     useEffect(() => {
@@ -136,8 +173,10 @@ function AuthorizeComponent() {
 
         try {
             // Create a temporary API key using better-auth's built-in endpoint
+            const displayName =
+                attribution?.appName || redirectHostname;
             const result = await authClient.apiKey.create({
-                name: redirectHostname,
+                name: displayName,
                 ...(keyPermissions.permissions.expiryDays !== null && {
                     expiresIn:
                         keyPermissions.permissions.expiryDays * SECONDS_PER_DAY,
@@ -146,6 +185,10 @@ function AuthorizeComponent() {
                 metadata: {
                     keyType: "secret",
                     createdVia: "redirect-auth",
+                    ...(attribution?.found && {
+                        createdForUserId: attribution.userId,
+                        createdForApp: attribution.appName,
+                    }),
                 },
             });
 
@@ -242,8 +285,14 @@ function AuthorizeComponent() {
                             <>
                                 <div className="bg-green-200 rounded-lg p-4">
                                     <p className="font-semibold text-green-950">
-                                        {redirectHostname}
+                                        {attribution?.appName ||
+                                            redirectHostname}
                                     </p>
+                                    {attribution?.appName && (
+                                        <p className="text-xs text-green-700 mt-0.5">
+                                            {redirectHostname}
+                                        </p>
+                                    )}
                                     <p className="text-xs text-green-800">
                                         wants to connect to your account
                                     </p>
@@ -313,7 +362,8 @@ function AuthorizeComponent() {
                                 <p className="font-semibold text-green-950 mb-1">
                                     🔑 Create and share my API key with{" "}
                                     <span className="font-mono bg-green-300 rounded px-1.5 py-0.5 text-green-950">
-                                        {redirectHostname}
+                                        {attribution?.appName ||
+                                            redirectHostname}
                                     </span>
                                 </p>
                                 <p className="text-xs text-green-800 mt-2">

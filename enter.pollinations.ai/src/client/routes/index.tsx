@@ -124,17 +124,27 @@ function RouteComponent() {
                     description: formState.description,
                     keyType,
                     plaintextKey: apiKey.key,
+                    ...(formState.appUrl && { appUrl: formState.appUrl }),
+                    ...(formState.byop && { byop: true }),
                 }),
             });
 
-            // Save turnstile settings if provided
-            if (formState.turnstile) {
-                await fetch(`/api/api-keys/${apiKey.id}/turnstile`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify(formState.turnstile),
-                });
+            // Auto-derive turnstile from appUrl when bot protection is enabled
+            if (formState.botProtection && formState.appUrl) {
+                try {
+                    const hostname = new URL(formState.appUrl).hostname;
+                    await fetch(`/api/api-keys/${apiKey.id}/turnstile`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({
+                            enabled: true,
+                            hostnames: [hostname],
+                        }),
+                    });
+                } catch {
+                    // Invalid URL, skip turnstile
+                }
             }
         }
 

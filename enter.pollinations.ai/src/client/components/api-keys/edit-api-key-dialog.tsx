@@ -29,6 +29,14 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const isPublishable = apiKey.metadata?.keyType === "publishable";
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
+    const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
+    const initialBotProtection =
+        !!(apiKey.metadata?.turnstile as { enabled?: boolean })?.enabled;
+    const initialByop = !!(apiKey.metadata?.byop);
+    const [appUrl, setAppUrl] = useState(initialAppUrl);
+    const [botProtection, setBotProtection] = useState(initialBotProtection);
+    const [byopEnabled, setByopEnabled] = useState(initialByop);
+
     useEffect(() => {
         const originalBodyOverflow = document.body.style.overflow;
         const originalHtmlOverflow = document.documentElement.style.overflow;
@@ -77,6 +85,47 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
                     : null,
             });
+
+            // Save app settings for publishable keys
+            if (isPublishable) {
+                const appUrlChanged = appUrl !== initialAppUrl;
+                const botChanged = botProtection !== initialBotProtection;
+                const byopChanged = byopEnabled !== initialByop;
+
+                if (appUrlChanged || byopChanged) {
+                    await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({
+                            appUrl: appUrl || undefined,
+                            byop: byopEnabled || undefined,
+                        }),
+                    });
+                }
+
+                if (botChanged || appUrlChanged) {
+                    let hostname: string | null = null;
+                    if (botProtection && appUrl) {
+                        try {
+                            hostname = new URL(appUrl).hostname;
+                        } catch {
+                            // Invalid URL
+                        }
+                    }
+                    await fetch(`/api/api-keys/${apiKey.id}/turnstile`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify(
+                            hostname
+                                ? { enabled: true, hostnames: [hostname] }
+                                : { enabled: false, hostnames: [] },
+                        ),
+                    });
+                }
+            }
+
             onClose();
         } catch (error) {
             console.error("Failed to update API key:", error);
@@ -157,6 +206,91 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                     disabled={isSubmitting}
                                 />
                             </Field.Root>
+
+                            {isPublishable && (
+                                <div className="space-y-3">
+                                    <Field.Root className="flex items-center gap-3">
+                                        <Field.Label className="text-sm font-semibold shrink-0">
+                                            App URL
+                                        </Field.Label>
+                                        <Input
+                                            type="url"
+                                            value={appUrl}
+                                            onChange={(e) => {
+                                                setAppUrl(e.target.value);
+                                                if (!e.target.value) {
+                                                    setBotProtection(false);
+                                                    setByopEnabled(false);
+                                                }
+                                            }}
+                                            className="flex-1"
+                                            placeholder="https://myapp.com"
+                                            disabled={isSubmitting}
+                                        />
+                                    </Field.Root>
+
+                                    {appUrl && (
+                                        <div
+                                            className={cn(
+                                                "rounded-lg border border-gray-200 p-3 space-y-2",
+                                                isSubmitting && "opacity-50",
+                                            )}
+                                        >
+                                            <label
+                                                className={cn(
+                                                    "flex items-center gap-2 cursor-pointer",
+                                                    isSubmitting &&
+                                                        "cursor-not-allowed",
+                                                )}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={botProtection}
+                                                    onChange={(e) =>
+                                                        setBotProtection(
+                                                            e.target.checked,
+                                                        )
+                                                    }
+                                                    disabled={isSubmitting}
+                                                    className="w-4 h-4 rounded text-cyan-600"
+                                                />
+                                                <span className="text-sm">
+                                                    🛡️ Bot Protection
+                                                </span>
+                                                <span className="text-xs text-gray-400 ml-auto">
+                                                    Turnstile verification
+                                                </span>
+                                            </label>
+                                            <label
+                                                className={cn(
+                                                    "flex items-center gap-2 cursor-pointer",
+                                                    isSubmitting &&
+                                                        "cursor-not-allowed",
+                                                )}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={byopEnabled}
+                                                    onChange={(e) =>
+                                                        setByopEnabled(
+                                                            e.target.checked,
+                                                        )
+                                                    }
+                                                    disabled={isSubmitting}
+                                                    className="w-4 h-4 rounded text-green-600"
+                                                />
+                                                <span className="text-sm">
+                                                    🔗 BYOP (Bring Your Own
+                                                    Pollen)
+                                                </span>
+                                                <span className="text-xs text-gray-400 ml-auto">
+                                                    Auth redirect flow
+                                                </span>
+                                            </label>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <KeyPermissionsInputs
                                 value={keyPermissions}

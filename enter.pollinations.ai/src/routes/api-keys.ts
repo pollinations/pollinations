@@ -168,6 +168,8 @@ const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
     keyType: z.string().optional(),
     plaintextKey: z.string().optional(),
+    appUrl: z.string().url().optional(),
+    byop: z.boolean().optional(),
 });
 
 /**

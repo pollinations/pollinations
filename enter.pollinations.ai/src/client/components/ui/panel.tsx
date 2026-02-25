@@ -8,6 +8,8 @@ const panelColors = {
     purple: "border-purple-300 bg-purple-50/30",
     amber: "border-amber-300 bg-amber-50/30",
     green: "border-green-200 bg-green-50/30",
+    pink: "border-pink-300 bg-pink-50/30",
+    gray: "border-gray-300 bg-gray-50/30",
 } as const;
 
 type PanelProps = PropsWithChildren<{

@@ -1,8 +1,8 @@
 // Import transform functions
 
-import { type ModelId, resolveServiceId } from "../shared/registry/registry.js";
+import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
 // Import registry for validation
-import type { TEXT_SERVICES } from "../shared/registry/text.js";
+import type { TEXT_SERVICES } from "../shared/registry/text.ts";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import chickyTutorPrompt from "./personas/chickytutor.js";
@@ -69,17 +69,22 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude-fast",
-        config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
+        config: portkeyConfig["claude-haiku-4-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude",
-        config: portkeyConfig["claude-sonnet-4-5-fallback"],
+        config: portkeyConfig["claude-sonnet-4-6"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude-large",
-        config: portkeyConfig["claude-opus-4-5-fallback"],
+        config: portkeyConfig["claude-opus-4-6"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "claude-legacy",
+        config: portkeyConfig["claude-opus-4-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -118,7 +123,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "chickytutor",
-        config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
+        config: portkeyConfig["claude-3-5-haiku"],
         transform: createMessageTransform(chickyTutorPrompt),
     },
     {
@@ -165,7 +170,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["accounts/fireworks/models/glm-4p7"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -176,6 +181,19 @@ const models: ModelDefinition[] = [
     {
         name: "nomnom",
         config: portkeyConfig["nomnom"],
+    },
+    {
+        name: "polly",
+        config: portkeyConfig["polly"],
+    },
+    {
+        name: "qwen-safety",
+        config: portkeyConfig["Qwen3Guard-Gen-8B"],
+    },
+    {
+        name: "qwen-character",
+        config: portkeyConfig["qwen-character"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.character),
     },
 ];
 

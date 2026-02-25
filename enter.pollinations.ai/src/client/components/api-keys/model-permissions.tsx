@@ -1,3 +1,4 @@
+import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { FC } from "react";
@@ -31,6 +32,14 @@ const videoModels = Object.entries(IMAGE_SERVICES)
         (config.outputModalities as readonly string[]).includes("video"),
     )
     .map(([id]) => ({
+        id,
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+// Audio models
+const audioModels = Object.keys(AUDIO_SERVICES)
+    .map((id) => ({
         id,
         label: getModelDisplayName(id),
     }))
@@ -86,7 +95,10 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
         (value ?? []).includes(modelId);
 
     const totalModels =
-        textModels.length + imageModels.length + videoModels.length;
+        textModels.length +
+        imageModels.length +
+        videoModels.length +
+        audioModels.length;
     const selectedCount = isUnrestricted ? totalModels : (value ?? []).length;
 
     return (
@@ -189,6 +201,25 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                             </div>
                             <div className="flex flex-col gap-1">
                                 {videoModels.map((model) => (
+                                    <ModelChip
+                                        key={model.id}
+                                        apiName={model.id}
+                                        officialName={model.label}
+                                        selected={isModelSelected(model.id)}
+                                        onClick={() => toggleModel(model.id)}
+                                        disabled={disabled}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Audio models */}
+                        <div>
+                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
+                                Audio
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                {audioModels.map((model) => (
                                     <ModelChip
                                         key={model.id}
                                         apiName={model.id}

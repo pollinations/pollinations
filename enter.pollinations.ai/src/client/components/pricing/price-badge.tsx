@@ -14,6 +14,7 @@ export const PriceBadge: FC<{
     perImage?: boolean;
     perToken?: boolean;
     perSecond?: boolean;
+    perKChar?: boolean;
     color?: keyof typeof priceBadgeColors;
     className?: string;
 }> = ({
@@ -23,6 +24,7 @@ export const PriceBadge: FC<{
     perImage,
     perToken,
     perSecond,
+    perKChar,
     color = "gray",
     className,
 }) => {
@@ -34,9 +36,11 @@ export const PriceBadge: FC<{
         ? " /sec"
         : perImage
           ? " /img"
-          : perToken
-            ? " /M"
-            : "";
+          : perKChar
+            ? " /1K chars"
+            : perToken
+              ? " /M"
+              : "";
 
     return (
         <span

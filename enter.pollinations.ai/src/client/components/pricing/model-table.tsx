@@ -7,13 +7,14 @@ import type { ModelPrice } from "./types.ts";
 
 type ModelTableProps = {
     models: ModelPrice[];
-    type: "text" | "image" | "video";
+    type: "text" | "image" | "video" | "audio";
 };
 
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
+    audioModels: ModelPrice[];
     packBalance?: number;
 };
 
@@ -47,7 +48,7 @@ const sortModels = (models: ModelPrice[]) => {
 
 type SectionHeaderProps = {
     label: string;
-    type: "text" | "image" | "video";
+    type: "text" | "image" | "video" | "audio";
     isFirst?: boolean;
 };
 
@@ -97,7 +98,9 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                                 ? "responses"
                                 : type === "image"
                                   ? "images"
-                                  : "videos"}
+                                  : type === "audio"
+                                    ? "requests"
+                                    : "videos"}
                         </div>
                     </div>
                 </Tooltip>
@@ -130,11 +133,13 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     imageModels,
     videoModels,
     textModels,
+    audioModels,
     packBalance = 0,
 }) => {
     const sortedImageModels = sortModels(imageModels);
     const sortedVideoModels = sortModels(videoModels);
     const sortedTextModels = sortModels(textModels);
+    const sortedAudioModels = sortModels(audioModels);
 
     const regularTextModels = sortedTextModels.filter(
         (m) => !isPersona(m.name),
@@ -184,6 +189,24 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     ))}
                 </tbody>
             </table>
+
+            {/* Audio Section */}
+            {sortedAudioModels.length > 0 && (
+                <table className="w-full min-w-[540px] table-fixed border-separate border-spacing-0 rounded-2xl">
+                    <TableColGroup />
+                    <tbody>
+                        <SectionHeader label="Audio" type="audio" isFirst />
+                        {sortedAudioModels.map((model, index) => (
+                            <ModelRow
+                                key={model.name}
+                                model={model}
+                                isLast={index === sortedAudioModels.length - 1}
+                                packBalance={packBalance}
+                            />
+                        ))}
+                    </tbody>
+                </table>
+            )}
 
             {/* Text Section */}
             <table className="w-full min-w-[540px] table-fixed border-separate border-spacing-0 rounded-2xl">
@@ -237,7 +260,13 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
         type === "text" ? sortedModels.filter((m) => isPersona(m.name)) : [];
 
     const tableLabel =
-        type === "text" ? "Text" : type === "image" ? "Image" : "Video";
+        type === "text"
+            ? "Text"
+            : type === "image"
+              ? "Image"
+              : type === "audio"
+                ? "Audio"
+                : "Video";
 
     return (
         <table className="w-full">
@@ -277,7 +306,9 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
                                 ? "responses"
                                 : type === "image"
                                   ? "images"
-                                  : "videos"}
+                                  : type === "audio"
+                                    ? "requests"
+                                    : "videos"}
                         </div>
                     </th>
                     <th

@@ -1,6 +1,6 @@
+import Debug from "debug";
 import { z } from "zod";
 import { MODELS } from "./models.js";
-import Debug from "debug";
 
 const log = Debug("pollinations:image.params");
 

@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ComfyUI Video Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-a: rgba(20,20,20,1);
+      --bg-b: rgba(30,30,30,1);
+      --panel: rgba(18, 24, 40, 0.9);
+      --stroke: rgba(255, 255, 255, 0);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: yellow;
+      --accent2: #f97316;
+      --shadow: none;
+      font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(34,211,238,0.12), transparent 0%),
+        radial-gradient(circle at 82% 12%, rgba(249,115,22,0.10), transparent 0%),
+        linear-gradient(135deg, var(--bg-a), var(--bg-b));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px 48px;
+      color: var(--text);
+    }
+    .shell {
+      width: min(1080px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--stroke);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 26px 26px 30px;
+      position: relative;
+      overflow: hidden;
+    }
+    .shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 80%, rgba(34,211,238,0.08), transparent 0%);
+      pointer-events: none;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 16px;
+    }
+    .title { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(34,211,238,0.14);
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.00);
+      border: 1px solid var(--stroke);
+      border-radius: 16px;
+      padding: 16px 16px 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0);
+    }
+    .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .label-row span { font-weight: 600; letter-spacing: -0.01em; }
+    .hint { color: var(--muted); font-size: 13px; }
+    .stack { display: flex; flex-direction: column; gap: 10px; }
+    .input {
+      width: 100%;
+      padding: 14px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--stroke);
+      font-size: 15px;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(34,211,238,0.22);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .button {
+      padding: 13px 16px;
+      border-radius: 12px;
+      border: none;
+      background: yellow;
+      color: #0b1220;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s;
+      box-shadow: 0 10px 30px rgba(14,165,233,0.25);
+    }
+    .button:hover { transform: translateY(-1px); }
+    .button:active { transform: translateY(0); }
+    .button:disabled { opacity: 0.65; cursor: not-allowed; box-shadow: none; transform: none; }
+    .status-line { font-size: 14px; color: var(--muted); }
+    .status-line strong { color: #fff; }
+    .video-wrap {
+      width: 100%;
+      min-height: 340px;
+      border: 1px dashed var(--stroke);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    video { width: 100%; max-height: 520px; border-radius: 12px; background: #000; }
+    .small-text { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="title">ComfyUI Video Console</div>
+      <div class="pill">Async · Modal · LTX2</div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div class="label-row">
+          <span>Prompt</span>
+          <span class="hint">Top input · polls every 3s</span>
+        </div>
+        <div class="stack">
+          <input id="prompt" class="input" placeholder="Describe the video you want…" />
+          <div class="controls">
+            <button id="generate" class="button">Generate</button>
+            <div class="status-line" id="status">Idle</div>
+          </div>
+          <div class="small-text" id="endpointHint"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 16px; position: relative; z-index: 1;">
+      <div class="label-row">
+        <span>Result</span>
+        <span class="hint" id="jobLabel">Awaiting job…</span>
+      </div>
+      <div class="video-wrap" id="videoWrap">
+        <span id="placeholder">Video will appear here.</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="root" style="display:none"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script type="module">
+    const { useEffect, useRef, useState } = React;
+
+    const deriveDefaultEndpoints = () => {
+      const params = new URLSearchParams(window.location.search);
+      const appSlug =
+        params.get("app") ||
+        window.COMFY_APP_SLUG ||
+        "pollinations--ltx2-comfyui-api-distilled";
+      const build = (suffix) => `https://${appSlug}-${suffix}.modal.run/`;
+      return {
+        enqueue: build("enqueue"),
+        status: build("status"),
+        result: build("result"),
+      };
+    };
+
+    const ENDPOINTS = window.COMFY_ENDPOINTS || deriveDefaultEndpoints();
+
+    function App() {
+      const [prompt, setPrompt] = useState("");
+
+      const [jobId, setJobId] = useState("");
+      const jobIdRef = useRef("");
+      const [statusText, setStatusText] = useState("Idle");
+      const [videoUrl, setVideoUrl] = useState(null);
+      const pollRef = useRef(null);
+
+      // clean up object URLs
+      useEffect(() => () => { if (videoUrl) URL.revokeObjectURL(videoUrl); }, [videoUrl]);
+
+      const updateStatus = (text) => {
+        setStatusText(text);
+        const el = document.getElementById("status");
+        if (el) el.textContent = text;
+      };
+
+      const setJobLabel = (text) => {
+        const el = document.getElementById("jobLabel");
+        if (el) el.textContent = text;
+      };
+
+      const resetVideo = () => {
+        const wrap = document.getElementById("videoWrap");
+        wrap.innerHTML = '<span id="placeholder">Video will appear here.</span>';
+      };
+
+      const showVideo = (src) => {
+        const wrap = document.getElementById("videoWrap");
+        wrap.innerHTML = "";
+        const vid = document.createElement("video");
+        vid.controls = true;
+        vid.autoplay = true;
+        vid.loop = true;
+        vid.src = src;
+        wrap.appendChild(vid);
+      };
+
+      const endpointsReady = () => {
+        try {
+          ["enqueue", "status", "result"].forEach((k) => new URL(ENDPOINTS[k]));
+          return true;
+        } catch (_) {
+          return false;
+        }
+      };
+
+      const urlWithId = (base, idOverride) => {
+        try {
+          const url = new URL(base);
+          url.searchParams.set("prompt_id", idOverride ?? jobIdRef.current);
+          return url.toString();
+        } catch (_) {
+          return null;
+        }
+      };
+
+      const stopPolling = () => {
+        if (pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+      };
+
+      const startPolling = () => {
+        stopPolling();
+        pollRef.current = setInterval(checkStatus, 3000);
+      };
+
+      const checkStatus = async () => {
+        const url = urlWithId(ENDPOINTS.status);
+        if (!url) return updateStatus("Invalid status URL");
+        updateStatus("Checking status…");
+        try {
+          const res = await fetch(url, { mode: "cors" });
+          if (!res.ok) throw new Error(`Status ${res.status}`);
+          const data = await res.json();
+          if (data.status === "done") {
+            stopPolling();
+            updateStatus("Finished · fetching video…");
+            fetchResult();
+          } else {
+            updateStatus("Running… (polling)");
+          }
+        } catch (err) {
+          updateStatus(`Status failed: ${err.message}`);
+        }
+      };
+
+      const fetchResult = async () => {
+        const url = urlWithId(ENDPOINTS.result);
+        if (!url) return updateStatus("Invalid result URL");
+        try {
+          const res = await fetch(url, { mode: "cors" });
+          if (res.status === 202) {
+            updateStatus("Result not ready; will retry");
+            startPolling();
+            return;
+          }
+          if (!res.ok) throw new Error(`Result ${res.status}`);
+          const blob = await res.blob();
+          const objUrl = URL.createObjectURL(blob);
+          setVideoUrl(objUrl);
+          showVideo(objUrl);
+          updateStatus("Video ready");
+          setJobLabel(`Job ${jobId}`);
+        } catch (err) {
+          updateStatus(`Result failed: ${err.message}`);
+        }
+      };
+
+      const handleGenerate = async () => {
+        if (!prompt.trim()) return updateStatus("Enter a prompt first");
+        if (!endpointsReady()) return updateStatus("Set endpoints in ENDPOINTS constant");
+
+        stopPolling();
+        if (videoUrl) URL.revokeObjectURL(videoUrl);
+        resetVideo();
+        setJobLabel("Submitting…");
+        updateStatus("Submitting job…");
+
+        try {
+          const res = await fetch(ENDPOINTS.enqueue, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: prompt.trim() }),
+            mode: "cors",
+          });
+          if (!res.ok) throw new Error(`Enqueue ${res.status}`);
+          const data = await res.json();
+          const id = data.prompt_id || data.id;
+          if (!id) throw new Error("No prompt_id in response");
+          setJobId(id);
+          jobIdRef.current = id;
+          setJobLabel(`Job ${id}`);
+          updateStatus("Queued · polling every 3s");
+          startPolling();
+        } catch (err) {
+          updateStatus(`Enqueue failed: ${err.message}`);
+        }
+      };
+
+      // Wire events to plain inputs so the whole page is a single view.
+      useEffect(() => {
+        const promptEl = document.getElementById("prompt");
+        const btn = document.getElementById("generate");
+        const hint = document.getElementById("endpointHint");
+
+        promptEl.value = prompt;
+        if (hint) {
+          const ready = endpointsReady();
+          hint.textContent = ready
+            ? `Using endpoints: ${ENDPOINTS.enqueue} · ${ENDPOINTS.status} · ${ENDPOINTS.result}`
+            : `Set ENDPOINTS.* in index.html (or ?app=<slug>) to your Modal URLs.`;
+          hint.style.color = ready ? "var(--muted)" : "#b91c1c";
+        }
+
+        const onPrompt = (e) => setPrompt(e.target.value);
+
+        promptEl.addEventListener("input", onPrompt);
+        btn.addEventListener("click", handleGenerate);
+
+        return () => {
+          promptEl.removeEventListener("input", onPrompt);
+          btn.removeEventListener("click", handleGenerate);
+        };
+      }, [prompt]);
+
+      return null; // DOM is managed imperatively
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</body>
+</html>

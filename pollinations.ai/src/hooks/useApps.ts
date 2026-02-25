@@ -18,6 +18,9 @@ export interface App {
     language: string;
     stars: number | null;
     date: string;
+    approvedDate: string;
+    byop: boolean;
+    requests24h: number;
 }
 
 interface UseAppsReturn {
@@ -60,6 +63,9 @@ function parseAppsMarkdown(markdown: string): App[] {
         const discord = cols[10];
         const other = cols[11];
         const date = cols[12];
+        const approvedDate = cols[14] || "";
+        const byop = cols.length > 15 ? cols[15] === "true" : false;
+        const requests24h = cols.length > 16 ? parseInt(cols[16], 10) || 0 : 0;
 
         // If no web URL but there's a repo, use repo as URL (fallback for repo-only apps)
         if (!url && repo) {
@@ -88,6 +94,9 @@ function parseAppsMarkdown(markdown: string): App[] {
             discord,
             other,
             date,
+            approvedDate,
+            byop,
+            requests24h,
         });
     }
 

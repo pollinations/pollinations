@@ -82,13 +82,25 @@ export function createPerplexityModelConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates an OVHcloud AI Endpoints model configuration
+ * Creates an OVHcloud AI Endpoints model configuration (Qwen endpoint)
  */
 export function createOVHcloudModelConfig(additionalConfig = {}) {
     return {
         provider: "openai",
         "custom-host":
             "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
+        authKey: process.env.OVHCLOUD_API_KEY,
+        ...additionalConfig,
+    };
+}
+
+/**
+ * Creates an OVHcloud AI Endpoints model configuration for Mistral
+ */
+export function createOVHcloudMistralConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
         authKey: process.env.OVHCLOUD_API_KEY,
         ...additionalConfig,
     };
@@ -107,6 +119,18 @@ export function createFireworksModelConfig(additionalConfig = {}) {
 }
 
 /**
+ * Creates an api.airforce model configuration
+ */
+export function createAirforceModelConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://api.airforce/v1",
+        authKey: process.env.AIRFORCE_API_KEY,
+        ...additionalConfig,
+    };
+}
+
+/**
  * Creates a NomNom model configuration (community model with web search/scrape/crawl)
  * Uses user's API key for billing passthrough - NomNom calls Pollinations internally
  */
@@ -114,8 +138,31 @@ export function createNomNomConfig(additionalConfig = {}) {
     return {
         provider: "openai",
         "custom-host": "https://scrape.pollinations.ai/v1",
-        // Flag to use user's API key from x-user-api-key header for billing passthrough
         useUserApiKey: true,
+        ...additionalConfig,
+    };
+}
+
+/**
+ * Creates a Polly model configuration (community model - Pollinations AI assistant)
+ * Uses user's API key for billing passthrough - Polly calls Pollinations internally
+ */
+export function createPollyConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://polly.pollinations.ai/v1",
+        useUserApiKey: true,
+        ...additionalConfig,
+    };
+}
+
+/**
+ * Creates an Anthropic model configuration for direct Claude API access
+ */
+export function createAnthropicConfig(additionalConfig = {}) {
+    return {
+        provider: "anthropic",
+        authKey: process.env.ANTHROPIC_API_KEY,
         ...additionalConfig,
     };
 }

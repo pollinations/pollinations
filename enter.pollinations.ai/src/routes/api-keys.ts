@@ -8,6 +8,7 @@ import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
+import { parseMetadata } from "./metadata-utils.ts";
 
 /**
  * Build updated permissions object based on changes
@@ -56,15 +57,41 @@ function parsePermissions(raw: string): Record<string, string[]> | null {
 }
 
 /**
- * Parse potentially double-serialized JSON metadata
+ * Verify the authenticated user owns the API key, returning the key row.
+ * Throws 404 if not found or not owned by the user.
  */
-function parseMetadata(metadata: string): Record<string, unknown> | null {
-    try {
-        const parsed = JSON.parse(metadata);
-        return typeof parsed === "string" ? JSON.parse(parsed) : parsed;
-    } catch {
-        return null;
+async function requireOwnedKey(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    keyId: string,
+    userId: string,
+) {
+    const key = await db.query.apikey.findFirst({
+        where: and(
+            eq(schema.apikey.id, keyId),
+            eq(schema.apikey.userId, userId),
+        ),
+    });
+    if (!key) {
+        throw new HTTPException(404, { message: "API key not found" });
     }
+    return key;
+}
+
+/**
+ * Update metadata on an API key row, merging with existing metadata.
+ */
+async function updateKeyMetadata(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    keyId: string,
+    metadataPatch: Record<string, unknown>,
+    existingRaw: string | null | undefined,
+): Promise<Record<string, unknown>> {
+    const merged = { ...parseMetadata(existingRaw), ...metadataPatch };
+    await db
+        .update(schema.apikey)
+        .set({ metadata: JSON.stringify(merged), updatedAt: new Date() })
+        .where(eq(schema.apikey.id, keyId));
+    return merged;
 }
 
 /**
@@ -99,6 +126,17 @@ const UpdateApiKeySchema = z.object({
         .optional()
         .transform((val) => (val ? new Date(val) : val))
         .describe("Expiration date for the key. null = no expiry"),
+});
+
+/**
+ * Schema for updating metadata on an API key.
+ */
+const UpdateMetadataSchema = z.object({
+    description: z.string().optional(),
+    keyType: z.string().optional(),
+    plaintextKey: z.string().optional(),
+    appUrl: z.string().url().optional(),
+    byop: z.boolean().optional(),
 });
 
 /**
@@ -170,18 +208,8 @@ export const apiKeysRoutes = new Hono<Env>()
                 expiresAt,
             } = c.req.valid("json");
 
-            // Verify ownership before updating
             const db = drizzle(c.env.DB, { schema });
-            const existingKey = await db.query.apikey.findFirst({
-                where: and(
-                    eq(schema.apikey.id, id),
-                    eq(schema.apikey.userId, user.id),
-                ),
-            });
-
-            if (!existingKey) {
-                throw new HTTPException(404, { message: "API key not found" });
-            }
+            const existingKey = await requireOwnedKey(db, id, user.id);
 
             const existingPermissions = existingKey.permissions
                 ? JSON.parse(existingKey.permissions as string)
@@ -239,5 +267,33 @@ export const apiKeysRoutes = new Hono<Env>()
                 pollenBalance: finalKey?.pollenBalance ?? null,
                 expiresAt: finalKey?.expiresAt ?? null,
             });
+        },
+    )
+    /**
+     * Update metadata for an API key directly via DB.
+     */
+    .post(
+        "/:id/metadata",
+        describeRoute({
+            tags: ["Account"],
+            description: "Update metadata for an API key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("json", UpdateMetadataSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+            const metadataUpdate = c.req.valid("json");
+
+            const db = drizzle(c.env.DB, { schema });
+            const existingKey = await requireOwnedKey(db, id, user.id);
+            const metadata = await updateKeyMetadata(
+                db,
+                id,
+                metadataUpdate,
+                existingKey.metadata,
+            );
+
+            return c.json({ id, metadata });
         },
     );

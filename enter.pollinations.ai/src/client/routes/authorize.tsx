@@ -6,10 +6,10 @@ import {
     useKeyPermissions,
 } from "../components/api-keys";
 import { Button } from "../components/button.tsx";
+import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
-// Parse comma-separated string to array, or null if empty
 const parseList = (val: unknown): string[] | null => {
     if (!val || typeof val !== "string") return null;
     const items = val
@@ -30,6 +30,7 @@ export const Route = createFileRoute("/authorize")({
     validateSearch: (search: Record<string, unknown>) => {
         const result: {
             redirect_url: string;
+            app_key?: string;
             models?: string[] | null;
             budget?: number | null;
             expiry?: number | null;
@@ -38,7 +39,10 @@ export const Route = createFileRoute("/authorize")({
             redirect_url: (search.redirect_url as string) || "",
         };
 
-        // Only include optional params if they're present
+        if (search.app_key && typeof search.app_key === "string") {
+            result.app_key = search.app_key;
+        }
+
         const models = parseList(search.models);
         if (models !== null) result.models = models;
 
@@ -53,12 +57,12 @@ export const Route = createFileRoute("/authorize")({
 
         return result;
     },
-    // No beforeLoad redirect - handle auth state in component for better UX
 });
 
 function AuthorizeComponent() {
     const {
         redirect_url,
+        app_key,
         models,
         budget,
         expiry,
@@ -66,7 +70,6 @@ function AuthorizeComponent() {
     } = Route.useSearch();
     const navigate = useNavigate();
 
-    // Fetch session directly using authClient
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
 
@@ -75,29 +78,47 @@ function AuthorizeComponent() {
     const [error, setError] = useState<string | null>(null);
     const [redirectHostname, setRedirectHostname] = useState<string>("");
     const [isValidUrl, setIsValidUrl] = useState(false);
+    const [attribution, setAttribution] = useState<{
+        found: boolean;
+        userId?: string;
+        userName?: string;
+        appName?: string;
+        appUrl?: string;
+    } | null>(null);
 
-    // Use shared hook for key permissions, pre-populated from URL params
-    // Default to profile permission enabled unless URL explicitly overrides
     const keyPermissions = useKeyPermissions({
         allowedModels: models,
         pollenBudget: budget,
-        expiryDays: expiry ?? 30, // Default 30 days for authorize flow
-        accountPermissions: urlPermissions ?? ["profile"], // Default profile enabled
+        expiryDays: expiry ?? 30,
+        accountPermissions: urlPermissions ?? ["profile"],
     });
 
-    // Hide page scrollbar behind the overlay
-    useEffect(() => {
-        const originalBody = document.body.style.overflow;
-        const originalHtml = document.documentElement.style.overflow;
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = originalBody;
-            document.documentElement.style.overflow = originalHtml;
-        };
-    }, []);
+    useScrollLock();
 
-    // Parse and validate the redirect URL
+    // Fetch attribution info (best-effort)
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (app_key) params.set("app_key", app_key);
+        else if (redirect_url) params.set("redirect_url", redirect_url);
+
+        if (params.toString()) {
+            fetch(`/api/app-lookup?${params}`)
+                .then((r) => r.json())
+                .then((data) =>
+                    setAttribution(
+                        data as {
+                            found: boolean;
+                            userId?: string;
+                            userName?: string;
+                            appName?: string;
+                            appUrl?: string;
+                        },
+                    ),
+                )
+                .catch(() => {});
+        }
+    }, [app_key, redirect_url]);
+
     useEffect(() => {
         if (!redirect_url) {
             setError("No redirect URL provided");
@@ -115,7 +136,6 @@ function AuthorizeComponent() {
 
     const handleSignIn = async () => {
         setIsSigningIn(true);
-        // Pass current URL as callback so we return here after GitHub OAuth
         const callbackURL = window.location.href;
         const { error } = await authClient.signIn.social({
             provider: "github",
@@ -125,7 +145,6 @@ function AuthorizeComponent() {
             setIsSigningIn(false);
             setError("Sign in failed. Please try again.");
         }
-        // On success, GitHub OAuth will redirect back to this page with user signed in
     };
 
     const handleAuthorize = async () => {
@@ -135,9 +154,9 @@ function AuthorizeComponent() {
         setError(null);
 
         try {
-            // Create a temporary API key using better-auth's built-in endpoint
+            const displayName = attribution?.appName || redirectHostname;
             const result = await authClient.apiKey.create({
-                name: redirectHostname,
+                name: displayName,
                 ...(keyPermissions.permissions.expiryDays !== null && {
                     expiresIn:
                         keyPermissions.permissions.expiryDays * SECONDS_PER_DAY,
@@ -146,7 +165,10 @@ function AuthorizeComponent() {
                 metadata: {
                     keyType: "secret",
                     createdVia: "redirect-auth",
-                    redirectUrl: redirect_url,
+                    ...(attribution?.found && {
+                        createdForUserId: attribution.userId,
+                        createdForApp: attribution.appName,
+                    }),
                 },
             });
 
@@ -158,7 +180,6 @@ function AuthorizeComponent() {
 
             const data = result.data;
 
-            // Set permissions via API
             const { allowedModels, pollenBudget, accountPermissions } =
                 keyPermissions.permissions;
             const updates = {
@@ -184,8 +205,6 @@ function AuthorizeComponent() {
                 }
             }
 
-            // Redirect back to the app with the key in URL fragment (not query param)
-            // Using fragment prevents key from leaking to server logs/Referer headers
             const url = new URL(redirect_url);
             url.hash = `api_key=${data.key}`;
             window.location.href = url.toString();
@@ -197,14 +216,12 @@ function AuthorizeComponent() {
 
     const handleCancel = () => {
         if (isValidUrl) {
-            // Redirect back to the requesting app without a key
             window.location.href = redirect_url;
         } else {
             navigate({ to: "/" });
         }
     };
 
-    // Show loading while checking session
     if (isPending) {
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
@@ -215,12 +232,10 @@ function AuthorizeComponent() {
         );
     }
 
-    // Not signed in - show simple sign-in screen
     if (!user) {
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
                 <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-lg w-full">
-                    {/* Header with logo */}
                     <div className="shrink-0 p-6 pb-4 flex items-center justify-between">
                         <h2 className="text-lg font-semibold">
                             Connect to pollinations.ai
@@ -243,8 +258,14 @@ function AuthorizeComponent() {
                             <>
                                 <div className="bg-green-200 rounded-lg p-4">
                                     <p className="font-semibold text-green-950">
-                                        {redirectHostname}
+                                        {attribution?.appName ||
+                                            redirectHostname}
                                     </p>
+                                    {attribution?.appName && (
+                                        <p className="text-xs text-green-700 mt-0.5">
+                                            {redirectHostname}
+                                        </p>
+                                    )}
                                     <p className="text-xs text-green-800">
                                         wants to connect to your account
                                     </p>
@@ -273,11 +294,9 @@ function AuthorizeComponent() {
         );
     }
 
-    // Signed in - show authorization details
     return (
         <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
             <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg max-h-[85vh] max-w-lg w-full flex flex-col">
-                {/* Sticky header */}
                 <div className="shrink-0 p-6 pb-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-semibold">
@@ -295,7 +314,6 @@ function AuthorizeComponent() {
                     </p>
                 </div>
 
-                {/* Scrollable content */}
                 <div
                     className="flex-1 overflow-y-auto px-6 py-2 space-y-4 scrollbar-subtle"
                     style={{
@@ -309,12 +327,12 @@ function AuthorizeComponent() {
                         </div>
                     ) : (
                         <>
-                            {/* Security info */}
                             <div className="bg-green-200 rounded-lg p-4">
                                 <p className="font-semibold text-green-950 mb-1">
                                     🔑 Create and share my API key with{" "}
                                     <span className="font-mono bg-green-300 rounded px-1.5 py-0.5 text-green-950">
-                                        {redirectHostname}
+                                        {attribution?.appName ||
+                                            redirectHostname}
                                     </span>
                                 </p>
                                 <p className="text-xs text-green-800 mt-2">
@@ -323,7 +341,6 @@ function AuthorizeComponent() {
                                 </p>
                             </div>
 
-                            {/* What this key allows */}
                             <ul className="text-sm text-green-900 space-y-2">
                                 <li className="flex items-start gap-2">
                                     <span className="text-green-600">✓</span>
@@ -351,13 +368,11 @@ function AuthorizeComponent() {
                                 </li>
                             </ul>
 
-                            {/* Key permissions inputs */}
                             <KeyPermissionsInputs
                                 value={keyPermissions}
                                 inline
                             />
 
-                            {/* Redirect URL display */}
                             <div className="bg-green-200 rounded-lg p-3">
                                 <p className="text-green-900 text-xs mb-1 font-medium">
                                     You will be redirected to:
@@ -370,7 +385,6 @@ function AuthorizeComponent() {
                     )}
                 </div>
 
-                {/* Sticky footer */}
                 <div className="flex items-center justify-between p-6 pt-4 shrink-0">
                     <a
                         href="/terms"

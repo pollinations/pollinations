@@ -1,15 +1,17 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     adjectives,
     animals,
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
+import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
+import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
 
 type ApiKeyDialogProps = {
@@ -21,7 +23,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
     onComplete,
 }) => {
-    // Generate a short fun default name (2 words for brevity)
     const generateFunName = () => {
         return uniqueNamesGenerator({
             dictionaries: [adjectives, animals],
@@ -31,12 +32,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         });
     };
 
-    // Form state
     const [name, setName] = useState(generateFunName());
     const [description, setDescription] = useState(
         `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
     );
     const [keyType, setKeyType] = useState<"secret" | "publishable">("secret");
+    const [appUrl, setAppUrl] = useState("");
+    const [byopEnabled, setByopEnabled] = useState(false);
     const keyPermissions = useKeyPermissions();
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
@@ -45,17 +47,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
-    useEffect(() => {
-        if (!isOpen) return;
-        const originalBodyOverflow = document.body.style.overflow;
-        const originalHtmlOverflow = document.documentElement.style.overflow;
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = originalBodyOverflow;
-            document.documentElement.style.overflow = originalHtmlOverflow;
-        };
-    }, [isOpen]);
+    useScrollLock(isOpen);
 
     const handleKeyTypeChange = (newKeyType: "secret" | "publishable") => {
         setKeyType(newKeyType);
@@ -68,6 +60,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setDescription(
             newKeyType === "publishable" ? "" : `Created on ${dateStr}`,
         );
+        if (newKeyType !== "publishable") {
+            setAppUrl("");
+            setByopEnabled(false);
+        }
     };
 
     async function handleSubmit(e: React.FormEvent) {
@@ -79,6 +75,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 description,
                 keyType,
                 ...keyPermissions.permissions,
+                ...(keyType === "publishable" && appUrl && { appUrl }),
+                ...(keyType === "publishable" && {
+                    byop: byopEnabled,
+                }),
             });
             setCreatedKey(newKey);
         } finally {
@@ -243,6 +243,16 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     readOnly={!!createdKey}
                                 />
                             </Field.Root>
+
+                            {keyType === "publishable" && !createdKey && (
+                                <PublishableKeySettings
+                                    appUrl={appUrl}
+                                    onAppUrlChange={setAppUrl}
+                                    byopEnabled={byopEnabled}
+                                    onByopEnabledChange={setByopEnabled}
+                                    disabled={isSubmitting}
+                                />
+                            )}
 
                             {!createdKey && (
                                 <KeyPermissionsInputs

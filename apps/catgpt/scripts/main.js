@@ -1,14 +1,18 @@
 // Main Application Entry Point
 
-import { dom, showImageThumbnail, hideImageThumbnail } from "./ui.js";
+import { addAnimationStyles, addFloatingEmojis } from "./animations.js";
+import { CAT_FACTS, KONAMI_SEQUENCE } from "./config.js";
 import { generateMeme } from "./generator.js";
+import {
+    clearUploadedImageUrl,
+    handleImageUpload,
+    setUploadedImageUrl,
+} from "./imageHandler.js";
 import { downloadMeme, shareMeme } from "./interactions.js";
-import { handleImageUpload, setUploadedImageUrl, clearUploadedImageUrl } from "./imageHandler.js";
-import { loadUserMemes, loadExamples } from "./memeLoader.js";
+import { loadExamples, loadUserMemes } from "./memeLoader.js";
 import { cleanupOldMemes, getSavedMemes } from "./storage.js";
-import { getURLPrompt, getRandomItem, showNotification } from "./utilities.js";
-import { addFloatingEmojis, addAnimationStyles } from "./animations.js";
-import { KONAMI_SEQUENCE, CAT_FACTS } from "./config.js";
+import { dom, hideImageThumbnail, showImageThumbnail } from "./ui.js";
+import { getRandomItem, getURLPrompt, showNotification } from "./utilities.js";
 
 let konamiCode = [];
 

@@ -75,15 +75,15 @@ export function createUserMemeCard(prompt, index, imageUrl) {
         dom.userInput.value = prompt;
         dom.userInput.scrollIntoView({ behavior: "smooth", block: "center" });
         dom.userInput.focus();
-        
+
         dom.userInput.style.animation = "pulse 0.5s";
         setTimeout(() => {
             dom.userInput.style.animation = "";
         }, 500);
-        
+
         showNotification("Generating your meme! 🎨", "info");
     });
-    
+
     return card;
 }
 

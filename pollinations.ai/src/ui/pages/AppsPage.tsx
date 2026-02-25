@@ -42,22 +42,20 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
         : null;
 
     const cardBorder = badges.buzz(app)
-        ? "border border-badge-buzz shadow-[0_0_8px] shadow-badge-buzz/30"
+        ? "border-2 border-badge-buzz border-r-4 border-b-4 shadow-[0_0_8px] shadow-badge-buzz/30"
         : badges.pollen(app)
-          ? "border border-badge-pollen shadow-[0_0_8px] shadow-badge-pollen/30"
-          : "border border-border-subtle";
+          ? "border-2 border-badge-pollen border-r-4 border-b-4 shadow-[0_0_8px] shadow-badge-pollen/30"
+          : "border-2 border-border-subtle border-r-4 border-b-4";
 
     return (
-        <div
-            className={`flex flex-col h-full rounded-sub-card overflow-visible ${cardBorder}`}
-        >
+        <div className={`flex flex-col h-full overflow-visible ${cardBorder}`}>
             <a
                 href={app.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between px-4 py-3 bg-input-background rounded-t-sub-card hover:brightness-110 transition-all"
+                className="flex items-center justify-between px-4 py-3 bg-input-background hover:brightness-110 transition-all"
             >
-                <span className="font-headline text-sm font-black uppercase text-text-body-main">
+                <span className="font-headline text-lg font-black uppercase text-text-body-main">
                     {app.emoji && `${app.emoji} `}
                     {app.name}
                 </span>
@@ -137,9 +135,9 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="pollen">
                                         {copy.pollenBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.pollenTooltip}
-                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-surface-card" />
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-input-background" />
                                     </div>
                                 </span>
                             )}
@@ -148,9 +146,9 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="buzz">
                                         {copy.buzzBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.buzzTooltip}
-                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-surface-card" />
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-input-background" />
                                     </div>
                                 </span>
                             )}
@@ -159,9 +157,9 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="fresh">
                                         {copy.newBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.newTooltip}
-                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-surface-card" />
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-input-background" />
                                     </div>
                                 </span>
                             )}
@@ -277,12 +275,12 @@ export default function AppsPage() {
 
                 {/* CTAs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                    <div className="flex items-center gap-4 p-4 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
+                    <div className="flex items-center gap-4 p-4 bg-surface-card border-2 border-border-brand border-r-4 border-b-4">
                         <div className="flex-1">
-                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                            <p className="font-headline text-base font-black text-text-body-main mb-1">
                                 {pageCopy.submitCtaTitle}
                             </p>
-                            <p className="font-body text-xs text-text-body-secondary">
+                            <p className="font-body text-sm text-text-body-secondary">
                                 {pageCopy.submitCtaDescription}
                             </p>
                         </div>
@@ -298,12 +296,12 @@ export default function AppsPage() {
                             <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
                         </Button>
                     </div>
-                    <div className="flex items-center gap-4 p-4 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
+                    <div className="flex items-center gap-4 p-4 bg-surface-card border-2 border-border-highlight border-r-4 border-b-4">
                         <div className="flex-1">
-                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                            <p className="font-headline text-base font-black text-text-body-main mb-1">
                                 {pageCopy.pollenCtaTitle}
                             </p>
-                            <p className="font-body text-xs text-text-body-secondary">
+                            <p className="font-body text-sm text-text-body-secondary">
                                 {pageCopy.pollenCtaDescription}
                             </p>
                         </div>
@@ -329,7 +327,7 @@ export default function AppsPage() {
                             variant="toggle"
                             data-active={filter === f.id}
                             onClick={() => setFilter(f.id)}
-                            className="px-4 py-2 text-sm"
+                            className="px-4 py-2 text-base"
                         >
                             {f.label}
                         </Button>
@@ -340,7 +338,7 @@ export default function AppsPage() {
                             variant="toggle-glow"
                             data-active={filter === f.id}
                             onClick={() => setFilter(f.id)}
-                            className="px-4 py-2 text-sm"
+                            className="px-4 py-2 text-base"
                             style={{ "--glow": f.glow } as React.CSSProperties}
                         >
                             {f.label}

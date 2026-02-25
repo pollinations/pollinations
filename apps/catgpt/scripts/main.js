@@ -86,7 +86,7 @@ function handleKonamiCode(e) {
         showNotification('🌈 Secret mode activated! You found the easter egg! 🦄', 'success');
         
         document.querySelectorAll('h1, h2, h3').forEach(el => {
-            el.innerHTML = el.innerHTML.replace(/Cat/g, '😸Cat😸');
+            el.textContent = el.textContent.replace(/Cat/g, '😸Cat😸');
         });
         
         setTimeout(() => {

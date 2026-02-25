@@ -3,6 +3,13 @@
 import { dom } from "./ui.js";
 import { showNotification } from "./utilities.js";
 
+// Escape HTML meta-characters to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 export function createUserMemeCard(prompt, index, imageUrl) {
     if (!imageUrl) {
         console.warn(`User meme has no URL: "${prompt}"`);
@@ -17,7 +24,7 @@ export function createUserMemeCard(prompt, index, imageUrl) {
     
     const img = document.createElement("img");
     img.src = imageUrl;
-    img.alt = prompt;
+    img.alt = escapeHtml(prompt);
     img.loading = "lazy";
     
     const badge = document.createElement("div");
@@ -34,7 +41,7 @@ export function createUserMemeCard(prompt, index, imageUrl) {
     `;
     
     const promptText = document.createElement("p");
-    promptText.textContent = `"${prompt}"`;
+    promptText.textContent = `"${escapeHtml(prompt)}"`;
     promptText.style.fontStyle = "italic";
     promptText.style.fontSize = "0.9rem";
     promptText.style.color = "var(--color-primary)";
@@ -74,11 +81,11 @@ export function createExampleCard(prompt, index, examplesMap) {
     
     const img = document.createElement("img");
     img.src = imageUrl;
-    img.alt = prompt;
+    img.alt = escapeHtml(prompt);
     img.loading = "lazy";
     
     const promptText = document.createElement("p");
-    promptText.textContent = `"${prompt}"`;
+    promptText.textContent = `"${escapeHtml(prompt)}"`;
     promptText.style.fontStyle = "italic";
     promptText.style.fontSize = "0.9rem";
     promptText.style.color = "var(--color-primary)";

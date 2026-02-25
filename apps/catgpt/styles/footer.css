@@ -1,0 +1,22 @@
+/* Footer Styles */
+
+footer {
+    text-align: center;
+    padding: 2rem 0;
+    color: #666;
+}
+
+footer a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+footer a:hover {
+    color: var(--color-accent);
+}
+
+.footer-small {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}

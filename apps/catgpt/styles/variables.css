@@ -1,0 +1,14 @@
+/* CSS Variables and Color Palette */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
+
+:root {
+    --color-primary: #ff61d8;
+    --color-secondary: #05ffa1;
+    --color-accent: #ffcc00;
+    --color-text: #1a1a1a;
+    --color-bg: #ffffff;
+    --color-light: #f5f5f5;
+    --gradient-1: linear-gradient(135deg, #ff61d8, #ffcc00);
+    --gradient-2: linear-gradient(135deg, #05ffa1, #00d4ff);
+    --gradient-3: linear-gradient(135deg, #ff61d8, #05ffa1, #ffcc00);
+}

@@ -1,0 +1,26 @@
+/* Sponsor Section Styles */
+
+.sponsor-section {
+    background: var(--gradient-2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.sponsor-text {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.sponsor-link {
+    color: white;
+    text-decoration: none;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+    transition: border-color 0.3s;
+}
+
+.sponsor-link:hover {
+    border-color: white;
+}

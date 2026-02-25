@@ -1,0 +1,64 @@
+/* Card Grid Styles for Examples and User Memes */
+
+.examples-section {
+    margin-bottom: 3rem;
+}
+
+.examples-section h2 {
+    font-size: 1.8rem;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.examples-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+/* Your Memes Section */
+.your-memes-section {
+    margin-bottom: 3rem;
+}
+
+.your-memes-section h2 {
+    font-size: 1.8rem;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.your-memes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+/* Example and Meme Cards */
+.example-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+    cursor: pointer;
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+.example-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.example-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.example-card p {
+    padding: 1rem;
+    font-size: 0.9rem;
+    text-align: center;
+    font-weight: 500;
+}
+

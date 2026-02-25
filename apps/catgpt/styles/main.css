@@ -1,0 +1,24 @@
+/* CatGPT Main Stylesheet - Imports all modular CSS files */
+
+/* 1. Variables and Colors */
+@import url('./variables.css');
+
+/* 2. Base and Reset Styles */
+@import url('./base.css');
+
+/* 3. Component Styles */
+@import url('./header.css');
+@import url('./generator.css');
+@import url('./upload.css');
+@import url('./buttons.css');
+@import url('./loading.css');
+@import url('./results.css');
+@import url('./cards.css');
+@import url('./sponsor.css');
+@import url('./footer.css');
+
+/* 4. Animations */
+@import url('./animations.css');
+
+/* 5. Responsive Design */
+@import url('./responsive.css');

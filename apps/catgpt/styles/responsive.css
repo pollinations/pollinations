@@ -1,0 +1,146 @@
+/* Responsive Design - Mobile and Tablet */
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .generator-section {
+        padding: 1.5rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .action-btn {
+        width: 100%;
+    }
+
+    .emoji-title {
+        font-size: 2rem;
+    }
+
+    .examples-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .your-memes-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .intro-text {
+        font-size: 1rem;
+    }
+
+    .generator-section h2 {
+        font-size: 1.5rem;
+    }
+
+    #userInput {
+        font-size: 1.2rem;
+        padding: 0.8rem;
+    }
+
+    .meme-container img {
+        max-height: 50vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+
+    .generator-section {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+
+    .emoji-title {
+        font-size: 1.5rem;
+    }
+
+    .tagline {
+        font-size: 1rem;
+    }
+
+    .intro-text {
+        font-size: 0.95rem;
+    }
+
+    .generator-section h2 {
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+    }
+
+    .input-group {
+        margin-bottom: 1rem;
+    }
+
+    #userInput {
+        font-size: 1rem;
+        padding: 0.7rem;
+    }
+
+    .generate-btn {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+        gap: 0.3rem;
+    }
+
+    .btn-emoji {
+        font-size: 1.2rem;
+    }
+
+    .examples-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .your-memes-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .your-memes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .result-section h3 {
+        font-size: 1.2rem;
+    }
+
+    .example-card p {
+        padding: 0.8rem;
+        font-size: 0.85rem;
+    }
+
+    .sponsor-section {
+        padding: 1rem;
+    }
+
+    .sponsor-text {
+        font-size: 1rem;
+    }
+
+    footer {
+        padding: 1.5rem 0;
+    }
+
+    .footer-small {
+        font-size: 0.8rem;
+    }
+}

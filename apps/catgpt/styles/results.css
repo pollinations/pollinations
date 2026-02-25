@@ -1,0 +1,31 @@
+/* Result Section Styles */
+
+.result-section {
+    margin-top: 2rem;
+}
+
+.result-section.hidden {
+    display: none;
+}
+
+.result-section h3 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.meme-container {
+    background: var(--color-light);
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.meme-container img {
+    max-width: 100%;
+    max-height: 60vh;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}

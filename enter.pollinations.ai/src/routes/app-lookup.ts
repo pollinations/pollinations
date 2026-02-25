@@ -7,6 +7,23 @@ import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
+async function resolveAttribution(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    keyRow: typeof schema.apikey.$inferSelect,
+) {
+    const meta = parseMetadata(keyRow.metadata);
+    const user = await db.query.user.findFirst({
+        where: eq(schema.user.id, keyRow.userId),
+    });
+    return {
+        found: true as const,
+        userId: keyRow.userId,
+        userName: user?.name,
+        appName: keyRow.name,
+        appUrl: (meta.appUrl as string) || undefined,
+    };
+}
+
 /**
  * Public endpoint to resolve an app_key or redirect_url to attribution info.
  * No auth required — used during the /authorize flow.
@@ -35,17 +52,7 @@ export const appLookupRoutes = new Hono<Env>().get(
                     where: eq(schema.apikey.id, result.key.id),
                 });
                 if (keyRow) {
-                    const meta = parseMetadata(keyRow.metadata);
-                    const user = await db.query.user.findFirst({
-                        where: eq(schema.user.id, keyRow.userId),
-                    });
-                    return c.json({
-                        found: true,
-                        userId: keyRow.userId,
-                        userName: user?.name,
-                        appName: keyRow.name,
-                        appUrl: (meta.appUrl as string) || undefined,
-                    });
+                    return c.json(await resolveAttribution(db, keyRow));
                 }
             }
         }
@@ -57,20 +64,10 @@ export const appLookupRoutes = new Hono<Env>().get(
                 const meta = parseMetadata(key.metadata);
                 if (
                     meta.keyType === "publishable" &&
-                    typeof meta.appUrl === "string"
+                    typeof meta.appUrl === "string" &&
+                    redirectUrl.startsWith(meta.appUrl)
                 ) {
-                    if (redirectUrl.startsWith(meta.appUrl)) {
-                        const user = await db.query.user.findFirst({
-                            where: eq(schema.user.id, key.userId),
-                        });
-                        return c.json({
-                            found: true,
-                            userId: key.userId,
-                            userName: user?.name,
-                            appName: key.name,
-                            appUrl: meta.appUrl,
-                        });
-                    }
+                    return c.json(await resolveAttribution(db, key));
                 }
             }
         }

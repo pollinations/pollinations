@@ -23,14 +23,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
     onComplete,
 }) => {
-    const generateFunName = () => {
+    function generateFunName(): string {
         return uniqueNamesGenerator({
             dictionaries: [adjectives, animals],
             separator: "-",
             length: 2,
             style: "lowerCase",
         });
-    };
+    }
 
     const [name, setName] = useState(generateFunName());
     const [description, setDescription] = useState(
@@ -49,7 +49,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     useScrollLock(isOpen);
 
-    const handleKeyTypeChange = (newKeyType: "secret" | "publishable") => {
+    function handleKeyTypeChange(newKeyType: "secret" | "publishable"): void {
         setKeyType(newKeyType);
         setName(generateFunName());
         const dateStr = new Date().toLocaleDateString("en-US", {
@@ -64,21 +64,20 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             setAppUrl("");
             setByopEnabled(false);
         }
-    };
+    }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setIsSubmitting(true);
         try {
+            const isPublishable = keyType === "publishable";
             const newKey = await onSubmit({
                 name,
                 description,
                 keyType,
                 ...keyPermissions.permissions,
-                ...(keyType === "publishable" && appUrl && { appUrl }),
-                ...(keyType === "publishable" && {
-                    byop: byopEnabled,
-                }),
+                ...(isPublishable && appUrl && { appUrl }),
+                ...(isPublishable && { byop: byopEnabled }),
             });
             setCreatedKey(newKey);
         } finally {
@@ -96,10 +95,23 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 onComplete();
                 setIsOpen(false);
             }, 500);
-        } catch (_err) {
+        } catch {
             onComplete();
             setIsOpen(false);
         }
+    }
+
+    const { allowedModels } = keyPermissions.permissions;
+    const noModelsSelected =
+        Array.isArray(allowedModels) && allowedModels.length === 0;
+    const isCreateDisabled =
+        !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
+
+    function getButtonText(): string {
+        if (copied) return "Copied! Closing...";
+        if (createdKey) return "Copy and Close";
+        if (isSubmitting) return "Creating...";
+        return "Create";
     }
 
     return (
@@ -275,50 +287,26 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     Cancel
                                 </Button>
                             )}
-                            {(() => {
-                                const { allowedModels } =
-                                    keyPermissions.permissions;
-                                const noModelsSelected =
-                                    Array.isArray(allowedModels) &&
-                                    allowedModels.length === 0;
-                                const isDisabled =
-                                    !createdKey &&
-                                    (!name.trim() ||
-                                        isSubmitting ||
-                                        noModelsSelected);
-
-                                const buttonText = () => {
-                                    if (copied) return "✓ Copied! Closing...";
-                                    if (createdKey) return "Copy and Close";
-                                    if (isSubmitting) return "Creating...";
-                                    return "Create";
-                                };
-
-                                return (
-                                    <span
-                                        title={
-                                            noModelsSelected && !createdKey
-                                                ? "Select at least one model"
-                                                : undefined
-                                        }
-                                    >
-                                        <Button
-                                            type={
-                                                createdKey ? "button" : "submit"
-                                            }
-                                            onClick={
-                                                createdKey
-                                                    ? handleCopyAndClose
-                                                    : undefined
-                                            }
-                                            className="disabled:opacity-50"
-                                            disabled={isDisabled}
-                                        >
-                                            {buttonText()}
-                                        </Button>
-                                    </span>
-                                );
-                            })()}
+                            <span
+                                title={
+                                    noModelsSelected && !createdKey
+                                        ? "Select at least one model"
+                                        : undefined
+                                }
+                            >
+                                <Button
+                                    type={createdKey ? "button" : "submit"}
+                                    onClick={
+                                        createdKey
+                                            ? handleCopyAndClose
+                                            : undefined
+                                    }
+                                    className="disabled:opacity-50"
+                                    disabled={isCreateDisabled}
+                                >
+                                    {getButtonText()}
+                                </Button>
+                            </span>
                         </div>
                     </form>
                 </Dialog.Content>

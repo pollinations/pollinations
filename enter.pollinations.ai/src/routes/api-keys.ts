@@ -34,7 +34,7 @@ function applyPermissionField(
     value: string[] | null | undefined,
 ): void {
     if (value === undefined) return;
-    if (value === null || value.length === 0) {
+    if (value === null) {
         delete target[key];
     } else {
         target[key] = value;

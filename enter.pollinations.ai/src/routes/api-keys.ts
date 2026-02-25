@@ -8,6 +8,7 @@ import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
+import { parseMetadata } from "./metadata-utils.ts";
 
 /**
  * Build updated permissions object based on changes
@@ -56,32 +57,6 @@ function parsePermissions(raw: string): Record<string, string[]> | null {
 }
 
 /**
- * Parse potentially double-serialized JSON metadata
- */
-function parseMetadata(metadata: string): Record<string, unknown> | null {
-    try {
-        const parsed = JSON.parse(metadata);
-        return typeof parsed === "string" ? JSON.parse(parsed) : parsed;
-    } catch {
-        return null;
-    }
-}
-
-/**
- * Parse metadata from DB row, handling invalid JSON gracefully.
- */
-function parseExistingMetadata(
-    raw: string | null | undefined,
-): Record<string, unknown> {
-    if (!raw) return {};
-    try {
-        return JSON.parse(String(raw));
-    } catch {
-        return {};
-    }
-}
-
-/**
  * Verify the authenticated user owns the API key, returning the key row.
  * Throws 404 if not found or not owned by the user.
  */
@@ -111,7 +86,7 @@ async function updateKeyMetadata(
     metadataPatch: Record<string, unknown>,
     existingRaw: string | null | undefined,
 ): Promise<Record<string, unknown>> {
-    const merged = { ...parseExistingMetadata(existingRaw), ...metadataPatch };
+    const merged = { ...parseMetadata(existingRaw), ...metadataPatch };
     await db
         .update(schema.apikey)
         .set({ metadata: JSON.stringify(merged), updatedAt: new Date() })
@@ -377,7 +352,7 @@ export const apiKeysRoutes = new Hono<Env>()
 
             const db = drizzle(c.env.DB, { schema });
             const existingKey = await requireOwnedKey(db, id, user.id);
-            const metadata = parseExistingMetadata(existingKey.metadata);
+            const metadata = parseMetadata(existingKey.metadata);
 
             const turnstile = (metadata.turnstile as {
                 enabled: boolean;

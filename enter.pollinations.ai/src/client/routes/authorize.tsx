@@ -6,6 +6,7 @@ import {
     useKeyPermissions,
 } from "../components/api-keys";
 import { Button } from "../components/button.tsx";
+import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -98,17 +99,7 @@ function AuthorizeComponent() {
         accountPermissions: urlPermissions ?? ["profile"], // Default profile enabled
     });
 
-    // Hide page scrollbar behind the overlay
-    useEffect(() => {
-        const originalBody = document.body.style.overflow;
-        const originalHtml = document.documentElement.style.overflow;
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = originalBody;
-            document.documentElement.style.overflow = originalHtml;
-        };
-    }, []);
+    useScrollLock();
 
     // Fetch attribution info (best-effort)
     useEffect(() => {
@@ -173,8 +164,7 @@ function AuthorizeComponent() {
 
         try {
             // Create a temporary API key using better-auth's built-in endpoint
-            const displayName =
-                attribution?.appName || redirectHostname;
+            const displayName = attribution?.appName || redirectHostname;
             const result = await authClient.apiKey.create({
                 name: displayName,
                 ...(keyPermissions.permissions.expiryDays !== null && {

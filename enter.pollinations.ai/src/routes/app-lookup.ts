@@ -2,19 +2,10 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
+import { createAuth } from "../auth.ts";
 import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
-import { createAuth } from "../auth.ts";
-
-function parseMetadata(raw: string | null): Record<string, unknown> {
-    if (!raw) return {};
-    try {
-        const parsed = JSON.parse(raw);
-        return typeof parsed === "string" ? JSON.parse(parsed) : parsed;
-    } catch {
-        return {};
-    }
-}
+import { parseMetadata } from "./metadata-utils.ts";
 
 /**
  * Public endpoint to resolve an app_key or redirect_url to attribution info.

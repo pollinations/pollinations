@@ -1,15 +1,17 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     adjectives,
     animals,
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
+import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
+import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
 
 type ApiKeyDialogProps = {
@@ -48,17 +50,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
-    useEffect(() => {
-        if (!isOpen) return;
-        const originalBodyOverflow = document.body.style.overflow;
-        const originalHtmlOverflow = document.documentElement.style.overflow;
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = originalBodyOverflow;
-            document.documentElement.style.overflow = originalHtmlOverflow;
-        };
-    }, [isOpen]);
+    useScrollLock(isOpen);
 
     const handleKeyTypeChange = (newKeyType: "secret" | "publishable") => {
         setKeyType(newKeyType);
@@ -258,88 +250,15 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             </Field.Root>
 
                             {keyType === "publishable" && !createdKey && (
-                                <div className="space-y-3">
-                                    <Field.Root className="flex items-center gap-3">
-                                        <Field.Label className="text-sm font-semibold shrink-0">
-                                            App URL
-                                        </Field.Label>
-                                        <Field.Input
-                                            type="url"
-                                            value={appUrl}
-                                            onChange={(e) => {
-                                                setAppUrl(e.target.value);
-                                                if (!e.target.value) {
-                                                    setBotProtection(false);
-                                                    setByopEnabled(false);
-                                                }
-                                            }}
-                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-                                            placeholder="https://myapp.com"
-                                            disabled={isSubmitting}
-                                        />
-                                    </Field.Root>
-
-                                    {appUrl && (
-                                        <div
-                                            className={cn(
-                                                "rounded-lg border border-gray-200 p-3 space-y-2",
-                                                isSubmitting && "opacity-50",
-                                            )}
-                                        >
-                                            <label
-                                                className={cn(
-                                                    "flex items-center gap-2 cursor-pointer",
-                                                    isSubmitting &&
-                                                        "cursor-not-allowed",
-                                                )}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={botProtection}
-                                                    onChange={(e) =>
-                                                        setBotProtection(
-                                                            e.target.checked,
-                                                        )
-                                                    }
-                                                    disabled={isSubmitting}
-                                                    className="w-4 h-4 rounded text-cyan-600"
-                                                />
-                                                <span className="text-sm">
-                                                    🛡️ Bot Protection
-                                                </span>
-                                                <span className="text-xs text-gray-400 ml-auto">
-                                                    Turnstile verification
-                                                </span>
-                                            </label>
-                                            <label
-                                                className={cn(
-                                                    "flex items-center gap-2 cursor-pointer",
-                                                    isSubmitting &&
-                                                        "cursor-not-allowed",
-                                                )}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={byopEnabled}
-                                                    onChange={(e) =>
-                                                        setByopEnabled(
-                                                            e.target.checked,
-                                                        )
-                                                    }
-                                                    disabled={isSubmitting}
-                                                    className="w-4 h-4 rounded text-green-600"
-                                                />
-                                                <span className="text-sm">
-                                                    🔗 BYOP (Bring Your Own
-                                                    Pollen)
-                                                </span>
-                                                <span className="text-xs text-gray-400 ml-auto">
-                                                    Auth redirect flow
-                                                </span>
-                                            </label>
-                                        </div>
-                                    )}
-                                </div>
+                                <PublishableKeySettings
+                                    appUrl={appUrl}
+                                    onAppUrlChange={setAppUrl}
+                                    botProtection={botProtection}
+                                    onBotProtectionChange={setBotProtection}
+                                    byopEnabled={byopEnabled}
+                                    onByopEnabledChange={setByopEnabled}
+                                    disabled={isSubmitting}
+                                />
                             )}
 
                             {!createdKey && (

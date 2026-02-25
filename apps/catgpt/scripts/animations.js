@@ -42,7 +42,9 @@ export function stopCatAnimation() {
         catAnimationInterval = null;
     }
     
-    document.querySelectorAll('[style*="catSlide"]').forEach(cat => cat.remove());
+    document.querySelectorAll('[style*="catSlide"]').forEach(cat => {
+        cat.remove();
+    });
 }
 
 export function startFakeProgress(progressMessages) {

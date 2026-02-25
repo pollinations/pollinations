@@ -18,13 +18,13 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 
 # Tier Levels
 
-| Tier | Emoji | Pollen/Day | Criteria |
-|------|-------|------------|----------|
-| microbe | 🦠 | 0.1 | Entry tier (auto-upgrades once verified) |
-| spore | 🍄 | 1 | Verified accounts |
-| seed | 🌱 | 3 | GitHub engagement |
-| flower | 🌸 | 10 | Contributor |
-| nectar | 🍯 | 20 | Coming soon |
+| Tier | Emoji | Pollen | Cadence | Criteria |
+|------|-------|--------|---------|----------|
+| microbe | 🦠 | 0 | weekly | Account under review |
+| spore | 🍄 | 1.5 | weekly | Verified accounts |
+| seed | 🌱 | 3 | daily | GitHub engagement |
+| flower | 🌸 | 10 | daily | Contributor |
+| nectar | 🍯 | 20 | daily | Coming soon |
 
 ---
 
@@ -185,6 +185,6 @@ export TIER_EVAL_GIST_ID=your_gist_id  # optional
 
 # Notes
 
-- **Tier balance resets daily** at midnight UTC (no rollover)
-- New users get `spore` tier + 1 pollen immediately
+- **Tier balance resets** at midnight UTC (daily for seed+, weekly Mon for spore/microbe; no rollover)
+- New users get `spore` tier + 1.5 pollen/week
 - Tier upgrades take effect on next refill (or set `tier_balance` manually)

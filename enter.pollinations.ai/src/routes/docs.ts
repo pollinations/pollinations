@@ -66,7 +66,6 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 theme: "saturn",
                 sources: [
                     { url: "/api/docs/open-api/generate-schema", title: "API" },
-                    { url: "https://rhizome.pollinations.ai/openapi.json", title: "Rhizome" },
                     // Include better-auth docs only in development mode
                     ...(c.env.ENVIRONMENT === "development"
                         ? [
@@ -201,6 +200,11 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "Generate text, images, and videos using AI models",
                         },
                         {
+                            name: "rhizome.pollinations.ai",
+                            description:
+                                "Content-addressed media storage (images, audio, video)",
+                        },
+                        {
                             name: "Bring Your Own Pollen 🌸",
                             description: BYOP_DOCS,
                         },
@@ -214,7 +218,46 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
 
             // Parse the schema, transform paths, and return
             const schema = (await response.json()) as Record<string, unknown>;
-            const transformed = transformOpenAPISchema(schema);
+            const transformed = transformOpenAPISchema(schema) as Record<
+                string,
+                any
+            >;
+
+            // Merge rhizome.pollinations.ai spec (3 endpoints) into unified view
+            try {
+                const rhizomeRes = await fetch(
+                    "https://rhizome.pollinations.ai/openapi.json",
+                );
+                if (rhizomeRes.ok) {
+                    const rhizome = (await rhizomeRes.json()) as Record<
+                        string,
+                        any
+                    >;
+                    if (rhizome.paths) {
+                        // Add path-level servers so Scalar targets rhizome, not gen
+                        for (const ops of Object.values(rhizome.paths)) {
+                            (ops as any).servers = [
+                                {
+                                    url: "https://rhizome.pollinations.ai",
+                                },
+                            ];
+                        }
+                        transformed.paths = {
+                            ...transformed.paths,
+                            ...rhizome.paths,
+                        };
+                    }
+                    if (rhizome.components?.schemas) {
+                        transformed.components.schemas = {
+                            ...transformed.components.schemas,
+                            ...rhizome.components.schemas,
+                        };
+                    }
+                }
+            } catch {
+                // Rhizome unavailable — skip, main docs still work
+            }
+
             return c.json(transformed);
         });
 };

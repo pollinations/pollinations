@@ -116,7 +116,7 @@ function RouteComponent() {
 
         // Store plaintext key and app settings for publishable keys
         if (isPublishable) {
-            await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
+            const metaRes = await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -127,6 +127,13 @@ function RouteComponent() {
                     ...(formState.appUrl && { appUrl: formState.appUrl }),
                 }),
             });
+            if (!metaRes.ok) {
+                const err = await metaRes.json().catch(() => null);
+                throw new Error(
+                    (err as { error?: { message?: string } })?.error?.message ||
+                        "Failed to save key metadata",
+                );
+            }
         }
 
         // Set permissions and budget if provided

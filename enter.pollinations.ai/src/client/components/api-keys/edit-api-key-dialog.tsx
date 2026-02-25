@@ -77,14 +77,24 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
             // Save app settings for publishable keys
             if (isPublishable && appUrl !== initialAppUrl) {
-                await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        appUrl: appUrl || undefined,
-                    }),
-                });
+                const metaRes = await fetch(
+                    `/api/api-keys/${apiKey.id}/metadata`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({
+                            appUrl: appUrl || undefined,
+                        }),
+                    },
+                );
+                if (!metaRes.ok) {
+                    const err = await metaRes.json().catch(() => null);
+                    throw new Error(
+                        (err as { error?: { message?: string } })?.error
+                            ?.message || "Failed to save key metadata",
+                    );
+                }
             }
 
             onClose();

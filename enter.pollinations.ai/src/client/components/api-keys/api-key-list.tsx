@@ -12,14 +12,6 @@ import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
 
-function getHostname(url: string): string {
-    try {
-        return new URL(url).hostname;
-    } catch {
-        return url;
-    }
-}
-
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
     onCreate,
@@ -73,6 +65,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 const appUrl = apiKey.metadata?.appUrl as
                                     | string
                                     | undefined;
+                                const isAppKey = isPublishable && !!appUrl;
 
                                 return (
                                     <div
@@ -182,33 +175,42 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         rel="noopener noreferrer"
                                                         className="text-blue-600 hover:underline truncate max-w-[200px] inline-block align-bottom"
                                                     >
-                                                        {getHostname(appUrl)}
+                                                        {appUrl.replace(
+                                                            /^https?:\/\//,
+                                                            "",
+                                                        )}
                                                     </a>
                                                 </span>
                                             )}
-                                            <LimitsBadge
-                                                expiresAt={apiKey.expiresAt}
-                                                pollenBudget={
-                                                    apiKey.pollenBalance
-                                                }
-                                            />
-                                            <span className="flex items-center gap-1">
-                                                <span className="text-gray-400">
-                                                    Permissions:
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <ModelsBadge
-                                                        permissions={
-                                                            apiKey.permissions
+                                            {!isAppKey && (
+                                                <>
+                                                    <LimitsBadge
+                                                        expiresAt={
+                                                            apiKey.expiresAt
+                                                        }
+                                                        pollenBudget={
+                                                            apiKey.pollenBalance
                                                         }
                                                     />
-                                                    <AccountBadge
-                                                        permissions={
-                                                            apiKey.permissions
-                                                        }
-                                                    />
-                                                </span>
-                                            </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <span className="text-gray-400">
+                                                            Permissions:
+                                                        </span>
+                                                        <span className="flex items-center gap-1">
+                                                            <ModelsBadge
+                                                                permissions={
+                                                                    apiKey.permissions
+                                                                }
+                                                            />
+                                                            <AccountBadge
+                                                                permissions={
+                                                                    apiKey.permissions
+                                                                }
+                                                            />
+                                                        </span>
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 );

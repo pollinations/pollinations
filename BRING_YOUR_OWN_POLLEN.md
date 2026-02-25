@@ -63,12 +63,14 @@ https://myapp.com#api_key=sk_abc123xyz
 
 **With `app_key`:** App name (large), developer @github link, hostname, permissions
 
-**Without `app_key`:** Just the hostname and permissions (still works, less branded)
+**Without `app_key`:** Just the hostname and permissions (still works fine)
+
+Registering your app also lets us track usage per app — devs who bring significant traffic may qualify for higher tiers.
 
 ## Code
 
 ```javascript
-// 1. Send user to auth (with app_key for branded consent screen)
+// 1. Send user to auth (app_key shows your app name on consent screen)
 const params = new URLSearchParams({
   redirect_url: location.href,
   app_key: 'pk_yourkey', // optional — shows app name + author

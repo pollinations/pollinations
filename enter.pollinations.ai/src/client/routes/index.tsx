@@ -114,15 +114,19 @@ function RouteComponent() {
 
         const apiKey = createResult.data;
 
-        // Store plaintext key for publishable keys
+        // Store plaintext key and app settings for publishable keys
         if (isPublishable) {
-            await authClient.apiKey.update({
-                keyId: apiKey.id,
-                metadata: {
+            await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
                     description: formState.description,
                     keyType,
                     plaintextKey: apiKey.key,
-                },
+                    ...(formState.appUrl && { appUrl: formState.appUrl }),
+                    ...(formState.byop && { byop: true }),
+                }),
             });
         }
 

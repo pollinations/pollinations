@@ -139,7 +139,7 @@ def main():
     lines = snippet.split('\n', 1)
     if lines:
         lines[0] = f"## {lines[0]}"
-        snippet = '\n'.join(lines)
+        snippet = '\n\n'.join(lines)
     pr_url = gist["url"]
     author = gist["author"]
 

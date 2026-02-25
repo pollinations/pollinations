@@ -37,7 +37,9 @@ CatGPT responds (2-5 words, funny):`;
 export function generateImageURL(prompt, uploadedImageUrl = null) {
     let imageParam;
     if (uploadedImageUrl) {
-        imageParam = encodeURIComponent(`${API_CONFIG.ORIGINAL_CATGPT_IMAGE},${uploadedImageUrl}`);
+        imageParam = encodeURIComponent(
+            `${API_CONFIG.ORIGINAL_CATGPT_IMAGE},${uploadedImageUrl}`,
+        );
     } else {
         imageParam = encodeURIComponent(API_CONFIG.ORIGINAL_CATGPT_IMAGE);
     }
@@ -49,34 +51,35 @@ export async function fetchImageWithAuth(imageUrl) {
         method: "GET",
         headers: {
             "Authorization": `Bearer ${API_CONFIG.POLLINATIONS_API_KEY}`
-        }
+        },
     });
-    
+
     if (!response.ok) {
         let errorDetails = "";
         try {
             const responseText = await response.text();
-            
+
             try {
                 const errorData = JSON.parse(responseText);
-                errorDetails = errorData.error?.message || JSON.stringify(errorData);
+                errorDetails =
+                    errorData.error?.message || JSON.stringify(errorData);
             } catch {
                 errorDetails = responseText || `HTTP ${response.status}`;
             }
-        } catch  {
+        } catch {
             errorDetails = `HTTP ${response.status}: ${response.statusText}`;
         }
-        
+
         console.error("API Error Details:", {
             status: response.status,
             statusText: response.statusText,
             details: errorDetails,
-            url: imageUrl
+            url: imageUrl,
         });
-        
+
         throw new Error(`API_ERROR_${response.status}`);
     }
-    
+
     const blob = await response.blob();
     return URL.createObjectURL(blob);
 }

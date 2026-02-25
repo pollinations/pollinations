@@ -34,35 +34,6 @@ function filterAliases(
     );
 }
 
-// Fetch rhizome.pollinations.ai OpenAPI spec and merge its paths into the main schema.
-// Uses path-level `servers` so Scalar sends requests to the correct host.
-async function mergeExternalSpecs(
-    schema: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
-    try {
-        const res = await fetch("https://rhizome.pollinations.ai/openapi.json");
-        if (!res.ok) return schema;
-        const rhizome = (await res.json()) as Record<string, unknown>;
-        const rhizomePaths = rhizome.paths as Record<string, unknown> | undefined;
-        if (!rhizomePaths) return schema;
-
-        const withServers: Record<string, unknown> = {};
-        for (const [path, value] of Object.entries(rhizomePaths)) {
-            withServers[path] = {
-                ...(value as object),
-                servers: [{ url: "https://rhizome.pollinations.ai" }],
-            };
-        }
-
-        return {
-            ...schema,
-            paths: { ...(schema.paths as object), ...withServers },
-        };
-    } catch {
-        return schema;
-    }
-}
-
 // Transform OpenAPI schema for gen.pollinations.ai:
 // 1. Remove /generate/ prefix from paths
 // 2. Filter out model aliases from enums (show only primary model names)
@@ -95,6 +66,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 theme: "saturn",
                 sources: [
                     { url: "/api/docs/open-api/generate-schema", title: "API" },
+                    { url: "https://rhizome.pollinations.ai/openapi.json", title: "Rhizome" },
                     // Include better-auth docs only in development mode
                     ...(c.env.ENVIRONMENT === "development"
                         ? [
@@ -229,11 +201,6 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "Generate text, images, and videos using AI models",
                         },
                         {
-                            name: "rhizome.pollinations.ai",
-                            description:
-                                "Content-addressed media storage (images, audio, video)",
-                        },
-                        {
                             name: "Bring Your Own Pollen 🌸",
                             description: BYOP_DOCS,
                         },
@@ -245,10 +212,9 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
             const response = await handler(c, next);
             if (!response) return;
 
-            // Parse the schema, transform paths, merge external specs, and return
+            // Parse the schema, transform paths, and return
             const schema = (await response.json()) as Record<string, unknown>;
             const transformed = transformOpenAPISchema(schema);
-            const merged = await mergeExternalSpecs(transformed);
-            return c.json(merged);
+            return c.json(transformed);
         });
 };

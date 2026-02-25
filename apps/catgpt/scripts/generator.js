@@ -1,6 +1,6 @@
 // Main Meme Generation
 
-import { createCatGPTPrompt, createImageGenerationPrompt } from './promptGenerator.js';
+import { createImageGenerationPrompt } from './promptGenerator.js';
 import { generateImageURL, fetchImageWithAuth } from './apiClient.js';
 import { dom, setButtonLoading, resetButton, showLoading, hideLoading, showResult } from './ui.js';
 import { saveGeneratedMeme } from './storage.js';
@@ -26,8 +26,6 @@ export async function generateMeme() {
     
     startFakeProgress(PROGRESS_MESSAGES);
     startCatAnimation();
-    
-    const fullPrompt = createCatGPTPrompt(userQuestion);
     const imagePrompt = createImageGenerationPrompt(userQuestion);
     
     try {

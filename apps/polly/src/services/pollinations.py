@@ -1,12 +1,11 @@
 import asyncio
+import json
 import logging
 import random
 import time
 from collections.abc import Callable
 from contextvars import ContextVar
 from typing import Any
-
-import json
 
 try:
     import orjson

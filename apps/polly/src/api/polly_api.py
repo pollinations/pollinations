@@ -192,20 +192,22 @@ def create_api_app(pollinations_client, config):
             if tool_calls:
                 message["tool_calls"] = tool_calls
 
-            return JSONResponse(content={
-                "id": f"chatcmpl-{uuid.uuid4().hex[:24]}",
-                "object": "chat.completion",
-                "created": int(time.time()),
-                "model": "polly",
-                "choices": [
-                    {
-                        "index": 0,
-                        "message": message,
-                        "finish_reason": "tool_calls" if tool_calls else "stop",
-                    }
-                ],
-                "usage": usage,
-            })
+            return JSONResponse(
+                content={
+                    "id": f"chatcmpl-{uuid.uuid4().hex[:24]}",
+                    "object": "chat.completion",
+                    "created": int(time.time()),
+                    "model": "polly",
+                    "choices": [
+                        {
+                            "index": 0,
+                            "message": message,
+                            "finish_reason": "tool_calls" if tool_calls else "stop",
+                        }
+                    ],
+                    "usage": usage,
+                }
+            )
         except UpstreamAuthError as e:
             raise HTTPException(status_code=e.status_code, detail=e.detail)
         except Exception as e:

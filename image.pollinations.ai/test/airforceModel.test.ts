@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Capture fetch calls
 let lastFetchBody: Record<string, unknown> = {};
 
 vi.stubGlobal("fetch", async (_url: string, init?: RequestInit) => {
-    lastFetchBody = JSON.parse(init?.body as string ?? "{}");
+    lastFetchBody = JSON.parse((init?.body as string) ?? "{}");
     // Return a minimal SSE response with a video URL
     return {
         ok: true,
@@ -28,7 +28,7 @@ vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
             arrayBuffer: async () => new ArrayBuffer(8),
         } as Response;
     }
-    lastFetchBody = JSON.parse(init?.body as string ?? "{}");
+    lastFetchBody = JSON.parse((init?.body as string) ?? "{}");
     return {
         ok: true,
         text: async () =>
@@ -69,10 +69,19 @@ describe("airforceModel - grok-imagine-video", () => {
     it("sends image_urls array when image param is provided", async () => {
         const params: ImageParams = {
             ...baseParams,
-            image: ["https://example.com/ref1.jpg", "https://example.com/ref2.jpg"],
+            image: [
+                "https://example.com/ref1.jpg",
+                "https://example.com/ref2.jpg",
+            ],
         };
 
-        await callAirforceVideoAPI("test prompt", params, makeProgress() as any, "req-1", "grok-imagine-video");
+        await callAirforceVideoAPI(
+            "test prompt",
+            params,
+            makeProgress() as any,
+            "req-1",
+            "grok-imagine-video",
+        );
 
         expect(lastFetchBody.image_urls).toEqual([
             "https://example.com/ref1.jpg",
@@ -81,7 +90,13 @@ describe("airforceModel - grok-imagine-video", () => {
     });
 
     it("does not send image_urls when no image provided", async () => {
-        await callAirforceVideoAPI("test prompt", baseParams, makeProgress() as any, "req-2", "grok-imagine-video");
+        await callAirforceVideoAPI(
+            "test prompt",
+            baseParams,
+            makeProgress() as any,
+            "req-2",
+            "grok-imagine-video",
+        );
 
         expect(lastFetchBody.image_urls).toBeUndefined();
     });
@@ -92,8 +107,16 @@ describe("airforceModel - grok-imagine-video", () => {
             image: ["https://example.com/single.jpg"],
         };
 
-        await callAirforceVideoAPI("test prompt", params, makeProgress() as any, "req-3", "grok-imagine-video");
+        await callAirforceVideoAPI(
+            "test prompt",
+            params,
+            makeProgress() as any,
+            "req-3",
+            "grok-imagine-video",
+        );
 
-        expect(lastFetchBody.image_urls).toEqual(["https://example.com/single.jpg"]);
+        expect(lastFetchBody.image_urls).toEqual([
+            "https://example.com/single.jpg",
+        ]);
     });
 });

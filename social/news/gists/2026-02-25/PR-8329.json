@@ -1,0 +1,34 @@
+{
+  "pr_number": 8329,
+  "title": "feat: add grok-imagine image model (alpha)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8329",
+  "merged_at": "2026-02-25T11:24:19Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grokking the Canvas",
+    "blurb": "The hive just got smarter—xAI's Grok-Imagine model is now available for your pixel-generating pleasure.",
+    "summary": "Integrated the Grok-Imagine image generation model (alpha) via the Airforce API.",
+    "impact": "Users can now select 'grok-imagine' to generate high-quality images with xAI's latest visual capabilities.",
+    "keywords": [
+      "grok",
+      "xAI",
+      "image-generation",
+      "models",
+      "alpha"
+    ],
+    "visual_concept": "Polly and the Robot discovering a new futuristic painting tool. The 'X' motif represents xAI/Grok, integrated into a cozy art studio setting.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and the chunky robot mascot in a warm art studio, looking at a canvas showing a starry galaxy with a subtle 'X'. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender gradient background. Polly wears a tiny artist beret and the robot holds a glowing brush. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text on easel: 'GROK'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-25T11:25:11.843075+00:00"
+}

@@ -2,7 +2,7 @@
 
 Use **25+ AI models** as your OpenClaw brain through a single API.
 
-**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM-4.7, Gemini Flash Lite, and Claude Haiku as free alternatives. Premium models (Claude Sonnet, Gemini 3, Grok 4) available on paid tier.
+**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM-5, GPT-5 Mini, Gemini Flash Lite, Claude Haiku, Mistral, Qwen Coder, MiniMax, Nova, and more as free alternatives. Premium models (GPT-5.2, Claude Sonnet/Opus, Gemini 3 Flash/Pro, Grok 4) available on paid tier.
 
 ## 30-Second Setup
 
@@ -28,16 +28,38 @@ openclaw onboard --install-daemon
 
 Switch models anytime in chat with `/model pollinations/<name>`:
 
+**Free models:**
+
 | Model | ID | Best for |
 |---|---|---|
 | **Kimi K2.5** ⭐ | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
-| **DeepSeek V3.2** | `pollinations/deepseek` | Strong reasoning & tool calling |
-| **GLM-4.7** | `pollinations/glm` | Coding, reasoning, agentic workflows |
-| **Gemini Flash Lite** | `pollinations/gemini-fast` | Fast, vision support |
-| **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast with good reasoning |
-| **Claude Sonnet** 💰 | `pollinations/claude` | Complex reasoning (paid) |
-| **Gemini 3** 💰 | `pollinations/gemini` | 1M context (paid) |
-| **Grok 4** 💰 | `pollinations/grok` | Tool calling, fast (paid) |
+| **DeepSeek V3.2** | `pollinations/deepseek` | Efficient reasoning & agentic AI |
+| **GLM-5** | `pollinations/glm` | 744B MoE, long context reasoning (198K) |
+| **GPT-5 Mini** | `pollinations/openai` | Fast & balanced, vision |
+| **GPT-5 Nano** | `pollinations/openai-fast` | Ultra fast & affordable |
+| **GPT-4o Audio** | `pollinations/openai-audio` | Voice input & output |
+| **Gemini Flash Lite** | `pollinations/gemini-fast` | Ultra fast, vision, search |
+| **Gemini + Search** | `pollinations/gemini-search` | Web search grounded answers |
+| **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast & intelligent |
+| **Mistral Small 3.2** | `pollinations/mistral` | Efficient & cost-effective |
+| **Qwen3 Coder** | `pollinations/qwen-coder` | Specialized for code generation |
+| **MiniMax M2.1** | `pollinations/minimax` | Multi-language & agent workflows (200K) |
+| **Nova Micro** | `pollinations/nova-fast` | Ultra fast & ultra cheap |
+| **Perplexity Sonar** | `pollinations/perplexity-fast` | Fast web search |
+| **Perplexity Reasoning** | `pollinations/perplexity-reasoning` | Advanced reasoning + web search |
+| **NomNom** | `pollinations/nomnom` | Web research with search, scrape & crawl |
+| **Polly** | `pollinations/polly` | Pollinations AI assistant with code search & web |
+
+**Paid models:**
+
+| Model | ID | Best for |
+|---|---|---|
+| **GPT-5.2** 💰 | `pollinations/openai-large` | Most powerful & intelligent (reasoning) |
+| **Claude Sonnet 4.6** 💰 | `pollinations/claude` | Most capable & balanced |
+| **Claude Opus 4.6** 💰 | `pollinations/claude-large` | Most intelligent model |
+| **Gemini 3 Flash** 💰 | `pollinations/gemini` | Pro-grade reasoning at flash speed |
+| **Gemini 3 Pro** 💰 | `pollinations/gemini-large` | 1M context, vision, audio & video |
+| **Grok 4 Fast** 💰 | `pollinations/grok` | High speed & real-time |
 
 ## Manual Configuration
 
@@ -51,13 +73,6 @@ If you prefer to edit `~/.openclaw/openclaw.json` directly:
       "model": {
         "primary": "pollinations/kimi",
         "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
-      },
-      "models": {
-        "pollinations/kimi": { "alias": "Kimi K2.5 (Pollinations)" },
-        "pollinations/deepseek": { "alias": "DeepSeek V3.2 (Pollinations)" },
-        "pollinations/glm": { "alias": "GLM-4.7 (Pollinations)" },
-        "pollinations/gemini-fast": { "alias": "Gemini Flash Lite (Pollinations)" },
-        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5 (Pollinations)" }
       }
     }
   },
@@ -69,28 +84,12 @@ If you prefer to edit `~/.openclaw/openclaw.json` directly:
         "apiKey": "${POLLINATIONS_API_KEY}",
         "api": "openai-completions",
         "models": [
-          {
-            "id": "kimi",
-            "name": "Kimi K2.5",
-            "reasoning": true,
-            "input": ["text", "image"],
-            "contextWindow": 256000,
-            "maxTokens": 8192
-          },
-          {
-            "id": "deepseek",
-            "name": "DeepSeek V3.2",
-            "input": ["text"],
-            "contextWindow": 128000,
-            "maxTokens": 8192
-          },
-          {
-            "id": "glm",
-            "name": "GLM-4.7",
-            "input": ["text"],
-            "contextWindow": 128000,
-            "maxTokens": 8192
-          }
+          { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
+            "input": ["text", "image"], "contextWindow": 256000 },
+          { "id": "deepseek", "name": "DeepSeek V3.2", "reasoning": true,
+            "input": ["text"], "contextWindow": 128000 },
+          { "id": "glm", "name": "GLM-5", "reasoning": true,
+            "input": ["text"], "contextWindow": 198000 }
         ]
       }
     }
@@ -98,7 +97,7 @@ If you prefer to edit `~/.openclaw/openclaw.json` directly:
 }
 ```
 
-Add more models by adding entries to the `models` array. See all available models at [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models).
+This is a minimal example with 3 models. The setup script configures all 23 models automatically. See all available models at [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models).
 
 ## Why Pollinations?
 

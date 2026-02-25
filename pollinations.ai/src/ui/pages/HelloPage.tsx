@@ -192,7 +192,7 @@ function HelloPage() {
                         </div>
                     </div>
                     <a
-                        href="https://enter.pollinations.ai"
+                        href="https://enter.pollinations.ai#what-are-tiers"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-headline text-sm font-black text-text-highlight hover:underline mt-4 inline-block"

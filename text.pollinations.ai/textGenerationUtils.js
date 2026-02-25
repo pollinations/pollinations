@@ -46,7 +46,6 @@ export function validateAndNormalizeMessages(messages) {
 
         // preserve other known OpenAI compatible properties
         if (msg.function_call) normalizedMsg.function_call = msg.function_call;
-        if (msg.cache_control) normalizedMsg.cache_control = msg.cache_control;
         if (msg.reasoning_content) normalizedMsg.reasoning_content = msg.reasoning_content;
         if (msg.audio) normalizedMsg.audio = msg.audio;
 

@@ -17,11 +17,18 @@ import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
 type ApiKeyDialogProps = {
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onComplete: () => void;
+    triggerLabel?: string;
+    triggerColor?: "blue" | "green" | "purple" | "amber";
+    /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only name + URL. */
+    simplified?: boolean;
 };
 
 export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
     onComplete,
+    triggerLabel = "Create new key",
+    triggerColor = "blue",
+    simplified = false,
 }) => {
     function generateFunName(): string {
         return uniqueNamesGenerator({
@@ -36,9 +43,20 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [description, setDescription] = useState(
         `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
     );
-    const [keyType, setKeyType] = useState<"secret" | "publishable">("secret");
+    const [keyType, setKeyType] = useState<"secret" | "publishable">(
+        simplified ? "publishable" : "secret",
+    );
     const [appUrl, setAppUrl] = useState("");
-    const keyPermissions = useKeyPermissions();
+    const keyPermissions = useKeyPermissions(
+        simplified
+            ? {
+                  pollenBudget: 0,
+                  expiryDays: null,
+                  allowedModels: [],
+                  accountPermissions: [],
+              }
+            : {},
+    );
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
     );
@@ -59,9 +77,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setDescription(
             newKeyType === "publishable" ? "" : `Created on ${dateStr}`,
         );
-        if (newKeyType !== "publishable") {
-            setAppUrl("");
-        }
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -100,7 +115,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     const { allowedModels } = keyPermissions.permissions;
     const noModelsSelected =
-        Array.isArray(allowedModels) && allowedModels.length === 0;
+        !simplified &&
+        Array.isArray(allowedModels) &&
+        allowedModels.length === 0;
     const isCreateDisabled =
         !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
 
@@ -112,19 +129,49 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     }
 
     return (
-        <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
+        <Dialog.Root
+            open={isOpen}
+            onOpenChange={({ open }) => {
+                if (open) {
+                    setCreatedKey(null);
+                    setCopied(false);
+                    setName(generateFunName());
+                    setAppUrl("");
+                    setKeyType(simplified ? "publishable" : "secret");
+                    const dateStr = new Date().toLocaleDateString("en-US", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "2-digit",
+                    });
+                    setDescription(simplified ? "" : `Created on ${dateStr}`);
+                }
+                setIsOpen(open);
+            }}
+        >
             <Dialog.Trigger>
-                <Button as="div" color="blue" weight="light">
-                    Create new key
+                <Button as="div" color={triggerColor} weight="light">
+                    {triggerLabel}
                 </Button>
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
-                <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col">
+                <Dialog.Content
+                    className={cn(
+                        "border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col",
+                        "bg-green-100 border-green-950",
+                    )}
+                >
                     <div className="shrink-0 p-6 pb-4">
                         <Dialog.Title className="text-lg font-semibold">
-                            Create New API Key
+                            {simplified
+                                ? "Create New App Key"
+                                : "Create New API Key"}
                         </Dialog.Title>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {simplified
+                                ? "Register your app to let users associate their Pollinations account with it."
+                                : "Access AI models for text, image, and audio generation."}
+                        </p>
                     </div>
 
                     <form
@@ -138,101 +185,112 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 overscrollBehavior: "contain",
                             }}
                         >
-                            <Field.Root>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <label
-                                        className={cn(
-                                            "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
-                                            keyType === "publishable"
-                                                ? "bg-blue-100 ring-2 ring-blue-500"
-                                                : "bg-gray-50 hover:bg-gray-100",
-                                            createdKey &&
-                                                keyType !== "publishable" &&
-                                                "opacity-40",
-                                        )}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="keyType"
-                                            value="publishable"
-                                            checked={keyType === "publishable"}
-                                            onChange={(e) =>
-                                                handleKeyTypeChange(
-                                                    e.target
-                                                        .value as "publishable",
-                                                )
-                                            }
-                                            className="sr-only"
-                                            disabled={
-                                                isSubmitting || !!createdKey
-                                            }
-                                        />
-                                        <div className="font-semibold text-sm mb-2">
-                                            🌐 Publishable Key
-                                        </div>
-                                        <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
-                                            <li>Always visible in dashboard</li>
-                                            <li>
-                                                For client-side code (React,
-                                                Vue)
-                                            </li>
-                                            <li>
-                                                Rate limited: 1p/hour per IP
-                                            </li>
-                                        </ul>
-                                        <div className="mt-3 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded">
-                                            ⚠️ Beta – still working out bugs
-                                        </div>
-                                    </label>
-                                    <label
-                                        className={cn(
-                                            "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
-                                            keyType === "secret"
-                                                ? "bg-purple-100 ring-2 ring-purple-500"
-                                                : "bg-gray-50 hover:bg-gray-100",
-                                            createdKey &&
-                                                keyType !== "secret" &&
-                                                "opacity-40",
-                                        )}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="keyType"
-                                            value="secret"
-                                            checked={keyType === "secret"}
-                                            onChange={(e) =>
-                                                handleKeyTypeChange(
-                                                    e.target.value as "secret",
-                                                )
-                                            }
-                                            className="sr-only"
-                                            disabled={
-                                                isSubmitting || !!createdKey
-                                            }
-                                        />
-                                        <div className="font-semibold text-sm mb-2">
-                                            🔒 Secret Key
-                                        </div>
-                                        <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
-                                            <li className="text-amber-700 font-medium">
-                                                Only shown once – copy it!
-                                            </li>
-                                            <li>
-                                                Never expose publicly (must be
-                                                hidden in your backend)
-                                            </li>
-                                            <li>No rate limits</li>
-                                        </ul>
-                                        <div className="mt-3 text-[10px] text-green-700 bg-green-50 px-2 py-1 rounded">
-                                            ✓ Recommended for production
-                                        </div>
-                                    </label>
-                                </div>
-                            </Field.Root>
+                            {!simplified && (
+                                <Field.Root>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <label
+                                            className={cn(
+                                                "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
+                                                keyType === "publishable"
+                                                    ? "bg-blue-100 ring-2 ring-blue-500"
+                                                    : "bg-gray-50 hover:bg-gray-100",
+                                                createdKey &&
+                                                    keyType !== "publishable" &&
+                                                    "opacity-40",
+                                            )}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="keyType"
+                                                value="publishable"
+                                                checked={
+                                                    keyType === "publishable"
+                                                }
+                                                onChange={(e) =>
+                                                    handleKeyTypeChange(
+                                                        e.target
+                                                            .value as "publishable",
+                                                    )
+                                                }
+                                                className="sr-only"
+                                                disabled={
+                                                    isSubmitting || !!createdKey
+                                                }
+                                            />
+                                            <div className="font-semibold text-sm mb-2">
+                                                🌐 Publishable Key
+                                            </div>
+                                            <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
+                                                <li>
+                                                    Always visible in dashboard
+                                                </li>
+                                                <li>
+                                                    For client-side code (React,
+                                                    Vue)
+                                                </li>
+                                                <li>
+                                                    Rate limited: 1p/hour per IP
+                                                </li>
+                                            </ul>
+                                            <div className="mt-3 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                                                ⚠️ Beta – still working out bugs
+                                            </div>
+                                        </label>
+                                        <label
+                                            className={cn(
+                                                "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
+                                                keyType === "secret"
+                                                    ? "bg-purple-100 ring-2 ring-purple-500"
+                                                    : "bg-gray-50 hover:bg-gray-100",
+                                                createdKey &&
+                                                    keyType !== "secret" &&
+                                                    "opacity-40",
+                                            )}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="keyType"
+                                                value="secret"
+                                                checked={keyType === "secret"}
+                                                onChange={(e) =>
+                                                    handleKeyTypeChange(
+                                                        e.target
+                                                            .value as "secret",
+                                                    )
+                                                }
+                                                className="sr-only"
+                                                disabled={
+                                                    isSubmitting || !!createdKey
+                                                }
+                                            />
+                                            <div className="font-semibold text-sm mb-2">
+                                                🔒 Secret Key
+                                            </div>
+                                            <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
+                                                <li className="text-amber-700 font-medium">
+                                                    Only shown once – copy it!
+                                                </li>
+                                                <li>
+                                                    Never expose publicly (must
+                                                    be hidden in your backend)
+                                                </li>
+                                                <li>No rate limits</li>
+                                            </ul>
+                                            <div className="mt-3 text-[10px] text-green-700 bg-green-50 px-2 py-1 rounded">
+                                                ✓ Recommended for production
+                                            </div>
+                                        </label>
+                                    </div>
+                                </Field.Root>
+                            )}
 
                             <Field.Root className="flex items-center gap-3">
                                 <Field.Label className="text-sm font-semibold shrink-0">
-                                    {createdKey ? "Your API Key" : "Name"}
+                                    {createdKey
+                                        ? simplified
+                                            ? "Your App Key"
+                                            : "Your API Key"
+                                        : "Name"}
                                 </Field.Label>
                                 <Field.Input
                                     type="text"
@@ -253,7 +311,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 />
                             </Field.Root>
 
-                            {keyType === "publishable" && !createdKey && (
+                            {simplified && !createdKey && (
                                 <PublishableKeySettings
                                     appUrl={appUrl}
                                     onAppUrlChange={setAppUrl}
@@ -261,7 +319,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 />
                             )}
 
-                            {!createdKey && (
+                            {!simplified && !createdKey && (
                                 <KeyPermissionsInputs
                                     value={keyPermissions}
                                     disabled={isSubmitting}

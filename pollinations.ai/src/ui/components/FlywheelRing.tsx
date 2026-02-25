@@ -90,7 +90,7 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
                             <path
                                 d="M6 12 L18 12 L18 8 L24 14 L18 20 L18 16 L6 16 Z"
                                 style={{
-                                    fill: "rgb(var(--border-main))",
+                                    fill: "rgb(var(--text-secondary))",
                                 }}
                             />
                         </svg>

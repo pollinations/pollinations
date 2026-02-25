@@ -19,6 +19,7 @@ async function resolveAttribution(
         found: true as const,
         userId: keyRow.userId,
         userName: user?.name,
+        githubUsername: user?.githubUsername || undefined,
         appName: keyRow.name,
         appUrl: (meta.appUrl as string) || undefined,
     };

@@ -1,6 +1,4 @@
-
-
-import { CATGPT_STYLE, CATGPT_PERSONALITY } from "./config.js";
+import { CATGPT_PERSONALITY, CATGPT_STYLE } from "./config.js";
 export function createImageGenerationPrompt(userQuestion) {
     return `${CATGPT_STYLE}\n
     ${CATGPT_PERSONALITY}\n

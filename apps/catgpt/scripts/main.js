@@ -37,14 +37,14 @@ function setupEventListeners() {
     // Image upload
     dom.imageUpload.addEventListener("change", handleImageUploadEvent);
     dom.removeImageBtn.addEventListener("click", handleRemoveImage);
-    
+
     // Text input
     dom.userInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
             generateMeme();
         }
     });
-    
+
     // Easter egg
     document.addEventListener("keydown", handleKonamiCode);
 }

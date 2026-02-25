@@ -15,18 +15,18 @@ export function createUserMemeCard(prompt, index, imageUrl) {
         console.warn(`User meme has no URL: "${prompt}"`);
         return null;
     }
-    
+
     const card = document.createElement("div");
     card.className = "example-card";
     card.style.animationDelay = `${index * 0.1}s`;
     card.style.border = "2px solid var(--color-accent)";
     card.style.boxShadow = "0 0 10px rgba(255, 105, 180, 0.3)";
-    
+
     const img = document.createElement("img");
     img.src = imageUrl;
     img.alt = escapeHtml(prompt);
     img.loading = "lazy";
-    
+
     const badge = document.createElement("div");
     badge.textContent = "✨ Your Meme";
     badge.style.cssText = `

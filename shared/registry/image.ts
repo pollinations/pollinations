@@ -267,37 +267,36 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
-    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
-    // "imagen-4": {
-    //     aliases: ["imagen"],
-    //     modelId: "imagen-4",
-    //     provider: "airforce",
-    //     alpha: true,
-    //     cost: [
-    //         {
-    //             date: new Date("2026-02-07").getTime(),
-    //             completionImageTokens: 0.0025, // $0.0025 per image
-    //         },
-    //     ],
-    //     description: "Imagen 4 (api.airforce) - Google's latest image gen",
-    //     inputModalities: ["text"],
-    //     outputModalities: ["image"],
-    // },
-    // "grok-video": {
-    //     aliases: ["grok-imagine-video"],
-    //     modelId: "grok-video",
-    //     provider: "airforce",
-    //     alpha: true,
-    //     cost: [
-    //         {
-    //             date: new Date("2026-02-07").getTime(),
-    //             completionVideoSeconds: 0.0025, // $0.0025 per second
-    //         },
-    //     ],
-    //     description: "Grok Video (api.airforce) - xAI video gen",
-    //     inputModalities: ["text", "image"],
-    //     outputModalities: ["video"],
-    // },
+    "imagen-4": {
+        aliases: ["imagen"],
+        modelId: "imagen-4",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                completionImageTokens: 0.0025, // $0.0025 per image
+            },
+        ],
+        description: "Imagen 4 (api.airforce) - Google's latest image gen",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "grok-video": {
+        aliases: ["grok-imagine-video"],
+        modelId: "grok-video",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                completionVideoSeconds: 0.0025, // $0.0025 per second
+            },
+        ],
+        description: "Grok Video (api.airforce) - xAI video gen",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+    },
     "ltx-2": {
         aliases: ["ltx2", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",

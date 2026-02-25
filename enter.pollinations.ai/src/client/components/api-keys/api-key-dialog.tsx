@@ -38,7 +38,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     );
     const [keyType, setKeyType] = useState<"secret" | "publishable">("secret");
     const [appUrl, setAppUrl] = useState("");
-    const [byopEnabled, setByopEnabled] = useState(false);
     const keyPermissions = useKeyPermissions();
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
@@ -62,7 +61,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         );
         if (newKeyType !== "publishable") {
             setAppUrl("");
-            setByopEnabled(false);
         }
     }
 
@@ -77,7 +75,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 keyType,
                 ...keyPermissions.permissions,
                 ...(isPublishable && appUrl && { appUrl }),
-                ...(isPublishable && { byop: byopEnabled }),
             });
             setCreatedKey(newKey);
         } finally {
@@ -260,8 +257,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 <PublishableKeySettings
                                     appUrl={appUrl}
                                     onAppUrlChange={setAppUrl}
-                                    byopEnabled={byopEnabled}
-                                    onByopEnabledChange={setByopEnabled}
                                     disabled={isSubmitting}
                                 />
                             )}

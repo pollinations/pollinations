@@ -125,7 +125,6 @@ function RouteComponent() {
                     keyType,
                     plaintextKey: apiKey.key,
                     ...(formState.appUrl && { appUrl: formState.appUrl }),
-                    ...(formState.byop && { byop: true }),
                 }),
             });
         }

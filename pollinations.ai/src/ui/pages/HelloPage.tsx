@@ -45,18 +45,18 @@ function HelloPage() {
                         <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
                     </Button>
                 </div>
-                <p className="font-body text-sm text-text-body-tertiary mb-4">
-                    <span className="font-headline font-black text-text-body-secondary">
+                <p className="font-body text-base text-text-body-tertiary mb-4">
+                    <span className="font-headline text-lg font-black text-text-body-secondary">
                         {pageCopy.heroStat1}
                     </span>{" "}
                     {pageCopy.heroStat1Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline font-black text-text-body-secondary">
+                    <span className="font-headline text-lg font-black text-text-body-secondary">
                         {pageCopy.heroStat2}
                     </span>{" "}
                     {pageCopy.heroStat2Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline font-black text-text-body-secondary">
+                    <span className="font-headline text-lg font-black text-text-body-secondary">
                         {pageCopy.heroStat3}
                     </span>{" "}
                     {pageCopy.heroStat3Label}
@@ -78,9 +78,9 @@ function HelloPage() {
                             <Body spacing="comfortable">
                                 {pageCopy.flywheelBody}
                             </Body>
-                            <p className="font-body text-xs text-text-body-tertiary italic mt-2">
+                            <span className="font-body text-base text-text-body-tertiary italic">
                                 {pageCopy.tiersBetaNote}
-                            </p>
+                            </span>
                         </div>
                     </div>
 
@@ -91,22 +91,22 @@ function HelloPage() {
                             <Body spacing="comfortable">
                                 {pageCopy.tierBody}
                             </Body>
-                            <div className="bg-surface-card/60 border border-border-subtle p-4 rounded-sub-card mb-4">
-                                <span className="font-headline text-sm font-black text-text-body-secondary">
+                            <div className="bg-border-accent/10 border-2 border-border-accent/30 border-r-4 border-b-4 p-4 mb-4">
+                                <span className="font-headline text-base font-black text-text-accent">
                                     {pageCopy.usersTitle}
                                 </span>
                                 <Body
                                     size="sm"
                                     spacing="tight"
-                                    className="mt-2 text-text-body-tertiary"
+                                    className="mt-2 text-text-body-secondary"
                                 >
                                     {pageCopy.usersBody}
                                 </Body>
                                 <a
-                                    href="https://enter.pollinations.ai/docs#payments"
+                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="font-headline text-sm font-black text-text-body-secondary hover:underline mt-2 inline-block"
+                                    className="font-headline text-base font-black text-text-accent hover:underline mt-2 inline-block"
                                 >
                                     {pageCopy.usersPaymentsLink}
                                 </a>
@@ -117,9 +117,10 @@ function HelloPage() {
                         <div className="relative flex flex-col gap-4 pl-6 max-w-[300px] lg:mx-auto">
                             {/* Gradient progression line */}
                             <div
-                                className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full"
+                                className="absolute left-0 top-2 bottom-2 w-[3px]"
                                 style={{
-                                    background: `linear-gradient(to bottom, rgb(var(--border-highlight)), rgb(var(--border-brand)), rgb(var(--border-main)))`,
+                                    background: `linear-gradient(to bottom, rgb(var(--border-highlight)) 0%, rgb(var(--border-highlight)) 33%, rgb(var(--border-brand)) 33%, rgb(var(--border-brand)) 66%, rgb(var(--border-main)) 66%, rgb(var(--border-main)) 100%)`,
+                                    imageRendering: "pixelated",
                                 }}
                             />
                             {[
@@ -128,7 +129,6 @@ function HelloPage() {
                                     title: pageCopy.tierNectarTitle,
                                     desc: pageCopy.tierNectarDescription,
                                     grant: pageCopy.tierNectarGrant,
-                                    points: pageCopy.tierNectarPoints,
                                     descBg: "bg-border-highlight/10",
                                     descBorder: "border-border-highlight/30",
                                 },
@@ -137,7 +137,6 @@ function HelloPage() {
                                     title: pageCopy.tierFlowerTitle,
                                     desc: pageCopy.tierFlowerDescription,
                                     grant: pageCopy.tierFlowerGrant,
-                                    points: pageCopy.tierFlowerPoints,
                                     descBg: "bg-border-brand/10",
                                     descBorder: "border-border-brand/30",
                                 },
@@ -146,7 +145,6 @@ function HelloPage() {
                                     title: pageCopy.tierSeedTitle,
                                     desc: pageCopy.tierSeedDescription,
                                     grant: pageCopy.tierSeedGrant,
-                                    points: pageCopy.tierSeedPoints,
                                     descBg: "bg-border-main/10",
                                     descBorder: "border-border-main/30",
                                 },
@@ -163,13 +161,13 @@ function HelloPage() {
                                         <span className="font-headline text-base font-black text-text-highlight">
                                             {tier.title}
                                         </span>
-                                        <span className="ml-auto font-headline text-sm font-black text-text-highlight">
+                                        <span className="ml-auto font-headline text-base font-black text-text-body-secondary">
                                             {tier.grant}
                                         </span>
                                     </div>
                                     {/* Description — highlighted callout */}
                                     <div
-                                        className={`${tier.descBg} border ${tier.descBorder} rounded-sub-card px-3 py-2`}
+                                        className={`${tier.descBg} border-2 ${tier.descBorder} border-r-4 border-b-4 px-3 py-2`}
                                     >
                                         <Body
                                             size="sm"
@@ -178,14 +176,6 @@ function HelloPage() {
                                         >
                                             {tier.desc}
                                         </Body>
-                                        <div className="flex justify-end mt-1">
-                                            <Badge
-                                                variant="muted"
-                                                className="text-xs px-2 py-0.5"
-                                            >
-                                                {tier.points}
-                                            </Badge>
-                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -195,7 +185,7 @@ function HelloPage() {
                         href="https://enter.pollinations.ai#what-are-tiers"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-headline text-sm font-black text-text-highlight hover:underline mt-4 inline-block"
+                        className="font-headline text-base font-black text-text-highlight hover:underline mt-4 inline-block"
                     >
                         {pageCopy.tierHowLink}
                     </a>
@@ -226,8 +216,8 @@ function HelloPage() {
                                         key={`${item.date}-${item.title}`}
                                         className="py-1"
                                     >
-                                        <p className="font-body text-sm text-text-body-secondary leading-relaxed">
-                                            <span className="shrink-0 bg-button-primary-bg text-text-on-color px-1.5 py-0.5 font-mono font-black text-[10px] rounded-tag mr-2">
+                                        <p className="font-body text-base text-text-body-secondary leading-relaxed">
+                                            <span className="shrink-0 bg-button-primary-bg text-text-on-color px-1.5 py-0.5 font-mono font-black text-xs rounded-tag mr-2">
                                                 {item.date}
                                             </span>
                                             <span className="mr-2">
@@ -257,7 +247,7 @@ function HelloPage() {
                                     description: string;
                                 }) => (
                                     <div key={item.title} className="py-1">
-                                        <p className="font-body text-sm text-text-body-secondary leading-relaxed">
+                                        <p className="font-body text-base text-text-body-secondary leading-relaxed">
                                             <span className="mr-2">
                                                 {item.emoji}
                                             </span>

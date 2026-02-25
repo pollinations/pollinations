@@ -129,7 +129,7 @@ function Layout() {
                                     size={null}
                                     className="text-text-highlight"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider">
+                                    <span className="font-headline text-base font-black uppercase tracking-wider">
                                         {authCopy.enterButton}
                                     </span>
                                     <ExternalLinkIcon className="w-3 h-3" />
@@ -239,7 +239,7 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-base font-black uppercase tracking-wider text-text-body-main">
                                         {layoutCopy.termsLink}
                                     </span>
                                 </Button>
@@ -250,7 +250,7 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-base font-black uppercase tracking-wider text-text-body-main">
                                         {layoutCopy.privacyLink}
                                     </span>
                                 </Button>
@@ -270,11 +270,11 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-base font-black uppercase tracking-wider text-text-body-main">
                                         {layoutCopy.emailLink}
                                     </span>
                                     {emailCopied && (
-                                        <span className="absolute -top-8 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
+                                        <span className="absolute -top-8 left-0 font-body text-xs font-bold text-text-brand uppercase tracking-wider">
                                             {layoutCopy.copiedLabel}
                                         </span>
                                     )}
@@ -288,7 +288,7 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
+                                    <span className="font-headline text-base font-black uppercase tracking-wider text-text-brand">
                                         {isLoggedIn
                                             ? authCopy.enterButton
                                             : authCopy.registerButton}
@@ -306,10 +306,10 @@ function Layout() {
                         <div className="flex items-center justify-between gap-6">
                             {/* Left: Branding Text */}
                             <div className="text-left flex-shrink-0">
-                                <p className="font-headline text-xs font-black text-text-body-main uppercase tracking-wider">
+                                <p className="font-headline text-base font-black text-text-body-main uppercase tracking-wider">
                                     {layoutCopy.footerBranding}
                                 </p>
-                                <p className="font-body text-[10px] text-text-body-main">
+                                <p className="font-body text-xs text-text-body-main">
                                     {layoutCopy.footerTagline}
                                 </p>
                             </div>
@@ -323,7 +323,7 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-base font-black uppercase tracking-wider text-text-body-main">
                                         {layoutCopy.termsLink}
                                     </span>
                                 </Button>
@@ -334,7 +334,7 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-base font-black uppercase tracking-wider text-text-body-main">
                                         {layoutCopy.privacyLink}
                                     </span>
                                 </Button>
@@ -354,11 +354,11 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-base font-black uppercase tracking-wider text-text-body-main">
                                         {layoutCopy.emailLink}
                                     </span>
                                     {emailCopied && (
-                                        <span className="absolute -top-8 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
+                                        <span className="absolute -top-8 left-0 font-body text-xs font-bold text-text-brand uppercase tracking-wider">
                                             {layoutCopy.copiedLabel}
                                         </span>
                                     )}
@@ -432,7 +432,7 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
+                                    <span className="font-headline text-base font-black uppercase tracking-wider text-text-brand">
                                         {isLoggedIn
                                             ? authCopy.enterButton
                                             : authCopy.registerButton}

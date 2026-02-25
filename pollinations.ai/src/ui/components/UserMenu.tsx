@@ -37,7 +37,7 @@ export function UserMenu() {
                 variant="primary"
                 size={null}
                 onClick={login}
-                className="px-3 py-1.5 lg:px-5 lg:py-1.5 text-xs"
+                className="px-3 py-1.5 lg:px-5 lg:py-1.5 text-base"
             >
                 {copy.loginButton}
             </Button>
@@ -54,7 +54,7 @@ export function UserMenu() {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 font-headline text-xs font-black uppercase tracking-wider text-text-body-main bg-surface-page backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button transition-all hover:bg-button-secondary-bg hover:shadow-shadow-brand-md whitespace-nowrap"
+                className="flex items-center gap-2 px-3 py-1.5 font-headline text-base font-black uppercase tracking-wider text-text-body-main bg-surface-page backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button transition-all hover:bg-button-secondary-bg hover:shadow-shadow-brand-md whitespace-nowrap"
             >
                 {profile?.image && (
                     <img
@@ -72,11 +72,11 @@ export function UserMenu() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-[rgb(var(--surface-base))] backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button p-4 z-50 shadow-shadow-brand-lg">
+                <div className="absolute right-0 top-full mt-2 w-72 bg-[rgb(var(--surface-base))] backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button p-4 z-50 shadow-shadow-brand-lg">
                     {/* Profile */}
                     {profile && (
                         <div className="mb-3">
-                            <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium block mb-1">
+                            <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block mb-1">
                                 {copy.accountLabel}
                             </span>
                             <div className="flex items-center gap-1.5">
@@ -87,7 +87,7 @@ export function UserMenu() {
                                         className="w-5 h-5 rounded-full shrink-0"
                                     />
                                 )}
-                                <span className="font-headline text-sm font-black text-text-body-main">
+                                <span className="font-headline text-base font-black text-text-body-main">
                                     {displayName}
                                 </span>
                             </div>
@@ -97,10 +97,10 @@ export function UserMenu() {
                     {/* Balance */}
                     {balance !== null && (
                         <div className="mb-3">
-                            <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium block">
+                            <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block">
                                 {copy.balanceLabel}
                             </span>
-                            <span className="font-headline text-sm font-black text-text-brand">
+                            <span className="font-headline text-base font-black text-text-brand">
                                 {balance.balance.toFixed(2)} {copy.pollenUnit}
                             </span>
                         </div>
@@ -109,10 +109,10 @@ export function UserMenu() {
                     {/* Tier (creator tiers only) */}
                     {tierEmoji && profile?.tier && (
                         <div className="mb-3">
-                            <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium block">
+                            <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block">
                                 Tier
                             </span>
-                            <span className="font-headline text-sm font-black text-text-body-main">
+                            <span className="font-headline text-base font-black text-text-body-main">
                                 {tierEmoji}{" "}
                                 {profile.tier.charAt(0).toUpperCase() +
                                     profile.tier.slice(1)}
@@ -122,10 +122,10 @@ export function UserMenu() {
 
                     {/* API Key */}
                     <div className="mb-4">
-                        <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium block">
+                        <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block">
                             {copy.apiKeyLabel}
                         </span>
-                        <span className="font-mono text-sm text-text-body-secondary">
+                        <span className="font-mono text-base text-text-body-secondary">
                             {apiKey.slice(0, 4)}••••••••
                         </span>
                     </div>
@@ -137,13 +137,13 @@ export function UserMenu() {
                         rel="noopener noreferrer"
                         className="block mb-4 p-2 rounded-md bg-[rgb(var(--surface-page))] hover:opacity-80 transition-opacity"
                     >
-                        <span className="text-[10px] uppercase tracking-wider text-text-brand font-bold block">
+                        <span className="text-xs uppercase tracking-wider text-text-brand font-bold block">
                             🔌 {copy.byopTitle}
                         </span>
-                        <span className="text-[10px] text-text-body-secondary block mt-0.5">
+                        <span className="text-xs text-text-body-secondary block mt-0.5">
                             {copy.byopDescription}
                         </span>
-                        <span className="text-[10px] text-text-brand font-medium mt-1 block">
+                        <span className="text-xs text-text-brand font-medium mt-1 block">
                             {copy.byopLink} →
                         </span>
                     </a>

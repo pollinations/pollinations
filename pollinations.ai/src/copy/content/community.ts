@@ -15,7 +15,7 @@ export const COMMUNITY_PAGE = {
     // Section 2 — Earn Pollen
     contributeTitle: "Earn Pollen",
     contributeBody:
-        "Activity on the platform earns points toward your next tier. Higher tier means bigger daily Pollen grants and more free compute.",
+        "Activity on the platform helps you level up your tier. Higher tier means bigger daily Pollen grants and more free compute.",
     contributeCard1Title: "Ship an app",
     contributeCard1Body:
         "Publish something to the ecosystem. Biggest tier boost.",
@@ -38,7 +38,7 @@ export const COMMUNITY_PAGE = {
         'Contribute code, report bugs, review PRs, or just star us. New here? Check the "good first issue" label.',
     submitAppTitle: "Submit Your App",
     submitAppSubtitle:
-        "Built something? Get it in the showcase. Featured apps get visibility and earn you tier points.",
+        "Built something? Get it in the showcase. Featured apps get visibility and help you level up.",
 
     // Buttons
     joinDiscordButton: "Join Discord",

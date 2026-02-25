@@ -4,9 +4,7 @@ import {
     InstagramIcon,
     LinkedinIcon,
     RedditIcon,
-    TiktokIcon,
     XIcon,
-    YoutubeIcon,
 } from "../../ui/assets/SocialIcons";
 
 export const SOCIAL_LINKS = {
@@ -45,24 +43,10 @@ export const SOCIAL_LINKS = {
         width: "20px",
         height: "20px",
     },
-    youtube: {
-        label: "YouTube",
-        icon: YoutubeIcon,
-        url: "https://www.youtube.com/c/pollinations",
-        width: "28px",
-        height: "28px",
-    },
-    tiktok: {
-        label: "Tiktok",
-        icon: TiktokIcon,
-        url: "https://tiktok.com/@pollinations.ai",
-        width: "27px",
-        height: "27px",
-    },
     reddit: {
         label: "Reddit",
         icon: RedditIcon,
-        url: "https://www.reddit.com/r/pollinations/",
+        url: "https://www.reddit.com/r/pollinations_ai/",
         width: "24px",
         height: "24px",
     },

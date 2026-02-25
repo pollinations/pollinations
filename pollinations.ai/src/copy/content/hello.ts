@@ -37,28 +37,27 @@ export const HELLO_PAGE = {
     flywheelBody:
         "The more people use your apps, the more free Pollen you get every day.",
     tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
-
     // Tier explanation (left column)
     tierTitle: "Grow your tier",
     tierBody:
-        "Your activity earns points. Hit a threshold, your tier goes up, you get more free daily Pollen.",
+        "The more your apps grow, the higher your tier — and the more free daily Pollen you get.",
     tierHowLink: "❓ Want to know more? Check our FAQ →",
 
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
-    tierSeedDescription: "Shipping apps and contributing.",
+    tierSeedDescription: "You're building. Contributing, shipping apps.",
     tierSeedGrant: "3 pollen / day",
-    tierSeedPoints: "score ≥ 8",
+    tierSeedPoints: "",
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
-    tierFlowerDescription: "Real users, real traction.",
+    tierFlowerDescription: "Your app is live and getting used.",
     tierFlowerGrant: "10 pollen / day",
-    tierFlowerPoints: "score ≥ 20",
+    tierFlowerPoints: "",
     tierNectarEmoji: "🍯",
     tierNectarTitle: "Nectar",
-    tierNectarDescription: "Your apps are thriving.",
+    tierNectarDescription: "Most active builders.",
     tierNectarGrant: "20 pollen / day",
-    tierNectarPoints: "score ≥ 50",
+    tierNectarPoints: "",
 
     // Section — For your users / BYOP
     usersTitle: "Your users pay for themselves",

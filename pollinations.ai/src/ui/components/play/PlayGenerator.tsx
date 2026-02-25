@@ -732,7 +732,7 @@ export function PlayGenerator({
                         title={copy.copyButton}
                     >
                         {urlCopied ? (
-                            <span className="font-headline text-[10px] font-black text-text-brand uppercase tracking-wider px-1">
+                            <span className="font-body text-xs font-bold text-text-brand uppercase tracking-wider px-1">
                                 {copy.copiedLabel}
                             </span>
                         ) : (
@@ -780,7 +780,7 @@ export function PlayGenerator({
                     {copy.agentPromptButton}
                     <CopyIcon className="w-3 h-3" />
                     {agentPromptCopied && (
-                        <span className="absolute -top-5 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
+                        <span className="absolute -top-5 left-0 font-body text-xs font-bold text-text-brand uppercase tracking-wider">
                             {copy.copiedLabel}
                         </span>
                     )}

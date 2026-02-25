@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { COPY_CONSTANTS } from "../../copy/constants";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
@@ -43,18 +42,18 @@ export default function CommunityPage() {
                 <div className="mb-8">
                     <Body spacing="comfortable">{pageCopy.subtitle}</Body>
                 </div>
-                <p className="font-body text-sm text-text-body-tertiary mb-4">
-                    <span className="font-headline font-black text-text-body-secondary">
+                <p className="font-body text-base text-text-body-tertiary mb-4">
+                    <span className="font-headline text-lg font-black text-text-body-secondary">
                         {pageCopy.heroStat1}
                     </span>{" "}
                     {pageCopy.heroStat1Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline font-black text-text-body-secondary">
+                    <span className="font-headline text-lg font-black text-text-body-secondary">
                         {pageCopy.heroStat2}
                     </span>{" "}
                     {pageCopy.heroStat2Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline font-black text-text-body-secondary">
+                    <span className="font-headline text-lg font-black text-text-body-secondary">
                         {pageCopy.heroStat3}
                     </span>{" "}
                     {pageCopy.heroStat3Label}
@@ -101,7 +100,14 @@ export default function CommunityPage() {
                     >
                         {pageCopy.contributeNote}
                     </Body>
-                    <Button as={Link} to="/" variant="secondary" size="default">
+                    <Button
+                        as="a"
+                        href="https://enter.pollinations.ai#what-are-tiers"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="secondary"
+                        size="default"
+                    >
                         {pageCopy.learnAboutTiersButton}
                     </Button>
                 </div>
@@ -217,7 +223,7 @@ export default function CommunityPage() {
                                             {issue.votes} votes
                                         </span>
                                     </div>
-                                    <p className="font-headline text-sm font-black text-text-body-main">
+                                    <p className="font-headline text-base font-black text-text-body-main">
                                         {issue.title}
                                     </p>
                                 </div>
@@ -276,7 +282,7 @@ export default function CommunityPage() {
                                             className="w-full h-full object-contain"
                                         />
                                     </div>
-                                    <p className="font-headline text-[10px] font-black text-text-body-main leading-tight">
+                                    <p className="font-body text-xs font-bold text-text-body-main leading-tight">
                                         {supporter.name}
                                     </p>
                                 </a>

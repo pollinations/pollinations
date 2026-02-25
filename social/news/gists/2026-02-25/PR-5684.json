@@ -1,0 +1,35 @@
+{
+  "pr_number": 5684,
+  "title": "feat: Add media.pollinations.ai upload service",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/5684",
+  "merged_at": "2026-02-25T22:34:01Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Honeycombs for your files",
+    "blurb": "We've spun up a new media upload service. Send us your pixels and audio, and we'll tuck them safely into our content-addressed digital honeycomb.",
+    "summary": "Introduces `media.pollinations.ai`, a content-addressed storage service running on Cloudflare Workers and R2 for hosting user-uploaded images, audio, and video.",
+    "impact": "Developers can now upload files up to 10MB directly to our infrastructure and retrieve them via SHA-256 hash, enabling persistent media support in apps.",
+    "keywords": [
+      "storage",
+      "upload",
+      "media",
+      "cloudflare",
+      "r2",
+      "api"
+    ],
+    "visual_concept": "The concept is 'digital storage'. Visual symbols: Hexagonal honeycomb slots acting as server racks, glowing data blocks. Characters: Polly the Bee placing a glowing block into a slot, accompanied by the Monitor Robot checking a clipboard. Setting: A cozy, warm server garden.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot placing a glowing data block into a wall of lime green (#ecf874) hexagonal honeycomb storage slots. A small robot with a monitor head checks a clipboard nearby. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'STORAGE'. Nostalgic, organized, and warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-25T22:34:48.185863+00:00"
+}

@@ -1,6 +1,6 @@
-import { API_CONFIG } from './config.js';
+import { API_CONFIG } from "./config.js";
 
-const CATGPT_STYLE = 'Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, black bob hair, brick/burgundy sweater (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, "CATGPT" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.';
+const CATGPT_STYLE = "Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, black bob hair, brick/burgundy sweater (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, \"CATGPT\" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.";
 
 const CATGPT_PERSONALITY = `You are **CatGPT** – an aloof, self-important house-cat oracle.
 
@@ -28,7 +28,7 @@ CatGPT:`;
 export function createImageGenerationPrompt(userQuestion) {
     return `Single-panel CatGPT webcomic, white background, thick black marker strokes. White cat with black patches, human with bob hair. Handwritten text.
 
-IMPORTANT: CatGPT's response MUST be 2-5 words ONLY. Make it funny, sarcastic, and dismissive. Examples: "Not your problem.", "I'd rather nap.", "Hard pass, human."
+IMPORTANT: CatGPT's response MUST be 2-5 words ONLY. Make it funny, sarcastic, and dismissive. Examples: "Not your problem.", "I"d rather nap.", "Hard pass, human."
 
 Human asks: "${userQuestion}"
 CatGPT responds (2-5 words, funny):`;
@@ -46,14 +46,14 @@ export function generateImageURL(prompt, uploadedImageUrl = null) {
 
 export async function fetchImageWithAuth(imageUrl) {
     const response = await fetch(imageUrl, {
-        method: 'GET',
+        method: "GET",
         headers: {
-            'Authorization': `Bearer ${API_CONFIG.POLLINATIONS_API_KEY}`
+            "Authorization": `Bearer ${API_CONFIG.POLLINATIONS_API_KEY}`
         }
     });
     
     if (!response.ok) {
-        let errorDetails = '';
+        let errorDetails = "";
         try {
             const responseText = await response.text();
             
@@ -67,7 +67,7 @@ export async function fetchImageWithAuth(imageUrl) {
             errorDetails = `HTTP ${response.status}: ${response.statusText}`;
         }
         
-        console.error('API Error Details:', {
+        console.error("API Error Details:", {
             status: response.status,
             statusText: response.statusText,
             details: errorDetails,

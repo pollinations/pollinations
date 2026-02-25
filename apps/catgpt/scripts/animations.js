@@ -1,20 +1,23 @@
 // Animation Functions
 
-import { ANIMATION_CONFIG } from './config.js';
-import { getRandomItem } from './utilities.js';
+import { ANIMATION_CONFIG } from "./config.js";
+import { getRandomItem } from "./utilities.js";
 
 let catAnimationInterval;
 let progressInterval;
 let progressStep = 0;
 
-export function startCatAnimation(mode = 'loading') {
-    const catEmojis = mode === 'retry' ? ANIMATION_CONFIG.RETRY_CATS : ANIMATION_CONFIG.LOADING_CATS;
-    const speed = mode === 'retry' ? 800 : 400;
-    
+export function startCatAnimation(mode = "loading") {
+    const catEmojis =
+        mode === "retry"
+            ? ANIMATION_CONFIG.RETRY_CATS
+            : ANIMATION_CONFIG.LOADING_CATS;
+    const speed = mode === "retry" ? 800 : 400;
+
     catAnimationInterval = setInterval(() => {
-        const cat = document.createElement('div');
-        const animationName = mode === 'retry' ? 'catSlowWalk' : 'catSlide';
-        
+        const cat = document.createElement("div");
+        const animationName = mode === "retry" ? "catSlowWalk" : "catSlide";
+
         cat.style.cssText = `
             position: fixed;
             font-size: ${2 + Math.random() * 2}rem;
@@ -24,10 +27,10 @@ export function startCatAnimation(mode = 'loading') {
             left: -100px;
             animation: ${animationName} ${3 + Math.random() * 2}s linear forwards;
         `;
-        
+
         cat.textContent = getRandomItem(catEmojis);
         document.body.appendChild(cat);
-        
+
         setTimeout(() => {
             if (cat.parentNode) {
                 cat.remove();
@@ -41,16 +44,16 @@ export function stopCatAnimation() {
         clearInterval(catAnimationInterval);
         catAnimationInterval = null;
     }
-    
-    document.querySelectorAll('[style*="catSlide"]').forEach(cat => {
+
+    document.querySelectorAll("[style*='catSlide']").forEach((cat) => {
         cat.remove();
     });
 }
 
 export function startFakeProgress(progressMessages) {
     progressStep = 0;
-    const progressText = document.createElement('div');
-    progressText.id = 'progress-text';
+    const progressText = document.createElement("div");
+    progressText.id = "progress-text";
     progressText.style.cssText = `
         text-align: center;
         font-size: 0.9rem;
@@ -59,8 +62,8 @@ export function startFakeProgress(progressMessages) {
         font-weight: 500;
         animation: pulse 2s infinite;
     `;
-    
-    const loadingIndicator = document.getElementById('loadingIndicator');
+
+    const loadingIndicator = document.getElementById("loadingIndicator");
     loadingIndicator.appendChild(progressText);
     
     progressInterval = setInterval(() => {
@@ -71,7 +74,7 @@ export function startFakeProgress(progressMessages) {
             progressText.textContent = "🎨 Finalizing your masterpiece...";
         }
     }, 2500);
-    
+
     progressText.textContent = progressMessages[0];
     progressStep = 1;
 }
@@ -81,7 +84,7 @@ export function stopFakeProgress() {
         clearInterval(progressInterval);
         progressInterval = null;
     }
-    const progressText = document.getElementById('progress-text');
+    const progressText = document.getElementById("progress-text");
     if (progressText) {
         progressText.remove();
     }
@@ -90,7 +93,7 @@ export function stopFakeProgress() {
 export function celebrate() {
     for (let i = 0; i < 20; i++) {
         setTimeout(() => {
-            const emoji = document.createElement('div');
+            const emoji = document.createElement("div");
             emoji.textContent = getRandomItem(ANIMATION_CONFIG.CELEBRATION_EMOJIS);
             emoji.style.cssText = `
                 position: fixed;
@@ -102,9 +105,9 @@ export function celebrate() {
                 z-index: 999;
                 pointer-events: none;
             `;
-            
+
             document.body.appendChild(emoji);
-            
+
             setTimeout(() => {
                 emoji.remove();
             }, 4000);
@@ -113,12 +116,12 @@ export function celebrate() {
 }
 
 export function addFloatingEmojis() {
-    const container = document.querySelector('.container');
-    
+    const container = document.querySelector(".container");
+
     ANIMATION_CONFIG.FLOATING_EMOJIS.forEach((emoji, index) => {
-        const floater = document.createElement('div');
+        const floater = document.createElement("div");
         floater.textContent = emoji;
-        floater.className = 'floating-emoji';
+        floater.className = "floating-emoji";
         floater.style.cssText = `
             position: absolute;
             font-size: 2rem;
@@ -128,13 +131,13 @@ export function addFloatingEmojis() {
             pointer-events: none;
             z-index: -1;
         `;
-        
+
         container.appendChild(floater);
     });
 }
 
 export function addAnimationStyles() {
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
         @keyframes slideIn {
             from {

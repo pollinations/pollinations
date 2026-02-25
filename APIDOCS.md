@@ -97,191 +97,6 @@ curl 'https://gen.pollinations.ai/account/usage' \
 
 ## Operations
 
-### GET /customer/balance
-
-- **Method:** `GET`
-- **Path:** `/customer/balance`
-- **Tags:** Customer
-
-Get detailed balance breakdown for the current user (tier, pack, crypto).
-
-#### Responses
-
-### GET /tiers/view
-
-- **Method:** `GET`
-- **Path:** `/tiers/view`
-- **Tags:** Auth
-
-Get the current user's tier status and daily pollen information.
-
-#### Responses
-
-##### Status: 200 Success
-
-###### Content-Type: application/json
-
-- **`active` (required)**
-
-  `object`
-
-  - **`dailyPollen` (required)**
-
-    `number`
-
-  - **`displayName` (required)**
-
-    `string`
-
-  - **`tier` (required)**
-
-    `string`, possible values: `"microbe", "spore", "seed", "flower", "nectar", "router", "none"`
-
-- **`target` (required)**
-
-  `string`, possible values: `"microbe", "spore", "seed", "flower", "nectar", "router"`
-
-**Example:**
-
-```json
-{
-  "target": "microbe",
-  "active": {
-    "tier": "microbe",
-    "displayName": "",
-    "dailyPollen": 1
-  }
-}
-```
-
-##### Status: 500 Oh snap, something went wrong on our end. We're on it!
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 500,
-  "success": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "Oh snap, something went wrong on our end. We're on it!",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-### GET /api-keys
-
-- **Method:** `GET`
-- **Path:** `/api-keys`
-- **Tags:** Account
-
-List all API keys for the current user with pollenBalance.
-
-#### Responses
-
-### POST /api-keys/{id}/update
-
-- **Method:** `POST`
-- **Path:** `/api-keys/{id}/update`
-- **Tags:** Account
-
-Update an API key's permissions and budget.
-
-#### Request Body
-
-##### Content-Type: application/json
-
-- **`accountPermissions`**
-
-  `object` — Account permissions: \["balance", "usage"]. null = none
-
-- **`allowedModels`**
-
-  `object` — Model IDs this key can access. null = all models allowed
-
-- **`expiresAt`**
-
-  `object` — Expiration date for the key. null = no expiry
-
-- **`name`**
-
-  `string` — Name for the API key
-
-- **`pollenBudget`**
-
-  `object` — Pollen budget cap for this key. null = unlimited
-
-**Example:**
-
-```json
-{
-  "name": "",
-  "allowedModels": [
-    ""
-  ],
-  "pollenBudget": 1,
-  "accountPermissions": [
-    ""
-  ],
-  "expiresAt": ""
-}
-```
-
-#### Responses
-
 ### GET /account/profile
 
 - **Method:** `GET`
@@ -308,6 +123,10 @@ Get user profile info (name, email, GitHub username, tier, createdAt, nextResetA
 
   `object` — GitHub username if linked
 
+- **`image` (required)**
+
+  `object` — Profile picture URL (e.g. GitHub avatar)
+
 - **`name` (required)**
 
   `object` — User's display name
@@ -327,6 +146,7 @@ Get user profile info (name, email, GitHub username, tier, createdAt, nextResetA
   "name": "",
   "email": "",
   "githubUsername": "",
+  "image": "",
   "tier": "anonymous",
   "createdAt": "",
   "nextResetAt": ""
@@ -929,6 +749,96 @@ Get a list of available text generation models with pricing, capabilities, and m
 }
 ```
 
+### GET /audio/models
+
+- **Method:** `GET`
+- **Path:** `/audio/models`
+- **Tags:** gen.pollinations.ai
+
+Get a list of available audio models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.
+
+#### Responses
+
+##### Status: 200 Success
+
+###### Content-Type: application/json
+
+**Array of:**
+
+**Example:**
+
+```json
+[]
+```
+
+##### Status: 500 Oh snap, something went wrong on our end. We're on it!
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 500,
+  "success": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Oh snap, something went wrong on our end. We're on it!",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
 ### POST /v1/chat/completions
 
 - **Method:** `POST`
@@ -1153,7 +1063,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
 
 - **`model`**
 
-  `string`, possible values: `"openai", "openai-fast", "openai-large", "qwen-coder", "mistral", "openai-audio", "gemini", "gemini-fast", "deepseek", "grok", "gemini-search", "chickytutor", "midijourney", "claude-fast", "claude", "claude-large", "perplexity-fast", "perplexity-reasoning", "kimi", "gemini-large", "gemini-legacy", "nova-fast", "glm", "minimax", "nomnom"`, default: `"openai"` — AI model for text generation. See /v1/models for full list.
+  `string`, default: `"openai"` — AI model for text generation. See /v1/models for full list.
 
 - **`parallel_tool_calls`**
 
@@ -2367,11 +2277,8 @@ Generate an image or video from a text prompt.
 
 **Video Models:** `veo`, `seedance`
 
-- `veo`: Text-to-video only (4-8 seconds). Supports `duration` parameter (default: 4 seconds).
-- `seedance`: Text-to-video and image-to-video (2-10 seconds). Supports `duration` parameter (default: 2 seconds).
-
-
-
+- `veo`: Text-to-video only (4-8 seconds)
+- `seedance`: Text-to-video and image-to-video (2-10 seconds)
 
 **Authentication:**
 
@@ -3200,6 +3107,14 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
 
   `string` — The text to generate audio for. Maximum 4096 characters.
 
+- **`duration`**
+
+  `number` — Music duration in seconds, 3-300 (elevenmusic only)
+
+- **`instrumental`**
+
+  `boolean` — If true, guarantees instrumental output (elevenmusic only)
+
 - **`model`**
 
   `string`
@@ -3214,7 +3129,7 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
 
 - **`voice`**
 
-  `string`, possible values: `"alloy", "echo", "fable", "onyx", "shimmer", "ash", "ballad", "coral", "sage", "verse", "rachel", "domi", "bella", "elli", "charlotte", "dorothy", "sarah", "emily", "lily", "matilda", "adam", "antoni", "arnold", "josh", "sam", "daniel", "charlie", "james", "fin", "callum", "liam", "george", "brian", "bill"`, default: `"alloy"` — The voice to use. Available voices: alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill.
+  `string`, default: `"alloy"` — The voice to use. Can be any preset name (alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill) OR a custom ElevenLabs voice ID (UUID from your dashboard).
 
 **Example:**
 
@@ -3224,7 +3139,9 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
   "input": "Hello, welcome to Pollinations!",
   "voice": "rachel",
   "response_format": "mp3",
-  "speed": 1
+  "speed": 1,
+  "duration": 30,
+  "instrumental": false
 }
 ```
 
@@ -4070,6 +3987,14 @@ This endpoint is OpenAI Whisper API compatible.
 
   `string` — The text to generate audio for. Maximum 4096 characters.
 
+* **`duration`**
+
+  `number` — Music duration in seconds, 3-300 (elevenmusic only)
+
+* **`instrumental`**
+
+  `boolean` — If true, guarantees instrumental output (elevenmusic only)
+
 * **`model`**
 
   `string`
@@ -4084,7 +4009,7 @@ This endpoint is OpenAI Whisper API compatible.
 
 * **`voice`**
 
-  `string`, possible values: `"alloy", "echo", "fable", "onyx", "shimmer", "ash", "ballad", "coral", "sage", "verse", "rachel", "domi", "bella", "elli", "charlotte", "dorothy", "sarah", "emily", "lily", "matilda", "adam", "antoni", "arnold", "josh", "sam", "daniel", "charlie", "james", "fin", "callum", "liam", "george", "brian", "bill"`, default: `"alloy"` — The voice to use. Available voices: alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill.
+  `string`, default: `"alloy"` — The voice to use. Can be any preset name (alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill) OR a custom ElevenLabs voice ID (UUID from your dashboard).
 
 **Example:**
 
@@ -4094,39 +4019,8 @@ This endpoint is OpenAI Whisper API compatible.
   "input": "Hello, welcome to Pollinations!",
   "voice": "rachel",
   "response_format": "mp3",
-  "speed": 1
+  "speed": 1,
+  "duration": 30,
+  "instrumental": false
 }
 ```
-## ❗ Common Error Responses
-
-### 401 — Invalid API Key
-Occurs when the API key is missing or incorrect.
-
-```json
-{
-  "error": "Invalid API key",
-  "status": 401
-}
-
-
-#### 403 — Model Not Allowed
-Occurs when the API key does not have permission to access the requested model.
-
-```json
-{
-  "error": "Model not allowed for this key",
-  "status": 403
-}
-
-
-
-{
-  "error": "Rate limit exceeded",
-  "status": 429
-}
-
-
-{
-  "error": "Bad request",
-  "status": 400
-}

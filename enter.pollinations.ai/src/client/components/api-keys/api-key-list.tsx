@@ -56,6 +56,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 const plaintextKey = apiKey.metadata?.[
                                     "plaintextKey"
                                 ] as string | undefined;
+                                const appUrl = apiKey.metadata?.["appUrl"] as
+                                    | string
+                                    | undefined;
 
                                 return (
                                     <div
@@ -150,6 +153,29 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         : "never"}
                                                 </span>
                                             </span>
+                                            {isPublishable && appUrl && (
+                                                <span title={appUrl}>
+                                                    <span className="text-gray-400">
+                                                        URL:{" "}
+                                                    </span>
+                                                    <a
+                                                        href={appUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-600 hover:underline truncate max-w-[200px] inline-block align-bottom"
+                                                    >
+                                                        {(() => {
+                                                            try {
+                                                                return new URL(
+                                                                    appUrl,
+                                                                ).hostname;
+                                                            } catch {
+                                                                return appUrl;
+                                                            }
+                                                        })()}
+                                                    </a>
+                                                </span>
+                                            )}
                                             <LimitsBadge
                                                 expiresAt={apiKey.expiresAt}
                                                 pollenBudget={

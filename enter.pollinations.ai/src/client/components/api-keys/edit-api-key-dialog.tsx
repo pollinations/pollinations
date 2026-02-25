@@ -1,13 +1,15 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/util.ts";
+import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Input } from "../ui/input.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
+import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
@@ -29,16 +31,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const isPublishable = apiKey.metadata?.keyType === "publishable";
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
-    useEffect(() => {
-        const originalBodyOverflow = document.body.style.overflow;
-        const originalHtmlOverflow = document.documentElement.style.overflow;
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = originalBodyOverflow;
-            document.documentElement.style.overflow = originalHtmlOverflow;
-        };
-    }, []);
+    const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
+    const initialByop = !!apiKey.metadata?.byop;
+    const [appUrl, setAppUrl] = useState(initialAppUrl);
+    const [byopEnabled, setByopEnabled] = useState(initialByop);
+
+    useScrollLock();
 
     const handleCopyKey = async () => {
         if (!plaintextKey) return;
@@ -77,6 +75,25 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
                     : null,
             });
+
+            // Save app settings for publishable keys
+            if (isPublishable) {
+                const appUrlChanged = appUrl !== initialAppUrl;
+                const byopChanged = byopEnabled !== initialByop;
+
+                if (appUrlChanged || byopChanged) {
+                    await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({
+                            appUrl: appUrl || undefined,
+                            byop: byopEnabled || undefined,
+                        }),
+                    });
+                }
+            }
+
             onClose();
         } catch (error) {
             console.error("Failed to update API key:", error);
@@ -157,6 +174,16 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                     disabled={isSubmitting}
                                 />
                             </Field.Root>
+
+                            {isPublishable && (
+                                <PublishableKeySettings
+                                    appUrl={appUrl}
+                                    onAppUrlChange={setAppUrl}
+                                    byopEnabled={byopEnabled}
+                                    onByopEnabledChange={setByopEnabled}
+                                    disabled={isSubmitting}
+                                />
+                            )}
 
                             <KeyPermissionsInputs
                                 value={keyPermissions}

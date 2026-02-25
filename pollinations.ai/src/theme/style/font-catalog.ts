@@ -130,7 +130,12 @@ export const FONT_LIBRARY: Record<string, FontDefinition> = {
         family: "Press Start 2P",
         category: "tech",
         type: "display",
-    }, // Pixel art style
+    },
+    "Pixelify Sans": {
+        family: "Pixelify Sans",
+        category: "creative",
+        type: "display",
+    },
     "Rubik Mono One": {
         family: "Rubik Mono One",
         category: "creative",

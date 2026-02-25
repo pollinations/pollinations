@@ -36,10 +36,10 @@ export const ModelSelector = memo(function ModelSelector({
         <div className="mb-6">
             {showLegend && (
                 <div className="flex items-center gap-4 mb-3">
-                    <div className="font-headline text-text-body-main uppercase text-xs tracking-wider font-black">
+                    <div className="font-headline text-text-body-main uppercase text-sm tracking-wider font-black">
                         {copy.modelsLabel}
                     </div>
-                    <div className="flex items-center gap-3 text-[10px] font-headline uppercase tracking-wider font-black">
+                    <div className="flex items-center gap-3 text-sm font-headline uppercase tracking-wider font-black">
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-3 bg-indicator-image" />
                             <span className="text-text-caption">
@@ -126,9 +126,9 @@ export const ModelSelector = memo(function ModelSelector({
                                 )}
                             </Button>
                             {!isAllowed && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {copy.gatedModelTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-surface-card" />
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
                                 </div>
                             )}
                         </div>

@@ -1,0 +1,35 @@
+{
+  "pr_number": 8438,
+  "title": "fix: pass image_urls array to grok-imagine-video",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8438",
+  "merged_at": "2026-02-25T11:28:31Z",
+  "labels": [
+    "DEV-BUG",
+    "polly"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Grokking the full picture",
+    "blurb": "The Grok video model now correctly handles image inputs, accepting the full array of URLs instead of just one. Your moving pictures just got a lot smoother.",
+    "summary": "Fixed an issue in the Airforce model integration where image-to-video requests were sending a single string instead of the required array of image URLs.",
+    "impact": "Users generating video with the Grok model can now successfully use image inputs for animation without API errors.",
+    "keywords": [
+      "grok-video",
+      "image-to-video",
+      "bugfix",
+      "api",
+      "airforce"
+    ],
+    "visual_concept": "Polly the bee acting as a film editor, splicing together a strip of film frames (representing the array of images) to feed into a projector. The film strip glows with the signature lime green.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot splicing together a glowing lime green (#ecf874) film strip on a vintage editing table. A chunky robot with a monitor head watches the projection with excitement. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text: 'ACTION!'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-25T11:29:17.504091+00:00"
+}

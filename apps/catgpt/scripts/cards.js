@@ -10,9 +10,28 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Sanitize image URLs to prevent injection of dangerous protocols
+function sanitizeImageUrl(url) {
+    if (!url || typeof url !== "string") {
+        return null;
+    }
+
+    try {
+        const parsed = new URL(url, window.location.href);
+        const allowedProtocols = ["http:", "https:", "blob:"];
+        if (!allowedProtocols.includes(parsed.protocol)) {
+            return null;
+        }
+        return parsed.toString();
+    } catch {
+        return null;
+    }
+}
+
 export function createUserMemeCard(prompt, index, imageUrl) {
-    if (!imageUrl) {
-        console.warn(`User meme has no URL: "${prompt}"`);
+    const safeUrl = sanitizeImageUrl(imageUrl);
+    if (!safeUrl) {
+        console.warn(`User meme has invalid or missing URL: "${prompt}"`);
         return null;
     }
 
@@ -23,7 +42,7 @@ export function createUserMemeCard(prompt, index, imageUrl) {
     card.style.boxShadow = "0 0 10px rgba(255, 105, 180, 0.3)";
 
     const img = document.createElement("img");
-    img.src = imageUrl;
+    img.src = safeUrl;
     img.alt = escapeHtml(prompt);
     img.loading = "lazy";
 

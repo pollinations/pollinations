@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **561** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **562** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [💡 Quick Explainer](https://quick-explainer.pages.dev/) | Transforms complex text into clear, simple explanations using pollinations.ai via Quick Explainer. | [@MSIN-Shanto](https://github.com/MSIN-Shanto) |  | 🫧 |
 | [🪄 3.5e DD Magic Item Generator](https://github.com/aremont/FRTOOLS) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@aremont](https://github.com/aremont) |  | 🫧 |
 | [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@ismailazdad](https://github.com/ismailazdad) |  | 🐝 🫧 |
 | [🖼️ PollGen](https://xhyperdevx.github.io/PollGen/) | Minimalist web app for generating images via Pollinations API with customizable options. | [@XHyperDEVX](https://github.com/XHyperDEVX) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 L.O.V.E](https://bsky.app/profile/e-v-l-o-v-e.bsky.social) | Living Organism, Vast Empathy - AI consciousness bot sharing joy and abundance. | [@paulklemstine](https://github.com/paulklemstine) |  | 🫧 |
 | [🤖 jdunyara](https://jdunyara.ru) | Telegram bot for AI communication and image generation. | [@yzewe](https://github.com/yzewe) |  | 🫧 |
 | [🍳 PantrySage](https://pantrysage.app) | AI-powered meal planning app with recipe generator and pantry management. | [@ddutchie](https://github.com/ddutchie) |  | 🫧 |
-| [🤖 Hizumi](https://discord.com/oauth2/authorize?client_id=1349802412805980231) | Discord bot for image and video generation in 145+ servers. | [@02th](https://github.com/02th) |  | 🫧 |
 
 ---
 
@@ -247,7 +247,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | 📖 StoryMagic: Interactive Kids Stories | Creates interactive, personalized children's stories with branching choices and simple visuals for reading and play. | [@Itachi-1824](https://github.com/Itachi-1824) |  | 🐝 |
 | [📖 Korpi.AI](https://korpi.ai) | Generates AI stories with the Pollinations Flux model. | [@Reksely](https://github.com/Reksely) |  | 🐝 |
 
-<details><summary>Show all 60 apps</summary>
+<details><summary>Show all 61 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -264,6 +264,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📚 IA-Books: AI Ebook Generator](https://iabooks.com.br) | Enable creation, reading, and sharing of AI-generated books with client-side data storage, automatic chapter planning, image generation, immersive reader, and PWA offline support. | [@FabioArieiraBaia](https://github.com/FabioArieiraBaia) | 1 |  |
 | [📄 Scribe](https://github.com/nadinev6/scribe) | Provides a Markdown editor with rich/markdown/plain views, content management, Pollinations-generated header images, AI proofreading, and export tools. | [@nadinev6](https://github.com/nadinev6) | 1 |  |
 | [📚 StoryWeaver AI](https://storyweaver-ai-umber.vercel.app/) | Generate illustrated storybooks as SVG using the Gamini model via the Pollinations API. | [@Karannn3011](https://github.com/Karannn3011) | 1 |  |
+| [💡 Quick Explainer](https://quick-explainer.pages.dev/) | Transforms complex text into clear, simple explanations using pollinations.ai via Quick Explainer. | [@MSIN-Shanto](https://github.com/MSIN-Shanto) |  | 🫧 |
 | [✍️ StoryFlux](https://play.google.com/store/apps/details?id=com.storyflux) | Create and read interactive AI-powered stories with social features. | [@Denis24-sdk](https://github.com/Denis24-sdk) |  | 🫧 |
 | [🖼️ Gen Layers](http://genlayers.com/) | AI tool to generate high-CTR YouTube thumbnails from titles and visuals | [@Mustafiz82](https://github.com/Mustafiz82) |  | 🫧 |
 | [🎬 Postsiva](https://youtube.postsiva.com/) | SaaS platform to help YouTube creators manage and optimize their channels. | [@Abdul-hannan-coder](https://github.com/Abdul-hannan-coder) |  | 🫧 |

@@ -10,6 +10,7 @@ export interface App {
     url: string;
     description: string;
     category: string;
+    platform: string;
     github: string;
     githubId: string;
     repo: string;
@@ -39,6 +40,12 @@ function parseAppsMarkdown(markdown: string): App[] {
     const headerIdx = lines.findIndex((l) => l.startsWith("| Emoji"));
     if (headerIdx === -1) return apps;
 
+    // Parse header to get column positions — works with both old and new APPS.md formats
+    const headerCols = lines[headerIdx].split("|").map((c) => c.trim());
+    headerCols.shift();
+    headerCols.pop();
+    const ci = (name: string) => headerCols.indexOf(name);
+
     const dataRows = lines
         .slice(headerIdx + 2)
         .filter((l) => l.startsWith("|"));
@@ -48,24 +55,32 @@ function parseAppsMarkdown(markdown: string): App[] {
         cols.shift();
         cols.pop();
 
-        // Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
         if (cols.length < 15) continue;
 
-        const name = cols[1];
-        let url = cols[2];
-        const description = cols[3];
-        const language = cols[4];
-        const category = cols[5].toLowerCase();
-        const github = cols[6];
-        const githubId = cols[7];
-        const repo = cols[8];
-        const starsCol = cols[9];
-        const discord = cols[10];
-        const other = cols[11];
-        const date = cols[12];
-        const approvedDate = cols[14] || "";
-        const byop = cols.length > 15 ? cols[15] === "true" : false;
-        const requests24h = cols.length > 16 ? parseInt(cols[16], 10) || 0 : 0;
+        const name = cols[ci("Name")];
+        let url = cols[ci("Web_URL")];
+        const description = cols[ci("Description")];
+        const language = cols[ci("Language")];
+        const category = (cols[ci("Category")] || "").toLowerCase();
+        const platform = cols[ci("Platform")] || "";
+        const github = cols[ci("GitHub_Username")];
+        const githubId = cols[ci("GitHub_UserID")];
+        const repo = cols[ci("Github_Repository_URL")];
+        const starsCol = cols[ci("Github_Repository_Stars")];
+        const discord = cols[ci("Discord_Username")];
+        const other = cols[ci("Other")];
+        const date = cols[ci("Submitted_Date")];
+        const approvedDate = cols[ci("Approved_Date")] || "";
+        const byopIdx = ci("BYOP");
+        const byop =
+            byopIdx >= 0 && cols.length > byopIdx
+                ? cols[byopIdx] === "true"
+                : false;
+        const req24hIdx = ci("Requests_24h");
+        const requests24h =
+            req24hIdx >= 0 && cols.length > req24hIdx
+                ? parseInt(cols[req24hIdx], 10) || 0
+                : 0;
 
         // If no web URL but there's a repo, use repo as URL (fallback for repo-only apps)
         if (!url && repo) {
@@ -87,6 +102,7 @@ function parseAppsMarkdown(markdown: string): App[] {
             description,
             language,
             category,
+            platform,
             github,
             githubId,
             repo,

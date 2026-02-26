@@ -45,9 +45,9 @@ export const badges = {
 // Genre filters — category-based
 export const GENRE_FILTERS = [
     {
-        id: "creative",
-        label: "🎨 Creative",
-        match: (app: App) => app.category === "creative",
+        id: "image",
+        label: "🖼️ Image",
+        match: (app: App) => app.category === "image",
     },
     {
         id: "chat",
@@ -55,29 +55,39 @@ export const GENRE_FILTERS = [
         match: (app: App) => app.category === "chat",
     },
     {
+        id: "build",
+        label: "🛠️ Build",
+        match: (app: App) => app.category === "build",
+    },
+    {
+        id: "writing",
+        label: "✍️ Write",
+        match: (app: App) => app.category === "writing",
+    },
+    {
         id: "games",
-        label: "🎲 Games",
+        label: "🎮 Games",
         match: (app: App) => app.category === "games",
-    },
-    {
-        id: "dev_tools",
-        label: "🛠️ Dev Tools",
-        match: (app: App) => app.category === "dev_tools",
-    },
-    {
-        id: "vibes",
-        label: "✨ Vibes",
-        match: (app: App) => app.category === "vibes",
-    },
-    {
-        id: "social_bots",
-        label: "🤖 Social Bots",
-        match: (app: App) => app.category === "social_bots",
     },
     {
         id: "learn",
         label: "📚 Learn",
         match: (app: App) => app.category === "learn",
+    },
+    {
+        id: "business",
+        label: "💼 Business",
+        match: (app: App) => app.category === "business",
+    },
+    {
+        id: "bots",
+        label: "🤖 Bots",
+        match: (app: App) => app.category === "bots",
+    },
+    {
+        id: "video_audio",
+        label: "🎬 Video & Audio",
+        match: (app: App) => app.category === "video_audio",
     },
 ];
 

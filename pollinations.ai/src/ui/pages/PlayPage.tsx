@@ -50,6 +50,23 @@ function PlayPage() {
         );
     }, [registryModels]);
 
+    const currentModel = allModels.find((m) => m.id === selectedModel);
+    const isVideoModel = !!currentModel?.hasVideoOutput;
+    const isAudioModel =
+        !isVideoModel &&
+        (!!currentModel?.hasAudioOutput || currentModel?.type === "audio");
+    const isImageModel =
+        !isVideoModel &&
+        !isAudioModel &&
+        imageModels.some((m) => m.id === selectedModel);
+    const promptPlaceholder = isVideoModel
+        ? pageCopy.videoPlaceholder
+        : isAudioModel
+          ? pageCopy.audioPlaceholder
+          : isImageModel
+            ? pageCopy.imagePlaceholder
+            : pageCopy.textPlaceholder;
+
     return (
         <PageContainer>
             <PageCard isTranslating={isTranslating}>
@@ -89,7 +106,7 @@ function PlayPage() {
                         <textarea
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            placeholder={pageCopy.imagePlaceholder}
+                            placeholder={promptPlaceholder}
                             className="min-h-[100px] p-3 border border-border-main rounded bg-transparent font-bold text-text-body-main focus:outline-none focus:ring-2 focus:ring-border-brand resize-none"
                         />
                     </div>

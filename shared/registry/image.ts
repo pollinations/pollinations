@@ -297,6 +297,21 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "grok-imagine-pro": {
+        aliases: ["grok-aurora", "aurora"],
+        modelId: "grok-imagine-image",
+        provider: "xai",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-02-26").getTime(),
+                completionImageTokens: 0.02, // $0.02 per image (xAI official pricing)
+            },
+        ],
+        description: "Grok Imagine Pro - xAI official API (Aurora)",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "grok-video": {
         aliases: ["grok-imagine-video"],
         modelId: "grok-video",
@@ -328,6 +343,38 @@ export const IMAGE_SERVICES = {
         ],
         description:
             "LTX-2 - Fast text-to-video generation with audio on Modal",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
+    "grok-video-pro": {
+        aliases: [],
+        modelId: "grok-imagine-video",
+        provider: "xai",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-02-26").getTime(),
+                completionVideoSeconds: 0.07, // $0.07 per second at 720p (xAI official pricing)
+            },
+        ],
+        description:
+            "Grok Video Pro - xAI official video generation API (720p)",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
+    "grok-video-pro-hd": {
+        aliases: [],
+        modelId: "grok-imagine-video-hd",
+        provider: "xai",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-02-26").getTime(),
+                completionVideoSeconds: 0.14, // $0.14 per second at 1080p (xAI official pricing)
+            },
+        ],
+        description:
+            "Grok Video Pro HD - xAI official video generation API (1080p)",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },

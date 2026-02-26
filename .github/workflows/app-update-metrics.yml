@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - name: Generate Pollinations AI Token
@@ -29,11 +30,22 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Configure git
+        run: |
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+
       - name: Update app metrics
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
         run: node .github/scripts/app-update-metrics.js --verbose
+
+      - name: Run health checks
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: node .github/scripts/app-check-links.js --health-update --verbose
 
       - name: Regenerate greenhouse
         run: node .github/scripts/app-update-greenhouse.js
@@ -50,8 +62,6 @@ jobs:
       - name: Commit and push changes
         if: steps.changes.outputs.changed == 'true'
         run: |
-          git config user.name "pollinations-ai[bot]"
-          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
           git add apps/APPS.md apps/GREENHOUSE.md
-          git commit -m "chore: update app metrics and greenhouse"
+          git commit -m "chore: update app metrics, health, and greenhouse"
           git push

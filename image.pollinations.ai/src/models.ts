@@ -139,7 +139,7 @@ export const IMAGE_CONFIG = {
     "klein-large": {
         type: "modal-klein-large",
         enhance: false,
-        defaultSideLength: 1024,
+        defaultSideLength: 1536,
     },
 
     // Imagen 4 - Google's latest image generation via api.airforce

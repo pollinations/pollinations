@@ -45,6 +45,21 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 | Change provider | ✅ | ✅ | ✅ (pricing!) |
 | Make paid-only | - | - | ✅ (`paidOnly: true`) |
 | Disable model | - | ✅ (remove) | ✅ (remove) |
+| Upgrade model | ✅ (if provider changes) | ✅ | ✅ (pricing!) + keep old as hidden legacy |
+
+---
+
+# Hidden/Legacy Models
+
+When **upgrading** a model (e.g. M2.1 → M2.5), keep the old version accessible as a hidden legacy entry so existing users who request it by name aren't broken.
+
+**Pattern** (follow `claude-legacy` / `gemini-legacy` examples):
+
+1. **Registry** (`shared/registry/text.ts`): Add a `"<name>-legacy"` entry with `hidden: true` and the old aliases/modelId
+2. **Config** (`modelConfigs.ts`): Keep the old provider config entry alongside the new one
+3. **Available models** (`availableModels.ts`): Add a `"<name>-legacy"` model definition pointing to the old config
+
+Hidden models are filtered from `/models` endpoints and dashboards but remain usable via API when requested by alias.
 
 ---
 

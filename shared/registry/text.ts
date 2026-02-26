@@ -503,6 +503,27 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
+    "minimax-legacy": {
+        aliases: ["minimax-m2.1", "minimax-m2p1"],
+        modelId: "accounts/fireworks/models/minimax-m2p1",
+        provider: "fireworks",
+        hidden: true,
+        cost: [
+            {
+                date: new Date("2026-01-05").getTime(),
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.15),
+                completionTextTokens: perMillion(1.2),
+            },
+        ],
+        description: "MiniMax M2.1 - Legacy",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextWindow: 200000,
+        isSpecialized: false,
+    },
     "nomnom": {
         aliases: ["web-scrape", "web-research"],
         modelId: "nomnom",

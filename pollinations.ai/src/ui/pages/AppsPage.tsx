@@ -33,6 +33,26 @@ function getRepoName(url: string) {
     return m ? m[1] : null;
 }
 
+// --- Platform badge ---
+
+const PLATFORM_DISPLAY: Record<string, string> = {
+    web: "🌐 Web",
+    android: "📱 Android",
+    ios: "🍎 iOS",
+    windows: "🖥️ Windows",
+    macos: "🖥️ macOS",
+    desktop: "💻 Desktop",
+    cli: "⌨️ CLI",
+    discord: "💬 Discord",
+    telegram: "✈️ Telegram",
+    whatsapp: "💬 WhatsApp",
+    library: "📦 Library",
+    "browser-ext": "🧩 Extension",
+    roblox: "🎮 Roblox",
+    wordpress: "📝 WordPress",
+    api: "⚙️ API",
+};
+
 // --- App Card ---
 
 function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
@@ -42,10 +62,10 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
         : null;
 
     const cardBorder = badges.buzz(app)
-        ? "border-2 border-badge-buzz border-r-4 border-b-4 shadow-[0_0_8px] shadow-badge-buzz/30"
+        ? "border border-badge-buzz/40 shadow-[0_0_4px] shadow-badge-buzz/20"
         : badges.pollen(app)
-          ? "border-2 border-badge-pollen border-r-4 border-b-4 shadow-[0_0_8px] shadow-badge-pollen/30"
-          : "border-2 border-border-subtle border-r-4 border-b-4";
+          ? "border border-badge-pollen/40 shadow-[0_0_4px] shadow-badge-pollen/20"
+          : "border border-border-subtle";
 
     return (
         <div className={`flex flex-col h-full overflow-visible ${cardBorder}`}>
@@ -167,7 +187,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                     )}
                 </div>
 
-                <div className="flex flex-wrap gap-2 mt-auto">
+                <div className="flex flex-wrap gap-2 mt-auto items-center">
                     {!repoName && githubUsername && (
                         <a
                             href={`https://github.com/${githubUsername}`}
@@ -215,6 +235,14 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                 </span>
                             )}
                         </a>
+                    )}
+                    {app.platform && PLATFORM_DISPLAY[app.platform] && (
+                        <Badge
+                            variant="muted"
+                            className="ml-auto bg-transparent border-transparent shadow-none px-0"
+                        >
+                            {PLATFORM_DISPLAY[app.platform]}
+                        </Badge>
                     )}
                 </div>
             </div>
@@ -275,7 +303,7 @@ export default function AppsPage() {
 
                 {/* CTAs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                    <div className="flex items-center gap-4 p-4 bg-surface-card border-2 border-border-brand border-r-4 border-b-4">
+                    <div className="flex items-center gap-4 p-4 bg-surface-card">
                         <div className="flex-1">
                             <p className="font-headline text-base font-black text-text-body-main mb-1">
                                 {pageCopy.submitCtaTitle}
@@ -296,7 +324,7 @@ export default function AppsPage() {
                             <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
                         </Button>
                     </div>
-                    <div className="flex items-center gap-4 p-4 bg-surface-card border-2 border-border-highlight border-r-4 border-b-4">
+                    <div className="flex items-center gap-4 p-4 bg-surface-card">
                         <div className="flex-1">
                             <p className="font-headline text-base font-black text-text-body-main mb-1">
                                 {pageCopy.pollenCtaTitle}

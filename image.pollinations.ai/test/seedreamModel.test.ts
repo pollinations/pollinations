@@ -14,7 +14,7 @@ vi.mock("../src/utils/imageDownload.ts", () => ({
 
 // Mock fetch: API call returns image URL, image download returns buffer
 vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
-    if (typeof url === "string" && url.includes("example.com")) {
+    if (typeof url === "string" && new URL(url).hostname === "example.com") {
         return {
             ok: true,
             arrayBuffer: async () => new ArrayBuffer(8),

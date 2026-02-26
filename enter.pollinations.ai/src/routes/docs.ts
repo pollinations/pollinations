@@ -866,6 +866,11 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "Manage your account, check your pollen balance, and view usage history.",
                         },
                         {
+                            name: "media.pollinations.ai",
+                            description:
+                                "Content-addressed media storage (images, audio, video)",
+                        },
+                        {
                             name: "Bring Your Own Pollen 🌸",
                             description: BYOP_DOCS,
                         },
@@ -877,7 +882,46 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
             if (!response) return;
 
             const schema = (await response.json()) as Record<string, unknown>;
-            const transformed = transformOpenAPISchema(schema);
+            const transformed = transformOpenAPISchema(schema) as Record<
+                string,
+                any
+            >;
+
+            // Merge media.pollinations.ai spec (3 endpoints) into unified view
+            try {
+                const mediaRes = await fetch(
+                    "https://media.pollinations.ai/openapi.json",
+                );
+                if (mediaRes.ok) {
+                    const media = (await mediaRes.json()) as Record<
+                        string,
+                        any
+                    >;
+                    if (media.paths) {
+                        // Add path-level servers so Scalar targets media, not gen
+                        for (const ops of Object.values(media.paths)) {
+                            (ops as any).servers = [
+                                {
+                                    url: "https://media.pollinations.ai",
+                                },
+                            ];
+                        }
+                        transformed.paths = {
+                            ...transformed.paths,
+                            ...media.paths,
+                        };
+                    }
+                    if (media.components?.schemas) {
+                        transformed.components.schemas = {
+                            ...transformed.components.schemas,
+                            ...media.components.schemas,
+                        };
+                    }
+                }
+            } catch {
+                // Media service unavailable — skip, main docs still work
+            }
+
             return c.json(transformed);
         });
 };

@@ -420,7 +420,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate an image or video from a text prompt.",
                 "",
-                "**Image Models:** `flux` (default), `turbo`, `gptimage`, `kontext`, `seedream`, `nanobanana`, `nanobanana-pro`",
+                "**Image Models:** `flux` (default), `turbo`, `gptimage`, `kontext`, `seedream5`, `nanobanana`, `nanobanana-pro`",
                 "",
                 "**Video Models:** `veo`, `seedance`",
                 "- `veo`: Text-to-video only (4-8 seconds)",

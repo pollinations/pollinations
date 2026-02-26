@@ -9,7 +9,6 @@
  *   --timeout=<ms>    Set timeout in milliseconds (default: 10000)
  *   --category=<name> Check only specific category
  *   --verbose         Show detailed output
- *   --update          Update APPS.md with status (adds ❌ to broken apps)
  *   --report          Generate BROKEN_APPS.md report
  *   --health-update   Track daily health: increment failure counters, open removal PR at threshold
  */
@@ -44,7 +43,6 @@ const colors = {
 // Parse command line arguments
 const args = process.argv.slice(2);
 const verbose = args.includes("--verbose");
-const _shouldUpdate = args.includes("--update");
 const shouldReport = args.includes("--report");
 const timeoutArg = args.find((a) => a.startsWith("--timeout="));
 const timeout = timeoutArg

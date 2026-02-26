@@ -119,6 +119,18 @@ export function createFireworksModelConfig(additionalConfig = {}) {
 }
 
 /**
+ * Creates an Alibaba Cloud DashScope model configuration (OpenAI-compatible)
+ */
+export function createDashScopeModelConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+        authKey: process.env.DASHSCOPE_API_KEY,
+        ...additionalConfig,
+    };
+}
+
+/**
  * Creates an api.airforce model configuration
  */
 export function createAirforceModelConfig(additionalConfig = {}) {

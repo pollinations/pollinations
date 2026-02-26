@@ -5,6 +5,7 @@ import {
     createAnthropicConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
+    createDashScopeModelConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
     createNomNomConfig,
@@ -267,6 +268,18 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/deepseek-v3p2": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v3p2",
+        }),
+
+    // ============================================================================
+    // Alibaba Cloud DashScope - qwen3.5, qwen3-vl
+    // ============================================================================
+    "qwen3.5-plus": () =>
+        createDashScopeModelConfig({
+            model: "qwen3.5-plus",
+        }),
+    "qwen3-vl-plus": () =>
+        createDashScopeModelConfig({
+            model: "qwen3-vl-plus",
         }),
 
     // ============================================================================

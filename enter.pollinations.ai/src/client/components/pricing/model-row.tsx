@@ -210,8 +210,8 @@ export const ModelRow: FC<ModelRowProps> = ({
                     />
                     <PriceBadge
                         prices={[model.perSecondPrice]}
-                        emoji="🎬"
-                        subEmojis={["🎬"]}
+                        emoji={model.type === "audio" ? "🔊" : "🎬"}
+                        subEmojis={model.type === "audio" ? ["🔊"] : ["🎬"]}
                         perSecond
                         color={priceColor}
                     />

@@ -161,7 +161,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/v1/models",
         describeRoute({
-            tags: ["Models"],
+            tags: ["🤖 Models"],
             summary: "List Text Models (OpenAI-compatible)",
             description:
                 'Returns available text models in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models` instead.',
@@ -197,7 +197,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/image/models",
         describeRoute({
-            tags: ["Models"],
+            tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
                 "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models.",
@@ -237,7 +237,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/text/models",
         describeRoute({
-            tags: ["Models"],
+            tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
                 "Returns all available text generation models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support.",
@@ -270,7 +270,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/audio/models",
         describeRoute({
-            tags: ["Models"],
+            tags: ["🤖 Models"],
             summary: "List Audio Models",
             description:
                 "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata.",
@@ -310,7 +310,7 @@ export const proxyRoutes = new Hono<Env>()
         "/v1/chat/completions",
         textCache,
         describeRoute({
-            tags: ["Text Generation"],
+            tags: ["✍️ Text Generation"],
             summary: "Chat Completions",
             description: [
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
@@ -337,7 +337,7 @@ export const proxyRoutes = new Hono<Env>()
         "/text/:prompt",
         textCache,
         describeRoute({
-            tags: ["Text Generation"],
+            tags: ["✍️ Text Generation"],
             summary: "Simple Text Generation",
             description: [
                 "Generate text from a prompt via a simple GET request. Returns plain text.",
@@ -418,7 +418,7 @@ export const proxyRoutes = new Hono<Env>()
         "/image/:prompt{[\\s\\S]+}",
         imageCache,
         describeRoute({
-            tags: ["Image Generation", "Video Generation"],
+            tags: ["🖼️ Image Generation", "🎬 Video Generation"],
             summary: "Generate Image or Video",
             description: [
                 "Generate an image or video from a text prompt.",
@@ -517,7 +517,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/audio/:text",
         describeRoute({
-            tags: ["Audio"],
+            tags: ["🔊 Audio Generation"],
             summary: "Generate Audio",
             description: [
                 "Generate speech or music from text via a simple GET request.",

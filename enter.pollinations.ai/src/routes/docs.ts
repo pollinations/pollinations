@@ -690,13 +690,14 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 pageTitle: "Pollinations API Reference",
                 title: "Pollinations API Reference",
                 theme: "saturn",
+                hideModels: true,
                 sources: [
                     { url: "/api/docs/open-api/generate-schema", title: "API" },
                     ...(c.env.ENVIRONMENT === "development"
                         ? [
                               {
                                   url: "/api/auth/open-api/generate-schema",
-                                  title: "Auth",
+                                  title: "🔐 Auth",
                               },
                           ]
                         : []),
@@ -772,7 +773,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             '  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3',
                             "```",
                             "",
-                            "## Authentication",
+                            "## 🔐 Authentication",
                             "",
                             "All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.",
                             "",
@@ -795,7 +796,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "",
                             "> **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.",
                             "",
-                            "## Errors",
+                            "## ❌ Errors",
                             "",
                             "All errors return JSON with a consistent format:",
                             "",
@@ -833,16 +834,16 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                     security: [{ bearerAuth: [] }],
                     tags: [
                         {
-                            name: "Text Generation",
+                            name: "✍️ Text Generation",
                             description:
                                 "Generate text responses using AI models. Supports the OpenAI Chat Completions format — use any OpenAI SDK by changing the base URL to `https://gen.pollinations.ai`.",
                         },
                         {
-                            name: "Image Generation",
+                            name: "🖼️ Image Generation",
                             description: `Generate images from text prompts. Available models: ${imageModelDisplayNames}.`,
                         },
                         {
-                            name: "Video Generation",
+                            name: "🎬 Video Generation",
                             description: [
                                 "Generate videos from text prompts or reference images.",
                                 "",
@@ -851,27 +852,27 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             ].join("\n"),
                         },
                         {
-                            name: "Audio",
+                            name: "🔊 Audio Generation",
                             description:
                                 "Text-to-speech, music generation, and audio transcription. Both simple URL-based and OpenAI-compatible endpoints available.",
                         },
                         {
-                            name: "Models",
+                            name: "🤖 Models",
                             description:
                                 "Discover available models with pricing, capabilities, and metadata.",
                         },
                         {
-                            name: "Account",
+                            name: "👤 Account",
                             description:
                                 "Manage your account, check your pollen balance, and view usage history.",
                         },
                         {
-                            name: "media.pollinations.ai",
+                            name: "📦 Media Storage",
                             description:
-                                "Content-addressed media storage (images, audio, video)",
+                                "Content-addressed media storage on [media.pollinations.ai](https://media.pollinations.ai). Upload and retrieve images, audio, and video by content hash.",
                         },
                         {
-                            name: "Bring Your Own Pollen 🌸",
+                            name: "🌸 Bring Your Own Pollen",
                             description: BYOP_DOCS,
                         },
                     ],
@@ -898,13 +899,26 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                         any
                     >;
                     if (media.paths) {
-                        // Add path-level servers so Scalar targets media, not gen
+                        // Add path-level servers and remap tags so Scalar groups them correctly
                         for (const ops of Object.values(media.paths)) {
                             (ops as any).servers = [
                                 {
                                     url: "https://media.pollinations.ai",
                                 },
                             ];
+                            // Rename "media.pollinations.ai" tag to match our tag definition
+                            for (const op of Object.values(
+                                ops as Record<string, any>,
+                            )) {
+                                if (op?.tags) {
+                                    op.tags = (op.tags as string[]).map(
+                                        (t: string) =>
+                                            t === "media.pollinations.ai"
+                                                ? "📦 Media Storage"
+                                                : t,
+                                    );
+                                }
+                            }
                         }
                         transformed.paths = {
                             ...transformed.paths,

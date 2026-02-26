@@ -157,7 +157,7 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/profile",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             summary: "Get Profile",
             description:
                 "Returns your account profile including name, email, tier level, and account creation date. Requires `account:profile` permission when using API keys.",
@@ -228,7 +228,7 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/balance",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             summary: "Get Balance",
             description:
                 "Returns your current pollen balance. If the API key has a budget limit, returns the key's remaining budget instead. Requires `account:balance` permission when using API keys.",
@@ -295,7 +295,7 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/usage",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             summary: "Get Usage History",
             description:
                 "Returns your request history with per-request details: model used, token counts, cost, and response time. Supports JSON and CSV export. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.",
@@ -450,7 +450,7 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/usage/daily",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
                 "Returns daily aggregated usage for the last 90 days, grouped by date and model. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
@@ -580,7 +580,7 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/key",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             summary: "Get API Key Info",
             description:
                 "Returns information about the API key used in the request: validity, type (secret/publishable), expiry, permissions, and remaining budget. Useful for validating keys without making generation requests.",

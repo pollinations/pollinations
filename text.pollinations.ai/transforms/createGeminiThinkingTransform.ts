@@ -7,8 +7,9 @@ const log = debug("pollinations:transforms:gemini-thinking");
  * - v2.5: Uses thinking.budget_tokens (0 to disable)
  * - v3-flash: Uses reasoning_effort ("none" for minimal thinking)
  * - v3-pro: Uses reasoning_effort ("low" for minimal thinking, can't fully disable)
+ * - none: Model doesn't support thinking (e.g. gemini-2.5-flash-lite) — strips thinking params
  */
-export type GeminiModelType = "v2.5" | "v3-flash" | "v3-pro";
+export type GeminiModelType = "v2.5" | "v3-flash" | "v3-pro" | "none";
 
 /**
  * Creates a transform that handles Gemini thinking mode configuration.
@@ -37,6 +38,15 @@ export function createGeminiThinkingTransform(
 
         // Only modify if thinking_budget is explicitly set
         if (thinkingBudget !== undefined) {
+            // Model doesn't support thinking — just strip the param
+            if (modelType === "none") {
+                log(
+                    "Model doesn't support thinking, stripping thinking_budget",
+                );
+                delete updatedOptions.thinking_budget;
+                return { messages, options: updatedOptions };
+            }
+
             const isDisabled = thinkingBudget === 0;
 
             log(

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8635,
+  "title": "feat: add Platform column to APPS.md and ecosystem page",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8635",
+  "merged_at": "2026-02-26T23:42:05Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Every app finds its place",
+    "blurb": "The ecosystem just got organized. We've added platform badges to every app so you know exactly where to run that cool new tool.",
+    "summary": "Introduced a Platform taxonomy to the apps registry, backfilling 500+ entries and updating the UI to display badges for Web, Discord, CLI, and more.",
+    "impact": "Users can now instantly see where an app runs, making the ecosystem easier to navigate.",
+    "keywords": [
+      "ecosystem",
+      "apps",
+      "ui",
+      "taxonomy",
+      "navigation"
+    ],
+    "visual_concept": "Polly the bee and the monitor robot organizing a library of software. They are placing specific labels (Web, Bot, CLI) on glowing boxes on shelves. Represents the new categorization system.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot and a cute robot organizing a wooden shelf of glowing boxes. They are sticking pixel labels like 'WEB' and 'BOT' on them. Lime green (#ecf874) and pastel peach background. Warm lighting, organized vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-26T23:43:11.868698+00:00"
+}

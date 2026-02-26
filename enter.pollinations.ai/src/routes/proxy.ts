@@ -418,7 +418,7 @@ export const proxyRoutes = new Hono<Env>()
         "/image/:prompt{[\\s\\S]+}",
         imageCache,
         describeRoute({
-            tags: ["🖼️ Image Generation", "🎬 Video Generation"],
+            tags: ["🖼️ Image & Video Generation"],
             summary: "Generate Image or Video",
             description: [
                 "Generate an image or video from a text prompt.",

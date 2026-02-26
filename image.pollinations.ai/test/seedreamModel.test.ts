@@ -71,7 +71,12 @@ describe("seedreamModel - Seedream 5.0 Lite", () => {
     });
 
     it("sends correct model version for seedream5", async () => {
-        await callSeedream5API("test prompt", baseParams, makeProgress() as any, "req-1");
+        await callSeedream5API(
+            "test prompt",
+            baseParams,
+            makeProgress() as any,
+            "req-1",
+        );
 
         expect(lastFetchUrl).toBe(
             "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations",
@@ -84,14 +89,24 @@ describe("seedreamModel - Seedream 5.0 Lite", () => {
 
     it("sends correct model version for legacy seedream (4.0)", async () => {
         const params = { ...baseParams, model: "seedream" as any };
-        await callSeedreamAPI("test prompt", params, makeProgress() as any, "req-2");
+        await callSeedreamAPI(
+            "test prompt",
+            params,
+            makeProgress() as any,
+            "req-2",
+        );
 
         expect(lastFetchBody.model).toBe("seedream-4-0-250828");
     });
 
     it("sends correct model version for legacy seedream-pro (4.5)", async () => {
         const params = { ...baseParams, model: "seedream-pro" as any };
-        await callSeedreamProAPI("test prompt", params, makeProgress() as any, "req-3");
+        await callSeedreamProAPI(
+            "test prompt",
+            params,
+            makeProgress() as any,
+            "req-3",
+        );
 
         expect(lastFetchBody.model).toBe("seedream-4-5-251128");
     });
@@ -102,13 +117,23 @@ describe("seedreamModel - Seedream 5.0 Lite", () => {
             image: ["https://example.com/ref1.jpg"],
         };
 
-        await callSeedream5API("edit this", params, makeProgress() as any, "req-4");
+        await callSeedream5API(
+            "edit this",
+            params,
+            makeProgress() as any,
+            "req-4",
+        );
 
         expect(lastFetchBody.image).toBe("data:image/jpeg;base64,dGVzdA==");
     });
 
     it("does not send image field when no images provided", async () => {
-        await callSeedream5API("test prompt", baseParams, makeProgress() as any, "req-5");
+        await callSeedream5API(
+            "test prompt",
+            baseParams,
+            makeProgress() as any,
+            "req-5",
+        );
 
         expect(lastFetchBody.image).toBeUndefined();
     });

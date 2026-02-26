@@ -14,6 +14,8 @@ export const PLAY_PAGE = {
     promptLabel: "Prompt",
     imagePlaceholder: "Describe the image you want...",
     textPlaceholder: "Enter your question or prompt...",
+    audioPlaceholder: "Enter the text to speak...",
+    videoPlaceholder: "Describe the video you want...",
     addImagesLabel: "Add Images (Optional)",
     upToFourLabel: "up to 4",
 

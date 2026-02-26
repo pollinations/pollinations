@@ -119,6 +119,50 @@ def call_llm(system_prompt, user_message):
 
     return response.json()["choices"][0]["message"]["content"]
 
+def infer_platform(name, url, description):
+    """Deterministically infer platform from name, URL, and description."""
+    u = (url or "").lower()
+    d = (description or "").lower()
+    n = (name or "").lower()
+    nd = f"{n} {d}"
+
+    # URL-based rules (high confidence)
+    if "play.google.com" in u: return "android"
+    if "apps.apple.com" in u: return "ios"
+    if "routinehub.co" in u: return "ios"
+    if "api.whatsapp.com" in u or "chat.whatsapp.com" in u: return "whatsapp"
+    if "t.me/" in u: return "telegram"
+    if "discord.com/oauth2" in u or "discord.gg" in u or "discord.com/application" in u: return "discord"
+    if "addons.mozilla.org" in u: return "browser-ext"
+    if "chromewebstore.google.com" in u or "chrome.google.com/webstore" in u: return "browser-ext"
+    if "roblox.com" in u: return "roblox"
+    if "pypi.org" in u: return "library"
+    if "npmjs.com" in u: return "library"
+    if "wordpress.org/plugins" in u: return "wordpress"
+    if u.endswith(".exe") or ".exe?" in u: return "windows"
+    if "bsky.app" in u: return "api"
+    if "pkg.go.dev" in u or "crates.io" in u: return "library"
+
+    # Description/name-based rules
+    if "discord bot" in nd or "discord slash" in nd: return "discord"
+    if "telegram bot" in nd or ("telegram" in nd and "bot" in nd): return "telegram"
+    if "whatsapp" in nd: return "whatsapp"
+    if "roblox" in nd: return "roblox"
+    if "wordpress plugin" in nd or "wordpress" in nd: return "wordpress"
+    if "home assistant" in nd: return "api"
+    if "obsidian plugin" in nd: return "library"
+    if "firefox extension" in nd or "chrome extension" in nd or "browser extension" in nd: return "browser-ext"
+    if "command-line" in nd or "command line" in nd or " cli " in nd: return "cli"
+    if "pyqt" in nd or "tkinter" in nd or "desktop app" in nd or "desktop application" in nd: return "desktop"
+    if "rimworld" in nd or "steam workshop" in nd or "game mod" in nd: return "desktop"
+    if "discord" in nd and not u: return "discord"
+    if "telegram" in nd and not u: return "telegram"
+
+    # Default
+    if u: return "web"
+    return "api"
+
+
 def parse_issue(body):
     """Parse issue body to extract app details."""
     def extract(pattern, default=""):
@@ -233,7 +277,8 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 {{
     "emoji": "single emoji that represents this app",
     "category": "one of: image, video_audio, writing, chat, games, learn, bots, build, business",
-    "language": "ISO code like en, zh-CN, es, ja"
+    "language": "ISO code like en, zh-CN, es, ja",
+    "platform": "one of: web, android, ios, windows, macos, desktop, cli, discord, telegram, whatsapp, library, browser-ext, roblox, wordpress, api"
 }}"""
 
     print("🤖 Asking LLM for emoji/category...")
@@ -257,6 +302,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     emoji = llm_data.get("emoji", "🚀")
     category = llm_data.get("category", "build")
     language = llm_data.get("language", "en")
+    platform = llm_data.get("platform") or infer_platform(parsed['name'], parsed['url'], parsed['description'])
 
     print(f"   Emoji: {emoji}")
     print(f"   Category: {category}")
@@ -323,8 +369,8 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 
     issue_url = f"https://github.com/pollinations/pollinations/issues/{ISSUE_NUMBER}"
 
-    # Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h | Health |
-    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |  |  |  |"
+    # Format: | Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h | Health |
+    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | {platform} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |  |  |  |"
 
     # Add row using the prepend script
     os.environ["NEW_ROW"] = new_row

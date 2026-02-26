@@ -157,13 +157,13 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/profile",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["👤 Account"],
+            summary: "Get Profile",
             description:
-                "Get user profile info (name, email, GitHub username, tier, createdAt, nextResetAt). Requires `account:profile` permission for API keys.",
+                "Returns your account profile including name, email, tier level, and account creation date. Requires `account:profile` permission when using API keys.",
             responses: {
                 200: {
-                    description:
-                        "User profile with name, email, githubUsername, tier, createdAt, nextResetAt",
+                    description: "User profile",
                     content: {
                         "application/json": {
                             schema: resolver(profileResponseSchema),
@@ -228,12 +228,13 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/balance",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["👤 Account"],
+            summary: "Get Balance",
             description:
-                "Get pollen balance. Returns the key's remaining budget if set, otherwise the user's total balance. Requires `account:balance` permission for API keys.",
+                "Returns your current pollen balance. If the API key has a budget limit, returns the key's remaining budget instead. Requires `account:balance` permission when using API keys.",
             responses: {
                 200: {
-                    description: "Balance (remaining pollen)",
+                    description: "Pollen balance",
                     content: {
                         "application/json": {
                             schema: resolver(balanceResponseSchema),
@@ -294,13 +295,13 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/usage",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["👤 Account"],
+            summary: "Get Usage History",
             description:
-                "Get request history and spending data. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.",
+                "Returns your request history with per-request details: model used, token counts, cost, and response time. Supports JSON and CSV export. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
-                    description:
-                        "Usage records with timestamp, model, tokens, cost_usd, etc.",
+                    description: "Usage records",
                     content: {
                         "application/json": {
                             schema: resolver(usageResponseSchema),
@@ -449,9 +450,10 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/usage/daily",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["👤 Account"],
+            summary: "Get Daily Usage",
             description:
-                "Get daily aggregated usage data (last 90 days). Supports JSON and CSV formats. Requires `account:usage` permission for API keys. Results are cached for 1 hour.",
+                "Returns daily aggregated usage for the last 90 days, grouped by date and model. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Daily usage records aggregated by date/model",
@@ -578,9 +580,10 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/key",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["👤 Account"],
+            summary: "Get API Key Info",
             description:
-                "Get API key status and information. Returns key validity, type, expiry, permissions, and remaining budget. This endpoint allows validating keys without making expensive generation requests. Requires API key authentication.",
+                "Returns information about the API key used in the request: validity, type (secret/publishable), expiry, permissions, and remaining budget. Useful for validating keys without making generation requests.",
             responses: {
                 200: {
                     description: "API key status and information",

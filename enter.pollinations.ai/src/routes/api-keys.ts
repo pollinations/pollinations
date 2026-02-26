@@ -115,7 +115,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             description:
                 "List all API keys for the current user with pollenBalance.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
@@ -153,7 +153,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/update",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             description: "Update an API key's permissions and budget.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),

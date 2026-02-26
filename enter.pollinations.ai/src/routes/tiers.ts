@@ -33,7 +33,7 @@ export const tiersRoutes = new Hono<Env>()
     .get(
         "/view",
         describeRoute({
-            tags: ["Auth"],
+            tags: ["👤 Account"],
             description:
                 "Get the current user's tier status and daily pollen information.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",

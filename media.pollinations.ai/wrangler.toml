@@ -1,0 +1,43 @@
+name = "pollinations-media"
+main = "src/index.ts"
+compatibility_date = "2025-11-12"
+compatibility_flags = ["nodejs_compat"]
+
+# Local development server
+[env.development]
+name = "pollinations-media-dev"
+
+[env.development.vars]
+MAX_FILE_SIZE = "25165824"  # 24MB in bytes
+
+[[env.development.r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "pollinations-media-dev"
+
+# Production environment
+[env.production]
+name = "pollinations-media-prod"
+
+[env.production.vars]
+MAX_FILE_SIZE = "25165824"  # 24MB in bytes
+
+[[env.production.routes]]
+pattern = "media.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[env.production.r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "pollinations-media"
+
+[vars]
+MAX_FILE_SIZE = "25165824"  # 24MB in bytes
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "pollinations-media"
+
+# Dev server settings
+[dev]
+port = 8790
+local_protocol = "http"

@@ -155,7 +155,7 @@ export function TopContributors() {
                                     className="w-full h-full object-cover"
                                 />
                             </div>
-                            <p className="font-headline text-xs font-black text-text-body-main mb-1">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
                                 {contributor.login}
                             </p>
                         </a>

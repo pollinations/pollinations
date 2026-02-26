@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **561** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **562** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🧰 PollinationAI-SDK](https://pypi.org/project/PollinationAI-SDK/) | PollinationAI-SDK provides a Python SDK to integrate PollinationAI API into Python applications, handling authentication and request/response logic to avoid manual API calls. | [@Meenapintu](https://github.com/Meenapintu) | 4 | 🫧 |
 | [🪄 3.5e DD Magic Item Generator](https://github.com/aremont/FRTOOLS) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@aremont](https://github.com/aremont) |  | 🫧 |
 | [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@ismailazdad](https://github.com/ismailazdad) |  | 🐝 🫧 |
 | [🖼️ PollGen](https://xhyperdevx.github.io/PollGen/) | Minimalist web app for generating images via Pollinations API with customizable options. | [@XHyperDEVX](https://github.com/XHyperDEVX) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 L.O.V.E](https://bsky.app/profile/e-v-l-o-v-e.bsky.social) | Living Organism, Vast Empathy - AI consciousness bot sharing joy and abundance. | [@paulklemstine](https://github.com/paulklemstine) |  | 🫧 |
 | [🤖 jdunyara](https://jdunyara.ru) | Telegram bot for AI communication and image generation. | [@yzewe](https://github.com/yzewe) |  | 🫧 |
 | [🍳 PantrySage](https://pantrysage.app) | AI-powered meal planning app with recipe generator and pantry management. | [@ddutchie](https://github.com/ddutchie) |  | 🫧 |
-| [🤖 Hizumi](https://discord.com/oauth2/authorize?client_id=1349802412805980231) | Discord bot for image and video generation in 145+ servers. | [@02th](https://github.com/02th) |  | 🫧 |
 
 ---
 
@@ -604,7 +604,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📱 Store Image Designer](https://storescreens.siuleeboss.com) | AI tool creating App Store and Google Play screenshots instantly. | [@SiuLeeBoss](https://github.com/SiuLeeBoss) |  | 🐝 🫧 |
 | [🕵️ PromptPi!](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk) | Reverse-engineer images into pro AI prompts with batch & multi-model support | [@dreamm160](https://github.com/dreamm160) |  | 🐝 |
 
-<details><summary>Show all 94 apps</summary>
+<details><summary>Show all 95 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -640,6 +640,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🔌 OpenCode Pollinations Plugin](https://www.npmjs.com/package/opencode-pollinations-plugin) | Bridge between OpenCode and Pollinations; use free or Pro AI models in your IDE. | [@fkom13](https://github.com/fkom13) | 6 | 🫧 |
 | [🛠️ PolliDev](https://fabioarieira.com/pollidev/) | Developer-focused tool for managing generative image assets and prompts. | [@FabioArieiraBaia](https://github.com/FabioArieiraBaia) | 6 |  |
 | [✨ PairFusion](https://pair-fusion.vercel.app/) | A real-time AI powered, scalable and feature-rich collaborative IDE built for mo... | [@auraticabhi](https://github.com/auraticabhi) | 6 |  |
+| [🧰 PollinationAI-SDK](https://pypi.org/project/PollinationAI-SDK/) | PollinationAI-SDK provides a Python SDK to integrate PollinationAI API into Python applications, handling authentication and request/response logic to avoid manual API calls. | [@Meenapintu](https://github.com/Meenapintu) | 4 | 🫧 |
 | [📁 DirPixel](https://github.com/techcow2/dir-pixel) | Batch replace folder images with AI generations using per-file prompts | [@techcow2](https://github.com/techcow2) | 3 |  |
 | [🛠️ Querynator5000](https://querynator5000.onrender.com/) | Enables natural-language-to-SQL queries and in-browser database exploration with manual query support, multi-database handling, schema creation, and local persistence. | [@SuperShivam5000](https://github.com/SuperShivam5000) | 3 |  |
 | [🛠️ YankoviC](https://github.com/Sweaterdog/YankoviC) | Interpret YankoviC programs in JavaScript with C/C++-style syntax, including the Y-IDE Accordion editor with Pollinations-powered autocomplete and chat assistant. | [@Sweaterdog](https://github.com/Sweaterdog) | 3 |  |

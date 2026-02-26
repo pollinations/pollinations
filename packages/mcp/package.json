@@ -1,6 +1,6 @@
 {
-    "name": "@pollinations_ai/model-context-protocol",
-    "version": "2.0.0",
+    "name": "@pollinations_ai/mcp",
+    "version": "2.0.2",
     "description": "Model Context Protocol (MCP) server for pollinations.ai - image, text, audio & video generation",
     "type": "module",
     "bin": {

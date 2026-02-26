@@ -31,7 +31,7 @@ export const RoadmapItem = React.forwardRef<HTMLDivElement, RoadmapItemProps>(
                     </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                    <p className="font-headline text-base font-black text-text-body-main mb-1">
                         {title}
                     </p>
                     <p className="font-body text-xs text-text-body-secondary leading-relaxed">

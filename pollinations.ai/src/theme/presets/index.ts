@@ -70,8 +70,8 @@ export const PRESETS: PresetMetadata[] = Object.entries(presetModules)
     })
     .filter((preset): preset is PresetMetadata => preset !== null)
     .sort((a, b) => {
-        if (a.id === "classic") return -1;
-        if (b.id === "classic") return 1;
+        if (a.id === "cozy") return -1;
+        if (b.id === "cozy") return 1;
         return a.name.localeCompare(b.name);
     });
 

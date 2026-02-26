@@ -245,24 +245,6 @@ export const TEXT_SERVICES = {
         codeExecution: true,
         isSpecialized: false,
     },
-    "chickytutor": {
-        aliases: [],
-        modelId: "claude-3-haiku-20240307",
-        provider: "anthropic",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.25),
-                promptCachedTokens: perMillion(0.03),
-                completionTextTokens: perMillion(1.25),
-            },
-        ],
-        description: "ChickyTutor AI Language Tutor - (chickytutor.com)",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: true,
-    },
     "midijourney": {
         aliases: [],
         modelId: "gpt-5.2-2025-12-11",
@@ -576,23 +558,22 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         isSpecialized: true,
     },
-    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
-    // "qwen-character": {
-    //     aliases: [],
-    //     modelId: "qwen-character",
-    //     provider: "airforce",
-    //     cost: [
-    //         {
-    //             date: new Date("2026-02-09").getTime(),
-    //             promptTextTokens: perMillion(0.01), // $0.01/M via api.airforce
-    //             completionTextTokens: perMillion(0.01),
-    //         },
-    //     ],
-    //     description:
-    //         "Qwen Character (api.airforce) - roleplay & character chat",
-    //     inputModalities: ["text"],
-    //     outputModalities: ["text"],
-    //     isSpecialized: true,
-    //     alpha: true,
-    // },
+    "qwen-character": {
+        aliases: [],
+        modelId: "qwen-character",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-02-09").getTime(),
+                promptTextTokens: perMillion(0.01), // $0.01/M via api.airforce
+                completionTextTokens: perMillion(0.01),
+            },
+        ],
+        description:
+            "Qwen Character (api.airforce) - roleplay & character chat",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        isSpecialized: true,
+        alpha: true,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

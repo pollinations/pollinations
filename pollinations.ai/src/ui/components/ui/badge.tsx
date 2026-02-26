@@ -15,7 +15,7 @@ import { cn } from "../../../utils";
 // ============================================
 
 const badgeVariants = cva(
-    "inline-flex items-center font-headline text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full",
+    "inline-flex items-center font-headline text-sm font-black uppercase tracking-wider px-3 py-1 rounded-full",
     {
         variants: {
             variant: {

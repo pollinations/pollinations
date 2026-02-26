@@ -5,14 +5,14 @@ Pre-configured [OpenCode](https://opencode.ai) + [oh-my-opencode](https://github
 ## Quick Install
 
 ```bash
-npx @pollinations_ai/oh-my-pollicode
+npx @pollinations_ai/ompc
 ```
 
 Or clone and run:
 ```bash
 git clone https://github.com/pollinations/pollinations.git
-cd pollinations/packages/oh-my-pollicode
-node install.js
+cd pollinations/packages/ompc
+node orchestrator.js
 ```
 
 ## What Gets Installed

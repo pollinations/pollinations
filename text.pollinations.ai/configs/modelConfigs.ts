@@ -81,12 +81,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // AWS Bedrock - claude-fast, claude, claude-large, chickytutor, nova-fast
+    // AWS Bedrock - claude-fast, claude, claude-large, nova-fast
     // ============================================================================
-    "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        }),
     "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -134,22 +130,22 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-sonnet-4-6": () =>
         createAnthropicConfig({
             model: "claude-sonnet-4-6",
+            defaultOptions: { max_tokens: 64000 },
         }),
     "claude-opus-4-6": () =>
         createAnthropicConfig({
             model: "claude-opus-4-6",
+            defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-4-5": () =>
         createAnthropicConfig({
             model: "claude-opus-4-5-20251101",
+            defaultOptions: { max_tokens: 64000 },
         }),
     "claude-haiku-4-5": () =>
         createAnthropicConfig({
             model: "claude-haiku-4-5-20251001",
-        }),
-    "claude-3-5-haiku": () =>
-        createAnthropicConfig({
-            model: "claude-3-haiku-20240307",
+            defaultOptions: { max_tokens: 64000 },
         }),
     "amazon.nova-micro-v1:0": () =>
         createBedrockNativeConfig({
@@ -286,11 +282,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
     // api.airforce - qwen-character (RP/character model)
     // ============================================================================
-    // "qwen-character": () =>
-    //     createAirforceModelConfig({
-    //         model: "qwen-character",
-    //     }),
+    "qwen-character": () =>
+        createAirforceModelConfig({
+            model: "qwen-character",
+        }),
 };

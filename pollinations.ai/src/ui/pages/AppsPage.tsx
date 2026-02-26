@@ -237,10 +237,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                         </a>
                     )}
                     {app.platform && PLATFORM_DISPLAY[app.platform] && (
-                        <Badge
-                            variant="muted"
-                            className="ml-auto bg-transparent border-transparent shadow-none px-0"
-                        >
+                        <Badge variant="muted" className="ml-auto">
                             {PLATFORM_DISPLAY[app.platform]}
                         </Badge>
                     )}

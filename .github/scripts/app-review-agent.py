@@ -121,27 +121,42 @@ def call_llm(system_prompt, user_message):
 
 def infer_platform(name, url, description):
     """Deterministically infer platform from name, URL, and description."""
-    u = (url or "").lower()
+    from urllib.parse import urlparse
     d = (description or "").lower()
     n = (name or "").lower()
     nd = f"{n} {d}"
 
-    # URL-based rules (high confidence)
-    if "play.google.com" in u: return "android"
-    if "apps.apple.com" in u: return "ios"
-    if "routinehub.co" in u: return "ios"
-    if "api.whatsapp.com" in u or "chat.whatsapp.com" in u: return "whatsapp"
-    if "t.me/" in u: return "telegram"
-    if "discord.com/oauth2" in u or "discord.gg" in u or "discord.com/application" in u: return "discord"
-    if "addons.mozilla.org" in u: return "browser-ext"
-    if "chromewebstore.google.com" in u or "chrome.google.com/webstore" in u: return "browser-ext"
-    if "roblox.com" in u: return "roblox"
-    if "pypi.org" in u: return "library"
-    if "npmjs.com" in u: return "library"
-    if "wordpress.org/plugins" in u: return "wordpress"
-    if u.endswith(".exe") or ".exe?" in u: return "windows"
-    if "bsky.app" in u: return "api"
-    if "pkg.go.dev" in u or "crates.io" in u: return "library"
+    # Parse URL for safe hostname/path checks
+    hostname = ""
+    url_path_lower = ""
+    if url:
+        try:
+            raw = url if url.startswith(("http://", "https://")) else f"https://{url}"
+            parsed = urlparse(raw.lower())
+            hostname = parsed.hostname or ""
+            url_path_lower = (parsed.path or "").lower()
+        except Exception:
+            pass
+
+    def host_is(domain):
+        return hostname == domain or hostname.endswith(f".{domain}")
+
+    # URL-based rules (safe hostname matching)
+    if host_is("play.google.com"): return "android"
+    if host_is("apps.apple.com"): return "ios"
+    if host_is("routinehub.co"): return "ios"
+    if host_is("api.whatsapp.com") or host_is("chat.whatsapp.com"): return "whatsapp"
+    if host_is("t.me"): return "telegram"
+    if host_is("discord.gg") or host_is("discord.com"): return "discord"
+    if host_is("addons.mozilla.org"): return "browser-ext"
+    if host_is("chromewebstore.google.com") or (host_is("chrome.google.com") and url_path_lower.startswith("/webstore")): return "browser-ext"
+    if host_is("roblox.com"): return "roblox"
+    if host_is("pypi.org"): return "library"
+    if host_is("npmjs.com"): return "library"
+    if host_is("wordpress.org") and url_path_lower.startswith("/plugins"): return "wordpress"
+    if host_is("bsky.app"): return "api"
+    if host_is("pkg.go.dev") or host_is("crates.io"): return "library"
+    if url_path_lower.endswith(".exe"): return "windows"
 
     # Description/name-based rules
     if "discord bot" in nd or "discord slash" in nd: return "discord"
@@ -155,11 +170,11 @@ def infer_platform(name, url, description):
     if "command-line" in nd or "command line" in nd or " cli " in nd: return "cli"
     if "pyqt" in nd or "tkinter" in nd or "desktop app" in nd or "desktop application" in nd: return "desktop"
     if "rimworld" in nd or "steam workshop" in nd or "game mod" in nd: return "desktop"
-    if "discord" in nd and not u: return "discord"
-    if "telegram" in nd and not u: return "telegram"
+    if "discord" in nd and not hostname: return "discord"
+    if "telegram" in nd and not hostname: return "telegram"
 
     # Default
-    if u: return "web"
+    if hostname: return "web"
     return "api"
 
 

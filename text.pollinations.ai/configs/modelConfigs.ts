@@ -250,7 +250,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // Fireworks AI - glm-5, minimax-m2.1, deepseek-v3.2, kimi-k2.5
+    // Fireworks AI - glm-5, minimax-m2.5, deepseek-v3.2, kimi-k2.5
     // ============================================================================
     "accounts/fireworks/models/kimi-k2p5": () =>
         createFireworksModelConfig({
@@ -260,9 +260,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5",
         }),
-    "accounts/fireworks/models/minimax-m2p1": () =>
+    "accounts/fireworks/models/minimax-m2p5": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/minimax-m2p1",
+            model: "accounts/fireworks/models/minimax-m2p5",
         }),
     "accounts/fireworks/models/deepseek-v3p2": () =>
         createFireworksModelConfig({

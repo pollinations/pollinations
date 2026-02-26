@@ -13,8 +13,8 @@
  * Usage: node apps/operation/economics/generate-category-dashboard.js
  */
 
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const APPS_FILE = path.resolve(__dirname, "../../APPS.md");
 const OUTPUT_FILE = path.resolve(
@@ -22,7 +22,7 @@ const OUTPUT_FILE = path.resolve(
     "provisioning/dashboards/category-economics.json",
 );
 
-const PLATFORM_META = {
+const _PLATFORM_META = {
     web: { emoji: "🌐", label: "Web" },
     api: { emoji: "🔌", label: "API" },
     telegram: { emoji: "✈️", label: "Telegram" },
@@ -286,12 +286,16 @@ function buildPlatformPanels(platformExpr, startId, startY) {
     // Pie: Pollen by Platform
     panels.push({
         datasource: CH_DATASOURCE,
-        description: "Total pollen consumption split by app platform (web, api, telegram, discord, etc.).",
+        description:
+            "Total pollen consumption split by app platform (web, api, telegram, discord, etc.).",
         fieldConfig: {
             defaults: {
                 color: { mode: "palette-classic" },
                 mappings: [],
-                thresholds: { mode: "absolute", steps: [{ color: "green", value: null }] },
+                thresholds: {
+                    mode: "absolute",
+                    steps: [{ color: "green", value: null }],
+                },
                 unit: "currencyUSD",
             },
             overrides: [],
@@ -300,27 +304,34 @@ function buildPlatformPanels(platformExpr, startId, startY) {
         id: id++,
         options: {
             displayLabels: ["name", "percent"],
-            legend: { displayMode: "table", placement: "right", showLegend: true, values: ["value", "percent"] },
+            legend: {
+                displayMode: "table",
+                placement: "right",
+                showLegend: true,
+                values: ["value", "percent"],
+            },
             pieType: "pie",
             reduceOptions: { calcs: ["lastNotNull"], fields: "", values: true },
             tooltip: { mode: "single", sort: "none" },
         },
         pluginVersion: "12.4.0",
-        targets: [{
-            datasource: CH_DATASOURCE,
-            format: 1,
-            rawSql: [
-                "SELECT",
-                `  ${platformExpr} as platform,`,
-                "  sum(total_price) as pollen",
-                "FROM generation_event",
-                `WHERE ${FILTERS}`,
-                "GROUP BY platform",
-                "HAVING platform != ''",
-                "ORDER BY pollen DESC",
-            ].join("\n"),
-            refId: "A",
-        }],
+        targets: [
+            {
+                datasource: CH_DATASOURCE,
+                format: 1,
+                rawSql: [
+                    "SELECT",
+                    `  ${platformExpr} as platform,`,
+                    "  sum(total_price) as pollen",
+                    "FROM generation_event",
+                    `WHERE ${FILTERS}`,
+                    "GROUP BY platform",
+                    "HAVING platform != ''",
+                    "ORDER BY pollen DESC",
+                ].join("\n"),
+                refId: "A",
+            },
+        ],
         transformations: [
             {
                 id: "rowsToFields",
@@ -344,14 +355,22 @@ function buildPlatformPanels(platformExpr, startId, startY) {
             defaults: {
                 color: { mode: "palette-classic" },
                 custom: {
-                    axisBorderShow: false, axisCenteredZero: false, axisColorMode: "text",
-                    axisPlacement: "auto", fillOpacity: 80, gradientMode: "none",
+                    axisBorderShow: false,
+                    axisCenteredZero: false,
+                    axisColorMode: "text",
+                    axisPlacement: "auto",
+                    fillOpacity: 80,
+                    gradientMode: "none",
                     hideFrom: { legend: false, tooltip: false, viz: false },
-                    lineWidth: 1, scaleDistribution: { type: "linear" },
+                    lineWidth: 1,
+                    scaleDistribution: { type: "linear" },
                     thresholdsStyle: { mode: "off" },
                 },
                 mappings: [],
-                thresholds: { mode: "absolute", steps: [{ color: "green", value: null }] },
+                thresholds: {
+                    mode: "absolute",
+                    steps: [{ color: "green", value: null }],
+                },
                 unit: "currencyUSD",
             },
             overrides: [
@@ -359,14 +378,20 @@ function buildPlatformPanels(platformExpr, startId, startY) {
                     matcher: { id: "byName", options: "tier_pollen" },
                     properties: [
                         { id: "displayName", value: "Tier \u03c1" },
-                        { id: "color", value: { fixedColor: "orange", mode: "fixed" } },
+                        {
+                            id: "color",
+                            value: { fixedColor: "orange", mode: "fixed" },
+                        },
                     ],
                 },
                 {
                     matcher: { id: "byName", options: "pack_pollen" },
                     properties: [
                         { id: "displayName", value: "Pack \u03c1" },
-                        { id: "color", value: { fixedColor: "green", mode: "fixed" } },
+                        {
+                            id: "color",
+                            value: { fixedColor: "green", mode: "fixed" },
+                        },
                     ],
                 },
             ],
@@ -374,29 +399,42 @@ function buildPlatformPanels(platformExpr, startId, startY) {
         gridPos: { h: 12, w: 12, x: 12, y: startY + 1 },
         id: id++,
         options: {
-            barRadius: 0.1, barWidth: 0.8, fullHighlight: false, groupWidth: 0.7,
-            legend: { calcs: ["sum"], displayMode: "table", placement: "bottom", showLegend: true },
-            orientation: "horizontal", showValue: "auto", stacking: "normal",
+            barRadius: 0.1,
+            barWidth: 0.8,
+            fullHighlight: false,
+            groupWidth: 0.7,
+            legend: {
+                calcs: ["sum"],
+                displayMode: "table",
+                placement: "bottom",
+                showLegend: true,
+            },
+            orientation: "horizontal",
+            showValue: "auto",
+            stacking: "normal",
             tooltip: { mode: "multi", sort: "desc" },
-            xTickLabelRotation: 0, xTickLabelSpacing: 0,
+            xTickLabelRotation: 0,
+            xTickLabelSpacing: 0,
         },
         pluginVersion: "12.4.0",
-        targets: [{
-            datasource: CH_DATASOURCE,
-            format: 1,
-            rawSql: [
-                "SELECT",
-                `  ${platformExpr} as platform,`,
-                "  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,",
-                "  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen",
-                "FROM generation_event",
-                `WHERE ${FILTERS}`,
-                "GROUP BY platform",
-                "HAVING platform != ''",
-                "ORDER BY tier_pollen + pack_pollen DESC",
-            ].join("\n"),
-            refId: "A",
-        }],
+        targets: [
+            {
+                datasource: CH_DATASOURCE,
+                format: 1,
+                rawSql: [
+                    "SELECT",
+                    `  ${platformExpr} as platform,`,
+                    "  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,",
+                    "  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen",
+                    "FROM generation_event",
+                    `WHERE ${FILTERS}`,
+                    "GROUP BY platform",
+                    "HAVING platform != ''",
+                    "ORDER BY tier_pollen + pack_pollen DESC",
+                ].join("\n"),
+                refId: "A",
+            },
+        ],
         title: "Tier vs Pack by Platform",
         type: "barchart",
     });
@@ -404,23 +442,37 @@ function buildPlatformPanels(platformExpr, startId, startY) {
     // Timeseries: Daily Pollen by Platform
     panels.push({
         datasource: CH_DATASOURCE,
-        description: "Daily pollen consumption by platform. Stacked to show total and relative contribution.",
+        description:
+            "Daily pollen consumption by platform. Stacked to show total and relative contribution.",
         fieldConfig: {
             defaults: {
                 color: { mode: "palette-classic" },
                 custom: {
-                    axisBorderShow: false, axisCenteredZero: false, axisColorMode: "text",
-                    axisLabel: "Pollen", axisPlacement: "left", barAlignment: 0,
-                    drawStyle: "bars", fillOpacity: 80, gradientMode: "none",
+                    axisBorderShow: false,
+                    axisCenteredZero: false,
+                    axisColorMode: "text",
+                    axisLabel: "Pollen",
+                    axisPlacement: "left",
+                    barAlignment: 0,
+                    drawStyle: "bars",
+                    fillOpacity: 80,
+                    gradientMode: "none",
                     hideFrom: { legend: false, tooltip: false, viz: false },
-                    insertNulls: false, lineInterpolation: "linear", lineWidth: 1,
-                    pointSize: 5, scaleDistribution: { type: "linear" },
-                    showPoints: "never", spanNulls: false,
+                    insertNulls: false,
+                    lineInterpolation: "linear",
+                    lineWidth: 1,
+                    pointSize: 5,
+                    scaleDistribution: { type: "linear" },
+                    showPoints: "never",
+                    spanNulls: false,
                     stacking: { group: "A", mode: "normal" },
                     thresholdsStyle: { mode: "off" },
                 },
                 mappings: [],
-                thresholds: { mode: "absolute", steps: [{ color: "green", value: null }] },
+                thresholds: {
+                    mode: "absolute",
+                    steps: [{ color: "green", value: null }],
+                },
                 unit: "currencyUSD",
             },
             overrides: [],
@@ -428,28 +480,38 @@ function buildPlatformPanels(platformExpr, startId, startY) {
         gridPos: { h: 12, w: 24, x: 0, y: startY + 13 },
         id: id++,
         options: {
-            legend: { calcs: ["sum", "mean"], displayMode: "table", placement: "bottom", showLegend: true },
+            legend: {
+                calcs: ["sum", "mean"],
+                displayMode: "table",
+                placement: "bottom",
+                showLegend: true,
+            },
             tooltip: { mode: "multi", sort: "desc" },
-            xTickLabelRotation: 0, xTickLabelSpacing: 200,
+            xTickLabelRotation: 0,
+            xTickLabelSpacing: 200,
         },
         pluginVersion: "12.4.0",
-        targets: [{
-            datasource: CH_DATASOURCE,
-            format: 1,
-            rawSql: [
-                "SELECT",
-                "  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,",
-                `  ${platformExpr} as platform,`,
-                "  sum(total_price) as pollen",
-                "FROM generation_event",
-                `WHERE ${FILTERS}`,
-                "GROUP BY time, platform",
-                "HAVING platform != ''",
-                "ORDER BY time",
-            ].join("\n"),
-            refId: "A",
-        }],
-        transformations: [{ id: "prepareTimeSeries", options: { format: "many" } }],
+        targets: [
+            {
+                datasource: CH_DATASOURCE,
+                format: 1,
+                rawSql: [
+                    "SELECT",
+                    "  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,",
+                    `  ${platformExpr} as platform,`,
+                    "  sum(total_price) as pollen",
+                    "FROM generation_event",
+                    `WHERE ${FILTERS}`,
+                    "GROUP BY time, platform",
+                    "HAVING platform != ''",
+                    "ORDER BY time",
+                ].join("\n"),
+                refId: "A",
+            },
+        ],
+        transformations: [
+            { id: "prepareTimeSeries", options: { format: "many" } },
+        ],
         title: "Daily Pollen by Platform",
         type: "timeseries",
     });
@@ -1039,7 +1101,9 @@ function main() {
     );
 
     const githubIdToPlatform = buildPlatformMappings(apps);
-    console.log(`\n  Platform mappings: ${githubIdToPlatform.size} users → platform`);
+    console.log(
+        `\n  Platform mappings: ${githubIdToPlatform.size} users → platform`,
+    );
     const platformExpr = buildPlatformExpr(githubIdToPlatform);
 
     const panels = buildPanels(categoryExpr, categoryAppCounts, platformExpr);
@@ -1077,7 +1141,7 @@ function main() {
         version: 1,
     };
 
-    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(dashboard, null, 4) + "\n");
+    fs.writeFileSync(OUTPUT_FILE, `${JSON.stringify(dashboard, null, 4)}\n`);
     console.log(`\nDashboard written to ${OUTPUT_FILE}`);
 }
 

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **562** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **563** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ Text To Image](https://t.me/GenerateTTI_bot) | Convert text prompts into images using the Telegram Bot by API Pollinations.ai. | [@falconafk31](https://github.com/falconafk31) |  | 🫧 |
 | [🧰 PollinationAI-SDK](https://pypi.org/project/PollinationAI-SDK/) | PollinationAI-SDK provides a Python SDK to integrate PollinationAI API into Python applications, handling authentication and request/response logic to avoid manual API calls. | [@Meenapintu](https://github.com/Meenapintu) | 4 | 🫧 |
 | [🪄 3.5e DD Magic Item Generator](https://github.com/aremont/FRTOOLS) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@aremont](https://github.com/aremont) |  | 🫧 |
 | [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@ismailazdad](https://github.com/ismailazdad) |  | 🐝 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ LIFE Pro](https://softwareupdate.systemceramics.com/inkjetsoftwareupdate/windows/1008910020_x64.exe) | Large image processing software with AI chat and image generation features. | [@mircomir](https://github.com/mircomir) |  | 🫧 |
 | [🤖 L.O.V.E](https://bsky.app/profile/e-v-l-o-v-e.bsky.social) | Living Organism, Vast Empathy - AI consciousness bot sharing joy and abundance. | [@paulklemstine](https://github.com/paulklemstine) |  | 🫧 |
 | [🤖 jdunyara](https://jdunyara.ru) | Telegram bot for AI communication and image generation. | [@yzewe](https://github.com/yzewe) |  | 🫧 |
-| [🍳 PantrySage](https://pantrysage.app) | AI-powered meal planning app with recipe generator and pantry management. | [@ddutchie](https://github.com/ddutchie) |  | 🫧 |
 
 ---
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Immage Generator](https://genimg.mummer.org/) | Web-based AI image generator for creating images from text prompts. | [@mumblemummer](https://github.com/mumblemummer) |  | 🐝 🫧 |
 | [🎨 PixArt AI](https://apps.apple.com/us/app/pixart-ai-ai-image-generator/id6749236127) | iOS app that turns text prompts into AI-generated artwork via Pollinations. | [@bhyahmed86-maker](https://github.com/bhyahmed86-maker) |  | 🐝 |
 
-<details><summary>Show all 122 apps</summary>
+<details><summary>Show all 123 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -108,6 +108,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
 | [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
 | [🖼 Image Generator by Quilix ️](https://github.com/quil1x/ImageBYquilix) | Generate AI images from a desktop app using Pollinations and multiple model options, with cross-platform support and 1024x1024 output. | [@quil1x](https://github.com/quil1x) | 1 |  |
+| [🖼️ Text To Image](https://t.me/GenerateTTI_bot) | Convert text prompts into images using the Telegram Bot by API Pollinations.ai. | [@falconafk31](https://github.com/falconafk31) |  | 🫧 |
 | [🖼️ PollGen](https://xhyperdevx.github.io/PollGen/) | Minimalist web app for generating images via Pollinations API with customizable options. | [@XHyperDEVX](https://github.com/XHyperDEVX) |  | 🫧 |
 | [🎨 Sketch My Mood](https://sketch-my-mood.onrender.com/) | AI-powered art therapy app that transforms emotional states into visual masterpieces. | [@PiusEzekiel](https://github.com/PiusEzekiel) |  | 🫧 |
 | [🎨 inkverse](https://play.google.com/store/apps/details?id=com.inkverse.aitattoogenerator&pcampaignid=web_share) | AI tattoo generator transforming text prompts into unique tattoo designs. | [@abhi25805444](https://github.com/abhi25805444) |  | 🫧 |

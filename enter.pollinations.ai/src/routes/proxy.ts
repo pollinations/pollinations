@@ -59,6 +59,55 @@ const videoModelNames = Object.entries(IMAGE_SERVICES)
 
 const factory = createFactory<Env>();
 
+// Shared handler for image and video generation (used by both /image/ and /video/ routes)
+const imageVideoHandlers = factory.createHandlers(
+    resolveModel("generate.image"),
+    track("generate.image"),
+    async (c) => {
+        const log = c.get("log").getChild("generate");
+        await c.var.auth.requireAuthorization();
+        c.var.auth.requireModelAccess();
+        c.var.auth.requireKeyBudget();
+        await checkBalance(c.var);
+
+        // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
+        const promptParam = c.req.param("prompt") || "";
+
+        log.debug("Extracted prompt param: {prompt}", {
+            prompt: promptParam,
+            length: promptParam.length,
+        });
+
+        const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
+        targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
+
+        log.debug("Proxying to: {url}", {
+            url: targetUrl.toString(),
+        });
+
+        const response = await proxy(targetUrl.toString(), {
+            method: c.req.method,
+            headers: proxyHeaders(c),
+            body: c.req.raw.body,
+        });
+
+        if (!response.ok) {
+            const responseText = await response.text();
+            log.warn("Image service error {status}: {body}", {
+                status: response.status,
+                body: responseText,
+            });
+            throw new UpstreamError(remapUpstreamStatus(response.status), {
+                message:
+                    responseText || getDefaultErrorMessage(response.status),
+                requestUrl: targetUrl,
+            });
+        }
+
+        return response;
+    },
+);
+
 // Shared handler for OpenAI-compatible chat completions
 const chatCompletionHandlers = factory.createHandlers(
     validator("json", CreateChatCompletionRequestSchema),
@@ -418,21 +467,18 @@ export const proxyRoutes = new Hono<Env>()
         "/image/:prompt{[\\s\\S]+}",
         imageCache,
         describeRoute({
-            tags: ["🖼️ Image & Video Generation"],
-            summary: "Generate Image or Video",
+            tags: ["🖼️ Image Generation"],
+            summary: "Generate Image",
             description: [
-                "Generate an image or video from a text prompt.",
+                "Generate an image from a text prompt. Returns JPEG or PNG.",
                 "",
-                `**For images:** Use models like ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default. Returns JPEG or PNG.`,
-                "",
-                `**For videos:** Use models like ${videoModelNames}. Returns MP4. Set \`duration\` for video length.`,
+                `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
                 "",
                 "Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),
             responses: {
                 200: {
-                    description:
-                        "Success - Returns the generated image or video",
+                    description: "Success - Returns the generated image",
                     content: {
                         "image/jpeg": {
                             schema: {
@@ -446,6 +492,44 @@ export const proxyRoutes = new Hono<Env>()
                                 format: "binary",
                             },
                         },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description: "Text description of the image to generate",
+                    example: "a beautiful sunset over mountains",
+                }),
+            }),
+        ),
+        validator("query", GenerateImageRequestQueryParamsSchema),
+        ...imageVideoHandlers,
+    )
+    .get(
+        "/video/:prompt{[\\s\\S]+}",
+        imageCache,
+        describeRoute({
+            tags: ["🎬 Video Generation"],
+            summary: "Generate Video",
+            description: [
+                "Generate a video from a text prompt. Returns MP4.",
+                "",
+                `**Available models:** ${videoModelNames}.`,
+                "",
+                "Use `duration` to set video length, `aspectRatio` for orientation, and `audio` to enable soundtrack generation.",
+                "",
+                "You can also pass reference images via the `image` parameter — for example, `veo` supports start and end frames for interpolation.",
+                "",
+                "Browse all available models at [`/image/models`](https://gen.pollinations.ai/image/models).",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns the generated video",
+                    content: {
                         "video/mp4": {
                             schema: {
                                 type: "string",
@@ -461,58 +545,13 @@ export const proxyRoutes = new Hono<Env>()
             "param",
             z.object({
                 prompt: z.string().min(1).meta({
-                    description:
-                        "Text description of the image or video to generate",
-                    example: "a beautiful sunset over mountains",
+                    description: "Text description of the video to generate",
+                    example: "a sunset timelapse over the ocean",
                 }),
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
-        resolveModel("generate.image"),
-        track("generate.image"),
-        async (c) => {
-            const log = c.get("log").getChild("generate");
-            await c.var.auth.requireAuthorization();
-            c.var.auth.requireModelAccess();
-            c.var.auth.requireKeyBudget();
-            await checkBalance(c.var);
-
-            // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
-            const promptParam = c.req.param("prompt") || "";
-
-            log.debug("Extracted prompt param: {prompt}", {
-                prompt: promptParam,
-                length: promptParam.length,
-            });
-
-            const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
-            targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
-
-            log.debug("Proxying to: {url}", {
-                url: targetUrl.toString(),
-            });
-
-            const response = await proxy(targetUrl.toString(), {
-                method: c.req.method,
-                headers: proxyHeaders(c),
-                body: c.req.raw.body,
-            });
-
-            if (!response.ok) {
-                const responseText = await response.text();
-                log.warn("Image service error {status}: {body}", {
-                    status: response.status,
-                    body: responseText,
-                });
-                throw new UpstreamError(remapUpstreamStatus(response.status), {
-                    message:
-                        responseText || getDefaultErrorMessage(response.status),
-                    requestUrl: targetUrl,
-                });
-            }
-
-            return response;
-        },
+        ...imageVideoHandlers,
     )
     .get(
         "/audio/:text",

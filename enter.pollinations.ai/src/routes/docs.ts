@@ -393,6 +393,36 @@ with open("image.jpg", "wb") as f:
 const blob = await response.blob();`,
         },
     ],
+    "get /video/{prompt}": [
+        {
+            label: "cURL",
+            lang: "Shell",
+            source: `curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo&duration=4" \\
+  -H "Authorization: Bearer YOUR_API_KEY" -o video.mp4`,
+        },
+        {
+            label: "Python",
+            lang: "Python",
+            source: `import requests
+
+response = requests.get(
+    "https://gen.pollinations.ai/video/a sunset timelapse",
+    params={"model": "veo", "duration": 4},
+    headers={"Authorization": "Bearer YOUR_API_KEY"},
+)
+with open("video.mp4", "wb") as f:
+    f.write(response.content)`,
+        },
+        {
+            label: "JavaScript",
+            lang: "JavaScript",
+            source: `const response = await fetch(
+  "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo&duration=4",
+  { headers: { Authorization: "Bearer YOUR_API_KEY" } },
+);
+const blob = await response.blob();`,
+        },
+    ],
     "get /audio/{text}": [
         {
             label: "cURL",
@@ -1023,7 +1053,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "| ✍️ | **Text Generation** | `POST /v1/chat/completions` | OpenAI-compatible |",
                             "| ✍️ | **Simple Text** | `GET /text/{prompt}` | Plain text |",
                             "| 🖼️ | **Image Generation** | `GET /image/{prompt}` | JPEG / PNG |",
-                            "| 🖼️ | **Video Generation** | `GET /image/{prompt}` + video model | MP4 |",
+                            "| 🎬 | **Video Generation** | `GET /video/{prompt}` | MP4 |",
                             "| 🔊 | **Text-to-Speech** | `GET /audio/{text}` | MP3 |",
                             "| 🔊 | **Music Generation** | `GET /audio/{text}` | MP3 |",
                             "| 🔊 | **Transcription** | `POST /v1/audio/transcriptions` | JSON |",
@@ -1135,9 +1165,9 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             ].join("\n"),
                         },
                         {
-                            name: "🖼️ Image & Video Generation",
+                            name: "🖼️ Image Generation",
                             description: [
-                                "Generate images and videos from text prompts via a simple GET request.",
+                                "Generate images from text prompts via a simple GET request. Returns JPEG or PNG.",
                                 "",
                                 "**Quick start** — paste in your browser, no code needed:",
                                 "",
@@ -1145,27 +1175,23 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux",
                                 "```",
                                 "",
-                                "### Image",
-                                "",
-                                `**Models:** ${imageModelDisplayNames}`,
+                                `**Available models:** ${imageModelDisplayNames}`,
                                 "",
                                 "**Key parameters:** `model`, `width`, `height`, `seed`, `enhance`, `negative_prompt`, `image` (for editing), `quality`, `transparent`",
-                                "",
-                                "Returns JPEG or PNG.",
-                                "",
-                                "### Video",
-                                "",
-                                "Use the same endpoint with a video model:",
+                            ].join("\n"),
+                        },
+                        {
+                            name: "🎬 Video Generation",
+                            description: [
+                                "Generate videos from text prompts or reference images. Returns MP4.",
                                 "",
                                 "```",
-                                "https://gen.pollinations.ai/image/sunset%20timelapse?model=veo&duration=4",
+                                "https://gen.pollinations.ai/video/sunset%20timelapse?model=veo&duration=4",
                                 "```",
                                 "",
-                                `**Models:** ${videoModelDisplayNames}`,
+                                `**Available models:** ${videoModelDisplayNames}`,
                                 "",
                                 "**Video parameters:** `duration` (seconds), `aspectRatio` (`16:9` or `9:16`), `audio` (enable soundtrack), `image` (reference frames)",
-                                "",
-                                "Returns MP4.",
                             ].join("\n"),
                         },
                         {

@@ -23,7 +23,7 @@ vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
         } as Response;
     }
 
-    if (typeof url === "string" && url.includes("example.com")) {
+    if (typeof url === "string" && new URL(url).hostname === "example.com") {
         // Simulate downloading the video buffer
         return {
             ok: true,

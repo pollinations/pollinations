@@ -7,7 +7,7 @@ let lastFetchBody: Record<string, unknown> = {};
 process.env.XAI_API_KEY = "test-xai-key";
 
 vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
-    if (typeof url === "string" && url.includes("example.com")) {
+    if (typeof url === "string" && new URL(url).hostname === "example.com") {
         // Simulate downloading the image buffer
         return {
             ok: true,

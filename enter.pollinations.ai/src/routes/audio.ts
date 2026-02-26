@@ -402,16 +402,16 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/speech",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🔊 Audio Generation"],
+            summary: "Text to Speech (OpenAI-compatible)",
             description: [
-                "Generate audio from text — speech (TTS) or music.",
+                "Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.",
                 "",
-                "This endpoint is OpenAI TTS API compatible.",
-                "Set `model` to `elevenmusic` (or alias `music`) to generate music instead of speech.",
+                "Set `model` to `elevenmusic` to generate music instead of speech.",
                 "",
-                `**TTS Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
-                "**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm",
+                "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
             ].join("\n"),
             responses: {
                 200: {
@@ -434,7 +434,7 @@ export const audioRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         validator("json", CreateSpeechRequestSchema),
@@ -481,15 +481,17 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/transcriptions",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🔊 Audio Generation"],
+            summary: "Transcribe Audio",
             description: [
-                "Transcribe audio to text using Whisper or ElevenLabs Scribe.",
+                "Transcribe audio files to text. Compatible with the OpenAI Whisper API.",
                 "",
-                "This endpoint is OpenAI Whisper API compatible.",
+                "**Supported audio formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
                 "",
-                "**Supported formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
-                "",
-                "**Models:** `whisper-large-v3` (default), `whisper-1`, `scribe`",
+                "**Models:**",
+                "- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
+                "- `whisper-1` — Alias for whisper-large-v3",
+                "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -558,7 +560,7 @@ export const audioRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         resolveModel("generate.audio"),

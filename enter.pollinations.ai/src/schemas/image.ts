@@ -21,16 +21,10 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             description:
                 "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream, seedream-pro, nanobanana, nanobanana-pro, klein, klein-large, imagen-4, grok-imagine. **Video:** veo, seedance, seedance-pro, wan, ltx-2, grok-video. See /image/models for full list.",
         }),
-    width: z.coerce
-        .number()
-        .int()
-        .nonnegative()
-        .optional()
-        .default(1024)
-        .meta({
-            description:
-                "Width in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p).",
-        }),
+    width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
+        description:
+            "Width in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p).",
+    }),
     height: z.coerce
         .number()
         .int()
@@ -52,14 +46,10 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             description:
                 "Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance. Other models ignore this parameter.",
         }),
-    enhance: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({
-            description:
-                "Let AI improve your prompt for better results. Applied during prompt processing.",
-        }),
+    enhance: z.coerce.boolean().optional().default(false).meta({
+        description:
+            "Let AI improve your prompt for better results. Applied during prompt processing.",
+    }),
     negative_prompt: z.coerce
         .string()
         .optional()
@@ -122,14 +112,10 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         description:
             "Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by width/height.",
     }),
-    audio: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({
-            description:
-                "Generate audio for the video. Only applies to video models. Note: `wan` and `ltx-2` generate audio regardless of this flag. For `veo`, set to `true` to enable audio.",
-        }),
+    audio: z.coerce.boolean().optional().default(false).meta({
+        description:
+            "Generate audio for the video. Only applies to video models. Note: `wan` and `ltx-2` generate audio regardless of this flag. For `veo`, set to `true` to enable audio.",
+    }),
 });
 
 export type GenerateImageRequestQueryParams = z.infer<

@@ -22,26 +22,18 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "System prompt to set the model's behavior and context. Acts as initial instructions before the user prompt.",
     }),
-    json: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({
-            description:
-                "When true, the model returns valid JSON. Useful for structured data extraction.",
-        }),
+    json: z.coerce.boolean().optional().default(false).meta({
+        description:
+            "When true, the model returns valid JSON. Useful for structured data extraction.",
+    }),
     temperature: z.coerce.number().optional().meta({
         description:
             "Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0.",
     }),
-    stream: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({
-            description:
-                "Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text.",
-        }),
+    stream: z.coerce.boolean().optional().default(false).meta({
+        description:
+            "Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text.",
+    }),
 });
 
 export type GenerateTextRequestQueryParams = z.infer<

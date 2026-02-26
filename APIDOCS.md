@@ -3720,6 +3720,138 @@ This endpoint is OpenAI Whisper API compatible.
 }
 ```
 
+## media.pollinations.ai
+
+Content-addressed media storage for images, audio, and video. Upload files and get back a permanent, deduplicated URL.
+
+- **Server:** `https://media.pollinations.ai`
+- **OpenAPI spec:** `https://media.pollinations.ai/openapi.json`
+
+### POST /upload
+
+- **Method:** `POST`
+- **Path:** `/upload`
+- **Tags:** media.pollinations.ai
+- **Auth required:** Yes (`Authorization: Bearer <key>` or `?key=<key>`)
+
+Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.
+
+#### Request Body
+
+Three input formats are supported:
+
+**1. Multipart form-data** (`Content-Type: multipart/form-data`)
+
+- **`file` (required)** — `binary` — The media file to upload
+
+**2. Raw binary** (e.g., `Content-Type: image/jpeg`)
+
+- Send the file as the raw request body with the appropriate Content-Type header
+
+**3. Base64 JSON** (`Content-Type: application/json`)
+
+- **`data` (required)** — `string` — Base64-encoded file data (with or without data URI prefix)
+- **`contentType`** — `string` — MIME type (e.g., `image/png`)
+- **`name`** — `string` — Original filename
+
+#### Responses
+
+##### Status: 200 Upload successful
+
+###### Content-Type: application/json
+
+- **`id` (required)** — `string` — 16-char hex content hash
+- **`url` (required)** — `string` — Public retrieval URL (`https://media.pollinations.ai/{hash}`)
+- **`contentType` (required)** — `string` — MIME type
+- **`size` (required)** — `integer` — File size in bytes
+- **`duplicate` (required)** — `boolean` — `true` if the file already existed
+
+**Example:**
+
+```json
+{
+  "id": "a3f2b1c4d5e6f789",
+  "url": "https://media.pollinations.ai/a3f2b1c4d5e6f789",
+  "contentType": "image/jpeg",
+  "size": 123456,
+  "duplicate": false
+}
+```
+
+##### Status: 401 Missing or invalid API key
+
+##### Status: 413 File too large (max 24MB)
+
+##### Status: 415 Unsupported media type (must be image/\*, audio/\*, or video/\*)
+
+### GET /{hash}
+
+- **Method:** `GET`
+- **Path:** `/{hash}`
+- **Tags:** media.pollinations.ai
+- **Auth required:** No (public)
+
+Retrieve a file by its content hash. No authentication required. Responses are cached immutably for 1 year.
+
+#### Parameters
+
+- **`hash` (required)** — `string` — 16-character hex content hash (pattern: `^[a-f0-9]{16}$`)
+
+#### Response Headers
+
+- `Content-Type` — MIME type of the file
+- `Cache-Control` — `public, max-age=31536000, immutable`
+- `X-Content-Hash` — 16-char hex content hash
+- `X-Content-Size` — File size in bytes
+
+#### Responses
+
+##### Status: 200 File content with appropriate Content-Type
+
+##### Status: 400 Invalid hash format
+
+##### Status: 404 File not found
+
+### HEAD /{hash}
+
+- **Method:** `HEAD`
+- **Path:** `/{hash}`
+- **Tags:** media.pollinations.ai
+- **Auth required:** No (public)
+
+Check if a file exists without downloading. Returns metadata headers.
+
+#### Parameters
+
+- **`hash` (required)** — `string` — 16-character hex content hash
+
+#### Response Headers
+
+- `Content-Type` — MIME type
+- `Content-Length` — File size in bytes
+- `Cache-Control` — `public, max-age=31536000, immutable`
+- `X-Content-Hash` — 16-char hex content hash
+- `X-Uploaded-At` — Upload timestamp (ISO 8601, if available)
+
+#### Responses
+
+##### Status: 200 File exists (headers include metadata)
+
+##### Status: 400 Invalid hash format
+
+##### Status: 404 File not found
+
+### Service Constraints
+
+- **Max file size:** 24MB
+- **Supported types:** `image/*`, `audio/*`, `video/*`
+- **Storage:** Cloudflare R2 (content-addressed, deduplicated)
+- **Retention:** Permanent — files are stored indefinitely with no expiration
+- **Deletion:** Not available — content-addressed storage is append-only by design
+- **Caching:** 1-year immutable cache (`max-age=31536000, immutable`)
+- **Hash algorithm:** SHA-256, truncated to 16 hex characters (64 bits)
+- **No user file listing or management endpoints**
+
 ## Schemas
 
 ### ErrorDetails

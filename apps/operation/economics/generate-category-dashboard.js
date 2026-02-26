@@ -299,9 +299,10 @@ function buildPlatformPanels(platformExpr, startId, startY) {
         gridPos: { h: 12, w: 12, x: 0, y: startY + 1 },
         id: id++,
         options: {
-            displayLabels: ["percent", "name"],
+            displayLabels: ["name", "percent"],
             legend: { displayMode: "table", placement: "right", showLegend: true, values: ["value", "percent"] },
             pieType: "pie",
+            reduceOptions: { calcs: ["lastNotNull"], fields: "", values: true },
             tooltip: { mode: "single", sort: "none" },
         },
         pluginVersion: "12.4.0",
@@ -320,6 +321,17 @@ function buildPlatformPanels(platformExpr, startId, startY) {
             ].join("\n"),
             refId: "A",
         }],
+        transformations: [
+            {
+                id: "rowsToFields",
+                options: {
+                    mappings: [
+                        { fieldName: "platform", handlerKey: "field.name" },
+                        { fieldName: "pollen", handlerKey: "field.value" },
+                    ],
+                },
+            },
+        ],
         title: "Pollen by Platform",
         type: "piechart",
     });

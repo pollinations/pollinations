@@ -5,7 +5,6 @@ import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
 import type { TEXT_SERVICES } from "../shared/registry/text.ts";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
-import chickyTutorPrompt from "./personas/chickytutor.js";
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
 // Import system prompts
@@ -120,11 +119,6 @@ const models: ModelDefinition[] = [
         name: "midijourney",
         config: portkeyConfig["gpt-5.2-2025-12-11"],
         transform: createMessageTransform(midijourneyPrompt),
-    },
-    {
-        name: "chickytutor",
-        config: portkeyConfig["claude-3-5-haiku"],
-        transform: createMessageTransform(chickyTutorPrompt),
     },
     {
         name: "perplexity-fast",

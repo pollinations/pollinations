@@ -163,6 +163,7 @@ export function createAnthropicConfig(additionalConfig = {}) {
     return {
         provider: "anthropic",
         authKey: process.env.ANTHROPIC_API_KEY,
+        defaultOptions: { max_tokens: 4096 },
         ...additionalConfig,
     };
 }

@@ -1,0 +1,27 @@
+{
+  "name": "media.pollinations.ai",
+  "version": "1.0.0",
+  "description": "Media upload service for Pollinations - content-addressed storage for images, audio, and video",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:production": "wrangler deploy --env production",
+    "tail": "wrangler tail",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@hono/standard-validator": "^0.2.2",
+    "hono": "^4.6.0",
+    "hono-openapi": "^1.2.0",
+    "zod": "^3.25.76",
+    "zod-openapi": "^4.2.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260111.0",
+    "typescript": "^5.6.0",
+    "vitest": "^1.0.0",
+    "wrangler": "^4.58.0"
+  }
+}

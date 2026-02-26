@@ -48,12 +48,17 @@ import { generateMusic, generateSpeech } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
-    .filter(([, svc]) => !svc.outputModalities?.includes("video"))
+    .filter(
+        ([, svc]) =>
+            !(svc.outputModalities as string[] | undefined)?.includes("video"),
+    )
     .map(([id]) => `\`${id}\``)
     .join(", ");
 
 const videoModelNames = Object.entries(IMAGE_SERVICES)
-    .filter(([, svc]) => svc.outputModalities?.includes("video"))
+    .filter(([, svc]) =>
+        (svc.outputModalities as string[] | undefined)?.includes("video"),
+    )
     .map(([id]) => `\`${id}\``)
     .join(", ");
 

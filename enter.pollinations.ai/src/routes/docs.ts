@@ -23,17 +23,19 @@ const ALL_ALIASES: Set<string> = new Set([...IMAGE_ALIASES, ...TEXT_ALIASES]);
 const imageModelDisplayNames = Object.keys(IMAGE_SERVICES)
     .filter(
         (id) =>
-            !IMAGE_SERVICES[
-                id as keyof typeof IMAGE_SERVICES
-            ].outputModalities?.includes("video"),
+            !(
+                IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
+                    .outputModalities as string[] | undefined
+            )?.includes("video"),
     )
     .join(", ");
 
 const videoModelDisplayNames = Object.keys(IMAGE_SERVICES)
     .filter((id) =>
-        IMAGE_SERVICES[
-            id as keyof typeof IMAGE_SERVICES
-        ].outputModalities?.includes("video"),
+        (
+            IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
+                .outputModalities as string[] | undefined
+        )?.includes("video"),
     )
     .join(", ");
 
@@ -158,10 +160,12 @@ function generateLLMDoc(): string {
     lines.push("- negative_prompt (string): Only flux, zimage");
     lines.push("- safe (boolean, default: false): Safety filter");
     lines.push(
-        '- quality (low|medium|high|hd, default: "medium"): Only gptimage',
+        '- quality (low|medium|high|hd, default: "medium"): gptimage, gptimage-large',
     );
     lines.push("- image (string): Reference image URL(s), | or , separated");
-    lines.push("- transparent (boolean, default: false): Only gptimage");
+    lines.push(
+        "- transparent (boolean, default: false): gptimage, gptimage-large",
+    );
     lines.push("- duration (int, 1-10): Video duration in seconds");
     lines.push('- aspectRatio ("16:9"|"9:16"): Video only');
     lines.push(
@@ -180,7 +184,7 @@ function generateLLMDoc(): string {
 
     lines.push("### POST /v1/audio/transcriptions");
     lines.push(
-        "Speech-to-text. Multipart: file (audio), model (whisper-large-v3|scribe_v2)",
+        "Speech-to-text. Multipart: file (audio), model (whisper-large-v3|scribe)",
     );
     lines.push("");
 

@@ -1,6 +1,5 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";
@@ -20,6 +19,7 @@ const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getAudioModelsInfo,
     getImageModelsInfo,
@@ -45,6 +45,17 @@ import {
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { generateMusic, generateSpeech } from "./audio.ts";
+
+// Build dynamic model lists from registry for use in API descriptions
+const imageModelNames = Object.entries(IMAGE_SERVICES)
+    .filter(([, svc]) => !svc.outputModalities?.includes("video"))
+    .map(([id]) => `\`${id}\``)
+    .join(", ");
+
+const videoModelNames = Object.entries(IMAGE_SERVICES)
+    .filter(([, svc]) => svc.outputModalities?.includes("video"))
+    .map(([id]) => `\`${id}\``)
+    .join(", ");
 
 const factory = createFactory<Env>();
 
@@ -153,7 +164,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["Models"],
             summary: "List Text Models (OpenAI-compatible)",
             description:
-                "Returns available text models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models` instead.",
+                'Returns available text models in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models` instead.',
             responses: {
                 200: {
                     description: "Success",
@@ -317,7 +328,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
         ...chatCompletionHandlers,
@@ -342,7 +353,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
         validator(
@@ -412,9 +423,9 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate an image or video from a text prompt.",
                 "",
-                "**For images:** Use models like `flux`, `gptimage`, `seedream`, `kontext`, `nanobanana`, and more. Returns JPEG or PNG.",
+                `**For images:** Use models like ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default. Returns JPEG or PNG.`,
                 "",
-                "**For videos:** Use models like `veo`, `seedance`, `wan`, `ltx-2`. Returns MP4. Set `duration` for video length.",
+                `**For videos:** Use models like ${videoModelNames}. Returns MP4. Set \`duration\` for video length.`,
                 "",
                 "Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),
@@ -443,7 +454,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
         validator(
@@ -528,7 +539,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
         validator(

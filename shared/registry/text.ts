@@ -80,6 +80,50 @@ export const TEXT_SERVICES = {
         reasoning: true,
         isSpecialized: false,
     },
+    "qwen": {
+        aliases: [
+            "qwen3.5",
+            "qwen3.5-plus",
+            "qwen3.5-397b",
+            "qwen3.5-397b-a17b",
+        ],
+        modelId: "qwen3.5-plus",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-02-26").getTime(),
+                promptTextTokens: perMillion(0.4),
+                completionTextTokens: perMillion(2.4),
+            },
+        ],
+        description: "Qwen3.5 Plus - Frontier Open MoE with Reasoning",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        paidOnly: true,
+        isSpecialized: false,
+    },
+    "qwen-vision": {
+        aliases: ["qwen3-vl", "qwen3-vl-plus", "qwen-vl"],
+        modelId: "qwen3-vl-plus",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-02-26").getTime(),
+                promptTextTokens: perMillion(0.2),
+                completionTextTokens: perMillion(1.6),
+            },
+        ],
+        description:
+            "Qwen3 VL Plus - Vision-Language Understanding & Reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
+    },
     "qwen-coder": {
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
         modelId: "qwen3-coder-30b-a3b-instruct",

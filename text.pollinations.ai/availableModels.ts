@@ -181,6 +181,16 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["polly"],
     },
     {
+        name: "qwen",
+        config: portkeyConfig["qwen3.5-plus"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "qwen-vision",
+        config: portkeyConfig["qwen3-vl-plus"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],
     },

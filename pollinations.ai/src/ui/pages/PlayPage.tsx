@@ -52,8 +52,13 @@ function PlayPage() {
 
     const currentModel = allModels.find((m) => m.id === selectedModel);
     const isVideoModel = !!currentModel?.hasVideoOutput;
-    const isAudioModel = !isVideoModel && (!!currentModel?.hasAudioOutput || currentModel?.type === "audio");
-    const isImageModel = !isVideoModel && !isAudioModel && imageModels.some((m) => m.id === selectedModel);
+    const isAudioModel =
+        !isVideoModel &&
+        (!!currentModel?.hasAudioOutput || currentModel?.type === "audio");
+    const isImageModel =
+        !isVideoModel &&
+        !isAudioModel &&
+        imageModels.some((m) => m.id === selectedModel);
     const promptPlaceholder = isVideoModel
         ? pageCopy.videoPlaceholder
         : isAudioModel

@@ -72,9 +72,15 @@ function parseAppsMarkdown(markdown: string): App[] {
         const date = cols[ci("Submitted_Date")];
         const approvedDate = cols[ci("Approved_Date")] || "";
         const byopIdx = ci("BYOP");
-        const byop = byopIdx >= 0 && cols.length > byopIdx ? cols[byopIdx] === "true" : false;
+        const byop =
+            byopIdx >= 0 && cols.length > byopIdx
+                ? cols[byopIdx] === "true"
+                : false;
         const req24hIdx = ci("Requests_24h");
-        const requests24h = req24hIdx >= 0 && cols.length > req24hIdx ? parseInt(cols[req24hIdx], 10) || 0 : 0;
+        const requests24h =
+            req24hIdx >= 0 && cols.length > req24hIdx
+                ? parseInt(cols[req24hIdx], 10) || 0
+                : 0;
 
         // If no web URL but there's a repo, use repo as URL (fallback for repo-only apps)
         if (!url && repo) {

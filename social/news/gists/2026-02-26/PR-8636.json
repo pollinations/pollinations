@@ -1,0 +1,33 @@
+{
+  "pr_number": 8636,
+  "title": "fix: show platform badge on app cards",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8636",
+  "merged_at": "2026-02-26T23:57:32Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Badges de-cloaked",
+    "blurb": "The platform badges on app cards were taking minimalism a bit too far. We convinced them to be visible again.",
+    "summary": "Restored the default styling for platform badges on app cards by removing aggressive CSS overrides.",
+    "impact": "Users can now easily identify supported platforms (Web, Android, iOS) when browsing the app showcase.",
+    "keywords": [
+      "ui",
+      "frontend",
+      "css",
+      "apps"
+    ],
+    "visual_concept": "The bee mascot inspecting a floating UI card where a badge has just magically appeared. Represents the restoration of visibility.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot inspecting a floating app card where a shiny new badge has just appeared. Lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel font text: 'VISIBLE'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-26T23:58:15.499956+00:00"
+}

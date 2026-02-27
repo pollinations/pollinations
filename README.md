@@ -44,6 +44,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-02-26** – **📚 Docs Overhaul** Restructured [API Docs](https://enter.pollinations.ai/api/docs) with copy-pasteable code samples in multiple languages. Less reading, more building.
+- **2026-02-26** – **🏷️ Ecosystem Sorting** Added platform badges to the app registry. Filter the 500+ apps by Web, Discord, CLI, or Mobile.
 - **2026-02-25** – **🚀 Media Uploads** New `media.pollinations.ai` service. Upload up to 10MB, get a hash, keep your app's assets persistent.
 - **2026-02-25** – **🎨 Grok-Imagine** Added `grok-imagine` (alpha). xAI's latest visual model is now available for generation.
 - **2026-02-25** – **🎵 Custom Voices** Audio API now accepts custom ElevenLabs voice IDs. Bring your own clones instead of just using presets.
@@ -52,8 +54,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-02-24** – **📦 NPM Package Rename** Packages are now `ompc` and `mcp`. Less typing, plus `claude-fast` is the new default model. [View on NPM](https://www.npmjs.com/package/@pollinations_ai/model-context-protocol)
 - **2026-02-24** – **🗂️ The Garden Organized** Sorted 542 ecosystem apps into 15 categories like "Vibe Coding" and "AI Studio" for better discoverability on the [Main Website](https://hello.pollinations.ai).
 - **2026-02-24** – **💻 Community Tool: fuckits** A new CLI utility that turns natural language descriptions into executable shell scripts. Yes, that is the real name.
-- **2026-02-23** – **🚀 Claude Sonnet 4.6** The default `claude` model alias now points to Sonnet 4.6. Smarter reasoning, better coding, same generous free tier.
-- **2026-02-23** – **🤖 New Agent Models** Added `nomnom` (web research) and `polly` (coding) to the [text API](https://gen.pollinations.ai). Specialized agents with reasoning capabilities.
 ---
 
 ## 🌱 Introduction

@@ -163,6 +163,13 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
+    // Grok Imagine Pro - xAI image generation via official xAI API (paid)
+    "grok-imagine-pro": {
+        type: "xai",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Grok Imagine Video - xAI video generation via api.airforce
     "grok-video": {
         type: "airforce-video",
@@ -181,6 +188,26 @@ export const IMAGE_CONFIG = {
         defaultDuration: 5, // 121 frames at 24 FPS
         maxDuration: 10, // 241 frames
         defaultResolution: "720p",
+    },
+
+    // Grok Video Pro - xAI official video generation API (720p)
+    "grok-video-pro": {
+        type: "xai-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "720p",
+    },
+
+    // Grok Video Pro HD - xAI official video generation API (1080p)
+    "grok-video-pro-hd": {
+        type: "xai-video-hd",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "1080p",
     },
 } as const satisfies ImageModelsConfig;
 

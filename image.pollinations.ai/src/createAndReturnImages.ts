@@ -12,6 +12,7 @@ import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
+import { callXaiImageAPI } from "./models/xaiModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
@@ -1155,6 +1156,10 @@ const generateImage = async (
             progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }
+    }
+
+    if (safeParams.model === "grok-imagine-pro") {
+        return await callXaiImageAPI(prompt, safeParams, progress, requestId);
     }
 
     // api.airforce image models

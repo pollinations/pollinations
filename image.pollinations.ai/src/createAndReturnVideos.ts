@@ -15,6 +15,7 @@ import {
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
 import { callWanAPI } from "./models/wanVideoModel.ts";
+import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 export type { VideoGenerationResult };
@@ -101,6 +102,16 @@ async function routeToVideoModel(
                 progress,
                 requestId,
                 "grok-imagine-video",
+            );
+        case "grok-video-pro":
+            return callXaiVideoAPI(prompt, safeParams, progress, requestId);
+        case "grok-video-pro-hd":
+            return callXaiVideoAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                "1080p",
             );
         default:
             throw new Error(

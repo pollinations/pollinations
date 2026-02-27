@@ -119,6 +119,65 @@ def call_llm(system_prompt, user_message):
 
     return response.json()["choices"][0]["message"]["content"]
 
+def infer_platform(name, url, description):
+    """Deterministically infer platform from name, URL, and description."""
+    from urllib.parse import urlparse
+    d = (description or "").lower()
+    n = (name or "").lower()
+    nd = f"{n} {d}"
+
+    # Parse URL for safe hostname/path checks
+    hostname = ""
+    url_path_lower = ""
+    if url:
+        try:
+            raw = url if url.startswith(("http://", "https://")) else f"https://{url}"
+            parsed = urlparse(raw.lower())
+            hostname = parsed.hostname or ""
+            url_path_lower = (parsed.path or "").lower()
+        except Exception:
+            pass
+
+    def host_is(domain):
+        return hostname == domain or hostname.endswith(f".{domain}")
+
+    # URL-based rules (safe hostname matching)
+    if host_is("play.google.com"): return "android"
+    if host_is("apps.apple.com"): return "ios"
+    if host_is("routinehub.co"): return "ios"
+    if host_is("api.whatsapp.com") or host_is("chat.whatsapp.com"): return "whatsapp"
+    if host_is("t.me"): return "telegram"
+    if host_is("discord.gg") or host_is("discord.com"): return "discord"
+    if host_is("addons.mozilla.org"): return "browser-ext"
+    if host_is("chromewebstore.google.com") or (host_is("chrome.google.com") and url_path_lower.startswith("/webstore")): return "browser-ext"
+    if host_is("roblox.com"): return "roblox"
+    if host_is("pypi.org"): return "library"
+    if host_is("npmjs.com"): return "library"
+    if host_is("wordpress.org") and url_path_lower.startswith("/plugins"): return "wordpress"
+    if host_is("bsky.app"): return "api"
+    if host_is("pkg.go.dev") or host_is("crates.io"): return "library"
+    if url_path_lower.endswith(".exe"): return "windows"
+
+    # Description/name-based rules
+    if "discord bot" in nd or "discord slash" in nd: return "discord"
+    if "telegram bot" in nd or ("telegram" in nd and "bot" in nd): return "telegram"
+    if "whatsapp" in nd: return "whatsapp"
+    if "roblox" in nd: return "roblox"
+    if "wordpress plugin" in nd or "wordpress" in nd: return "wordpress"
+    if "home assistant" in nd: return "api"
+    if "obsidian plugin" in nd: return "library"
+    if "firefox extension" in nd or "chrome extension" in nd or "browser extension" in nd: return "browser-ext"
+    if "command-line" in nd or "command line" in nd or " cli " in nd: return "cli"
+    if "pyqt" in nd or "tkinter" in nd or "desktop app" in nd or "desktop application" in nd: return "desktop"
+    if "rimworld" in nd or "steam workshop" in nd or "game mod" in nd: return "desktop"
+    if "discord" in nd and not hostname: return "discord"
+    if "telegram" in nd and not hostname: return "telegram"
+
+    # Default
+    if hostname: return "web"
+    return "api"
+
+
 def parse_issue(body):
     """Parse issue body to extract app details."""
     def extract(pattern, default=""):
@@ -233,7 +292,8 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 {{
     "emoji": "single emoji that represents this app",
     "category": "one of: image, video_audio, writing, chat, games, learn, bots, build, business",
-    "language": "ISO code like en, zh-CN, es, ja"
+    "language": "ISO code like en, zh-CN, es, ja",
+    "platform": "one of: web, android, ios, windows, macos, desktop, cli, discord, telegram, whatsapp, library, browser-ext, roblox, wordpress, api"
 }}"""
 
     print("🤖 Asking LLM for emoji/category...")
@@ -257,6 +317,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     emoji = llm_data.get("emoji", "🚀")
     category = llm_data.get("category", "build")
     language = llm_data.get("language", "en")
+    platform = llm_data.get("platform") or infer_platform(parsed['name'], parsed['url'], parsed['description'])
 
     print(f"   Emoji: {emoji}")
     print(f"   Category: {category}")
@@ -323,8 +384,8 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 
     issue_url = f"https://github.com/pollinations/pollinations/issues/{ISSUE_NUMBER}"
 
-    # Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h | Health |
-    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |  |  |  |"
+    # Format: | Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h | Health |
+    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | {platform} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |  |  |  |"
 
     # Add row using the prepend script
     os.environ["NEW_ROW"] = new_row

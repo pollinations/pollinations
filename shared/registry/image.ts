@@ -40,6 +40,24 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "nanobanana-2": {
+        aliases: ["nanobanana2"],
+        modelId: "nanobanana-2",
+        provider: "google",
+        paidOnly: true,
+        cost: [
+            // Gemini 3.1 Flash Image via Vertex AI
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.5), // $0.50 per 1M input tokens
+                promptImageTokens: perMillion(0.5), // $0.50 per 1M input tokens
+                completionImageTokens: perMillion(60), // $60 per 1M tokens × 2520 tokens/image = $0.151 per image
+            },
+        ],
+        description: "NanoBanana 2 - Gemini 3.1 Flash Image",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "nanobanana-pro": {
         aliases: [],
         modelId: "nanobanana-pro",
@@ -217,20 +235,20 @@ export const IMAGE_SERVICES = {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
         provider: "alibaba",
-        alpha: true,
+        paidOnly: true,
         cost: [
-            // Wan 2.6 I2V Flash (Singapore/International region)
-            // Video base: 720P $0.025/sec (without audio)
-            // Audio add-on: $0.025/sec (when audio=true)
-            // Total with audio: $0.05/sec
+            // Wan 2.6 - Alibaba DashScope international pricing (720P)
+            // T2V: $0.10/sec, I2V+audio: $0.05/sec, I2V no audio: $0.025/sec
+            // Using I2V+audio rate as base since T2V also generates audio
+            // Audio cost split out separately for tracking
             {
-                date: new Date("2026-01-20").getTime(), // Launch date
-                completionVideoSeconds: 0.025, // $0.025 per second (video only)
-                completionAudioSeconds: 0.025, // $0.025 per second of audio
+                date: new Date("2026-02-20").getTime(),
+                completionVideoSeconds: 0.05, // $0.05 per second (video)
+                completionAudioSeconds: 0.05, // $0.05 per second (audio)
             },
         ],
         description:
-            "Wan 2.6 - Alibaba image-to-video with audio (2-15s, up to 1080P)",
+            "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P) via DashScope",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
@@ -278,8 +296,22 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0025, // $0.0025 per image
             },
         ],
-        description:
-            "Imagen 4 (alpha) - Google's latest image gen, powered by api.airforce",
+        description: "Imagen 4 (api.airforce) - Google's latest image gen",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "grok-imagine": {
+        aliases: [],
+        modelId: "grok-imagine",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-02-16").getTime(),
+                completionImageTokens: 0.0025, // $0.0025 per image
+            },
+        ],
+        description: "Grok Imagine (api.airforce) - xAI image gen",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -294,9 +326,8 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.0025, // $0.0025 per second
             },
         ],
-        description:
-            "Grok Video (alpha) - xAI video gen, powered by api.airforce",
-        inputModalities: ["text"],
+        description: "Grok Video (api.airforce) - xAI video gen",
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
     "ltx-2": {

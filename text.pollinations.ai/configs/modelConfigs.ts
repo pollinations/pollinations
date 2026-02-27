@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAirforceModelConfig,
+    createAnthropicConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
@@ -10,6 +11,7 @@ import {
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
+    createPollyConfig,
     createScalewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -79,12 +81,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // AWS Bedrock - claude-fast, claude, claude-large, chickytutor, nova-fast
+    // AWS Bedrock - claude-fast, claude, claude-large, nova-fast
     // ============================================================================
-    "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        }),
     "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -92,6 +90,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "us.anthropic.claude-sonnet-4-5-20250929-v1:0": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        }),
+    "us.anthropic.claude-sonnet-4-6": () =>
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-sonnet-4-6",
         }),
     "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
         createBedrockNativeConfig({
@@ -113,30 +115,37 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-model-id": "anthropic.claude-opus-4-5@20251101",
         "strict-open-ai-compliance": "true",
     }),
-    "claude-sonnet-4-5-vertex": () => ({
+    "claude-sonnet-4-6-vertex": () => ({
         provider: "vertex-ai",
         authKey: googleCloudAuth.getAccessToken,
         "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "europe-west1",
-        "vertex-model-id": "anthropic.claude-sonnet-4-5@20250929",
+        "vertex-model-id": "anthropic.claude-sonnet-4-6",
         "strict-open-ai-compliance": "true",
     }),
 
     // ============================================================================
-    // Claude Models - Bedrock only (no fallback needed since Claude is paid tier)
+    // Claude Models - Direct Anthropic API (primary)
     // ============================================================================
-    "claude-sonnet-4-5": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "claude-sonnet-4-6": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-4-6",
+            defaultOptions: { max_tokens: 64000 },
         }),
     "claude-opus-4-6": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-6-v1",
+        createAnthropicConfig({
+            model: "claude-opus-4-6",
+            defaultOptions: { max_tokens: 128000 },
         }),
-    // Opus 4.5 - Bedrock only (no fallback needed since Claude is paid tier)
     "claude-opus-4-5": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        createAnthropicConfig({
+            model: "claude-opus-4-5-20251101",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "claude-haiku-4-5": () =>
+        createAnthropicConfig({
+            model: "claude-haiku-4-5-20251001",
+            defaultOptions: { max_tokens: 64000 },
         }),
     "amazon.nova-micro-v1:0": () =>
         createBedrockNativeConfig({
@@ -178,6 +187,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "global",
         "vertex-model-id": "gemini-3-flash-preview",
+        "strict-openai-compliance": "false",
+    }),
+    "gemini-3.1-pro-preview": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "global",
+        "vertex-model-id": "gemini-3.1-pro-preview",
         "strict-openai-compliance": "false",
     }),
     "gemini-2.5-flash-lite": () => ({
@@ -229,23 +246,27 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // OVHcloud AI Endpoints - qwen3-coder
+    // OVHcloud AI Endpoints - qwen3-coder, qwen3guard
     // ============================================================================
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({
             model: "Qwen3-Coder-30B-A3B-Instruct",
         }),
+    "Qwen3Guard-Gen-8B": () =>
+        createOVHcloudMistralConfig({
+            model: "Qwen3Guard-Gen-8B",
+        }),
 
     // ============================================================================
-    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2, kimi-k2.5
+    // Fireworks AI - glm-5, minimax-m2.1, deepseek-v3.2, kimi-k2.5
     // ============================================================================
     "accounts/fireworks/models/kimi-k2p5": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p5",
         }),
-    "accounts/fireworks/models/glm-4p7": () =>
+    "accounts/fireworks/models/glm-5": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-4p7",
+            model: "accounts/fireworks/models/glm-5",
         }),
     "accounts/fireworks/models/minimax-m2p1": () =>
         createFireworksModelConfig({
@@ -257,11 +278,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // Community Models - NomNom (web search/scrape/crawl)
+    // Community Models
     // ============================================================================
     "nomnom": () =>
         createNomNomConfig({
             model: "nomnom",
+        }),
+    "polly": () =>
+        createPollyConfig({
+            model: "polly",
         }),
 
     // ============================================================================

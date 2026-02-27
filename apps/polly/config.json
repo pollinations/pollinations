@@ -14,21 +14,22 @@
   },
   "webhook": {
     "port": 8002,
-    "enabled": true
+    "enabled": false
+  },
+  "api": {
+    "enabled": true,
+    "port": 55288
   },
   "ai": {
     "model": "kimi",
-    "fallback_model": "openai"
+    "fallback_model": "glm"
   },
   "features": {
-    "sandbox_enabled": true,
     "local_embeddings_enabled": true,
     "embeddings_repo": "pollinations/pollinations",
     "doc_embeddings_enabled": true,
     "doc_sites": [
-      "https://enter.pollinations.ai",
-      "https://kpi.myceli.ai",
-      "https://gsoc.pollinations.ai"
+      "https://enter.pollinations.ai/api/docs/open-api/generate-schema"
     ]
   }
 }

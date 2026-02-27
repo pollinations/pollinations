@@ -70,7 +70,7 @@ function roundTo32(n: number): number {
 
 /**
  * Calculate width and height with resolution limits
- * - Default: 768x768
+ * - Uses unified resolution calculation, then applies LTX-2 specific constraints
  * - Max total pixels: 1024x1024 (1,048,576)
  * - Dimensions must be divisible by 32 for LTX-2
  */
@@ -79,11 +79,16 @@ function calculateDimensions(
     inputHeight?: number,
     aspectRatio?: string,
 ): { width: number; height: number } {
-    let width = inputWidth || DEFAULT_SIZE;
-    let height = inputHeight || DEFAULT_SIZE;
+    let width: number;
+    let height: number;
 
-    // Handle aspect ratio presets if no explicit dimensions
-    if (!inputWidth && !inputHeight && aspectRatio) {
+    // If explicit dimensions provided, use them
+    if (inputWidth && inputHeight) {
+        width = inputWidth;
+        height = inputHeight;
+    } else {
+        // Otherwise map aspectRatio to preset dimensions
+        // Note: LTX-2 has MAX_PIXELS constraint (1024x1024), so resolution tiers don't apply
         if (aspectRatio === "16:9") {
             width = 1024;
             height = 576;

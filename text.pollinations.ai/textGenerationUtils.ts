@@ -4,10 +4,13 @@ const log = debug("pollinations:utils");
 
 interface Message {
     role: string;
-    content: string;
+    content: string | null;
     tool_call_id?: string;
     name?: string;
     tool_calls?: unknown[];
+    function_call?: unknown;
+    reasoning_content?: unknown;
+    audio?: unknown;
 }
 
 interface NormalizedOptions {
@@ -16,7 +19,6 @@ interface NormalizedOptions {
     top_p?: number;
     presence_penalty?: number;
     frequency_penalty?: number;
-    repetition_penalty?: number;
     seed?: number;
     max_tokens?: number;
     response_format?: { type: string };
@@ -38,9 +40,20 @@ export function validateAndNormalizeMessages(messages: unknown): Message[] {
             content: msg.content || "",
         };
 
+        if (msg.tool_calls) {
+            normalizedMsg.content = msg.content != null ? msg.content : null;
+        } else if (msg.role === "tool") {
+            normalizedMsg.content = msg.content ?? null;
+        } else {
+            normalizedMsg.content = msg.content || "";
+        }
+
         if (msg.tool_call_id) normalizedMsg.tool_call_id = msg.tool_call_id;
         if (msg.name) normalizedMsg.name = msg.name;
         if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
+        if (msg.function_call) normalizedMsg.function_call = msg.function_call;
+        if (msg.reasoning_content) normalizedMsg.reasoning_content = msg.reasoning_content;
+        if (msg.audio) normalizedMsg.audio = msg.audio;
 
         return normalizedMsg;
     });
@@ -113,13 +126,6 @@ export function normalizeOptions(
         normalized.frequency_penalty = clamp(
             normalized.frequency_penalty,
             -2,
-            2,
-        );
-    }
-    if (normalized.repetition_penalty !== undefined) {
-        normalized.repetition_penalty = clamp(
-            normalized.repetition_penalty,
-            0,
             2,
         );
     }

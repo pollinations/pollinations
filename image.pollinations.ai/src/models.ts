@@ -52,6 +52,13 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
+    // Gemini 3.1 Flash Image via Vertex AI - faster flash with pro-level quality (Nano Banana 2)
+    "nanobanana-2": {
+        type: "vertex-ai-2",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Gemini 3 Pro Image via Vertex AI - high quality image generation (Nano Banana Pro)
     // Supports 1K, 2K, and 4K output resolutions
     "nanobanana-pro": {
@@ -144,6 +151,13 @@ export const IMAGE_CONFIG = {
 
     // Imagen 4 - Google's latest image generation via api.airforce
     "imagen-4": {
+        type: "airforce",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Grok Imagine - xAI image generation via api.airforce
+    "grok-imagine": {
         type: "airforce",
         enhance: false,
         defaultSideLength: 1024,

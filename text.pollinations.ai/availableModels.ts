@@ -3,7 +3,6 @@
 import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
-import chickyTutorPrompt from "./personas/chickytutor.js";
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
 // Import system prompts
@@ -67,12 +66,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude-fast",
-        config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
+        config: portkeyConfig["claude-haiku-4-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude",
-        config: portkeyConfig["claude-sonnet-4-5"],
+        config: portkeyConfig["claude-sonnet-4-6"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -120,11 +119,6 @@ const models: ModelDefinition[] = [
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
-        name: "chickytutor",
-        config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
-        transform: createMessageTransform(chickyTutorPrompt),
-    },
-    {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -141,6 +135,17 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-large",
+        config: portkeyConfig["gemini-3.1-pro-preview"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "gemini-3-pro-preview",
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -176,10 +181,14 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
-    // {
-    //     name: "nomnom",
-    //     config: portkeyConfig["nomnom"],
-    // },
+    {
+        name: "nomnom",
+        config: portkeyConfig["nomnom"],
+    },
+    {
+        name: "polly",
+        config: portkeyConfig["polly"],
+    },
     {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],

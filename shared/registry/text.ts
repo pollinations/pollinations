@@ -245,23 +245,6 @@ export const TEXT_SERVICES = {
         codeExecution: true,
         isSpecialized: false,
     },
-    "chickytutor": {
-        aliases: [],
-        modelId: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        provider: "aws",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.8),
-                completionTextTokens: perMillion(4.0),
-            },
-        ],
-        description: "ChickyTutor AI Language Tutor - (chickytutor.com)",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: true,
-    },
     "midijourney": {
         aliases: [],
         modelId: "gpt-5.2-2025-12-11",
@@ -282,12 +265,13 @@ export const TEXT_SERVICES = {
     },
     "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
-        modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-        provider: "aws",
+        modelId: "claude-haiku-4-5-20251001",
+        provider: "anthropic",
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(1.0),
+                promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(5.0),
             },
         ],
@@ -298,18 +282,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude": {
-        aliases: ["claude-sonnet-4.5", "claude-sonnet"],
-        modelId: "claude-sonnet-4-5-20250929",
-        provider: "google",
+        aliases: ["claude-sonnet-4.6", "claude-sonnet"],
+        modelId: "claude-sonnet-4-6",
+        provider: "anthropic",
         paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(3.0),
+                promptCachedTokens: perMillion(0.3),
                 completionTextTokens: perMillion(15.0),
             },
         ],
-        description: "Anthropic Claude Sonnet 4.5 - Most Capable & Balanced",
+        description: "Anthropic Claude Sonnet 4.6 - Most Capable & Balanced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -317,13 +302,14 @@ export const TEXT_SERVICES = {
     },
     "claude-large": {
         aliases: ["claude-opus-4.6", "claude-opus"],
-        modelId: "claude-opus-4-6-20260205",
-        provider: "google",
+        modelId: "claude-opus-4-6",
+        provider: "anthropic",
         paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(5.0),
+                promptCachedTokens: perMillion(0.5),
                 completionTextTokens: perMillion(25.0),
             },
         ],
@@ -336,13 +322,14 @@ export const TEXT_SERVICES = {
     "claude-legacy": {
         aliases: ["claude-opus-4.5", "claude-large-legacy"],
         modelId: "claude-opus-4-5-20251101",
-        provider: "google",
+        provider: "anthropic",
         paidOnly: true,
         hidden: true,
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(5.0),
+                promptCachedTokens: perMillion(0.5),
                 completionTextTokens: perMillion(25.0),
             },
         ],
@@ -412,26 +399,50 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-large": {
-        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
-        modelId: "gemini-3-pro-preview",
+        aliases: ["gemini-3.1-pro"],
+        modelId: "gemini-3.1-pro-preview",
         provider: "google",
         paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(2.0),
-                promptCachedTokens: perMillion(0.2), // 10% of input price (same ratio as other Gemini models)
+                promptCachedTokens: perMillion(0.2),
                 completionTextTokens: perMillion(12.0),
             },
         ],
         description:
-            "Google Gemini 3 Pro - Most Intelligent Model with 1M Context (Preview)",
+            "Google Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
         search: true,
         codeExecution: false, // Disabled - was breaking gemini-large
+        isSpecialized: false,
+    },
+    "gemini-3-pro-preview": {
+        aliases: ["gemini-3-pro", "gemini-3"],
+        modelId: "gemini-3-pro-preview",
+        provider: "google",
+        paidOnly: true,
+        hidden: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.0),
+                promptCachedTokens: perMillion(0.2),
+                completionTextTokens: perMillion(12.0),
+            },
+        ],
+        description:
+            "Google Gemini 3 Pro (deprecated Mar 9, 2026) - use gemini-large",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        search: true,
+        codeExecution: false,
         isSpecialized: false,
     },
     "gemini-legacy": {
@@ -516,26 +527,45 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
-    // "nomnom": {
-    //     aliases: ["gemini-scrape", "web-research"],
-    //     modelId: "nomnom",
-    //     provider: "community",
-    //     cost: [
-    //         {
-    //             date: new Date("2026-01-17").getTime(),
-    //             promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
-    //             completionTextTokens: perMillion(0.0),
-    //         },
-    //     ],
-    //     description:
-    //         "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
-    //     inputModalities: ["text"],
-    //     outputModalities: ["text"],
-    //     tools: true,
-    //     search: true,
-    //     isSpecialized: false,
-    //     alpha: true,
-    // },
+    "nomnom": {
+        aliases: ["web-scrape", "web-research"],
+        modelId: "nomnom",
+        provider: "community",
+        cost: [
+            {
+                date: new Date("2026-01-17").getTime(),
+            },
+        ],
+        description:
+            "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        search: true,
+        isSpecialized: false,
+        alpha: true,
+    },
+    "polly": {
+        aliases: ["pollinations-ai", "polly-ai"],
+        modelId: "polly",
+        provider: "community",
+        cost: [
+            {
+                date: new Date("2026-02-23").getTime(),
+            },
+        ],
+        description:
+            "Polly by @Itachi-1824 - Pollinations AI Assistant with GitHub, Code Search & Web Tools (Alpha)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        codeExecution: true,
+        search: true,
+        isSpecialized: false,
+        alpha: true,
+    },
     "qwen-safety": {
         aliases: ["qwen3guard-gen-8b"],
         modelId: "Qwen3Guard-Gen-8B",

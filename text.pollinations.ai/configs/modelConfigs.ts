@@ -2,13 +2,16 @@ import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAirforceModelConfig,
+    createAnthropicConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
+    createNomNomConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
+    createPollyConfig,
     createScalewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -106,10 +109,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- AWS Bedrock ----------------------------------------------------------
-    "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        }),
     "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -117,6 +116,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "us.anthropic.claude-sonnet-4-5-20250929-v1:0": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        }),
+    "us.anthropic.claude-sonnet-4-6": () =>
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-sonnet-4-6",
         }),
     "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
         createBedrockNativeConfig({
@@ -131,22 +134,30 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-opus-4-5-vertex": createVertexClaudeConfig(
         "anthropic.claude-opus-4-5@20251101",
     ),
-    "claude-sonnet-4-5-vertex": createVertexClaudeConfig(
-        "anthropic.claude-sonnet-4-5@20250929",
+    "claude-sonnet-4-6-vertex": createVertexClaudeConfig(
+        "anthropic.claude-sonnet-4-6",
     ),
 
-    // -- Claude aliases (Bedrock) ---------------------------------------------
-    "claude-sonnet-4-5": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    // -- Claude Direct Anthropic API ------------------------------------------
+    "claude-sonnet-4-6": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-4-6",
+            defaultOptions: { max_tokens: 64000 },
         }),
     "claude-opus-4-6": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-6-v1",
+        createAnthropicConfig({
+            model: "claude-opus-4-6",
+            defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-4-5": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        createAnthropicConfig({
+            model: "claude-opus-4-5-20251101",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "claude-haiku-4-5": () =>
+        createAnthropicConfig({
+            model: "claude-haiku-4-5-20251001",
+            defaultOptions: { max_tokens: 64000 },
         }),
 
     // -- AWS Bedrock (Nova) ---------------------------------------------------
@@ -175,6 +186,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     // -- Google Vertex AI (Gemini) --------------------------------------------
     "gemini-3-flash-preview": createVertexGeminiConfig(
         "gemini-3-flash-preview",
+        "global",
+    ),
+    "gemini-3.1-pro-preview": createVertexGeminiConfig(
+        "gemini-3.1-pro-preview",
         "global",
     ),
     "gemini-2.5-flash-lite": createVertexGeminiConfig(
@@ -225,6 +240,16 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/deepseek-v3p2": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v3p2",
+        }),
+
+    // -- Community Models -----------------------------------------------------
+    "nomnom": () =>
+        createNomNomConfig({
+            model: "nomnom",
+        }),
+    "polly": () =>
+        createPollyConfig({
+            model: "polly",
         }),
 
     // -- api.airforce ---------------------------------------------------------

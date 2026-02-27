@@ -1,0 +1,51 @@
+name = "image-service-container"
+main = "src/index.ts"
+compatibility_date = "2025-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Container configuration
+[containers]
+dockerfile = "../../Dockerfile"
+build_context = "../../.."
+
+[[durable_objects.bindings]]
+name = "IMAGE_SERVICE"
+class_name = "ImageServiceContainer"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ImageServiceContainer"]
+
+[vars]
+PORT = "16384"
+
+[dev]
+port = 16385
+
+# --- Production ---
+[env.production]
+
+[[env.production.durable_objects.bindings]]
+name = "IMAGE_SERVICE"
+class_name = "ImageServiceContainer"
+
+[[env.production.migrations]]
+tag = "v1"
+new_classes = ["ImageServiceContainer"]
+
+[env.production.vars]
+PORT = "16384"
+
+# --- Staging ---
+[env.staging]
+
+[[env.staging.durable_objects.bindings]]
+name = "IMAGE_SERVICE"
+class_name = "ImageServiceContainer"
+
+[[env.staging.migrations]]
+tag = "v1"
+new_classes = ["ImageServiceContainer"]
+
+[env.staging.vars]
+PORT = "16384"

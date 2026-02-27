@@ -83,18 +83,8 @@ const imageVideoHandlers = factory.createHandlers(
             length: promptParam.length,
         });
 
-        const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
-        targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
-
-        log.debug("Proxying to: {url}", {
-            url: targetUrl.toString(),
-        });
-
-        const response = await proxy(targetUrl.toString(), {
-            method: c.req.method,
-            headers: proxyHeaders(c),
-            body: c.req.raw.body,
-        });
+        // Use service binding if available (Cloudflare Container), else HTTP proxy
+        const response = await proxyToImageService(c, promptParam);
 
         if (!response.ok) {
             const responseText = await response.text();
@@ -686,6 +676,46 @@ export const proxyRoutes = new Hono<Env>()
             });
         },
     );
+
+async function proxyToImageService(
+	c: Context,
+	promptParam: string,
+): Promise<Response> {
+	const imageService = (c.env as Record<string, unknown>)
+		.IMAGE_SERVICE as Fetcher | undefined;
+
+	if (imageService) {
+		// Service binding path: zero-latency internal routing to container Worker
+		const url = new URL(c.req.url);
+		url.pathname = joinPaths("/prompt", promptParam);
+
+		// Copy query params excluding 'key' (auth only)
+		const searchParams = new URLSearchParams(url.search);
+		searchParams.delete("key");
+		if (c.var.model?.resolved && searchParams.has("model")) {
+			searchParams.set("model", c.var.model.resolved);
+		}
+		url.search = searchParams.toString();
+
+		return imageService.fetch(
+			new Request(url.toString(), {
+				method: c.req.method,
+				headers: proxyHeaders(c),
+				body: c.req.raw.body,
+			}),
+		);
+	}
+
+	// HTTP proxy fallback: route to IMAGE_SERVICE_URL (EC2)
+	const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
+	targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
+
+	return proxy(targetUrl.toString(), {
+		method: c.req.method,
+		headers: proxyHeaders(c),
+		body: c.req.raw.body,
+	});
+}
 
 function proxyHeaders(c: Context): Record<string, string> {
     const clientIP = c.req.header("cf-connecting-ip") || "";

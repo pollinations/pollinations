@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pollinations.AI — Seed Deck</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #fafafa;
+    --lime: #ecf874;
+    --text: #111;
+    --gray: #999;
+    --light: #ddd;
+  }
+
+  body { background: #e8e8e8; font-family: 'Inter', sans-serif; color: var(--text); }
+
+  .slide {
+    width: 1440px;
+    height: 810px;
+    margin: 20px auto;
+    padding: 64px 80px;
+    background: var(--bg);
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+  }
+
+  h2 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 24px;
+  }
+
+  p { font-size: 18px; line-height: 1.6; }
+
+  .hl { background: var(--lime); padding: 2px 6px; }
+  .dim { color: var(--gray); }
+
+  .footer {
+    position: absolute;
+    bottom: 28px;
+    left: 80px;
+    font-size: 11px;
+    color: var(--gray);
+  }
+
+  .cols { display: flex; gap: 32px; }
+  .col { flex: 1; }
+
+  .col-label {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .stat-row { margin-bottom: 10px; }
+  .stat-num {
+    font-size: 22px;
+    font-weight: 700;
+    background: var(--lime);
+    padding: 2px 10px;
+    display: inline-block;
+    margin-right: 12px;
+    min-width: 80px;
+  }
+  .stat-label { color: #555; font-size: 15px; }
+
+  .team-name { font-size: 20px; font-weight: 700; }
+  .team-role {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+  .team-bio { font-size: 16px; margin-top: 10px; line-height: 1.6; }
+
+  .funds-bar {
+    display: flex;
+    height: 24px;
+    margin-top: 20px;
+    overflow: hidden;
+  }
+  .funds-bar div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  @media print {
+    body { background: white; }
+    .slide { margin: 0; }
+    @page { size: 1440px 810px; margin: 0; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1 — Title -->
+<div class="slide">
+  <div style="margin-top: -40px;">
+    <h1 style="font-size: 48px; font-weight: 700; letter-spacing: -1px;">
+      <span class="hl" style="padding: 4px 12px;">POLLINATIONS.AI</span>
+    </h1>
+    <p style="font-size: 22px; margin-top: 24px;">Compute and payments for the long tail of AI apps.</p>
+    <p class="dim" style="font-size: 15px; margin-top: 48px;">Seed Round &middot; &euro;1.5M &nbsp;&nbsp;|&nbsp;&nbsp; pollinations.ai</p>
+  </div>
+  <div style="position: absolute; top: 64px; right: 88px; font-size: 48px;">&#128029;</div>
+  <div class="footer">Pollinations.AI &mdash; Seed Deck</div>
+</div>
+
+<!-- SLIDE 2 — Problem -->
+<div class="slide">
+  <h2>Problem</h2>
+  <h3>A million useful AI tools are waiting to exist.</h3>
+  <div class="cols" style="margin-top: 20px;">
+    <div class="col">
+      <div style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">Too small for subscriptions</div>
+      <p style="font-size: 17px;">A calorie tracker, a storybook maker, a game mod. Worth <span class="hl">$0.15/use</span> to a user &mdash; not $5/month.</p>
+    </div>
+    <div class="col">
+      <div style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">Too expensive to give away</div>
+      <p style="font-size: 17px;">Every interaction burns GPU. Free kills the dev. But another subscription kills the user.</p>
+    </div>
+  </div>
+  <p style="margin-top: 40px; font-size: 18px; font-weight: 600;">
+    Creating with AI is addictive. All software will include AI. But there's no economy to sustain it.
+  </p>
+  <div class="footer">Pollinations.AI &mdash; Seed Deck</div>
+</div>
+
+<!-- SLIDE 3 — Solution -->
+<div class="slide">
+  <h2>Solution</h2>
+  <h3>We flip the model. Users pay for what they use.</h3>
+  <p style="font-size: 18px; font-weight: 600; margin-bottom: 24px;">
+    <span class="hl" style="padding: 4px 10px;">Pollen</span> &mdash; Universal credits for AI compute. One wallet, every app.
+  </p>
+  <div class="cols" style="margin-top: 16px;">
+    <div class="col">
+      <div class="col-label">Devs</div>
+      <p style="font-size: 16px;">Free daily compute to start. 40+ text, image, audio &amp; video models. One API. Earn when users pay.</p>
+    </div>
+    <div class="col">
+      <div class="col-label">Users</div>
+      <p style="font-size: 16px;">Buy Pollen, use any app. Pay-as-you-go. One account everywhere.</p>
+    </div>
+    <div class="col">
+      <div class="col-label">Platform</div>
+      <p style="font-size: 16px;">Covers compute. Handles payments. Takes a cut.</p>
+    </div>
+  </div>
+  <p class="dim" style="margin-top: 32px; font-size: 17px;">Every app is a storefront. Same playbook as Shopify and Roblox.</p>
+  <div class="footer">Pollinations.AI &mdash; Seed Deck</div>
+</div>
+
+<!-- SLIDE 4 — Traction -->
+<div class="slide">
+  <h2>Traction</h2>
+  <h3>Revenue growing 10% week-over-week. Zero paid acquisition.</h3>
+  <div class="cols" style="gap: 40px; margin-top: 16px;">
+    <div class="col">
+      <div class="col-label" style="margin-bottom: 14px;">Growth</div>
+      <div class="stat-row"><span class="stat-num">1.1M</span><span class="stat-label">requests / day</span></div>
+      <div class="stat-row"><span class="stat-num">8,200</span><span class="stat-label">weekly active users</span></div>
+      <div class="stat-row"><span class="stat-num">~600</span><span class="stat-label">new users / day</span></div>
+    </div>
+    <div class="col">
+      <div class="col-label" style="margin-bottom: 14px;">Retention</div>
+      <div class="stat-row"><span class="stat-num">~42%</span><span class="stat-label">monthly retention (median)</span></div>
+      <div class="stat-row"><span class="stat-num">+10%</span><span class="stat-label">revenue WoW &middot; 12 weeks</span></div>
+      <div class="stat-row"><span class="stat-num">17K</span><span class="stat-label">Discord community</span></div>
+    </div>
+  </div>
+  <p class="dim" style="font-size: 14px; margin-top: 20px;">Calorie trackers &middot; Games &middot; Discord bots &middot; AI storybooks &middot; chat apps &middot; Claude Code &middot; OpenClaw</p>
+  <p style="font-size: 17px; font-weight: 600; margin-top: 10px;">Payments launched 8 weeks ago. The users who activate, stay and pay.</p>
+  <div class="footer">Pollinations.AI &mdash; Seed Deck</div>
+</div>
+
+<!-- SLIDE 5 — Business Model -->
+<div class="slide">
+  <h2>Business Model</h2>
+  <h3>Users pay per use. We handle compute and payments. We take a cut.</h3>
+  <p style="font-size: 19px; margin-top: 24px;">We add convenience. We keep the volume margin.</p>
+  <p style="font-size: 19px; margin-top: 16px;">
+    <span class="hl" style="font-weight: 700; padding: 3px 8px;">25% gross margin</span> today, expanding with volume.
+  </p>
+  <p style="margin-top: 48px; font-size: 18px; color: #555;">
+    Everyone else charges the builder. <span style="font-weight: 700; color: #111;">We charge the audience.</span>
+  </p>
+  <div class="footer">Pollinations.AI &mdash; Seed Deck</div>
+</div>
+
+<!-- SLIDE 6 — Team -->
+<div class="slide">
+  <h2>Team</h2>
+  <h3>Two founders. 1.1M daily requests. Zero marketing.</h3>
+  <div class="cols" style="gap: 40px; margin-top: 20px;">
+    <div class="col">
+      <div class="team-name">Thomas Haferlach</div>
+      <div class="team-role">CEO</div>
+      <p class="team-bio">AI &amp; CS (Edinburgh). Amazon engineer. 15+ years in AI and creative tech. Built the platform from scratch.</p>
+    </div>
+    <div class="col">
+      <div class="team-name">Elliot Fouchy</div>
+      <div class="team-role">CPO</div>
+      <p class="team-bio">Ops, Finance, Cloud Partnerships. ByteDance, Azure. Payment infra across 195 countries.</p>
+    </div>
+  </div>
+  <div style="margin-top: 32px; border-top: 1px solid var(--light); padding-top: 20px;">
+    <p class="dim" style="font-size: 16px;">17K Discord community. They ship integrations, onboard devs, handle support.</p>
+    <p style="font-size: 16px; margin-top: 10px;">University students in India leading hackathons. A Brazilian teen whose game has 50 million players. They all build on Pollinations.</p>
+  </div>
+  <div class="footer">Pollinations.AI &mdash; Seed Deck</div>
+</div>
+
+<!-- SLIDE 7 — The Ask -->
+<div class="slide">
+  <h2>The Ask</h2>
+  <h3><span class="hl" style="padding: 4px 12px;">&euro;1.5M Seed</span></h3>
+  <p class="dim" style="font-size: 17px; margin-bottom: 20px;">AI moves too fast for a fixed roadmap. We're building for multiple futures.</p>
+  <div style="font-size: 17px; line-height: 2;">
+    <span class="hl" style="font-weight: 700; padding: 2px 8px;">DONE</span>&nbsp;&nbsp;Infrastructure &mdash; 40+ models, one API, 1,000+ apps<br>
+    <span class="hl" style="font-weight: 700; padding: 2px 8px;">NOW</span>&nbsp;&nbsp;&nbsp;&nbsp;Monetization &mdash; Pay-per-use, tightening free tier
+  </div>
+  <div style="font-size: 16px; line-height: 1.9; margin-top: 20px; padding-left: 16px;">
+    Where it goes:<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;Payouts &mdash; Devs earn a cut of what users spend<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;Ads &mdash; Devs earn from free users too<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;x402 &mdash; Agent crypto micropayments<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;Discovery &mdash; App marketplace, curation
+  </div>
+  <div class="funds-bar">
+    <div style="width: 50%; background: var(--lime);">INFRA &amp; FREE-TIER 50%</div>
+    <div style="width: 30%; background: #eee;">ENGINEERING 30%</div>
+    <div style="width: 20%; background: #ddd;">COMMUNITY 20%</div>
+  </div>
+  <div class="footer">Pollinations.AI &mdash; Seed Deck</div>
+</div>
+
+</body>
+</html>

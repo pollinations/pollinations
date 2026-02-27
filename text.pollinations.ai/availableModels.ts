@@ -137,6 +137,17 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-large",
+        config: portkeyConfig["gemini-3.1-pro-preview"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "gemini-3-pro-preview",
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),

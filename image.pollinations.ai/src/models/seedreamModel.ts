@@ -64,7 +64,13 @@ export const callSeedream5API = async (
             "Generating with Seedream 5.0...",
         );
 
-        const sizeParam = `${safeParams.width}x${safeParams.height}`;
+        // Scale up dimensions to meet Seedream 5.0's minimum pixel requirement
+        const scaled = getScaledDimensions(
+            "seedream5",
+            safeParams.width,
+            safeParams.height,
+        );
+        const sizeParam = `${scaled.width}x${scaled.height}`;
         logOps("Using pixel dimensions:", sizeParam);
 
         return await generateWithSeedream(

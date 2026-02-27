@@ -83,7 +83,7 @@ describe("seedreamModel - Seedream 5.0 Lite", () => {
         );
         expect(lastFetchBody.model).toBe("seedream-5-0-260128");
         expect(lastFetchBody.prompt).toBe("test prompt");
-        expect(lastFetchBody.size).toBe("1024x1024");
+        expect(lastFetchBody.size).toBe("1920x1920"); // scaled up to meet 3686400 minPixels
         expect(lastFetchBody.seed).toBe(42);
     });
 

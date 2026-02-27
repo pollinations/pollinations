@@ -34,7 +34,8 @@ export const IMAGE_CONFIG = {
     seedream5: {
         type: "seedream5",
         enhance: false,
-        defaultSideLength: 1024,
+        defaultSideLength: 2048,
+        minPixels: 3686400, // Seedream 5.0 requires at least 1920x1920 pixels
     },
 
     // Legacy (hidden): real Seedream 4.0
@@ -55,6 +56,13 @@ export const IMAGE_CONFIG = {
     // Gemini 2.5 Flash Image via Vertex AI - image-to-image generation
     nanobanana: {
         type: "vertex-ai",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Gemini 3.1 Flash Image via Vertex AI - faster flash with pro-level quality (Nano Banana 2)
+    "nanobanana-2": {
+        type: "vertex-ai-2",
         enhance: false,
         defaultSideLength: 1024,
     },

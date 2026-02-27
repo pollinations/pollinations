@@ -40,6 +40,24 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "nanobanana-2": {
+        aliases: ["nanobanana2"],
+        modelId: "nanobanana-2",
+        provider: "google",
+        paidOnly: true,
+        cost: [
+            // Gemini 3.1 Flash Image via Vertex AI
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.5), // $0.50 per 1M input tokens
+                promptImageTokens: perMillion(0.5), // $0.50 per 1M input tokens
+                completionImageTokens: perMillion(60), // $60 per 1M tokens × 2520 tokens/image = $0.151 per image
+            },
+        ],
+        description: "NanoBanana 2 - Gemini 3.1 Flash Image",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "nanobanana-pro": {
         aliases: [],
         modelId: "nanobanana-pro",

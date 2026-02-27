@@ -15,19 +15,6 @@ export function pipe(...transforms: TransformFn[]): TransformFn {
 }
 
 /**
- * Creates a transform that always appends the given tools to existing tools.
- */
-export function addTools(tools: unknown[]): TransformFn {
-    return (messages, options) => ({
-        messages,
-        options: {
-            ...options,
-            tools: [...(options.tools || []), ...tools],
-        },
-    });
-}
-
-/**
  * Creates a transform that sets default tools only if the user hasn't provided any.
  * Respects explicit empty arrays (user intent to disable tools).
  */
@@ -37,19 +24,6 @@ export function addDefaultTools(defaultTools: unknown[]): TransformFn {
         options: {
             ...options,
             tools: options.tools !== undefined ? options.tools : defaultTools,
-        },
-    });
-}
-
-/**
- * Creates a transform that overrides the model name.
- */
-export function overrideModel(modelName: string | (() => string)): TransformFn {
-    return (messages, options) => ({
-        messages,
-        options: {
-            ...options,
-            model: typeof modelName === "function" ? modelName() : modelName,
         },
     });
 }

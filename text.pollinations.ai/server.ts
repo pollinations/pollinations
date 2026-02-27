@@ -131,21 +131,6 @@ function setUsageHeaders(c: Context, completion: ChatCompletion): void {
     }
 }
 
-function summarizeMessages(
-    messages: ChatMessage[],
-    maxLen = 50,
-): { role: string; content: string }[] {
-    return messages.map((m) => ({
-        role: m.role,
-        content:
-            typeof m.content === "string"
-                ? m.content.length > maxLen
-                    ? `${m.content.substring(0, maxLen)}...`
-                    : m.content
-                : "[non-string content]",
-    }));
-}
-
 function parseErrorDetails(error: ServiceError): unknown {
     if (error.details) return error.details;
     const data = error.response?.data;
@@ -302,62 +287,21 @@ export function sendErrorResponse(
     };
     if (errorDetails) errorResponse.details = errorDetails;
 
-    const clientInfo = {
-        ip: getIp(c.req.raw) || "unknown",
-        userAgent: c.req.header("user-agent") || "unknown",
-        referer: c.req.header("referer") || "unknown",
-        origin: c.req.header("origin") || "unknown",
-    };
-
-    const messages = requestData?.messages;
-    const sanitizedRequestData = requestData
-        ? {
-              model: requestData.model || "unknown",
-              temperature: requestData.temperature,
-              max_tokens: requestData.max_tokens,
-              stream: requestData.stream,
-              referrer: requestData.referrer || "unknown",
-              messageCount: messages?.length ?? 0,
-          }
-        : "no request data";
-
     const authResult =
         (c as unknown as { authResult?: Record<string, unknown> }).authResult ||
         {};
-    const userContext = authResult.username
-        ? `${authResult.username} (${authResult.userId})`
-        : "anonymous";
 
-    errorLog("Error occurred:", {
-        error: {
-            message: error.message,
-            status: responseStatus,
-            details: error.details,
-        },
-        user: {
-            username: authResult.username || null,
-            userId: authResult.userId || null,
-            context: userContext,
-        },
-        model: error.model || requestData?.model || "unknown",
-        provider: error.provider || "Pollinations",
-        originalProvider: error.originalProvider,
-        clientInfo,
-        requestData: sanitizedRequestData,
-        stack: error.stack,
-    });
+    errorLog(
+        "Error: status=%d model=%s user=%s ip=%s message=%s",
+        responseStatus,
+        error.model || requestData?.model || "unknown",
+        authResult.username || "anonymous",
+        getIp(c.req.raw) || "unknown",
+        error.message,
+    );
 
-    if (responseStatus === 429) {
-        const userLabel = authResult.username
-            ? `User ${authResult.username} (${authResult.userId})`
-            : "Anonymous user";
-        errorLog(
-            "RATE LIMIT: %s exceeded limits - IP: %s, tier: %s, model: %s",
-            userLabel,
-            clientInfo.ip,
-            authResult.tier || "none",
-            requestData?.model || "unknown",
-        );
+    if (error.details) {
+        errorLog("Error details: %O", error.details);
     }
 
     return c.json(errorResponse, responseStatus as 400);
@@ -503,18 +447,17 @@ async function generateTextBasedOnModel(
     options: TransformOptions,
 ): Promise<ChatCompletion> {
     log("Using model: %s, stream: %s", options.model, !!options.stream);
-    log("Messages: %j", summarizeMessages(messages));
 
     try {
         return await generateTextPortkey(messages, options);
     } catch (thrown: unknown) {
         const error = thrown as ServiceError;
-        errorLog("Error in generateTextBasedOnModel: %j", {
-            error: error.message,
-            model: options.model,
-            provider: error.provider || "unknown",
-            errorDetails: error.response?.data || null,
-        });
+        errorLog(
+            "Generation failed: model=%s provider=%s error=%s",
+            options.model,
+            error.provider || "unknown",
+            error.message,
+        );
 
         if (options.stream) {
             return {

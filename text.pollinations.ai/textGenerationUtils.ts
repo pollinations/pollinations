@@ -1,52 +1,27 @@
 import debug from "debug";
-import type { ChatMessage } from "./types.js";
+import type { ChatMessage, TransformOptions } from "./types.js";
 
 const log = debug("pollinations:utils");
-
-interface Message {
-    role: string;
-    content: string | null;
-    tool_call_id?: string;
-    name?: string;
-    tool_calls?: unknown[];
-    function_call?: unknown;
-    reasoning_content?: unknown;
-    audio?: unknown;
-}
-
-interface NormalizedOptions {
-    stream: boolean;
-    temperature?: number;
-    top_p?: number;
-    presence_penalty?: number;
-    frequency_penalty?: number;
-    seed?: number;
-    max_tokens?: number;
-    response_format?: { type: string };
-    model?: string;
-    [key: string]: unknown;
-}
 
 /**
  * Validates and ensures each message has required properties.
  */
-export function validateAndNormalizeMessages(messages: unknown): Message[] {
+export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
     if (!Array.isArray(messages) || messages.length === 0) {
         throw new Error("Messages must be a non-empty array");
     }
 
     return messages.map((raw: unknown) => {
         const msg = raw as ChatMessage;
+        const hasToolContext = msg.tool_calls || msg.role === "tool";
         let content: string | null;
-        if (msg.tool_calls) {
-            content = msg.content != null ? String(msg.content) : null;
-        } else if (msg.role === "tool") {
+        if (hasToolContext) {
             content = msg.content != null ? String(msg.content) : null;
         } else {
             content = msg.content ? String(msg.content) : "";
         }
 
-        const normalizedMsg: Message = {
+        const normalizedMsg: ChatMessage = {
             role: msg.role || "user",
             content,
         };
@@ -110,8 +85,8 @@ function clamp(value: number, min: number, max: number): number {
 export function normalizeOptions(
     options: Record<string, unknown> = {},
     defaults: Record<string, unknown> = {},
-): NormalizedOptions {
-    const normalized = { ...defaults, ...options } as NormalizedOptions &
+): TransformOptions {
+    const normalized = { ...defaults, ...options } as TransformOptions &
         Record<string, unknown>;
 
     normalized.stream = parseStreamOption(normalized.stream);

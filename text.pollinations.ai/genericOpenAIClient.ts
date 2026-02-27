@@ -19,20 +19,14 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 
-interface ApiError extends Error {
-    status?: number;
-    details?: unknown;
-    model?: string;
-}
-
 function createApiError(
     response: { status: number; statusText: string },
     details: unknown,
     modelName: string,
-): ApiError {
-    const error: ApiError = new Error(
+): ServiceError {
+    const error = new Error(
         `${response.status} ${response.statusText}`,
-    );
+    ) as ServiceError;
     error.status = response.status;
     error.details = details;
     error.model = modelName;

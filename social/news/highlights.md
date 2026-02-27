@@ -1,3 +1,5 @@
+- **2026-02-26** – **📚 Docs Overhaul** Restructured [API Docs](https://enter.pollinations.ai/api/docs) with copy-pasteable code samples in multiple languages. Less reading, more building.
+- **2026-02-26** – **🏷️ Ecosystem Sorting** Added platform badges to the app registry. Filter the 500+ apps by Web, Discord, CLI, or Mobile.
 - **2026-02-25** – **🚀 Media Uploads** New `media.pollinations.ai` service. Upload up to 10MB, get a hash, keep your app's assets persistent.
 - **2026-02-25** – **🎨 Grok-Imagine** Added `grok-imagine` (alpha). xAI's latest visual model is now available for generation.
 - **2026-02-25** – **🎵 Custom Voices** Audio API now accepts custom ElevenLabs voice IDs. Bring your own clones instead of just using presets.

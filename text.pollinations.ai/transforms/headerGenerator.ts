@@ -1,5 +1,10 @@
 import debug from "debug";
 import { generatePortkeyHeaders } from "../portkeyUtils.js";
+import type {
+    ChatMessage,
+    TransformOptions,
+    TransformResult,
+} from "../types.js";
 
 const log = debug("pollinations:transforms:headers");
 
@@ -7,9 +12,9 @@ const log = debug("pollinations:transforms:headers");
  * Transform that generates provider-specific headers for the request.
  */
 export async function generateHeaders(
-    messages: unknown[],
-    options: Record<string, any>,
-): Promise<{ messages: unknown[]; options: Record<string, any> }> {
+    messages: ChatMessage[],
+    options: TransformOptions,
+): Promise<TransformResult> {
     if (!options.modelConfig) {
         return { messages, options };
     }

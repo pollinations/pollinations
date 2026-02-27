@@ -1,18 +1,17 @@
 import debug from "debug";
+import type {
+    ChatMessage,
+    TransformOptions,
+    TransformResult,
+} from "../types.js";
 
 const log = debug("pollinations:transforms:sanitizer");
-
-interface Message {
-    role: string;
-    content?: string | unknown[];
-    [key: string]: unknown;
-}
 
 /**
  * Replaces empty user message content with placeholder text.
  */
-function sanitizeEmptyUserMessages(messages: Message[]): {
-    messages: Message[];
+function sanitizeEmptyUserMessages(messages: ChatMessage[]): {
+    messages: ChatMessage[];
     replacedCount: number;
 } {
     if (!Array.isArray(messages)) {
@@ -42,9 +41,9 @@ function sanitizeEmptyUserMessages(messages: Message[]): {
  * Transform that sanitizes messages by replacing empty user content with placeholder text.
  */
 export function sanitizeMessages(
-    messages: Message[],
-    options: Record<string, any>,
-): { messages: Message[]; options: Record<string, any> } {
+    messages: ChatMessage[],
+    options: TransformOptions,
+): TransformResult {
     if (
         !Array.isArray(messages) ||
         !options.modelDef ||

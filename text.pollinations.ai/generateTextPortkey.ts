@@ -6,12 +6,18 @@ import { generateHeaders } from "./transforms/headerGenerator.js";
 import { createImageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { sanitizeMessages } from "./transforms/messageSanitizer.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
+import type {
+    ChatCompletion,
+    ChatMessage,
+    TransformFn,
+    TransformOptions,
+    TransformResult,
+} from "./types.js";
 import { resolveModelConfig } from "./utils/modelResolver.js";
 
 dotenv.config();
 
 export const log = debug("pollinations:portkey");
-const errorLog = debug("pollinations:portkey:error");
 
 const DEFAULT_OPTIONS = {
     model: "openai-fast",
@@ -27,103 +33,72 @@ const clientConfig = {
     defaultOptions: DEFAULT_OPTIONS,
 };
 
+/** Applies a transform step, destructuring and reassigning messages/options. */
+async function applyTransform(
+    state: TransformResult,
+    transform: TransformFn,
+    label: string,
+): Promise<TransformResult> {
+    const result = await transform(state.messages, state.options);
+    log(
+        "After %s: modelDef=%s modelConfig=%s",
+        label,
+        !!result.options.modelDef,
+        !!result.options.modelConfig,
+    );
+    return result;
+}
+
 export async function generateTextPortkey(
-    messages: any[],
-    options: any = {},
-): Promise<any> {
-    let processedOptions: any = { ...options };
-    let processedMessages = messages;
+    messages: ChatMessage[],
+    options: TransformOptions = {},
+): Promise<ChatCompletion> {
+    let state: TransformResult = { messages, options: { ...options } };
 
-    if (processedOptions.model) {
-        const modelDef = findModelByName(processedOptions.model);
+    if (state.options.model) {
+        const modelDef = findModelByName(state.options.model);
         if (modelDef?.transform) {
-            try {
-                const transformed = modelDef.transform(
-                    messages,
-                    processedOptions,
-                );
-                const {
-                    messages: transformedMessages,
-                    options: transformedOptions,
-                } = transformed;
-                processedMessages = transformedMessages;
-
-                // Merge transformed options
-                processedOptions = {
-                    ...processedOptions,
-                    ...transformedOptions,
-                };
-            } catch (error) {
-                errorLog("Error applying transform:", error);
-                throw error;
-            }
+            const result = await modelDef.transform(messages, state.options);
+            state = {
+                messages: result.messages,
+                options: { ...state.options, ...result.options },
+            };
         }
     }
 
-    if (processedOptions.model) {
-        try {
-            let result = resolveModelConfig(
-                processedMessages,
-                processedOptions,
-            );
-            processedMessages = result.messages;
-            processedOptions = result.options;
-            log(
-                "After resolveModelConfig:",
-                !!processedOptions.modelDef,
-                !!processedOptions.modelConfig,
-            );
-
-            result = await generateHeaders(processedMessages, processedOptions);
-            processedMessages = result.messages;
-            processedOptions = result.options;
-            log(
-                "After generateHeaders:",
-                !!processedOptions.modelDef,
-                !!processedOptions.modelConfig,
-            );
-
-            const imageUrlTransform = createImageUrlToBase64Transform();
-            result = await imageUrlTransform(
-                processedMessages,
-                processedOptions,
-            );
-            processedMessages = result.messages;
-            processedOptions = result.options;
-            log(
-                "After imageUrlTransform:",
-                !!processedOptions.modelDef,
-                !!processedOptions.modelConfig,
-            );
-
-            result = sanitizeMessages(processedMessages, processedOptions);
-            processedMessages = result.messages;
-            processedOptions = result.options;
-            log(
-                "After sanitizeMessages:",
-                !!processedOptions.modelDef,
-                !!processedOptions.modelConfig,
-            );
-
-            result = processParameters(processedMessages, processedOptions);
-            processedMessages = result.messages;
-            processedOptions = result.options;
-        } catch (error) {
-            errorLog("Error in request transformation:", error);
-            throw error;
-        }
+    if (state.options.model) {
+        state = await applyTransform(
+            state,
+            resolveModelConfig,
+            "resolveModelConfig",
+        );
+        state = await applyTransform(state, generateHeaders, "generateHeaders");
+        state = await applyTransform(
+            state,
+            createImageUrlToBase64Transform(),
+            "imageUrlTransform",
+        );
+        state = await applyTransform(
+            state,
+            sanitizeMessages,
+            "sanitizeMessages",
+        );
+        state = await applyTransform(
+            state,
+            processParameters,
+            "processParameters",
+        );
     }
 
     const requestConfig = {
         ...clientConfig,
-        additionalHeaders: processedOptions.additionalHeaders || {},
+        additionalHeaders: (state.options.additionalHeaders || {}) as Record<
+            string,
+            string
+        >,
     };
 
-    delete processedOptions.additionalHeaders;
+    delete state.options.additionalHeaders;
 
-    return genericOpenAIClient(
-        processedMessages,
-        processedOptions,
-        requestConfig,
-    );
+    return genericOpenAIClient(state.messages, state.options, requestConfig);
 }

@@ -57,12 +57,15 @@ export function validateString(
 /**
  * Checks whether JSON mode is enabled from various input formats.
  */
-export function validateJsonMode(data: Record<string, any>): boolean {
+export function validateJsonMode(data: Record<string, unknown>): boolean {
+    const responseFormat = data.response_format as
+        | Record<string, unknown>
+        | undefined;
     return !!(
         data.jsonMode ||
         (typeof data.json === "string" && data.json.toLowerCase() === "true") ||
         data.json === true ||
-        data.response_format?.type === "json_object"
+        responseFormat?.type === "json_object"
     );
 }
 
@@ -70,18 +73,21 @@ export function validateJsonMode(data: Record<string, any>): boolean {
  * Resolves thinking_budget from either a direct parameter or
  * Anthropic/OpenAI-style thinking object: { type: "enabled"|"disabled", budget_tokens: N }
  */
-function resolveThinkingBudget(data: Record<string, any>): number | undefined {
+function resolveThinkingBudget(
+    data: Record<string, unknown>,
+): number | undefined {
     const direct = validateInt(data.thinking_budget);
     if (direct !== undefined) return direct;
 
     if (data.thinking && typeof data.thinking === "object") {
+        const thinking = data.thinking as Record<string, unknown>;
         if (
-            data.thinking.type === "enabled" &&
-            data.thinking.budget_tokens !== undefined
+            thinking.type === "enabled" &&
+            thinking.budget_tokens !== undefined
         ) {
-            return validateInt(data.thinking.budget_tokens);
+            return validateInt(thinking.budget_tokens);
         }
-        if (data.thinking.type === "disabled") {
+        if (thinking.type === "disabled") {
             return 0;
         }
     }
@@ -93,8 +99,8 @@ function resolveThinkingBudget(data: Record<string, any>): number | undefined {
  * Validates all common text generation parameters from a data object.
  */
 export function validateTextGenerationParams(
-    data: Record<string, any>,
-): Record<string, any> {
+    data: Record<string, unknown>,
+): Record<string, unknown> {
     return {
         temperature: validateFloat(data.temperature),
         top_p: validateFloat(data.top_p),

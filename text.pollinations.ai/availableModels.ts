@@ -14,6 +14,7 @@ import { createSystemPromptTransform } from "./transforms/createSystemPromptTran
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
+import type { TransformFn } from "./types.js";
 
 // Type constraint: model names - using string for now to avoid circular dep
 type ValidServiceName = string;
@@ -21,7 +22,7 @@ type ValidServiceName = string;
 interface ModelDefinition {
     name: ValidServiceName;
     config: (typeof portkeyConfig)[ModelId];
-    transform?: any;
+    transform?: TransformFn;
 }
 
 const models: ModelDefinition[] = [

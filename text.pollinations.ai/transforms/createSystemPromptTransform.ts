@@ -1,28 +1,24 @@
 import { convertSystemToUserMessages } from "../textGenerationUtils.js";
-
-interface Message {
-    role: string;
-    content: string;
-}
-
-type TransformResult = {
-    messages: Message[];
-    options: Record<string, unknown>;
-};
+import type {
+    ChatMessage,
+    TransformFn,
+    TransformOptions,
+    TransformResult,
+} from "../types.js";
 
 /**
  * Creates a transform that adds a default system prompt only if no system message already exists.
  */
 export function createSystemPromptTransform(
     defaultSystemPrompt: string,
-): (messages: Message[], options: Record<string, unknown>) => TransformResult {
+): TransformFn {
     if (!defaultSystemPrompt || typeof defaultSystemPrompt !== "string") {
         throw new Error("defaultSystemPrompt must be a non-empty string");
     }
 
     return function transform(
-        messages: Message[],
-        options: Record<string, unknown>,
+        messages: ChatMessage[],
+        options: TransformOptions,
     ): TransformResult {
         if (!Array.isArray(messages)) {
             throw new Error("messages must be an array");
@@ -51,8 +47,8 @@ export function createSystemPromptTransform(
  * Transform that converts system messages to user messages for providers that don't support system role.
  */
 export function removeSystemMessages(
-    messages: Message[],
-    options: Record<string, unknown>,
+    messages: ChatMessage[],
+    options: TransformOptions,
 ): TransformResult {
     return {
         messages: convertSystemToUserMessages(messages),

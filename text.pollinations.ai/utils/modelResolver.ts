@@ -3,6 +3,11 @@
  */
 import debug from "debug";
 import { findModelByName } from "../availableModels.js";
+import type {
+    ChatMessage,
+    TransformOptions,
+    TransformResult,
+} from "../types.js";
 
 const log = debug("pollinations:model-resolver");
 
@@ -11,9 +16,9 @@ const log = debug("pollinations:model-resolver");
  * User-provided options take precedence over model defaults.
  */
 export function resolveModelConfig(
-    messages: any[],
-    options: Record<string, any>,
-): { messages: any[]; options: Record<string, any> } {
+    messages: ChatMessage[],
+    options: TransformOptions,
+): TransformResult {
     const requestedModel = options.model;
     const modelDef = findModelByName(requestedModel);
 
@@ -21,16 +26,16 @@ export function resolveModelConfig(
         throw new Error(`Model configuration not found for: ${requestedModel}`);
     }
 
-    const config: any =
+    const config = (
         typeof modelDef.config === "function"
             ? modelDef.config()
-            : modelDef.config;
+            : modelDef.config
+    ) as Record<string, unknown>;
 
-    const usedModel =
-        config.model ||
+    const usedModel = (config.model ||
         config["azure-model-name"] ||
         config["azure-deployment-id"] ||
-        config["vertex-model-id"];
+        config["vertex-model-id"]) as string;
 
     log(
         "Processing request for model:",
@@ -49,7 +54,7 @@ export function resolveModelConfig(
     return {
         messages,
         options: {
-            ...(config.defaultOptions || {}),
+            ...((config.defaultOptions || {}) as Record<string, unknown>),
             ...definedOptions,
             model: usedModel,
             modelConfig: config,

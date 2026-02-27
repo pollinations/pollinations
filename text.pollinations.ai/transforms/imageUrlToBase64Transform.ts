@@ -1,5 +1,6 @@
 import debug from "debug";
 import fetch from "node-fetch";
+import type { TransformFn } from "../types.js";
 
 const log = debug("pollinations:transforms:imageUrl");
 const errorLog = debug("pollinations:transforms:imageUrl:error");
@@ -115,12 +116,17 @@ async function fetchImageAsBase64(url: string): Promise<string> {
         const base64 = Buffer.from(arrayBuffer).toString("base64");
         log(`Converted image to base64: ${mimeType}, ${base64.length} chars`);
         return `data:${mimeType};base64,${base64}`;
-    } catch (error: any) {
-        if (error instanceof ImageFetchError) {
-            errorLog(`Image fetch error for ${url}: ${error.message}`);
-            throw error;
+    } catch (thrown: unknown) {
+        if (thrown instanceof ImageFetchError) {
+            errorLog(`Image fetch error for ${url}: ${thrown.message}`);
+            throw thrown;
         }
 
+        const error = thrown as {
+            message?: string;
+            name?: string;
+            code?: string;
+        };
         let errorMessage = `Failed to fetch image from ${url}: ${error.message}`;
 
         if (error.name === "AbortError") {
@@ -175,23 +181,22 @@ async function processMessageContent(
     return Promise.all(content.map(processContentPart));
 }
 
-interface Message {
-    content?: string | ContentPart[];
-    [key: string]: unknown;
-}
-
 /**
  * Creates a transform that converts HTTP image URLs to base64 data URLs
  * for Vertex AI and Bedrock compatibility. These providers require base64
  * inline data rather than HTTP URLs.
  */
-export function createImageUrlToBase64Transform() {
-    return async (messages: Message[], options: Record<string, any>) => {
-        const config = options?.modelConfig;
-        const provider = config?.provider;
-        const targets = config?.targets || [];
+export function createImageUrlToBase64Transform(): TransformFn {
+    return async (messages, options) => {
+        const config = options?.modelConfig as
+            | Record<string, unknown>
+            | undefined;
+        const provider = config?.provider as string | undefined;
+        const targets = (config?.targets || []) as Array<
+            Record<string, unknown>
+        >;
         const hasBase64Target = targets.some(
-            (t: any) => t.provider === "vertex-ai" || t.provider === "bedrock",
+            (t) => t.provider === "vertex-ai" || t.provider === "bedrock",
         );
 
         if (
@@ -204,7 +209,7 @@ export function createImageUrlToBase64Transform() {
 
         const providerInfo = provider
             ? provider
-            : `fallback[${targets.map((t: any) => t.provider).join(", ")}]`;
+            : `fallback[${targets.map((t) => t.provider).join(", ")}]`;
         log(`Processing messages for ${providerInfo} image URL conversion`);
 
         const processedMessages = await Promise.all(
@@ -214,7 +219,7 @@ export function createImageUrlToBase64Transform() {
                 }
 
                 const processedContent = await processMessageContent(
-                    message.content,
+                    message.content as ContentPart[],
                 );
                 return { ...message, content: processedContent };
             }),

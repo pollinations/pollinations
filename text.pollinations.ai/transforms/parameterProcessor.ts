@@ -1,4 +1,9 @@
 import debug from "debug";
+import type {
+    ChatMessage,
+    TransformOptions,
+    TransformResult,
+} from "../types.js";
 
 const log = debug("pollinations:transforms:parameters");
 
@@ -15,14 +20,14 @@ const SAMPLING_PARAMS = [
  * and provider-specific parameter conversions.
  */
 export function processParameters(
-    messages: unknown[],
-    options: Record<string, any>,
-): { messages: unknown[]; options: Record<string, any> } {
+    messages: ChatMessage[],
+    options: TransformOptions,
+): TransformResult {
     if (!options.modelConfig || !options.modelDef) {
         return { messages, options };
     }
 
-    const config = options.modelConfig;
+    const config = options.modelConfig as Record<string, unknown>;
     const updatedOptions = { ...options };
 
     // Apply model-specific sampling parameter defaults
@@ -32,7 +37,7 @@ export function processParameters(
             config[param] !== undefined
         ) {
             log(`Setting ${param} to model default value: ${config[param]}`);
-            updatedOptions[param] = config[param];
+            updatedOptions[param] = config[param] as number;
         }
     }
 

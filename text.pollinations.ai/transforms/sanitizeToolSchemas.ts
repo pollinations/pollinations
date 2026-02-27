@@ -5,6 +5,7 @@
  * See: https://github.com/Portkey-AI/gateway/issues/1473
  * Ref: https://cloud.google.com/vertex-ai/generative-ai/docs/reference/rest/v1/Schema
  */
+import type { TransformFn } from "../types.js";
 
 const UNSUPPORTED_PROPERTIES = new Set([
     "exclusiveMinimum",
@@ -33,8 +34,8 @@ interface Tool {
     [key: string]: unknown;
 }
 
-export function sanitizeToolSchemas() {
-    return (messages: unknown[], options: Record<string, any>) => ({
+export function sanitizeToolSchemas(): TransformFn {
+    return (messages, options) => ({
         messages,
         options: {
             ...options,

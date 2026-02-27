@@ -8,14 +8,24 @@ import { cors } from "hono/cors";
 import { stream } from "hono/streaming";
 import { getIp } from "../shared/extractFromRequest.js";
 import { logIp } from "../shared/ipLogger.js";
-import { getServiceDefinition } from "../shared/registry/registry.ts";
+import {
+    getServiceDefinition,
+    type ServiceId,
+} from "../shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     openaiUsageToUsage,
 } from "../shared/registry/usage-headers.ts";
 import { availableModels, findModelByName } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import { getRequestData } from "./requestUtils.js";
+import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
+import type {
+    ChatCompletion,
+    ChatMessage,
+    RequestData,
+    ServiceError,
+    TransformOptions,
+} from "./types.js";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -107,9 +117,13 @@ function generatePollinationsId(): string {
     return `pllns_${hash}`;
 }
 
-function setUsageHeaders(c: Context, completion: any): void {
+function setUsageHeaders(c: Context, completion: ChatCompletion): void {
     if (completion?.usage && completion?.model) {
-        const usage = openaiUsageToUsage(completion.usage);
+        const usage = openaiUsageToUsage(
+            completion.usage as unknown as Parameters<
+                typeof openaiUsageToUsage
+            >[0],
+        );
         const usageHeaders = buildUsageHeaders(completion.model, usage);
         for (const [key, value] of Object.entries(usageHeaders)) {
             c.header(key, String(value));
@@ -117,36 +131,44 @@ function setUsageHeaders(c: Context, completion: any): void {
     }
 }
 
-function summarizeMessages(messages: any[], maxLen = 50): any[] {
-    return messages.map((m: any) => ({
+function summarizeMessages(
+    messages: ChatMessage[],
+    maxLen = 50,
+): { role: string; content: string }[] {
+    return messages.map((m) => ({
         role: m.role,
         content:
             typeof m.content === "string"
-                ? `${m.content.substring(0, maxLen)}${m.content.length > maxLen ? "..." : ""}`
+                ? m.content.length > maxLen
+                    ? `${m.content.substring(0, maxLen)}...`
+                    : m.content
                 : "[non-string content]",
     }));
 }
 
-function parseErrorDetails(error: any): any {
+function parseErrorDetails(error: ServiceError): unknown {
     if (error.details) return error.details;
-    if (!error.response?.data) return null;
-    if (typeof error.response.data !== "string") return error.response.data;
+    const data = error.response?.data;
+    if (!data) return null;
+    if (typeof data !== "string") return data;
     try {
-        return JSON.parse(error.response.data);
+        return JSON.parse(data);
     } catch {
-        return error.response.data;
+        return data;
     }
 }
 
-function createExpressLikeRequest(c: Context, body: any = null): any {
-    const query = Object.fromEntries(new URL(c.req.url).searchParams);
+function createExpressLikeRequest(
+    c: Context,
+    body: Record<string, unknown> | null = null,
+): ExpressLikeRequest {
     const wildcardPath = c.req.param("*") || c.req.path.slice(1);
-    const params: any = { ...c.req.param() };
+    const params: Record<string, string> = { ...c.req.param() };
     if (wildcardPath) params[0] = wildcardPath;
 
     return {
-        query,
-        body: body || {},
+        query: Object.fromEntries(new URL(c.req.url).searchParams),
+        body: (body || {}) as Record<string, unknown>,
         path: c.req.path,
         params,
         method: c.req.method,
@@ -154,18 +176,18 @@ function createExpressLikeRequest(c: Context, body: any = null): any {
     };
 }
 
-function prepareRequestParameters(requestParams: any): any {
+function prepareRequestParameters(requestParams: RequestData): RequestData {
     let isAudioModel = false;
     try {
-        const serviceDef = getServiceDefinition(requestParams.model);
+        const serviceDef = getServiceDefinition(
+            requestParams.model as ServiceId,
+        );
         isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
     } catch {
         // Model not in registry
     }
 
-    if (!isAudioModel) {
-        return { ...requestParams };
-    }
+    if (!isAudioModel) return requestParams;
 
     const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
     const audioFormat = requestParams.stream ? "pcm16" : "mp3";
@@ -190,32 +212,36 @@ function prepareRequestParameters(requestParams: any): any {
 
 // --- Response senders ---
 
-export function sendOpenAIResponse(c: Context, completion: any): Response {
-    c.header("Content-Type", "application/json; charset=utf-8");
+export function sendOpenAIResponse(
+    c: Context,
+    completion: ChatCompletion,
+): Response {
     setUsageHeaders(c, completion);
 
-    const response = {
+    return c.json({
         ...completion,
         id: completion.id || generatePollinationsId(),
         object: completion.object || "chat.completion",
         created: completion.created || Date.now(),
-    };
-
-    return c.json(response);
+    });
 }
 
-export function sendContentResponse(c: Context, completion: any): Response {
+export function sendContentResponse(
+    c: Context,
+    completion: ChatCompletion,
+): Response {
     setUsageHeaders(c, completion);
     c.header("Cache-Control", "public, max-age=31536000, immutable");
 
     if (typeof completion === "string") {
-        c.header("Content-Type", "text/plain; charset=utf-8");
         return c.text(completion);
     }
 
     if (!completion.choices?.[0]) {
         errorLog("Unrecognized completion format:", JSON.stringify(completion));
-        const error: any = new Error("Unrecognized response format from model");
+        const error: ServiceError = new Error(
+            "Unrecognized response format from model",
+        ) as ServiceError;
         error.status = 500;
         throw error;
     }
@@ -223,18 +249,17 @@ export function sendContentResponse(c: Context, completion: any): Response {
     const message = completion.choices[0].message;
 
     if (typeof message !== "object" || !message) {
-        c.header("Content-Type", "text/plain; charset=utf-8");
         return c.text(String(message));
     }
 
-    if (message.audio?.data) {
+    const audio = message.audio as Record<string, unknown> | undefined;
+    if (audio?.data) {
         c.header("Content-Type", "audio/mpeg");
-        return c.body(Buffer.from(message.audio.data, "base64"));
+        return c.body(Buffer.from(audio.data as string, "base64"));
     }
 
     if (message.content) {
-        c.header("Content-Type", "text/plain; charset=utf-8");
-        let content = message.content;
+        let content = String(message.content);
         if (completion.citations?.length > 0) {
             content += "\n\n---\nSources:\n";
             content += completion.citations
@@ -246,18 +271,16 @@ export function sendContentResponse(c: Context, completion: any): Response {
     }
 
     if (Object.keys(message).length > 0) {
-        c.header("Content-Type", "application/json; charset=utf-8");
         return c.json(message);
     }
 
-    c.header("Content-Type", "text/plain; charset=utf-8");
     return c.text("");
 }
 
 export function sendErrorResponse(
     c: Context,
-    error: any,
-    requestData: any,
+    error: ServiceError,
+    requestData: RequestData | null,
     statusCode = 500,
 ): Response {
     const responseStatus = error.status || statusCode;
@@ -271,7 +294,7 @@ export function sendErrorResponse(
     const errorType = errorTypes[responseStatus] || "Internal Server Error";
 
     const errorDetails = error.details || error.response?.data;
-    const errorResponse: any = {
+    const errorResponse: Record<string, unknown> = {
         error: errorType,
         message: error.message || "An error occurred",
         requestId: Math.random().toString(36).substring(7),
@@ -284,7 +307,6 @@ export function sendErrorResponse(
         userAgent: c.req.header("user-agent") || "unknown",
         referer: c.req.header("referer") || "unknown",
         origin: c.req.header("origin") || "unknown",
-        cf_ray: c.req.header("cf-ray") || "",
     };
 
     const messages = requestData?.messages;
@@ -293,25 +315,15 @@ export function sendErrorResponse(
               model: requestData.model || "unknown",
               temperature: requestData.temperature,
               max_tokens: requestData.max_tokens,
-              top_p: requestData.top_p,
-              frequency_penalty: requestData.frequency_penalty,
-              presence_penalty: requestData.presence_penalty,
               stream: requestData.stream,
               referrer: requestData.referrer || "unknown",
               messageCount: messages?.length ?? 0,
-              totalMessageLength:
-                  messages?.reduce?.(
-                      (total: number, msg: any) =>
-                          total +
-                          (typeof msg?.content === "string"
-                              ? msg.content.length
-                              : 0),
-                      0,
-                  ) ?? 0,
           }
         : "no request data";
 
-    const authResult = (c as any).authResult || {};
+    const authResult =
+        (c as unknown as { authResult?: Record<string, unknown> }).authResult ||
+        {};
     const userContext = authResult.username
         ? `${authResult.username} (${authResult.userId})`
         : "anonymous";
@@ -348,12 +360,12 @@ export function sendErrorResponse(
         );
     }
 
-    return c.json(errorResponse, responseStatus);
+    return c.json(errorResponse, responseStatus as 400);
 }
 
 async function sendAsOpenAIStream(
     c: Context,
-    completion: any,
+    completion: ChatCompletion,
 ): Promise<Response> {
     log(
         "sendAsOpenAIStream: stream=%s, hasResponseStream=%s",
@@ -375,7 +387,7 @@ async function sendAsOpenAIStream(
     return stream(c, async (stream) => {
         if (responseStream) {
             for await (const chunk of responseStream) {
-                await stream.write(chunk);
+                await stream.write(chunk as string);
             }
         } else {
             log("No responseStream available");
@@ -389,7 +401,10 @@ async function sendAsOpenAIStream(
 
 // --- Core request handler ---
 
-async function handleRequest(c: Context, requestData: any): Promise<Response> {
+async function handleRequest(
+    c: Context,
+    requestData: RequestData,
+): Promise<Response> {
     log(
         "Request: model=%s referrer=%s",
         requestData.model,
@@ -399,13 +414,17 @@ async function handleRequest(c: Context, requestData: any): Promise<Response> {
 
     try {
         const requestId = generatePollinationsId();
-        const authResult = (c as any).authResult || {};
+        const authResult =
+            (c as unknown as { authResult?: Record<string, unknown> })
+                .authResult || {};
         const modelDef = findModelByName(requestData.model);
 
         log("Model lookup: model=%s, found=%s", requestData.model, !!modelDef);
 
         if (!modelDef) {
-            const err: any = new Error(`Model not found: ${requestData.model}`);
+            const err = new Error(
+                `Model not found: ${requestData.model}`,
+            ) as ServiceError;
             err.status = 404;
             return sendErrorResponse(c, err, requestData, 404);
         }
@@ -439,7 +458,9 @@ async function handleRequest(c: Context, requestData: any): Promise<Response> {
                     ? { message: completion.error }
                     : completion.error;
 
-            const err: any = new Error(errorObj.message || "An error occurred");
+            const err = new Error(
+                errorObj.message || "An error occurred",
+            ) as ServiceError;
             if (errorObj.details) err.response = { data: errorObj.details };
 
             return sendErrorResponse(
@@ -466,35 +487,32 @@ async function handleRequest(c: Context, requestData: any): Promise<Response> {
             return sendContentResponse(c, completion);
         }
         return sendOpenAIResponse(c, completion);
-    } catch (error: any) {
+    } catch (thrown: unknown) {
+        const error = thrown as ServiceError;
         return sendErrorResponse(
             c,
             error,
             requestData,
-            error.status || error.code || 500,
+            error.status || (typeof error.code === "number" ? error.code : 500),
         );
     }
 }
 
 async function generateTextBasedOnModel(
-    messages: any[],
-    options: any,
-): Promise<any> {
-    if (!options.model) {
-        throw new Error("Model parameter is required");
-    }
-
+    messages: ChatMessage[],
+    options: TransformOptions,
+): Promise<ChatCompletion> {
     log("Using model: %s, stream: %s", options.model, !!options.stream);
     log("Messages: %j", summarizeMessages(messages));
 
     try {
         return await generateTextPortkey(messages, options);
-    } catch (error: any) {
+    } catch (thrown: unknown) {
+        const error = thrown as ServiceError;
         errorLog("Error in generateTextBasedOnModel: %j", {
             error: error.message,
             model: options.model,
             provider: error.provider || "unknown",
-            messages: summarizeMessages(messages, 100),
             errorDetails: error.response?.data || null,
         });
 
@@ -504,7 +522,9 @@ async function generateTextBasedOnModel(
                     message:
                         error.message ||
                         "An error occurred during text generation",
-                    status: error.status || error.code || 500,
+                    status:
+                        error.status ||
+                        (typeof error.code === "number" ? error.code : 500),
                     details: parseErrorDetails(error),
                 },
             };
@@ -523,12 +543,12 @@ app.post("/", async (c) => {
     }
 
     const req = createExpressLikeRequest(c, body);
-    const requestParams = prepareRequestParameters(getRequestData(req as any));
+    const requestParams = prepareRequestParameters(getRequestData(req));
     return handleRequest(c, requestParams);
 });
 
 app.get("/openai/models", (c) => {
-    const models = availableModels.map((model: any) => ({
+    const models = availableModels.map((model) => ({
         id: model.name,
         object: "model",
         created: Date.now(),
@@ -539,19 +559,14 @@ app.get("/openai/models", (c) => {
 app.post("/openai*", async (c) => {
     const body = await c.req.json().catch(() => ({}));
     const req = createExpressLikeRequest(c, body);
-    const requestParams = {
-        ...getRequestData(req as any),
-        isPrivate: true,
-        private: true,
-    };
-    return handleRequest(c, requestParams);
+    return handleRequest(c, getRequestData(req));
 });
 
 app.post("/v1/chat/completions", async (c) => {
     const body = await c.req.json().catch(() => ({}));
     const req = createExpressLikeRequest(c, body);
     const requestParams = {
-        ...getRequestData(req as any),
+        ...getRequestData(req),
         isPrivate: true,
     };
     return handleRequest(c, requestParams);
@@ -559,7 +574,7 @@ app.post("/v1/chat/completions", async (c) => {
 
 app.get("/*", async (c) => {
     const req = createExpressLikeRequest(c);
-    const requestParams = prepareRequestParameters(getRequestData(req as any));
+    const requestParams = prepareRequestParameters(getRequestData(req));
     return handleRequest(c, requestParams);
 });
 

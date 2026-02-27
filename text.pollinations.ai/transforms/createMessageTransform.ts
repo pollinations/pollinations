@@ -1,26 +1,21 @@
-interface Message {
-    role: string;
-    content: string;
-}
-
-type TransformResult = {
-    messages: Message[];
-    options: Record<string, unknown>;
-};
+import type {
+    ChatMessage,
+    TransformFn,
+    TransformOptions,
+    TransformResult,
+} from "../types.js";
 
 /**
  * Creates a transform that prepends a system message, merging with any existing system messages.
  */
-export function createMessageTransform(
-    systemMessage: string,
-): (messages: Message[], options: Record<string, unknown>) => TransformResult {
+export function createMessageTransform(systemMessage: string): TransformFn {
     if (!systemMessage || typeof systemMessage !== "string") {
         throw new Error("systemMessage must be a non-empty string");
     }
 
     return function transform(
-        messages: Message[],
-        options: Record<string, unknown>,
+        messages: ChatMessage[],
+        options: TransformOptions,
     ): TransformResult {
         if (!Array.isArray(messages)) {
             throw new Error("messages must be an array");
@@ -31,7 +26,7 @@ export function createMessageTransform(
 
         const existingSystemContent = messages
             .filter((msg) => msg.role === "system")
-            .map((msg) => msg.content)
+            .map((msg) => String(msg.content || ""))
             .join("\n\n");
 
         const nonSystemMessages = messages.filter(

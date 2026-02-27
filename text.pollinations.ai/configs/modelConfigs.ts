@@ -88,7 +88,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gpt-4o-mini-audio-preview-2024-12-17",
         2048,
     ),
-    "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
+    "myceli-grok-4-fast": createMyceliGrok4FastConfig,
 
     // -- Azure (PointsFlyer) --------------------------------------------------
     "gpt-5-nano-2025-08-07": createAzureWithMaxTokens(

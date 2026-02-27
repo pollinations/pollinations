@@ -1,4 +1,5 @@
 import debug from "debug";
+import type { TransformFn } from "../types.js";
 
 const log = debug("pollinations:transforms:gemini-thinking");
 
@@ -27,8 +28,8 @@ function budgetToReasoningEffort(budget: number): string {
  */
 export function createGeminiThinkingTransform(
     modelType: GeminiModelType = "v2.5",
-) {
-    return (messages: unknown[], options: Record<string, unknown>) => {
+): TransformFn {
+    return (messages, options) => {
         const thinkingBudget = options.thinking_budget as number | undefined;
 
         if (thinkingBudget === undefined) {

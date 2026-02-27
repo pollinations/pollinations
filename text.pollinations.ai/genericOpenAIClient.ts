@@ -6,22 +6,52 @@ import {
     normalizeOptions,
     validateAndNormalizeMessages,
 } from "./textGenerationUtils.js";
+import type {
+    ChatCompletion,
+    ChatMessage,
+    CompletionChoice,
+    OpenAIClientConfig,
+    ServiceError,
+    TransformOptions,
+} from "./types.js";
 import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 
-const log = debug(`pollinations:genericopenai`);
-const errorLog = debug(`pollinations:error`);
+const log = debug("pollinations:genericopenai");
+const errorLog = debug("pollinations:error");
 
 interface ApiError extends Error {
     status?: number;
-    details?: any;
+    details?: unknown;
     model?: string;
 }
 
+function createApiError(
+    response: { status: number; statusText: string },
+    details: unknown,
+    modelName: string,
+): ApiError {
+    const error: ApiError = new Error(
+        `${response.status} ${response.statusText}`,
+    );
+    error.status = response.status;
+    error.details = details;
+    error.model = modelName;
+    return error;
+}
+
+function parseJsonSafe(text: string): unknown {
+    try {
+        return JSON.parse(text);
+    } catch {
+        return null;
+    }
+}
+
 export async function genericOpenAIClient(
-    messages: any[],
-    options: any = {},
-    config: any,
-): Promise<any> {
+    messages: ChatMessage[],
+    options: TransformOptions = {},
+    config: OpenAIClientConfig,
+): Promise<ChatCompletion> {
     const {
         endpoint,
         authHeaderName = "Authorization",
@@ -38,7 +68,7 @@ export async function genericOpenAIClient(
         options,
     });
 
-    let normalizedOptions: any;
+    let normalizedOptions: TransformOptions;
     let modelName: string;
 
     try {
@@ -82,34 +112,37 @@ export async function genericOpenAIClient(
             body: JSON.stringify(requestBody),
         });
 
+        if (!response.ok) {
+            const errorText = await response.text();
+            const errorDetails = parseJsonSafe(errorText) || errorText;
+            errorLog(
+                `[${requestId}] API error (${response.status}):`,
+                errorDetails,
+            );
+            throw createApiError(response, errorDetails, modelName);
+        }
+
         if (normalizedOptions.stream) {
             log(
                 `[${requestId}] Streaming response, status: ${response.status}`,
             );
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                const errorDetails = parseJsonSafe(errorText) || errorText;
-
-                const error: ApiError = new Error(
-                    `${response.status} ${response.statusText}`,
-                );
-                error.status = response.status;
-                error.details = errorDetails;
-                error.model = modelName;
-                throw error;
-            }
-
             let streamToReturn = response.body;
             if (response.body && formatResponse) {
                 streamToReturn = response.body.pipe(
-                    createSseStreamConverter((json: any) => {
-                        const delta = json?.choices?.[0]?.delta;
+                    createSseStreamConverter((json: unknown) => {
+                        const parsed = json as ChatCompletion;
+                        const delta = parsed?.choices?.[0]?.delta;
                         if (!delta) return json;
                         const mapped = formatResponse(delta, json) ?? delta;
                         return {
-                            ...json,
-                            choices: [{ ...json.choices[0], delta: mapped }],
+                            ...parsed,
+                            choices: [
+                                {
+                                    ...(parsed.choices?.[0] ?? {}),
+                                    delta: mapped,
+                                },
+                            ],
                         };
                     }),
                 );
@@ -127,33 +160,22 @@ export async function genericOpenAIClient(
             };
         }
 
-        log(`[${requestId}] Response status: ${response.status}`);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            const errorDetails = parseJsonSafe(errorText) || errorText;
-
-            const error: ApiError = new Error(
-                `${response.status} ${response.statusText}`,
-            );
-            error.status = response.status;
-            error.details = errorDetails;
-            error.model = modelName;
-            errorLog(`[${requestId}] API error:`, errorDetails);
-            throw error;
-        }
-
-        const data: any = await response.json();
-        const completionTime = Date.now() - startTime;
-
+        const data = (await response.json()) as ChatCompletion;
         log(
-            `[${requestId}] Completed in ${completionTime}ms, model: ${data.model || modelName}`,
+            `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${data.model || modelName}`,
         );
 
         const originalChoice = data.choices?.[0] ?? {};
-        const formattedChoice = formatResponse
-            ? formatResponse(originalChoice, requestId, startTime, modelName)
-            : originalChoice;
+        const formattedChoice = (
+            formatResponse
+                ? formatResponse(
+                      originalChoice,
+                      requestId,
+                      startTime,
+                      modelName,
+                  )
+                : originalChoice
+        ) as CompletionChoice;
 
         return {
             ...data,
@@ -161,20 +183,13 @@ export async function genericOpenAIClient(
             object: data.object || "chat.completion",
             choices: [formattedChoice],
         };
-    } catch (error: any) {
+    } catch (thrown: unknown) {
+        const error = thrown as ServiceError;
         errorLog(`[${requestId}] Error:`, {
             error: error.message,
             status: error.status,
             model: modelName,
         });
         throw error;
-    }
-}
-
-function parseJsonSafe(text: string): any {
-    try {
-        return JSON.parse(text);
-    } catch {
-        return null;
     }
 }

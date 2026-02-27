@@ -1,4 +1,5 @@
 import debug from "debug";
+import type { ChatMessage } from "./types.js";
 
 const log = debug("pollinations:utils");
 
@@ -34,19 +35,21 @@ export function validateAndNormalizeMessages(messages: unknown): Message[] {
         throw new Error("Messages must be a non-empty array");
     }
 
-    return messages.map((msg: any) => {
+    return messages.map((raw: unknown) => {
+        const msg = raw as ChatMessage;
+        let content: string | null;
+        if (msg.tool_calls) {
+            content = msg.content != null ? String(msg.content) : null;
+        } else if (msg.role === "tool") {
+            content = msg.content != null ? String(msg.content) : null;
+        } else {
+            content = msg.content ? String(msg.content) : "";
+        }
+
         const normalizedMsg: Message = {
             role: msg.role || "user",
-            content: msg.content || "",
+            content,
         };
-
-        if (msg.tool_calls) {
-            normalizedMsg.content = msg.content != null ? msg.content : null;
-        } else if (msg.role === "tool") {
-            normalizedMsg.content = msg.content ?? null;
-        } else {
-            normalizedMsg.content = msg.content || "";
-        }
 
         if (msg.tool_call_id) normalizedMsg.tool_call_id = msg.tool_call_id;
         if (msg.name) normalizedMsg.name = msg.name;
@@ -63,26 +66,25 @@ export function validateAndNormalizeMessages(messages: unknown): Message[] {
 /**
  * Converts system messages to user messages for models that don't support system messages.
  */
-export function convertSystemToUserMessages(messages: Message[]): Message[] {
-    if (!Array.isArray(messages) || messages.length === 0) {
-        return messages;
-    }
+export function convertSystemToUserMessages(
+    messages: ChatMessage[],
+): ChatMessage[] {
+    if (!messages.length) return messages;
 
     log("Converting system messages to user messages");
 
     return messages.map((msg) => {
-        if (msg.role === "system") {
-            log(
-                "Converting system message to user message:",
-                `${msg.content.substring(0, 50)}...`,
-            );
-            return {
-                ...msg,
-                role: "user",
-                content: `System instruction: ${msg.content}`,
-            };
-        }
-        return msg;
+        if (msg.role !== "system") return msg;
+        const contentStr = typeof msg.content === "string" ? msg.content : "";
+        log(
+            "Converting system message to user message:",
+            `${contentStr.substring(0, 50)}...`,
+        );
+        return {
+            ...msg,
+            role: "user",
+            content: `System instruction: ${msg.content}`,
+        };
     });
 }
 
@@ -106,10 +108,11 @@ function clamp(value: number, min: number, max: number): number {
  * Normalizes options with default values and validates numeric ranges.
  */
 export function normalizeOptions(
-    options: any = {},
-    defaults: any = {},
+    options: Record<string, unknown> = {},
+    defaults: Record<string, unknown> = {},
 ): NormalizedOptions {
-    const normalized: any = { ...defaults, ...options };
+    const normalized = { ...defaults, ...options } as NormalizedOptions &
+        Record<string, unknown>;
 
     normalized.stream = parseStreamOption(normalized.stream);
     log("Normalized stream option to %s", normalized.stream);
@@ -136,7 +139,7 @@ export function normalizeOptions(
     }
 
     if (normalized.maxTokens !== undefined) {
-        normalized.max_tokens = normalized.maxTokens;
+        normalized.max_tokens = normalized.maxTokens as number;
         delete normalized.maxTokens;
     }
 

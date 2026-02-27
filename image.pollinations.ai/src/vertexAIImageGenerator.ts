@@ -4,18 +4,18 @@
  */
 
 import debug from "debug";
-import { withTimeoutSignal } from "./util.ts";
-import { HttpError } from "./httpError.ts";
-import { generateImageWithVertexAI } from "./vertexAIClient.ts";
-import { writeExifMetadata } from "./writeExifMetadata.js";
-import { downloadImageAsBase64 } from "./utils/imageDownload.ts";
-import type { ImageParams } from "./params.js";
 import type {
-    ImageGenerationResult,
     AuthResult,
+    ImageGenerationResult,
 } from "./createAndReturnImages.js";
+import { HttpError } from "./httpError.ts";
+import type { ImageParams } from "./params.js";
+import { withTimeoutSignal } from "./util.ts";
+import { downloadImageAsBase64 } from "./utils/imageDownload.ts";
 import { generateTransparentImage } from "./utils/transparentImage.ts";
 import type { VertexAIImageData } from "./vertexAIClient.ts";
+import { generateImageWithVertexAI } from "./vertexAIClient.ts";
+import { writeExifMetadata } from "./writeExifMetadata.js";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
@@ -47,6 +47,7 @@ async function processNanobananaRequest(
     // Check if this is a nanobanana/nanobanana-pro request with height/width parameters
     const isNanoBananaModel =
         safeParams.model === "nanobanana" ||
+        safeParams.model === "nanobanana-2" ||
         safeParams.model === "nanobanana-pro";
     if (!isNanoBananaModel || !safeParams.width || !safeParams.height) {
         // Return original values for non-nanobanana models or when dimensions are missing
@@ -181,7 +182,9 @@ export async function callVertexAIGemini(
         const vertexModel =
             safeParams.model === "nanobanana-pro"
                 ? "gemini-3-pro-image-preview" // Nano Banana Pro
-                : "gemini-2.5-flash-image-preview"; // Nano Banana (default)
+                : safeParams.model === "nanobanana-2"
+                  ? "gemini-3.1-flash-image-preview" // Nano Banana 2
+                  : "gemini-2.5-flash-image-preview"; // Nano Banana (default)
 
         const vertexRequest = {
             prompt: enhancedPrompt,
@@ -310,7 +313,9 @@ export async function callVertexAIGemini(
                     generator:
                         safeParams.model === "nanobanana-pro"
                             ? "Vertex AI Gemini 3 Pro Image Preview"
-                            : "Vertex AI Gemini 2.5 Flash Image Preview",
+                            : safeParams.model === "nanobanana-2"
+                              ? "Vertex AI Gemini 3.1 Flash Image Preview"
+                              : "Vertex AI Gemini 2.5 Flash Image Preview",
                     textResponse: result.textResponse,
                     usage: result.usage,
                 },

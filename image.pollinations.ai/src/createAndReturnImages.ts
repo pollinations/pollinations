@@ -981,9 +981,10 @@ const generateImage = async (
         }
     }
 
-    // Nano Banana / Nano Banana Pro - Gemini Image generation using Vertex AI
+    // Nano Banana / Nano Banana 2 / Nano Banana Pro - Gemini Image generation using Vertex AI
     if (
         safeParams.model === "nanobanana" ||
+        safeParams.model === "nanobanana-2" ||
         safeParams.model === "nanobanana-pro"
     ) {
         // Detailed logging of authentication info for Nano Banana access
@@ -1040,7 +1041,9 @@ const generateImage = async (
             const modelDisplayName =
                 safeParams.model === "nanobanana-pro"
                     ? "Nano Banana Pro"
-                    : "Nano Banana";
+                    : safeParams.model === "nanobanana-2"
+                      ? "Nano Banana 2"
+                      : "Nano Banana";
             progress.updateBar(
                 requestId,
                 35,

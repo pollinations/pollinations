@@ -13,9 +13,11 @@
 
 // import { getRateLimitStats } from "../logging/rateLimitLogger.js";
 // TODO: Fix this import - logging directory doesn't exist
-const getRateLimitStats = (hours: number) => ({ error: "Rate limit logging not configured" });
+const getRateLimitStats = (_hours: number) => ({
+    error: "Rate limit logging not configured",
+});
 
-const hours = parseInt(process.argv[2]) || 1;
+const hours = parseInt(process.argv[2], 10) || 1;
 
 console.log(`\n🔍 Rate Limit Analysis - Last ${hours} hour(s)\n`);
 

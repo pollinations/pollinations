@@ -27,7 +27,10 @@ const clientConfig = {
     defaultOptions: DEFAULT_OPTIONS,
 };
 
-export async function generateTextPortkey(messages: any[], options: any = {}): Promise<any> {
+export async function generateTextPortkey(
+    messages: any[],
+    options: any = {},
+): Promise<any> {
     let processedOptions: any = { ...options };
     let processedMessages = messages;
 
@@ -65,12 +68,20 @@ export async function generateTextPortkey(messages: any[], options: any = {}): P
             );
             processedMessages = result.messages;
             processedOptions = result.options;
-            log("After resolveModelConfig:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
+            log(
+                "After resolveModelConfig:",
+                !!processedOptions.modelDef,
+                !!processedOptions.modelConfig,
+            );
 
             result = await generateHeaders(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;
-            log("After generateHeaders:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
+            log(
+                "After generateHeaders:",
+                !!processedOptions.modelDef,
+                !!processedOptions.modelConfig,
+            );
 
             const imageUrlTransform = createImageUrlToBase64Transform();
             result = await imageUrlTransform(
@@ -79,12 +90,20 @@ export async function generateTextPortkey(messages: any[], options: any = {}): P
             );
             processedMessages = result.messages;
             processedOptions = result.options;
-            log("After imageUrlTransform:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
+            log(
+                "After imageUrlTransform:",
+                !!processedOptions.modelDef,
+                !!processedOptions.modelConfig,
+            );
 
             result = sanitizeMessages(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;
-            log("After sanitizeMessages:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
+            log(
+                "After sanitizeMessages:",
+                !!processedOptions.modelDef,
+                !!processedOptions.modelConfig,
+            );
 
             result = processParameters(processedMessages, processedOptions);
             processedMessages = result.messages;
@@ -102,5 +121,9 @@ export async function generateTextPortkey(messages: any[], options: any = {}): P
 
     delete processedOptions.additionalHeaders;
 
-    return genericOpenAIClient(processedMessages, processedOptions, requestConfig);
+    return genericOpenAIClient(
+        processedMessages,
+        processedOptions,
+        requestConfig,
+    );
 }

@@ -8,17 +8,20 @@ const { extractReferrer } = sharedUtils as any;
 dotenv.config();
 dotenv.config({ path: ".env.local" });
 
-const log = debug("pollinations:requestUtils");
+const _log = debug("pollinations:requestUtils");
 
 export function getRequestData(req: any): any {
     const data = { ...req.query, ...req.body };
     const validated = validateTextGenerationParams(data);
 
     const systemPrompt = data.system || null;
-    const isPrivate = req.path?.startsWith("/openai") || validated.private === true;
+    const isPrivate =
+        req.path?.startsWith("/openai") || validated.private === true;
     const referrer = extractReferrer(req);
 
-    const messages = data.messages || [{ role: "user", content: req.params[0] }];
+    const messages = data.messages || [
+        { role: "user", content: req.params[0] },
+    ];
     if (systemPrompt) {
         messages.unshift({ role: "system", content: systemPrompt });
     }

@@ -52,7 +52,8 @@ export function validateAndNormalizeMessages(messages: unknown): Message[] {
         if (msg.name) normalizedMsg.name = msg.name;
         if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
         if (msg.function_call) normalizedMsg.function_call = msg.function_call;
-        if (msg.reasoning_content) normalizedMsg.reasoning_content = msg.reasoning_content;
+        if (msg.reasoning_content)
+            normalizedMsg.reasoning_content = msg.reasoning_content;
         if (msg.audio) normalizedMsg.audio = msg.audio;
 
         return normalizedMsg;

@@ -15,7 +15,9 @@ export function createSseStreamConverter(
             let match: RegExpExecArray | null;
             let lastIndex = 0;
 
-            while ((match = eventRegex.exec(buffer)) !== null) {
+            while (true) {
+                match = eventRegex.exec(buffer);
+                if (match === null) break;
                 const dataLine = match[2].trim();
                 lastIndex = eventRegex.lastIndex;
 

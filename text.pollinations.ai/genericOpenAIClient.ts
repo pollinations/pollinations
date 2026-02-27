@@ -50,7 +50,8 @@ export async function genericOpenAIClient(
         modelName = normalizedOptions.model;
 
         const validatedMessages = validateAndNormalizeMessages(messages);
-        const { additionalHeaders: _drop, ...cleanedOptions } = normalizedOptions;
+        const { additionalHeaders: _drop, ...cleanedOptions } =
+            normalizedOptions;
         const requestBody = cleanNullAndUndefined({
             model: modelName,
             messages: validatedMessages,

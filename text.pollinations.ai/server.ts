@@ -158,8 +158,7 @@ function prepareRequestParameters(requestParams: any): any {
     let isAudioModel = false;
     try {
         const serviceDef = getServiceDefinition(requestParams.model);
-        isAudioModel =
-            serviceDef?.outputModalities?.includes("audio") ?? false;
+        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
     } catch {
         // Model not in registry
     }
@@ -168,8 +167,7 @@ function prepareRequestParameters(requestParams: any): any {
         return { ...requestParams };
     }
 
-    const voice =
-        requestParams.voice || requestParams.audio?.voice || "amuch";
+    const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
     const audioFormat = requestParams.stream ? "pcm16" : "mp3";
 
     log(
@@ -216,13 +214,8 @@ export function sendContentResponse(c: Context, completion: any): Response {
     }
 
     if (!completion.choices?.[0]) {
-        errorLog(
-            "Unrecognized completion format:",
-            JSON.stringify(completion),
-        );
-        const error: any = new Error(
-            "Unrecognized response format from model",
-        );
+        errorLog("Unrecognized completion format:", JSON.stringify(completion));
+        const error: any = new Error("Unrecognized response format from model");
         error.status = 500;
         throw error;
     }
@@ -362,8 +355,11 @@ async function sendAsOpenAIStream(
     c: Context,
     completion: any,
 ): Promise<Response> {
-    log("sendAsOpenAIStream: stream=%s, hasResponseStream=%s",
-        completion.stream, !!completion.responseStream);
+    log(
+        "sendAsOpenAIStream: stream=%s, hasResponseStream=%s",
+        completion.stream,
+        !!completion.responseStream,
+    );
 
     if (completion.error) {
         errorLog("Error detected in streaming request");
@@ -393,10 +389,7 @@ async function sendAsOpenAIStream(
 
 // --- Core request handler ---
 
-async function handleRequest(
-    c: Context,
-    requestData: any,
-): Promise<Response> {
+async function handleRequest(c: Context, requestData: any): Promise<Response> {
     log(
         "Request: model=%s referrer=%s",
         requestData.model,
@@ -412,9 +405,7 @@ async function handleRequest(
         log("Model lookup: model=%s, found=%s", requestData.model, !!modelDef);
 
         if (!modelDef) {
-            const err: any = new Error(
-                `Model not found: ${requestData.model}`,
-            );
+            const err: any = new Error(`Model not found: ${requestData.model}`);
             err.status = 404;
             return sendErrorResponse(c, err, requestData, 404);
         }
@@ -448,9 +439,7 @@ async function handleRequest(
                     ? { message: completion.error }
                     : completion.error;
 
-            const err: any = new Error(
-                errorObj.message || "An error occurred",
-            );
+            const err: any = new Error(errorObj.message || "An error occurred");
             if (errorObj.details) err.response = { data: errorObj.details };
 
             return sendErrorResponse(
@@ -465,7 +454,7 @@ async function handleRequest(
             "Generated response: %s",
             completion.stream
                 ? "Streaming"
-                : (completion.choices?.[0]?.message?.content || ""),
+                : completion.choices?.[0]?.message?.content || "",
         );
 
         if (requestData.stream) {
@@ -534,9 +523,7 @@ app.post("/", async (c) => {
     }
 
     const req = createExpressLikeRequest(c, body);
-    const requestParams = prepareRequestParameters(
-        getRequestData(req as any),
-    );
+    const requestParams = prepareRequestParameters(getRequestData(req as any));
     return handleRequest(c, requestParams);
 });
 
@@ -572,9 +559,7 @@ app.post("/v1/chat/completions", async (c) => {
 
 app.get("/*", async (c) => {
     const req = createExpressLikeRequest(c);
-    const requestParams = prepareRequestParameters(
-        getRequestData(req as any),
-    );
+    const requestParams = prepareRequestParameters(getRequestData(req as any));
     return handleRequest(c, requestParams);
 });
 

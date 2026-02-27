@@ -1,0 +1,13 @@
+{
+  "title": "Added health checks to the app directory and rewrote the API docs",
+  "image_prompt": "Cozy pixel art scene of the cute bee mascot (Polly) wearing a tiny straw gardener's hat, pruning a pixelated plant where the leaves are square app icons. A round tan Nomnom creature is happily eating a fallen withered leaf (representing a stale app). Lime green (#ecf874) and soft pastel cream gradient background. Text in chunky pixel font: 'GARDENING'. Warm lighting, lo-fi 8-bit aesthetic, chunky sprites like Stardew Valley. Nostalgic, clean, and emotionally warm.",
+  "body": "Shipped a few maintenance updates today to keep the ecosystem clean.\n\nThe biggest change is automated gardening for the app directory. We added daily health checks that auto-remove stale apps (#8546). If an endpoint goes down, it shouldn't clutter the list. We also added platform badges (#8636) so you can see where things actually run before clicking.\n\nDocumentation got a significant overhaul (#8597). Restructured the API docs and added actual code samples that work. Trying to make the barrier to entry lower for new contributors.\n\nOn the backend, tuned the model monitor to exclude user errors from health checks (#8599). 400s aren't 500s, and our alerting shouldn't treat them the same way.\n\nCode is open as always.",
+  "reasoning": "Title is purely factual and descriptive, avoiding hype. Body focuses on the 'why' behind the changes (removing clutter, distinguishing 400s vs 500s) which appeals to developers. Image uses the 'gardening' metaphor to visualize the abstract concept of stale app removal in the required cozy pixel style.",
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-26/images/reddit.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot (Polly) wearing a tiny straw gardener's hat, pruning a pixelated plant where the leaves are square app icons. A round tan Nomnom creature is happily eating a fallen withered leaf (representing a stale app). Lime green (#ecf874) and soft pastel cream gradient background. Text in chunky pixel font: 'GARDENING'. Warm lighting, lo-fi 8-bit aesthetic, chunky sprites like Stardew Valley. Nostalgic, clean, and emotionally warm."
+  },
+  "date": "2026-02-26",
+  "generated_at": "2026-02-27T06:17:09.686070+00:00",
+  "platform": "reddit"
+}

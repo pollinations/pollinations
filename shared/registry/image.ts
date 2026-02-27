@@ -78,19 +78,36 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "seedream5": {
+        aliases: [],
+        modelId: "seedream5",
+        provider: "bytedance",
+        paidOnly: true,
+        cost: [
+            // ByteDance ARK Seedream 5.0 Lite - $0.035 per image
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.035, // $0.035 per image (3.5 cents)
+            },
+        ],
+        description:
+            "Seedream 5.0 Lite - ByteDance ARK (web search, reasoning)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "seedream": {
         aliases: [],
         modelId: "seedream",
         provider: "bytedance",
         paidOnly: true,
+        hidden: true,
         cost: [
-            // ByteDance ARK Seedream 4.0 - $0.03 per image
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.03, // $0.03 per image (3 cents)
+                completionImageTokens: 0.03, // $0.03 per image (real 4.0)
             },
         ],
-        description: "Seedream 4.0 - ByteDance ARK (better quality)",
+        description: "Seedream 4.0 - ByteDance ARK (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -99,14 +116,14 @@ export const IMAGE_SERVICES = {
         modelId: "seedream-pro",
         provider: "bytedance",
         paidOnly: true,
+        hidden: true,
         cost: [
-            // ByteDance ARK Seedream 4.5 - $0.04 per image
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.04, // $0.04 per image (4 cents)
+                completionImageTokens: 0.04, // $0.04 per image (real 4.5)
             },
         ],
-        description: "Seedream 4.5 Pro - ByteDance ARK (4K, Multi-Image)",
+        description: "Seedream 4.5 Pro - ByteDance ARK (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

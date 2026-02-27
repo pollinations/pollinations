@@ -1,0 +1,34 @@
+{
+  "pr_number": 8648,
+  "title": "add remaining tier pollen panel to tier-costs dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8648",
+  "merged_at": "2026-02-27T12:15:43Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Economy watch",
+    "blurb": "Upgraded our internal dashboards to track the flow of Pollen in real-time. We can now see exactly how fast the hive is buzzing.",
+    "summary": "Added a stacked bar chart panel to the internal tier-costs dashboard to visualize remaining pollen budgets across active users.",
+    "impact": "Gives the team better visibility into economy health and tier depletion rates.",
+    "keywords": [
+      "dashboard",
+      "metrics",
+      "pollen",
+      "economy",
+      "monitoring"
+    ],
+    "visual_concept": "The robot mascot (who loves screens) analyzing a new data chart. The chart represents the 'honey reserves' (pollen). The bee is supervising.",
+    "image_prompt": "Cozy pixel art of the robot mascot pointing at a large glowing chart showing stacked bars of pollen usage. The bee mascot floats nearby with a tiny clipboard. Lime green (#ecf874) and soft pastel background. Chunky pixels, warm lighting, lo-fi sci-fi control room vibes. Text in pixel font: 'METRICS'. Nostalgic and clean."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-27T12:16:40.456280+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8622,
+  "title": "feat: add Seedream 5.0 Lite as seedream5, keep legacy models hidden",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8622",
+  "merged_at": "2026-02-27T18:12:04Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Dreaming in High Definition",
+    "blurb": "Seedream 5.0 Lite has arrived in the garden. It's faster, sharper, and ready to turn your prompts into pixel-perfect reality.",
+    "summary": "Added support for the Seedream 5.0 Lite model (`seedream5`) while preserving legacy access to version 4.0 and 4.5.",
+    "impact": "Users can now generate images with the latest Seedream 5.0 engine by specifying `model: 'seedream5'` in their requests.",
+    "keywords": [
+      "models",
+      "image-generation",
+      "seedream",
+      "api",
+      "bytedance"
+    ],
+    "visual_concept": "The concept of 'Seedream' translates literally to a magical garden. We visualize the upgrade to 5.0 as a new, more vibrant species of plant being introduced to the ecosystem.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot planting a glowing magical seed labeled '5.0' in a garden bed. The seed is sprouting into a vibrant, holographic dream cloud. Lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'SEEDREAM 5'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-27T18:12:53.405991+00:00"
+}

@@ -11,7 +11,11 @@ import { incrementModelCounter } from "./modelCounter.ts";
 import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
-import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
+import {
+    callSeedream5API,
+    callSeedreamAPI,
+    callSeedreamProAPI,
+} from "./models/seedreamModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
@@ -1092,8 +1096,24 @@ const generateImage = async (
         }
     }
 
+    if (safeParams.model === "seedream5") {
+        // Seedream 5.0 Lite - web search, reasoning
+        try {
+            return await callSeedream5API(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+        } catch (error) {
+            logError("Seedream 5.0 generation failed:", error.message);
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
+        }
+    }
+
     if (safeParams.model === "seedream") {
-        // Seedream 4.0 - better quality (default)
+        // Legacy: routes to Seedream 5.0
         try {
             return await callSeedreamAPI(
                 prompt,
@@ -1102,14 +1122,14 @@ const generateImage = async (
                 requestId,
             );
         } catch (error) {
-            logError("Seedream 4.0 generation failed:", error.message);
+            logError("Seedream (legacy) generation failed:", error.message);
             progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }
     }
 
     if (safeParams.model === "seedream-pro") {
-        // Seedream 4.5 Pro - 4K, multi-image
+        // Legacy: routes to Seedream 5.0
         try {
             return await callSeedreamProAPI(
                 prompt,
@@ -1118,7 +1138,7 @@ const generateImage = async (
                 requestId,
             );
         } catch (error) {
-            logError("Seedream 4.5 Pro generation failed:", error.message);
+            logError("Seedream Pro (legacy) generation failed:", error.message);
             progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }

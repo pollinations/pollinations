@@ -30,18 +30,26 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // ByteDance ARK Seedream 4.0 - better quality (default)
+    // ByteDance ARK Seedream 5.0 Lite - web search, reasoning
+    seedream5: {
+        type: "seedream5",
+        enhance: false,
+        defaultSideLength: 2048,
+        minPixels: 3686400, // Seedream 5.0 requires at least 1920x1920 pixels
+    },
+
+    // Legacy (hidden): real Seedream 4.0
     seedream: {
         type: "seedream",
         enhance: false,
-        defaultSideLength: 1024, // Seedream 4.0 standard resolution
+        defaultSideLength: 1024,
     },
 
-    // ByteDance ARK Seedream 4.5 Pro - high quality 4K image generation
+    // Legacy (hidden): real Seedream 4.5 Pro
     "seedream-pro": {
         type: "seedream-pro",
         enhance: false,
-        defaultSideLength: 2048, // Seedream 4.5 supports up to 4K
+        defaultSideLength: 2048,
         minPixels: 3686400, // Seedream 4.5 requires at least 1920x1920 pixels
     },
 

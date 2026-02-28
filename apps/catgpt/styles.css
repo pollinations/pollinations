@@ -110,11 +110,6 @@ header {
     text-decoration: none;
     font-weight: 600;
     position: relative;
-    transition: all 0.3s;
-}
-
-.intro-text a:hover {
-    color: var(--color-accent);
 }
 
 .intro-text a::after {
@@ -179,10 +174,6 @@ header {
 }
 
 /* === Upload === */
-
-.upload-container {
-    width: 100%;
-}
 
 .image-upload-input {
     width: 100%;
@@ -501,10 +492,6 @@ footer a {
     font-weight: 600;
 }
 
-footer a:hover {
-    color: var(--color-accent);
-}
-
 .footer-small {
     font-size: 0.9rem;
     margin-top: 0.5rem;
@@ -585,7 +572,6 @@ footer a:hover {
 
     .action-buttons {
         flex-direction: column;
-        width: 100%;
     }
 
     .action-btn {
@@ -669,7 +655,6 @@ footer a:hover {
     .examples-grid,
     .your-memes-grid {
         grid-template-columns: 1fr;
-        gap: 1rem;
     }
 
     .action-buttons {

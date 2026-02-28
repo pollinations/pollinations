@@ -85,15 +85,8 @@ export async function fetchImageWithAuth(imageUrl) {
     });
 
     if (!response.ok) {
-        const responseText = await response.text().catch(() => "");
-        let errorDetails;
-        try {
-            const errorData = JSON.parse(responseText);
-            errorDetails = errorData.error?.message || JSON.stringify(errorData);
-        } catch {
-            errorDetails = responseText || `HTTP ${response.status}: ${response.statusText}`;
-        }
-        console.error("API Error:", { status: response.status, details: errorDetails, url: imageUrl });
+        const errorText = await response.text().catch(() => "");
+        console.error("API Error:", { status: response.status, details: errorText, url: imageUrl });
         throw new Error(`API_ERROR_${response.status}`);
     }
 
@@ -102,15 +95,6 @@ export async function fetchImageWithAuth(imageUrl) {
 }
 
 // ── Cloudinary Upload ───────────────────────────────────────────────────────
-
-function fileToDataURI(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
 
 async function uploadToCloudinary(file) {
     const formData = new FormData();
@@ -148,7 +132,12 @@ export async function handleImageUpload(file, showNotification) {
         console.error("Cloudinary upload failed:", error);
         showNotification("Cloud upload failed. Trying local method...", "warning");
         try {
-            const dataUri = await fileToDataURI(file);
+            const dataUri = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
             if (dataUri.length > 500000) {
                 showNotification("Image may be too large for reliable use. Results might vary.", "warning");
             }

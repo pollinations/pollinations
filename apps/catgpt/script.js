@@ -173,8 +173,7 @@ const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
 
 function saveGeneratedMeme(prompt, blobUrl) {
     const saved = getSavedMemes();
-    const now = Date.now();
-    const newMeme = { prompt, url: blobUrl, timestamp: now };
+    const newMeme = { prompt, url: blobUrl, timestamp: Date.now() };
     const updated = [newMeme, ...saved.filter((m) => m.prompt !== prompt)].slice(0, 8);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 }
@@ -182,20 +181,15 @@ function saveGeneratedMeme(prompt, blobUrl) {
 function getSavedMemes() {
     try {
         const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        cleanupOldMemes(data);
-        return data;
+        const now = Date.now();
+        const filtered = data.filter((m) => now - m.timestamp < ONE_MONTH);
+        if (filtered.length !== data.length) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+        }
+        return filtered;
     } catch {
         return [];
     }
-}
-
-function cleanupOldMemes(memes) {
-    const now = Date.now();
-    const filtered = memes.filter((m) => now - m.timestamp < ONE_MONTH);
-    if (filtered.length !== memes.length) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    }
-    return filtered;
 }
 
 // ── Animations ──────────────────────────────────────────────────────────────
@@ -236,9 +230,10 @@ function stopCatAnimation() {
 }
 
 function startFakeProgress() {
-    progressStep = 0;
+    progressStep = 1;
     const progressText = document.createElement("div");
     progressText.id = "progress-text";
+    progressText.textContent = PROGRESS_MESSAGES[0];
     progressText.style.cssText = `
         text-align: center;
         font-size: 0.9rem;
@@ -257,9 +252,6 @@ function startFakeProgress() {
             progressText.textContent = "🎨 Finalizing your masterpiece...";
         }
     }, 2500);
-
-    progressText.textContent = PROGRESS_MESSAGES[0];
-    progressStep = 1;
 }
 
 function stopFakeProgress() {
@@ -317,12 +309,6 @@ let uploadedImageUrl = null;
 
 // ── Cards ───────────────────────────────────────────────────────────────────
 
-function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 function sanitizeImageUrl(url) {
     if (!url || typeof url !== "string") return null;
     try {
@@ -358,12 +344,12 @@ function createMemeCard(prompt, index, imageUrl, isUserMeme = false) {
 
     const img = document.createElement("img");
     img.src = safeUrl;
-    img.alt = escapeHtml(prompt);
+    img.alt = prompt;
     img.loading = "lazy";
     card.appendChild(img);
 
     const promptText = document.createElement("p");
-    promptText.textContent = `"${escapeHtml(prompt)}"`;
+    promptText.textContent = `"${prompt}"`;
     card.appendChild(promptText);
 
     card.addEventListener("click", () => {
@@ -406,15 +392,11 @@ function loadUserMemes() {
 
 function loadExamples() {
     dom.examplesGrid.innerHTML = "";
-    Array.from(EXAMPLES_MAP.keys()).forEach((prompt, index) => {
-        const card = createMemeCard(prompt, index, EXAMPLES_MAP.get(prompt));
+    let index = 0;
+    for (const [prompt, url] of EXAMPLES_MAP) {
+        const card = createMemeCard(prompt, index++, url);
         if (card) dom.examplesGrid.appendChild(card);
-    });
-}
-
-function refreshGalleries() {
-    loadUserMemes();
-    loadExamples();
+    }
 }
 
 // ── Error Handling ──────────────────────────────────────────────────────────
@@ -540,7 +522,8 @@ async function generateMeme() {
         stopCatAnimation();
         celebrate();
         saveGeneratedMeme(userQuestion, imageUrl);
-        refreshGalleries();
+        loadUserMemes();
+        loadExamples();
     } catch (error) {
         clearTimeout(imageLoadTimeout);
         console.error("Generation error:", error);
@@ -574,7 +557,7 @@ async function downloadMeme() {
 }
 
 async function shareMeme() {
-    if (!dom.generatedMeme.getAttribute("src")) {
+    if (!dom.generatedMeme.src) {
         showNotification("Generate a meme first! 🎨", "warning");
         return;
     }

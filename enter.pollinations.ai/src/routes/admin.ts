@@ -73,6 +73,14 @@ async function sendBulkTierRefillEvents(
     logger: Logger,
 ): Promise<void> {
     if (!tinybirdUrl || !tinybirdToken || users.length === 0) {
+        logger.warn(
+            "TINYBIRD_TIER_SKIP: url={url} token={token} users={users}",
+            {
+                url: !!tinybirdUrl,
+                token: !!tinybirdToken,
+                users: users.length,
+            },
+        );
         return;
     }
 
@@ -102,18 +110,33 @@ async function sendBulkTierRefillEvents(
             body: events,
         });
 
+        const responseText = await response.text();
+
         if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(
-                "Failed to send tier refill events to Tinybird: {error}",
-                {
-                    error: errorText,
-                    status: response.status,
-                },
-            );
+            logger.error("TINYBIRD_TIER_ERROR: status={status} error={error}", {
+                status: response.status,
+                error: responseText,
+            });
+        } else {
+            try {
+                const result = JSON.parse(responseText);
+                logger.info(
+                    "TINYBIRD_TIER_SENT: total={total} success={success} quarantined={quarantined}",
+                    {
+                        total: users.length,
+                        success: result.successful_rows ?? 0,
+                        quarantined: result.quarantined_rows ?? 0,
+                    },
+                );
+            } catch {
+                logger.info(
+                    "TINYBIRD_TIER_SENT: total={total} response={response}",
+                    { total: users.length, response: responseText },
+                );
+            }
         }
     } catch (err) {
-        logger.error("Failed to send tier refill events to Tinybird: {error}", {
+        logger.error("TINYBIRD_TIER_FAIL: error={error}", {
             error: err instanceof Error ? err.message : String(err),
         });
     }

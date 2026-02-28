@@ -230,7 +230,9 @@ function stopCatAnimation() {
         clearInterval(catAnimationInterval);
         catAnimationInterval = null;
     }
-    document.querySelectorAll("[style*='catSlide']").forEach((cat) => cat.remove());
+    for (const cat of document.querySelectorAll("[style*='catSlide']")) {
+        cat.remove();
+    }
 }
 
 function startFakeProgress() {
@@ -334,7 +336,7 @@ function sanitizeImageUrl(url) {
 }
 
 function createMemeCard(prompt, index, imageUrl, isUserMeme = false) {
-    const safeUrl = isUserMeme ? sanitizeImageUrl(imageUrl) : imageUrl;
+    const safeUrl = sanitizeImageUrl(imageUrl);
     if (!safeUrl) {
         console.warn(`Invalid or missing URL for: "${prompt}"`);
         return null;
@@ -633,9 +635,12 @@ function handleURLPrompt() {
     const { prompt, image } = getURLParams();
 
     if (image) {
-        uploadedImageUrl = image;
-        dom.imageThumbnail.src = image;
-        showImageThumbnail();
+        const safeImage = sanitizeImageUrl(image);
+        if (safeImage) {
+            uploadedImageUrl = safeImage;
+            dom.imageThumbnail.src = safeImage;
+            showImageThumbnail();
+        }
     }
 
     if (prompt) {

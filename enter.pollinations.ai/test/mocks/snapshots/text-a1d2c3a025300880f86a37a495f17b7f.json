@@ -1,0 +1,31 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Is%20Berlin%20the%20capital%20of%20Germany%3F%20Reply%20yes%20or%20no.?model=polly&seed=42",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
+      "connection": "keep-alive",
+      "content-length": "58",
+      "content-type": "text/plain; charset=utf-8",
+      "date": "Fri, 27 Feb 2026 18:41:46 GMT",
+      "etag": "W/\"3a-7O8MbJZ4BlNzBz2ZU7lCg2pQKq4\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "polly",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "text",
+      "data": "Sorry, I had trouble processing that. Could you try again?"
+    }
+  }
+}

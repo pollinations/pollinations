@@ -193,12 +193,6 @@ export const IMAGE_CONFIG = {
 } as const satisfies ImageModelsConfig;
 
 /**
- * Legacy MODELS export for backward compatibility
- * @deprecated Use IMAGE_SERVICES from registry, IMAGE_CONFIG for implementation details
- */
-export const MODELS = IMAGE_CONFIG as Record<ImageServiceId, ImageModelConfig>;
-
-/**
  * Scale up dimensions to meet minimum pixel requirements while preserving aspect ratio
  * @param width - Original width
  * @param height - Original height
@@ -235,7 +229,9 @@ export function getScaledDimensions(
     width: number,
     height: number,
 ): { width: number; height: number } {
-    const config = MODELS[modelName as ImageServiceId];
+    const config = IMAGE_CONFIG[
+        modelName as ImageServiceId
+    ] as ImageModelConfig;
     if (!config?.minPixels) {
         return { width, height };
     }

@@ -1,0 +1,62 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "polly",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 400,
+    "statusText": "Bad Request",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "396",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 27 Feb 2026 18:41:18 GMT",
+      "etag": "W/\"18c-yQ2ZxwI/5kWfRb/FqcsMthKCn2w\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Bad Request",
+        "message": "400 Bad Request",
+        "requestId": "o0vjnt",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "Is Berlin the capital of Germany? Reply yes or no."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "polly",
+          "referrer": null,
+          "stream": true,
+          "isPrivate": true,
+          "voice": "alloy",
+          "private": true
+        },
+        "details": {
+          "detail": "Streaming is not supported for the polly model. Use stream=false."
+        }
+      }
+    }
+  }
+}

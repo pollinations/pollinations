@@ -208,10 +208,10 @@ function filterModelsByPermissions<
 // Check if authenticated user has paid balance (pack or crypto > 0)
 // Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
 // Returns undefined if no user (unauthenticated), true/false otherwise.
-function hasPaidBalance(c: {
-    var: { auth?: { user?: { packBalance?: number; cryptoBalance?: number } } };
-}): boolean | undefined {
-    const user = c.var.auth?.user;
+function hasPaidBalance(c: { var: { auth?: { user?: unknown } } }): boolean | undefined {
+    const user = c.var.auth?.user as
+        | { packBalance?: number; cryptoBalance?: number }
+        | undefined;
     if (!user) return undefined;
     return (user.packBalance ?? 0) > 0 || (user.cryptoBalance ?? 0) > 0;
 }

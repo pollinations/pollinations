@@ -24,8 +24,8 @@ CONFIG_FILE="${CONFIG_DIR}/openclaw.json"
 mkdir -p "$CONFIG_DIR"
 
 # Define the configuration
+# All available text models from Pollinations API
 # Kimi K2.5 as primary (256K context, vision + tools + reasoning)
-# Multiple models available as fallbacks and alternatives
 NEW_CONFIG=$(cat <<EOF
 {
   "env": { "POLLINATIONS_API_KEY": "${POLLINATIONS_API_KEY}" },
@@ -38,11 +38,27 @@ NEW_CONFIG=$(cat <<EOF
       "models": {
         "pollinations/kimi": { "alias": "Kimi K2.5 (Pollinations)" },
         "pollinations/deepseek": { "alias": "DeepSeek V3.2 (Pollinations)" },
-        "pollinations/glm": { "alias": "GLM-4.7 (Pollinations)" },
+        "pollinations/glm": { "alias": "GLM-5 (Pollinations)" },
+        "pollinations/openai": { "alias": "GPT-5 Mini (Pollinations)" },
+        "pollinations/openai-fast": { "alias": "GPT-5 Nano (Pollinations)" },
+        "pollinations/openai-large": { "alias": "GPT-5.2 (Pollinations, paid)" },
+        "pollinations/openai-audio": { "alias": "GPT-4o Audio (Pollinations)" },
+        "pollinations/gemini": { "alias": "Gemini 3 Flash (Pollinations, paid)" },
+        "pollinations/gemini-fast": { "alias": "Gemini Flash Lite (Pollinations)" },
         "pollinations/gemini-search": { "alias": "Gemini + Search (Pollinations)" },
+        "pollinations/gemini-large": { "alias": "Gemini 3 Pro (Pollinations, paid)" },
         "pollinations/claude-fast": { "alias": "Claude Haiku 4.5 (Pollinations)" },
+        "pollinations/claude": { "alias": "Claude Sonnet 4.6 (Pollinations, paid)" },
         "pollinations/claude-large": { "alias": "Claude Opus 4.6 (Pollinations, paid)" },
-        "pollinations/gemini-large": { "alias": "Gemini 3 Pro (Pollinations, paid)" }
+        "pollinations/grok": { "alias": "Grok 4 Fast (Pollinations, paid)" },
+        "pollinations/mistral": { "alias": "Mistral Small 3.2 (Pollinations)" },
+        "pollinations/qwen-coder": { "alias": "Qwen3 Coder (Pollinations)" },
+        "pollinations/minimax": { "alias": "MiniMax M2.1 (Pollinations)" },
+        "pollinations/nova-fast": { "alias": "Nova Micro (Pollinations)" },
+        "pollinations/perplexity-fast": { "alias": "Perplexity Sonar (Pollinations)" },
+        "pollinations/perplexity-reasoning": { "alias": "Perplexity Reasoning (Pollinations)" },
+        "pollinations/nomnom": { "alias": "NomNom Web Research (Pollinations)" },
+        "pollinations/polly": { "alias": "Polly AI Assistant (Pollinations)" }
       }
     }
   },
@@ -64,17 +80,65 @@ NEW_CONFIG=$(cat <<EOF
           },
           {
             "id": "deepseek",
-            "name": "DeepSeek V3.2 — Strong reasoning & tool calling",
-            "reasoning": false,
+            "name": "DeepSeek V3.2 — Efficient reasoning & agentic AI",
+            "reasoning": true,
             "input": ["text"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 128000
           },
           {
             "id": "glm",
-            "name": "GLM-4.7 — Coding, reasoning, agentic workflows",
-            "reasoning": false,
+            "name": "GLM-5 — 744B MoE, long context reasoning & agentic workflows",
+            "reasoning": true,
             "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 198000
+          },
+          {
+            "id": "openai",
+            "name": "OpenAI GPT-5 Mini — Fast & balanced",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "openai-fast",
+            "name": "OpenAI GPT-5 Nano — Ultra fast & affordable",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "openai-large",
+            "name": "OpenAI GPT-5.2 — Most powerful & intelligent (Paid)",
+            "reasoning": true,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "openai-audio",
+            "name": "OpenAI GPT-4o Mini Audio — Voice input & output",
+            "reasoning": false,
+            "input": ["text", "image", "audio"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "gemini",
+            "name": "Gemini 3 Flash — Pro-grade reasoning at flash speed (Paid)",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "gemini-fast",
+            "name": "Gemini 2.5 Flash Lite — Ultra fast & cost-effective",
+            "reasoning": false,
+            "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 128000
           },
@@ -87,8 +151,24 @@ NEW_CONFIG=$(cat <<EOF
             "contextWindow": 128000
           },
           {
+            "id": "gemini-large",
+            "name": "Gemini 3 Pro — Most intelligent with 1M context (Paid)",
+            "reasoning": true,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000
+          },
+          {
             "id": "claude-fast",
-            "name": "Claude Haiku 4.5 — Fast with good reasoning",
+            "name": "Claude Haiku 4.5 — Fast & intelligent",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000
+          },
+          {
+            "id": "claude",
+            "name": "Claude Sonnet 4.6 — Most capable & balanced (Paid)",
             "reasoning": false,
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
@@ -96,19 +176,83 @@ NEW_CONFIG=$(cat <<EOF
           },
           {
             "id": "claude-large",
-            "name": "Claude Opus 4.6 — Most Intelligent (Paid)",
+            "name": "Claude Opus 4.6 — Most intelligent (Paid)",
             "reasoning": false,
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 200000
           },
           {
-            "id": "gemini-large",
-            "name": "Gemini 3 Pro — Most Intelligent with 1M Context (Paid)",
+            "id": "grok",
+            "name": "Grok 4 Fast — High speed & real-time (Paid)",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "mistral",
+            "name": "Mistral Small 3.2 — Efficient & cost-effective",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "qwen-coder",
+            "name": "Qwen3 Coder 30B — Specialized for code generation",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "minimax",
+            "name": "MiniMax M2.1 — Multi-language & agent workflows",
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000
+          },
+          {
+            "id": "nova-fast",
+            "name": "Amazon Nova Micro — Ultra fast & ultra cheap",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "perplexity-fast",
+            "name": "Perplexity Sonar — Fast web search",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "perplexity-reasoning",
+            "name": "Perplexity Sonar Reasoning — Advanced reasoning with web search",
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "nomnom",
+            "name": "NomNom — Web research with search, scrape & crawl",
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000
+          },
+          {
+            "id": "polly",
+            "name": "Polly — Pollinations AI assistant with code search & web tools",
             "reasoning": true,
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 1000000
+            "contextWindow": 128000
           }
         ]
       }
@@ -187,11 +331,12 @@ echo "  Config:  $CONFIG_FILE"
 echo "  API Key: $MASKED_KEY"
 echo ""
 echo "  Primary model: Kimi K2.5 (256K context, vision, tools, reasoning)"
-echo "  Fallbacks:     DeepSeek V3.2, GLM-4.7"
-echo "  Web search:    Gemini + Search, plus web_search tool (Perplexity via Pollinations)"
-echo "  Also available: Claude Haiku 4.5, + premium models"
+echo "  Fallbacks:     DeepSeek V3.2, GLM-5"
+echo "  23 models:     OpenAI, Gemini, Claude, DeepSeek, Grok, Mistral, Qwen, MiniMax, Nova + more"
+echo "  Web search:    Gemini + Search, Perplexity Sonar, NomNom"
 echo ""
 echo "  Switch models in chat: /model pollinations/gemini-search"
+echo "  All models:            https://gen.pollinations.ai/v1/models"
 echo "  Manage your account:   https://enter.pollinations.ai"
 echo ""
 if ! command -v openclaw >/dev/null 2>&1; then

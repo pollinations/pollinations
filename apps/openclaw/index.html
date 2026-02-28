@@ -631,7 +631,7 @@
   | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
                     <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
                         <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
-                        <li>🤖 Adds 7 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
+                        <li>🤖 Adds 23 models: OpenAI, Gemini, Claude, DeepSeek, Grok, Mistral, Qwen, MiniMax, Nova + more</li>
                         <li>🔍 Configures <code style="color:var(--accent); font-size:13px">web_search</code> tool with Perplexity <em>via pollinations.ai</em> (preserves existing if already set)</li>
                     </ul>
 
@@ -640,23 +640,6 @@
                         <div class="step-text">Or paste this into <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>:</div>
                         <div class="code-block" id="json-config" style="white-space:pre; font-size:12px;">{
   "env": { "POLLINATIONS_API_KEY": "<span class="key-in-json">YOUR_API_KEY</span>" },
-  "agents": {
-    "defaults": {
-      "model": {
-        "primary": "pollinations/kimi",
-        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
-      },
-      "models": {
-        "pollinations/kimi": { "alias": "Kimi K2.5" },
-        "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
-        "pollinations/glm": { "alias": "GLM-4.7" },
-        "pollinations/gemini-search": { "alias": "Gemini + Search" },
-        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" },
-        "pollinations/claude-large": { "alias": "Claude Opus 4.6" },
-        "pollinations/gemini-large": { "alias": "Gemini 3 Pro" }
-      }
-    }
-  },
   "models": {
     "mode": "merge",
     "providers": {
@@ -667,36 +650,29 @@
         "models": [
           { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
             "input": ["text","image"], "contextWindow": 256000 },
-          { "id": "deepseek", "name": "DeepSeek V3.2",
+          { "id": "deepseek", "name": "DeepSeek V3.2", "reasoning": true,
             "input": ["text"], "contextWindow": 128000 },
-          { "id": "glm", "name": "GLM-4.7",
-            "input": ["text"], "contextWindow": 128000 },
+          { "id": "glm", "name": "GLM-5", "reasoning": true,
+            "input": ["text"], "contextWindow": 198000 },
+          { "id": "openai", "name": "GPT-5 Mini",
+            "input": ["text","image"], "contextWindow": 128000 },
+          { "id": "openai-large", "name": "GPT-5.2 (Paid)", "reasoning": true,
+            "input": ["text","image"], "contextWindow": 128000 },
           { "id": "gemini-search", "name": "Gemini + Search",
             "input": ["text","image"], "contextWindow": 128000 },
+          { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
+            "input": ["text","image"], "contextWindow": 1000000 },
           { "id": "claude-fast", "name": "Claude Haiku 4.5",
             "input": ["text","image"], "contextWindow": 200000 },
           { "id": "claude-large", "name": "Claude Opus 4.6 (Paid)",
-            "input": ["text","image"], "contextWindow": 200000 },
-          { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
-            "input": ["text","image"], "contextWindow": 1000000 }
+            "input": ["text","image"], "contextWindow": 200000 }
         ]
       }
     }
   },
-  "tools": {
-    "web": {
-      "search": {
-        "provider": "perplexity",
-        "perplexity": {
-          "baseUrl": "https://gen.pollinations.ai/v1",
-          "apiKey": "${POLLINATIONS_API_KEY}",
-          "model": "perplexity-fast"
-        }
-      }
-    }
-  },
   "gateway": { "mode": "local" }
-}<button class="copy-btn" onclick="copyCode('json-config')">Copy</button></div>
+}
+<em style="color:var(--muted); font-size:11px">Showing 9 key models. The setup script configures all 23.</em><button class="copy-btn" onclick="copyCode('json-config')">Copy</button></div>
                     </div>
                 </div>
 
@@ -718,39 +694,100 @@ The script will restart the gateway automatically. After that, switch to the new
                 <div class="model-row recommended">
                     <div class="model-label">Kimi K2.5 <span class="model-tag">default</span></div>
                     <div class="model-id">pollinations/kimi</div>
-                    <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K context</em>, vision, tools, reasoning. 77% SWE-Bench.</div>
-                </div>
-                <div class="model-row">
-                    <div class="model-label">Gemini + Search <span class="model-tag">web search</span></div>
-                    <div class="model-id">pollinations/gemini-search</div>
-                    <div class="model-note">Google Gemini with <strong>always-on web search</strong>. Vision support. Look up docs, APIs, recent changes.</div>
+                    <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K context</em>, vision, tools, reasoning.</div>
                 </div>
                 <div class="model-row">
                     <div class="model-label">DeepSeek V3.2</div>
                     <div class="model-id">pollinations/deepseek</div>
-                    <div class="model-note"><strong>Strong reasoning</strong> & tool calling. Good alternative to Kimi for hard problems.</div>
+                    <div class="model-note"><strong>Efficient reasoning</strong> & agentic AI. Great alternative for hard problems.</div>
                 </div>
                 <div class="model-row">
-                    <div class="model-label">GLM-4.7</div>
+                    <div class="model-label">GLM-5 <span class="model-tag">198K</span></div>
                     <div class="model-id">pollinations/glm</div>
-                    <div class="model-note">Z.ai — <em>coding, reasoning, agentic workflows</em>. Competitive with Kimi.</div>
+                    <div class="model-note">Z.ai 744B MoE — <em>long context reasoning & agentic workflows</em>.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">GPT-5 Mini</div>
+                    <div class="model-id">pollinations/openai</div>
+                    <div class="model-note">OpenAI — <strong>fast & balanced</strong>. Vision support, tool calling.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Gemini + Search <span class="model-tag">web search</span></div>
+                    <div class="model-id">pollinations/gemini-search</div>
+                    <div class="model-note">Google Gemini with <strong>always-on web search</strong>. Look up docs, APIs, recent changes.</div>
                 </div>
                 <div class="model-row">
                     <div class="model-label">Claude Haiku 4.5</div>
                     <div class="model-id">pollinations/claude-fast</div>
-                    <div class="model-note">Anthropic — <strong>fast</strong> with good reasoning. Claude quality, lower cost.</div>
+                    <div class="model-note">Anthropic — <strong>fast & intelligent</strong>. Claude quality, lower cost.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Gemini Flash Lite</div>
+                    <div class="model-id">pollinations/gemini-fast</div>
+                    <div class="model-note">Google — <strong>ultra fast</strong>. Vision, search, code execution.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Mistral Small 3.2</div>
+                    <div class="model-id">pollinations/mistral</div>
+                    <div class="model-note">Efficient & cost-effective. Good for straightforward tasks.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Qwen3 Coder <span class="model-tag">code</span></div>
+                    <div class="model-id">pollinations/qwen-coder</div>
+                    <div class="model-note">Specialized for <strong>code generation</strong>. 30B with tool calling.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">MiniMax M2.1 <span class="model-tag">200K</span></div>
+                    <div class="model-id">pollinations/minimax</div>
+                    <div class="model-note">Multi-language & agent workflows. <em>200K context</em>, reasoning.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Nova Micro</div>
+                    <div class="model-id">pollinations/nova-fast</div>
+                    <div class="model-note">Amazon — <strong>ultra fast & ultra cheap</strong>. Great for simple tasks.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Perplexity Sonar <span class="model-tag">web search</span></div>
+                    <div class="model-id">pollinations/perplexity-fast</div>
+                    <div class="model-note">Fast web search with citations. Also used as the <code>web_search</code> tool.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Perplexity Reasoning <span class="model-tag">web search</span></div>
+                    <div class="model-id">pollinations/perplexity-reasoning</div>
+                    <div class="model-note">Advanced <strong>reasoning + web search</strong>. Deep research tasks.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">GPT-5.2 <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/openai-large</div>
+                    <div class="model-note">OpenAI's most powerful. Reasoning, vision, tool calling.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">Claude Sonnet 4.6 <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/claude</div>
+                    <div class="model-note">Anthropic — most capable & balanced. Vision, tools.</div>
                 </div>
                 <div class="model-row dimmed">
                     <div class="model-label">Claude Opus 4.6 <span class="model-tag paid">paid</span></div>
                     <div class="model-id">pollinations/claude-large</div>
-                    <div class="model-note">Anthropic's most capable model. Vision, tools, deep reasoning.</div>
+                    <div class="model-note">Anthropic's most intelligent model. Deep reasoning.</div>
                 </div>
                 <div class="model-row dimmed">
-                    <div class="model-label">Gemini 3 Pro <span class="model-tag paid">paid</span></div>
+                    <div class="model-label">Gemini 3 Flash <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/gemini</div>
+                    <div class="model-note">Google — pro-grade reasoning at flash speed.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">Gemini 3 Pro <span class="model-tag paid">paid</span> <span class="model-tag">1M</span></div>
                     <div class="model-id">pollinations/gemini-large</div>
-                    <div class="model-note">Google's flagship with vision, audio & video understanding.</div>
+                    <div class="model-note">Google's flagship. <em>1M context</em>, vision, audio & video.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">Grok 4 Fast <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/grok</div>
+                    <div class="model-note">xAI — high speed, real-time. Tool calling.</div>
                 </div>
             </div>
+            <p style="margin-top:12px; font-size:13px; color:var(--muted)">+ GPT-5 Nano, GPT-4o Audio, NomNom, Polly — <a href="https://gen.pollinations.ai/v1/models" target="_blank" style="color:var(--accent)">see all models</a></p>
 
             <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model pollinations/gemini-search</code></p>
         </section>
@@ -798,7 +835,7 @@ function toggleManual() {
 
 function startAuthorize() {
     var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
-    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast,claude-large,gemini-large');
+    var models = encodeURIComponent('kimi,deepseek,glm,openai,openai-fast,openai-large,openai-audio,gemini,gemini-fast,gemini-search,gemini-large,claude-fast,claude,claude-large,grok,mistral,qwen-coder,minimax,nova-fast,perplexity-fast,perplexity-reasoning,nomnom,polly');
     window.location.href = `https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}&models=${models}`;
 }
 

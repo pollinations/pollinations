@@ -1,0 +1,34 @@
+{
+  "pr_number": 8684,
+  "title": "feat: hide paid-only models from /models when user has no paid balance",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8684",
+  "merged_at": "2026-02-28T17:07:35Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Tidying up the hive",
+    "blurb": "We've decluttered the API for free-tier users. Now you'll only see the models you can actually use, saving you a click and an error message.",
+    "summary": "The `/models` endpoint now automatically filters out paid-only models for authenticated users who don't have a paid balance.",
+    "impact": "Users get a streamlined, personalized list of available tools, reducing confusion about which models are accessible on their current tier.",
+    "keywords": [
+      "api",
+      "ux",
+      "models",
+      "billing",
+      "developer-experience"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot are organizing a wooden shelf of glowing data crystals. They are sorting them neatly, representing the curated list of models. The vibe is productive and cozy, like organizing a chest in a game.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot and the monitor robot sorting glowing lime green (#ecf874) data crystals on a wooden shelf. Cozy 8-bit pixel art aesthetic. Soft pastel gradient background. The robot has a happy face on its screen. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-28T17:08:31.836723+00:00"
+}

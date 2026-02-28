@@ -10,7 +10,6 @@ import type {
 } from "./createAndReturnImages.js";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.js";
-import { withTimeoutSignal } from "./util.ts";
 import { downloadImageAsBase64 } from "./utils/imageDownload.ts";
 import { generateTransparentImage } from "./utils/transparentImage.ts";
 import type { VertexAIImageData } from "./vertexAIClient.ts";
@@ -22,9 +21,18 @@ const errorLog = debug("pollinations:vertex-ai-generator:error");
 
 /** Mapping from pollinations model names to Vertex AI model IDs and display names */
 const NANOBANANA_MODELS: Record<string, { vertex: string; name: string }> = {
-    "nanobanana-pro": { vertex: "gemini-3-pro-image-preview", name: "Vertex AI Gemini 3 Pro Image Preview" },
-    "nanobanana-2": { vertex: "gemini-3.1-flash-image-preview", name: "Vertex AI Gemini 3.1 Flash Image Preview" },
-    "nanobanana": { vertex: "gemini-2.5-flash-image-preview", name: "Vertex AI Gemini 2.5 Flash Image Preview" },
+    "nanobanana-pro": {
+        vertex: "gemini-3-pro-image-preview",
+        name: "Vertex AI Gemini 3 Pro Image Preview",
+    },
+    "nanobanana-2": {
+        vertex: "gemini-3.1-flash-image-preview",
+        name: "Vertex AI Gemini 3.1 Flash Image Preview",
+    },
+    "nanobanana": {
+        vertex: "gemini-2.5-flash-image-preview",
+        name: "Vertex AI Gemini 2.5 Flash Image Preview",
+    },
 };
 
 /**
@@ -129,7 +137,10 @@ function buildNoImageDataError(result: {
         }
 
         const highProbCategories = result.safetyRatings
-            .filter((r: any) => r.probability === "HIGH" || r.probability === "MEDIUM")
+            .filter(
+                (r: any) =>
+                    r.probability === "HIGH" || r.probability === "MEDIUM",
+            )
             .map((r: any) => `${r.category} (${r.probability})`)
             .join(", ");
 
@@ -230,7 +241,9 @@ export async function callVertexAIGemini(
         }
 
         // Determine the Vertex AI model based on the model parameter
-        const modelConfig = NANOBANANA_MODELS[safeParams.model] || NANOBANANA_MODELS["nanobanana"];
+        const modelConfig =
+            NANOBANANA_MODELS[safeParams.model] ||
+            NANOBANANA_MODELS["nanobanana"];
         const vertexModel = modelConfig.vertex;
 
         const vertexRequest = {

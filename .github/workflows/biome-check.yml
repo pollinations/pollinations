@@ -22,7 +22,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+
+      - name: Install Biome CLI
+        run: npm install --no-save @biomejs/cli-linux-x64@2.3.10
 
       - name: Get changed files
         id: changed-files

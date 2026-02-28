@@ -211,7 +211,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 163800,
+        contextLength: 163840,
         isSpecialized: false,
     },
     "grok": {
@@ -231,7 +231,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
-        contextLength: 2000000,
+        contextLength: 128000,
         isSpecialized: false,
     },
     "gemini-search": {

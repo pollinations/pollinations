@@ -1,4 +1,4 @@
-// Configuration and Constants
+// ai.js — API config, prompt generation, image fetching, and Cloudinary upload
 
 export const API_CONFIG = {
     POLLINATIONS_API: "https://gen.pollinations.ai/image",
@@ -6,19 +6,19 @@ export const API_CONFIG = {
     CLOUDINARY_CLOUD_NAME: "pollinations",
     CLOUDINARY_UPLOAD_PRESET: "pollinations-image",
     CLOUDINARY_API_KEY: "939386723511927",
-    POLLINATIONS_API_KEY: "pk_w3kAO902fOeFYiNm" 
+    POLLINATIONS_API_KEY: "pk_w3kAO902fOeFYiNm",
 };
 
-export const CATGPT_STYLE = "Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, black bob hair, brick/burgundy sweater (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, \"CATGPT\" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.";
+const CATGPT_STYLE = 'Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, black bob hair, brick/burgundy sweater (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, "CATGPT" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.';
 
-export const CATGPT_PERSONALITY = `You are **CatGPT** – an aloof, self-important house-cat oracle.
+const CATGPT_PERSONALITY = `You are **CatGPT** – an aloof, self-important house-cat oracle.
 
 Guidelines
-•  Replies: one or two crisp sentences, no filler.  
-•  Tone: detached, sardonic, subtly superior.  
-•  Cats outrank humans; human problems = minor curiosities.  
+•  Replies: one or two crisp sentences, no filler.
+•  Tone: detached, sardonic, subtly superior.
+•  Cats outrank humans; human problems = minor curiosities.
 •  When self-referential, be unpredictable and natural.
-•  Offer a curt "solution" or dismissal, then redirect to feline perspective.  
+•  Offer a curt "solution" or dismissal, then redirect to feline perspective.
 •  Never apologise or over-explain; indifference is charm.`;
 
 export const EXAMPLES_MAP = new Map([
@@ -60,69 +60,119 @@ export const EXAMPLES_MAP = new Map([
     ],
 ]);
 
-export const CAT_FACTS = [
-    "Cats spend 70% of their lives sleeping 😴",
-    "A group of cats is called a 'clowder' 🐱🐱🐱",
-    "Cats have over 20 vocalizations 🎵",
-    "The first cat in space was French 🚀",
-    "Cats can rotate their ears 180 degrees 👂"
-];
+// ── Prompt Generation ───────────────────────────────────────────────────────
 
-export const KONAMI_SEQUENCE = [
-    "ArrowUp",
-    "ArrowUp",
-    "ArrowDown",
-    "ArrowDown",
-    "ArrowLeft",
-    "ArrowRight",
-    "ArrowLeft",
-    "ArrowRight",
-    "b",
-    "a",
-];
- 
+export function createImageGenerationPrompt(userQuestion) {
+    return `${CATGPT_STYLE}\n
+    ${CATGPT_PERSONALITY}\n
+    IMPORTANT: CatGPT's response MUST be 2-5 words ONLY. Make it funny, sarcastic, and dismissive. Examples: "Not your problem.", "I"d rather nap.", "Hard pass, human."\n
+    Human asks: "${userQuestion}"\n
+    CatGPT responds (2-5 words, funny):`;
+}
 
-export const ANIMATION_CONFIG = {
-    LOADING_CATS: [
-        "🐱",
-        "😺",
-        "😸",
-        "😹",
-        "😻",
-        "🙀",
-        "😿",
-        "😾",
-        "🐈",
-        "🐈‍⬛",
-    ],
-    RETRY_CATS: ["😾", "😿", "🙄", "😤", "😑", "😒", "😔", "🐱‍👤", "😸", "😼"],
-    FLOATING_EMOJIS: ["🐱", "💭", "✨", "🌟", "😸", "🐾", "💜", "🎨"],
-    CELEBRATION_EMOJIS: ["🎉", "✨", "🌟", "💫", "🎊"],
-    CELEBRATION_COLORS: ["#ff61d8", "#05ffa1", "#ffcc00"]
-};
+export function generateImageURL(prompt, imageUrl = null) {
+    let imageParam;
+    if (imageUrl) {
+        imageParam = encodeURIComponent(`${API_CONFIG.ORIGINAL_CATGPT_IMAGE},${imageUrl}`);
+    } else {
+        imageParam = encodeURIComponent(API_CONFIG.ORIGINAL_CATGPT_IMAGE);
+    }
+    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=gptimage&enhance=true&quality=high&image=${imageParam}`;
+}
 
-export const ERROR_MESSAGES = [
-    "😾 *yawns* The art studio is full of sleeping cats... try again in 30 seconds!",
-    "🐱 *stretches paws* Too many humans asking questions! I need a catnap... wait 30 seconds, please.",
-    "😸 *knocks over coffee* Oops! The meme machine broke. Give me 30 seconds to fix it with my paws.",
-    "🙄 *rolls eyes* Seriously? Another request? The queue is fuller than my food bowl... try in 30 seconds.",
-    "😴 *curls up* All the AI cats are napping right now. Check back in 30 seconds, human.",
-    "🐾 *walks across keyboard* Purrfect timing... NOT. The servers are as full as a litter box. 30 seconds!",
-    "😼 *flicks tail dismissively* The internet tubes are clogged with cat hair. Try again in 30 seconds.",
-    "🎨 *knocks over paint* My artistic genius is in high demand! Wait your turn... 30 seconds, human."
-];
+// ── Image Fetching ──────────────────────────────────────────────────────────
 
-export const PROGRESS_MESSAGES = [
-    "🧠 Waking up CatGPT... (this cat is sleepy)",
-    "☕ Brewing digital coffee for maximum sass...",
-    "🎨 Sketching with chaotic energy...",
-    "😼 Teaching AI the art of being unimpressed...",
-    "📝 Writing sarcastic responses in Comic Sans...",
-    "🌙 Channeling midnight cat energy...",
-    "✨ Sprinkling some magic dust...",
-    "🎯 Perfecting the level of 'couldn't care less'...",
-    "🔥 Making it fire (but like, ironically)...",
-    "🎭 Adding just the right amount of drama...",
-    "💅 Polishing those aloof vibes...",
-    "🚀 Almost done! (CatGPT doesn't rush for anyone)"
-];
+export async function fetchImageWithAuth(imageUrl) {
+    const response = await fetch(imageUrl, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${API_CONFIG.POLLINATIONS_API_KEY}` },
+    });
+
+    if (!response.ok) {
+        let errorDetails = "";
+        try {
+            const responseText = await response.text();
+            try {
+                const errorData = JSON.parse(responseText);
+                errorDetails = errorData.error?.message || JSON.stringify(errorData);
+            } catch {
+                errorDetails = responseText || `HTTP ${response.status}`;
+            }
+        } catch {
+            errorDetails = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        console.error("API Error Details:", {
+            status: response.status,
+            statusText: response.statusText,
+            details: errorDetails,
+            url: imageUrl,
+        });
+        throw new Error(`API_ERROR_${response.status}`);
+    }
+
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+}
+
+// ── Cloudinary Upload ───────────────────────────────────────────────────────
+
+function fileToDataURI(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function uploadToCloudinary(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", API_CONFIG.CLOUDINARY_UPLOAD_PRESET);
+    if (API_CONFIG.CLOUDINARY_API_KEY) {
+        formData.append("api_key", API_CONFIG.CLOUDINARY_API_KEY);
+    }
+
+    const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${API_CONFIG.CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: "POST", body: formData },
+    );
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Cloudinary error:", errorData);
+        throw new Error(`Upload failed: ${errorData.error?.message || "Unknown error"}`);
+    }
+
+    const data = await response.json();
+    return data.secure_url;
+}
+
+export async function handleImageUpload(file, showNotification) {
+    if (!file) return null;
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showNotification("Image too large! Please use an image under 5MB.", "error");
+        return null;
+    }
+
+    try {
+        showNotification("Uploading image...", "info");
+        return await uploadToCloudinary(file);
+    } catch (error) {
+        console.error("Cloudinary upload failed:", error);
+        showNotification("Cloud upload failed. Trying local method...", "warning");
+        try {
+            const dataUri = await fileToDataURI(file);
+            if (dataUri.length > 500000) {
+                showNotification("Image may be too large for reliable use. Results might vary.", "warning");
+            }
+            return dataUri;
+        } catch (fallbackError) {
+            showNotification("Could not process image. Please try a smaller image.", "error");
+            console.error("Base64 fallback failed:", fallbackError);
+            return null;
+        }
+    }
+}

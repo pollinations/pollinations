@@ -305,7 +305,7 @@ function sanitizeImageUrl(url) {
     if (!url || typeof url !== "string") return null;
     try {
         const parsed = new URL(url, window.location.href);
-        const allowedProtocols = ["http:", "https:", "blob:"];
+        const allowedProtocols = ["http:", "https:", "blob:", "data:"];
         if (!allowedProtocols.includes(parsed.protocol)) return null;
         return parsed.toString();
     } catch {
@@ -350,7 +350,7 @@ function createMemeCard(prompt, index, imageUrl, isUserMeme = false) {
         dom.userInput.focus();
         dom.userInput.style.animation = "pulse 0.5s";
         setTimeout(() => { dom.userInput.style.animation = ""; }, 500);
-        showNotification("Generating your meme! 🎨", "info");
+        showNotification("Prompt loaded! Hit Generate 🎨", "info");
     });
 
     return card;
@@ -515,7 +515,6 @@ async function generateMeme() {
         celebrate();
         saveGeneratedMeme(userQuestion, imageUrl);
         loadUserMemes();
-        loadExamples();
     } catch (error) {
         clearTimeout(imageLoadTimeout);
         console.error("Generation error:", error);

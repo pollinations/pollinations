@@ -3,9 +3,6 @@ import type { ChatMessage, TransformOptions } from "./types.js";
 
 const log = debug("pollinations:utils");
 
-/**
- * Validates and ensures each message has required properties.
- */
 export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
     if (!Array.isArray(messages) || messages.length === 0) {
         throw new Error("Messages must be a non-empty array");
@@ -54,9 +51,6 @@ function clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, value));
 }
 
-/**
- * Normalizes options with default values and validates numeric ranges.
- */
 export function normalizeOptions(
     options: Record<string, unknown> = {},
     defaults: Record<string, unknown> = {},
@@ -103,9 +97,6 @@ export function normalizeOptions(
     return normalized;
 }
 
-/**
- * Generates a unique request ID.
- */
 export function generateRequestId(): string {
     return Math.random().toString(36).substring(7);
 }

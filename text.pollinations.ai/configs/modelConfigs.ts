@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAirforceModelConfig,
@@ -14,8 +13,6 @@ import {
     createPollyConfig,
     createScalewayModelConfig,
 } from "./providerConfigs.js";
-
-dotenv.config();
 
 // =============================================================================
 // Helpers

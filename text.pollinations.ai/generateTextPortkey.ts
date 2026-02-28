@@ -1,5 +1,4 @@
 import debug from "debug";
-import dotenv from "dotenv";
 import { findModelByName } from "./availableModels.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
@@ -14,8 +13,6 @@ import type {
     TransformResult,
 } from "./types.js";
 import { resolveModelConfig } from "./utils/modelResolver.js";
-
-dotenv.config();
 
 export const log = debug("pollinations:portkey");
 

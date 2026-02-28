@@ -28,8 +28,32 @@ import path from "node:path";
 import { promisify } from "node:util";
 import dotenv from "dotenv";
 
-// Load environment variables from .env file
 dotenv.config();
+
+interface ModelMetadata {
+    name: string;
+    aliases?: string;
+    description?: string;
+    provider?: string;
+    tier?: string;
+    input_modalities?: string[];
+    output_modalities?: string[];
+    audio?: unknown;
+}
+
+interface TestResult {
+    modelName: string;
+    originalName: string | null;
+    error?: string | unknown;
+    errorType?: string;
+    rawResponse?: string;
+    duration?: number;
+    userTier?: string;
+    responseTime?: number;
+    tokenUsage?: unknown;
+    statusCode?: number;
+    success: boolean;
+}
 
 const execAsync = promisify(exec);
 
@@ -53,27 +77,18 @@ console.log(`📁 Models file: ${AVAILABLE_MODELS_PATH}`);
 console.log("💡 Make sure your local server is running on port 16385");
 console.log("💡 Start your server with: DEBUG=* npm start");
 
-// Load models from local availableModels.js file
-async function loadLocalModels() {
+async function loadLocalModels(): Promise<ModelMetadata[]> {
     try {
         console.log("📁 Loading models from local availableModels.js...");
 
-        // Import the availableModels directly
         const { availableModels } = await import("../availableModels.js");
 
         console.log(
             `✅ Loaded ${availableModels.length} models from local file`,
         );
 
-        return availableModels.map((model: any) => ({
+        return availableModels.map((model) => ({
             name: model.name,
-            aliases: model.aliases,
-            description: model.description,
-            provider: model.provider,
-            tier: model.tier,
-            input_modalities: model.input_modalities,
-            output_modalities: model.output_modalities,
-            audio: model.audio,
         }));
     } catch (error) {
         console.error("❌ Error loading local models:", error);
@@ -108,7 +123,10 @@ async function getAvailableModels() {
     return await loadLocalModels();
 }
 
-async function testModelForOriginalName(modelName, modelMetadata = null) {
+async function testModelForOriginalName(
+    modelName: string,
+    modelMetadata: ModelMetadata | null = null,
+): Promise<TestResult> {
     try {
         console.log(`🧪 Testing: ${modelName}`);
         const startTime = Date.now();
@@ -247,7 +265,8 @@ async function testModelForOriginalName(modelName, modelMetadata = null) {
                 duration,
                 success: true,
             };
-        } catch (parseError) {
+        } catch (thrown: unknown) {
+            const parseError = thrown as Error;
             console.log(
                 `  ❌ Parse error (${duration}ms): ${parseError.message}`,
             );
@@ -262,7 +281,8 @@ async function testModelForOriginalName(modelName, modelMetadata = null) {
                 success: false,
             };
         }
-    } catch (error) {
+    } catch (thrown: unknown) {
+        const error = thrown as Error;
         console.log(`  ❌ Request error: ${error.message}`);
         return {
             modelName,
@@ -274,7 +294,9 @@ async function testModelForOriginalName(modelName, modelMetadata = null) {
     }
 }
 
-async function updateAvailableModelsFile(results) {
+async function updateAvailableModelsFile(
+    results: TestResult[],
+): Promise<number> {
     try {
         console.log(
             "\n📝 Updating availableModels.js with discovered original names...",
@@ -465,8 +487,8 @@ async function discoverAllOriginalNames() {
         console.log("=".repeat(80));
 
         // Group failures by error type
-        const errorsByType: Record<string, any[]> = {};
-        failed.forEach((result: any) => {
+        const errorsByType: Record<string, TestResult[]> = {};
+        failed.forEach((result) => {
             const errorType = result.errorType || "unknown";
             if (!errorsByType[errorType]) {
                 errorsByType[errorType] = [];
@@ -481,7 +503,7 @@ async function discoverAllOriginalNames() {
             );
             console.log("-".repeat(60));
 
-            failures.forEach((result: any) => {
+            failures.forEach((result) => {
                 const duration = result.duration
                     ? `(${result.duration}ms)`
                     : "";
@@ -549,7 +571,9 @@ async function discoverAllOriginalNames() {
 }
 
 // Function to test a single model
-async function testSingleModel(modelName) {
+async function testSingleModel(
+    modelName: string,
+): Promise<TestResult | undefined> {
     console.log(`🎯 Testing single model: ${modelName}`);
     console.log(`📡 Target API: ${API_BASE}`);
     console.log(`🔑 Using auth token: ${AUTH_TOKEN.substring(0, 8)}...`);
@@ -602,7 +626,7 @@ async function testSingleModel(modelName) {
     console.log("=".repeat(80));
 
     // Test the model
-    const result: any = await testModelForOriginalName(modelName, targetModel);
+    const result = await testModelForOriginalName(modelName, targetModel);
 
     // Display results
     console.log(`\n${"=".repeat(80)}`);
@@ -647,7 +671,7 @@ async function testSingleModel(modelName) {
 }
 
 // Parse command line arguments
-function parseArguments() {
+function parseArguments(): string | null {
     const args = process.argv.slice(2);
 
     // Check for help flag

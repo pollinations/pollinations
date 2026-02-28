@@ -218,10 +218,6 @@ export function sendContentResponse(
     setUsageHeaders(c, completion);
     c.header("Cache-Control", "public, max-age=31536000, immutable");
 
-    if (typeof completion === "string") {
-        return c.text(completion);
-    }
-
     if (!completion.choices?.[0]) {
         errorLog("Unrecognized completion format:", JSON.stringify(completion));
         const error: ServiceError = new Error(

@@ -1,9 +1,4 @@
-/**
- * Parameter validation utilities for text generation requests.
- * No range clamping -- downstream APIs validate and return proper errors.
- */
-
-/** Maximum seed value: INT32_MAX for compatibility with strict providers like Vertex AI */
+/** INT32_MAX - for compatibility with strict providers like Vertex AI */
 const MAX_SEED_VALUE = 2147483647;
 
 export function validateFloat(value: unknown): number | undefined {
@@ -36,14 +31,6 @@ export function validateBoolean(value: unknown): boolean | undefined {
         if (["false", "0", "no"].includes(lower)) return false;
     }
     return Boolean(value);
-}
-
-export function validateEnum<T>(
-    value: unknown,
-    allowedValues: T[],
-): T | undefined {
-    if (value === undefined || value === null) return undefined;
-    return allowedValues.includes(value as T) ? (value as T) : undefined;
 }
 
 export function validateString(

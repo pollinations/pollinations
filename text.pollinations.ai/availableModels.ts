@@ -193,15 +193,9 @@ const models: ModelDefinition[] = [
     },
 ];
 
-// Export models - metadata is in registry (single source of truth)
 export const availableModels = models;
 
-/**
- * Find a model definition by name or alias
- * @param modelName - The name of the model to find
- * @returns The model definition or null if not found
- */
-export function findModelByName(modelName: string) {
+export function findModelByName(modelName: string): ModelDefinition | null {
     const directMatch = availableModels.find(
         (model) => model.name === modelName,
     );

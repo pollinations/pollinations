@@ -1,6 +1,3 @@
-/**
- * Model configuration resolution utilities
- */
 import debug from "debug";
 import { findModelByName } from "../availableModels.js";
 import type {

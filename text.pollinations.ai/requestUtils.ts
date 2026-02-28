@@ -1,10 +1,6 @@
-import dotenv from "dotenv";
 import { extractReferrer } from "../shared/extractFromRequest.js";
 import type { RequestData } from "./types.js";
 import { validateTextGenerationParams } from "./utils/parameterValidators.js";
-
-dotenv.config();
-dotenv.config({ path: ".env.local" });
 
 export interface ExpressLikeRequest {
     query: Record<string, unknown>;

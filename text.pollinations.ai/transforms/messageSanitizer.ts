@@ -8,14 +8,18 @@ import type {
 const log = debug("pollinations:transforms:sanitizer");
 
 /**
- * Replaces empty user message content with placeholder text.
+ * Transform that sanitizes messages by replacing empty user content with placeholder text.
  */
-function sanitizeEmptyUserMessages(messages: ChatMessage[]): {
-    messages: ChatMessage[];
-    replacedCount: number;
-} {
-    if (!Array.isArray(messages)) {
-        return { messages, replacedCount: 0 };
+export function sanitizeMessages(
+    messages: ChatMessage[],
+    options: TransformOptions,
+): TransformResult {
+    if (
+        !Array.isArray(messages) ||
+        !options.modelDef ||
+        !options.requestedModel
+    ) {
+        return { messages, options };
     }
 
     let replacedCount = 0;
@@ -33,27 +37,6 @@ function sanitizeEmptyUserMessages(messages: ChatMessage[]): {
         replacedCount++;
         return { ...message, content: "Please provide a response." };
     });
-
-    return { messages: sanitized, replacedCount };
-}
-
-/**
- * Transform that sanitizes messages by replacing empty user content with placeholder text.
- */
-export function sanitizeMessages(
-    messages: ChatMessage[],
-    options: TransformOptions,
-): TransformResult {
-    if (
-        !Array.isArray(messages) ||
-        !options.modelDef ||
-        !options.requestedModel
-    ) {
-        return { messages, options };
-    }
-
-    const { messages: sanitized, replacedCount } =
-        sanitizeEmptyUserMessages(messages);
 
     if (replacedCount > 0) {
         log(

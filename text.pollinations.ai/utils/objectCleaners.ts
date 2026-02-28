@@ -1,17 +1,10 @@
-/**
- * Simple object cleaning utilities
- */
-
 const PROTECTED_KEYS = new Set(["modalities", "audio"]);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/**
- * Removes null and undefined values from an object (recursive).
- * Protected keys ("modalities", "audio") are never removed.
- */
+/** Removes null/undefined values recursively. Protected keys are never removed. */
 export function cleanNullAndUndefined(obj: unknown): unknown {
     if (!isPlainObject(obj)) return obj;
 

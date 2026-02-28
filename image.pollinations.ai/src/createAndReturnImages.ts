@@ -1169,8 +1169,20 @@ const generateImage = async (
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js
 
-const extractMaturityFlags = (result: ImageGenerationResult): ContentSafetyFlags => {
-    return { isMature: result.isMature, isChild: result.isChild };
+const extractMaturityFlags = (
+    result: ImageGenerationResult,
+): ContentSafetyFlags => {
+    const r = result as ImageGenerationResult & {
+        has_nsfw_concept?: boolean;
+        concept?: { special_scores?: Record<string, number> };
+    };
+    const isMature = r.isMature || r.has_nsfw_concept;
+    const isChild =
+        r.isChild ||
+        Object.values(r.concept?.special_scores || {})
+            ?.slice(1)
+            .some((score) => score > -0.05);
+    return { isMature, isChild };
 };
 
 /**

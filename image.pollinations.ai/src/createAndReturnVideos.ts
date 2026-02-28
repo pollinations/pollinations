@@ -31,7 +31,12 @@ export async function createAndReturnVideo(
     requestId: string,
 ): Promise<VideoGenerationResult> {
     logOps("Starting video generation:", { prompt, model: safeParams.model });
-    progress.updateBar(requestId, 20, "Processing", "Starting video generation...");
+    progress.updateBar(
+        requestId,
+        20,
+        "Processing",
+        "Starting video generation...",
+    );
 
     let result: VideoGenerationResult;
     switch (safeParams.model) {
@@ -39,10 +44,20 @@ export async function createAndReturnVideo(
             result = await callVeoAPI(prompt, safeParams, progress, requestId);
             break;
         case "seedance":
-            result = await callSeedanceAPI(prompt, safeParams, progress, requestId);
+            result = await callSeedanceAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
             break;
         case "seedance-pro":
-            result = await callSeedanceProAPI(prompt, safeParams, progress, requestId);
+            result = await callSeedanceProAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
             break;
         case "wan":
             result = await callWanAPI(prompt, safeParams, progress, requestId);
@@ -51,10 +66,18 @@ export async function createAndReturnVideo(
             result = await callLtx2API(prompt, safeParams, progress, requestId);
             break;
         case "grok-video":
-            result = await callAirforceVideoAPI(prompt, safeParams, progress, requestId, "grok-imagine-video");
+            result = await callAirforceVideoAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                "grok-imagine-video",
+            );
             break;
         default:
-            throw new Error(`Video generation not supported for model: ${safeParams.model}`);
+            throw new Error(
+                `Video generation not supported for model: ${safeParams.model}`,
+            );
     }
 
     logOps("Video generation complete:", {
@@ -68,6 +91,8 @@ export async function createAndReturnVideo(
  * Check if a model is a video model by looking at the IMAGE_CONFIG
  */
 export function isVideoModel(model: string): boolean {
-    const config = IMAGE_CONFIG[model as ImageServiceId];
+    const config = IMAGE_CONFIG[model as ImageServiceId] as {
+        isVideo?: boolean;
+    };
     return config?.isVideo === true;
 }

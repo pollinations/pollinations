@@ -6,7 +6,9 @@ const log = Debug("pollinations:image.params");
 
 type ModelName = keyof typeof IMAGE_CONFIG;
 
-const allowedModels = Object.keys(IMAGE_CONFIG) as Array<keyof typeof IMAGE_CONFIG>;
+const allowedModels = Object.keys(IMAGE_CONFIG) as Array<
+    keyof typeof IMAGE_CONFIG
+>;
 const validQualities = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
@@ -36,7 +38,9 @@ function adjustImageSizeForModel(
     width?: number,
     height?: number,
 ): { width: number; height: number } {
-    const defaultSideLength = IMAGE_CONFIG[model].defaultSideLength ?? 1024;
+    const defaultSideLength =
+        (IMAGE_CONFIG[model] as { defaultSideLength?: number })
+            .defaultSideLength ?? 1024;
 
     // Use provided dimensions or default - no scaling/limiting
     const sanitizedWidth =

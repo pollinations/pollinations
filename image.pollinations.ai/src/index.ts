@@ -6,7 +6,6 @@ import debug from "debug";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { logIp } from "../../shared/ipLogger.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
-import { IMAGE_CONFIG } from "./models.js";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -15,6 +14,7 @@ import {
 import { createAndReturnVideo, isVideoModel } from "./createAndReturnVideos.js";
 import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
 import { HttpError } from "./httpError.js";
+import { IMAGE_CONFIG } from "./models.js";
 import {
     normalizeAndTranslatePrompt,
     type TimingStep,
@@ -562,11 +562,15 @@ const server = http.createServer((req, res) => {
             Pragma: "no-cache",
             Expires: "0",
         });
-        const modelDetails = Object.entries(IMAGE_CONFIG).map(([name, config]) => ({
-            name,
-            enhance: config.enhance || false,
-            defaultSideLength: config.defaultSideLength ?? 1024,
-        }));
+        const modelDetails = Object.entries(IMAGE_CONFIG).map(
+            ([name, config]) => ({
+                name,
+                enhance: config.enhance || false,
+                defaultSideLength:
+                    (config as { defaultSideLength?: number })
+                        .defaultSideLength ?? 1024,
+            }),
+        );
         res.end(JSON.stringify(modelDetails));
         return;
     }

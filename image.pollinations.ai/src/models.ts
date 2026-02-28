@@ -229,7 +229,9 @@ export function getScaledDimensions(
     width: number,
     height: number,
 ): { width: number; height: number } {
-    const config = IMAGE_CONFIG[modelName as ImageServiceId];
+    const config = IMAGE_CONFIG[
+        modelName as ImageServiceId
+    ] as ImageModelConfig;
     if (!config?.minPixels) {
         return { width, height };
     }

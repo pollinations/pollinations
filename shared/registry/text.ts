@@ -41,7 +41,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        contextWindow: 400000,
+        contextLength: 400000,
         isSpecialized: false,
     },
     "openai-fast": {
@@ -60,7 +60,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        contextWindow: 400000,
+        contextLength: 400000,
         isSpecialized: false,
     },
     "openai-large": {
@@ -80,7 +80,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextWindow: 400000,
+        contextLength: 400000,
         isSpecialized: false,
     },
     "qwen-coder": {
@@ -98,7 +98,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
-        contextWindow: 262144,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "mistral": {
@@ -120,7 +120,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
-        contextWindow: 131072,
+        contextLength: 131072,
         isSpecialized: false,
     },
     "openai-audio": {
@@ -144,7 +144,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],
         tools: true,
-        contextWindow: 128000,
+        contextLength: 128000,
         isSpecialized: false,
     },
     "gemini": {
@@ -168,7 +168,7 @@ export const TEXT_SERVICES = {
         tools: true,
         search: true,
         codeExecution: true,
-        contextWindow: 1048576,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-fast": {
@@ -191,7 +191,7 @@ export const TEXT_SERVICES = {
         tools: true,
         search: true,
         codeExecution: true,
-        contextWindow: 1048576,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "deepseek": {
@@ -211,7 +211,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextWindow: 163800,
+        contextLength: 163800,
         isSpecialized: false,
     },
     "grok": {
@@ -231,7 +231,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
-        contextWindow: 2000000,
+        contextLength: 2000000,
         isSpecialized: false,
     },
     "gemini-search": {
@@ -253,7 +253,7 @@ export const TEXT_SERVICES = {
         tools: false,
         search: true,
         codeExecution: true,
-        contextWindow: 1048576,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "midijourney": {
@@ -290,7 +290,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        contextWindow: 200000,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "claude": {
@@ -310,7 +310,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        contextWindow: 200000,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "claude-large": {
@@ -330,7 +330,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        contextWindow: 200000,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "claude-legacy": {
@@ -351,7 +351,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        contextWindow: 200000,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "perplexity-fast": {
@@ -370,7 +370,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: false,
         search: true,
-        contextWindow: 127072,
+        contextLength: 127072,
         isSpecialized: false,
     },
     "perplexity-reasoning": {
@@ -391,7 +391,7 @@ export const TEXT_SERVICES = {
         tools: false,
         reasoning: true,
         search: true,
-        contextWindow: 128000,
+        contextLength: 128000,
         isSpecialized: false,
     },
     "kimi": {
@@ -412,7 +412,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextWindow: 256000,
+        contextLength: 256000,
         isSpecialized: false,
     },
     "gemini-large": {
@@ -436,7 +436,7 @@ export const TEXT_SERVICES = {
         reasoning: true,
         search: true,
         codeExecution: false, // Disabled - was breaking gemini-large
-        contextWindow: 1048576,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-3-pro-preview": {
@@ -461,7 +461,7 @@ export const TEXT_SERVICES = {
         reasoning: true,
         search: true,
         codeExecution: false,
-        contextWindow: 1048576,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-legacy": {
@@ -486,7 +486,7 @@ export const TEXT_SERVICES = {
         reasoning: true,
         search: true,
         codeExecution: true,
-        contextWindow: 1048576,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "nova-fast": {
@@ -504,7 +504,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
-        contextWindow: 128000,
+        contextLength: 128000,
         isSpecialized: false,
     },
     "glm": {
@@ -525,7 +525,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextWindow: 198000,
+        contextLength: 198000,
         isSpecialized: false,
     },
     "minimax": {
@@ -545,7 +545,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextWindow: 200000,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "nomnom": {

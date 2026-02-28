@@ -61,7 +61,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
         output_modalities: service.outputModalities,
         tools: service.tools,
         reasoning: service.reasoning,
-        context_length: service.contextWindow,
+        context_length: service.contextLength,
         voices: service.voices,
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,

@@ -1,0 +1,36 @@
+{
+  "pr_number": 8526,
+  "title": "fix: make usage field optional in chat completion response schema",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8526",
+  "merged_at": "2026-02-28T19:34:52Z",
+  "labels": [
+    "TEXT",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No receipt needed",
+    "blurb": "We taught the API to stop asking for usage stats when they aren't there. Less paperwork, more chatting.",
+    "summary": "Updated the chat completion schema to make the `usage` field optional, preventing validation errors for providers that omit it.",
+    "impact": "API requests to community models that don't report usage stats will now succeed instead of failing validation.",
+    "keywords": [
+      "api",
+      "chat",
+      "schema",
+      "validation",
+      "openai"
+    ],
+    "visual_concept": "The Robot acting as a friendly gatekeeper, checking a clipboard (schema) but happily ignoring a blank spot for 'usage'. The Bee is chatting nearby, representing the message passing through.",
+    "image_prompt": "Cozy pixel art scene of the cute robot with monitor head holding a clipboard with a checklist, smiling and waving a green flag. The bee mascot hovers nearby with a speech bubble. Lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-28T19:35:41.305922+00:00"
+}

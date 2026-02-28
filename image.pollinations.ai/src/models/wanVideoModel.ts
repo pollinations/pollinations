@@ -91,9 +91,6 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
 /**
  * Generates a video using Alibaba DashScope API (wan-2.6)
  * Supports both text-to-video and image-to-video with optional audio
- *
- * NOTE: Airforce primary was disabled (2026-02-20) due to provider outage.
- * Now routes directly to DashScope.
  */
 export async function callWanAPI(
     prompt: string,

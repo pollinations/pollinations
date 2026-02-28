@@ -30,24 +30,39 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // ByteDance ARK Seedream 4.0 - better quality (default)
+    // ByteDance ARK Seedream 5.0 Lite - web search, reasoning
+    seedream5: {
+        type: "seedream5",
+        enhance: false,
+        defaultSideLength: 2048,
+        minPixels: 3686400, // Seedream 5.0 requires at least 1920x1920 pixels
+    },
+
+    // Legacy (hidden): real Seedream 4.0
     seedream: {
         type: "seedream",
         enhance: false,
-        defaultSideLength: 1024, // Seedream 4.0 standard resolution
+        defaultSideLength: 1024,
     },
 
-    // ByteDance ARK Seedream 4.5 Pro - high quality 4K image generation
+    // Legacy (hidden): real Seedream 4.5 Pro
     "seedream-pro": {
         type: "seedream-pro",
         enhance: false,
-        defaultSideLength: 2048, // Seedream 4.5 supports up to 4K
+        defaultSideLength: 2048,
         minPixels: 3686400, // Seedream 4.5 requires at least 1920x1920 pixels
     },
 
     // Gemini 2.5 Flash Image via Vertex AI - image-to-image generation
     nanobanana: {
         type: "vertex-ai",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Gemini 3.1 Flash Image via Vertex AI - faster flash with pro-level quality (Nano Banana 2)
+    "nanobanana-2": {
+        type: "vertex-ai-2",
         enhance: false,
         defaultSideLength: 1024,
     },
@@ -104,7 +119,7 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // Alibaba Wan 2.6 - Video generation with audio (DashScope only, airforce disabled)
+    // Alibaba Wan 2.6 - Video generation with audio
     wan: {
         type: "alibaba-dashscope-video",
         enhance: false,
@@ -142,22 +157,29 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
-    // "imagen-4": {
-    //     type: "airforce",
-    //     enhance: false,
-    //     defaultSideLength: 1024,
-    // },
+    // Imagen 4 - Google's latest image generation via api.airforce
+    "imagen-4": {
+        type: "airforce",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
 
-    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
-    // "grok-video": {
-    //     type: "airforce-video",
-    //     enhance: false,
-    //     isVideo: true,
-    //     defaultDuration: 5,
-    //     maxDuration: 10,
-    //     defaultResolution: "720p",
-    // },
+    // Grok Imagine - xAI image generation via api.airforce
+    "grok-imagine": {
+        type: "airforce",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Grok Imagine Video - xAI video generation via api.airforce
+    "grok-video": {
+        type: "airforce-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "720p",
+    },
 
     // LTX-2 - Fast video generation with audio on Modal
     "ltx-2": {

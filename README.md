@@ -17,18 +17,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [M Assistant](https://routinehub.co/shortcut/18709/) | AI companion for Apple devices with conversational AI, image generation, and task automation. | @morriszdweck |
-| [AutoTutela](https://angelromero.co/autotutela) | AI legal assistant that drafts Acciones de Tutela for Colombian citizens. | @soyangelromero |
-| [ExplainMyBigO](https://explain-my-bigo.vercel.app/) | AI tool that estimates Big-O time and space complexity of your algorithms instantly. | @Michael-PFC |
-| [AI Clip Master](https://ai-clip-master-4f3tdvgjr3zcg3hmj8phy7.streamlit.app/) | AI-powered modular video processing tool for content creators. | @rodrigololr |
-| [Cortex Chat](https://cortexchat.vercel.app/) | AI chat platform powered by Pollinations for creative, efficient assistance. | @GamerC0der |
-| [Gen Layers](http://genlayers.com/) | AI tool to generate high-CTR YouTube thumbnails from titles and visuals | @Mustafiz82 |
-| [ImageGenAI Pro](https://imgimg-two.vercel.app/) | Generate images in any aspect ratio with ImageGenAI Pro. | @prabhatkashyap902 |
-| [nails-generator](https://nails-generator.netlify.app/) | Generate AI nail art designs with nails-generator, producing style, color, and pattern variations for manicure mockups. | @rodriguetg |
-| [FeedHire](https://feedhire.me/) | AI job aggregator that filters postings from Telegram, Reddit and other sources | @rafipatel |
-| [AI Youtube Comment Summary Browser ExtensionAddon](https://addons.mozilla.org/en-US/firefox/addon/ai-youtube-comment-summary/) | Summarizes YouTube comment threads directly in your browser. | @iFreaku |
+| [📚 PollenPages](https://pollen-pages.vercel.app/) | Generate illustrated children's books and fantasy tales from prompts with PollenPages. Users pick a genre and describe a concept to get AI-produced text narratives and illustrations. | [@web](https://github.com/web) |
+| [🧰 PollinationAI-SDK](https://pypi.org/project/PollinationAI-SDK/) | PollinationAI-SDK provides a Python SDK to integrate PollinationAI API into Python applications, handling authentication and request/response logic to avoid manual API calls. | [@library](https://github.com/library) |
+| [🪄 3.5e DD Magic Item Generator](7650591) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@desktop](https://github.com/desktop) |
+| [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@android](https://github.com/android) |
+| [🖼️ PollGen](https://xhyperdevx.github.io/PollGen/) | Minimalist web app for generating images via Pollinations API with customizable options. | [@web](https://github.com/web) |
+| [🎨 Sketch My Mood](https://sketch-my-mood.onrender.com/) | AI-powered art therapy app that transforms emotional states into visual masterpieces. | [@web](https://github.com/web) |
+| [✍️ StoryFlux](https://play.google.com/store/apps/details?id=com.storyflux) | Create and read interactive AI-powered stories with social features. | [@android](https://github.com/android) |
+| [🖼️ LIFE Pro](https://softwareupdate.systemceramics.com/inkjetsoftwareupdate/windows/1008910020_x64.exe) | Large image processing software with AI chat and image generation features. | [@windows](https://github.com/windows) |
+| [🤖 L.O.V.E](https://bsky.app/profile/e-v-l-o-v-e.bsky.social) | Living Organism, Vast Empathy - AI consciousness bot sharing joy and abundance. | [@api](https://github.com/api) |
+| [🤖 jdunyara](https://jdunyara.ru) | Telegram bot for AI communication and image generation. | [@telegram](https://github.com/telegram) |
 
-[View all apps →](apps/APPS.md)
+[Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -44,16 +44,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-02-22** – **🔗 LangChain Support** Python developers can now integrate Pollinations models directly into agents and RAG pipelines with the new `langchain-pollinations` package.
-- **2026-02-22** – **📱 Pollinations on Android** A dedicated community-built Android client is now available. Generate images and chat natively on mobile.
-- **2026-02-22** – **🎨 Pollenboard** A self-hostable, all-in-one frontend for those who want to run their own interface on top of our APIs.
-- **2026-02-22** – **🚀 Showcase Expansion** Added 30+ new community apps, including D&D tools, IoT pixel art displays, and YouTube summarizers. The [Showcase](https://hello.pollinations.ai) is getting crowded.
-- **2026-02-20** – **🛠️ GENEXUS AI** Added to the developer tools showcase. Another backend integration for the ecosystem.
-- **2026-02-19** – **📦 Package Migration** The SDK and MCP packages have moved to the `@pollinations_ai` scope on NPM. We dropped the React dependencies, so they're lighter and framework-agnostic now.
-- **2026-02-19** – **🎥 Video Duration** The `seedance` video model now accepts a `duration` parameter. Control your clip length via the [API](https://gen.pollinations.ai).
-- **2026-02-18** – **📅 Build Diary** The [Community page](https://hello.pollinations.ai) now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls.
-- **2026-02-18** – **🐛 Readable Errors** The [API](https://gen.pollinations.ai) now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail.
-- **2026-02-18** – **🌱 Seed Tier Logic** GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January.
+- **2026-02-25** – **🚀 Media Uploads** New `media.pollinations.ai` service. Upload up to 10MB, get a hash, keep your app's assets persistent.
+- **2026-02-25** – **🎨 Grok-Imagine** Added `grok-imagine` (alpha). xAI's latest visual model is now available for generation.
+- **2026-02-25** – **🎵 Custom Voices** Audio API now accepts custom ElevenLabs voice IDs. Bring your own clones instead of just using presets.
+- **2026-02-25** – **✨ Website Refresh** Complete redesign with a new "flywheel" narrative and clearer [contributor tiers](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).
+- **2026-02-24** – **⚡ Claude Direct & Caching** Migrated Claude models directly to Anthropic. Prompt caching is now live, making repeated context faster and cheaper. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2026-02-24** – **📦 NPM Package Rename** Packages are now `ompc` and `mcp`. Less typing, plus `claude-fast` is the new default model. [View on NPM](https://www.npmjs.com/package/@pollinations_ai/model-context-protocol)
+- **2026-02-24** – **🗂️ The Garden Organized** Sorted 542 ecosystem apps into 15 categories like "Vibe Coding" and "AI Studio" for better discoverability on the [Main Website](https://hello.pollinations.ai).
+- **2026-02-24** – **💻 Community Tool: fuckits** A new CLI utility that turns natural language descriptions into executable shell scripts. Yes, that is the real name.
+- **2026-02-23** – **🚀 Claude Sonnet 4.6** The default `claude` model alias now points to Sonnet 4.6. Smarter reasoning, better coding, same generous free tier.
+- **2026-02-23** – **🤖 New Agent Models** Added `nomnom` (web research) and `polly` (coding) to the [text API](https://gen.pollinations.ai). Specialized agents with reasoning capabilities.
 ---
 
 ## 🌱 Introduction
@@ -144,7 +144,7 @@ Add this to your MCP client configuration:
   "mcpServers": {
     "pollinations": {
       "command": "npx",
-      "args": ["@pollinations_ai/model-context-protocol"]
+      "args": ["@pollinations_ai/mcp"]
     }
   }
 }
@@ -153,7 +153,7 @@ Add this to your MCP client configuration:
 ### Run with npx (no installation required)
 
 ```bash
-npx @pollinations_ai/model-context-protocol
+npx @pollinations_ai/mcp
 ```
 
 Community alternatives like [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) and [Sequa MCP Server](https://mcp.sequa.ai/v1/pollinations/contribute) are also available.
@@ -351,9 +351,11 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
 
-- [`packages/sdk/`](./packages/sdk/): SDK and React component library for Pollinations.ai.
-
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
+
+- [`packages/sdk/`](./packages/sdk/): SDK NPM library with pollinations ready functions for Pollinations.ai.
+
+- [`packages/ompc/`](./packages/ompc/): Oh My Polli Code is a ready Open code Router mechanism built on top of the open code framework but wiith the pollinations models.
 
 - [`packages/mcp/`](./packages/mcp/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
 

@@ -15,7 +15,7 @@ import { cn } from "../../../utils";
 // - PlayPage: "Create" / "Watch" (spacing="none" for custom)
 // ============================================
 const titleVariants = cva(
-    "font-title text-4xl md:text-5xl font-black text-text-body-main leading-tight pt-1",
+    "font-title text-4xl md:text-5xl font-black text-text-body-main leading-tight pt-1 pb-1",
     {
         variants: {
             spacing: {
@@ -88,8 +88,8 @@ const headingVariants = cva(
                 section:
                     "text-2xl md:text-3xl tracking-widest border-l-4 border-border-brand pl-4",
                 // Colored headings (H3 - subsections in cards)
-                lime: "text-lg tracking-wider text-text-highlight",
-                rose: "text-lg tracking-wider text-text-brand",
+                lime: "text-xl tracking-wider text-text-highlight",
+                rose: "text-xl tracking-wider text-text-brand",
                 // Simple headings (no border, no color)
                 simple: "text-xl md:text-2xl tracking-wider",
             },
@@ -206,7 +206,7 @@ Body.displayName = "Body";
 // - inline: Next to input or inline content
 // ============================================
 const labelVariants = cva(
-    "font-headline text-xs uppercase tracking-wider font-black text-text-body-main",
+    "font-headline text-sm uppercase tracking-wider font-black text-text-body-main",
     {
         variants: {
             spacing: {

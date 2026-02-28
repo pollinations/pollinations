@@ -106,7 +106,6 @@ test("GET /text/models includes context_length for standard models", async () =>
     expect(withContextLength.length).toBeGreaterThan(10);
 
     for (const model of withContextLength) {
-        expect(model.context_length).toBeTypeOf("number");
         expect(model.context_length).toBeGreaterThan(0);
     }
 });

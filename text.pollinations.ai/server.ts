@@ -69,7 +69,7 @@ app.use("*", async (c, next) => {
             "Invalid or missing PLN_ENTER_TOKEN from IP:",
             getIp(c.req.raw),
         );
-        return c.json({ error: "Unauthorized" }, 403);
+        return c.json({ error: "Unauthorized" }, 401);
     }
 
     authLog("Valid PLN_ENTER_TOKEN from IP:", getIp(c.req.raw));

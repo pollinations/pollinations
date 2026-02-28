@@ -63,7 +63,7 @@ export async function genericOpenAIClient(
     });
 
     let normalizedOptions: TransformOptions;
-    let modelName: string;
+    let modelName = "unknown";
 
     try {
         if (!authHeaderValue()) {

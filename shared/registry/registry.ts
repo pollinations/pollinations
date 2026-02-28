@@ -308,5 +308,3 @@ export function calculatePrice(serviceId: ServiceId, usage: Usage): UsagePrice {
         totalPrice,
     };
 }
-
-// ModelInfo, getModelInfo, getTextModelsInfo, getImageModelsInfo are in model-info.ts

@@ -1,4 +1,3 @@
-import { convertSystemToUserMessages } from "../textGenerationUtils.js";
 import type {
     ChatMessage,
     TransformFn,
@@ -40,18 +39,5 @@ export function createSystemPromptTransform(
             ],
             options,
         };
-    };
-}
-
-/**
- * Transform that converts system messages to user messages for providers that don't support system role.
- */
-export function removeSystemMessages(
-    messages: ChatMessage[],
-    options: TransformOptions,
-): TransformResult {
-    return {
-        messages: convertSystemToUserMessages(messages),
-        options,
     };
 }

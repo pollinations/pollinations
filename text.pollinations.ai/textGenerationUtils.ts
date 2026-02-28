@@ -38,31 +38,6 @@ export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
     });
 }
 
-/**
- * Converts system messages to user messages for models that don't support system messages.
- */
-export function convertSystemToUserMessages(
-    messages: ChatMessage[],
-): ChatMessage[] {
-    if (!messages.length) return messages;
-
-    log("Converting system messages to user messages");
-
-    return messages.map((msg) => {
-        if (msg.role !== "system") return msg;
-        const contentStr = typeof msg.content === "string" ? msg.content : "";
-        log(
-            "Converting system message to user message:",
-            `${contentStr.substring(0, 50)}...`,
-        );
-        return {
-            ...msg,
-            role: "user",
-            content: `System instruction: ${msg.content}`,
-        };
-    });
-}
-
 const TRUTHY_STRINGS = new Set(["true", "1", "yes"]);
 const FALSY_STRINGS = new Set(["false", "0", "no"]);
 

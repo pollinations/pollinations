@@ -1,11 +1,6 @@
-// Import transform functions
-
 import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
-// Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
-// Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
-// Import system prompts
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
@@ -16,11 +11,8 @@ import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonRespo
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import type { TransformFn } from "./types.js";
 
-// Type constraint: model names - using string for now to avoid circular dep
-type ValidServiceName = string;
-
 interface ModelDefinition {
-    name: ValidServiceName;
+    name: string;
     config: (typeof portkeyConfig)[ModelId];
     transform?: TransformFn;
 }

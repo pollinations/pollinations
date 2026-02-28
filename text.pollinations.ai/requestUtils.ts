@@ -22,7 +22,6 @@ export function getRequestData(req: ExpressLikeRequest): RequestData {
     const systemPrompt = (data.system as string) || null;
     const isPrivate =
         req.path?.startsWith("/openai") || validated.private === true;
-    const referrer = extractReferrer(req);
 
     const messages = (data.messages as RequestData["messages"]) || [
         { role: "user", content: req.params[0] },
@@ -32,25 +31,16 @@ export function getRequestData(req: ExpressLikeRequest): RequestData {
     }
 
     return {
+        // Validated params (temperature, top_p, seed, model, stream, etc.)
+        ...validated,
         messages,
-        jsonMode: validated.jsonMode as boolean | undefined,
-        seed: validated.seed as number | undefined,
-        model: validated.model as string | undefined,
-        temperature: validated.temperature as number | undefined,
-        top_p: validated.top_p as number | undefined,
-        presence_penalty: validated.presence_penalty as number | undefined,
-        frequency_penalty: validated.frequency_penalty as number | undefined,
-        repetition_penalty: validated.repetition_penalty as number | undefined,
-        referrer,
-        stream: validated.stream as boolean | undefined,
+        referrer: extractReferrer(req),
         isPrivate,
-        voice: validated.voice as string | undefined,
+        // Passthrough params not handled by validateTextGenerationParams
         tools: data.tools as unknown[] | undefined,
         tool_choice: data.tool_choice,
         modalities: data.modalities as string[] | undefined,
         audio: data.audio as Record<string, unknown> | undefined,
-        reasoning_effort: validated.reasoning_effort as string | undefined,
-        thinking_budget: validated.thinking_budget as number | undefined,
         response_format: data.response_format as RequestData["response_format"],
         max_tokens: data.max_tokens as number | undefined,
         max_completion_tokens: data.max_completion_tokens as number | undefined,
@@ -62,5 +52,5 @@ export function getRequestData(req: ExpressLikeRequest): RequestData {
         top_logprobs: data.top_logprobs,
         logit_bias: data.logit_bias,
         user: data.user,
-    };
+    } as RequestData;
 }

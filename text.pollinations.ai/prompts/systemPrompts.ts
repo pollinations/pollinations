@@ -1,19 +1,4 @@
-interface BasePrompts {
-    helpful: string;
-    openai: string;
-    conversational: string;
-    pollySearch: (date: string) => string;
-    unrestricted: string;
-    reasoning: string;
-    coding: string;
-    moderation: string;
-    searchGrounded: string;
-    hormoz: string;
-    character: string;
-    adultCompanion: string;
-}
-
-export const BASE_PROMPTS: BasePrompts = {
+export const BASE_PROMPTS = {
     helpful:
         "You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.",
     openai: "You are a helpful, knowledgeable assistant.",

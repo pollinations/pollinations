@@ -10,34 +10,46 @@ import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 
 const BYOP_DOCS = BYOP_MD.trim();
 
+// Repeated fragments used across code samples
+const BASE_URL = "https://gen.pollinations.ai";
+const AUTH_HEADER = '-H "Authorization: Bearer YOUR_API_KEY"';
+
+const PYTHON_CLIENT_INIT = `from openai import OpenAI
+
+client = OpenAI(
+    base_url="${BASE_URL}",
+    api_key="YOUR_API_KEY",
+)`;
+
+const JS_CLIENT_INIT = `import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "${BASE_URL}",
+  apiKey: "YOUR_API_KEY",
+});`;
+
 // Get all model aliases (values we want to hide from docs)
-const IMAGE_ALIASES: Set<string> = new Set(
-    Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
+const ALL_ALIASES: Set<string> = new Set(
+    [IMAGE_SERVICES, TEXT_SERVICES].flatMap((registry) =>
+        Object.values(registry).flatMap((service) => service.aliases),
+    ),
 );
-const TEXT_ALIASES: Set<string> = new Set(
-    Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
-);
-const ALL_ALIASES: Set<string> = new Set([...IMAGE_ALIASES, ...TEXT_ALIASES]);
 
 // Build dynamic model name lists from registry for tag descriptions
-const imageModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter(
-        (id) =>
-            !(
-                IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                    .outputModalities as string[] | undefined
-            )?.includes("video"),
-    )
-    .join(", ");
+function getImageServiceNames(includesVideo: boolean): string {
+    return Object.keys(IMAGE_SERVICES)
+        .filter((id) => {
+            const modalities = IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
+                .outputModalities as string[] | undefined;
+            return includesVideo
+                ? modalities?.includes("video")
+                : !modalities?.includes("video");
+        })
+        .join(", ");
+}
 
-const videoModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter((id) =>
-        (
-            IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                .outputModalities as string[] | undefined
-        )?.includes("video"),
-    )
-    .join(", ");
+const imageModelDisplayNames = getImageServiceNames(false);
+const videoModelDisplayNames = getImageServiceNames(true);
 
 function filterAliases(
     schema: Record<string, unknown>,
@@ -197,11 +209,26 @@ function generateLLMDoc(): string {
     lines.push("");
 
     // Models
-    lines.push("## Text Models");
-    lines.push("");
-    for (const [id, rawSvc] of Object.entries(TEXT_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
-        if (svc.hidden) continue;
+    function appendModelSection(
+        heading: string,
+        services: Record<string, ServiceDefinition<string>>,
+        describeLine: (id: string, svc: ServiceDefinition<string>) => string | null,
+    ): void {
+        lines.push(`## ${heading}`);
+        lines.push("");
+        for (const [id, svc] of Object.entries(services)) {
+            if (svc.hidden) continue;
+            const line = describeLine(id, svc);
+            if (line !== null) lines.push(line);
+        }
+        lines.push("");
+    }
+
+    function formatFlags(flags: string[]): string {
+        return flags.length ? ` (${flags.join(", ")})` : "";
+    }
+
+    appendModelSection("Text Models", TEXT_SERVICES as Record<string, ServiceDefinition<string>>, (id, svc) => {
         const caps: string[] = [];
         if (svc.tools) caps.push("tools");
         if (svc.reasoning) caps.push("reasoning");
@@ -211,49 +238,29 @@ function generateLLMDoc(): string {
         const flags: string[] = [];
         if (svc.alpha) flags.push("alpha");
         if (svc.paidOnly) flags.push("paid");
-        const flagStr = flags.length ? ` (${flags.join(", ")})` : "";
-        lines.push(`- ${id}: ${svc.description ?? id}${capsStr}${flagStr}`);
-    }
-    lines.push("");
+        return `- ${id}: ${svc.description ?? id}${capsStr}${formatFlags(flags)}`;
+    });
 
-    lines.push("## Image Models");
-    lines.push("");
-    for (const [id, rawSvc] of Object.entries(IMAGE_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
-        if (svc.hidden) continue;
-        if (svc.outputModalities?.includes("video")) continue;
+    appendModelSection("Image Models", IMAGE_SERVICES as Record<string, ServiceDefinition<string>>, (id, svc) => {
+        if (svc.outputModalities?.includes("video")) return null;
         const flags: string[] = [];
         if (svc.paidOnly) flags.push("paid");
         if (svc.inputModalities?.includes("image")) flags.push("image input");
-        const flagStr = flags.length ? ` (${flags.join(", ")})` : "";
-        lines.push(`- ${id}: ${svc.description ?? id}${flagStr}`);
-    }
-    lines.push("");
+        return `- ${id}: ${svc.description ?? id}${formatFlags(flags)}`;
+    });
 
-    lines.push("## Video Models");
-    lines.push("");
-    for (const [id, rawSvc] of Object.entries(IMAGE_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
-        if (svc.hidden) continue;
-        if (!svc.outputModalities?.includes("video")) continue;
+    appendModelSection("Video Models", IMAGE_SERVICES as Record<string, ServiceDefinition<string>>, (id, svc) => {
+        if (!svc.outputModalities?.includes("video")) return null;
         const flags: string[] = [];
         if (svc.paidOnly) flags.push("paid");
-        const flagStr = flags.length ? ` (${flags.join(", ")})` : "";
-        lines.push(`- ${id}: ${svc.description ?? id}${flagStr}`);
-    }
-    lines.push("");
+        return `- ${id}: ${svc.description ?? id}${formatFlags(flags)}`;
+    });
 
-    lines.push("## Audio Models");
-    lines.push("");
-    for (const [id, rawSvc] of Object.entries(AUDIO_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
-        if (svc.hidden) continue;
+    appendModelSection("Audio Models", AUDIO_SERVICES as Record<string, ServiceDefinition<string>>, (id, svc) => {
         const flags: string[] = [];
         if (svc.alpha) flags.push("alpha");
-        const flagStr = flags.length ? ` (${flags.join(", ")})` : "";
-        lines.push(`- ${id}: ${svc.description ?? id}${flagStr}`);
-    }
-    lines.push("");
+        return `- ${id}: ${svc.description ?? id}${formatFlags(flags)}`;
+    });
 
     lines.push("## Available Voices (TTS)");
     lines.push("");
@@ -286,8 +293,8 @@ const CODE_SAMPLES: Record<
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/v1/chat/completions \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
+            source: `curl ${BASE_URL}/v1/chat/completions \\
+  ${AUTH_HEADER} \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "openai",
@@ -297,12 +304,7 @@ const CODE_SAMPLES: Record<
         {
             label: "Python",
             lang: "Python",
-            source: `from openai import OpenAI
-
-client = OpenAI(
-    base_url="https://gen.pollinations.ai",
-    api_key="YOUR_API_KEY"
-)
+            source: `${PYTHON_CLIENT_INIT}
 
 response = client.chat.completions.create(
     model="openai",
@@ -313,12 +315,7 @@ print(response.choices[0].message.content)`,
         {
             label: "JavaScript",
             lang: "JavaScript",
-            source: `import OpenAI from "openai";
-
-const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai",
-  apiKey: "YOUR_API_KEY",
-});
+            source: `${JS_CLIENT_INIT}
 
 const response = await client.chat.completions.create({
   model: "openai",
@@ -331,8 +328,8 @@ console.log(response.choices[0].message.content);`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai" \\
-  -H "Authorization: Bearer YOUR_API_KEY"`,
+            source: `curl "${BASE_URL}/text/Write%20a%20haiku?model=openai" \\
+  ${AUTH_HEADER}`,
         },
         {
             label: "Python",
@@ -340,7 +337,7 @@ console.log(response.choices[0].message.content);`,
             source: `import requests
 
 response = requests.get(
-    "https://gen.pollinations.ai/text/Write a haiku",
+    "${BASE_URL}/text/Write a haiku",
     params={"model": "openai"},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
@@ -350,7 +347,7 @@ print(response.text)`,
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai",
+  "${BASE_URL}/text/Write%20a%20haiku?model=openai",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 console.log(await response.text());`,
@@ -361,18 +358,18 @@ console.log(await response.text());`,
             label: "HTML",
             lang: "HTML",
             source: `<!-- No code needed — use as an image URL -->
-<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux" />`,
+<img src="${BASE_URL}/image/a%20cat%20in%20space?model=flux" />`,
         },
         {
             label: "cURL",
             lang: "Shell",
             source: `# Generate an image
-curl "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o image.jpg
+curl "${BASE_URL}/image/a%20cat%20in%20space?model=flux" \\
+  ${AUTH_HEADER} -o image.jpg
 
 # Generate a video
-curl "https://gen.pollinations.ai/image/a%20sunset%20timelapse?model=veo&duration=4" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o video.mp4`,
+curl "${BASE_URL}/image/a%20sunset%20timelapse?model=veo&duration=4" \\
+  ${AUTH_HEADER} -o video.mp4`,
         },
         {
             label: "Python",
@@ -380,7 +377,7 @@ curl "https://gen.pollinations.ai/image/a%20sunset%20timelapse?model=veo&duratio
             source: `import requests
 
 response = requests.get(
-    "https://gen.pollinations.ai/image/a cat in space",
+    "${BASE_URL}/image/a cat in space",
     params={"model": "flux"},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
@@ -391,7 +388,7 @@ with open("image.jpg", "wb") as f:
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux",
+  "${BASE_URL}/image/a%20cat%20in%20space?model=flux",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const blob = await response.blob();`,
@@ -401,8 +398,8 @@ const blob = await response.blob();`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo&duration=4" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o video.mp4`,
+            source: `curl "${BASE_URL}/video/a%20sunset%20timelapse?model=veo&duration=4" \\
+  ${AUTH_HEADER} -o video.mp4`,
         },
         {
             label: "Python",
@@ -410,7 +407,7 @@ const blob = await response.blob();`,
             source: `import requests
 
 response = requests.get(
-    "https://gen.pollinations.ai/video/a sunset timelapse",
+    "${BASE_URL}/video/a sunset timelapse",
     params={"model": "veo", "duration": 4},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
@@ -421,7 +418,7 @@ with open("video.mp4", "wb") as f:
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo&duration=4",
+  "${BASE_URL}/video/a%20sunset%20timelapse?model=veo&duration=4",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const blob = await response.blob();`,
@@ -432,12 +429,12 @@ const blob = await response.blob();`,
             label: "cURL",
             lang: "Shell",
             source: `# Text-to-speech
-curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
+curl "${BASE_URL}/audio/Hello%20world?voice=nova" \\
+  ${AUTH_HEADER} -o speech.mp3
 
 # Generate music
-curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration=30" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3`,
+curl "${BASE_URL}/audio/upbeat%20jazz?model=elevenmusic&duration=30" \\
+  ${AUTH_HEADER} -o music.mp3`,
         },
         {
             label: "Python",
@@ -445,7 +442,7 @@ curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration
             source: `import requests
 
 response = requests.get(
-    "https://gen.pollinations.ai/audio/Hello world",
+    "${BASE_URL}/audio/Hello world",
     params={"voice": "nova"},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
@@ -456,7 +453,7 @@ with open("speech.mp3", "wb") as f:
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/audio/Hello%20world?voice=nova",
+  "${BASE_URL}/audio/Hello%20world?voice=nova",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const audio = await response.blob();`,
@@ -466,8 +463,8 @@ const audio = await response.blob();`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/v1/audio/speech \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
+            source: `curl ${BASE_URL}/v1/audio/speech \\
+  ${AUTH_HEADER} \\
   -H "Content-Type: application/json" \\
   -d '{"input": "Hello world", "voice": "nova"}' \\
   -o speech.mp3`,
@@ -475,12 +472,7 @@ const audio = await response.blob();`,
         {
             label: "Python",
             lang: "Python",
-            source: `from openai import OpenAI
-
-client = OpenAI(
-    base_url="https://gen.pollinations.ai",
-    api_key="YOUR_API_KEY",
-)
+            source: `${PYTHON_CLIENT_INIT}
 
 response = client.audio.speech.create(
     model="tts-1",
@@ -492,12 +484,7 @@ response.stream_to_file("speech.mp3")`,
         {
             label: "JavaScript",
             lang: "JavaScript",
-            source: `import OpenAI from "openai";
-
-const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai",
-  apiKey: "YOUR_API_KEY",
-});
+            source: `${JS_CLIENT_INIT}
 
 const response = await client.audio.speech.create({
   model: "tts-1",
@@ -511,20 +498,15 @@ const buffer = Buffer.from(await response.arrayBuffer());`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/v1/audio/transcriptions \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
+            source: `curl ${BASE_URL}/v1/audio/transcriptions \\
+  ${AUTH_HEADER} \\
   -F file=@audio.mp3 \\
   -F model=whisper-large-v3`,
         },
         {
             label: "Python",
             lang: "Python",
-            source: `from openai import OpenAI
-
-client = OpenAI(
-    base_url="https://gen.pollinations.ai",
-    api_key="YOUR_API_KEY",
-)
+            source: `${PYTHON_CLIENT_INIT}
 
 with open("audio.mp3", "rb") as f:
     transcript = client.audio.transcriptions.create(
@@ -539,7 +521,7 @@ print(transcript.text)`,
 import fs from "fs";
 
 const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai",
+  baseURL: "${BASE_URL}",
   apiKey: "YOUR_API_KEY",
 });
 
@@ -554,8 +536,8 @@ console.log(transcript.text);`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/account/balance \\
-  -H "Authorization: Bearer YOUR_API_KEY"`,
+            source: `curl ${BASE_URL}/account/balance \\
+  ${AUTH_HEADER}`,
         },
         {
             label: "Python",
@@ -563,7 +545,7 @@ console.log(transcript.text);`,
             source: `import requests
 
 response = requests.get(
-    "https://gen.pollinations.ai/account/balance",
+    "${BASE_URL}/account/balance",
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 print(response.json())  # {"balance": 42.5}`,
@@ -572,7 +554,7 @@ print(response.json())  # {"balance": 42.5}`,
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/account/balance",
+  "${BASE_URL}/account/balance",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const { balance } = await response.json();
@@ -583,8 +565,8 @@ console.log(balance);`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/account/profile \\
-  -H "Authorization: Bearer YOUR_API_KEY"`,
+            source: `curl ${BASE_URL}/account/profile \\
+  ${AUTH_HEADER}`,
         },
         {
             label: "Python",
@@ -592,7 +574,7 @@ console.log(balance);`,
             source: `import requests
 
 response = requests.get(
-    "https://gen.pollinations.ai/account/profile",
+    "${BASE_URL}/account/profile",
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 profile = response.json()
@@ -602,7 +584,7 @@ print(f"{profile['name']} ({profile['tier']})")`,
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/account/profile",
+  "${BASE_URL}/account/profile",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const profile = await response.json();
@@ -613,8 +595,8 @@ console.log(\`\${profile.name} (\${profile.tier})\`);`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/account/key \\
-  -H "Authorization: Bearer YOUR_API_KEY"`,
+            source: `curl ${BASE_URL}/account/key \\
+  ${AUTH_HEADER}`,
         },
         {
             label: "Python",
@@ -622,7 +604,7 @@ console.log(\`\${profile.name} (\${profile.tier})\`);`,
             source: `import requests
 
 response = requests.get(
-    "https://gen.pollinations.ai/account/key",
+    "${BASE_URL}/account/key",
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 key_info = response.json()
@@ -632,7 +614,7 @@ print(f"Valid: {key_info['valid']}, Type: {key_info['type']}")`,
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/account/key",
+  "${BASE_URL}/account/key",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const keyInfo = await response.json();
@@ -643,17 +625,12 @@ console.log(\`Valid: \${keyInfo.valid}, Type: \${keyInfo.type}\`);`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/v1/models`,
+            source: `curl ${BASE_URL}/v1/models`,
         },
         {
             label: "Python",
             lang: "Python",
-            source: `from openai import OpenAI
-
-client = OpenAI(
-    base_url="https://gen.pollinations.ai",
-    api_key="YOUR_API_KEY",
-)
+            source: `${PYTHON_CLIENT_INIT}
 
 models = client.models.list()
 for model in models.data:
@@ -662,12 +639,7 @@ for model in models.data:
         {
             label: "JavaScript",
             lang: "JavaScript",
-            source: `import OpenAI from "openai";
-
-const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai",
-  apiKey: "YOUR_API_KEY",
-});
+            source: `${JS_CLIENT_INIT}
 
 const models = await client.models.list();
 models.data.forEach((m) => console.log(m.id));`,
@@ -677,12 +649,12 @@ models.data.forEach((m) => console.log(m.id));`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/image/models`,
+            source: `curl ${BASE_URL}/image/models`,
         },
         {
             label: "JavaScript",
             lang: "JavaScript",
-            source: `const response = await fetch("https://gen.pollinations.ai/image/models");
+            source: `const response = await fetch("${BASE_URL}/image/models");
 const models = await response.json();
 models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
         },
@@ -691,12 +663,12 @@ models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/text/models`,
+            source: `curl ${BASE_URL}/text/models`,
         },
         {
             label: "JavaScript",
             lang: "JavaScript",
-            source: `const response = await fetch("https://gen.pollinations.ai/text/models");
+            source: `const response = await fetch("${BASE_URL}/text/models");
 const models = await response.json();
 models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
         },
@@ -705,12 +677,12 @@ models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/audio/models`,
+            source: `curl ${BASE_URL}/audio/models`,
         },
         {
             label: "JavaScript",
             lang: "JavaScript",
-            source: `const response = await fetch("https://gen.pollinations.ai/audio/models");
+            source: `const response = await fetch("${BASE_URL}/audio/models");
 const models = await response.json();
 models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
         },
@@ -720,12 +692,12 @@ models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
             label: "cURL",
             lang: "Shell",
             source: `# Get usage history (JSON)
-curl "https://gen.pollinations.ai/account/usage?limit=10" \\
-  -H "Authorization: Bearer YOUR_API_KEY"
+curl "${BASE_URL}/account/usage?limit=10" \\
+  ${AUTH_HEADER}
 
 # Export as CSV
-curl "https://gen.pollinations.ai/account/usage?format=csv&limit=100" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o usage.csv`,
+curl "${BASE_URL}/account/usage?format=csv&limit=100" \\
+  ${AUTH_HEADER} -o usage.csv`,
         },
         {
             label: "Python",
@@ -733,7 +705,7 @@ curl "https://gen.pollinations.ai/account/usage?format=csv&limit=100" \\
             source: `import requests
 
 response = requests.get(
-    "https://gen.pollinations.ai/account/usage",
+    "${BASE_URL}/account/usage",
     params={"limit": 10},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
@@ -745,8 +717,8 @@ for record in response.json()["data"]:
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl "https://gen.pollinations.ai/account/usage/daily?days=30" \\
-  -H "Authorization: Bearer YOUR_API_KEY"`,
+            source: `curl "${BASE_URL}/account/usage/daily?days=30" \\
+  ${AUTH_HEADER}`,
         },
     ],
 };

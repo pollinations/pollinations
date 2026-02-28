@@ -108,7 +108,7 @@ export async function getUserBalances(
     };
 }
 
-export type DeductionSource = {
+type DeductionSource = {
     fromTier: number;
     fromCrypto: number;
     fromPack: number;

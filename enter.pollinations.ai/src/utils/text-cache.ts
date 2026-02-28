@@ -72,19 +72,6 @@ export async function generateCacheKey(
         .join("");
 }
 
-/**
- * Prepare metadata for caching
- * Minimal metadata - only what's needed to serve the cached response
- */
-export function prepareMetadata(response: Response): Record<string, string> {
-    return {
-        response_content_type: response.headers.get("content-type") || "",
-        status: response.status.toString(),
-        statusText: response.statusText,
-        cachedAt: new Date().toISOString(),
-    };
-}
-
 type TextCacheEnv = {
     Bindings: CloudflareBindings;
     Variables: {
@@ -186,15 +173,19 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                             offset += chunk.byteLength;
                         }
 
-                        // Prepare metadata
-                        const metadata = prepareMetadata(response);
-
-                        // Store in R2
+                        // Store in R2 with response metadata
                         await c.env.TEXT_BUCKET.put(
                             cacheKey,
                             completeResponse,
                             {
-                                customMetadata: metadata,
+                                customMetadata: {
+                                    response_content_type:
+                                        response.headers.get("content-type") ||
+                                        "",
+                                    status: response.status.toString(),
+                                    statusText: response.statusText,
+                                    cachedAt: new Date().toISOString(),
+                                },
                             },
                         );
 

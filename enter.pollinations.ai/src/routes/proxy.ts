@@ -1,3 +1,4 @@
+import type { Logger } from "@logtape/logtape";
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
@@ -27,7 +28,6 @@ import {
 } from "@shared/registry/model-info.ts";
 import { getServiceDefinition } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
-import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import {
     getDefaultErrorMessage,
@@ -64,6 +64,49 @@ const videoModelNames = Object.entries(IMAGE_SERVICES)
 
 const factory = createFactory<Env>();
 
+/**
+ * Extract a meaningful error message from an upstream response body.
+ * Tries JSON parsing first (handles nested error formats from chat completion
+ * providers), then falls back to the raw response text.
+ */
+function extractErrorMessage(responseText: string, status: number): string {
+    if (!responseText) return getDefaultErrorMessage(status);
+    try {
+        const parsed = JSON.parse(responseText);
+        const extracted =
+            parsed?.details?.error?.message ||
+            parsed?.error?.message ||
+            parsed?.message ||
+            (typeof parsed?.error === "string" ? parsed.error : null);
+        if (extracted) return extracted;
+    } catch {
+        // Not JSON or parse failed - use raw text as-is
+    }
+    return responseText;
+}
+
+/**
+ * Shared upstream error handler. Reads the response body, logs a warning,
+ * and throws an UpstreamError with a remapped status code.
+ */
+async function throwUpstreamError(
+    response: Response,
+    targetUrl: URL,
+    log: Logger,
+): Promise<never> {
+    const responseText = await response.text();
+    const errorMessage = extractErrorMessage(responseText, response.status);
+    log.warn("Service error {status}: {body}", {
+        status: response.status,
+        body: responseText,
+    });
+    throw new UpstreamError(remapUpstreamStatus(response.status), {
+        message: errorMessage,
+        requestUrl: targetUrl,
+    });
+}
+
+
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
     resolveModel("generate.image"),
@@ -97,16 +140,7 @@ const imageVideoHandlers = factory.createHandlers(
         });
 
         if (!response.ok) {
-            const responseText = await response.text();
-            log.warn("Image service error {status}: {body}", {
-                status: response.status,
-                body: responseText,
-            });
-            throw new UpstreamError(remapUpstreamStatus(response.status), {
-                message:
-                    responseText || getDefaultErrorMessage(response.status),
-                requestUrl: targetUrl,
-            });
+            await throwUpstreamError(response, targetUrl, log);
         }
 
         return response;
@@ -139,33 +173,7 @@ const chatCompletionHandlers = factory.createHandlers(
         });
 
         if (!response.ok) {
-            const responseText = await response.text();
-            log.warn("Chat completions error {status}: {body}", {
-                status: response.status,
-                body: responseText,
-            });
-
-            // Try to extract meaningful error message from upstream JSON
-            let errorMessage =
-                responseText || getDefaultErrorMessage(response.status);
-            try {
-                const parsed = JSON.parse(responseText);
-                const extracted =
-                    parsed?.details?.error?.message ||
-                    parsed?.error?.message ||
-                    parsed?.message ||
-                    (typeof parsed?.error === "string" ? parsed.error : null);
-                if (extracted) {
-                    errorMessage = extracted;
-                }
-            } catch {
-                // Not JSON or parse failed - use raw text as-is
-            }
-
-            throw new UpstreamError(remapUpstreamStatus(response.status), {
-                message: errorMessage,
-                requestUrl: targetUrl,
-            });
+            await throwUpstreamError(response, targetUrl, log);
         }
 
         // add content filter headers if not streaming
@@ -473,16 +481,7 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
-                const responseText = await response.text();
-                log.warn("Text service error {status}: {body}", {
-                    status: response.status,
-                    body: responseText,
-                });
-                throw new UpstreamError(remapUpstreamStatus(response.status), {
-                    message:
-                        responseText || getDefaultErrorMessage(response.status),
-                    requestUrl: targetUrl,
-                });
+                await throwUpstreamError(response, targetUrl, log);
             }
 
             // Backend returns plain text for text models and raw audio for audio models
@@ -765,64 +764,58 @@ export function contentFilterResultsToHeaders(
         response.prompt_filter_results?.[0]?.content_filter_results;
     const completionFilters = response.choices?.[0]?.content_filter_results;
 
-    const mapToString = (value: unknown): string | undefined =>
-        value ? String(value) : undefined;
-
-    // Build header mappings
-    const headerMappings: Array<[string, unknown]> = [
-        // Prompt filters
-        ["x-moderation-prompt-hate-severity", promptFilters?.hate?.severity],
-        [
-            "x-moderation-prompt-self-harm-severity",
-            promptFilters?.self_harm?.severity,
-        ],
-        [
-            "x-moderation-prompt-sexual-severity",
-            promptFilters?.sexual?.severity,
-        ],
-        [
-            "x-moderation-prompt-violence-severity",
-            promptFilters?.violence?.severity,
-        ],
-        [
-            "x-moderation-prompt-jailbreak-detected",
-            promptFilters?.jailbreak?.detected,
-        ],
-        // Completion filters
-        [
-            "x-moderation-completion-hate-severity",
-            completionFilters?.hate?.severity,
-        ],
-        [
-            "x-moderation-completion-self-harm-severity",
-            completionFilters?.self_harm?.severity,
-        ],
-        [
-            "x-moderation-completion-sexual-severity",
-            completionFilters?.sexual?.severity,
-        ],
-        [
-            "x-moderation-completion-violence-severity",
-            completionFilters?.violence?.severity,
-        ],
-        [
-            "x-moderation-completion-protected-material-text-detected",
-            completionFilters?.protected_material_text?.detected,
-        ],
-        [
-            "x-moderation-completion-protected-material-code-detected",
-            completionFilters?.protected_material_code?.detected,
-        ],
-    ];
-
-    // Convert to headers, filtering out undefined values
     const headers: Record<string, string> = {};
-    for (const [key, value] of headerMappings) {
-        const stringValue = mapToString(value);
-        if (stringValue !== undefined) {
-            headers[key] = stringValue;
-        }
+    function addIfExists(key: string, value: unknown): void {
+        if (value != null) headers[key] = String(value);
     }
+
+    // Prompt filters
+    addIfExists(
+        "x-moderation-prompt-hate-severity",
+        promptFilters?.hate?.severity,
+    );
+    addIfExists(
+        "x-moderation-prompt-self-harm-severity",
+        promptFilters?.self_harm?.severity,
+    );
+    addIfExists(
+        "x-moderation-prompt-sexual-severity",
+        promptFilters?.sexual?.severity,
+    );
+    addIfExists(
+        "x-moderation-prompt-violence-severity",
+        promptFilters?.violence?.severity,
+    );
+    addIfExists(
+        "x-moderation-prompt-jailbreak-detected",
+        promptFilters?.jailbreak?.detected,
+    );
+
+    // Completion filters
+    addIfExists(
+        "x-moderation-completion-hate-severity",
+        completionFilters?.hate?.severity,
+    );
+    addIfExists(
+        "x-moderation-completion-self-harm-severity",
+        completionFilters?.self_harm?.severity,
+    );
+    addIfExists(
+        "x-moderation-completion-sexual-severity",
+        completionFilters?.sexual?.severity,
+    );
+    addIfExists(
+        "x-moderation-completion-violence-severity",
+        completionFilters?.violence?.severity,
+    );
+    addIfExists(
+        "x-moderation-completion-protected-material-text-detected",
+        completionFilters?.protected_material_text?.detected,
+    );
+    addIfExists(
+        "x-moderation-completion-protected-material-code-detected",
+        completionFilters?.protected_material_code?.detected,
+    );
 
     return headers;
 }

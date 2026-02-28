@@ -1,7 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import type { WebhookBenefitGrantCreatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcreatedpayload.js";
 import type { WebhookBenefitGrantUpdatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantupdatedpayload.js";
-import type { WebhookOrderPaidPayload } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
 import {
     validateEvent,
     WebhookVerificationError,
@@ -160,7 +159,13 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
                 break;
 
             case "order.paid":
-                await handleOrderPaid(c.env, payload);
+                log.debug(
+                    "order.paid for user {userId} (packs handled via benefit_grant)",
+                    {
+                        userId: payload.data.customer.externalId ?? "unknown",
+                        productId: payload.data.productId,
+                    },
+                );
                 break;
 
             default:
@@ -275,18 +280,3 @@ async function handlePackBenefitGrant(
     }
 }
 
-async function handleOrderPaid(
-    _env: Cloudflare.Env,
-    payload: WebhookOrderPaidPayload,
-): Promise<void> {
-    // Pack purchases are handled by benefit_grant.created webhook which includes
-    // the full benefit with units. This handler is kept for logging/future use.
-    const externalId = payload.data.customer.externalId;
-    log.debug(
-        "order.paid for user {userId} (packs handled via benefit_grant)",
-        {
-            userId: externalId ?? "unknown",
-            productId: payload.data.productId,
-        },
-    );
-}

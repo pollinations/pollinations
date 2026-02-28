@@ -101,9 +101,6 @@ export type TinybirdEvent = {
     errorMessage?: string;
 };
 
-// Alias for backward compatibility with track.ts
-export type InsertGenerationEvent = TinybirdEvent;
-
 export type GenerationEventPriceParams = {
     tokenPricePromptText: number;
     tokenPricePromptCached: number;

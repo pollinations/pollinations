@@ -1,21 +1,14 @@
-import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import { getUserBalances, type UserBalances } from "@/utils/balance-deduction.ts";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
     selectedMeterSlug: string;
     balances: Record<string, number>;
-};
-
-export type UserBalance = {
-    tierBalance: number;
-    packBalance: number;
-    cryptoBalance: number;
 };
 
 export type BalanceVariables = {
@@ -25,7 +18,7 @@ export type BalanceVariables = {
             message?: string,
         ) => Promise<void>;
         requirePaidBalance: (userId: string, message?: string) => Promise<void>;
-        getBalance: (userId: string) => Promise<UserBalance>;
+        getBalance: (userId: string) => Promise<UserBalances>;
         balanceCheckResult?: BalanceCheckResult;
     };
 };
@@ -41,29 +34,13 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
 
     // Get balance from D1 only
     // Pack balance is updated via webhooks, tier balance via daily cron
-    const getBalance = async (userId: string): Promise<UserBalance> => {
-        const users = await db
-            .select({
-                tierBalance: userTable.tierBalance,
-                packBalance: userTable.packBalance,
-                cryptoBalance: userTable.cryptoBalance,
-            })
-            .from(userTable)
-            .where(eq(userTable.id, userId))
-            .limit(1);
-
-        const user = users[0];
-        return {
-            tierBalance: user?.tierBalance ?? 0,
-            packBalance: user?.packBalance ?? 0,
-            cryptoBalance: user?.cryptoBalance ?? 0,
-        };
-    };
+    const getBalance = async (userId: string): Promise<UserBalances> =>
+        getUserBalances(db, userId);
 
     // Helper to fetch balance with error handling
     const fetchBalanceWithErrorHandling = async (
         userId: string,
-    ): Promise<UserBalance> => {
+    ): Promise<UserBalances> => {
         try {
             return await getBalance(userId);
         } catch (error) {
@@ -79,7 +56,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
 
     // Helper to determine selected balance source
     const determineBalanceSource = (
-        balances: UserBalance,
+        balances: UserBalances,
         isPaidOnly = false,
     ): { source: string; slug: string } => {
         if (isPaidOnly) {

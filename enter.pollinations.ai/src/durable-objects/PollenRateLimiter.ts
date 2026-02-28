@@ -91,25 +91,4 @@ export class PollenRateLimiter extends DurableObject {
         await this.ctx.storage.put("nextAllowedTime", this.nextAllowedTime);
     }
 
-    /**
-     * Get current state (for debugging)
-     */
-    async getState(): Promise<{
-        nextAllowedTime: number;
-        msUntilAllowed: number;
-    }> {
-        const now = Date.now();
-        return {
-            nextAllowedTime: this.nextAllowedTime,
-            msUntilAllowed: Math.max(0, this.nextAllowedTime - now),
-        };
-    }
-
-    /**
-     * Reset rate limiter (for testing)
-     */
-    async reset(): Promise<void> {
-        this.nextAllowedTime = 0;
-        await this.ctx.storage.put("nextAllowedTime", 0);
-    }
 }

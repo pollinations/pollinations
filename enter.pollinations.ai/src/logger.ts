@@ -70,7 +70,6 @@ export async function ensureConfigured(options: {
             },
         ],
         contextLocalStorage: new AsyncLocalStorage(),
-        reset: true,
     });
     configured = true;
 }

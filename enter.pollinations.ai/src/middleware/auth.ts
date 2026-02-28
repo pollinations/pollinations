@@ -47,7 +47,6 @@ interface AuthResult {
     user?: User;
     session?: Session;
     apiKey?: ApiKey;
-    rawApiKey?: string;
 }
 
 /** Extracts Bearer token from Authorization header (RFC 6750) or query parameter */
@@ -133,7 +132,6 @@ export const auth = (options: AuthOptions) =>
                     pollenBalance: fullApiKey?.pollenBalance ?? null,
                     rawKey: rawApiKey,
                 },
-                rawApiKey,
             };
         };
 

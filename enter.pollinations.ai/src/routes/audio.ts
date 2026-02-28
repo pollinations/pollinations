@@ -82,6 +82,44 @@ function mapOutputFormat(format: string): string {
     return formatMap[format] || "mp3_44100_128";
 }
 
+/**
+ * POST to an ElevenLabs JSON endpoint with the standard auth/content headers.
+ */
+async function fetchElevenLabs(
+    url: string,
+    body: Record<string, unknown>,
+    apiKey: string,
+): Promise<Response> {
+    return fetch(url, {
+        method: "POST",
+        headers: {
+            "xi-api-key": apiKey,
+            "Content-Type": "application/json",
+            Accept: "audio/mpeg",
+        },
+        body: JSON.stringify(body),
+    });
+}
+
+/**
+ * Check an ElevenLabs response and throw an UpstreamError on failure.
+ */
+async function handleElevenLabsError(
+    response: Response,
+    log: Logger,
+): Promise<void> {
+    if (!response.ok) {
+        const errorText = await response.text();
+        log.warn("ElevenLabs error {status}: {body}", {
+            status: response.status,
+            body: errorText,
+        });
+        throw new UpstreamError(remapUpstreamStatus(response.status), {
+            message: errorText || getDefaultErrorMessage(response.status),
+        });
+    }
+}
+
 export async function generateSpeech(opts: {
     text: string;
     voice: string;
@@ -134,26 +172,8 @@ export async function generateSpeech(opts: {
         },
     };
 
-    const response = await fetch(elevenLabsUrl, {
-        method: "POST",
-        headers: {
-            "xi-api-key": apiKey,
-            "Content-Type": "application/json",
-            Accept: "audio/mpeg",
-        },
-        body: JSON.stringify(elevenLabsBody),
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("ElevenLabs error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-        });
-    }
+    const response = await fetchElevenLabs(elevenLabsUrl, elevenLabsBody, apiKey);
+    await handleElevenLabsError(response, log);
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
@@ -232,16 +252,7 @@ export async function transcribeWithElevenLabs(opts: {
         },
     );
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("ElevenLabs transcription error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-        });
-    }
+    await handleElevenLabsError(response, log);
 
     const elevenLabsData: ElevenLabsTranscriptionResponse =
         await response.json();
@@ -349,26 +360,8 @@ export async function generateMusic(opts: {
         elevenLabsBody.force_instrumental = true;
     }
 
-    const response = await fetch(elevenLabsUrl, {
-        method: "POST",
-        headers: {
-            "xi-api-key": apiKey,
-            "Content-Type": "application/json",
-            Accept: "audio/mpeg",
-        },
-        body: JSON.stringify(elevenLabsBody),
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("ElevenLabs Music error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-        });
-    }
+    const response = await fetchElevenLabs(elevenLabsUrl, elevenLabsBody, apiKey);
+    await handleElevenLabsError(response, log);
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
@@ -453,8 +446,7 @@ export const audioRoutes = new Hono<Env>()
             const { input, voice, response_format } = c.req.valid(
                 "json" as never,
             ) as CreateSpeechRequest;
-            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
-                .ELEVENLABS_API_KEY;
+            const apiKey = c.env.ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(
@@ -592,9 +584,7 @@ export const audioRoutes = new Hono<Env>()
 
             // Route to ElevenLabs Scribe or Whisper based on model
             if (c.var.model.resolved === "scribe") {
-                const elevenLabsApiKey = (
-                    c.env as unknown as { ELEVENLABS_API_KEY: string }
-                ).ELEVENLABS_API_KEY;
+                const elevenLabsApiKey = c.env.ELEVENLABS_API_KEY;
                 const response = await transcribeWithElevenLabs({
                     file,
                     language: language || undefined,

@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
+import { bufferToHex } from "../util.ts";
 
 const log = getLogger(["hono", "webhooks-crypto"]);
 
@@ -120,11 +121,7 @@ async function verifyIpnSignatureAsync(
             key,
             messageData,
         );
-        const hashArray = Array.from(new Uint8Array(signatureBuffer));
-        const hashHex = hashArray
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("");
-        return hashHex === signature;
+        return bufferToHex(signatureBuffer) === signature;
     } catch {
         return false;
     }

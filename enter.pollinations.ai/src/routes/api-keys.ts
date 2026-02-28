@@ -44,27 +44,31 @@ function buildUpdatedPermissions(
 }
 
 /**
- * Parse permissions JSON, returning null for empty objects or invalid JSON.
+ * Safely parse a JSON string, returning null on failure.
  */
-function parsePermissions(raw: string): Record<string, string[]> | null {
+function parseJSON<T>(text: string): T | null {
     try {
-        const parsed = JSON.parse(raw);
-        return Object.keys(parsed).length > 0 ? parsed : null;
+        return JSON.parse(text);
     } catch {
         return null;
     }
 }
 
 /**
+ * Parse permissions JSON, returning null for empty objects or invalid JSON.
+ */
+function parsePermissions(raw: string): Record<string, string[]> | null {
+    const parsed = parseJSON<Record<string, string[]>>(raw);
+    return parsed && Object.keys(parsed).length > 0 ? parsed : null;
+}
+
+/**
  * Parse potentially double-serialized JSON metadata
  */
 function parseMetadata(metadata: string): Record<string, unknown> | null {
-    try {
-        const parsed = JSON.parse(metadata);
-        return typeof parsed === "string" ? JSON.parse(parsed) : parsed;
-    } catch {
-        return null;
-    }
+    const parsed = parseJSON<Record<string, unknown> | string>(metadata);
+    if (typeof parsed === "string") return parseJSON<Record<string, unknown>>(parsed);
+    return parsed;
 }
 
 /**

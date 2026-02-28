@@ -1,5 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import type { Env } from "../env.ts";
+import { bufferToHex } from "../util.ts";
 
 /**
  * Serialized response data that can be shared across request contexts
@@ -175,10 +176,5 @@ async function createRequestKey(c: {
     const encoder = new TextEncoder();
     const data = encoder.encode(combined);
     const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-
-    return `req:${hashHex}`;
+    return `req:${bufferToHex(hashBuffer)}`;
 }

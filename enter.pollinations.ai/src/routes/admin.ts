@@ -1,4 +1,3 @@
-import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -70,7 +69,6 @@ async function sendBulkTierRefillEvents(
     environment: string,
     tinybirdUrl: string | undefined,
     tinybirdToken: string | undefined,
-    logger: Logger,
 ): Promise<void> {
     if (!tinybirdUrl || !tinybirdToken || users.length === 0) {
         logger.warn(
@@ -341,7 +339,6 @@ export const adminRoutes = new Hono<Env>()
                 c.env.ENVIRONMENT || "unknown",
                 c.env.TINYBIRD_TIER_INGEST_URL,
                 c.env.TINYBIRD_INGEST_TOKEN,
-                log,
             ),
         );
 

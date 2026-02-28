@@ -135,58 +135,6 @@ export function extractToken(req) {
 }
 
 /**
- * Determine the source of the token (header, query param, body)
- * @param {Request|Object} req - The request object
- * @returns {string} The source of the token
- */
-
-export function getTokenSource(req) {
-    const token = extractToken(req);
-    if (!token) return "unknown";
-
-    const queryResult = extractFromQuery(req.url, TOKEN_FIELDS.query);
-    if (queryResult.value === token) return queryResult.source;
-
-    const headerResult = extractFromHeaders(req.headers, TOKEN_FIELDS.header);
-    if (headerResult.value === token) return headerResult.source;
-
-    const bodyResult = extractFromBody(req.body, TOKEN_FIELDS.body);
-    if (bodyResult.value === token) return bodyResult.source;
-
-    return "unknown";
-}
-/**
- * Get client IP address from request
- * @param {Request|Object} req - The request object
- * @returns {string} The client IP or 'unknown'
- */
-
-export function getClientIp(req) {
-    // Handle Cloudflare Workers Request
-    if (req.headers && typeof req.headers.get === "function") {
-        return (
-            req.headers.get("cf-connecting-ip") ||
-            req.headers.get("x-real-ip") ||
-            req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-            "unknown"
-        );
-    }
-
-    // Handle Express/Node.js request
-    if (req.headers && typeof req.headers === "object") {
-        return (
-            req.headers["cf-connecting-ip"] ||
-            req.headers["x-real-ip"] ||
-            (req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
-            req.connection?.remoteAddress ||
-            "unknown"
-        );
-    }
-
-    return "unknown";
-}
-
-/**
  * Helper function to extract value from query parameters
  * @param {string} url - Request URL
  * @param {string[]} fields - Array of field names to check

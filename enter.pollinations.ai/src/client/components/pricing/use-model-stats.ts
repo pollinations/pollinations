@@ -3,7 +3,7 @@
  * Uses the backend /api/model-stats endpoint which caches Tinybird data server-side (6h TTL)
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 export type ModelStats = Record<
     string,
@@ -70,8 +70,5 @@ export function useModelStats(): {
         };
     }, []);
 
-    // Memoize to prevent unnecessary re-renders when stats haven't changed
-    const memoizedStats = useMemo(() => stats, [stats]);
-
-    return { stats: memoizedStats, isLoading, error };
+    return { stats, isLoading, error };
 }

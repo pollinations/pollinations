@@ -141,31 +141,27 @@ const ChatCompletionMessageContentPartRedactedThinkingSchema = z.object({
     data: z.string(),
 });
 
+const MessageContentSchema = z.union([
+    z.string(),
+    z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+]);
+
 const ChatCompletionRequestSystemMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
+    content: MessageContentSchema,
     role: z.literal("system"),
     name: z.string().optional(),
     cache_control: CacheControlSchema,
 });
 
 const ChatCompletionRequestDeveloperMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
+    content: MessageContentSchema,
     role: z.literal("developer"),
     name: z.string().optional(),
     cache_control: CacheControlSchema,
 });
 
 const ChatCompletionRequestUserMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
+    content: MessageContentSchema,
     role: z.literal("user"),
     name: z.string().optional(),
 });
@@ -184,13 +180,7 @@ const ChatCompletionMessageToolCallsSchema = z.array(
 );
 
 const ChatCompletionRequestAssistantMessageSchema = z.object({
-    content: z
-        .union([
-            z.string(),
-            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-        ])
-        .nullable()
-        .optional(),
+    content: MessageContentSchema.nullable().optional(),
     role: z.literal("assistant"),
     name: z.string().optional(),
     tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
@@ -206,12 +196,7 @@ const ChatCompletionRequestAssistantMessageSchema = z.object({
 
 const ChatCompletionRequestToolMessageSchema = z.object({
     role: z.literal("tool"),
-    content: z
-        .union([
-            z.string(),
-            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-        ])
-        .nullable(),
+    content: MessageContentSchema.nullable(),
     tool_call_id: z.string(),
     cache_control: CacheControlSchema,
 });
@@ -270,6 +255,14 @@ const ThinkingSchema = z
     .nullable()
     .optional();
 
+const PenaltySchema = z
+    .number()
+    .min(-2)
+    .max(2)
+    .nullable()
+    .optional()
+    .default(0);
+
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
     model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
@@ -283,13 +276,7 @@ export const CreateChatCompletionRequestSchema = z.object({
             format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
         })
         .optional(),
-    frequency_penalty: z
-        .number()
-        .min(-2)
-        .max(2)
-        .nullable()
-        .optional()
-        .default(0),
+    frequency_penalty: PenaltySchema,
     repetition_penalty: z.number().min(0).max(2).nullable().optional(),
     logit_bias: z
         .record(z.string(), z.number().int())
@@ -299,13 +286,7 @@ export const CreateChatCompletionRequestSchema = z.object({
     logprobs: z.boolean().nullable().optional().default(false),
     top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
     max_tokens: z.number().int().min(0).nullable().optional(),
-    presence_penalty: z
-        .number()
-        .min(-2)
-        .max(2)
-        .nullable()
-        .optional()
-        .default(0),
+    presence_penalty: PenaltySchema,
     response_format: ResponseFormatUnionSchema.optional(),
     seed: z
         .number()
@@ -434,36 +415,25 @@ export const ContentFilterSeveritySchema = z
 
 export type ContentFilterSeverity = z.infer<typeof ContentFilterSeveritySchema>;
 
+const SeverityFilterSchema = z.object({
+    filtered: z.boolean(),
+    severity: ContentFilterSeveritySchema,
+});
+
+const DetectionFilterSchema = z.object({
+    filtered: z.boolean(),
+    detected: z.boolean(),
+});
+
 export const ContentFilterResultSchema = z
     .object({
-        hate: z.object({
-            filtered: z.boolean(),
-            severity: ContentFilterSeveritySchema,
-        }),
-        self_harm: z.object({
-            filtered: z.boolean(),
-            severity: ContentFilterSeveritySchema,
-        }),
-        sexual: z.object({
-            filtered: z.boolean(),
-            severity: ContentFilterSeveritySchema,
-        }),
-        violence: z.object({
-            filtered: z.boolean(),
-            severity: ContentFilterSeveritySchema,
-        }),
-        jailbreak: z.object({
-            filtered: z.boolean(),
-            detected: z.boolean(),
-        }),
-        protected_material_text: z.object({
-            filtered: z.boolean(),
-            detected: z.boolean(),
-        }),
-        protected_material_code: z.object({
-            filtered: z.boolean(),
-            detected: z.boolean(),
-        }),
+        hate: SeverityFilterSchema,
+        self_harm: SeverityFilterSchema,
+        sexual: SeverityFilterSchema,
+        violence: SeverityFilterSchema,
+        jailbreak: DetectionFilterSchema,
+        protected_material_text: DetectionFilterSchema,
+        protected_material_code: DetectionFilterSchema,
     })
     .partial()
     .meta({ $id: "ContentFilterResult" });

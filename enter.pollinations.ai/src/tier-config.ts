@@ -26,15 +26,10 @@ export function isValidTier(tier: string): tier is TierName {
     return tier in TIERS;
 }
 
-// Type-safe overloads: no fallback needed when TierName is guaranteed
-export function getTierPollen(tier: TierName): number;
-export function getTierPollen(tier: string): number;
 export function getTierPollen(tier: string): number {
     return isValidTier(tier) ? TIERS[tier].pollen : TIERS[DEFAULT_TIER].pollen;
 }
 
-export function getTierEmoji(tier: TierName): string;
-export function getTierEmoji(tier: string): string;
 export function getTierEmoji(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].emoji : TIERS[DEFAULT_TIER].emoji;
 }
@@ -44,14 +39,10 @@ export const TIER_COLORS = Object.fromEntries(
     Object.entries(TIERS).map(([tier, c]) => [tier, c.color]),
 ) as Record<TierName, string>;
 
-export function getTierColor(tier: TierName): string;
-export function getTierColor(tier: string): string;
 export function getTierColor(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].color : TIERS[DEFAULT_TIER].color;
 }
 
-export function getTierCadence(tier: TierName): "daily" | "weekly";
-export function getTierCadence(tier: string): "daily" | "weekly";
 export function getTierCadence(tier: string): "daily" | "weekly" {
     return isValidTier(tier)
         ? TIERS[tier].cadence

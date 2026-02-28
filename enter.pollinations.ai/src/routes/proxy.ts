@@ -1,9 +1,6 @@
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
@@ -209,25 +206,14 @@ function filterModelsByPermissions<
 }
 
 // Check if authenticated user has paid balance (pack or crypto > 0)
-// Returns undefined if no user (unauthenticated), true/false otherwise
-async function checkPaidBalance(c: Context<Env>): Promise<boolean | undefined> {
-    const userId = c.var.auth?.user?.id;
-    if (!userId) return undefined;
-    try {
-        const db = drizzle(c.env.DB);
-        const users = await db
-            .select({
-                packBalance: userTable.packBalance,
-                cryptoBalance: userTable.cryptoBalance,
-            })
-            .from(userTable)
-            .where(eq(userTable.id, userId))
-            .limit(1);
-        const user = users[0];
-        return (user?.packBalance ?? 0) > 0 || (user?.cryptoBalance ?? 0) > 0;
-    } catch {
-        return undefined; // On error, don't filter — show all models
-    }
+// Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
+// Returns undefined if no user (unauthenticated), true/false otherwise.
+function hasPaidBalance(c: Context<Env>): boolean | undefined {
+    const user = c.var.auth?.user as
+        | { packBalance?: number; cryptoBalance?: number }
+        | undefined;
+    if (!user) return undefined;
+    return (user.packBalance ?? 0) > 0 || (user.cryptoBalance ?? 0) > 0;
 }
 
 export const proxyRoutes = new Hono<Env>()
@@ -265,11 +251,11 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-            const hasPaidBalance = await checkPaidBalance(c);
+            const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getTextModelsInfo(),
                 allowedModels,
-                hasPaidBalance,
+                paidBalance,
             );
             const now = Date.now();
             return c.json({
@@ -309,11 +295,11 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             try {
                 const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-                const hasPaidBalance = await checkPaidBalance(c);
+                const paidBalance = hasPaidBalance(c);
                 const models = filterModelsByPermissions(
                     getImageModelsInfo(),
                     allowedModels,
-                    hasPaidBalance,
+                    paidBalance,
                 );
                 return c.json(models);
             } catch (error) {
@@ -350,11 +336,11 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-            const hasPaidBalance = await checkPaidBalance(c);
+            const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getTextModelsInfo(),
                 allowedModels,
-                hasPaidBalance,
+                paidBalance,
             );
             return c.json(models);
         },
@@ -385,11 +371,11 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-            const hasPaidBalance = await checkPaidBalance(c);
+            const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getAudioModelsInfo(),
                 allowedModels,
-                hasPaidBalance,
+                paidBalance,
             );
             return c.json(models);
         },

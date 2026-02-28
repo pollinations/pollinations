@@ -1,4 +1,4 @@
-import sleep from "await-sleep";
+import { sleep } from "../util.ts";
 import debug from "debug";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";

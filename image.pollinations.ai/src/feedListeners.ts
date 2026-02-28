@@ -6,8 +6,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 const logFeed = debug("pollinations:feed");
 const logAuth = debug("pollinations:auth");
 
-let feedListeners = [];
-const lastStates = [];
+type FeedListener = { res: ServerResponse; isAuthenticated: boolean };
+
+let feedListeners: FeedListener[] = [];
+const lastStates: unknown[] = [];
 
 function getAbsoluteUrl(req: IncomingMessage): URL {
     const host = req.headers.host;
@@ -44,7 +46,7 @@ export const registerFeedListener = async (
     }
 
     // add listener to feedListeners with authentication status
-    feedListeners = [...feedListeners, { res, isAuthenticated }];
+    feedListeners.push({ res, isAuthenticated });
 
     // remove listener when connection closes
     req.on("close", () => {

@@ -1,5 +1,4 @@
 import sharp from "sharp";
-import { exiftool } from "exiftool-vendored";
 import debug from "debug";
 
 const logPerf = debug("pollinations:perf");

@@ -13,9 +13,7 @@ export class HttpError extends Error {
         this.status = status;
         this.details = details;
         
-        // Maintains proper stack trace for where our error was thrown (only available on V8)ew 
-        if (Error.captureStackTrace) {
-            Error.captureStackTrace(this, HttpError);
-        }
+        // Maintains proper stack trace for where our error was thrown (only available on V8)
+        Error.captureStackTrace(this, HttpError);
     }
 }

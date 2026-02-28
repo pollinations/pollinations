@@ -42,9 +42,7 @@ async function _generateTransparentImage(
 
     // Convert to base64 for Vertex AI inlineData
     const base64 = transparentBuffer.toString('base64');
-    
-    console.log(`Generated transparent WebP: ${width}x${height} → ${base64.length} chars (${transparentBuffer.length}B) [memoized]`);
-    
+
     return {
         base64: base64,
         mimeType: `image/${TRANSPARENT_IMAGE_CONFIG.FORMAT}`

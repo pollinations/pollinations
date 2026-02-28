@@ -1,10 +1,10 @@
 // CatGPT Meme Generator — UI, state, and DOM logic
 
 import {
-    EXAMPLES_MAP,
     createImageGenerationPrompt,
-    generateImageURL,
+    EXAMPLES_MAP,
     fetchImageWithAuth,
+    generateImageURL,
     handleImageUpload,
 } from "./ai.js";
 
@@ -19,13 +19,31 @@ const CAT_FACTS = [
 ];
 
 const KONAMI_SEQUENCE = [
-    "ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown",
-    "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight",
-    "b", "a",
+    "ArrowUp",
+    "ArrowUp",
+    "ArrowDown",
+    "ArrowDown",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowLeft",
+    "ArrowRight",
+    "b",
+    "a",
 ];
 
 const ANIMATION_CONFIG = {
-    LOADING_CATS: ["🐱", "😺", "😸", "😹", "😻", "🙀", "😿", "😾", "🐈", "🐈‍⬛"],
+    LOADING_CATS: [
+        "🐱",
+        "😺",
+        "😸",
+        "😹",
+        "😻",
+        "🙀",
+        "😿",
+        "😾",
+        "🐈",
+        "🐈‍⬛",
+    ],
     RETRY_CATS: ["😾", "😿", "🙄", "😤", "😑", "😒", "😔", "🐱‍👤", "😸", "😼"],
     FLOATING_EMOJIS: ["🐱", "💭", "✨", "🌟", "😸", "🐾", "💜", "🎨"],
     CELEBRATION_EMOJIS: ["🎉", "✨", "🌟", "💫", "🎊"],
@@ -81,7 +99,12 @@ function setURLPrompt(prompt) {
     window.history.replaceState({}, "", url);
 }
 
-const NOTIFICATION_COLORS = { success: "#05ffa1", error: "#ff61d8", info: "#ffcc00", warning: "#ffcc00" };
+const NOTIFICATION_COLORS = {
+    success: "#05ffa1",
+    error: "#ff61d8",
+    info: "#ffcc00",
+    warning: "#ffcc00",
+};
 
 function showNotification(message, type = "info") {
     const notification = document.createElement("div");
@@ -130,7 +153,8 @@ const dom = {
     removeImageBtn: document.getElementById("removeImageBtn"),
 };
 
-const BUTTON_DEFAULT_HTML = '<span class="btn-text">Generate Meme</span><span class="btn-emoji">🎨</span>';
+const BUTTON_DEFAULT_HTML =
+    '<span class="btn-text">Generate Meme</span><span class="btn-emoji">🎨</span>';
 
 function setButtonLoading() {
     dom.generateBtn.disabled = true;
@@ -172,7 +196,10 @@ const STORAGE_KEY = "catgpt-generated";
 
 function saveGeneratedMeme(prompt, url) {
     const saved = getSavedMemes();
-    const updated = [{ prompt, url }, ...saved.filter((m) => m.prompt !== prompt)].slice(0, 8);
+    const updated = [
+        { prompt, url },
+        ...saved.filter((m) => m.prompt !== prompt),
+    ].slice(0, 8);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 }
 
@@ -191,7 +218,10 @@ let progressInterval;
 let progressStep = 0;
 
 function startCatAnimation(mode = "loading") {
-    const catEmojis = mode === "retry" ? ANIMATION_CONFIG.RETRY_CATS : ANIMATION_CONFIG.LOADING_CATS;
+    const catEmojis =
+        mode === "retry"
+            ? ANIMATION_CONFIG.RETRY_CATS
+            : ANIMATION_CONFIG.LOADING_CATS;
     const speed = mode === "retry" ? 800 : 400;
 
     catAnimationInterval = setInterval(() => {
@@ -207,7 +237,9 @@ function startCatAnimation(mode = "loading") {
         `;
         cat.textContent = getRandomItem(catEmojis);
         document.body.appendChild(cat);
-        setTimeout(() => { if (cat.parentNode) cat.remove(); }, 6000);
+        setTimeout(() => {
+            if (cat.parentNode) cat.remove();
+        }, 6000);
     }, speed);
 }
 
@@ -259,7 +291,9 @@ function celebrate() {
     for (let i = 0; i < 20; i++) {
         setTimeout(() => {
             const emoji = document.createElement("div");
-            emoji.textContent = getRandomItem(ANIMATION_CONFIG.CELEBRATION_EMOJIS);
+            emoji.textContent = getRandomItem(
+                ANIMATION_CONFIG.CELEBRATION_EMOJIS,
+            );
             emoji.style.cssText = `
                 position: fixed;
                 left: ${Math.random() * 100}%;
@@ -349,7 +383,9 @@ function createMemeCard(prompt, index, imageUrl, isUserMeme = false) {
         dom.userInput.scrollIntoView({ behavior: "smooth", block: "center" });
         dom.userInput.focus();
         dom.userInput.style.animation = "pulse 0.5s";
-        setTimeout(() => { dom.userInput.style.animation = ""; }, 500);
+        setTimeout(() => {
+            dom.userInput.style.animation = "";
+        }, 500);
         showNotification("Prompt loaded! Hit Generate 🎨", "info");
     });
 
@@ -364,7 +400,8 @@ function loadUserMemes() {
 
     if (savedMemes.length === 0) {
         const emptyMessage = document.createElement("p");
-        emptyMessage.textContent = "No memes yet! Generate one to see it here. 🎨";
+        emptyMessage.textContent =
+            "No memes yet! Generate one to see it here. 🎨";
         emptyMessage.style.cssText = `
             grid-column: 1 / -1;
             text-align: center;
@@ -395,9 +432,10 @@ function loadExamples() {
 
 function handleImageError(errorType = "general") {
     const randomMessage = getRandomItem(ERROR_MESSAGES);
-    const message = errorType === "timeout"
-        ? `⏰ This cat took too long to respond... probably distracted by a laser pointer! ${randomMessage}`
-        : randomMessage;
+    const message =
+        errorType === "timeout"
+            ? `⏰ This cat took too long to respond... probably distracted by a laser pointer! ${randomMessage}`
+            : randomMessage;
     showNotification(message, "error");
     stopCatAnimation();
     startRetryCountdown();
@@ -436,7 +474,8 @@ function startRetryCountdown() {
 
     const subtitle = document.createElement("p");
     subtitle.style.cssText = `margin: 1rem 0 0 0; opacity: 0.9; font-size: 1rem;`;
-    subtitle.innerHTML = "The whole internet wants cat wisdom! Auto-retry in... 🐾";
+    subtitle.innerHTML =
+        "The whole internet wants cat wisdom! Auto-retry in... 🐾";
 
     const cancelBtn = document.createElement("button");
     cancelBtn.innerHTML = "Cancel ❌";
@@ -543,7 +582,10 @@ async function downloadMeme() {
         showNotification("Meme downloaded! 🎉", "success");
     } catch (error) {
         console.error("Download failed:", error);
-        showNotification("Download failed! Try right-clicking and save image instead.", "error");
+        showNotification(
+            "Download failed! Try right-clicking and save image instead.",
+            "error",
+        );
     }
 }
 
@@ -558,7 +600,10 @@ async function shareMeme() {
         showNotification("Link copied to clipboard! 📋", "success");
     } catch (error) {
         console.error("Error copying to clipboard:", error);
-        showNotification("Could not copy link. Try copying it manually! 🔗", "error");
+        showNotification(
+            "Could not copy link. Try copying it manually! 🔗",
+            "error",
+        );
     }
 }
 
@@ -629,13 +674,18 @@ function handleKonamiCode(e) {
 
     if (konamiCode.join(",") === KONAMI_SEQUENCE.join(",")) {
         document.body.style.animation = "rainbow 2s";
-        showNotification("🌈 Secret mode activated! You found the easter egg! 🦄", "success");
+        showNotification(
+            "🌈 Secret mode activated! You found the easter egg! 🦄",
+            "success",
+        );
 
         document.querySelectorAll("h1, h2, h3").forEach((el) => {
             el.textContent = el.textContent.replace(/Cat/g, "😸Cat😸");
         });
 
-        setTimeout(() => { document.body.style.animation = ""; }, 2000);
+        setTimeout(() => {
+            document.body.style.animation = "";
+        }, 2000);
     }
 }
 

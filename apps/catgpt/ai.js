@@ -2,14 +2,16 @@
 
 export const API_CONFIG = {
     POLLINATIONS_API: "https://gen.pollinations.ai/image",
-    ORIGINAL_CATGPT_IMAGE: "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png",
+    ORIGINAL_CATGPT_IMAGE:
+        "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png",
     CLOUDINARY_CLOUD_NAME: "pollinations",
     CLOUDINARY_UPLOAD_PRESET: "pollinations-image",
     CLOUDINARY_API_KEY: "939386723511927",
     POLLINATIONS_API_KEY: "pk_w3kAO902fOeFYiNm",
 };
 
-const CATGPT_STYLE = 'Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, black bob hair, brick/burgundy sweater (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, "CATGPT" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.';
+const CATGPT_STYLE =
+    'Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, black bob hair, brick/burgundy sweater (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, "CATGPT" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.';
 
 const CATGPT_PERSONALITY = `You are **CatGPT** – an aloof, self-important house-cat oracle.
 
@@ -86,7 +88,11 @@ export async function fetchImageWithAuth(imageUrl) {
 
     if (!response.ok) {
         const errorText = await response.text().catch(() => "");
-        console.error("API Error:", { status: response.status, details: errorText, url: imageUrl });
+        console.error("API Error:", {
+            status: response.status,
+            details: errorText,
+            url: imageUrl,
+        });
         throw new Error(`API_ERROR_${response.status}`);
     }
 
@@ -110,7 +116,9 @@ async function uploadToCloudinary(file) {
     if (!response.ok) {
         const errorData = await response.json();
         console.error("Cloudinary error:", errorData);
-        throw new Error(`Upload failed: ${errorData.error?.message || "Unknown error"}`);
+        throw new Error(
+            `Upload failed: ${errorData.error?.message || "Unknown error"}`,
+        );
     }
 
     return (await response.json()).secure_url;
@@ -121,7 +129,10 @@ export async function handleImageUpload(file, showNotification) {
 
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-        showNotification("Image too large! Please use an image under 5MB.", "error");
+        showNotification(
+            "Image too large! Please use an image under 5MB.",
+            "error",
+        );
         return null;
     }
 
@@ -130,7 +141,10 @@ export async function handleImageUpload(file, showNotification) {
         return await uploadToCloudinary(file);
     } catch (error) {
         console.error("Cloudinary upload failed:", error);
-        showNotification("Cloud upload failed. Trying local method...", "warning");
+        showNotification(
+            "Cloud upload failed. Trying local method...",
+            "warning",
+        );
         try {
             const dataUri = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -139,11 +153,17 @@ export async function handleImageUpload(file, showNotification) {
                 reader.readAsDataURL(file);
             });
             if (dataUri.length > 500000) {
-                showNotification("Image may be too large for reliable use. Results might vary.", "warning");
+                showNotification(
+                    "Image may be too large for reliable use. Results might vary.",
+                    "warning",
+                );
             }
             return dataUri;
         } catch (fallbackError) {
-            showNotification("Could not process image. Please try a smaller image.", "error");
+            showNotification(
+                "Could not process image. Please try a smaller image.",
+                "error",
+            );
             console.error("Base64 fallback failed:", fallbackError);
             return null;
         }

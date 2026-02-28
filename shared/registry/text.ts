@@ -245,24 +245,6 @@ export const TEXT_SERVICES = {
         codeExecution: true,
         isSpecialized: false,
     },
-    "chickytutor": {
-        aliases: [],
-        modelId: "claude-3-haiku-20240307",
-        provider: "anthropic",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.25),
-                promptCachedTokens: perMillion(0.03),
-                completionTextTokens: perMillion(1.25),
-            },
-        ],
-        description: "ChickyTutor AI Language Tutor - (chickytutor.com)",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: true,
-    },
     "midijourney": {
         aliases: [],
         modelId: "gpt-5.2-2025-12-11",
@@ -417,26 +399,50 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-large": {
-        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
-        modelId: "gemini-3-pro-preview",
+        aliases: ["gemini-3.1-pro"],
+        modelId: "gemini-3.1-pro-preview",
         provider: "google",
         paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(2.0),
-                promptCachedTokens: perMillion(0.2), // 10% of input price (same ratio as other Gemini models)
+                promptCachedTokens: perMillion(0.2),
                 completionTextTokens: perMillion(12.0),
             },
         ],
         description:
-            "Google Gemini 3 Pro - Most Intelligent Model with 1M Context (Preview)",
+            "Google Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
         search: true,
         codeExecution: false, // Disabled - was breaking gemini-large
+        isSpecialized: false,
+    },
+    "gemini-3-pro-preview": {
+        aliases: ["gemini-3-pro", "gemini-3"],
+        modelId: "gemini-3-pro-preview",
+        provider: "google",
+        paidOnly: true,
+        hidden: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.0),
+                promptCachedTokens: perMillion(0.2),
+                completionTextTokens: perMillion(12.0),
+            },
+        ],
+        description:
+            "Google Gemini 3 Pro (deprecated Mar 9, 2026) - use gemini-large",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        search: true,
+        codeExecution: false,
         isSpecialized: false,
     },
     "gemini-legacy": {

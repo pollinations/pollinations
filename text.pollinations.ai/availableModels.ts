@@ -1,14 +1,6 @@
-// Import transform functions
-
 import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
-// Import registry for validation
-import type { TEXT_SERVICES } from "../shared/registry/text.ts";
-// Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
-import chickyTutorPrompt from "./personas/chickytutor.js";
-// Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
-// Import system prompts
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
@@ -17,14 +9,12 @@ import { createSystemPromptTransform } from "./transforms/createSystemPromptTran
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
-
-// Type constraint: model names must exist in registry
-type ValidServiceName = keyof typeof TEXT_SERVICES;
+import type { TransformFn } from "./types.js";
 
 interface ModelDefinition {
-    name: ValidServiceName;
+    name: string;
     config: (typeof portkeyConfig)[ModelId];
-    transform?: any;
+    transform?: TransformFn;
 }
 
 const models: ModelDefinition[] = [
@@ -122,11 +112,6 @@ const models: ModelDefinition[] = [
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
-        name: "chickytutor",
-        config: portkeyConfig["claude-3-5-haiku"],
-        transform: createMessageTransform(chickyTutorPrompt),
-    },
-    {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -143,6 +128,17 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-large",
+        config: portkeyConfig["gemini-3.1-pro-preview"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "gemini-3-pro-preview",
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -197,23 +193,14 @@ const models: ModelDefinition[] = [
     },
 ];
 
-// Export models - metadata is in registry (single source of truth)
 export const availableModels = models;
 
-/**
- * Find a model definition by name or alias
- * Uses registry to resolve aliases to service names
- * @param modelName - The name or alias of the model to find
- * @returns The model definition or null if not found
- */
-export function findModelByName(modelName: string) {
-    // First try direct lookup
+export function findModelByName(modelName: string): ModelDefinition | null {
     const directMatch = availableModels.find(
         (model) => model.name === modelName,
     );
     if (directMatch) return directMatch;
 
-    // Try resolving via registry (handles aliases)
     try {
         const resolvedServiceId = resolveServiceId(modelName);
         return (

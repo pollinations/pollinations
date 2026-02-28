@@ -62,19 +62,27 @@ function buildResultFromCategories(
         }
     }
 
-    return { safe, violations, formattedViolations: formatViolations(violations) };
+    return {
+        safe,
+        violations,
+        formattedViolations: formatViolations(violations),
+    };
 }
 
 export async function analyzeTextSafety(
     text: string,
 ): Promise<ContentSafetyResults> {
     if (!client) {
-        console.warn("Azure Content Safety not configured - skipping text analysis");
+        console.warn(
+            "Azure Content Safety not configured - skipping text analysis",
+        );
         return SAFE_RESULT;
     }
 
     try {
-        const result = await client.path("/text:analyze").post({ body: { text } });
+        const result = await client
+            .path("/text:analyze")
+            .post({ body: { text } });
 
         if (isUnexpected(result)) {
             console.error("Azure Content Safety text analysis error:", result);
@@ -92,7 +100,9 @@ export async function analyzeImageSafety(
     imageData: Buffer | string,
 ): Promise<ContentSafetyResults> {
     if (!client) {
-        console.warn("Azure Content Safety not configured - skipping image analysis");
+        console.warn(
+            "Azure Content Safety not configured - skipping image analysis",
+        );
         return SAFE_RESULT;
     }
 

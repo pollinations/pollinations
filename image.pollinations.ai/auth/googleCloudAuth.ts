@@ -1,6 +1,6 @@
-import fetch from "node-fetch";
 import debug from "debug";
 import jwt from "jsonwebtoken";
+import fetch from "node-fetch";
 
 const log = debug("pollinations:google-auth");
 const errorLog = debug("pollinations:google-auth:error");
@@ -104,7 +104,9 @@ async function refreshGcloudAccessToken(): Promise<string | null> {
  * @param keyData - The parsed service account key data
  * @returns A promise that resolves to the JWT token or null if generation fails
  */
-async function generateJwtToken(keyData: ServiceAccountKey): Promise<string | null> {
+async function generateJwtToken(
+    keyData: ServiceAccountKey,
+): Promise<string | null> {
     try {
         if (
             !keyData.private_key ||
@@ -145,7 +147,10 @@ async function generateJwtToken(keyData: ServiceAccountKey): Promise<string | nu
 
         return signedJwt;
     } catch (error) {
-        errorLog("Error generating JWT token:", error instanceof Error ? error.message : error);
+        errorLog(
+            "Error generating JWT token:",
+            error instanceof Error ? error.message : error,
+        );
         return null;
     }
 }
@@ -155,7 +160,9 @@ async function generateJwtToken(keyData: ServiceAccountKey): Promise<string | nu
  * @param jwtToken - The JWT token
  * @returns A promise that resolves to the access token or null if exchange fails
  */
-async function exchangeJwtForAccessToken(jwtToken: string): Promise<string | null> {
+async function exchangeJwtForAccessToken(
+    jwtToken: string,
+): Promise<string | null> {
     try {
         let response: any;
         try {
@@ -200,7 +207,10 @@ async function exchangeJwtForAccessToken(jwtToken: string): Promise<string | nul
 
         return data.access_token;
     } catch (error) {
-        errorLog("Error exchanging JWT for access token:", error instanceof Error ? error.message : error);
+        errorLog(
+            "Error exchanging JWT for access token:",
+            error instanceof Error ? error.message : error,
+        );
         return null;
     }
 }
@@ -221,7 +231,10 @@ async function getGcloudAccessToken(): Promise<string | null> {
                 gcloudAccessToken = newToken;
                 // Set expiration to 50 minutes from now (tokens typically last 60 minutes)
                 tokenExpiration = Date.now() + 50 * 60 * 1000;
-                log("Token refreshed, expires at:", new Date(tokenExpiration).toISOString());
+                log(
+                    "Token refreshed, expires at:",
+                    new Date(tokenExpiration).toISOString(),
+                );
             } else {
                 return null;
             }
@@ -240,7 +253,10 @@ async function getGcloudAccessToken(): Promise<string | null> {
  */
 function initGoogleCloudAuth(): AuthInstance {
     try {
-        if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_CLIENT_EMAIL) {
+        if (
+            !process.env.GOOGLE_PRIVATE_KEY ||
+            !process.env.GOOGLE_CLIENT_EMAIL
+        ) {
             return {
                 getAccessToken: async () => null,
             };
@@ -248,14 +264,20 @@ function initGoogleCloudAuth(): AuthInstance {
 
         // Try to refresh the token immediately but don't fail if it doesn't work
         getGcloudAccessToken().catch((error) => {
-            errorLog("Failed to initialize Google Cloud authentication:", error);
+            errorLog(
+                "Failed to initialize Google Cloud authentication:",
+                error,
+            );
         });
 
         // Set up a timer to refresh the token every 50 minutes
         const intervalId = setInterval(
             () => {
                 getGcloudAccessToken().catch((error) => {
-                    errorLog("Failed to refresh Google Cloud access token:", error);
+                    errorLog(
+                        "Failed to refresh Google Cloud access token:",
+                        error,
+                    );
                 });
             },
             50 * 60 * 1000,
@@ -299,5 +321,5 @@ export default {
         if (instance.cleanup) {
             instance.cleanup();
         }
-    }
+    },
 };

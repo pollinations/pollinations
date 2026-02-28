@@ -3,8 +3,8 @@
  * Direct integration with Google Vertex AI API bypassing Portkey issues
  */
 
-import fetch from "node-fetch";
 import debug from "debug";
+import fetch from "node-fetch";
 import googleCloudAuth from "../auth/googleCloudAuth.ts";
 
 const log = debug("pollinations:vertex-ai");
@@ -285,8 +285,8 @@ export async function generateImageWithVertexAI(
         let imageData: string | null = null;
         let mimeType: string | null = null;
         let textResponse: string | null = null;
-        let finishReason: string | undefined = undefined;
-        let safetyRatings: any[] | undefined = undefined;
+        let finishReason: string | undefined;
+        let safetyRatings: any[] | undefined;
 
         if (data.candidates && data.candidates.length > 0) {
             const candidate = data.candidates[0];
@@ -339,4 +339,3 @@ export async function generateImageWithVertexAI(
         throw error;
     }
 }
-

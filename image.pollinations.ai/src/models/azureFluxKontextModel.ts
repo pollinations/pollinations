@@ -18,9 +18,16 @@ import {
 const logError = debug("pollinations:error");
 const logCloudflare = debug("pollinations:cloudflare");
 
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+function withTimeout<T>(
+    promise: Promise<T>,
+    ms: number,
+    label: string,
+): Promise<T> {
     const timeout = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error(`${label} timeout after ${ms / 1000}s`)), ms);
+        setTimeout(
+            () => reject(new Error(`${label} timeout after ${ms / 1000}s`)),
+            ms,
+        );
     });
     return Promise.race([promise, timeout]);
 }

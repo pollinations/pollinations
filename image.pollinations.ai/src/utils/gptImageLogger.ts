@@ -53,7 +53,8 @@ export async function logGptImageError(
             contentSafety: contentSafetyResults
                 ? {
                       safe: contentSafetyResults.safe,
-                      formattedViolations: contentSafetyResults.formattedViolations,
+                      formattedViolations:
+                          contentSafetyResults.formattedViolations,
                       violations: contentSafetyResults.violations,
                   }
                 : null,

@@ -1,9 +1,9 @@
-import { sleep } from "../util.ts";
 import debug from "debug";
 import googleCloudAuth from "../../auth/googleCloudAuth.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { sleep } from "../util.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
@@ -121,7 +121,10 @@ export const callVeoAPI = async (
             aspectRatio: safeParams.aspectRatio,
             defaultResolution: "720P",
         });
-    const resolution = resolutionUpper.toLowerCase() as "480p" | "720p" | "1080p";
+    const resolution = resolutionUpper.toLowerCase() as
+        | "480p"
+        | "720p"
+        | "1080p";
 
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;

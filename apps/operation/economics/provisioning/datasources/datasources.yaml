@@ -30,7 +30,7 @@ datasources:
       dialTimeout: "10"
       queryTimeout: "60"
     secureJsonData:
-      password: "$__env{TINYBIRD_GENERATION_EVENT_READ}"
+      password: "$__env{TINYBIRD_READ_ALL}"
     editable: true
 
   - name: Tinybird Stripe

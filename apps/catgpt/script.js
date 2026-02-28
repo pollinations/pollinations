@@ -169,24 +169,16 @@ function hideImageThumbnail() {
 // ── Storage ─────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "catgpt-generated";
-const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
 
-function saveGeneratedMeme(prompt, blobUrl) {
+function saveGeneratedMeme(prompt, url) {
     const saved = getSavedMemes();
-    const newMeme = { prompt, url: blobUrl, timestamp: Date.now() };
-    const updated = [newMeme, ...saved.filter((m) => m.prompt !== prompt)].slice(0, 8);
+    const updated = [{ prompt, url }, ...saved.filter((m) => m.prompt !== prompt)].slice(0, 8);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 }
 
 function getSavedMemes() {
     try {
-        const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        const now = Date.now();
-        const filtered = data.filter((m) => now - m.timestamp < ONE_MONTH);
-        if (filtered.length !== data.length) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-        }
-        return filtered;
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     } catch {
         return [];
     }

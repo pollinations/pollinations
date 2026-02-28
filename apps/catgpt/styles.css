@@ -184,10 +184,6 @@ header {
     width: 100%;
 }
 
-.upload-container.hidden {
-    display: none;
-}
-
 .image-upload-input {
     width: 100%;
     padding: 0.8rem;
@@ -226,10 +222,6 @@ header {
     border: 2px solid var(--color-primary);
     padding: 5px;
     transition: all 0.3s;
-}
-
-.thumbnail-container.hidden {
-    display: none;
 }
 
 .image-thumbnail {
@@ -324,7 +316,7 @@ header {
 
 .btn-emoji {
     font-size: 1.4rem;
-    animation: rotate 2s linear infinite;
+    animation: spin 2s linear infinite;
 }
 
 .action-buttons {
@@ -365,10 +357,6 @@ header {
     text-align: center;
 }
 
-.loading.hidden {
-    display: none;
-}
-
 .loading-spinner {
     width: 60px;
     height: 60px;
@@ -386,10 +374,6 @@ header {
 
 .result-section {
     margin-top: 2rem;
-}
-
-.result-section.hidden {
-    display: none;
 }
 
 .result-section h3 {
@@ -416,32 +400,19 @@ header {
 
 /* === Cards === */
 
-.examples-section {
-    margin-bottom: 3rem;
-}
-
-.examples-section h2 {
-    font-size: 1.8rem;
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.examples-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-}
-
+.examples-section,
 .your-memes-section {
     margin-bottom: 3rem;
 }
 
+.examples-section h2,
 .your-memes-section h2 {
     font-size: 1.8rem;
     text-align: center;
     margin-bottom: 2rem;
 }
 
+.examples-grid,
 .your-memes-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -470,10 +441,23 @@ header {
 }
 
 .example-card p {
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     font-size: 0.9rem;
+    font-style: italic;
     text-align: center;
     font-weight: 500;
+    color: var(--color-primary);
+}
+
+.user-meme-badge {
+    background: var(--gradient-1);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    text-align: center;
 }
 
 /* === Sponsor === */
@@ -548,11 +532,6 @@ footer a:hover {
     50% { opacity: 0.7; transform: scale(1.02); }
 }
 
-@keyframes rotate {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
 @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
@@ -578,12 +557,6 @@ footer a:hover {
 }
 
 @keyframes catSlide {
-    0% { left: -100px; transform: rotate(0deg); }
-    50% { transform: rotate(180deg); }
-    100% { left: calc(100vw + 100px); transform: rotate(360deg); }
-}
-
-@keyframes catSlowWalk {
     0% { left: -100px; transform: rotate(0deg); }
     50% { transform: rotate(180deg); }
     100% { left: calc(100vw + 100px); transform: rotate(360deg); }
@@ -623,11 +596,7 @@ footer a:hover {
         font-size: 2rem;
     }
 
-    .examples-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-    }
-
+    .examples-grid,
     .your-memes-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
@@ -697,11 +666,7 @@ footer a:hover {
         font-size: 1.2rem;
     }
 
-    .examples-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
+    .examples-grid,
     .your-memes-grid {
         grid-template-columns: 1fr;
         gap: 1rem;

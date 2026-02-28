@@ -71,42 +71,29 @@ export function createImageGenerationPrompt(userQuestion) {
 }
 
 export function generateImageURL(prompt, imageUrl = null) {
-    let imageParam;
-    if (imageUrl) {
-        imageParam = encodeURIComponent(`${API_CONFIG.ORIGINAL_CATGPT_IMAGE},${imageUrl}`);
-    } else {
-        imageParam = encodeURIComponent(API_CONFIG.ORIGINAL_CATGPT_IMAGE);
-    }
-    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=gptimage&enhance=true&quality=high&image=${imageParam}`;
+    const imageRef = imageUrl
+        ? `${API_CONFIG.ORIGINAL_CATGPT_IMAGE},${imageUrl}`
+        : API_CONFIG.ORIGINAL_CATGPT_IMAGE;
+    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=gptimage&enhance=true&quality=high&image=${encodeURIComponent(imageRef)}`;
 }
 
 // ── Image Fetching ──────────────────────────────────────────────────────────
 
 export async function fetchImageWithAuth(imageUrl) {
     const response = await fetch(imageUrl, {
-        method: "GET",
         headers: { Authorization: `Bearer ${API_CONFIG.POLLINATIONS_API_KEY}` },
     });
 
     if (!response.ok) {
-        let errorDetails = "";
+        const responseText = await response.text().catch(() => "");
+        let errorDetails;
         try {
-            const responseText = await response.text();
-            try {
-                const errorData = JSON.parse(responseText);
-                errorDetails = errorData.error?.message || JSON.stringify(errorData);
-            } catch {
-                errorDetails = responseText || `HTTP ${response.status}`;
-            }
+            const errorData = JSON.parse(responseText);
+            errorDetails = errorData.error?.message || JSON.stringify(errorData);
         } catch {
-            errorDetails = `HTTP ${response.status}: ${response.statusText}`;
+            errorDetails = responseText || `HTTP ${response.status}: ${response.statusText}`;
         }
-        console.error("API Error Details:", {
-            status: response.status,
-            statusText: response.statusText,
-            details: errorDetails,
-            url: imageUrl,
-        });
+        console.error("API Error:", { status: response.status, details: errorDetails, url: imageUrl });
         throw new Error(`API_ERROR_${response.status}`);
     }
 
@@ -129,9 +116,7 @@ async function uploadToCloudinary(file) {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", API_CONFIG.CLOUDINARY_UPLOAD_PRESET);
-    if (API_CONFIG.CLOUDINARY_API_KEY) {
-        formData.append("api_key", API_CONFIG.CLOUDINARY_API_KEY);
-    }
+    formData.append("api_key", API_CONFIG.CLOUDINARY_API_KEY);
 
     const response = await fetch(
         `https://api.cloudinary.com/v1_1/${API_CONFIG.CLOUDINARY_CLOUD_NAME}/image/upload`,
@@ -144,8 +129,7 @@ async function uploadToCloudinary(file) {
         throw new Error(`Upload failed: ${errorData.error?.message || "Unknown error"}`);
     }
 
-    const data = await response.json();
-    return data.secure_url;
+    return (await response.json()).secure_url;
 }
 
 export async function handleImageUpload(file, showNotification) {

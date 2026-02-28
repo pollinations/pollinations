@@ -1,7 +1,6 @@
 // CatGPT Meme Generator — UI, state, and DOM logic
 
 import {
-    API_CONFIG,
     EXAMPLES_MAP,
     createImageGenerationPrompt,
     generateImageURL,
@@ -61,14 +60,9 @@ const PROGRESS_MESSAGES = [
 
 // ── Utilities ───────────────────────────────────────────────────────────────
 
-function getURLPrompt() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get("prompt");
-}
-
-function getURLImage() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get("image");
+function getURLParams() {
+    const params = new URLSearchParams(window.location.search);
+    return { prompt: params.get("prompt"), image: params.get("image") };
 }
 
 function setURLPrompt(prompt) {
@@ -87,6 +81,8 @@ function setURLPrompt(prompt) {
     window.history.replaceState({}, "", url);
 }
 
+const NOTIFICATION_COLORS = { success: "#05ffa1", error: "#ff61d8", info: "#ffcc00", warning: "#ffcc00" };
+
 function showNotification(message, type = "info") {
     const notification = document.createElement("div");
     notification.className = `notification notification-${type}`;
@@ -96,7 +92,7 @@ function showNotification(message, type = "info") {
         top: 20px;
         right: 20px;
         padding: 1rem 1.5rem;
-        background: ${type === "success" ? "#05ffa1" : type === "error" ? "#ff61d8" : "#ffcc00"};
+        background: ${NOTIFICATION_COLORS[type] || NOTIFICATION_COLORS.info};
         color: #000;
         border-radius: 10px;
         font-weight: 600;
@@ -134,18 +130,16 @@ const dom = {
     removeImageBtn: document.getElementById("removeImageBtn"),
 };
 
+const BUTTON_DEFAULT_HTML = '<span class="btn-text">Generate Meme</span><span class="btn-emoji">🎨</span>';
+
 function setButtonLoading() {
     dom.generateBtn.disabled = true;
     dom.generateBtn.innerHTML = "🐾 Generating... (~30s)";
-    dom.generateBtn.style.opacity = "0.6";
-    dom.generateBtn.style.cursor = "not-allowed";
 }
 
 function resetButton() {
     dom.generateBtn.disabled = false;
-    dom.generateBtn.innerHTML = "Generate CatGPT Meme 🎨";
-    dom.generateBtn.style.opacity = "1";
-    dom.generateBtn.style.cursor = "pointer";
+    dom.generateBtn.innerHTML = BUTTON_DEFAULT_HTML;
 }
 
 function showLoading() {
@@ -216,7 +210,6 @@ function startCatAnimation(mode = "loading") {
 
     catAnimationInterval = setInterval(() => {
         const cat = document.createElement("div");
-        const animationName = mode === "retry" ? "catSlowWalk" : "catSlide";
         cat.style.cssText = `
             position: fixed;
             font-size: ${2 + Math.random() * 2}rem;
@@ -224,7 +217,7 @@ function startCatAnimation(mode = "loading") {
             pointer-events: none;
             top: ${Math.random() * 100}vh;
             left: -100px;
-            animation: ${animationName} ${3 + Math.random() * 2}s linear forwards;
+            animation: catSlide ${3 + Math.random() * 2}s linear forwards;
         `;
         cat.textContent = getRandomItem(catEmojis);
         document.body.appendChild(cat);
@@ -340,86 +333,35 @@ function sanitizeImageUrl(url) {
     }
 }
 
-function createUserMemeCard(prompt, index, imageUrl) {
-    const safeUrl = sanitizeImageUrl(imageUrl);
+function createMemeCard(prompt, index, imageUrl, isUserMeme = false) {
+    const safeUrl = isUserMeme ? sanitizeImageUrl(imageUrl) : imageUrl;
     if (!safeUrl) {
-        console.warn(`User meme has invalid or missing URL: "${prompt}"`);
+        console.warn(`Invalid or missing URL for: "${prompt}"`);
         return null;
     }
 
     const card = document.createElement("div");
     card.className = "example-card";
     card.style.animationDelay = `${index * 0.1}s`;
-    card.style.border = "2px solid var(--color-accent)";
-    card.style.boxShadow = "0 0 10px rgba(255, 105, 180, 0.3)";
+
+    if (isUserMeme) {
+        card.style.border = "2px solid var(--color-accent)";
+        card.style.boxShadow = "0 0 10px rgba(255, 105, 180, 0.3)";
+
+        const badge = document.createElement("div");
+        badge.textContent = "✨ Your Meme";
+        badge.className = "user-meme-badge";
+        card.appendChild(badge);
+    }
 
     const img = document.createElement("img");
     img.src = safeUrl;
     img.alt = escapeHtml(prompt);
     img.loading = "lazy";
-
-    const badge = document.createElement("div");
-    badge.textContent = "✨ Your Meme";
-    badge.style.cssText = `
-        background: var(--gradient-1);
-        color: white;
-        padding: 0.2rem 0.5rem;
-        border-radius: 10px;
-        font-size: 0.7rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-        text-align: center;
-    `;
+    card.appendChild(img);
 
     const promptText = document.createElement("p");
     promptText.textContent = `"${escapeHtml(prompt)}"`;
-    promptText.style.fontStyle = "italic";
-    promptText.style.fontSize = "0.9rem";
-    promptText.style.color = "var(--color-primary)";
-    promptText.style.textAlign = "center";
-    promptText.style.margin = "0.5rem 0";
-
-    card.appendChild(badge);
-    card.appendChild(img);
-    card.appendChild(promptText);
-
-    card.addEventListener("click", () => {
-        dom.userInput.value = prompt;
-        dom.userInput.scrollIntoView({ behavior: "smooth", block: "center" });
-        dom.userInput.focus();
-        dom.userInput.style.animation = "pulse 0.5s";
-        setTimeout(() => { dom.userInput.style.animation = ""; }, 500);
-        showNotification("Generating your meme! 🎨", "info");
-    });
-
-    return card;
-}
-
-function createExampleCard(prompt, index) {
-    const imageUrl = EXAMPLES_MAP.get(prompt);
-    if (!imageUrl) {
-        console.warn(`Example "${prompt}" not found in EXAMPLES_MAP`);
-        return null;
-    }
-
-    const card = document.createElement("div");
-    card.className = "example-card";
-    card.style.animationDelay = `${index * 0.1}s`;
-
-    const img = document.createElement("img");
-    img.src = imageUrl;
-    img.alt = escapeHtml(prompt);
-    img.loading = "lazy";
-
-    const promptText = document.createElement("p");
-    promptText.textContent = `"${escapeHtml(prompt)}"`;
-    promptText.style.fontStyle = "italic";
-    promptText.style.fontSize = "0.9rem";
-    promptText.style.color = "var(--color-primary)";
-    promptText.style.textAlign = "center";
-    promptText.style.margin = "0.5rem 0";
-
-    card.appendChild(img);
     card.appendChild(promptText);
 
     card.addEventListener("click", () => {
@@ -455,21 +397,20 @@ function loadUserMemes() {
     }
 
     savedMemes.forEach((meme, index) => {
-        const card = createUserMemeCard(meme.prompt, index, meme.url);
+        const card = createMemeCard(meme.prompt, index, meme.url, true);
         if (card) dom.yourMemesGrid.appendChild(card);
     });
 }
 
 function loadExamples() {
     dom.examplesGrid.innerHTML = "";
-    const examplePrompts = Array.from(EXAMPLES_MAP.keys());
-    examplePrompts.forEach((prompt, index) => {
-        const card = createExampleCard(prompt, index);
+    Array.from(EXAMPLES_MAP.keys()).forEach((prompt, index) => {
+        const card = createMemeCard(prompt, index, EXAMPLES_MAP.get(prompt));
         if (card) dom.examplesGrid.appendChild(card);
     });
 }
 
-function refreshExamples() {
+function refreshGalleries() {
     loadUserMemes();
     loadExamples();
 }
@@ -478,13 +419,10 @@ function refreshExamples() {
 
 function handleImageError(errorType = "general") {
     const randomMessage = getRandomItem(ERROR_MESSAGES);
-    let specificMessage;
-    if (errorType === "timeout") {
-        specificMessage = `⏰ This cat took too long to respond... probably distracted by a laser pointer! ${randomMessage}`;
-    } else {
-        specificMessage = randomMessage;
-    }
-    showNotification(specificMessage, "error");
+    const message = errorType === "timeout"
+        ? `⏰ This cat took too long to respond... probably distracted by a laser pointer! ${randomMessage}`
+        : randomMessage;
+    showNotification(message, "error");
     stopCatAnimation();
     startRetryCountdown();
 }
@@ -581,43 +519,36 @@ async function generateMeme() {
     startCatAnimation();
 
     const imagePrompt = createImageGenerationPrompt(userQuestion);
+    const imageUrl = generateImageURL(imagePrompt, uploadedImageUrl);
+    let timedOut = false;
 
-    try {
-        const imageUrl = generateImageURL(imagePrompt, uploadedImageUrl);
-        let imageLoadTimeout;
-
-        imageLoadTimeout = setTimeout(() => {
-            resetButton();
-            hideLoading();
-            handleImageError("timeout");
-        }, 45000);
-
-        try {
-            const blobUrl = await fetchImageWithAuth(imageUrl);
-            clearTimeout(imageLoadTimeout);
-            dom.generatedMeme.src = blobUrl;
-            showResult();
-            resetButton();
-            hideLoading();
-            stopCatAnimation();
-            stopFakeProgress();
-            celebrate();
-            saveGeneratedMeme(userQuestion, imageUrl);
-            refreshExamples();
-        } catch (fetchError) {
-            clearTimeout(imageLoadTimeout);
-            console.error("Generation error:", fetchError);
-            resetButton();
-            hideLoading();
-            stopFakeProgress();
-            handleImageError("general");
-        }
-    } catch (error) {
-        console.error("Error generating meme:", error);
+    const imageLoadTimeout = setTimeout(() => {
+        timedOut = true;
         resetButton();
         hideLoading();
         stopFakeProgress();
-        handleImageError("general");
+        handleImageError("timeout");
+    }, 45000);
+
+    try {
+        const blobUrl = await fetchImageWithAuth(imageUrl);
+        clearTimeout(imageLoadTimeout);
+        dom.generatedMeme.src = blobUrl;
+        showResult();
+        stopCatAnimation();
+        celebrate();
+        saveGeneratedMeme(userQuestion, imageUrl);
+        refreshGalleries();
+    } catch (error) {
+        clearTimeout(imageLoadTimeout);
+        console.error("Generation error:", error);
+        if (!timedOut) {
+            handleImageError("general");
+        }
+    } finally {
+        resetButton();
+        hideLoading();
+        stopFakeProgress();
     }
 }
 
@@ -641,7 +572,7 @@ async function downloadMeme() {
 }
 
 async function shareMeme() {
-    if (!dom.generatedMeme.src || dom.generatedMeme.src === "") {
+    if (!dom.generatedMeme.getAttribute("src")) {
         showNotification("Generate a meme first! 🎨", "warning");
         return;
     }
@@ -660,7 +591,6 @@ async function shareMeme() {
 let konamiCode = [];
 
 function initializeApp() {
-    cleanupOldMemes(getSavedMemes());
     loadUserMemes();
     loadExamples();
     loadRandomCatFact();
@@ -700,18 +630,17 @@ function setupEventListeners() {
 }
 
 function handleURLPrompt() {
-    const urlPrompt = getURLPrompt();
-    const urlImage = getURLImage();
+    const { prompt, image } = getURLParams();
 
-    if (urlImage) {
-        uploadedImageUrl = urlImage;
-        dom.imageThumbnail.src = urlImage;
+    if (image) {
+        uploadedImageUrl = image;
+        dom.imageThumbnail.src = image;
         showImageThumbnail();
     }
 
-    if (urlPrompt) {
-        dom.userInput.value = urlPrompt;
-        setTimeout(() => generateMeme(), 500);
+    if (prompt) {
+        dom.userInput.value = prompt;
+        setTimeout(generateMeme, 500);
     }
 }
 

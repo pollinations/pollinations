@@ -1,0 +1,35 @@
+{
+  "pr_number": 8580,
+  "title": "fix(enter): restore burst accumulation in PollenRateLimiter",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/8580",
+  "merged_at": "2026-02-28T14:12:05Z",
+  "labels": [
+    "WEB",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Patience is now a currency",
+    "blurb": "The rate limiter was having a bit of amnesia about your idle time. We've reminded it that waiting should be rewarded with a nice little burst of speed when you return.",
+    "summary": "Fixed a regression in the PollenRateLimiter where accumulated idle time was being discarded on new requests instead of credited as burst capacity.",
+    "impact": "Users who idle between requests can now utilize a burst of activity upon returning, rather than being throttled immediately.",
+    "keywords": [
+      "rate-limit",
+      "pollen",
+      "burst",
+      "api",
+      "reliability"
+    ],
+    "visual_concept": "A visual metaphor for 'stored energy' or 'accumulated time'. A glass tank or battery filling up with lime green liquid (pollen/energy) while the bee rests. This represents the 'idle time' now counting towards a full tank of request credits.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot napping peacefully on a large leaf next to a glass tank filling with glowing lime green (#ecf874) honey. A retro gauge on the tank indicates it is charging up. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-28T14:12:50.347604+00:00"
+}

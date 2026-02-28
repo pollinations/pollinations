@@ -508,18 +508,18 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "minimax": {
-        aliases: ["minimax-m2.1", "minimax-m2p1"],
-        modelId: "accounts/fireworks/models/minimax-m2p1",
+        aliases: ["minimax-m2.5", "minimax-m2p5"],
+        modelId: "accounts/fireworks/models/minimax-m2p5",
         provider: "fireworks",
         cost: [
             {
                 date: new Date("2026-01-05").getTime(),
                 promptTextTokens: perMillion(0.3),
-                promptCachedTokens: perMillion(0.15),
+                promptCachedTokens: perMillion(0.03),
                 completionTextTokens: perMillion(1.2),
             },
         ],
-        description: "MiniMax M2.1 - Multi-Language & Agent Workflows",
+        description: "MiniMax M2.5 - Coding, Agentic & Multi-Language",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,

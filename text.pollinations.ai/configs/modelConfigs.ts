@@ -230,9 +230,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5",
         }),
-    "accounts/fireworks/models/minimax-m2p1": () =>
+    "accounts/fireworks/models/minimax-m2p5": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/minimax-m2p1",
+            model: "accounts/fireworks/models/minimax-m2p5",
         }),
     "accounts/fireworks/models/deepseek-v3p2": () =>
         createFireworksModelConfig({

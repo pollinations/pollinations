@@ -171,7 +171,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "minimax",
-        config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
+        config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

@@ -1,5 +1,5 @@
 import { SELF } from "cloudflare:test";
-import { test, expect } from "vitest";
+import { expect, test } from "vitest";
 import { test as fixtureTest } from "../fixtures.ts";
 
 // Test public endpoints that should be accessible without authentication
@@ -87,6 +87,27 @@ test("OPTIONS preflight request works for /image/models", async () => {
     expect(response.status).toBe(204);
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
     await response.text(); // consume response
+});
+
+test("GET /text/models includes context_length for standard models", async () => {
+    const response = await SELF.fetch(
+        `http://localhost:3000/api/generate/text/models`,
+        { method: "GET" },
+    );
+    expect(response.status).toBe(200);
+
+    const models = (await response.json()) as {
+        name: string;
+        context_length?: number;
+    }[];
+    expect(Array.isArray(models)).toBe(true);
+
+    const withContextLength = models.filter((m) => m.context_length != null);
+    expect(withContextLength.length).toBeGreaterThan(10);
+
+    for (const model of withContextLength) {
+        expect(model.context_length).toBeGreaterThan(0);
+    }
 });
 
 // Test model filtering by API key permissions

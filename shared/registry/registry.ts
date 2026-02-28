@@ -79,7 +79,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     reasoning?: boolean;
     search?: boolean;
     codeExecution?: boolean;
-    contextWindow?: number;
+    contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
     persona?: boolean;

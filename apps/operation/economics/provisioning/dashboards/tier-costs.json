@@ -1,17 +1,19 @@
 {
   "annotations": {
-    "list": [{
-      "builtIn": 1,
-      "datasource": {
-        "type": "grafana",
-        "uid": "-- Grafana --"
-      },
-      "enable": true,
-      "hide": true,
-      "iconColor": "rgba(0, 211, 255, 1)",
-      "name": "Annotations & Alerts",
-      "type": "dashboard"
-    }]
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
   },
   "description": "Tier cost analysis — user distribution, usage rates, and financial forecasting",
   "editable": true,
@@ -19,7 +21,8 @@
   "graphTooltip": 1,
   "id": null,
   "links": [],
-  "panels": [{
+  "panels": [
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -46,10 +49,12 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "blue",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           },
           "unit": "short"
         },
@@ -68,32 +73,36 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": true
         },
         "textMode": "auto"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "yesoreyeram-infinity-datasource",
-          "uid": "P33A123E5D474E8F3"
-        },
-        "format": "table",
-        "parser": "backend",
-        "refId": "A",
-        "root_selector": "$.result[0].results",
-        "source": "url",
-        "type": "json",
-        "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
-        "url_options": {
-          "body_content_type": "application/json",
-          "body_type": "raw",
-          "data": "{\"sql\":\"SELECT COUNT(*) as total_users FROM user\"}",
-          "method": "POST"
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "P33A123E5D474E8F3"
+          },
+          "format": "table",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.result[0].results",
+          "source": "url",
+          "type": "json",
+          "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+          "url_options": {
+            "body_content_type": "application/json",
+            "body_type": "raw",
+            "data": "{\"sql\":\"SELECT COUNT(*) as total_users FROM user\"}",
+            "method": "POST"
+          }
         }
-      }],
+      ],
       "title": "Total Users",
       "type": "stat"
     },
@@ -131,10 +140,12 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           },
           "unit": "short"
         },
@@ -169,25 +180,27 @@
         "xTickLabelSpacing": 0
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "yesoreyeram-infinity-datasource",
-          "uid": "P33A123E5D474E8F3"
-        },
-        "format": "table",
-        "parser": "backend",
-        "refId": "A",
-        "root_selector": "$.result[0].results",
-        "source": "url",
-        "type": "json",
-        "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
-        "url_options": {
-          "body_content_type": "application/json",
-          "body_type": "raw",
-          "data": "{\"sql\":\"SELECT COALESCE(tier, 'unknown') as tier, COUNT(*) as user_count FROM user GROUP BY tier ORDER BY CASE tier WHEN 'nectar' THEN 1 WHEN 'flower' THEN 2 WHEN 'seed' THEN 3 WHEN 'spore' THEN 4 WHEN 'microbe' THEN 5 ELSE 6 END\"}",
-          "method": "POST"
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "P33A123E5D474E8F3"
+          },
+          "format": "table",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.result[0].results",
+          "source": "url",
+          "type": "json",
+          "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+          "url_options": {
+            "body_content_type": "application/json",
+            "body_type": "raw",
+            "data": "{\"sql\":\"SELECT COALESCE(tier, 'unknown') as tier, COUNT(*) as user_count FROM user GROUP BY tier ORDER BY CASE tier WHEN 'nectar' THEN 1 WHEN 'flower' THEN 2 WHEN 'seed' THEN 3 WHEN 'spore' THEN 4 WHEN 'microbe' THEN 5 ELSE 6 END\"}",
+            "method": "POST"
+          }
         }
-      }],
+      ],
       "title": "Users by Tier",
       "type": "barchart"
     },
@@ -215,16 +228,24 @@
       },
       "id": 3,
       "options": {
-        "displayLabels": ["name", "percent"],
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
         "legend": {
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
-          "values": ["value", "percent"]
+          "values": [
+            "value",
+            "percent"
+          ]
         },
         "pieType": "pie",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": true
         },
@@ -234,38 +255,45 @@
         }
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "yesoreyeram-infinity-datasource",
-          "uid": "P33A123E5D474E8F3"
-        },
-        "format": "table",
-        "parser": "backend",
-        "refId": "A",
-        "root_selector": "$.result[0].results",
-        "source": "url",
-        "type": "json",
-        "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
-        "url_options": {
-          "body_content_type": "application/json",
-          "body_type": "raw",
-          "data": "{\"sql\":\"SELECT COALESCE(tier, 'unknown') as tier, COUNT(*) as user_count FROM user GROUP BY tier ORDER BY user_count DESC\"}",
-          "method": "POST"
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "P33A123E5D474E8F3"
+          },
+          "format": "table",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.result[0].results",
+          "source": "url",
+          "type": "json",
+          "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+          "url_options": {
+            "body_content_type": "application/json",
+            "body_type": "raw",
+            "data": "{\"sql\":\"SELECT COALESCE(tier, 'unknown') as tier, COUNT(*) as user_count FROM user GROUP BY tier ORDER BY user_count DESC\"}",
+            "method": "POST"
+          }
         }
-      }],
+      ],
       "title": "Tier Distribution %",
-      "transformations": [{
-        "id": "rowsToFields",
-        "options": {
-          "mappings": [{
-            "fieldName": "tier",
-            "handlerKey": "field.name"
-          }, {
-            "fieldName": "user_count",
-            "handlerKey": "field.value"
-          }]
+      "transformations": [
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "tier",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "user_count",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
         }
-      }],
+      ],
       "type": "piechart"
     },
     {
@@ -282,19 +310,24 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }, {
-              "color": "yellow",
-              "value": 50
-            }, {
-              "color": "orange",
-              "value": 100
-            }, {
-              "color": "red",
-              "value": 500
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "orange",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
           },
           "unit": "currencyUSD"
         },
@@ -313,32 +346,36 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["sum"],
+          "calcs": [
+            "sum"
+          ],
           "fields": "",
           "values": false
         },
         "textMode": "auto"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "yesoreyeram-infinity-datasource",
-          "uid": "P33A123E5D474E8F3"
-        },
-        "format": "table",
-        "parser": "backend",
-        "refId": "A",
-        "root_selector": "$.result[0].results",
-        "source": "url",
-        "type": "json",
-        "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
-        "url_options": {
-          "body_content_type": "application/json",
-          "body_type": "raw",
-          "data": "{\"sql\":\"SELECT SUM(CASE tier WHEN 'microbe' THEN 0 WHEN 'spore' THEN 1.5/7.0 WHEN 'seed' THEN 3 WHEN 'flower' THEN 10 WHEN 'nectar' THEN 20 ELSE 0 END) as max_daily_liability FROM user\"}",
-          "method": "POST"
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "P33A123E5D474E8F3"
+          },
+          "format": "table",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.result[0].results",
+          "source": "url",
+          "type": "json",
+          "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+          "url_options": {
+            "body_content_type": "application/json",
+            "body_type": "raw",
+            "data": "{\"sql\":\"SELECT SUM(CASE tier WHEN 'microbe' THEN 0 WHEN 'spore' THEN 1.5/7.0 WHEN 'seed' THEN 3 WHEN 'flower' THEN 10 WHEN 'nectar' THEN 20 ELSE 0 END) as max_daily_liability FROM user\"}",
+            "method": "POST"
+          }
         }
-      }],
+      ],
       "title": "Max Daily Liability",
       "type": "stat"
     },
@@ -356,19 +393,24 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }, {
-              "color": "yellow",
-              "value": 50
-            }, {
-              "color": "orange",
-              "value": 100
-            }, {
-              "color": "red",
-              "value": 500
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "orange",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
           },
           "unit": "currencyUSD"
         },
@@ -387,23 +429,27 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["sum"],
+          "calcs": [
+            "sum"
+          ],
           "fields": "",
           "values": false
         },
         "textMode": "auto"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 0,
-        "range": true,
-        "rawSql": "SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND selected_meter_slug = 'v1:meter:tier' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND selected_meter_slug = 'v1:meter:tier' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time",
+          "refId": "A"
+        }
+      ],
       "title": "Total Tier Cost",
       "type": "stat"
     },
@@ -421,13 +467,16 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "blue",
-              "value": null
-            }, {
-              "color": "purple",
-              "value": 50
-            }]
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "purple",
+                "value": 50
+              }
+            ]
           },
           "unit": "currencyUSD"
         },
@@ -446,23 +495,27 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["sum"],
+          "calcs": [
+            "sum"
+          ],
           "fields": "",
           "values": false
         },
         "textMode": "auto"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 0,
-        "range": true,
-        "rawSql": "SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND selected_meter_slug = 'v1:meter:pack' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND selected_meter_slug = 'v1:meter:pack' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time",
+          "refId": "A"
+        }
+      ],
       "title": "Total Pack Cost",
       "type": "stat"
     },
@@ -525,92 +578,110 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           },
           "unit": "currencyUSD"
         },
-        "overrides": [{
+        "overrides": [
+          {
             "matcher": {
               "id": "byName",
               "options": "microbe"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Microbe ($0/day)"
-            }, {
-              "id": "color",
-              "value": {
-                "fixedColor": "light-green",
-                "mode": "fixed"
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Microbe ($0/day)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
               }
-            }]
+            ]
           },
           {
             "matcher": {
               "id": "byName",
               "options": "spore"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Spore ($1.5/week)"
-            }, {
-              "id": "color",
-              "value": {
-                "fixedColor": "green",
-                "mode": "fixed"
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Spore ($1.5/week)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
               }
-            }]
+            ]
           },
           {
             "matcher": {
               "id": "byName",
               "options": "seed"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Seed ($3/day)"
-            }, {
-              "id": "color",
-              "value": {
-                "fixedColor": "blue",
-                "mode": "fixed"
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Seed ($3/day)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
               }
-            }]
+            ]
           },
           {
             "matcher": {
               "id": "byName",
               "options": "flower"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Flower ($10/day)"
-            }, {
-              "id": "color",
-              "value": {
-                "fixedColor": "orange",
-                "mode": "fixed"
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Flower ($10/day)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
               }
-            }]
+            ]
           },
           {
             "matcher": {
               "id": "byName",
               "options": "nectar"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Nectar ($20/day)"
-            }, {
-              "id": "color",
-              "value": {
-                "fixedColor": "purple",
-                "mode": "fixed"
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Nectar ($20/day)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
               }
-            }]
+            ]
           }
         ]
       },
@@ -623,7 +694,10 @@
       "id": 5,
       "options": {
         "legend": {
-          "calcs": ["sum", "mean"],
+          "calcs": [
+            "sum",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -634,16 +708,18 @@
         }
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 0,
-        "range": true,
-        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  sumIf(total_price, user_tier = 'microbe') as microbe,\n  sumIf(total_price, user_tier = 'spore') as spore,\n  sumIf(total_price, user_tier = 'seed') as seed,\n  sumIf(total_price, user_tier = 'flower') as flower,\n  sumIf(total_price, user_tier = 'nectar') as nectar\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\nGROUP BY time\nORDER BY time",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  sumIf(total_price, user_tier = 'microbe') as microbe,\n  sumIf(total_price, user_tier = 'spore') as spore,\n  sumIf(total_price, user_tier = 'seed') as seed,\n  sumIf(total_price, user_tier = 'flower') as flower,\n  sumIf(total_price, user_tier = 'nectar') as nectar\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
       "title": "Daily Tier Consumption by Tier",
       "type": "timeseries"
     },
@@ -663,68 +739,83 @@
           "min": 0,
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }, {
-              "color": "yellow",
-              "value": 50
-            }, {
-              "color": "red",
-              "value": 80
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
           },
           "unit": "percent"
         },
-        "overrides": [{
+        "overrides": [
+          {
             "matcher": {
               "id": "byName",
               "options": "Microbe"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Microbe ($0/day)"
-            }]
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Microbe ($0/day)"
+              }
+            ]
           },
           {
             "matcher": {
               "id": "byName",
               "options": "Spore"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Spore ($1.5/week)"
-            }]
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Spore ($1.5/week)"
+              }
+            ]
           },
           {
             "matcher": {
               "id": "byName",
               "options": "Seed"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Seed ($3/day)"
-            }]
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Seed ($3/day)"
+              }
+            ]
           },
           {
             "matcher": {
               "id": "byName",
               "options": "Flower"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Flower ($10/day)"
-            }]
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Flower ($10/day)"
+              }
+            ]
           },
           {
             "matcher": {
               "id": "byName",
               "options": "Nectar"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Nectar ($20/day)"
-            }]
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Nectar ($20/day)"
+              }
+            ]
           }
         ]
       },
@@ -743,7 +834,9 @@
         "namePlacement": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -752,7 +845,8 @@
         "valueMode": "color"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
+      "targets": [
+        {
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "PAD1A0A25CD30D456"
@@ -866,10 +960,12 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           },
           "unit": "currencyUSD"
         },
@@ -884,7 +980,11 @@
       "id": 8,
       "options": {
         "legend": {
-          "calcs": ["sum", "mean", "max"],
+          "calcs": [
+            "sum",
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -895,16 +995,18 @@
         }
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 0,
-        "range": true,
-        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_tier_cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_tier_cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
       "title": "Total Daily Tier Cost",
       "type": "timeseries"
     },
@@ -922,16 +1024,20 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }, {
-              "color": "yellow",
-              "value": 100
-            }, {
-              "color": "red",
-              "value": 500
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
           },
           "unit": "currencyUSD"
         },
@@ -950,23 +1056,27 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["mean"],
+          "calcs": [
+            "mean"
+          ],
           "fields": "",
           "values": false
         },
         "textMode": "auto"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 0,
-        "range": true,
-        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
       "title": "Avg Daily Cost",
       "type": "stat"
     },
@@ -984,10 +1094,12 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "blue",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           },
           "unit": "currencyUSD"
         },
@@ -1006,23 +1118,27 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["sum"],
+          "calcs": [
+            "sum"
+          ],
           "fields": "",
           "values": false
         },
         "textMode": "auto"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 0,
-        "range": true,
-        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
       "title": "Period Total Cost",
       "type": "stat"
     },
@@ -1073,10 +1189,12 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           },
           "unit": "currencyUSD"
         },
@@ -1091,7 +1209,10 @@
       "id": 12,
       "options": {
         "legend": {
-          "calcs": ["sum", "mean"],
+          "calcs": [
+            "sum",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1102,16 +1223,18 @@
         }
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 0,
-        "range": true,
-        "rawSql": "SELECT\n  toStartOfWeek(start_time) as time,\n  SUM(total_price) as weekly_cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfWeek(start_time) as time,\n  SUM(total_price) as weekly_cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
       "title": "Weekly Tier Cost",
       "type": "timeseries"
     },
@@ -1161,69 +1284,86 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           },
           "unit": "currencyUSD"
         },
-        "overrides": [{
+        "overrides": [
+          {
             "matcher": {
               "id": "byName",
               "options": "daily_cost"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Actual Daily Cost"
-            }, {
-              "id": "color",
-              "value": {
-                "fixedColor": "blue",
-                "mode": "fixed"
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Actual Daily Cost"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
               }
-            }]
+            ]
           },
           {
             "matcher": {
               "id": "byName",
               "options": "trend_cost"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Trend Line"
-            }, {
-              "id": "color",
-              "value": {
-                "fixedColor": "red",
-                "mode": "fixed"
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Trend Line"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
               }
-            }, {
-              "id": "custom.lineStyle",
-              "value": {
-                "dash": [10, 10],
-                "fill": "dash"
-              }
-            }]
+            ]
           },
           {
             "matcher": {
               "id": "byName",
               "options": "cumulative_cost"
             },
-            "properties": [{
-              "id": "displayName",
-              "value": "Cumulative Cost"
-            }, {
-              "id": "custom.axisPlacement",
-              "value": "right"
-            }, {
-              "id": "color",
-              "value": {
-                "fixedColor": "green",
-                "mode": "fixed"
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Cumulative Cost"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
               }
-            }]
+            ]
           }
         ]
       },
@@ -1236,7 +1376,10 @@
       "id": 13,
       "options": {
         "legend": {
-          "calcs": ["last", "sum"],
+          "calcs": [
+            "last",
+            "sum"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1247,17 +1390,211 @@
         }
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 0,
-        "range": true,
-        "rawSql": "SELECT time, daily_cost, sum(daily_cost) OVER (ORDER BY time) as cumulative_cost FROM (SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND selected_meter_slug = 'v1:meter:tier' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time)",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT time, daily_cost, sum(daily_cost) OVER (ORDER BY time) as cumulative_cost FROM (SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND selected_meter_slug = 'v1:meter:tier' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time)",
+          "refId": "A"
+        }
+      ],
       "title": "Cost Trend & Cumulative",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Total remaining tier pollen across all active users at end of each day, broken down by tier. Uses each user's last-seen tier balance per day from generation events. Shows how tier budgets deplete between refills.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Pollen ($)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "microbe"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Microbe ($0/day)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "spore"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Spore ($1.5/week)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "seed"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Seed ($3/day)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "flower"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Flower ($10/day)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nectar"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Nectar ($20/day)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 45
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT day as time, round(sumIf(last_balance, user_tier = 'microbe'), 2) as microbe, round(sumIf(last_balance, user_tier = 'spore'), 2) as spore, round(sumIf(last_balance, user_tier = 'seed'), 2) as seed, round(sumIf(last_balance, user_tier = 'flower'), 2) as flower, round(sumIf(last_balance, user_tier = 'nectar'), 2) as nectar FROM (SELECT toStartOfDay(start_time) as day, user_id, user_tier, argMax(balances['v1:meter:tier'], start_time) as last_balance FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar') GROUP BY day, user_id, user_tier) GROUP BY day ORDER BY day",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Tier Balance Remaining (Active Users)",
       "type": "timeseries"
     },
     {
@@ -1274,16 +1611,20 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }, {
-              "color": "yellow",
-              "value": 5000
-            }, {
-              "color": "red",
-              "value": 15000
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5000
+              },
+              {
+                "color": "red",
+                "value": 15000
+              }
+            ]
           },
           "unit": "currencyUSD"
         },
@@ -1302,23 +1643,27 @@
         "justifyMode": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": true
         },
         "textMode": "auto"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 0,
-        "range": true,
-        "rawSql": "SELECT\n  'Next 30 Days' as period,\n  AVG(daily_cost) * 30 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)\nUNION ALL\nSELECT\n  'Next 90 Days' as period,\n  AVG(daily_cost) * 90 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  'Next 30 Days' as period,\n  AVG(daily_cost) * 30 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)\nUNION ALL\nSELECT\n  'Next 90 Days' as period,\n  AVG(daily_cost) * 90 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)",
+          "refId": "A"
+        }
+      ],
       "title": "Projections (30d / 90d)",
       "type": "stat"
     },
@@ -1328,7 +1673,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 55
       },
       "id": 400,
       "panels": [],
@@ -1342,30 +1687,56 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {"mode": "thresholds"},
+          "color": {
+            "mode": "thresholds"
+          },
           "decimals": 1,
-          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]}
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "yellow",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
-      "gridPos": {"h": 4, "w": 5, "x": 0, "y": 50},
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 60
+      },
       "id": 410,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "horizontal",
-        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "textMode": "value_and_name"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
-        "format": 1,
-        "range": true,
-        "rawSql": "SELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'nectar'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'nectar'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "A"
+        }
+      ],
       "title": "Nectar Total",
       "type": "stat"
     },
@@ -1376,30 +1747,56 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {"mode": "thresholds"},
+          "color": {
+            "mode": "thresholds"
+          },
           "decimals": 1,
-          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]}
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "yellow",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
-      "gridPos": {"h": 4, "w": 5, "x": 5, "y": 50},
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 5,
+        "y": 60
+      },
       "id": 411,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "horizontal",
-        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "textMode": "value_and_name"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
-        "format": 1,
-        "range": true,
-        "rawSql": "SELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'flower'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'flower'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "A"
+        }
+      ],
       "title": "Flower Total",
       "type": "stat"
     },
@@ -1410,30 +1807,56 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {"mode": "thresholds"},
+          "color": {
+            "mode": "thresholds"
+          },
           "decimals": 1,
-          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]}
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "yellow",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
-      "gridPos": {"h": 4, "w": 5, "x": 10, "y": 50},
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 10,
+        "y": 60
+      },
       "id": 412,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "horizontal",
-        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "textMode": "value_and_name"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
-        "format": 1,
-        "range": true,
-        "rawSql": "SELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'seed'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'seed'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "A"
+        }
+      ],
       "title": "Seed Total",
       "type": "stat"
     },
@@ -1444,30 +1867,56 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {"mode": "thresholds"},
+          "color": {
+            "mode": "thresholds"
+          },
           "decimals": 1,
-          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]}
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "yellow",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
-      "gridPos": {"h": 4, "w": 5, "x": 15, "y": 50},
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 15,
+        "y": 60
+      },
       "id": 413,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "horizontal",
-        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "textMode": "value_and_name"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
-        "format": 1,
-        "range": true,
-        "rawSql": "SELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'spore'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'spore'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "A"
+        }
+      ],
       "title": "Spore Total",
       "type": "stat"
     },
@@ -1478,30 +1927,56 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {"mode": "thresholds"},
+          "color": {
+            "mode": "thresholds"
+          },
           "decimals": 1,
-          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]}
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "yellow",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
-      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 50},
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 60
+      },
       "id": 414,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "horizontal",
-        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "textMode": "value_and_name"
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
-        "format": 1,
-        "range": true,
-        "rawSql": "SELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'microbe'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'microbe'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "A"
+        }
+      ],
       "title": "Microbe Total",
       "type": "stat"
     },
@@ -1526,76 +2001,98 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           }
         },
-        "overrides": [{
-          "matcher": {
-            "id": "byName",
-            "options": "Model"
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Model"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
           },
-          "properties": [{
-            "id": "custom.width",
-            "value": 120
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Pack_Pct"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pack_Pct"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 55
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
           },
-          "properties": [{
-            "id": "custom.width",
-            "value": 55
-          }, {
-            "id": "decimals",
-            "value": 1
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Tier_Cost"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tier_Cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "displayName",
+                "value": "Tier$"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
           },
-          "properties": [{
-            "id": "unit",
-            "value": "currencyUSD"
-          }, {
-            "id": "decimals",
-            "value": 1
-          }, {
-            "id": "displayName",
-            "value": "Tier$"
-          }, {
-            "id": "custom.width",
-            "value": 70
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Pack_Cost"
-          },
-          "properties": [{
-            "id": "unit",
-            "value": "currencyUSD"
-          }, {
-            "id": "decimals",
-            "value": 1
-          }, {
-            "id": "displayName",
-            "value": "Pack$"
-          }, {
-            "id": "custom.width",
-            "value": 70
-          }]
-        }]
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pack_Cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "displayName",
+                "value": "Pack$"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 22,
         "w": 5,
         "x": 0,
-        "y": 54
+        "y": 64
       },
       "id": 401,
       "options": {
@@ -1604,26 +2101,32 @@
           "countRows": false,
           "enablePagination": false,
           "fields": [],
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
-        "sortBy": [{
-          "desc": true,
-          "displayName": "Tier Cost"
-        }]
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Tier Cost"
+          }
+        ]
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 1,
-        "range": true,
-        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'nectar'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'nectar'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+          "refId": "A"
+        }
+      ],
       "title": "Nectar ($20/day)",
       "type": "table"
     },
@@ -1648,76 +2151,98 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           }
         },
-        "overrides": [{
-          "matcher": {
-            "id": "byName",
-            "options": "Model"
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Model"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
           },
-          "properties": [{
-            "id": "custom.width",
-            "value": 120
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Pack_Pct"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pack_Pct"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 55
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
           },
-          "properties": [{
-            "id": "custom.width",
-            "value": 55
-          }, {
-            "id": "decimals",
-            "value": 1
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Tier_Cost"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tier_Cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "displayName",
+                "value": "Tier$"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
           },
-          "properties": [{
-            "id": "unit",
-            "value": "currencyUSD"
-          }, {
-            "id": "decimals",
-            "value": 1
-          }, {
-            "id": "displayName",
-            "value": "Tier$"
-          }, {
-            "id": "custom.width",
-            "value": 70
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Pack_Cost"
-          },
-          "properties": [{
-            "id": "unit",
-            "value": "currencyUSD"
-          }, {
-            "id": "decimals",
-            "value": 1
-          }, {
-            "id": "displayName",
-            "value": "Pack$"
-          }, {
-            "id": "custom.width",
-            "value": 70
-          }]
-        }]
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pack_Cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "displayName",
+                "value": "Pack$"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 22,
         "w": 5,
         "x": 5,
-        "y": 54
+        "y": 64
       },
       "id": 402,
       "options": {
@@ -1726,26 +2251,32 @@
           "countRows": false,
           "enablePagination": false,
           "fields": [],
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
-        "sortBy": [{
-          "desc": true,
-          "displayName": "Tier Cost"
-        }]
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Tier Cost"
+          }
+        ]
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 1,
-        "range": true,
-        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'flower'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'flower'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+          "refId": "A"
+        }
+      ],
       "title": "Flower ($10/day)",
       "type": "table"
     },
@@ -1770,76 +2301,98 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           }
         },
-        "overrides": [{
-          "matcher": {
-            "id": "byName",
-            "options": "Model"
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Model"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
           },
-          "properties": [{
-            "id": "custom.width",
-            "value": 120
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Pack_Pct"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pack_Pct"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 55
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
           },
-          "properties": [{
-            "id": "custom.width",
-            "value": 55
-          }, {
-            "id": "decimals",
-            "value": 1
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Tier_Cost"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tier_Cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "displayName",
+                "value": "Tier$"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
           },
-          "properties": [{
-            "id": "unit",
-            "value": "currencyUSD"
-          }, {
-            "id": "decimals",
-            "value": 1
-          }, {
-            "id": "displayName",
-            "value": "Tier$"
-          }, {
-            "id": "custom.width",
-            "value": 70
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Pack_Cost"
-          },
-          "properties": [{
-            "id": "unit",
-            "value": "currencyUSD"
-          }, {
-            "id": "decimals",
-            "value": 1
-          }, {
-            "id": "displayName",
-            "value": "Pack$"
-          }, {
-            "id": "custom.width",
-            "value": 70
-          }]
-        }]
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pack_Cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "displayName",
+                "value": "Pack$"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 22,
         "w": 5,
         "x": 10,
-        "y": 54
+        "y": 64
       },
       "id": 403,
       "options": {
@@ -1848,26 +2401,32 @@
           "countRows": false,
           "enablePagination": false,
           "fields": [],
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
-        "sortBy": [{
-          "desc": true,
-          "displayName": "Tier Cost"
-        }]
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Tier Cost"
+          }
+        ]
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 1,
-        "range": true,
-        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'seed'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'seed'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+          "refId": "A"
+        }
+      ],
       "title": "Seed ($3/day)",
       "type": "table"
     },
@@ -1892,76 +2451,98 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           }
         },
-        "overrides": [{
-          "matcher": {
-            "id": "byName",
-            "options": "Model"
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Model"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
           },
-          "properties": [{
-            "id": "custom.width",
-            "value": 120
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Pack_Pct"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pack_Pct"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 55
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
           },
-          "properties": [{
-            "id": "custom.width",
-            "value": 55
-          }, {
-            "id": "decimals",
-            "value": 1
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Tier_Cost"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tier_Cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "displayName",
+                "value": "Tier$"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
           },
-          "properties": [{
-            "id": "unit",
-            "value": "currencyUSD"
-          }, {
-            "id": "decimals",
-            "value": 1
-          }, {
-            "id": "displayName",
-            "value": "Tier$"
-          }, {
-            "id": "custom.width",
-            "value": 70
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Pack_Cost"
-          },
-          "properties": [{
-            "id": "unit",
-            "value": "currencyUSD"
-          }, {
-            "id": "decimals",
-            "value": 1
-          }, {
-            "id": "displayName",
-            "value": "Pack$"
-          }, {
-            "id": "custom.width",
-            "value": 70
-          }]
-        }]
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pack_Cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "displayName",
+                "value": "Pack$"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 22,
         "w": 5,
         "x": 15,
-        "y": 54
+        "y": 64
       },
       "id": 404,
       "options": {
@@ -1970,26 +2551,32 @@
           "countRows": false,
           "enablePagination": false,
           "fields": [],
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
-        "sortBy": [{
-          "desc": true,
-          "displayName": "Tier Cost"
-        }]
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Tier Cost"
+          }
+        ]
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 1,
-        "range": true,
-        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'spore'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'spore'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+          "refId": "A"
+        }
+      ],
       "title": "Spore ($1.5/week)",
       "type": "table"
     },
@@ -2014,76 +2601,98 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{
-              "color": "green",
-              "value": null
-            }]
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           }
         },
-        "overrides": [{
-          "matcher": {
-            "id": "byName",
-            "options": "Model"
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Model"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
           },
-          "properties": [{
-            "id": "custom.width",
-            "value": 120
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Pack_Pct"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pack_Pct"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 55
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
           },
-          "properties": [{
-            "id": "custom.width",
-            "value": 55
-          }, {
-            "id": "decimals",
-            "value": 1
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Tier_Cost"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tier_Cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "displayName",
+                "value": "Tier$"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
           },
-          "properties": [{
-            "id": "unit",
-            "value": "currencyUSD"
-          }, {
-            "id": "decimals",
-            "value": 1
-          }, {
-            "id": "displayName",
-            "value": "Tier$"
-          }, {
-            "id": "custom.width",
-            "value": 70
-          }]
-        }, {
-          "matcher": {
-            "id": "byName",
-            "options": "Pack_Cost"
-          },
-          "properties": [{
-            "id": "unit",
-            "value": "currencyUSD"
-          }, {
-            "id": "decimals",
-            "value": 1
-          }, {
-            "id": "displayName",
-            "value": "Pack$"
-          }, {
-            "id": "custom.width",
-            "value": 70
-          }]
-        }]
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pack_Cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "displayName",
+                "value": "Pack$"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 22,
         "w": 4,
         "x": 20,
-        "y": 54
+        "y": 64
       },
       "id": 405,
       "options": {
@@ -2092,33 +2701,43 @@
           "countRows": false,
           "enablePagination": false,
           "fields": [],
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
-        "sortBy": [{
-          "desc": true,
-          "displayName": "Tier Cost"
-        }]
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Tier Cost"
+          }
+        ]
       },
       "pluginVersion": "12.4.0",
-      "targets": [{
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PAD1A0A25CD30D456"
-        },
-        "format": 1,
-        "range": true,
-        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'microbe'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
-        "refId": "A"
-      }],
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 1) as Tier_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 1) as Pack_Cost,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack') * 100.0 / nullIf(sumIf(total_price, selected_meter_slug = 'v1:meter:tier') + sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'microbe'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+          "refId": "A"
+        }
+      ],
       "title": "Microbe ($0/day)",
       "type": "table"
     }
   ],
   "refresh": "5m",
   "schemaVersion": 40,
-  "tags": ["economics", "tier", "costs"],
+  "tags": [
+    "economics",
+    "tier",
+    "costs"
+  ],
   "templating": {
     "list": []
   },

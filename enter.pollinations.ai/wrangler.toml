@@ -37,9 +37,18 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 script_name = "pollinations-enter"
 
+[[durable_objects.bindings]]
+name = "REQUEST_DEDUPLICATOR"
+class_name = "RequestDeduplicator"
+script_name = "pollinations-enter"
+
 [[migrations]]
 tag = "v2"
 new_classes = ["PollenRateLimiter"]
+
+[[migrations]]
+tag = "v3"
+new_classes = ["RequestDeduplicator"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -143,9 +152,17 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[env.production.durable_objects.bindings]]
+name = "REQUEST_DEDUPLICATOR"
+class_name = "RequestDeduplicator"
+
 [[env.production.migrations]]
 tag = "v2"
 new_classes = ["PollenRateLimiter"]
+
+[[env.production.migrations]]
+tag = "v3"
+new_classes = ["RequestDeduplicator"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -204,9 +221,17 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[env.staging.durable_objects.bindings]]
+name = "REQUEST_DEDUPLICATOR"
+class_name = "RequestDeduplicator"
+
 [[env.staging.migrations]]
 tag = "v2"
 new_classes = ["PollenRateLimiter"]
+
+[[env.staging.migrations]]
+tag = "v3"
+new_classes = ["RequestDeduplicator"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -258,9 +283,17 @@ remote = true
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[env.dev.durable_objects.bindings]]
+name = "REQUEST_DEDUPLICATOR"
+class_name = "RequestDeduplicator"
+
 [[env.dev.migrations]]
 tag = "v2"
 new_classes = ["PollenRateLimiter"]
+
+[[env.dev.migrations]]
+tag = "v3"
+new_classes = ["RequestDeduplicator"]
 
 [env.dev.vars]
 ENVIRONMENT = "dev"
@@ -314,6 +347,10 @@ simple = { limit = 10000, period = 10 }
 [[env.test.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
+
+[[env.test.durable_objects.bindings]]
+name = "REQUEST_DEDUPLICATOR"
+class_name = "RequestDeduplicator"
 
 [env.test.vars]
 ENVIRONMENT = "test"

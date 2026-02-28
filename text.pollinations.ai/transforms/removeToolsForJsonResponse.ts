@@ -1,30 +1,29 @@
-/**
- * Transform that removes tools when response_format is set (JSON mode/structured output)
- *
- * This is needed because Gemini/Vertex AI doesn't support combining:
- * - code_execution tool with controlled generation (response_format)
- * - google_search tool with controlled generation
- *
- * Error: "controlled generation is not supported with Code Execution tool"
- * See: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini
- *
- * @param messages - Array of message objects
- * @param options - Request options that may contain response_format and tools
- * @returns Object with messages and options (tools removed if response_format is set)
- */
-export function removeToolsForJsonResponse(messages: any[], options: any) {
-    // Check if response_format is set (JSON mode or JSON schema)
-    const hasResponseFormat =
-        options.response_format &&
-        (options.response_format.type === "json_object" ||
-            options.response_format.type === "json_schema");
+import type {
+    ChatMessage,
+    TransformOptions,
+    TransformResult,
+} from "../types.js";
 
-    if (!hasResponseFormat) {
-        // No JSON response requested, keep tools as-is
+/**
+ * Transform that removes tools when response_format is set (JSON mode/structured output).
+ *
+ * Gemini/Vertex AI doesn't support combining code_execution or google_search tools
+ * with controlled generation (response_format).
+ *
+ * See: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini
+ */
+export function removeToolsForJsonResponse(
+    messages: ChatMessage[],
+    options: TransformOptions,
+): TransformResult {
+    const responseType = options.response_format?.type;
+    const hasJsonFormat =
+        responseType === "json_object" || responseType === "json_schema";
+
+    if (!hasJsonFormat) {
         return { messages, options };
     }
 
-    // Remove tools to avoid Vertex AI conflict
     const { tools, tool_choice, ...restOptions } = options;
 
     return {

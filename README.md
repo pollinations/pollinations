@@ -27,24 +27,8 @@
 | [🎬 CINESONICS](https://cinesonics.vercel.app/) | Generate cinematic soundtrack concepts by describing a movie vibe to get AI tracklist and album cover. | [@rajeshbsws557](https://github.com/rajeshbsws557) |
 | 🔌 pollinations2openai | Bridge Pollinations image generation with OpenAI-compatible APIs for easy integration. | [@mamontuka](https://github.com/mamontuka) |
 | [🛡️ DecoyNet](https://decoy-net-production-1c08.up.railway.app/) | Intelligent honeypot that detects scammers using dual-LLM architecture for fraud prevention. | [@Venky1209](https://github.com/Venky1209) |
-| [🎭 GEEMS](https://geems.web.app) | AI interactive fiction platform with LLM game master, 7 game modes, and psychological profiling. | [@paulklemstine](https://github.com/paulklemstine) |
-| [📝 Noted](https://app-noted.netlify.app/) | Create and organize markdown notes, to-do lists, and expense records with AI image and text generation. | [@djulTrb](https://github.com/djulTrb) |
-| [✨ Quick Explainer](https://quick-explainer.pages.dev/) | Transforms complex text into clear, simple explanations using Pollinations AI. | [@MSIN-Shanto](https://github.com/MSIN-Shanto) |
-| [🌱 Bloom CLI](https://pypi.org/project/bloom-cli/) | Open-source terminal coding agent using Pollinations API with multi-tool agent workflows. | [@Ilm-Alan](https://github.com/Ilm-Alan) |
-| [🌐 GeoCitAIes.com](https://geocitaies.com) | Surf 1990s-style web and generate retro personal homepages on demand using AI personas. | [@egusta](https://github.com/egusta) |
-| [📖 Tiny Tales](https://tiny-tales.nathanconnor.dev) | Generates child-friendly 4-page stories with adjustable max word length. | [@natyconnor](https://github.com/natyconnor) |
-| [🎨 Instaclaw](https://insta-claw.netlify.app/) | Showcase of agent-generated art interacting within a social network. | [@areknow](https://github.com/areknow) |
-| [📚 PollenPages](https://pollen-pages.vercel.app/) | Generate illustrated children's books and fantasy tales from prompts with PollenPages. Users pick a genre and describe a concept to get AI-produced text narratives and illustrations. | [@web](https://github.com/web) |
-| [🧰 PollinationAI-SDK](https://pypi.org/project/PollinationAI-SDK/) | PollinationAI-SDK provides a Python SDK to integrate PollinationAI API into Python applications, handling authentication and request/response logic to avoid manual API calls. | [@library](https://github.com/library) |
-| [🪄 3.5e DD Magic Item Generator](7650591) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@desktop](https://github.com/desktop) |
-| [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@android](https://github.com/android) |
-| [🖼️ PollGen](https://xhyperdevx.github.io/PollGen/) | Minimalist web app for generating images via Pollinations API with customizable options. | [@web](https://github.com/web) |
-| [🎨 Sketch My Mood](https://sketch-my-mood.onrender.com/) | AI-powered art therapy app that transforms emotional states into visual masterpieces. | [@web](https://github.com/web) |
-| [✍️ StoryFlux](https://play.google.com/store/apps/details?id=com.storyflux) | Create and read interactive AI-powered stories with social features. | [@android](https://github.com/android) |
-| [🖼️ LIFE Pro](https://softwareupdate.systemceramics.com/inkjetsoftwareupdate/windows/1008910020_x64.exe) | Large image processing software with AI chat and image generation features. | [@windows](https://github.com/windows) |
-| [🤖 jdunyara](https://jdunyara.ru) | Telegram bot for AI communication and image generation. | [@telegram](https://github.com/telegram) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.

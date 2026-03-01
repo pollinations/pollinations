@@ -4,12 +4,11 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "copy-apps": "cp ../apps/APPS.md public/APPS.md",
-        "predev": "npm run copy-apps",
         "dev": "vite",
-        "prebuild": "npm run copy-apps",
         "build": "tsc && vite build",
+        "build:staging": "CLOUDFLARE_ENV=staging tsc && CLOUDFLARE_ENV=staging vite build --mode=staging",
         "preview": "vite preview",
+        "deploy:staging": "npm run build:staging && CLOUDFLARE_ACCOUNT_ID=efdcb0933eaac64f27c0b295039b28f2 wrangler deploy",
         "deploy:production": "npm run build && wrangler deploy"
     },
     "dependencies": {
@@ -21,6 +20,7 @@
         "react-dom": "^18.2.0",
         "react-markdown": "^10.1.0",
         "react-router-dom": "^6.20.0",
+        "remark-gfm": "^4.0.1",
         "tailwind-merge": "^3.4.0",
         "webfontloader": "^1.6.28"
     },

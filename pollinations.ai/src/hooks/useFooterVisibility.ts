@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export function useFooterVisibility(threshold = 100) {
     const [showFooter, setShowFooter] = useState(false);
-    const lastScrollY = useRef(0);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -18,8 +17,6 @@ export function useFooterVisibility(threshold = 100) {
             } else {
                 setShowFooter(false);
             }
-
-            lastScrollY.current = currentScrollY;
         };
 
         window.addEventListener("scroll", handleScroll, { passive: true });

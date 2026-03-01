@@ -7,9 +7,10 @@ Sunday 06:00 UTC:
   2. AI synthesizes weekly themes
   3. Generate platform posts (Twitter, LinkedIn, Instagram, Reddit, Discord)
   4. Generate 7 platform images (1 twitter + 1 linkedin + 3 instagram + 1 reddit + 1 discord)
-  5. Create PR for review
+  5. Commit all content directly to the news branch
 
-Sunday 18:00 UTC cron (publish_weekly.py) checks if PR was merged and publishes.
+Buffer staging happens immediately after in NEWS_summary.yml.
+Direct channels (Reddit, Discord) publish via NEWS_publish.yml cron.
 
 See social/PIPELINE.md for full architecture.
 """
@@ -33,9 +34,8 @@ from common import (
     read_gists_for_date,
     filter_daily_gists,
     parse_json_response,
-    create_branch_from_main,
     commit_files_to_branch,
-    create_or_update_pr,
+    GISTS_BRANCH,
     IMAGE_SIZE,
 )
 
@@ -176,9 +176,6 @@ def generate_discord_post(digest: Dict, token: str, week_end: str) -> Optional[D
         return None
 
     text = response.strip()
-    if text.upper().strip() == "SKIP":
-        return None
-
     result = parse_json_response(text)
     if result:
         result["date"] = week_end
@@ -269,12 +266,10 @@ def generate_platform_images(
                 discord_post["image"] = {"url": url, "prompt": discord_post["image_prompt"]}
 
 
-# ── Step 4: Create PR ───────────────────────────────────────────────
+# ── Step 4: Commit to news branch ─────────────────────────────────
 
-def create_weekly_pr(
-    week_start: str,
+def commit_weekly_to_news(
     week_end: str,
-    digest: Dict,
     twitter_post: Optional[Dict],
     linkedin_post: Optional[Dict],
     instagram_post: Optional[Dict],
@@ -283,22 +278,17 @@ def create_weekly_pr(
     owner: str,
     repo: str,
     reddit_post: Optional[Dict] = None,
-) -> Optional[int]:
-    """Create a single PR with all weekly files."""
-    branch = f"weekly-digest-{week_end}"
-
-    if create_branch_from_main(branch, github_token, owner, repo) is None:
-        return None
-
+) -> bool:
+    """Commit all weekly content directly to the news branch. Returns True on success."""
     base_path = f"{WEEKLY_REL_DIR}/{week_end}"
     pollinations_token = get_env("POLLINATIONS_TOKEN")
 
-    # Generate images
+    # Generate images (commits them directly to news branch)
     print("\n  Generating platform images...")
     generate_platform_images(
         twitter_post, linkedin_post, instagram_post,
         week_end, pollinations_token,
-        github_token, owner, repo, branch,
+        github_token, owner, repo, GISTS_BRANCH,
         reddit_post=reddit_post,
         discord_post=discord_post,
     )
@@ -329,35 +319,13 @@ def create_weekly_pr(
             post["post_type"] = "carousel" if len(post.get("images", [])) > 1 else "single"
         files_to_commit.append((f"{base_path}/{filename}", post))
 
-    # Commit all files
-    commit_files_to_branch(files_to_commit, branch, github_token, owner, repo, label=f"for week of {week_end}")
+    if not files_to_commit:
+        print("  No files to commit")
+        return False
 
-    # Build PR body
-    theme = digest.get("theme", "")
-    pr_count = digest.get("pr_count", 0)
-    arc_preview = ""
-    for arc in digest.get("arcs", []):
-        arc_preview += f"\n**{arc['headline']}** ({arc['importance']})\n"
-        arc_preview += f"{arc.get('summary', '')[:200]}\n"
-
-    pr_body = f"""## Weekly Digest — {week_start} to {week_end}
-
-**{theme}**
-
-{pr_count} PRs merged across {len(digest.get('arcs', []))} themes.
-
-### Themes
-{arc_preview}
----
-When this PR is merged, the Sunday 18:00 UTC cron will publish to all 5 platforms (Twitter, LinkedIn, Instagram via Buffer + Reddit API + Discord webhook).
-
-Generated automatically by GitHub Actions.
-"""
-
-    return create_or_update_pr(
-        f"Weekly Digest — {week_start} to {week_end}", pr_body, branch,
-        github_token, owner, repo,
-    )
+    commit_files_to_branch(files_to_commit, GISTS_BRANCH, github_token, owner, repo, label=f"for week of {week_end}")
+    print(f"  Committed {len(files_to_commit)} files to {GISTS_BRANCH} branch")
+    return True
 
 
 # ── Main ─────────────────────────────────────────────────────────────
@@ -412,21 +380,19 @@ def main():
     print("  Discord...")
     discord_post = generate_discord_post(digest, pollinations_token, week_end)
 
-    # ── Create PR ────────────────────────────────────────────────────
-    # Note: highlights + README are NOT included in the weekly PR.
-    # They are accumulated by daily PRs (Mon-Sat) throughout the week.
-    print(f"\n[4/4] Creating PR...")
-    pr_number = create_weekly_pr(
-        week_start, week_end, digest,
+    # ── Commit to news branch ────────────────────────────────────────
+    print(f"\n[4/4] Committing weekly content to news branch...")
+    success = commit_weekly_to_news(
+        week_end,
         twitter_post, linkedin_post, instagram_post, discord_post,
         github_token, owner, repo,
         reddit_post=reddit_post,
     )
 
-    if pr_number:
-        print(f"\n=== Done! PR #{pr_number} created ===")
+    if success:
+        print("\n=== Done! ===")
     else:
-        print("\n=== Failed to create PR ===")
+        print("\n=== Failed to commit weekly content ===")
         sys.exit(1)
 
 

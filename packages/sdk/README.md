@@ -1,14 +1,14 @@
-# @pollinations/sdk
+# @pollinations_ai/sdk
 
 Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, text, audio, and video with one simple package.
 
-[![npm version](https://img.shields.io/npm/v/@pollinations/sdk.svg)](https://www.npmjs.com/package/@pollinations/sdk)
+[![npm version](https://img.shields.io/npm/v/@pollinations_ai/sdk.svg)](https://www.npmjs.com/package/@pollinations_ai/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Installation
 
 ```bash
-npm install @pollinations/sdk
+npm install @pollinations_ai/sdk
 ```
 
 ## Quick Start
@@ -22,7 +22,7 @@ export POLLINATIONS_API_KEY=your_api_key
 Then:
 
 ```javascript
-import { generateImage, generateText } from '@pollinations/sdk';
+import { generateImage, generateText } from '@pollinations_ai/sdk';
 
 // Generate an image
 const image = await generateImage('a futuristic cityscape');
@@ -41,7 +41,7 @@ New to coding? Here's a complete file you can copy-paste and run:
 // save this as: my-first-ai.mjs
 // First run: export POLLINATIONS_API_KEY=your_api_key
 
-import { generateText, generateImage } from '@pollinations/sdk';
+import { generateText, generateImage } from '@pollinations_ai/sdk';
 
 async function main() {
   // Generate text
@@ -68,7 +68,7 @@ node my-first-ai.mjs
 
 ```html
 <script type="module">
-  import { configure, generateText, generateImage } from 'https://esm.sh/@pollinations/sdk';
+  import { configure, generateText, generateImage } from 'https://esm.sh/@pollinations_ai/sdk';
 
   // Set your API key
   configure({ apiKey: 'your_api_key' });
@@ -92,7 +92,7 @@ node my-first-ai.mjs
 An API key is required. Get one for free at **https://enter.pollinations.ai**
 
 ```javascript
-import { configure } from '@pollinations/sdk';
+import { configure } from '@pollinations_ai/sdk';
 
 configure({ apiKey: 'your_api_key' });
 ```
@@ -105,7 +105,7 @@ export POLLINATIONS_API_KEY=your_api_key
 ## Image Generation
 
 ```javascript
-import { generateImage, imageUrl } from '@pollinations/sdk';
+import { generateImage, imageUrl } from '@pollinations_ai/sdk';
 
 // Generate and save
 const image = await generateImage('a robot painting', {
@@ -149,7 +149,7 @@ const url = await imageUrl('a sunset');
 ## Text Generation
 
 ```javascript
-import { generateText, generateTextStream } from '@pollinations/sdk';
+import { generateText, generateTextStream } from '@pollinations_ai/sdk';
 
 // Simple
 const text = await generateText('write a poem about coding');
@@ -194,7 +194,7 @@ console.log(result.actualModel); // actual model used
 ## Chat
 
 ```javascript
-import { chat, chatStream, conversation } from '@pollinations/sdk';
+import { chat, chatStream, conversation } from '@pollinations_ai/sdk';
 
 // Single message
 const response = await chat([
@@ -222,7 +222,7 @@ convo.clear(); // Reset conversation
 ## Video Generation
 
 ```javascript
-import { generateVideo } from '@pollinations/sdk';
+import { generateVideo } from '@pollinations_ai/sdk';
 
 const video = await generateVideo('a timelapse of clouds', {
   model: 'veo',
@@ -252,7 +252,7 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 ## Audio (Text-to-Speech)
 
 ```javascript
-import { generateAudio } from '@pollinations/sdk';
+import { generateAudio } from '@pollinations_ai/sdk';
 import { writeFileSync } from 'fs';
 
 const audio = await generateAudio('Hello, welcome!', {
@@ -280,7 +280,7 @@ audioEl.play();
 ## Vision (Image Input)
 
 ```javascript
-import { chat } from '@pollinations/sdk';
+import { chat } from '@pollinations_ai/sdk';
 
 const response = await chat([
   {
@@ -296,7 +296,7 @@ const response = await chat([
 ## List Available Models
 
 ```javascript
-import { getTextModels, getImageModels } from '@pollinations/sdk';
+import { getTextModels, getImageModels } from '@pollinations_ai/sdk';
 
 const textModels = await getTextModels();
 const imageModels = await getImageModels();
@@ -307,7 +307,7 @@ console.log(textModels.map(m => m.name));
 ## Error Handling
 
 ```javascript
-import { generateImage, PollinationsError } from '@pollinations/sdk';
+import { generateImage, PollinationsError } from '@pollinations_ai/sdk';
 
 try {
   const image = await generateImage('test');
@@ -323,7 +323,7 @@ try {
 ## Advanced: Client Class
 
 ```javascript
-import { Pollinations } from '@pollinations/sdk';
+import { Pollinations } from '@pollinations_ai/sdk';
 
 const client = new Pollinations({ apiKey: 'your_key' });
 
@@ -344,7 +344,7 @@ import type {
   Message,
   ImageResponseExt,
   ChatResponseExt,
-} from '@pollinations/sdk';
+} from '@pollinations_ai/sdk';
 ```
 
 ## API Reference
@@ -383,7 +383,7 @@ const base64 = image.toBase64();    // Raw base64 string
 Default timeouts: text/chat 5min, images 10min, videos 10min. For custom timeouts:
 
 ```javascript
-import { Pollinations } from '@pollinations/sdk';
+import { Pollinations } from '@pollinations_ai/sdk';
 
 const client = new Pollinations({
   timeout: 600000,       // 10 minutes for all requests
@@ -402,7 +402,7 @@ Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimite
 The SDK automatically retries failed requests up to 3 times. To customize:
 
 ```javascript
-import { Pollinations } from '@pollinations/sdk';
+import { Pollinations } from '@pollinations_ai/sdk';
 
 const client = new Pollinations({
   maxRetries: 5,  // Retry up to 5 times

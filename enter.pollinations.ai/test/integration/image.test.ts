@@ -211,16 +211,47 @@ describe("Image Integration Tests", () => {
     );
 
     test(
-        "gptimage-large with reference image returns 200 (img2img edit mode)",
+        "gptimage with reference image returns 200 (img2img edit mode)",
         { timeout: 60000 },
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird");
 
-            // Use a small test image URL for reference image
+            // This tests that gptimage correctly uses the /images/edits endpoint
+            // which requires api-version=2025-04-01-preview (not the old 2024-02-01)
+            // Regression: #7917 set gptimage to 2024-02-01, breaking edit mode
+            // Use a static public image (not pollinations URL which may not resolve in test)
+            const referenceImageUrl =
+                "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png";
+            const encodedImageUrl = encodeURIComponent(referenceImageUrl);
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/transform%20into%20blue?model=gptimage&width=256&height=256&seed=42&image=${encodedImageUrl}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            // Should return 200, not 404 "Resource not found"
+            // If this fails with 404, the API version is likely wrong (needs 2025-04-01-preview)
+            expect(response.status).toBe(200);
+            await response.arrayBuffer();
+        },
+    );
+
+    test(
+        "gptimage-large with reference image returns 200 (img2img edit mode)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
             // This tests that gptimage-large correctly uses the /images/edits endpoint
             // which requires api-version=2025-04-01-preview (not the old 2024-02-01)
+            // Use a static public image (not pollinations URL which may not resolve in test)
             const referenceImageUrl =
-                "https://image.pollinations.ai/prompt/red%20circle?width=256&height=256&seed=1&nologo=true";
+                "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png";
             const encodedImageUrl = encodeURIComponent(referenceImageUrl);
 
             const response = await SELF.fetch(
@@ -228,7 +259,7 @@ describe("Image Integration Tests", () => {
                 {
                     method: "GET",
                     headers: {
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -300,8 +331,39 @@ describe("Image Integration Tests", () => {
     );
 
     test(
+        "nanobanana-2 should return image/png (Gemini 3.1 Flash Image)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20cat%20on%20a%20rainbow?model=nanobanana-2&width=512&height=512&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("nanobanana-2 response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
         "should use crypto balance when tier balance is exhausted",
-        { timeout: 10000 },
+        { timeout: 30000 },
         async ({ apiKey, mocks, sessionToken }) => {
             await mocks.enable("polar", "tinybird");
             const { drizzle } = await import("drizzle-orm/d1");

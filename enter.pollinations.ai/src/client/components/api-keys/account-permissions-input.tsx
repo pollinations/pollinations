@@ -313,7 +313,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                             toggleCategory(audioModels)
                                         }
                                         disabled={disabled}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer"
                                     >
                                         {isCategoryAllSelected(audioModels)
                                             ? "Deselect all"
@@ -353,6 +353,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                 isChecked
                                     ? "border-green-400 bg-green-50"
                                     : "border-gray-200 hover:border-gray-300",
+                                !disabled && "cursor-pointer",
                                 disabled && "opacity-50 cursor-not-allowed",
                             )}
                         >

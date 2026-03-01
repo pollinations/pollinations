@@ -6,16 +6,13 @@
  * - Opacity: Add /90, /80, /50 etc. (e.g., bg-primary/90)
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
-import type { Config } from "tailwindcss";
-import { AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCssVariables as DefaultCssVariables } from "./src/theme/presets/default";
 import plugin from "tailwindcss/plugin";
+import { CozyCssVariables as DefaultCssVariables } from "./src/theme/presets/cozy";
 
-// Font family names
-// Font family names
 const Fonts = {
-    title: "var(--font-title, 'Maven Pro')",
-    headline: "var(--font-headline, 'Mako')",
-    body: "var(--font-body, 'Duru Sans')",
+    title: "var(--font-title, 'Pixelify Sans')",
+    headline: "var(--font-headline, 'Pixelify Sans')",
+    body: "var(--font-body, 'Outfit')",
 };
 
 export default {
@@ -49,10 +46,11 @@ export default {
                 "text-on-color": "rgb(var(--text-inverse))",
                 "text-brand": "rgb(var(--text-brand))",
                 "text-highlight": "rgb(var(--text-highlight))",
+                "text-accent": "rgb(var(--text-accent))",
 
                 // Surfaces (with opacity support)
                 "surface-page":
-                    "rgb(var(--surface-page) / var(--opacity-card, 1))",
+                    "rgb(var(--surface-page) / var(--opacity-overlay, 1))",
                 "surface-card":
                     "rgb(var(--surface-card) / var(--opacity-card, 1))",
                 "surface-base":
@@ -77,10 +75,16 @@ export default {
                 // Borders
                 "border-brand": "rgb(var(--border-brand))",
                 "border-highlight": "rgb(var(--border-highlight))",
+                "border-accent": "rgb(var(--border-accent))",
                 "border-main": "rgb(var(--border-main))",
                 "border-strong": "rgb(var(--border-strong))",
                 "border-subtle": "rgb(var(--border-subtle))",
                 "border-faint": "rgb(var(--border-faint))",
+
+                // Badge accent colors (theme-responsive via semantic tokens)
+                "badge-fresh": "rgb(var(--text-brand) / <alpha-value>)",
+                "badge-pollen": "rgb(var(--text-highlight) / <alpha-value>)",
+                "badge-buzz": "rgb(var(--text-accent) / <alpha-value>)",
 
                 // Logo
                 "logo-main": "rgb(var(--logo-main))",
@@ -118,27 +122,32 @@ export default {
                 // SEMANTIC TOKEN SHADOWS
                 // ============================================
                 // Brand shadows
-                "shadow-brand-sm": "2px 2px 0px 0px var(--shadow-brand-sm)",
-                "shadow-brand-md": "4px 4px 0px 0px var(--shadow-brand-md)",
-                "shadow-brand-lg": "6px 6px 0px 0px var(--shadow-brand-lg)",
+                "shadow-brand-sm":
+                    "2px 2px 0px 0px rgb(var(--shadow-brand-sm))",
+                "shadow-brand-md":
+                    "4px 4px 0px 0px rgb(var(--shadow-brand-md))",
+                "shadow-brand-lg":
+                    "6px 6px 0px 0px rgb(var(--shadow-brand-lg))",
 
                 // Dark shadows
-                "shadow-dark-sm": "2px 2px 0px 0px var(--shadow-dark-sm)",
-                "shadow-dark-md": "4px 4px 0px 0px var(--shadow-dark-md)",
-                "shadow-dark-lg": "6px 6px 0px 0px var(--shadow-dark-lg)",
-                "shadow-dark-xl": "12px 12px 0px 0px var(--shadow-dark-xl)",
+                "shadow-dark-sm": "2px 2px 0px 0px rgb(var(--shadow-dark-sm))",
+                "shadow-dark-md": "4px 4px 0px 0px rgb(var(--shadow-dark-md))",
+                "shadow-dark-lg": "6px 6px 0px 0px rgb(var(--shadow-dark-lg))",
+                "shadow-dark-xl":
+                    "12px 12px 0px 0px rgb(var(--shadow-dark-xl))",
 
                 // Highlight shadows
                 "shadow-highlight-sm":
-                    "2px 2px 0px 0px var(--shadow-highlight-sm)",
+                    "2px 2px 0px 0px rgb(var(--shadow-highlight-sm))",
                 "shadow-highlight-md":
-                    "4px 4px 0px 0px var(--shadow-highlight-md)",
+                    "4px 4px 0px 0px rgb(var(--shadow-highlight-md))",
             },
             borderRadius: {
                 button: "var(--radius-button)",
                 card: "var(--radius-card)",
                 input: "var(--radius-input)",
                 "sub-card": "var(--radius-subcard)",
+                tag: "var(--radius-tag)",
             },
             animation: {
                 "pulse-subtle": "pulse-subtle 1.5s ease-in-out infinite",
@@ -175,12 +184,36 @@ export default {
                 ":root": {
                     // CSS variables for Tailwind colors
                     "--color-yellow": "#ecf874",
-                    "--color-pink": "#ff69b4",
-                    "--color-cyan": "#74f8ec",
+                    "--color-lime": "#ecf874",
+                    "--color-pink": "#ffd1b3",
+                    "--color-cyan": "#a8e6cf",
                     "--color-charcoal": "#110518",
 
                     // Inject Default Theme Variables
                     ...DefaultCssVariables,
+                },
+            });
+        }),
+        // Pixel-art utility classes
+        plugin(({ addUtilities, addBase }) => {
+            // Disable font smoothing on pixel font families for crisp rendering
+            addBase({
+                ".font-title, .font-headline": {
+                    "-webkit-font-smoothing": "none",
+                    "-moz-osx-font-smoothing": "grayscale",
+                },
+            });
+            addUtilities({
+                ".font-pixel": {
+                    "-webkit-font-smoothing": "none",
+                    "-moz-osx-font-smoothing": "grayscale",
+                },
+                ".render-pixelated": {
+                    "image-rendering": "pixelated",
+                },
+                ".pixel-border": {
+                    "box-shadow":
+                        "-4px 0 0 0 currentColor, 4px 0 0 0 currentColor, 0 -4px 0 0 currentColor, 0 4px 0 0 currentColor",
                 },
             });
         }),

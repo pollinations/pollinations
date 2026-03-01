@@ -11,6 +11,7 @@ const cardColors = {
     red: "border-red-300",
     yellow: "border-yellow-200",
     gray: "border-gray-200",
+    pink: "border-pink-300",
 } as const;
 
 type CardProps = PropsWithChildren<{

@@ -1,0 +1,88 @@
+name: Social Publish (Direct Channels)
+
+on:
+  schedule:
+    - cron: '0 15 * * 1-6'  # Mon-Sat 15:00 UTC — daily Reddit
+    - cron: '0 18 * * 0'    # Sunday 18:00 UTC — weekly Reddit + Discord
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Publish mode'
+        required: true
+        type: choice
+        options:
+          - daily
+          - weekly
+      target_date:
+        description: 'Date (YYYY-MM-DD) for manual publish'
+        required: false
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests PyYAML Jinja2 paramiko
+
+      - name: Overlay news branch data
+        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
+
+      - name: Determine mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            DOW=$(date -u +%u)  # 1=Monday, 7=Sunday
+            if [ "$DOW" = "7" ]; then
+              echo "mode=weekly" >> "$GITHUB_OUTPUT"
+            else
+              echo "mode=daily" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "mode=${{ github.event.inputs.mode }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish daily Reddit
+        if: steps.mode.outputs.mode == 'daily'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PUBLISH_MODE: direct
+          TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
+          REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
+          REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
+          REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}
+        run: python social/scripts/publish_daily.py
+
+      - name: Publish weekly Reddit + Discord
+        if: steps.mode.outputs.mode == 'weekly'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PUBLISH_MODE: direct
+          WEEK_END_DATE: ${{ github.event.inputs.target_date || '' }}
+          DISCORD_WEEKLY_WEBHOOK_URL: ${{ secrets.DISCORD_WEEKLY_WEBHOOK_URL }}
+          REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
+          REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
+          REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}
+        run: python social/scripts/publish_weekly.py

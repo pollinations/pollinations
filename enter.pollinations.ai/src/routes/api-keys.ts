@@ -44,6 +44,18 @@ function buildUpdatedPermissions(
 }
 
 /**
+ * Parse permissions JSON, returning null for empty objects or invalid JSON.
+ */
+function parsePermissions(raw: string): Record<string, string[]> | null {
+    try {
+        const parsed = JSON.parse(raw);
+        return Object.keys(parsed).length > 0 ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Parse potentially double-serialized JSON metadata
  */
 function parseMetadata(metadata: string): Record<string, unknown> | null {
@@ -103,7 +115,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             description:
                 "List all API keys for the current user with pollenBalance.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
@@ -126,7 +138,7 @@ export const apiKeysRoutes = new Hono<Env>()
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
                     permissions: key.permissions
-                        ? JSON.parse(key.permissions)
+                        ? parsePermissions(key.permissions)
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
@@ -141,7 +153,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/update",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             description: "Update an API key's permissions and budget.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),

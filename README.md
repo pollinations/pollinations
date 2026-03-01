@@ -17,7 +17,22 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [⚖️ Marid V2.0 Legal Intelligence System](https://ai.al-mohamy.com/) | Marid is a LangGraph-driven Multi-Agent System engineered for the legal domain. It combines Retrieval-Augmented Generation RAG with a rigorous Honor Constraint Framework HCF to ensure high-fidelity le | [@web](https://github.com/web) |
+| [⚖️ Marid V2.0](https://ai.al-mohamy.com/) | LangGraph-driven legal AI multi-agent system with RAG for high-fidelity legal analysis. | [@ahmedmetwali1](https://github.com/ahmedmetwali1) |
+| [🖌️ Viso](https://viso-l.netlify.app/) | Clean brutalist AI image generator with multiple art styles and aspect ratios. | [@xxooxannn](https://github.com/xxooxannn) |
+| [🎨 AnimePollen](https://animepollen.vercel.app/) | Free AI anime art generator — describe scenes to get instant illustrations. | [@Pelz01](https://github.com/Pelz01) |
+| [🌊 Dream-Stream](https://dream-stream-ai.huangxiaogang.workers.dev/) | Serverless AI art gallery on Cloudflare Workers using Pollinations API. | [@huangxiaogang-ctrl](https://github.com/huangxiaogang-ctrl) |
+| [🖼️ StickerForge](https://stickerforge-two.vercel.app/) | Generate custom stickers for Telegram and WhatsApp from images or text prompts. | [@patangal](https://github.com/patangal) |
+| [🎬 CINESONICS](https://cinesonics.vercel.app/) | Generate cinematic soundtrack concepts by describing a movie vibe to get AI tracklist and album cover. | [@rajeshbsws557](https://github.com/rajeshbsws557) |
+| 🔌 pollinations2openai | Bridge Pollinations image generation with OpenAI-compatible APIs for easy integration. | [@mamontuka](https://github.com/mamontuka) |
+| [🛡️ DecoyNet](https://honeypot-decoynet.up.railway.app) | Intelligent honeypot that detects scammers using dual-LLM architecture for fraud prevention. | [@Venky1209](https://github.com/Venky1209) |
+| [🎭 GEEMS](https://geems.web.app) | AI interactive fiction platform with LLM game master, 7 game modes, and psychological profiling. | [@paulklemstine](https://github.com/paulklemstine) |
+| [📝 Noted](https://app-noted.netlify.app/) | Create and organize markdown notes, to-do lists, and expense records with AI image and text generation. | [@djulTrb](https://github.com/djulTrb) |
+| [✨ Quick Explainer](https://quick-explainer.pages.dev/) | Transforms complex text into clear, simple explanations using Pollinations AI. | [@MSIN-Shanto](https://github.com/MSIN-Shanto) |
+| [🌱 Bloom CLI](https://pypi.org/project/bloom-cli/) | Open-source terminal coding agent using Pollinations API with multi-tool agent workflows. | [@Ilm-Alan](https://github.com/Ilm-Alan) |
+| [🌐 GeoCitAIes.com](https://geocitaies.com) | Surf 1990s-style web and generate retro personal homepages on demand using AI personas. | [@egusta](https://github.com/egusta) |
+| [📖 Tiny Tales](https://tiny-tales.nathanconnor.dev) | Generates child-friendly 4-page stories with adjustable max word length. | [@natyconnor](https://github.com/natyconnor) |
+| [🎨 Instaclaw](https://insta-claw.netlify.app/) | Showcase of agent-generated art interacting within a social network. | [@areknow](https://github.com/areknow) |
+| [📚 PollenPages](https://pollen-pages.vercel.app/) | Generate illustrated children's books and fantasy tales from prompts with PollenPages. Users pick a genre and describe a concept to get AI-produced text narratives and illustrations. | [@web](https://github.com/web) |
 | [🧰 PollinationAI-SDK](https://pypi.org/project/PollinationAI-SDK/) | PollinationAI-SDK provides a Python SDK to integrate PollinationAI API into Python applications, handling authentication and request/response logic to avoid manual API calls. | [@library](https://github.com/library) |
 | [🪄 3.5e DD Magic Item Generator](7650591) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@desktop](https://github.com/desktop) |
 | [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@android](https://github.com/android) |

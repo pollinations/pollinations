@@ -1,0 +1,133 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-3-pro-preview",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 404,
+    "statusText": "Not Found",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "794",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 27 Feb 2026 18:42:00 GMT",
+      "etag": "W/\"31a-svhmmSgL9UdqL+oHK4Hf6yCwPHo\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Not Found",
+        "message": "Model not found: gemini-3-pro-preview",
+        "requestId": "61aiqn",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "What is 5 + 3? You must use the calculator tool to compute this."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "gemini-3-pro-preview",
+          "referrer": null,
+          "isPrivate": true,
+          "voice": "alloy",
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "calculator",
+                "description": "Perform basic arithmetic operations",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "operation": {
+                      "type": "string",
+                      "enum": [
+                        "add",
+                        "subtract",
+                        "multiply",
+                        "divide"
+                      ],
+                      "description": "The arithmetic operation to perform"
+                    },
+                    "a": {
+                      "type": "number",
+                      "description": "First operand"
+                    },
+                    "b": {
+                      "type": "number",
+                      "description": "Second operand"
+                    }
+                  },
+                  "required": [
+                    "operation",
+                    "a",
+                    "b"
+                  ]
+                }
+              }
+            }
+          ],
+          "tool_choice": "required",
+          "private": true
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **563** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **564** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -12,7 +12,8 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
-| [⚖️ Marid V2.0 Legal Intelligence System](https://ai.al-mohamy.com/) | Marid is a LangGraph-driven Multi-Agent System engineered for the legal domain. It combines Retrieval-Augmented Generation RAG with a rigorous Honor Constraint Framework HCF to ensure high-fidelity le | [@web](https://github.com/web) |  | 🫧 |
+| [📝 Noted](https://app-noted.netlify.app/) | Create and organize markdown notes, to-do lists, and expense records with Noted. Use built-in AI to generate images and text to populate or enrich notes. | [@web](https://github.com/web) |  | 🫧 |
+| [📚 PollenPages](https://pollen-pages.vercel.app/) | Generate illustrated children's books and fantasy tales from prompts with PollenPages. Users pick a genre and describe a concept to get AI-produced text narratives and illustrations. | [@web](https://github.com/web) |  | 🫧 |
 | [🧰 PollinationAI-SDK](https://pypi.org/project/PollinationAI-SDK/) | PollinationAI-SDK provides a Python SDK to integrate PollinationAI API into Python applications, handling authentication and request/response logic to avoid manual API calls. | [@library](https://github.com/library) |  | 🫧 |
 | [🔍 ExplainMyBigO](https://explain-my-bigo.vercel.app/) | AI tool that estimates Big-O time and space complexity of your algorithms instantly. | [@web](https://github.com/web) |  | 🫧 |
 | [⚖️ AutoTutela](https://angelromero.co/autotutela) | AI legal assistant that drafts Acciones de Tutela for Colombian citizens. | [@web](https://github.com/web) |  | 🫧 |
@@ -21,7 +22,6 @@
 | [🧪 BotForgeX Laboratories](https://botforgex-labs.vercel.app) | Build secure, multimodal Discord chatbots effortlessly powered by Pollinations with zero data logging. Includes 100+ templates, live in-browser previews, and advanced toggles for Vision, TTS, and Image Gen. Features intelligent model routing and adjustable natural messaging ranges—all while keeping your private tokens/keys 100% on your device. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 KHMER TOOL BOT](https://t.me/khmer_downloader_bot) | Offers multiple utility commands and integrations, including image generation via pollinations.ai. | [@telegram](https://github.com/telegram) |  | 🫧 |
 | [🔌 langchain-pollinations](https://pypi.org/project/langchain-pollinations/) | LangChain integration for pollinations.ai — build agents, RAGs, and AI applications. | [@library](https://github.com/library) |  | 🫧 |
-| [🛠️ LLM Client](80639411) | Minimal stdlib-only Go client with a unified API for OpenAI-compatible LLM endpoints. | [@api](https://github.com/api) |  | 🫧 |
 
 ---
 
@@ -204,6 +204,8 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [📝 Noted](https://app-noted.netlify.app/) | Create and organize markdown notes, to-do lists, and expense records with Noted. Use built-in AI to generate images and text to populate or enrich notes. | [@web](https://github.com/web) |  | 🫧 |
+| [📚 PollenPages](https://pollen-pages.vercel.app/) | Generate illustrated children's books and fantasy tales from prompts with PollenPages. Users pick a genre and describe a concept to get AI-produced text narratives and illustrations. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 Postsiva](https://youtube.postsiva.com/) | SaaS platform to help YouTube creators manage and optimize their channels. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 Postsiva  AI Facebook Automation](https://facebook.postsiva.com/) | AI platform to generate, schedule and publish Facebook posts at scale. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 AI Youtube Comment Summary Browser ExtensionAddon](https://addons.mozilla.org/en-US/firefox/addon/ai-youtube-comment-summary/) | Summarizes YouTube comment threads directly in your browser. | [@browser-ext](https://github.com/browser-ext) |  | 🫧 |
@@ -212,13 +214,13 @@
 | [📊 LandPPT](https://landppt.com) | LLM-powered platform converting documents into professional PPT presentations. | [@web](https://github.com/web) |  | 🫧 |
 | [✍️ StoryFlux](https://play.google.com/store/apps/details?id=com.storyflux) | Create and read interactive AI-powered stories with social features. | [@android](https://github.com/android) |  | 🫧 |
 | [📖 TaleCrafter AI](https://www.talecrafter.tech/) | Interactive storytelling platform turning prompts into digital storybooks with AI illustrations. | [@web](https://github.com/web) |  | 🫧 |
-| [📖 Korpi.AI](https://korpi.ai) | Generates AI stories with the Pollinations Flux model. | [@web](https://github.com/web) |  | 🫧 |
-| [✍️ Textify](https://letstypifythecontent.web.app/) | AI-powered content writer for generating articles, posts, and marketing copy. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 60 apps</summary>
+<details><summary>Show all 62 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [📖 Korpi.AI](https://korpi.ai) | Generates AI stories with the Pollinations Flux model. | [@web](https://github.com/web) |  | 🫧 |
+| [✍️ Textify](https://letstypifythecontent.web.app/) | AI-powered content writer for generating articles, posts, and marketing copy. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ Gen Layers](http://genlayers.com/) | AI tool to generate high-CTR YouTube thumbnails from titles and visuals | [@web](https://github.com/web) |  | 🫧 |
 | [🗺️ AI World Generator  Narrative Extractor Standalone](https://latejedorademundos-prog.github.io/pollinationproject-extractor/) | Standalone extractor that pulls narrative content from AI world generator. | [@web](https://github.com/web) |  | 🫧 |
 | [🌌 Mundos de Fantasía](https://todoh.github.io/POLLINATIONS-MUNDOS-FANTASIA/) | AI world-builder: characters, maps, history & stories from a single idea | [@web](https://github.com/web) |  | 🫧 |
@@ -516,7 +518,6 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
-| [⚖️ Marid V2.0 Legal Intelligence System](https://ai.al-mohamy.com/) | Marid is a LangGraph-driven Multi-Agent System engineered for the legal domain. It combines Retrieval-Augmented Generation RAG with a rigorous Honor Constraint Framework HCF to ensure high-fidelity le | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 KHMER TOOL BOT](https://t.me/khmer_downloader_bot) | Offers multiple utility commands and integrations, including image generation via pollinations.ai. | [@telegram](https://github.com/telegram) |  | 🫧 |
 | [🤖 EcubzBOT](https://t.me/eCubzBot) | Telegram inline AI assistant for generating answers directly within chats. | [@telegram](https://github.com/telegram) |  | 🫧 |
 | [🛡️ Nova Defense](https://dashboard.novadefense.es) | Anti-raid Discord bot using Pollinations for attack detection and images. | [@discord](https://github.com/discord) |  | 🫧 |
@@ -526,12 +527,12 @@
 | [🤖 jdunyara](https://jdunyara.ru) | Telegram bot for AI communication and image generation. | [@telegram](https://github.com/telegram) |  | 🫧 |
 | [🤖 Hizumi](https://discord.com/oauth2/authorize?client_id=1349802412805980231) | Discord bot for image and video generation in 145+ servers. | [@discord](https://github.com/discord) |  | 🫧 |
 | [🤖 Riko](https://discord.gg/zXuw4rvpvT) | Human-like Discord bot with long-term memory, relationships, and personality. | [@discord](https://github.com/discord) |  | 🫧 |
+| [💬 Chat AI](https://t.me/Chat2qai_bot) | Telegram bot for AI chat and image generation powered by Pollinations API | [@telegram](https://github.com/telegram) |  | 🫧 |
 
-<details><summary>Show all 32 apps</summary>
+<details><summary>Show all 31 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
-| [💬 Chat AI](https://t.me/Chat2qai_bot) | Telegram bot for AI chat and image generation powered by Pollinations API | [@telegram](https://github.com/telegram) |  | 🫧 |
 | [🤖 AlphaLLM](https://alphallm.tech) | Discord AI bot with multi-model text/image gen, RAG memory & REST API | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 Happy Robot](https://discord.com/oauth2/authorize?client_id=1335649491658735737) | Discord AI bot with streaming responses, web search & image generation | [@discord](https://github.com/discord) |  | 🫧 |
 | [🤖 AI Telegram Bot ChatGPT-5  Unlimmited  Free](https://t.me/free_unlim_chatgpt_bot) | Free Telegram AI bot with multiple text models and image generation. | [@telegram](https://github.com/telegram) |  | 🫧 |

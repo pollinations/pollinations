@@ -175,9 +175,22 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 : "Create New API Key"}
                         </Dialog.Title>
                         <p className="text-sm text-gray-500 mt-1">
-                            {simplified
-                                ? "Register your app to let users associate their Pollinations account with it."
-                                : "Access AI models for text, image, and audio generation."}
+                            {simplified ? (
+                                <>
+                                    Register your app for{" "}
+                                    <a
+                                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-green-700 underline hover:text-green-900"
+                                    >
+                                        BYOP
+                                    </a>
+                                    {" "}&mdash; let users bring their own pollen.
+                                </>
+                            ) : (
+                                "Access AI models for text, image, and audio generation."
+                            )}
                         </p>
                     </div>
 

@@ -30,7 +30,8 @@ export class PollenRateLimiter extends DurableObject {
         // Load state from storage - blockConcurrencyWhile ensures no requests
         // are delivered until initialization completes, preventing race conditions
         ctx.blockConcurrencyWhile(async () => {
-            this.nextAllowedTime = (await ctx.storage.get("nextAllowedTime")) ?? 0;
+            this.nextAllowedTime =
+                (await ctx.storage.get("nextAllowedTime")) ?? 0;
             this.log.debug("Loaded state: nextAllowedTime={nextAllowedTime}", {
                 nextAllowedTime: this.nextAllowedTime,
             });
@@ -72,12 +73,20 @@ export class PollenRateLimiter extends DurableObject {
     async consumePollen(cost: number): Promise<void> {
         const now = Date.now();
         const waitTime = Math.ceil(cost / this.refillRate);
-        this.nextAllowedTime = now + waitTime;
 
-        this.log.debug(
-            "Consumed {cost} pollen, next allowed in {waitMs}ms",
-            { cost, waitMs: waitTime },
-        );
+        // Accumulate from previous nextAllowedTime to support burst for idle users.
+        // Cap burst credit to prevent abuse (max 10 hours of accumulated idle time).
+        const MAX_BURST_MS = 10 * 3600000;
+        const effectiveBase =
+            this.nextAllowedTime === 0
+                ? now // First-ever request — no burst credit
+                : Math.max(now - MAX_BURST_MS, this.nextAllowedTime);
+        this.nextAllowedTime = effectiveBase + waitTime;
+
+        this.log.debug("Consumed {cost} pollen, next allowed in {waitMs}ms", {
+            cost,
+            waitMs: Math.max(0, this.nextAllowedTime - now),
+        });
 
         await this.ctx.storage.put("nextAllowedTime", this.nextAllowedTime);
     }

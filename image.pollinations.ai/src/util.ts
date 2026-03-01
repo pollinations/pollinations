@@ -29,34 +29,6 @@ export function withTimeoutSignal<T>(
     return Promise.race([promise, timeoutPromise]);
 }
 
-/**
- * Wraps any promise with a timeout using Promise.race.
- * Note: This does not cancel the underlying operation, only rejects the promise.
- *
- * @param promise - The promise to wrap with timeout
- * @param timeoutMs - Timeout in milliseconds
- * @returns Promise that resolves/rejects with the original promise or timeout error
- *
- * @example
- * const response = await withTimeout(
- *   fetch('/api/data'),
- *   30000
- * );
- */
-export function withTimeout<T>(
-    promise: Promise<T>,
-    timeoutMs: number,
-): Promise<T> {
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-            reject(new Error(`Operation timed out after ${timeoutMs}ms`));
-        }, timeoutMs);
-    });
-
-    return Promise.race([promise, timeoutPromise]);
-}
-
 export async function sleep(ms: number) {
     await new Promise<void>((resolve, _) => setTimeout(resolve, ms));
 }
-

@@ -484,7 +484,7 @@ export interface ModelInfo {
     uncensored?: boolean;
     voices?: string[];
     maxInputChars?: number;
-    context_window?: number;
+    context_length?: number;
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
     pricing?: {

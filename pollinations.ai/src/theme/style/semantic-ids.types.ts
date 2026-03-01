@@ -71,6 +71,7 @@ export type SemanticTokenId =
     | "radius.card"
     | "radius.input"
     | "radius.subcard"
+    | "radius.tag"
 
     // Fonts
     | "font.title"

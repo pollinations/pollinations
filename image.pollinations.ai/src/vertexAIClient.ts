@@ -3,8 +3,8 @@
  * Direct integration with Google Vertex AI API bypassing Portkey issues
  */
 
-import fetch from "node-fetch";
 import debug from "debug";
+import fetch from "node-fetch";
 import googleCloudAuth from "../auth/googleCloudAuth.ts";
 
 const log = debug("pollinations:vertex-ai");
@@ -285,12 +285,8 @@ export async function generateImageWithVertexAI(
         let imageData: string | null = null;
         let mimeType: string | null = null;
         let textResponse: string | null = null;
-        let finishReason: string | undefined = undefined;
-        let safetyRatings: any[] | undefined = undefined;
-
-        log("Response structure check:");
-        log("- data.candidates exists:", !!data.candidates);
-        log("- candidates length:", data.candidates?.length || 0);
+        let finishReason: string | undefined;
+        let safetyRatings: any[] | undefined;
 
         if (data.candidates && data.candidates.length > 0) {
             const candidate = data.candidates[0];
@@ -299,14 +295,6 @@ export async function generateImageWithVertexAI(
             finishReason = candidate.finishReason;
             safetyRatings = (candidate as any).safetyRatings;
 
-            log("- candidate.content exists:", !!candidate.content);
-            log(
-                "- candidate.content.parts exists:",
-                !!candidate.content?.parts,
-            );
-            log("- parts length:", candidate.content?.parts?.length || 0);
-            log("- finishReason:", finishReason);
-
             // Check if content and parts exist before iterating
             // When safety blocks content, candidate.content or parts may be undefined
             if (candidate.content?.parts) {
@@ -314,32 +302,11 @@ export async function generateImageWithVertexAI(
                     if (part.inlineData) {
                         imageData = part.inlineData.data;
                         mimeType = part.inlineData.mimeType;
-                        log(
-                            "Found image data:",
-                            mimeType,
-                            "size:",
-                            imageData.length,
-                        );
                     } else if (part.text) {
                         textResponse = part.text;
-                        log(
-                            "Found text response:",
-                            part.text.substring(0, 100),
-                        );
-                    } else {
-                        log(
-                            "Part has no inlineData or text:",
-                            Object.keys(part),
-                        );
                     }
                 }
-            } else {
-                log(
-                    "No content.parts available - likely blocked by safety filters",
-                );
             }
-        } else {
-            log("No candidates found in response");
         }
 
         if (!imageData || !mimeType) {
@@ -370,35 +337,5 @@ export async function generateImageWithVertexAI(
     } catch (error) {
         errorLog("Error in generateImageWithVertexAI:", error);
         throw error;
-    }
-}
-
-/**
- * Test function to verify Vertex AI integration
- */
-export async function testVertexAIConnection(): Promise<boolean> {
-    try {
-        log("Testing Vertex AI connection...");
-
-        const result = await generateImageWithVertexAI({
-            prompt: "A simple test image of a banana",
-        });
-
-        if (!result.imageData) {
-            log(
-                "Test completed but no image generated (possibly blocked by safety)",
-            );
-            return false;
-        }
-        log(
-            "Test successful - generated image:",
-            result.mimeType,
-            "size:",
-            result.imageData.length,
-        );
-        return true;
-    } catch (error) {
-        errorLog("Test failed:", error);
-        return false;
     }
 }

@@ -1,5 +1,8 @@
 import type { Logger } from "@logtape/logtape";
-import { ELEVENLABS_VOICES, VOICE_MAPPING } from "@shared/registry/audio.ts";
+import {
+    ELEVENLABS_VOICES,
+    resolveElevenLabsVoiceId,
+} from "@shared/registry/audio.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -35,10 +38,10 @@ const CreateSpeechRequestSchema = z
             example: "Hello, welcome to Pollinations!",
         }),
         voice: z
-            .enum(ELEVENLABS_VOICES as [string, ...string[]])
+            .string()
             .default("alloy")
             .meta({
-                description: `The voice to use. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
+                description: `The voice to use. Can be any preset name (${ELEVENLABS_VOICES.join(", ")}) OR a custom ElevenLabs voice ID (UUID from your dashboard).`,
                 example: "rachel",
             }),
         response_format: z
@@ -100,11 +103,13 @@ export async function generateSpeech(opts: {
         });
     }
 
-    const voiceId = VOICE_MAPPING[voice];
-    if (!voiceId) {
+    const voiceId = resolveElevenLabsVoiceId(voice);
+
+    // Basic sanity check (custom voice IDs are long strings/UUIDs)
+    if (!voiceId || voiceId.length < 8) {
         log.warn("Invalid voice requested: {voice}", { voice });
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice: ${voice}. Available voices: ${Object.keys(VOICE_MAPPING).join(", ")}.`,
+            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
         });
     }
 
@@ -397,16 +402,16 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/speech",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🔊 Audio Generation"],
+            summary: "Text to Speech (OpenAI-compatible)",
             description: [
-                "Generate audio from text — speech (TTS) or music.",
+                "Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.",
                 "",
-                "This endpoint is OpenAI TTS API compatible.",
-                "Set `model` to `elevenmusic` (or alias `music`) to generate music instead of speech.",
+                "Set `model` to `elevenmusic` to generate music instead of speech.",
                 "",
-                `**TTS Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
-                "**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm",
+                "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
             ].join("\n"),
             responses: {
                 200: {
@@ -429,7 +434,7 @@ export const audioRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         validator("json", CreateSpeechRequestSchema),
@@ -476,15 +481,17 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/transcriptions",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🔊 Audio Generation"],
+            summary: "Transcribe Audio",
             description: [
-                "Transcribe audio to text using Whisper or ElevenLabs Scribe.",
+                "Transcribe audio files to text. Compatible with the OpenAI Whisper API.",
                 "",
-                "This endpoint is OpenAI Whisper API compatible.",
+                "**Supported audio formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
                 "",
-                "**Supported formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
-                "",
-                "**Models:** `whisper-large-v3` (default), `whisper-1`, `scribe`",
+                "**Models:**",
+                "- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
+                "- `whisper-1` — Alias for whisper-large-v3",
+                "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -553,7 +560,7 @@ export const audioRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         resolveModel("generate.audio"),

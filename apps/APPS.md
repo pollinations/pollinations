@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h | Health |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🌐 | wwwsim | https://wwwsim.netlify.app/ | AI website builder using multiple models like Gemini, Claude, and Kimi for design and code generation. | en | build | web | @Brybod123 | 0 |  |  |  | | 2026-02-16 | https://github.com/pollinations/pollinations/issues/8318 | 2026-03-01 |  |  |  |
 | ⚖️ | Marid V2.0 | https://ai.al-mohamy.com/ | LangGraph-driven legal AI multi-agent system with RAG for high-fidelity legal analysis. | en | bots | web | @ahmedmetwali1 | 0 |  |  |  | | 2026-02-28 | https://github.com/pollinations/pollinations/issues/8663 | 2026-03-01 |  |  |  |
 | 🖌️ | Viso | https://viso-l.netlify.app/ | Clean brutalist AI image generator with multiple art styles and aspect ratios. | en | image | web | @xxooxannn | 0 | https://github.com/xxooxannn/Viso |  |  | | 2026-02-21 | https://github.com/pollinations/pollinations/issues/8447 | 2026-03-01 |  |  |  |
 | 🎨 | AnimePollen | https://animepollen.vercel.app/ | Free AI anime art generator — describe scenes to get instant illustrations. | en | image | web | @Pelz01 | 0 |  |  |  | | 2026-02-10 | https://github.com/pollinations/pollinations/issues/8156 | 2026-03-01 |  |  |  |

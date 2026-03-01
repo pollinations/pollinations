@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../../api.config";
 import { PLAY_PAGE } from "../../../copy/content/play";
+import { LINKS } from "../../../copy/content/socialLinks";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 import { CopyIcon } from "../../assets/CopyIcon";
@@ -105,10 +106,7 @@ export function PlayGenerator({
     // Fetch agent prompt for copy button
     useEffect(() => {
         const controller = new AbortController();
-        fetch(
-            "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
-            { signal: controller.signal },
-        )
+        fetch(LINKS.apidocsRaw, { signal: controller.signal })
             .then((res) => res.text())
             .then(setAgentPrompt)
             .catch(() => {});
@@ -218,6 +216,7 @@ export function PlayGenerator({
     };
 
     const handleGenerate = async () => {
+        if (isLoading) return;
         setIsLoading(true);
         setError(null);
         setResult(null);
@@ -408,7 +407,7 @@ export function PlayGenerator({
                                                 ),
                                             )
                                         }
-                                        className="absolute -top-1 -right-1 w-5 h-5 bg-charcoal border border-border-main rounded-full flex items-center justify-center text-text-body-main hover:bg-button-secondary-bg transition-colors"
+                                        className="absolute -top-1 -right-1 w-5 h-5 bg-surface-card border border-border-main rounded-full flex items-center justify-center text-text-body-main hover:bg-button-secondary-bg transition-colors"
                                     >
                                         ×
                                     </button>
@@ -482,9 +481,9 @@ export function PlayGenerator({
                                 >
                                     {copy.seedLabel}
                                 </Label>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/seed:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/seed:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {copy.seedTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
                                 </div>
                             </div>
                             <input
@@ -509,9 +508,9 @@ export function PlayGenerator({
                                 >
                                     {copy.enhanceLabel}
                                 </Label>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {copy.enhanceTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
                                 </div>
                             </div>
                             <label className="relative flex items-center justify-center p-3 bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group rounded-input">
@@ -576,10 +575,14 @@ export function PlayGenerator({
                 <Button
                     type="button"
                     onClick={handleGenerate}
-                    disabled={!prompt || isLoading}
+                    disabled={!prompt && !isLoading}
                     variant="generate"
                     size={null}
-                    className={isLoading ? "animate-pulse" : ""}
+                    className={
+                        isLoading
+                            ? "animate-pulse-subtle pointer-events-none cursor-wait"
+                            : ""
+                    }
                     data-type={
                         isVideoModel
                             ? "video"
@@ -610,9 +613,9 @@ export function PlayGenerator({
                     )}
                 </Button>
                 {!prompt && !isLoading && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                         {copy.enterPromptFirst}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
                     </div>
                 )}
             </div>
@@ -727,7 +730,7 @@ export function PlayGenerator({
                         title={copy.copyButton}
                     >
                         {urlCopied ? (
-                            <span className="font-headline text-[10px] font-black text-text-brand uppercase tracking-wider px-1">
+                            <span className="font-body text-xs font-bold text-text-brand uppercase tracking-wider px-1">
                                 {copy.copiedLabel}
                             </span>
                         ) : (
@@ -741,7 +744,7 @@ export function PlayGenerator({
             <div className="flex flex-wrap gap-2 mb-6">
                 <Button
                     as="a"
-                    href="https://enter.pollinations.ai"
+                    href={LINKS.enter}
                     target="_blank"
                     rel="noopener noreferrer"
                     variant="primary"
@@ -752,7 +755,7 @@ export function PlayGenerator({
                 </Button>
                 <Button
                     as="a"
-                    href="https://enter.pollinations.ai/api/docs"
+                    href={LINKS.enterApiDocs}
                     target="_blank"
                     rel="noopener noreferrer"
                     variant="secondary"
@@ -775,7 +778,7 @@ export function PlayGenerator({
                     {copy.agentPromptButton}
                     <CopyIcon className="w-3 h-3" />
                     {agentPromptCopied && (
-                        <span className="absolute -top-5 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
+                        <span className="absolute -top-5 left-0 font-body text-xs font-bold text-text-brand uppercase tracking-wider">
                             {copy.copiedLabel}
                         </span>
                     )}
@@ -880,32 +883,27 @@ export function PlayGenerator({
             </div>
 
             {/* BYOP highlight */}
-            <div className="flex items-start gap-3 bg-surface-card border-l-4 border-pink p-3 rounded-sub-card">
-                <Label
-                    as="span"
-                    spacing="none"
-                    display="inline"
-                    className="text-pink whitespace-nowrap"
-                >
-                    {copy.byopLabel}
-                </Label>
-                <Body
-                    as="span"
-                    size="xs"
-                    spacing="none"
-                    className="text-text-body-secondary"
-                >
-                    {copy.byopDescription}{" "}
-                    <a
-                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-pink hover:underline"
-                    >
-                        {copy.byopButton} &rarr;
-                    </a>
-                </Body>
-            </div>
+            <a
+                href={LINKS.byopDocs}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-6 bg-border-highlight/15 border-2 border-border-highlight/40 border-r-4 border-b-4 rounded-sub-card hover:bg-border-highlight/25 transition-colors"
+            >
+                <div className="flex items-center gap-4">
+                    <span className="text-4xl">🔌</span>
+                    <div className="flex-1 min-w-0">
+                        <span className="font-headline text-2xl font-black text-text-highlight block">
+                            {copy.byopLabel}
+                        </span>
+                        <span className="font-body text-base text-text-body-secondary block mt-1">
+                            {copy.byopDescription}
+                        </span>
+                    </div>
+                    <span className="font-headline text-2xl font-black text-text-highlight shrink-0">
+                        &rarr;
+                    </span>
+                </div>
+            </a>
         </>
     );
 }

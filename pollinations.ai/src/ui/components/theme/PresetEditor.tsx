@@ -12,13 +12,7 @@ import {
     useOpacitySync,
     useRadiusSync,
 } from "./hooks/useCSSSync";
-import {
-    colorTokenFilter,
-    fontTokenFilter,
-    opacityTokenFilter,
-    radiusTokenFilter,
-    useDragAndDrop,
-} from "./hooks/useDragAndDrop";
+import { useDragAndDrop } from "./hooks/useDragAndDrop";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
 import { PresetManager } from "./PresetManager";
 import type { FontState, OpacityState, RadiusState, ThemeState } from "./types";
@@ -29,6 +23,12 @@ import {
     convertStateToThemeDictionary,
     convertToThemeState,
 } from "./utils/state-converters";
+import {
+    isColorToken,
+    isFontToken,
+    isOpacityToken,
+    isRadiusToken,
+} from "./utils/token-helpers";
 
 export function PresetEditor() {
     const [isOpen, setIsOpen] = useState(false);
@@ -101,10 +101,10 @@ export function PresetEditor() {
     useOpacitySync(opacity);
 
     // Drag and drop
-    const colorDnD = useDragAndDrop(setTheme, colorTokenFilter);
-    const radiusDnD = useDragAndDrop(setRadius, radiusTokenFilter);
-    const fontDnD = useDragAndDrop(setFonts, fontTokenFilter);
-    const opacityDnD = useDragAndDrop(setOpacity, opacityTokenFilter);
+    const colorDnD = useDragAndDrop(setTheme, isColorToken);
+    const radiusDnD = useDragAndDrop(setRadius, isRadiusToken);
+    const fontDnD = useDragAndDrop(setFonts, isFontToken);
+    const opacityDnD = useDragAndDrop(setOpacity, isOpacityToken);
 
     // Toggle on Ctrl+E
     useKeyboardShortcut("e", true, () => setIsOpen((prev) => !prev));

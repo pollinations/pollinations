@@ -10,6 +10,9 @@ export const LAYOUT = {
 
     // Header
     enterButton: "Enter",
+    changeThemeTooltip: "Change theme",
+    contactEmail: "hello@pollinations.ai",
+    loadingBuildDiary: "Loading build diary...",
 
     // Footer
     termsLink: "Terms",
@@ -18,10 +21,4 @@ export const LAYOUT = {
     copiedLabel: "Copied!",
     footerBranding: "pollinations.ai - 2026",
     footerTagline: "Open source AI innovation from Berlin",
-};
-
-// Beta banner
-export const BETA_BANNER = {
-    message: "Welcome to our new platform! Still in beta —",
-    linkText: "visit the old one",
 };

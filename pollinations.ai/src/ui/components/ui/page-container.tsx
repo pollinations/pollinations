@@ -41,7 +41,7 @@ export const PageContainer = React.forwardRef<
             )}
             {...props}
         >
-            <div className="max-w-4xl mx-auto">{children}</div>
+            <div className="max-w-5xl mx-auto">{children}</div>
         </div>
     );
 });

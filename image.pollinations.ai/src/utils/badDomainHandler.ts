@@ -1,5 +1,5 @@
+import type { IncomingHttpHeaders } from "node:http";
 import debug from "debug";
-import { IncomingHttpHeaders } from "node:http";
 
 const logger = debug("pollinations:badDomain");
 const memoizedResults = new Map();
@@ -35,7 +35,7 @@ function getRefererFromHeaders(
  * @param {string} referrer - The referrer domain to check
  * @returns {boolean} - Whether the domain is in the bad domains list
  */
-export function isBadDomain(referrer: string): boolean {
+function isBadDomain(referrer: string): boolean {
     if (!referrer) return false;
 
     const badDomains = process.env.BAD_DOMAINS
@@ -65,7 +65,7 @@ export function isBadDomain(referrer: string): boolean {
  * @param {string} prompt - The original prompt to transform
  * @returns {Promise<string>} - The transformed prompt
  */
-export async function transformToOpposite(prompt: string): Promise<string> {
+async function transformToOpposite(prompt: string): Promise<string> {
     try {
         const systemPrompt = [
             `Transform the following image prompt into its semantic opposite,`,
@@ -110,7 +110,7 @@ export async function transformToOpposite(prompt: string): Promise<string> {
  * @param {string} url - The URL to extract the domain from
  * @returns {string} - The extracted domain
  */
-export function extractDomain(url: string): string {
+function extractDomain(url: string): string {
     try {
         // Handle URLs that don't start with a protocol
         const fullUrl = url.startsWith("http") ? url : `https://${url}`;
@@ -137,7 +137,7 @@ type ProcessPromtResult = {
  * @param {number} transformProbability - Probability (0.0-1.0) to transform bad domain prompts
  * @returns {Promise<ProcessPromtResult>} - Result object with processed prompt and metadata
  */
-export async function processPrompt(
+async function processPrompt(
     prompt: string,
     headers: IncomingHttpHeaders = {},
     explicitReferrer: string | null = null,
@@ -200,10 +200,6 @@ export async function processPrompt(
     return result;
 }
 
-// Export all functions as a single object for easier imports
 export const badDomainHandler = {
     processPrompt,
-    isBadDomain,
-    transformToOpposite,
-    extractDomain,
 };

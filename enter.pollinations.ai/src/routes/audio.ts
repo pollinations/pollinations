@@ -1,6 +1,8 @@
 import type { Logger } from "@logtape/logtape";
-import { ELEVENLABS_VOICES, VOICE_MAPPING } from "@shared/registry/audio.ts";
-import type { ServiceId } from "@shared/registry/registry.ts";
+import {
+    ELEVENLABS_VOICES,
+    resolveElevenLabsVoiceId,
+} from "@shared/registry/audio.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -8,14 +10,16 @@ import {
     createCompletionAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
 import { Hono } from "hono";
-import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
-import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import {
+    getDefaultErrorMessage,
+    remapUpstreamStatus,
+    UpstreamError,
+} from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
-import type { ModelVariables } from "@/middleware/model.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
@@ -34,10 +38,10 @@ const CreateSpeechRequestSchema = z
             example: "Hello, welcome to Pollinations!",
         }),
         voice: z
-            .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
+            .string()
             .default("alloy")
             .meta({
-                description: `The voice to use. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
+                description: `The voice to use. Can be any preset name (${ELEVENLABS_VOICES.join(", ")}) OR a custom ElevenLabs voice ID (UUID from your dashboard).`,
                 example: "rachel",
             }),
         response_format: z
@@ -94,25 +98,19 @@ export async function generateSpeech(opts: {
     }
 
     if (text.length > 4096) {
-        return Response.json(
-            {
-                error: "invalid_request_error",
-                message: `Input text too long: ${text.length} characters. Maximum is 4096.`,
-            },
-            { status: 400 },
-        );
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Input text too long: ${text.length} characters. Maximum is 4096.`,
+        });
     }
 
-    const voiceId = VOICE_MAPPING[voice];
-    if (!voiceId) {
+    const voiceId = resolveElevenLabsVoiceId(voice);
+
+    // Basic sanity check (custom voice IDs are long strings/UUIDs)
+    if (!voiceId || voiceId.length < 8) {
         log.warn("Invalid voice requested: {voice}", { voice });
-        return Response.json(
-            {
-                error: "invalid_request_error",
-                message: `Invalid voice: ${voice}. Available voices: ${Object.keys(VOICE_MAPPING).join(", ")}.`,
-            },
-            { status: 400 },
-        );
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
+        });
     }
 
     const outputFormat = mapOutputFormat(responseFormat);
@@ -152,7 +150,7 @@ export async function generateSpeech(opts: {
             status: response.status,
             body: errorText,
         });
-        throw new UpstreamError(response.status as ContentfulStatusCode, {
+        throw new UpstreamError(remapUpstreamStatus(response.status), {
             message: errorText || getDefaultErrorMessage(response.status),
         });
     }
@@ -175,6 +173,139 @@ export async function generateSpeech(opts: {
     });
 }
 
+interface ElevenLabsTranscriptionResponse {
+    text: string;
+    language_code?: string;
+    words?: {
+        text: string;
+        start: number;
+        end: number;
+    }[];
+}
+
+export async function transcribeWithElevenLabs(opts: {
+    file: File;
+    language?: string;
+    responseFormat?: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { file, language, responseFormat = "json", apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Transcription service is not configured (missing API key)",
+        });
+    }
+
+    // Validate response format
+    if (
+        responseFormat &&
+        !["json", "text", "verbose_json"].includes(responseFormat)
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for scribe model: ${responseFormat}. Supported: json, text, verbose_json`,
+        });
+    }
+
+    log.info("ElevenLabs transcription: format={format}, size={size}", {
+        format: responseFormat,
+        size: file.size,
+    });
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("model_id", "scribe_v2");
+    if (language) {
+        formData.append("language_code", language);
+    }
+
+    const response = await fetch(
+        "https://api.elevenlabs.io/v1/speech-to-text",
+        {
+            method: "POST",
+            headers: {
+                "xi-api-key": apiKey,
+            },
+            body: formData,
+        },
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        log.warn("ElevenLabs transcription error {status}: {body}", {
+            status: response.status,
+            body: errorText,
+        });
+        throw new UpstreamError(remapUpstreamStatus(response.status), {
+            message: errorText || getDefaultErrorMessage(response.status),
+        });
+    }
+
+    const elevenLabsData: ElevenLabsTranscriptionResponse =
+        await response.json();
+
+    // Get duration from word timestamps (Scribe v2 always returns words)
+    if (!elevenLabsData.words?.length) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "ElevenLabs response missing word timestamps (required for billing)",
+        });
+    }
+    const duration = elevenLabsData.words[elevenLabsData.words.length - 1].end;
+
+    const usageHeaders = buildUsageHeaders(
+        "scribe",
+        createAudioSecondsUsage(duration),
+    );
+
+    log.info("ElevenLabs transcription success: {chars} chars, {duration}s", {
+        chars: elevenLabsData.text.length,
+        duration: Math.round(duration * 10) / 10,
+    });
+
+    // Return response based on format
+    if (responseFormat === "text") {
+        return new Response(elevenLabsData.text, {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                ...usageHeaders,
+            },
+        });
+    }
+
+    if (responseFormat === "verbose_json") {
+        // OpenAI verbose format with word-level timestamps and segments
+        const verboseResponse = {
+            text: elevenLabsData.text,
+            task: "transcribe",
+            language: elevenLabsData.language_code || "unknown",
+            duration,
+            words: elevenLabsData.words?.map((w) => ({
+                word: w.text,
+                start: w.start,
+                end: w.end,
+            })),
+            segments: [
+                {
+                    id: 0,
+                    start: 0,
+                    end: duration,
+                    text: elevenLabsData.text,
+                },
+            ],
+        };
+        return Response.json(verboseResponse, { headers: usageHeaders });
+    }
+
+    // Default: json format
+    return Response.json(
+        { text: elevenLabsData.text },
+        { headers: usageHeaders },
+    );
+}
+
 export async function generateMusic(opts: {
     prompt: string;
     durationSeconds?: number;
@@ -191,13 +322,9 @@ export async function generateMusic(opts: {
     }
 
     if (prompt.length > 10000) {
-        return Response.json(
-            {
-                error: "invalid_request_error",
-                message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
-            },
-            { status: 400 },
-        );
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+        });
     }
 
     log.info(
@@ -238,7 +365,7 @@ export async function generateMusic(opts: {
             status: response.status,
             body: errorText,
         });
-        throw new UpstreamError(response.status as ContentfulStatusCode, {
+        throw new UpstreamError(remapUpstreamStatus(response.status), {
             message: errorText || getDefaultErrorMessage(response.status),
         });
     }
@@ -269,29 +396,22 @@ export async function generateMusic(opts: {
     });
 }
 
-/** Set model for tracking — audio routes have fixed providers, no model resolution needed */
-const fixedModel = (serviceId: ServiceId) =>
-    createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
-        c.set("model", { requested: serviceId, resolved: serviceId });
-        await next();
-    });
-
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), balance)
     .post(
         "/speech",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🔊 Audio Generation"],
+            summary: "Text to Speech (OpenAI-compatible)",
             description: [
-                "Generate audio from text — speech (TTS) or music.",
+                "Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.",
                 "",
-                "This endpoint is OpenAI TTS API compatible.",
-                "Set `model` to `elevenmusic` (or alias `music`) to generate music instead of speech.",
+                "Set `model` to `elevenmusic` to generate music instead of speech.",
                 "",
-                `**TTS Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
-                "**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm",
+                "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
             ].join("\n"),
             responses: {
                 200: {
@@ -314,7 +434,7 @@ export const audioRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         validator("json", CreateSpeechRequestSchema),
@@ -361,15 +481,17 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/transcriptions",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🔊 Audio Generation"],
+            summary: "Transcribe Audio",
             description: [
-                "Transcribe audio to text using Whisper.",
+                "Transcribe audio files to text. Compatible with the OpenAI Whisper API.",
                 "",
-                "This endpoint is OpenAI Whisper API compatible.",
+                "**Supported audio formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
                 "",
-                "**Supported formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
-                "",
-                "**Models:** `whisper-large-v3` (default), `whisper-1`",
+                "**Models:**",
+                "- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
+                "- `whisper-1` — Alias for whisper-large-v3",
+                "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -389,7 +511,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`.",
+                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`.",
                                 },
                                 language: {
                                     type: "string",
@@ -438,10 +560,10 @@ export const audioRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        fixedModel("whisper" as ServiceId),
+        resolveModel("generate.audio"),
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("transcription");
@@ -453,6 +575,40 @@ export const audioRoutes = new Hono<Env>()
                 );
             }
 
+            // Get formData from middleware or parse it
+            const formData = c.get("formData") || (await c.req.formData());
+
+            const file = formData.get("file") as File;
+            const language = formData.get("language") as string | null;
+            const responseFormat = formData.get("response_format") as
+                | string
+                | null;
+
+            if (!file) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Missing required field: file",
+                });
+            }
+
+            // Route to ElevenLabs Scribe or Whisper based on model
+            if (c.var.model.resolved === "scribe") {
+                const elevenLabsApiKey = (
+                    c.env as unknown as { ELEVENLABS_API_KEY: string }
+                ).ELEVENLABS_API_KEY;
+                const response = await transcribeWithElevenLabs({
+                    file,
+                    language: language || undefined,
+                    responseFormat: responseFormat || undefined,
+                    apiKey: elevenLabsApiKey,
+                    log,
+                });
+
+                // Override tracking with final response
+                c.var.track.overrideResponseTracking(response.clone());
+                return response;
+            }
+
+            // Default: Whisper (OVHcloud)
             const ovhApiKey = c.env.OVHCLOUD_API_KEY;
             if (!ovhApiKey) {
                 throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -461,8 +617,13 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            // Parse multipart form and re-send to OVH (Hono consumes the body stream)
-            const formData = await c.req.formData();
+            // Re-build formData for Whisper (Hono consumed the original body stream)
+            const whisperFormData = new FormData();
+            whisperFormData.append("file", file);
+            if (language) whisperFormData.append("language", language);
+            if (responseFormat)
+                whisperFormData.append("response_format", responseFormat);
+            whisperFormData.append("model", "whisper-large-v3");
 
             // Thin proxy to OVHcloud Whisper
             const response = await fetch(
@@ -472,7 +633,7 @@ export const audioRoutes = new Hono<Env>()
                     headers: {
                         Authorization: `Bearer ${ovhApiKey}`,
                     },
-                    body: formData,
+                    body: whisperFormData,
                 },
             );
 
@@ -482,14 +643,10 @@ export const audioRoutes = new Hono<Env>()
                     status: response.status,
                     body: errorText,
                 });
-                throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
-                    {
-                        message:
-                            errorText ||
-                            getDefaultErrorMessage(response.status),
-                    },
-                );
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        errorText || getDefaultErrorMessage(response.status),
+                });
             }
 
             // Read body to extract duration for usage billing

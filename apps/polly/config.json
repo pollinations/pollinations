@@ -1,0 +1,35 @@
+{
+  "bot": {
+    "name": "Polly",
+    "default_repo": "pollinations/pollinations"
+  },
+  "discord": {
+    "admin_role_ids": [911279121307414558, 1340339234065744006]
+  },
+  "github": {
+    "bot_username": "polly-bot-pollinations-ai",
+    "admin_users": ["voodoohop", "Itachi-1824", "eulervoid", "ElliotEtag", "Circuit-Overtime"],
+    "whitelisted_repos": ["pollinations/pollinations"],
+    "admin_only_mentions": true
+  },
+  "webhook": {
+    "port": 8002,
+    "enabled": false
+  },
+  "api": {
+    "enabled": true,
+    "port": 55288
+  },
+  "ai": {
+    "model": "kimi",
+    "fallback_model": "glm"
+  },
+  "features": {
+    "local_embeddings_enabled": true,
+    "embeddings_repo": "pollinations/pollinations",
+    "doc_embeddings_enabled": true,
+    "doc_sites": [
+      "https://enter.pollinations.ai/api/docs/open-api/generate-schema"
+    ]
+  }
+}

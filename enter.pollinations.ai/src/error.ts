@@ -95,18 +95,16 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
 
     if (err instanceof HTTPException) {
         const status = err.status;
-        const response = createBaseErrorResponse(err, status, timestamp);
         log.trace("HttpException: {message}", {
             message: err.message || getDefaultErrorMessage(err.status),
         });
-        return c.json(response, status);
+        return c.json(createErrorResponse(err, status, timestamp), status);
     }
 
     if (err instanceof APIError) {
         const status = err.statusCode as ContentfulStatusCode;
-        const response = createBaseErrorResponse(err, status, timestamp);
         log.trace("APIError: {error}", { error: err });
-        return c.json(response, status);
+        return c.json(createErrorResponse(err, status, timestamp), status);
     }
 
     if (err instanceof ValidationError) {
@@ -156,14 +154,6 @@ function createErrorResponse(
     };
 }
 
-function createBaseErrorResponse(
-    error: Error,
-    status: ContentfulStatusCode,
-    timestamp: string,
-): ErrorResponse {
-    return createErrorResponse(error, status, timestamp);
-}
-
 function createValidationErrorResponse(
     error: ValidationError,
     status: ContentfulStatusCode,
@@ -185,6 +175,15 @@ function createInternalErrorResponse(
         name: error.name,
         stack: error.stack,
     });
+}
+
+/**
+ * Remap upstream 429s to 502 so clients can distinguish between our own rate
+ * limit (429) and a downstream provider quota issue (502 Bad Gateway).
+ */
+export function remapUpstreamStatus(status: number): ContentfulStatusCode {
+    if (status === 429) return 502;
+    return status as ContentfulStatusCode;
 }
 
 export function getErrorCode(status: number): string {

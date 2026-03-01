@@ -1,0 +1,37 @@
+TOKEN scoring_snapshot_append APPEND
+TOKEN scoring_snapshot_read READ
+TOKEN all_datasources_read READ
+
+DESCRIPTION >
+    Periodic snapshots of user tier scoring metrics. Each row captures
+    raw inputs used to compute a user's tier score at a point in time.
+    Enables Grafana simulations with different scoring configs.
+
+SCHEMA >
+    `timestamp`             DateTime            `json:$.timestamp`,
+    `user_id`               String              `json:$.user_id`,
+    `github_username`       String              `json:$.github_username`,
+    `current_tier`          LowCardinality(String) `json:$.current_tier`,
+    `computed_tier`         LowCardinality(String) `json:$.computed_tier`,
+    `total_score`           Float32             `json:$.total_score`,
+    `change`                LowCardinality(String) `json:$.change`,
+    `github_age_days`       UInt32              `json:$.github_age_days` DEFAULT 0,
+    `pollinations_age_days` UInt32              `json:$.pollinations_age_days` DEFAULT 0,
+    `spend_7d`              Float32             `json:$.spend_7d` DEFAULT 0,
+    `trust_score`           UInt8               `json:$.trust_score` DEFAULT 100,
+    `commits`               UInt32              `json:$.commits` DEFAULT 0,
+    `repos`                 UInt32              `json:$.repos` DEFAULT 0,
+    `stars`                 UInt32              `json:$.stars` DEFAULT 0,
+    `apps_listed`           UInt8               `json:$.apps_listed` DEFAULT 0,
+    `score_github_age_days`       Float32       `json:$.score_github_age_days` DEFAULT 0,
+    `score_pollinations_age_days` Float32       `json:$.score_pollinations_age_days` DEFAULT 0,
+    `score_spend_7d`              Float32       `json:$.score_spend_7d` DEFAULT 0,
+    `score_trust_score`           Float32       `json:$.score_trust_score` DEFAULT 0,
+    `score_commits`               Float32       `json:$.score_commits` DEFAULT 0,
+    `score_repos`                 Float32       `json:$.score_repos` DEFAULT 0,
+    `score_stars`                 Float32       `json:$.score_stars` DEFAULT 0,
+    `score_apps_listed`           Float32       `json:$.score_apps_listed` DEFAULT 0
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, current_tier, github_username"

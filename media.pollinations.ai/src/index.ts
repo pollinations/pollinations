@@ -7,7 +7,7 @@ const DOMAIN = "media.pollinations.ai";
 const ENTER_VERIFY_URL = "https://gen.pollinations.ai/api/account/key";
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
-const DEFAULT_MAX_SIZE = 25165824; // 24 MB
+const DEFAULT_MAX_SIZE = 10485760; // 10 MB
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -86,13 +86,7 @@ api.post(
                 },
             },
             413: {
-                description: "File too large (max 24MB)",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            415: {
-                description: "Unsupported media type",
+                description: "File too large (max 10MB)",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -198,14 +192,8 @@ api.post(
                 contentType = requestContentType || "application/octet-stream";
             }
 
-            if (!isValidMediaType(contentType)) {
-                return c.json(
-                    {
-                        error: "Invalid file type. Supported: image/*, audio/*, video/*",
-                        received: contentType,
-                    },
-                    415,
-                );
+            if (!contentType || contentType === "") {
+                contentType = "application/octet-stream";
             }
 
             const hash = await generateHash(fileBuffer);
@@ -234,6 +222,17 @@ api.post(
                     keyType: authResult.type,
                 },
             });
+
+            console.log(
+                JSON.stringify({
+                    event: "upload",
+                    hash,
+                    size: fileBuffer.byteLength,
+                    contentType,
+                    keyType: authResult.type,
+                    uploadedBy: authResult.name || "unknown",
+                }),
+            );
 
             return c.json({
                 id: hash,
@@ -354,13 +353,115 @@ api.on(
     },
 );
 
+const DeleteResponseSchema = z.object({
+    deleted: z.boolean(),
+    id: z.string().describe("16-char hex content hash"),
+});
+
+api.delete(
+    "/:hash",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Delete media",
+        description:
+            "Delete a file by its content hash. Only the original uploader can delete their own files.",
+        responses: {
+            200: {
+                description: "File deleted",
+                content: {
+                    "application/json": {
+                        schema: resolver(DeleteResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid hash format",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            403: {
+                description: "Not the original uploader",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            404: {
+                description: "File not found",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) {
+            return c.json(
+                {
+                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
+                },
+                401,
+            );
+        }
+        const authResult = await verifyApiKey(apiKey);
+        if (!authResult) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+
+        const hash = c.req.param("hash");
+
+        if (!HASH_PATTERN.test(hash)) {
+            return c.json({ error: "Invalid hash format" }, 400);
+        }
+
+        try {
+            const object = await c.env.MEDIA_BUCKET.head(hash);
+
+            if (!object) {
+                return c.json({ error: "Not found" }, 404);
+            }
+
+            const uploadedBy = object.customMetadata?.uploadedBy || "";
+            if (uploadedBy !== authResult.name) {
+                return c.json(
+                    { error: "You can only delete files you uploaded" },
+                    403,
+                );
+            }
+
+            await c.env.MEDIA_BUCKET.delete(hash);
+
+            console.log(
+                JSON.stringify({
+                    event: "delete",
+                    hash,
+                    deletedBy: authResult.name || "unknown",
+                    keyType: authResult.type,
+                }),
+            );
+
+            return c.json({ deleted: true, id: hash });
+        } catch (error) {
+            console.error("Delete error:", error);
+            return c.json({ error: "Delete failed" }, 500);
+        }
+    },
+);
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.use(
     "*",
     cors({
         origin: "*",
-        allowMethods: ["GET", "POST", "HEAD", "OPTIONS"],
+        allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
         exposeHeaders: ["X-Content-Hash", "X-Content-Size"],
     }),
@@ -373,11 +474,11 @@ app.get("/", (c) => {
         endpoints: {
             upload: "POST /upload (requires API key)",
             retrieve: "GET /:hash",
+            delete: "DELETE /:hash (requires API key, owner only)",
             docs: "GET /openapi.json",
         },
         limits: {
-            maxFileSize: "24MB",
-            supportedTypes: ["image/*", "audio/*", "video/*"],
+            maxFileSize: "10MB",
         },
     });
 });
@@ -421,14 +522,6 @@ async function generateHash(buffer: ArrayBuffer): Promise<string> {
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("")
         .substring(0, 16);
-}
-
-function isValidMediaType(contentType: string): boolean {
-    return (
-        contentType.startsWith("image/") ||
-        contentType.startsWith("audio/") ||
-        contentType.startsWith("video/")
-    );
 }
 
 const MIME_TYPES: Record<string, string> = {

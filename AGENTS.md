@@ -22,14 +22,36 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 **Table format in APPS.md:**
 
 ```markdown
-| Emoji | Name     | Web_URL | Description                   | Language | Category | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted_Date | Issue_URL | Approved_Date |
-| ----- | -------- | ------- | ----------------------------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | -------------- | --------- | ------------- |
-| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01     | #1234     | 2025-01-02    |
+| Emoji | Name     | Web_URL | Description                   | Language | Category | Platform | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted_Date | Issue_URL | Approved_Date |
+| ----- | -------- | ------- | ----------------------------- | -------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | -------------- | --------- | ------------- |
+| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | web      | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01     | #1234     | 2025-01-02    |
 ```
 
 - **Submitted_Date**: Issue creation date (when user submitted)
 - **Issue_URL**: Link to original GitHub issue
 - **Approved_Date**: PR merge date (when app was approved)
+
+**Platform values** (auto-detected from URL + description):
+
+| Value | When to use |
+|-------|-------------|
+| `web` | Browser-based app (default when URL exists) |
+| `android` | Google Play Store app |
+| `ios` | App Store or Apple Shortcuts (routinehub.co) |
+| `windows` | Windows desktop / .exe |
+| `macos` | macOS native app |
+| `desktop` | Cross-platform desktop (Python/Qt, Electron, etc.) |
+| `cli` | Command-line tool |
+| `discord` | Discord bot or app |
+| `telegram` | Telegram bot |
+| `whatsapp` | WhatsApp bot |
+| `library` | npm/PyPI/Go package, SDK, API wrapper |
+| `browser-ext` | Browser extension (Firefox, Chrome) |
+| `roblox` | Roblox game |
+| `wordpress` | WordPress plugin |
+| `api` | Backend/server with no public UI (default when no URL) |
+
+Multiple platforms: comma-separated, e.g. `telegram,whatsapp`
 
 **Categories:**
 

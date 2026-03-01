@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h | Health |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🎮 | Plaiyground | https://playground.endoxi.dev | BYOP vibe coding tool using multiple Pollinations AI models to generate web apps. | en | build | web | @MetaMysteries8 | 0 |  |  |  | | 2026-02-24 | https://github.com/pollinations/pollinations/issues/8521 | 2026-03-01 | true |  |  |
 | 🧠 | EnneAI | https://t.me/typologyAIbot | Telegram personality typing bot using AI via Pollinations across two personality systems. | en | bots | telegram | @Gl0wdy | 0 |  |  |  | | 2026-03-01 | https://github.com/pollinations/pollinations/issues/8709 | 2026-03-01 |  |  |  |
 | 🌐 | wwwsim | https://wwwsim.netlify.app/ | AI website builder using multiple models like Gemini, Claude, and Kimi for design and code generation. | en | build | web | @Brybod123 | 0 |  |  |  | | 2026-02-16 | https://github.com/pollinations/pollinations/issues/8318 | 2026-03-01 |  |  |  |
 | ⚖️ | Marid V2.0 | https://ai.al-mohamy.com/ | LangGraph-driven legal AI multi-agent system with RAG for high-fidelity legal analysis. | en | bots | web | @ahmedmetwali1 | 0 |  |  |  | | 2026-02-28 | https://github.com/pollinations/pollinations/issues/8663 | 2026-03-01 |  |  |  |

@@ -19,12 +19,7 @@ import {
 import { availableModels, findModelByName } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
-import type {
-    ChatCompletion,
-    ChatMessage,
-    RequestData,
-    ServiceError,
-} from "./types.js";
+import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -204,10 +199,7 @@ const ERROR_TYPES: Record<number, string> = {
     429: "Too Many Requests",
 };
 
-function sendOpenAIResponse(
-    c: Context,
-    completion: ChatCompletion,
-): Response {
+function sendOpenAIResponse(c: Context, completion: ChatCompletion): Response {
     setUsageHeaders(c, completion);
 
     return c.json({
@@ -218,10 +210,7 @@ function sendOpenAIResponse(
     });
 }
 
-function sendContentResponse(
-    c: Context,
-    completion: ChatCompletion,
-): Response {
+function sendContentResponse(c: Context, completion: ChatCompletion): Response {
     setUsageHeaders(c, completion);
     c.header("Cache-Control", "public, max-age=31536000, immutable");
 

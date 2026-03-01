@@ -47,7 +47,10 @@ export async function generateTextPortkey(
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
         state = await generateHeaders(state.messages, state.options);
-        state = await createImageUrlToBase64Transform()(state.messages, state.options);
+        state = await createImageUrlToBase64Transform()(
+            state.messages,
+            state.options,
+        );
         state = await sanitizeMessages(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
     }

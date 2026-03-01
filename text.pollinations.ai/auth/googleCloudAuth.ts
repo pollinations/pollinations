@@ -130,7 +130,10 @@ async function getAccessToken(): Promise<string | null> {
     log("Token missing or expired, refreshing...");
     cachedToken = await refreshToken();
     tokenExpiration = Date.now() + TOKEN_REFRESH_INTERVAL_MS;
-    log("Token refreshed, expires at:", new Date(tokenExpiration).toISOString());
+    log(
+        "Token refreshed, expires at:",
+        new Date(tokenExpiration).toISOString(),
+    );
     return cachedToken;
 }
 

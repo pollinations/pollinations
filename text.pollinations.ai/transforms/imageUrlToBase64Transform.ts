@@ -75,11 +75,7 @@ async function fetchImageAsBase64(url: string): Promise<string> {
                     errorMessage = base;
             }
 
-            throw new ImageFetchError(
-                errorMessage,
-                response.status,
-                url,
-            );
+            throw new ImageFetchError(errorMessage, response.status, url);
         }
 
         const contentType = response.headers.get("content-type");

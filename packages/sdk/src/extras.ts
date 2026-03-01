@@ -1,13 +1,13 @@
+import { Pollinations } from "./client.js";
 import type {
-    ImageGenerateOptions,
-    ImageResponse,
-    VideoGenerateOptions,
-    VideoResponse,
     ChatOptions,
     ChatResponse,
+    ImageGenerateOptions,
+    ImageResponse,
     Message,
+    VideoGenerateOptions,
+    VideoResponse,
 } from "./types.js";
-import { Pollinations } from "./client.js";
 
 export interface ImageResponseExt extends ImageResponse {
     /** Save image to file (Node.js only) */

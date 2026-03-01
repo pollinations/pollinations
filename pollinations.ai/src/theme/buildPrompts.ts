@@ -25,4 +25,3 @@ ${themeDescription}
 
 Generate the complete design tokens in JSON format:`;
 }
-

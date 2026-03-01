@@ -49,7 +49,8 @@ function extractAzureDeploymentName(
 }
 
 function extractAzureApiVersion(endpoint: string | undefined): string {
-    if (!endpoint) return process.env.OPENAI_API_VERSION || DEFAULT_AZURE_API_VERSION;
+    if (!endpoint)
+        return process.env.OPENAI_API_VERSION || DEFAULT_AZURE_API_VERSION;
     return (
         endpoint.match(/api-version=([^&]+)/)?.[1] ??
         process.env.OPENAI_API_VERSION ??
@@ -71,7 +72,8 @@ export function createAzureModelConfig(
     return {
         provider: "azure-openai",
         "azure-api-key": apiKey,
-        "azure-resource-name": resourceName || extractAzureResourceName(endpoint),
+        "azure-resource-name":
+            resourceName || extractAzureResourceName(endpoint),
         "azure-deployment-id": deploymentId,
         "azure-api-version": extractAzureApiVersion(endpoint),
         "azure-model-name": deploymentId,

@@ -13,12 +13,6 @@ import {
     useRadiusSync,
 } from "./hooks/useCSSSync";
 import { useDragAndDrop } from "./hooks/useDragAndDrop";
-import {
-    isColorToken,
-    isFontToken,
-    isOpacityToken,
-    isRadiusToken,
-} from "./utils/token-helpers";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
 import { PresetManager } from "./PresetManager";
 import type { FontState, OpacityState, RadiusState, ThemeState } from "./types";
@@ -29,6 +23,12 @@ import {
     convertStateToThemeDictionary,
     convertToThemeState,
 } from "./utils/state-converters";
+import {
+    isColorToken,
+    isFontToken,
+    isOpacityToken,
+    isRadiusToken,
+} from "./utils/token-helpers";
 
 export function PresetEditor() {
     const [isOpen, setIsOpen] = useState(false);

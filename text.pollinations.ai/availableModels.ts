@@ -17,7 +17,9 @@ interface ModelDefinition {
     transform?: TransformFn;
 }
 
-const withConversational = createSystemPromptTransform(BASE_PROMPTS.conversational);
+const withConversational = createSystemPromptTransform(
+    BASE_PROMPTS.conversational,
+);
 
 const models: ModelDefinition[] = [
     {

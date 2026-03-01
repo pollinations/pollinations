@@ -1,103 +1,81 @@
-"""Documentation embeddings service for semantic search across documentation sites.
-
-Uses Jina Embeddings v2 Base Code + ChromaDB for local documentation search.
-Crawls and indexes: enter.pollinations.ai, kpi.myceli.ai, gsoc.pollinations.ai
-"""
-
 import asyncio
 import hashlib
 import logging
+import os
 import re
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urljoin, urlparse
+
+import tiktoken
+
+from .embeddings_utils import validate_and_get_openai_client
 
 logger = logging.getLogger(__name__)
 
-# Lazy imports - only load heavy dependencies when needed
+_enc = tiktoken.get_encoding("cl100k_base")
+MAX_TOKENS_PER_INPUT = 8000
+
 _model = None
 _chroma_client = None
 _collection = None
 
-# Data directories
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DOC_EMBEDDINGS_DIR = DATA_DIR / "doc_embeddings"
 DOC_CACHE_DIR = DATA_DIR / "doc_cache"
 
-# Configuration
 DEFAULT_DOC_SITES = [
-    "https://enter.pollinations.ai",
-    "https://kpi.myceli.ai",
-    "https://gsoc.pollinations.ai",
+    "https://enter.pollinations.ai/api/docs/open-api/generate-schema",
 ]
 
-# Crawl settings
 MAX_PAGES_PER_SITE = 500
 MAX_CRAWL_DEPTH = 10
 REQUEST_TIMEOUT = 30
 
-# Chunk settings
-MAX_CHUNK_SIZE = 1000  # characters
+MAX_CHUNK_SIZE = 1000
 MIN_CHUNK_SIZE = 100
 
-# Update lock
 _update_lock = asyncio.Lock()
 
 
 def _get_model():
-    """Lazy load the embedding model (reuse same as code_search)."""
     global _model
     if _model is None:
-        from sentence_transformers import SentenceTransformer
-
-        logger.info("Loading Jina embeddings model for documentation...")
-        _model = SentenceTransformer(
-            "jinaai/jina-embeddings-v2-base-code", trust_remote_code=True
-        )
-        logger.info("Documentation embedding model loaded")
+        api_key = os.getenv("OPENAI_EMBEDDINGS_API")
+        _model = validate_and_get_openai_client(api_key, service_name="doc_embeddings")
+        logger.info("OpenAI embeddings client initialized for documentation")
     return _model
 
 
 def _get_collection():
-    """Lazy load ChromaDB collection for documentation."""
     global _chroma_client, _collection
     if _collection is None:
         import chromadb
 
         DOC_EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
         _chroma_client = chromadb.PersistentClient(path=str(DOC_EMBEDDINGS_DIR))
-        _collection = _chroma_client.get_or_create_collection(
-            name="doc_embeddings", metadata={"hnsw:space": "cosine"}
-        )
-        logger.info(
-            f"ChromaDB doc collection loaded with {_collection.count()} embeddings"
-        )
+        _collection = _chroma_client.get_or_create_collection(name="doc_embeddings", metadata={"hnsw:space": "cosine"})
+        logger.info(f"ChromaDB doc collection loaded with {_collection.count()} embeddings")
     return _collection
 
 
 def _content_hash(content: str) -> str:
-    """Generate hash of content for change detection."""
     return hashlib.md5(content.encode()).hexdigest()
 
 
 def _clean_url(url: str) -> str:
-    """Clean URL by removing fragments and normalizing."""
     parsed = urlparse(url)
-    # Remove fragment (#), keep query params
     return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
 
 
 def _is_same_domain(url: str, base_url: str) -> bool:
-    """Check if URL belongs to same domain as base."""
     url_domain = urlparse(url).netloc
     base_domain = urlparse(base_url).netloc
     return url_domain == base_domain
 
 
 def _should_skip_url(url: str) -> bool:
-    """Check if URL should be skipped during crawling."""
-    # Skip common non-content patterns
     skip_patterns = [
         r"/login",
         r"/logout",
@@ -120,40 +98,25 @@ def _should_skip_url(url: str) -> bool:
     return False
 
 
-def _chunk_content(
-    content: str, url: str, page_title: str, max_chunk_size: int = MAX_CHUNK_SIZE
-) -> list[dict]:
-    """
-    Split web content into semantic chunks for embedding.
-
-    Strategy:
-    1. Split by markdown headers (##, ###, etc.)
-    2. If section too large, split by paragraphs
-    3. Keep chunks reasonable size
-    4. Include context: page title, section heading, URL
-    """
+def _chunk_content(content: str, url: str, page_title: str, max_chunk_size: int = MAX_CHUNK_SIZE) -> list[dict]:
     if not content or len(content) < MIN_CHUNK_SIZE:
         return []
 
     chunks = []
 
-    # Split by headers first
     header_pattern = r"^(#{1,6})\s+(.+)$"
     lines = content.split("\n")
 
     current_chunk = []
     current_section = page_title
-    chunk_start_line = 0
 
-    for i, line in enumerate(lines):
+    for _i, line in enumerate(lines):
         header_match = re.match(header_pattern, line.strip())
 
-        # Found a header - finalize previous chunk
         if header_match and current_chunk:
             chunk_text = "\n".join(current_chunk).strip()
 
             if len(chunk_text) >= MIN_CHUNK_SIZE:
-                # Split large chunks by paragraphs
                 if len(chunk_text) > max_chunk_size:
                     sub_chunks = _split_large_chunk(chunk_text, max_chunk_size)
                     for sub_chunk in sub_chunks:
@@ -175,15 +138,12 @@ def _chunk_content(
                         }
                     )
 
-            # Start new chunk with new section
             current_chunk = [line]
             current_section = header_match.group(2).strip()
-            chunk_start_line = i
 
         else:
             current_chunk.append(line)
 
-    # Don't forget the last chunk
     if current_chunk:
         chunk_text = "\n".join(current_chunk).strip()
         if len(chunk_text) >= MIN_CHUNK_SIZE:
@@ -208,7 +168,6 @@ def _chunk_content(
                     }
                 )
 
-    # If no headers found, treat whole content as one chunk (or split if too large)
     if not chunks:
         content_clean = content.strip()
         if len(content_clean) >= MIN_CHUNK_SIZE:
@@ -233,11 +192,30 @@ def _chunk_content(
                     }
                 )
 
-    return chunks
+    # Split any chunk exceeding token limit using tiktoken
+    final_chunks = []
+    for chunk in chunks:
+        tokens = _enc.encode(chunk["content"])
+        if len(tokens) <= MAX_TOKENS_PER_INPUT:
+            final_chunks.append(chunk)
+        else:
+            parts = list(range(0, len(tokens), MAX_TOKENS_PER_INPUT))
+            for part_idx, pos in enumerate(parts):
+                sub_tokens = tokens[pos : pos + MAX_TOKENS_PER_INPUT]
+                final_chunks.append(
+                    {
+                        "content": _enc.decode(sub_tokens),
+                        "url": chunk["url"],
+                        "page_title": chunk["page_title"],
+                        "section": chunk["section"],
+                        "part": part_idx,
+                    }
+                )
+
+    return final_chunks
 
 
 def _split_large_chunk(text: str, max_size: int) -> list[str]:
-    """Split a large text chunk into smaller pieces by paragraphs."""
     paragraphs = text.split("\n\n")
     chunks = []
     current = []
@@ -247,7 +225,6 @@ def _split_large_chunk(text: str, max_size: int) -> list[str]:
         para_size = len(para)
 
         if current_size + para_size > max_size and current:
-            # Finalize current chunk
             chunks.append("\n\n".join(current))
             current = [para]
             current_size = para_size
@@ -255,15 +232,13 @@ def _split_large_chunk(text: str, max_size: int) -> list[str]:
             current.append(para)
             current_size += para_size
 
-    # Don't forget last chunk
     if current:
         chunks.append("\n\n".join(current))
 
     return chunks
 
 
-async def _scrape_page(url: str) -> Optional[dict]:
-    """Scrape a single page and return content."""
+async def _scrape_page(url: str) -> dict | None:
     try:
         from .web_scraper import scrape_url
 
@@ -285,8 +260,8 @@ async def _scrape_page(url: str) -> Optional[dict]:
 
         return {
             "url": url,
-            "title": result.get("title", ""),
-            "content": result.get("content", ""),
+            "title": result.get("title") or "",
+            "content": result.get("markdown") or result.get("content", ""),
             "links": result.get("links", []),
         }
 
@@ -296,11 +271,6 @@ async def _scrape_page(url: str) -> Optional[dict]:
 
 
 async def _crawl_site(base_url: str, max_pages: int = MAX_PAGES_PER_SITE) -> list[dict]:
-    """
-    Recursively crawl a site starting from base_url.
-
-    Returns list of page data dicts.
-    """
     visited = set()
     to_visit = [base_url]
     pages = []
@@ -308,19 +278,16 @@ async def _crawl_site(base_url: str, max_pages: int = MAX_PAGES_PER_SITE) -> lis
     logger.info(f"Starting crawl of {base_url}")
 
     while to_visit and len(visited) < max_pages:
-        # Process in batches for efficiency
         batch_size = min(5, len(to_visit))
         batch = to_visit[:batch_size]
         to_visit = to_visit[batch_size:]
 
-        # Scrape batch concurrently
         tasks = [_scrape_page(url) for url in batch if url not in visited]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for url, result in zip(batch, results):
             visited.add(url)
 
-            # Handle exceptions
             if isinstance(result, Exception):
                 logger.warning(f"Exception crawling {url}: {result}")
                 continue
@@ -330,19 +297,21 @@ async def _crawl_site(base_url: str, max_pages: int = MAX_PAGES_PER_SITE) -> lis
 
             pages.append(result)
 
-            # Extract and queue internal links
             if result.get("links"):
                 for link_data in result["links"]:
-                    link_url = link_data.get("href", "")
+                    # Handle both string links and dict links
+                    if isinstance(link_data, dict):
+                        link_url = link_data.get("href", "")
+                    elif isinstance(link_data, str):
+                        link_url = link_data
+                    else:
+                        continue
 
-                    # Make absolute
                     if link_url.startswith("/"):
                         link_url = urljoin(base_url, link_url)
 
-                    # Clean URL
                     link_url = _clean_url(link_url)
 
-                    # Check if should crawl
                     if (
                         link_url
                         and link_url not in visited
@@ -359,34 +328,27 @@ async def _crawl_site(base_url: str, max_pages: int = MAX_PAGES_PER_SITE) -> lis
 
 
 async def embed_site(base_url: str, force_full: bool = False) -> int:
-    """
-    Crawl and embed all pages from a documentation site.
-
-    Args:
-        base_url: Base URL to crawl from
-        force_full: If True, re-embed everything. Otherwise incremental.
-
-    Returns:
-        Number of chunks embedded
-    """
     model = _get_model()
     collection = _get_collection()
 
-    # Crawl the site
     pages = await _crawl_site(base_url)
 
     if not pages:
         logger.warning(f"No pages found for {base_url}")
         return 0
 
-    # Track embeddings
+    total_pages = len(pages)
+    logger.info(f"Starting to embed {total_pages} pages from {base_url}")
+
     embedded_count = 0
     all_ids = []
-    all_embeddings = []
     all_documents = []
     all_metadatas = []
+    ids_to_delete = []
+    pages_skipped = 0
+    pages_processed = 0
 
-    for page in pages:
+    for _page_idx, page in enumerate(pages, 1):
         url = page["url"]
         title = page["title"]
         content = page["content"]
@@ -394,85 +356,150 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
         if not content:
             continue
 
-        # Chunk the content
+        content_hash = _content_hash(content)
+
+        # Check if page has changed (page-level TTL)
+        if not force_full and collection.count() > 0:
+            existing = collection.get(where={"url": url})
+
+            if existing["ids"] and existing["metadatas"]:
+                # Check if content hash matches any existing chunk from this page
+                existing_page_hash = existing["metadatas"][0].get("page_hash")
+
+                if existing_page_hash == content_hash:
+                    logger.debug(f"TTL: Skipping {url} (unchanged, hash={content_hash[:8]})...")
+                    pages_skipped += 1
+                    continue
+                else:
+                    # Page changed, delete old chunks for this page
+                    ids_to_delete.extend(existing["ids"])
+                    logger.debug(f"TTL: Page {url} changed, deleting {len(existing['ids'])} old chunks")
+
         chunks = _chunk_content(content, url, title)
 
         for idx, chunk in enumerate(chunks):
-            chunk_id = f"{url}#chunk-{idx}"
-            content_hash = _content_hash(chunk["content"])
+            part = chunk.get("part")
+            chunk_id = f"{url}#chunk-{idx}" + (f"p{part}" if part is not None else "")
 
-            # Check if already embedded (skip if same hash)
-            if not force_full:
-                existing = collection.get(ids=[chunk_id])
-                if existing["ids"] and existing["metadatas"]:
-                    if existing["metadatas"][0].get("hash") == content_hash:
-                        continue
+            all_ids.append(chunk_id)
+            all_documents.append(chunk["content"])
+            all_metadatas.append(
+                {
+                    "url": chunk["url"],
+                    "page_title": chunk["page_title"] or "",
+                    "section": chunk["section"] or "",
+                    "site": urlparse(base_url).netloc,
+                    "page_hash": content_hash,
+                    "last_updated": datetime.utcnow().isoformat(),
+                }
+            )
 
-            # Generate embedding
-            try:
-                embedding = await asyncio.to_thread(model.encode, chunk["content"])
+        pages_processed += 1
+        progress_pct = (pages_processed / total_pages) * 100
+        chunks_in_queue = len(all_ids)
 
-                all_ids.append(chunk_id)
-                all_embeddings.append(embedding.tolist())
-                all_documents.append(chunk["content"])
-                all_metadatas.append(
-                    {
-                        "url": chunk["url"],
-                        "page_title": chunk["page_title"],
-                        "section": chunk["section"],
-                        "site": urlparse(base_url).netloc,
-                        "hash": content_hash,
-                        "last_updated": datetime.utcnow().isoformat(),
-                    }
-                )
+        # Log progress every 10% or every 10 pages
+        if pages_processed % max(1, total_pages // 10) == 0 or pages_processed == total_pages:
+            logger.info(
+                f"📊 Doc embedding progress: {pages_processed}/{total_pages} pages ({progress_pct:.1f}%), {chunks_in_queue} chunks queued for embedding"
+            )
 
-                embedded_count += 1
+    # Delete old chunks from pages that were modified
+    if ids_to_delete:
+        collection.delete(ids=ids_to_delete)
+        logger.info(f"Deleted {len(ids_to_delete)} old chunks from changed pages")
 
-            except Exception as e:
-                logger.warning(f"Failed to embed chunk from {url}: {e}")
-                continue
-
-    # Batch upsert to ChromaDB
+    # Batch embed with token-aware sizing, upsert each batch immediately
+    MAX_BATCH_TOKENS = 250_000
     if all_ids:
-        collection.upsert(
-            ids=all_ids,
-            embeddings=all_embeddings,
-            documents=all_documents,
-            metadatas=all_metadatas,
-        )
-        logger.info(f"Embedded {embedded_count} chunks from {base_url}")
+        try:
+            batch_start = 0
+            batch_num = 0
+            while batch_start < len(all_documents):
+                batch_docs = []
+                batch_ids = []
+                batch_metadatas = []
+                batch_tokens = 0
+                i = batch_start
+                while i < len(all_documents):
+                    doc_tokens = len(_enc.encode(all_documents[i]))
+                    if batch_tokens + doc_tokens > MAX_BATCH_TOKENS and batch_docs:
+                        break
+                    batch_docs.append(all_documents[i])
+                    batch_ids.append(all_ids[i])
+                    batch_metadatas.append(all_metadatas[i])
+                    batch_tokens += doc_tokens
+                    i += 1
+                embedding_response = await asyncio.to_thread(
+                    lambda docs=batch_docs: model.embeddings.create(
+                        model="text-embedding-3-small", input=docs, dimensions=1536
+                    )
+                )
+                batch_embeddings = [item.embedding for item in embedding_response.data]
+                collection.upsert(
+                    ids=batch_ids,
+                    embeddings=batch_embeddings,
+                    documents=batch_docs,
+                    metadatas=batch_metadatas,
+                )
+                embedded_count += len(batch_ids)
+                batch_num += 1
+                logger.info(
+                    f"Embedded+saved doc batch {batch_num} ({len(batch_docs)} chunks, ~{batch_tokens} tokens, {i}/{len(all_documents)} total)"
+                )
+                batch_start = i
+        except Exception as e:
+            logger.error(f"Failed to embed doc chunks: {e}")
+            raise
 
     return embedded_count
 
 
+# TTL cache for doc search results (avoids redundant OpenAI API calls)
+_search_cache: dict[str, tuple[float, list[dict]]] = {}
+_SEARCH_CACHE_TTL = 300  # 5 minutes
+_SEARCH_CACHE_MAX = 256
+
+
+def _cache_get(key: str) -> list[dict] | None:
+    if key in _search_cache:
+        ts, val = _search_cache[key]
+        if time.time() - ts < _SEARCH_CACHE_TTL:
+            return val
+        del _search_cache[key]
+    return None
+
+
+def _cache_set(key: str, val: list[dict]):
+    if len(_search_cache) >= _SEARCH_CACHE_MAX:
+        oldest = min(_search_cache, key=lambda k: _search_cache[k][0])
+        del _search_cache[oldest]
+    _search_cache[key] = (time.time(), val)
+
+
 async def search_docs(query: str, top_k: int = 5) -> list[dict]:
-    """
-    Search documentation using semantic similarity.
+    cache_key = f"{query}:{top_k}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
 
-    Args:
-        query: Natural language query
-        top_k: Number of results to return
-
-    Returns:
-        List of matching documentation chunks with URLs
-    """
     model = _get_model()
     collection = _get_collection()
 
     if collection.count() == 0:
         return []
 
-    # Generate query embedding
-    query_embedding = await asyncio.to_thread(model.encode, query)
+    embedding_response = await asyncio.to_thread(
+        lambda: model.embeddings.create(model="text-embedding-3-small", input=query)
+    )
+    query_embedding = embedding_response.data[0].embedding
 
-    # Search
     results = collection.query(
-        query_embeddings=[query_embedding.tolist()],
+        query_embeddings=[query_embedding],
         n_results=min(top_k, collection.count()),
         include=["documents", "metadatas", "distances"],
     )
 
-    # Format results
     formatted = []
     for i, doc in enumerate(results["documents"][0]):
         metadata = results["metadatas"][0][i]
@@ -480,46 +507,47 @@ async def search_docs(query: str, top_k: int = 5) -> list[dict]:
 
         formatted.append(
             {
-                "url": metadata["url"],
-                "page_title": metadata["page_title"],
+                "url": metadata.get("url", ""),
+                "page_title": metadata.get("page_title", ""),
                 "section": metadata.get("section", ""),
                 "site": metadata.get("site", ""),
                 "content": doc,
-                "similarity": round(1 - distance, 3),  # Convert distance to similarity
+                "similarity": round(1 - distance, 3),
             }
         )
 
+    _cache_set(cache_key, formatted)
     return formatted
 
 
-async def update_all_sites(sites: Optional[list[str]] = None):
-    """Update embeddings for all configured documentation sites."""
+async def update_all_sites(sites: list[str] | None = None):
     if sites is None:
         from ..config import config
 
         sites = config.doc_sites if hasattr(config, "doc_sites") else DEFAULT_DOC_SITES
 
     async with _update_lock:
-        logger.info(f"Updating {len(sites)} documentation sites...")
+        logger.info(f"Updating {len(sites)} documentation sites with TTL incremental updates...")
 
         total_chunks = 0
         for site in sites:
             try:
                 count = await embed_site(site, force_full=False)
                 total_chunks += count
-                logger.info(f"Updated {site}: {count} new/changed chunks")
+                if count > 0:
+                    logger.info(f"Updated {site}: {count} new/changed chunks")
+                else:
+                    logger.debug(f"No changes detected for {site}")
             except Exception as e:
                 logger.error(f"Failed to update {site}: {e}", exc_info=True)
 
-        logger.info(f"Documentation update complete: {total_chunks} total chunks embedded")
+        collection = _get_collection()
+        logger.info(
+            f"✅ Doc embeddings update complete — {collection.count()} total chunks ready ({total_chunks} new/changed)"
+        )
 
 
 async def initialize():
-    """
-    Initialize documentation embeddings on startup.
-
-    Crawls and embeds all configured sites if not already done.
-    """
     from ..config import config
 
     if not config.doc_embeddings_enabled:
@@ -529,17 +557,18 @@ async def initialize():
     sites = config.doc_sites if hasattr(config, "doc_sites") else DEFAULT_DOC_SITES
     logger.info(f"Initializing documentation embeddings for {len(sites)} sites...")
 
-    # Check if we need initial embedding
     collection = _get_collection()
     if collection.count() == 0:
-        logger.info("No existing doc embeddings found, running full crawl...")
-        await update_all_sites(sites)
+        logger.info("No existing doc embeddings found, running full crawl (first initialization)...")
     else:
-        logger.info(f"Found {collection.count()} existing doc embeddings")
+        logger.info(f"Found {collection.count()} existing doc embeddings, checking for updates...")
+
+    await update_all_sites(sites)
+
+    logger.info("✅ Doc embeddings initialization complete — %d chunks ready", collection.count())
 
 
 def get_doc_stats() -> dict:
-    """Get documentation embedding stats."""
     collection = _get_collection()
     return {
         "total_chunks": collection.count(),
@@ -549,10 +578,8 @@ def get_doc_stats() -> dict:
 
 
 async def close():
-    """Clean up resources on shutdown."""
     global _model, _chroma_client, _collection
 
-    # Clear references (ChromaDB handles its own cleanup)
     _model = None
     _collection = None
     _chroma_client = None

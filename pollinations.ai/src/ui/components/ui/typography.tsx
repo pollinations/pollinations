@@ -10,17 +10,17 @@ import { cn } from "../../../utils";
 //
 // Examples:
 // - HelloPage: "Gen AI with a Human Touch" (spacing="default")
-// - DocsPage: "Integrate" (spacing="comfortable")
+// - PlayPage: "Integrate" (spacing="comfortable")
 // - CommunityPage: "Community" (spacing="tight")
 // - PlayPage: "Create" / "Watch" (spacing="none" for custom)
 // ============================================
 const titleVariants = cva(
-    "font-title text-4xl md:text-5xl font-black text-text-body-main leading-tight pt-1",
+    "font-title text-4xl md:text-5xl font-black text-text-body-main leading-tight pt-1 pb-1",
     {
         variants: {
             spacing: {
                 default: "mb-8", // Default spacing (reduced from mb-12)
-                comfortable: "mb-6", // DocsPage - moderate spacing
+                comfortable: "mb-6", // PlayPage - moderate spacing
                 tight: "mb-4", // CommunityPage - compact
                 none: "", // PlayPage - custom spacing needed
             },
@@ -63,7 +63,7 @@ Title.displayName = "Title";
 // Variant examples:
 // - section: Main content sections with rose border-left accent
 //   → HelloPage: "Pollen: One Simple Credit", "Fuel Your Vision", etc.
-//   → DocsPage: "Authentication", "Image Generation", "Text Generation"
+//   → PlayPage: "Authentication", "Integrate"
 //   → Used for: Major page sections (H2)
 //
 // - lime: Subsection headings with lime color
@@ -88,8 +88,8 @@ const headingVariants = cva(
                 section:
                     "text-2xl md:text-3xl tracking-widest border-l-4 border-border-brand pl-4",
                 // Colored headings (H3 - subsections in cards)
-                lime: "text-lg tracking-wider text-text-highlight",
-                rose: "text-lg tracking-wider text-text-brand",
+                lime: "text-xl tracking-wider text-text-highlight",
+                rose: "text-xl tracking-wider text-text-brand",
                 // Simple headings (no border, no color)
                 simple: "text-xl md:text-2xl tracking-wider",
             },
@@ -142,7 +142,7 @@ Heading.displayName = "Heading";
 //   → Used for: Supporting text, card content, subtitles
 //
 // - xs (text-xs): Fine print, captions, notes
-//   → DocsPage: API response examples, small notes
+//   → PlayPage: API key cards, small notes
 //   → Used for: Captions, metadata, fine print
 //
 // Spacing: Adjust vertical rhythm between paragraphs
@@ -194,7 +194,7 @@ Body.displayName = "Body";
 //
 // Examples:
 // - PlayPage: "Models", "Prompt", "Width", "Height", etc.
-// - DocsPage: "Pick a prompt:", "Optional parameters:", etc.
+// - PlayPage: "Publishable", "Secret", etc.
 //
 // Features:
 // - Always uppercase with wider tracking (brutalist style)
@@ -206,7 +206,7 @@ Body.displayName = "Body";
 // - inline: Next to input or inline content
 // ============================================
 const labelVariants = cva(
-    "font-headline text-xs uppercase tracking-wider font-black text-text-body-main",
+    "font-headline text-sm uppercase tracking-wider font-black text-text-body-main",
     {
         variants: {
             spacing: {

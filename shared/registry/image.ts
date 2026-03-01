@@ -40,6 +40,24 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "nanobanana-2": {
+        aliases: ["nanobanana2"],
+        modelId: "nanobanana-2",
+        provider: "google",
+        paidOnly: true,
+        cost: [
+            // Gemini 3.1 Flash Image via Vertex AI
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.5), // $0.50 per 1M input tokens
+                promptImageTokens: perMillion(0.5), // $0.50 per 1M input tokens
+                completionImageTokens: perMillion(60), // $60 per 1M tokens × 2520 tokens/image = $0.151 per image
+            },
+        ],
+        description: "NanoBanana 2 - Gemini 3.1 Flash Image",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "nanobanana-pro": {
         aliases: [],
         modelId: "nanobanana-pro",
@@ -60,19 +78,36 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "seedream5": {
+        aliases: [],
+        modelId: "seedream5",
+        provider: "bytedance",
+        paidOnly: true,
+        cost: [
+            // ByteDance ARK Seedream 5.0 Lite - $0.035 per image
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.035, // $0.035 per image (3.5 cents)
+            },
+        ],
+        description:
+            "Seedream 5.0 Lite - ByteDance ARK (web search, reasoning)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "seedream": {
         aliases: [],
         modelId: "seedream",
         provider: "bytedance",
         paidOnly: true,
+        hidden: true,
         cost: [
-            // ByteDance ARK Seedream 4.0 - $0.03 per image
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.03, // $0.03 per image (3 cents)
+                completionImageTokens: 0.03, // $0.03 per image (real 4.0)
             },
         ],
-        description: "Seedream 4.0 - ByteDance ARK (better quality)",
+        description: "Seedream 4.0 - ByteDance ARK (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -81,14 +116,14 @@ export const IMAGE_SERVICES = {
         modelId: "seedream-pro",
         provider: "bytedance",
         paidOnly: true,
+        hidden: true,
         cost: [
-            // ByteDance ARK Seedream 4.5 - $0.04 per image
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.04, // $0.04 per image (4 cents)
+                completionImageTokens: 0.04, // $0.04 per image (real 4.5)
             },
         ],
-        description: "Seedream 4.5 Pro - ByteDance ARK (4K, Multi-Image)",
+        description: "Seedream 4.5 Pro - ByteDance ARK (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -217,20 +252,20 @@ export const IMAGE_SERVICES = {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
         provider: "alibaba",
-        alpha: true,
+        paidOnly: true,
         cost: [
-            // Wan 2.6 I2V Flash (Singapore/International region)
-            // Video base: 720P $0.025/sec (without audio)
-            // Audio add-on: $0.025/sec (when audio=true)
-            // Total with audio: $0.05/sec
+            // Wan 2.6 - Alibaba DashScope international pricing (720P)
+            // T2V: $0.10/sec, I2V+audio: $0.05/sec, I2V no audio: $0.025/sec
+            // Using I2V+audio rate as base since T2V also generates audio
+            // Audio cost split out separately for tracking
             {
-                date: new Date("2026-01-20").getTime(), // Launch date
-                completionVideoSeconds: 0.025, // $0.025 per second (video only)
-                completionAudioSeconds: 0.025, // $0.025 per second of audio
+                date: new Date("2026-02-20").getTime(),
+                completionVideoSeconds: 0.05, // $0.05 per second (video)
+                completionAudioSeconds: 0.05, // $0.05 per second (audio)
             },
         ],
         description:
-            "Wan 2.6 - Alibaba image-to-video with audio (2-15s, up to 1080P)",
+            "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P) via DashScope",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
@@ -275,27 +310,25 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),
-                completionImageTokens: 0.005, // $0.005 per image
+                completionImageTokens: 0.0025, // $0.0025 per image
             },
         ],
-        description:
-            "Imagen 4 (api.airforce) - Google's latest image generation model",
+        description: "Imagen 4 (api.airforce) - Google's latest image gen",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "flux-2-dev": {
-        aliases: ["flux2", "flux-2"],
-        modelId: "flux-2-dev",
+    "grok-imagine": {
+        aliases: [],
+        modelId: "grok-imagine",
         provider: "airforce",
         alpha: true,
         cost: [
             {
-                date: new Date("2026-02-07").getTime(),
-                completionImageTokens: 0.005, // $0.005 per image
+                date: new Date("2026-02-16").getTime(),
+                completionImageTokens: 0.0025, // $0.0025 per image
             },
         ],
-        description:
-            "FLUX.2 Dev (api.airforce) - Black Forest Labs' latest image model",
+        description: "Grok Imagine (api.airforce) - xAI image gen",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -307,12 +340,11 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),
-                completionVideoSeconds: 0.005, // $0.005 per second
+                completionVideoSeconds: 0.0025, // $0.0025 per second
             },
         ],
-        description:
-            "Grok Imagine Video (api.airforce) - xAI's video generation model",
-        inputModalities: ["text"],
+        description: "Grok Video (api.airforce) - xAI video gen",
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
     "ltx-2": {

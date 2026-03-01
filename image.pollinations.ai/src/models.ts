@@ -30,24 +30,39 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // ByteDance ARK Seedream 4.0 - better quality (default)
+    // ByteDance ARK Seedream 5.0 Lite - web search, reasoning
+    seedream5: {
+        type: "seedream5",
+        enhance: false,
+        defaultSideLength: 2048,
+        minPixels: 3686400, // Seedream 5.0 requires at least 1920x1920 pixels
+    },
+
+    // Legacy (hidden): real Seedream 4.0
     seedream: {
         type: "seedream",
         enhance: false,
-        defaultSideLength: 1024, // Seedream 4.0 standard resolution
+        defaultSideLength: 1024,
     },
 
-    // ByteDance ARK Seedream 4.5 Pro - high quality 4K image generation
+    // Legacy (hidden): real Seedream 4.5 Pro
     "seedream-pro": {
         type: "seedream-pro",
         enhance: false,
-        defaultSideLength: 2048, // Seedream 4.5 supports up to 4K
+        defaultSideLength: 2048,
         minPixels: 3686400, // Seedream 4.5 requires at least 1920x1920 pixels
     },
 
     // Gemini 2.5 Flash Image via Vertex AI - image-to-image generation
     nanobanana: {
         type: "vertex-ai",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Gemini 3.1 Flash Image via Vertex AI - faster flash with pro-level quality (Nano Banana 2)
+    "nanobanana-2": {
+        type: "vertex-ai-2",
         enhance: false,
         defaultSideLength: 1024,
     },
@@ -149,14 +164,14 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // FLUX.2 Dev - Black Forest Labs' latest image model via api.airforce
-    "flux-2-dev": {
+    // Grok Imagine - xAI image generation via api.airforce
+    "grok-imagine": {
         type: "airforce",
         enhance: false,
         defaultSideLength: 1024,
     },
 
-    // Grok Imagine Video - xAI video generation via api.airforce (alpha - ~90% success rate)
+    // Grok Imagine Video - xAI video generation via api.airforce
     "grok-video": {
         type: "airforce-video",
         enhance: false,
@@ -176,12 +191,6 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 } as const satisfies ImageModelsConfig;
-
-/**
- * Legacy MODELS export for backward compatibility
- * @deprecated Use IMAGE_SERVICES from registry, IMAGE_CONFIG for implementation details
- */
-export const MODELS = IMAGE_CONFIG as Record<ImageServiceId, ImageModelConfig>;
 
 /**
  * Scale up dimensions to meet minimum pixel requirements while preserving aspect ratio
@@ -220,7 +229,9 @@ export function getScaledDimensions(
     width: number,
     height: number,
 ): { width: number; height: number } {
-    const config = MODELS[modelName as ImageServiceId];
+    const config = IMAGE_CONFIG[
+        modelName as ImageServiceId
+    ] as ImageModelConfig;
     if (!config?.minPixels) {
         return { width, height };
     }

@@ -2,7 +2,6 @@
 
 export * from "../copy/content/apps";
 export * from "../copy/content/community";
-export * from "../copy/content/docs";
 export * from "../copy/content/hello";
 export * from "../copy/content/play";
 export * from "./buildPrompts";
@@ -12,5 +11,4 @@ export * from "./guidelines/animator";
 export * from "./guidelines/designer";
 export * from "./guidelines/helpers/animator";
 export * from "./guidelines/helpers/designer";
-export * from "./guidelines/helpers/illustrator";
 export * from "./guidelines/illustrator";

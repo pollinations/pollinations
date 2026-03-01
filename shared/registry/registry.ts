@@ -79,12 +79,13 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     reasoning?: boolean;
     search?: boolean;
     codeExecution?: boolean;
-    contextWindow?: number;
+    contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
     persona?: boolean;
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability
+    hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
 };
 
 /** Sorts the cost and price definitions by date, in descending order */
@@ -203,6 +204,15 @@ export function getAudioServices(): ServiceId[] {
     return Object.keys(AUDIO_SERVICES) as ServiceId[];
 }
 
+/** Filter out hidden services */
+function filterVisible(ids: ServiceId[]): ServiceId[] {
+    return ids.filter((id) => !SERVICE_REGISTRY[id]?.hidden);
+}
+
+export const getVisibleTextServices = () => filterVisible(getTextServices());
+export const getVisibleImageServices = () => filterVisible(getImageServices());
+export const getVisibleAudioServices = () => filterVisible(getAudioServices());
+
 /**
  * Get service definition by ID
  */
@@ -270,7 +280,7 @@ export function calculateCost(modelId: ModelId, usage: Usage): UsageCost {
         );
     const usageCost = convertUsage(usage, costDefinition);
     const totalCost = safeRound(
-        Object.values(usageCost).reduce((total, cost) => total + cost),
+        Object.values(usageCost).reduce((total, cost) => total + cost, 0),
         PRECISION,
     );
     return {
@@ -290,7 +300,7 @@ export function calculatePrice(serviceId: ServiceId, usage: Usage): UsagePrice {
         );
     const usagePrice = convertUsage(usage, priceDefinition);
     const totalPrice = safeRound(
-        Object.values(usagePrice).reduce((total, price) => total + price),
+        Object.values(usagePrice).reduce((total, price) => total + price, 0),
         PRECISION,
     );
     return {
@@ -298,5 +308,3 @@ export function calculatePrice(serviceId: ServiceId, usage: Usage): UsagePrice {
         totalPrice,
     };
 }
-
-// ModelInfo, getModelInfo, getTextModelsInfo, getImageModelsInfo are in model-info.ts

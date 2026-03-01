@@ -1,6 +1,5 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";
@@ -20,6 +19,7 @@ const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getAudioModelsInfo,
     getImageModelsInfo,
@@ -29,7 +29,11 @@ import { getServiceDefinition } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import {
+    getDefaultErrorMessage,
+    remapUpstreamStatus,
+    UpstreamError,
+} from "@/error.ts";
 import { validator } from "@/middleware/validator.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import {
@@ -42,7 +46,72 @@ import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { generateMusic, generateSpeech } from "./audio.ts";
 
+// Build dynamic model lists from registry for use in API descriptions
+const imageModelNames = Object.entries(IMAGE_SERVICES)
+    .filter(
+        ([, svc]) =>
+            !(svc.outputModalities as string[] | undefined)?.includes("video"),
+    )
+    .map(([id]) => `\`${id}\``)
+    .join(", ");
+
+const videoModelNames = Object.entries(IMAGE_SERVICES)
+    .filter(([, svc]) =>
+        (svc.outputModalities as string[] | undefined)?.includes("video"),
+    )
+    .map(([id]) => `\`${id}\``)
+    .join(", ");
+
 const factory = createFactory<Env>();
+
+// Shared handler for image and video generation (used by both /image/ and /video/ routes)
+const imageVideoHandlers = factory.createHandlers(
+    resolveModel("generate.image"),
+    track("generate.image"),
+    async (c) => {
+        const log = c.get("log").getChild("generate");
+        await c.var.auth.requireAuthorization();
+        c.var.auth.requireModelAccess();
+        c.var.auth.requireKeyBudget();
+        await checkBalance(c.var);
+
+        // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
+        const promptParam = c.req.param("prompt") || "";
+
+        log.debug("Extracted prompt param: {prompt}", {
+            prompt: promptParam,
+            length: promptParam.length,
+        });
+
+        const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
+        targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
+
+        log.debug("Proxying to: {url}", {
+            url: targetUrl.toString(),
+        });
+
+        const response = await proxy(targetUrl.toString(), {
+            method: c.req.method,
+            headers: proxyHeaders(c),
+            body: c.req.raw.body,
+        });
+
+        if (!response.ok) {
+            const responseText = await response.text();
+            log.warn("Image service error {status}: {body}", {
+                status: response.status,
+                body: responseText,
+            });
+            throw new UpstreamError(remapUpstreamStatus(response.status), {
+                message:
+                    responseText || getDefaultErrorMessage(response.status),
+                requestUrl: targetUrl,
+            });
+        }
+
+        return response;
+    },
+);
 
 // Shared handler for OpenAI-compatible chat completions
 const chatCompletionHandlers = factory.createHandlers(
@@ -70,16 +139,31 @@ const chatCompletionHandlers = factory.createHandlers(
         });
 
         if (!response.ok) {
-            // Read upstream error and throw UpstreamError to get structured error response
-            // This preserves the status code while providing consistent error format
             const responseText = await response.text();
             log.warn("Chat completions error {status}: {body}", {
                 status: response.status,
                 body: responseText,
             });
-            throw new UpstreamError(response.status as ContentfulStatusCode, {
-                message:
-                    responseText || getDefaultErrorMessage(response.status),
+
+            // Try to extract meaningful error message from upstream JSON
+            let errorMessage =
+                responseText || getDefaultErrorMessage(response.status);
+            try {
+                const parsed = JSON.parse(responseText);
+                const extracted =
+                    parsed?.details?.error?.message ||
+                    parsed?.error?.message ||
+                    parsed?.message ||
+                    (typeof parsed?.error === "string" ? parsed.error : null);
+                if (extracted) {
+                    errorMessage = extracted;
+                }
+            } catch {
+                // Not JSON or parse failed - use raw text as-is
+            }
+
+            throw new UpstreamError(remapUpstreamStatus(response.status), {
+                message: errorMessage,
                 requestUrl: targetUrl,
             });
         }
@@ -105,13 +189,30 @@ const chatCompletionHandlers = factory.createHandlers(
     },
 );
 
-// Helper to filter models by API key permissions
-function filterModelsByPermissions<T extends { name: string }>(
+// Helper to filter models by API key permissions and paid balance
+function filterModelsByPermissions<
+    T extends { name: string; paid_only?: boolean },
+>(
     models: T[],
     allowedModels: string[] | undefined,
+    hasPaidBalance?: boolean,
 ): T[] {
-    if (!allowedModels?.length) return models;
-    return models.filter((m) => allowedModels.includes(m.name));
+    return models.filter((m) => {
+        if (allowedModels?.length && !allowedModels.includes(m.name))
+            return false;
+        if (m.paid_only && hasPaidBalance === false) return false;
+        return true;
+    });
+}
+
+// Check if authenticated user has paid balance (pack or crypto > 0)
+// Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
+// Returns undefined if no user (unauthenticated), true/false otherwise.
+// biome-ignore lint/suspicious/noExplicitAny: User type doesn't include balance fields from SELECT *
+function hasPaidBalance(c: any): boolean | undefined {
+    const user = c.var?.auth?.user;
+    if (!user) return undefined;
+    return (user.packBalance ?? 0) > 0 || (user.cryptoBalance ?? 0) > 0;
 }
 
 export const proxyRoutes = new Hono<Env>()
@@ -131,9 +232,10 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/v1/models",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🤖 Models"],
+            summary: "List Text Models (OpenAI-compatible)",
             description:
-                "Get available text models (OpenAI-compatible). If an API key with model restrictions is provided, only allowed models are returned.",
+                'Returns available text models in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
             responses: {
                 200: {
                     description: "Success",
@@ -148,9 +250,11 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getTextModelsInfo(),
                 allowedModels,
+                paidBalance,
             );
             const now = Date.now();
             return c.json({
@@ -166,9 +270,10 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/image/models",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🤖 Models"],
+            summary: "List Image & Video Models",
             description:
-                "Get a list of available image generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -189,9 +294,11 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             try {
                 const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+                const paidBalance = hasPaidBalance(c);
                 const models = filterModelsByPermissions(
                     getImageModelsInfo(),
                     allowedModels,
+                    paidBalance,
                 );
                 return c.json(models);
             } catch (error) {
@@ -205,9 +312,10 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/text/models",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🤖 Models"],
+            summary: "List Text Models (Detailed)",
             description:
-                "Get a list of available text generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
+                "Returns all available text generation models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -225,11 +333,13 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        (c) => {
+        async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getTextModelsInfo(),
                 allowedModels,
+                paidBalance,
             );
             return c.json(models);
         },
@@ -237,9 +347,10 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/audio/models",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🤖 Models"],
+            summary: "List Audio Models",
             description:
-                "Get a list of available audio models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
+                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -257,11 +368,13 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        (c) => {
+        async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getAudioModelsInfo(),
                 allowedModels,
+                paidBalance,
             );
             return c.json(models);
         },
@@ -276,20 +389,12 @@ export const proxyRoutes = new Hono<Env>()
         "/v1/chat/completions",
         textCache,
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["✍️ Text Generation"],
+            summary: "Chat Completions",
             description: [
-                "OpenAI-compatible chat completions endpoint.",
+                "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
-                "**Legacy endpoint:** `/openai` (deprecated, use `/v1/chat/completions` instead)",
-                "",
-                "**Authentication (Secret Keys Only):**",
-                "",
-                "Include your API key in the `Authorization` header as a Bearer token:",
-                "",
-                "`Authorization: Bearer YOUR_API_KEY`",
-                "",
-                "API keys can be created from your dashboard at enter.pollinations.ai.",
-                "Both key types consume Pollen. Secret keys have no rate limits.",
+                "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
             ].join("\n"),
             responses: {
                 200: {
@@ -302,7 +407,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
         ...chatCompletionHandlers,
@@ -311,17 +416,12 @@ export const proxyRoutes = new Hono<Env>()
         "/text/:prompt",
         textCache,
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["✍️ Text Generation"],
+            summary: "Simple Text Generation",
             description: [
-                "Generates text from text prompts.",
+                "Generate text from a prompt via a simple GET request. Returns plain text.",
                 "",
-                "**Authentication:**",
-                "",
-                "Include your API key either:",
-                "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
-                "- As a query parameter: `?key=YOUR_API_KEY`",
-                "",
-                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions` endpoint — ideal for quick prototyping or simple integrations.",
             ].join("\n"),
             responses: {
                 200: {
@@ -332,7 +432,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
         validator(
@@ -373,22 +473,16 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
-                // Read upstream error and throw UpstreamError to get structured error response
-                // This preserves the status code while providing consistent error format
                 const responseText = await response.text();
                 log.warn("Text service error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });
-                throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
-                    {
-                        message:
-                            responseText ||
-                            getDefaultErrorMessage(response.status),
-                        requestUrl: targetUrl,
-                    },
-                );
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        responseText || getDefaultErrorMessage(response.status),
+                    requestUrl: targetUrl,
+                });
             }
 
             // Backend returns plain text for text models and raw audio for audio models
@@ -403,28 +497,18 @@ export const proxyRoutes = new Hono<Env>()
         "/image/:prompt{[\\s\\S]+}",
         imageCache,
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🖼️ Image Generation"],
+            summary: "Generate Image",
             description: [
-                "Generate an image or video from a text prompt.",
+                "Generate an image from a text prompt. Returns JPEG or PNG.",
                 "",
-                "**Image Models:** `flux` (default), `turbo`, `gptimage`, `kontext`, `seedream`, `nanobanana`, `nanobanana-pro`",
+                `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
                 "",
-                "**Video Models:** `veo`, `seedance`",
-                "- `veo`: Text-to-video only (4-8 seconds)",
-                "- `seedance`: Text-to-video and image-to-video (2-10 seconds)",
-                "",
-                "**Authentication:**",
-                "",
-                "Include your API key either:",
-                "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
-                "- As a query parameter: `?key=YOUR_API_KEY`",
-                "",
-                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),
             responses: {
                 200: {
-                    description:
-                        "Success - Returns the generated image or video",
+                    description: "Success - Returns the generated image",
                     content: {
                         "image/jpeg": {
                             schema: {
@@ -438,6 +522,44 @@ export const proxyRoutes = new Hono<Env>()
                                 format: "binary",
                             },
                         },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description: "Text description of the image to generate",
+                    example: "a beautiful sunset over mountains",
+                }),
+            }),
+        ),
+        validator("query", GenerateImageRequestQueryParamsSchema),
+        ...imageVideoHandlers,
+    )
+    .get(
+        "/video/:prompt{[\\s\\S]+}",
+        imageCache,
+        describeRoute({
+            tags: ["🎬 Video Generation"],
+            summary: "Generate Video",
+            description: [
+                "Generate a video from a text prompt. Returns MP4.",
+                "",
+                `**Available models:** ${videoModelNames}.`,
+                "",
+                "Use `duration` to set video length, `aspectRatio` for orientation, and `audio` to enable soundtrack generation.",
+                "",
+                "You can also pass reference images via the `image` parameter — for example, `veo` supports start and end frames for interpolation.",
+                "",
+                "Browse all available models at [`/image/models`](https://gen.pollinations.ai/image/models).",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns the generated video",
+                    content: {
                         "video/mp4": {
                             schema: {
                                 type: "string",
@@ -446,96 +568,36 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
         validator(
             "param",
             z.object({
                 prompt: z.string().min(1).meta({
-                    description:
-                        "Text description of the image or video to generate",
-                    example: "a beautiful sunset over mountains",
+                    description: "Text description of the video to generate",
+                    example: "a sunset timelapse over the ocean",
                 }),
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
-        resolveModel("generate.image"),
-        track("generate.image"),
-        async (c) => {
-            const log = c.get("log").getChild("generate");
-            await c.var.auth.requireAuthorization();
-            c.var.auth.requireModelAccess();
-            c.var.auth.requireKeyBudget();
-            await checkBalance(c.var);
-
-            // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
-            const promptParam = c.req.param("prompt") || "";
-
-            log.debug("Extracted prompt param: {prompt}", {
-                prompt: promptParam,
-                length: promptParam.length,
-            });
-
-            const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
-            targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
-
-            log.debug("Proxying to: {url}", {
-                url: targetUrl.toString(),
-            });
-
-            const response = await proxy(targetUrl.toString(), {
-                method: c.req.method,
-                headers: proxyHeaders(c),
-                body: c.req.raw.body,
-            });
-
-            if (!response.ok) {
-                // Read upstream error and throw UpstreamError to get structured error response
-                // This preserves the status code while providing consistent error format
-                const responseText = await response.text();
-                log.warn("Image service error {status}: {body}", {
-                    status: response.status,
-                    body: responseText,
-                });
-                throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
-                    {
-                        message:
-                            responseText ||
-                            getDefaultErrorMessage(response.status),
-                        requestUrl: targetUrl,
-                    },
-                );
-            }
-
-            return response;
-        },
+        ...imageVideoHandlers,
     )
     .get(
         "/audio/:text",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["🔊 Audio Generation"],
+            summary: "Generate Audio",
             description: [
-                "Generate audio from text — speech (TTS) or music.",
+                "Generate speech or music from text via a simple GET request.",
                 "",
-                "**Models:** Use `model` query param to select:",
-                "- TTS (default): `elevenlabs`, `tts-1`, etc.",
-                "- Music: `elevenmusic` (or `music`)",
+                "**Text-to-speech (default):** Returns spoken audio in the selected voice and format.",
                 "",
-                `**TTS Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
-                "**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm",
+                "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music options:** `duration` in seconds (3-300), `instrumental=true`",
-                "",
-                "**Authentication:**",
-                "",
-                "Include your API key either:",
-                "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
-                "- As a query parameter: `?key=YOUR_API_KEY`",
-                "",
-                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "**Music generation:** Set `model=elevenmusic` to generate music instead of speech. Supports `duration` (3-300 seconds) and `instrumental` mode.",
             ].join("\n"),
             responses: {
                 200: {
@@ -546,7 +608,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
         validator(
@@ -778,7 +840,7 @@ async function checkBalance({
     if (isPaidOnly) {
         await balance.requirePaidBalance(
             auth.user.id,
-            "This premium model requires a paid balance. Tier balance cannot be used.",
+            "This model requires a paid balance. Tier balance cannot be used.",
         );
     } else {
         await balance.requirePositiveBalance(

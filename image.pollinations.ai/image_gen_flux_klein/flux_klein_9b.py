@@ -76,16 +76,11 @@ MODEL_ID = "black-forest-labs/FLUX.2-klein-9B"
 MINUTES = 60
 
 # Maximum resolution to prevent OOM - 9B model is memory-hungry
-MAX_DIMENSION = 1024
 MAX_TOTAL_PIXELS = 1024 * 1024  # 1 megapixel max
 
 def clamp_dimensions(width: int, height: int) -> tuple[int, int]:
-    """Clamp dimensions to prevent OOM errors on 9B model."""
-    # First clamp individual dimensions
-    width = min(width, MAX_DIMENSION)
-    height = min(height, MAX_DIMENSION)
-    
-    # Then check total pixels
+    """Scale down dimensions while maintaining aspect ratio to prevent OOM errors."""
+    # Scale down proportionally if total pixels exceed max
     total_pixels = width * height
     if total_pixels > MAX_TOTAL_PIXELS:
         scale = (MAX_TOTAL_PIXELS / total_pixels) ** 0.5

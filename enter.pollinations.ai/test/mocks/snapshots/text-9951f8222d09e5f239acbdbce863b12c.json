@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sequential test 1771094056162"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1807",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 14 Feb 2026 18:34:27 GMT",
+      "etag": "W/\"70f-cCQznM4oAKKUpzQcWGGw4GCVbPg\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "1024",
+      "x-usage-completion-text-tokens": "160",
+      "x-usage-prompt-text-tokens": "255"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Do you want me to do something specific with \"Sequential test 1771094056162\", or were you just checking the connection? A few things I can do if you want:\n\n- Echo or reformat that ID\n- Treat the number as a timestamp (ms or s) and convert to a human date/time\n- Run basic number analysis (parity, factor out small primes, convert to hex/binary)\n- Use it as a seed and generate a pseudorandom sequence\n- Interpret it as a test case name and log a result template\n\nQuick note: the number is even (1771094056162 = 2 × 885547028081). Tell me which of the options (or something else) you'd like.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1771094056,
+        "id": "pllns_308cb4023190dbcf591c7474832af41c",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1184,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1024,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 255,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1439
+        }
+      }
+    }
+  }
+}

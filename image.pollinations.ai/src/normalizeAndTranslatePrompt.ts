@@ -74,11 +74,8 @@ export const normalizeAndTranslatePrompt = async (
                 logError(error);
                 enhance = true;
             }
-            // prompt = await translateIfNecessary(prompt);
             const endTime = Date.now();
             logPerf(`Translation time: ${endTime - startTime}ms`);
-
-            // enhance = true;
         }
 
         if (enhance) {

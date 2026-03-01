@@ -7,7 +7,6 @@ import {
     fetchFromLeastBusyServer,
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
-import { incrementModelCounter } from "./modelCounter.ts";
 import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
@@ -626,9 +625,6 @@ const callAzureGPTImageWithEndpoint = async (
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";
-    // Default compression to 100 (best quality)
-    // const outputCompression = 70;
-
     // Build request body
     const requestBody = {
         prompt: sanitizeString(prompt),
@@ -881,15 +877,51 @@ export const callAzureGPTImage = async (
 };
 
 /**
- * Generates an image using the appropriate model based on safeParams
- * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - Parameters for image generation
- * @param {number} concurrentRequests - Number of concurrent requests
- * @param {Object} progress - Progress tracking object
- * @param {string} requestId - Request ID for progress tracking
- * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
- * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean, [key: string]: any}>}
+ * Checks prompt safety with Azure Content Safety, logs the result, and throws
+ * an HttpError(400) if the prompt is unsafe.
  */
+async function requireSafePrompt(
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<void> {
+    const promptSafetyResult = await analyzeTextSafety(prompt);
+
+    await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
+
+    if (!promptSafetyResult.safe) {
+        const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+        logError("Azure Content Safety rejected prompt:", errorMessage);
+        progress.updateBar(
+            requestId,
+            100,
+            "Error",
+            "Prompt contains unsafe content",
+        );
+
+        const error = new HttpError(errorMessage, 400);
+        await logGptImageError(
+            prompt,
+            safeParams,
+            userInfo,
+            error,
+            promptSafetyResult,
+        );
+        throw error;
+    }
+}
+
+/**
+ * Formats user auth info for logging.
+ */
+function formatAuthInfo(userInfo: AuthResult): string {
+    return userInfo
+        ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
+        : "No userInfo provided";
+}
+
 const generateImage = async (
     prompt: string,
     safeParams: ImageParams,
@@ -898,181 +930,14 @@ const generateImage = async (
     requestId: string,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
-    // Log model usage
-    incrementModelCounter(safeParams.model).catch(() => {});
-
-    // Model selection strategy using a more functional approach
-
-    // GPT Image models - gpt-image-1-mini and gpt-image-1.5
-    if (
-        safeParams.model === "gptimage" ||
-        safeParams.model === "gptimage-large"
-    ) {
-        const gptConfig = AZURE_GPTIMAGE_CONFIGS[safeParams.model];
-        // Detailed logging of authentication info for GPT image access
-        logError(
-            `GPT Image (${gptConfig.modelName}) authentication check:`,
-            userInfo
-                ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
-                : "No userInfo provided",
-        );
-        // For gptimage models, always throw errors instead of falling back
-        progress.updateBar(
-            requestId,
-            30,
-            "Processing",
-            "Checking prompt safety...",
-        );
-
-        try {
-            // Check prompt safety with Azure Content Safety
-            const promptSafetyResult = await analyzeTextSafety(prompt);
-
-            // Log the prompt with safety analysis results
-            await logGptImagePrompt(
-                prompt,
-                safeParams,
-                userInfo,
-                promptSafetyResult,
-            );
-
-            if (!promptSafetyResult.safe) {
-                const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                logError("Azure Content Safety rejected prompt:", errorMessage);
-                progress.updateBar(
-                    requestId,
-                    100,
-                    "Error",
-                    "Prompt contains unsafe content",
-                );
-
-                // Log the error with safety analysis results
-                const error = new HttpError(errorMessage, 400);
-                await logGptImageError(
-                    prompt,
-                    safeParams,
-                    userInfo,
-                    error,
-                    promptSafetyResult,
-                );
-
-                throw error;
-            }
-
-            progress.updateBar(
-                requestId,
-                35,
-                "Processing",
-                `Trying Azure GPT Image (${gptConfig.modelName})...`,
-            );
-            return await callAzureGPTImage(
-                prompt,
-                safeParams,
-                userInfo,
-                safeParams.model,
-            );
-        } catch (error) {
-            // Log the error but don't fall back - propagate it to the caller
+    switch (safeParams.model) {
+        case "gptimage":
+        case "gptimage-large": {
+            const gptConfig = AZURE_GPTIMAGE_CONFIGS[safeParams.model];
             logError(
-                "Azure GPT Image generation or safety check failed:",
-                error.message,
+                `GPT Image (${gptConfig.modelName}) authentication check:`,
+                formatAuthInfo(userInfo),
             );
-
-            await logGptImageError(prompt, safeParams, userInfo, error);
-
-            progress.updateBar(requestId, 100, "Error", error.message);
-            throw error;
-        }
-    }
-
-    // Nano Banana / Nano Banana 2 / Nano Banana Pro - Gemini Image generation using Vertex AI
-    if (
-        safeParams.model === "nanobanana" ||
-        safeParams.model === "nanobanana-2" ||
-        safeParams.model === "nanobanana-pro"
-    ) {
-        // Detailed logging of authentication info for Nano Banana access
-        logError(
-            "Nano Banana authentication check:",
-            userInfo
-                ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
-                : "No userInfo provided",
-        );
-
-        // All requests assumed to come from enter.pollinations.ai
-        // For nanobanana model, always throw errors instead of falling back
-        progress.updateBar(
-            requestId,
-            30,
-            "Processing",
-            "Checking prompt safety...",
-        );
-
-        try {
-            // Check prompt safety with Azure Content Safety
-            const promptSafetyResult = await analyzeTextSafety(prompt);
-
-            // Log the prompt with safety analysis results
-            await logGptImagePrompt(
-                prompt,
-                safeParams,
-                userInfo,
-                promptSafetyResult,
-            );
-
-            if (!promptSafetyResult.safe) {
-                const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                logError("Azure Content Safety rejected prompt:", errorMessage);
-                progress.updateBar(
-                    requestId,
-                    100,
-                    "Error",
-                    "Prompt contains unsafe content",
-                );
-
-                // Log the error with safety analysis results
-                const error = new HttpError(errorMessage, 400);
-                await logGptImageError(
-                    prompt,
-                    safeParams,
-                    userInfo,
-                    error,
-                    promptSafetyResult,
-                );
-                throw error;
-            }
-
-            const modelDisplayName =
-                safeParams.model === "nanobanana-pro"
-                    ? "Nano Banana Pro"
-                    : safeParams.model === "nanobanana-2"
-                      ? "Nano Banana 2"
-                      : "Nano Banana";
-            progress.updateBar(
-                requestId,
-                35,
-                "Processing",
-                `Generating with ${modelDisplayName}...`,
-            );
-            return await callVertexAIGemini(prompt, safeParams, userInfo);
-        } catch (error) {
-            // Log the error but don't fall back - propagate it to the caller
-            logError(
-                "Vertex AI Gemini image generation or safety check failed:",
-                error.message,
-            );
-
-            await logGptImageError(prompt, safeParams, userInfo, error);
-
-            progress.updateBar(requestId, 100, "Error", error.message);
-            throw error;
-        }
-    }
-
-    if (safeParams.model === "kontext") {
-        // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
-        try {
-            // Check prompt safety
             progress.updateBar(
                 requestId,
                 30,
@@ -1080,161 +945,243 @@ const generateImage = async (
                 "Checking prompt safety...",
             );
 
-            // Use Azure Flux Kontext for image generation/editing
+            try {
+                await requireSafePrompt(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    progress,
+                    requestId,
+                );
+
+                progress.updateBar(
+                    requestId,
+                    35,
+                    "Processing",
+                    `Trying Azure GPT Image (${gptConfig.modelName})...`,
+                );
+                return await callAzureGPTImage(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    safeParams.model,
+                );
+            } catch (error) {
+                logError(
+                    "Azure GPT Image generation or safety check failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "nanobanana":
+        case "nanobanana-2":
+        case "nanobanana-pro": {
+            logError(
+                "Nano Banana authentication check:",
+                formatAuthInfo(userInfo),
+            );
             progress.updateBar(
                 requestId,
-                35,
+                30,
                 "Processing",
-                "Generating with Azure Flux Kontext...",
+                "Checking prompt safety...",
             );
-            return await callAzureFluxKontext(prompt, safeParams, userInfo);
-        } catch (error) {
-            logError("Azure Flux Kontext generation failed:", error.message);
-            await logGptImageError(prompt, safeParams, userInfo, error);
-            progress.updateBar(requestId, 100, "Error", error.message);
-            throw error;
-        }
-    }
 
-    if (safeParams.model === "seedream5") {
-        // Seedream 5.0 Lite - web search, reasoning
-        try {
-            return await callSeedream5API(
+            try {
+                await requireSafePrompt(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    progress,
+                    requestId,
+                );
+
+                const modelDisplayName =
+                    safeParams.model === "nanobanana-pro"
+                        ? "Nano Banana Pro"
+                        : safeParams.model === "nanobanana-2"
+                          ? "Nano Banana 2"
+                          : "Nano Banana";
+                progress.updateBar(
+                    requestId,
+                    35,
+                    "Processing",
+                    `Generating with ${modelDisplayName}...`,
+                );
+                return await callVertexAIGemini(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError(
+                    "Vertex AI Gemini image generation or safety check failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "kontext": {
+            try {
+                progress.updateBar(
+                    requestId,
+                    30,
+                    "Processing",
+                    "Checking prompt safety...",
+                );
+                progress.updateBar(
+                    requestId,
+                    35,
+                    "Processing",
+                    "Generating with Azure Flux Kontext...",
+                );
+                return await callAzureFluxKontext(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError(
+                    "Azure Flux Kontext generation failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "seedream5": {
+            try {
+                return await callSeedream5API(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Seedream 5.0 generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "seedream": {
+            // Hidden legacy model -- routes to real Seedream 4.0 endpoint
+            try {
+                return await callSeedreamAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError(
+                    "Seedream 4.0 (legacy) generation failed:",
+                    error.message,
+                );
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "seedream-pro": {
+            // Hidden legacy model -- routes to real Seedream 4.5 endpoint
+            try {
+                return await callSeedreamProAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError(
+                    "Seedream 4.5 Pro (legacy) generation failed:",
+                    error.message,
+                );
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "klein": {
+            try {
+                return await callFluxKleinAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Flux Klein generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "klein-large": {
+            try {
+                return await callFluxKleinAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    "klein-large",
+                );
+            } catch (error) {
+                logError("Flux Klein Large generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "imagen-4":
+        case "grok-imagine":
+            return await callAirforceImageAPI(
                 prompt,
                 safeParams,
                 progress,
                 requestId,
+                safeParams.model,
             );
-        } catch (error) {
-            logError("Seedream 5.0 generation failed:", error.message);
-            progress.updateBar(requestId, 100, "Error", error.message);
-            throw error;
-        }
-    }
 
-    if (safeParams.model === "seedream") {
-        // Legacy: routes to Seedream 5.0
-        try {
-            return await callSeedreamAPI(
+        case "flux":
+            progress.updateBar(
+                requestId,
+                25,
+                "Processing",
+                "Using registered servers",
+            );
+            return await callSelfHostedServer(
                 prompt,
                 safeParams,
-                progress,
-                requestId,
+                concurrentRequests,
             );
-        } catch (error) {
-            logError("Seedream (legacy) generation failed:", error.message);
-            progress.updateBar(requestId, 100, "Error", error.message);
-            throw error;
-        }
-    }
 
-    if (safeParams.model === "seedream-pro") {
-        // Legacy: routes to Seedream 5.0
-        try {
-            return await callSeedreamProAPI(
+        default:
+            // zimage and any unrecognized model fall through to self-hosted servers
+            return await callSelfHostedServer(
                 prompt,
                 safeParams,
-                progress,
-                requestId,
+                concurrentRequests,
             );
-        } catch (error) {
-            logError("Seedream Pro (legacy) generation failed:", error.message);
-            progress.updateBar(requestId, 100, "Error", error.message);
-            throw error;
-        }
     }
-
-    if (safeParams.model === "klein") {
-        // Klein - Fast 4B model on Modal (text-to-image + image editing)
-        try {
-            return await callFluxKleinAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
-        } catch (error) {
-            logError("Flux Klein generation failed:", error.message);
-            progress.updateBar(requestId, 100, "Error", error.message);
-            throw error;
-        }
-    }
-
-    if (safeParams.model === "klein-large") {
-        // Klein Large - Higher quality 9B model on Modal (text-to-image + image editing)
-        try {
-            return await callFluxKleinAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-                "klein-large",
-            );
-        } catch (error) {
-            logError("Flux Klein Large generation failed:", error.message);
-            progress.updateBar(requestId, 100, "Error", error.message);
-            throw error;
-        }
-    }
-
-    // api.airforce image models
-    if (
-        safeParams.model === "imagen-4" ||
-        safeParams.model === "grok-imagine"
-    ) {
-        return await callAirforceImageAPI(
-            prompt,
-            safeParams,
-            progress,
-            requestId,
-            safeParams.model,
-        );
-    }
-
-    if (safeParams.model === "flux") {
-        progress.updateBar(
-            requestId,
-            25,
-            "Processing",
-            "Using registered servers",
-        );
-        return await callSelfHostedServer(
-            prompt,
-            safeParams,
-            concurrentRequests,
-        );
-    }
-
-    return await callSelfHostedServer(prompt, safeParams, concurrentRequests);
 };
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js
 
-// TODO: Check if this type is still used and where @voodohop
-// see https://github.com/pollinations/pollinations/issues/3276
-interface NSFWContentSafetyFlags {
-    has_nsfw_concept?: boolean;
-    concept?: {
-        special_scores?: Record<string, number>;
-    };
-}
-
-/**
- * Extracts and normalizes maturity flags from image generation result
- * @param {Object} result - The image generation result
- * @returns {{isMature: boolean, isChild: boolean}}
- */
 const extractMaturityFlags = (
-    result: ImageGenerationResult & NSFWContentSafetyFlags,
+    result: ImageGenerationResult,
 ): ContentSafetyFlags => {
-    const isMature = result?.isMature || result?.has_nsfw_concept;
-    const concept = result?.concept;
+    const r = result as ImageGenerationResult & {
+        has_nsfw_concept?: boolean;
+        concept?: { special_scores?: Record<string, number> };
+    };
+    const isMature = r.isMature || r.has_nsfw_concept;
     const isChild =
-        result?.isChild ||
-        Object.values(concept?.special_scores || {})
+        r.isChild ||
+        Object.values(r.concept?.special_scores || {})
             ?.slice(1)
             .some((score) => score > -0.05);
-
     return { isMature, isChild };
 };
 

@@ -19,13 +19,7 @@ import {
 import { availableModels, findModelByName } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
-import type {
-    ChatCompletion,
-    ChatMessage,
-    RequestData,
-    ServiceError,
-    TransformOptions,
-} from "./types.js";
+import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -197,10 +191,15 @@ function prepareRequestParameters(requestParams: RequestData): RequestData {
 
 // --- Response senders ---
 
-export function sendOpenAIResponse(
-    c: Context,
-    completion: ChatCompletion,
-): Response {
+const ERROR_TYPES: Record<number, string> = {
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    429: "Too Many Requests",
+};
+
+function sendOpenAIResponse(c: Context, completion: ChatCompletion): Response {
     setUsageHeaders(c, completion);
 
     return c.json({
@@ -211,10 +210,7 @@ export function sendOpenAIResponse(
     });
 }
 
-export function sendContentResponse(
-    c: Context,
-    completion: ChatCompletion,
-): Response {
+function sendContentResponse(c: Context, completion: ChatCompletion): Response {
     setUsageHeaders(c, completion);
     c.header("Cache-Control", "public, max-age=31536000, immutable");
 
@@ -258,21 +254,14 @@ export function sendContentResponse(
     return c.text("");
 }
 
-export function sendErrorResponse(
+function sendErrorResponse(
     c: Context,
     error: ServiceError,
     requestData: RequestData | null,
     statusCode = 500,
 ): Response {
     const responseStatus = error.status || statusCode;
-    const errorTypes: Record<number, string> = {
-        400: "Bad Request",
-        401: "Unauthorized",
-        403: "Forbidden",
-        404: "Not Found",
-        429: "Too Many Requests",
-    };
-    const errorType = errorTypes[responseStatus] || "Internal Server Error";
+    const errorType = ERROR_TYPES[responseStatus] || "Internal Server Error";
 
     const errorDetails = error.details || error.response?.data;
     const errorResponse: Record<string, unknown> = {
@@ -380,10 +369,43 @@ async function handleRequest(
             userApiKey: c.req.header("x-user-api-key") || "",
         };
 
-        const completion = await generateTextBasedOnModel(
-            requestData.messages,
-            requestWithUserInfo,
+        log(
+            "Using model: %s, stream: %s",
+            requestWithUserInfo.model,
+            !!requestWithUserInfo.stream,
         );
+
+        let completion: ChatCompletion;
+        try {
+            completion = await generateTextPortkey(
+                requestData.messages,
+                requestWithUserInfo,
+            );
+        } catch (thrown: unknown) {
+            const error = thrown as ServiceError;
+            errorLog(
+                "Generation failed: model=%s provider=%s error=%s",
+                requestWithUserInfo.model,
+                error.provider || "unknown",
+                error.message,
+            );
+
+            if (requestWithUserInfo.stream) {
+                completion = {
+                    error: {
+                        message:
+                            error.message ||
+                            "An error occurred during text generation",
+                        status:
+                            error.status ||
+                            (typeof error.code === "number" ? error.code : 500),
+                        details: parseErrorDetails(error),
+                    },
+                };
+            } else {
+                throw error;
+            }
+        }
 
         completion.id = requestId;
 
@@ -438,52 +460,28 @@ async function handleRequest(
     }
 }
 
-async function generateTextBasedOnModel(
-    messages: ChatMessage[],
-    options: TransformOptions,
-): Promise<ChatCompletion> {
-    log("Using model: %s, stream: %s", options.model, !!options.stream);
-
-    try {
-        return await generateTextPortkey(messages, options);
-    } catch (thrown: unknown) {
-        const error = thrown as ServiceError;
-        errorLog(
-            "Generation failed: model=%s provider=%s error=%s",
-            options.model,
-            error.provider || "unknown",
-            error.message,
-        );
-
-        if (options.stream) {
-            return {
-                error: {
-                    message:
-                        error.message ||
-                        "An error occurred during text generation",
-                    status:
-                        error.status ||
-                        (typeof error.code === "number" ? error.code : 500),
-                    details: parseErrorDetails(error),
-                },
-            };
-        }
-
-        throw error;
-    }
-}
-
 // --- Route handlers ---
+
+function buildAndHandle(
+    c: Context,
+    body: Record<string, unknown> | null,
+    overrides: Partial<RequestData> = {},
+    prepare = false,
+): Promise<Response> | Response {
+    const req = createExpressLikeRequest(c, body);
+    const requestData = { ...getRequestData(req), ...overrides };
+    return handleRequest(
+        c,
+        prepare ? prepareRequestParameters(requestData) : requestData,
+    );
+}
 
 app.post("/", async (c) => {
     const body = await c.req.json();
     if (!body.messages || !Array.isArray(body.messages)) {
         return c.json({ error: "Invalid messages array" }, 400);
     }
-
-    const req = createExpressLikeRequest(c, body);
-    const requestParams = prepareRequestParameters(getRequestData(req));
-    return handleRequest(c, requestParams);
+    return buildAndHandle(c, body, {}, true);
 });
 
 app.get("/openai/models", (c) => {
@@ -497,24 +495,16 @@ app.get("/openai/models", (c) => {
 
 app.post("/openai*", async (c) => {
     const body = await c.req.json().catch(() => ({}));
-    const req = createExpressLikeRequest(c, body);
-    return handleRequest(c, getRequestData(req));
+    return buildAndHandle(c, body);
 });
 
 app.post("/v1/chat/completions", async (c) => {
     const body = await c.req.json().catch(() => ({}));
-    const req = createExpressLikeRequest(c, body);
-    const requestParams = {
-        ...getRequestData(req),
-        isPrivate: true,
-    };
-    return handleRequest(c, requestParams);
+    return buildAndHandle(c, body, { isPrivate: true });
 });
 
 app.get("/*", async (c) => {
-    const req = createExpressLikeRequest(c);
-    const requestParams = prepareRequestParameters(getRequestData(req));
-    return handleRequest(c, requestParams);
+    return buildAndHandle(c, null, {}, true);
 });
 
 export default app;

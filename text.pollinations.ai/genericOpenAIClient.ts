@@ -2,7 +2,6 @@ import debug from "debug";
 import fetch from "node-fetch";
 import { createSseStreamConverter } from "./sseStreamConverter.js";
 import {
-    generateRequestId,
     normalizeOptions,
     validateAndNormalizeMessages,
 } from "./textGenerationUtils.js";
@@ -55,7 +54,7 @@ export async function genericOpenAIClient(
         additionalHeaders = {},
     } = config;
     const startTime = Date.now();
-    const requestId = generateRequestId();
+    const requestId = Math.random().toString(36).substring(7);
 
     log(`[${requestId}] Starting request`, {
         messageCount: messages?.length || 0,

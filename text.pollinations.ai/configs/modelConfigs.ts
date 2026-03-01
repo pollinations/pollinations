@@ -11,7 +11,6 @@ import {
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
-    createScalewayModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -33,18 +32,6 @@ function createVertexGeminiConfig(
         "vertex-region": region,
         "vertex-model-id": modelId,
         "strict-openai-compliance": "false",
-    });
-}
-
-/** Creates a Vertex AI config for Claude models. */
-function createVertexClaudeConfig(modelId: string): PortkeyConfigFactory {
-    return () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": "europe-west1",
-        "vertex-model-id": modelId,
-        "strict-open-ai-compliance": "true",
     });
 }
 
@@ -95,45 +82,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         512,
     ),
 
-    // -- Scaleway -------------------------------------------------------------
-    "qwen2.5-coder-32b-instruct": () =>
-        createScalewayModelConfig({ model: "qwen2.5-coder-32b-instruct" }),
-
     // -- OVHcloud Mistral -----------------------------------------------------
     "mistral-small-3.2-24b-instruct-2506": () =>
         createOVHcloudMistralConfig({
             model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),
-
-    // -- AWS Bedrock ----------------------------------------------------------
-    "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-        }),
-    "us.anthropic.claude-sonnet-4-5-20250929-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        }),
-    "us.anthropic.claude-sonnet-4-6": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-6",
-        }),
-    "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        }),
-    "global.anthropic.claude-opus-4-6-v1": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-6-v1",
-        }),
-
-    // -- Google Vertex AI (Claude) --------------------------------------------
-    "claude-opus-4-5-vertex": createVertexClaudeConfig(
-        "anthropic.claude-opus-4-5@20251101",
-    ),
-    "claude-sonnet-4-6-vertex": createVertexClaudeConfig(
-        "anthropic.claude-sonnet-4-6",
-    ),
 
     // -- Claude Direct Anthropic API ------------------------------------------
     "claude-sonnet-4-6": () =>
@@ -158,8 +111,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- AWS Bedrock (Nova) ---------------------------------------------------
-    "amazon.nova-micro-v1:0": () =>
-        createBedrockNativeConfig({ model: "amazon.nova-micro-v1:0" }),
     "nova-micro-fallback": () => ({
         strategy: { mode: "fallback" },
         targets: [
@@ -199,19 +150,8 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "gemini-2.5-pro": createVertexGeminiConfig("gemini-2.5-pro", "us-central1"),
 
-    // -- Google Vertex AI (Kimi via MaaS) -------------------------------------
-    "kimi-k2-thinking-maas": () => ({
-        provider: "openai",
-        authKey: googleCloudAuth.getAccessToken,
-        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GOOGLE_PROJECT_ID}/locations/global/endpoints/openapi`,
-        "strict-openai-compliance": "false",
-        model: "moonshotai/kimi-k2-thinking-maas",
-    }),
-
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
-    "sonar-reasoning": () =>
-        createPerplexityModelConfig({ model: "sonar-reasoning" }),
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 

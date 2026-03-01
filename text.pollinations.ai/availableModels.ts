@@ -17,21 +17,25 @@ interface ModelDefinition {
     transform?: TransformFn;
 }
 
+const withConversational = createSystemPromptTransform(
+    BASE_PROMPTS.conversational,
+);
+
 const models: ModelDefinition[] = [
     {
         name: "openai",
         config: portkeyConfig["gpt-5-mini"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "openai-fast",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "openai-large",
         config: portkeyConfig["gpt-5.2-2025-12-11"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "qwen-coder",
@@ -41,17 +45,17 @@ const models: ModelDefinition[] = [
     {
         name: "mistral",
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "deepseek",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "grok",
         config: portkeyConfig["myceli-grok-4-fast"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "openai-audio",
@@ -60,28 +64,28 @@ const models: ModelDefinition[] = [
     {
         name: "claude-fast",
         config: portkeyConfig["claude-haiku-4-5"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "claude",
         config: portkeyConfig["claude-sonnet-4-6"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "claude-large",
         config: portkeyConfig["claude-opus-4-6"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "claude-legacy",
         config: portkeyConfig["claude-opus-4-5"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "gemini",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            withConversational,
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
@@ -92,7 +96,7 @@ const models: ModelDefinition[] = [
         name: "gemini-fast",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            withConversational,
             sanitizeToolSchemas(),
             createGeminiThinkingTransform("v2.5"),
         ),
@@ -114,23 +118,23 @@ const models: ModelDefinition[] = [
     {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "perplexity-reasoning",
         config: portkeyConfig["sonar-reasoning-pro"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "kimi",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            withConversational,
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
@@ -141,7 +145,7 @@ const models: ModelDefinition[] = [
         name: "gemini-3-pro-preview",
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            withConversational,
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
@@ -152,7 +156,7 @@ const models: ModelDefinition[] = [
         name: "gemini-legacy",
         config: portkeyConfig["gemini-2.5-pro"],
         transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            withConversational,
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
@@ -162,17 +166,17 @@ const models: ModelDefinition[] = [
     {
         name: "nova-fast",
         config: portkeyConfig["nova-micro-fallback"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "glm",
         config: portkeyConfig["accounts/fireworks/models/glm-5"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: withConversational,
     },
     {
         name: "nomnom",

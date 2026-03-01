@@ -48,26 +48,6 @@ function detectMimeType(url: string, contentType: string | null): string {
     return "image/jpeg";
 }
 
-function buildErrorMessage(
-    status: number,
-    statusText: string,
-    url: string,
-): string {
-    const base = `Failed to fetch image from ${url}: HTTP ${status} ${statusText || "Unknown error"}`;
-
-    switch (status) {
-        case 401:
-        case 403:
-            return `${base}. The image requires authentication or is forbidden. Please use a publicly accessible image URL.`;
-        case 404:
-            return `${base}. The image was not found. Please check the URL is correct.`;
-        case 429:
-            return `${base}. The image server is rate limiting requests. Please try a different image source or wait before retrying.`;
-        default:
-            return base;
-    }
-}
-
 async function fetchImageAsBase64(url: string): Promise<string> {
     try {
         log(`Fetching image: ${url}`);
@@ -77,11 +57,25 @@ async function fetchImageAsBase64(url: string): Promise<string> {
         });
 
         if (!response.ok) {
-            throw new ImageFetchError(
-                buildErrorMessage(response.status, response.statusText, url),
-                response.status,
-                url,
-            );
+            const base = `Failed to fetch image from ${url}: HTTP ${response.status} ${response.statusText || "Unknown error"}`;
+            let errorMessage: string;
+
+            switch (response.status) {
+                case 401:
+                case 403:
+                    errorMessage = `${base}. The image requires authentication or is forbidden. Please use a publicly accessible image URL.`;
+                    break;
+                case 404:
+                    errorMessage = `${base}. The image was not found. Please check the URL is correct.`;
+                    break;
+                case 429:
+                    errorMessage = `${base}. The image server is rate limiting requests. Please try a different image source or wait before retrying.`;
+                    break;
+                default:
+                    errorMessage = base;
+            }
+
+            throw new ImageFetchError(errorMessage, response.status, url);
         }
 
         const contentType = response.headers.get("content-type");

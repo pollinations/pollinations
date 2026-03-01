@@ -3,8 +3,6 @@ import debug from "debug";
 const log = debug("pollinations:portkey-utils");
 const errorLog = debug("pollinations:portkey-utils:error");
 
-const DEFAULT_API_VERSION = "2024-08-01-preview";
-
 interface PortkeyTarget {
     authKey?: string | (() => string | Promise<string>);
     defaultOptions?: Record<string, unknown>;
@@ -23,47 +21,6 @@ interface PortkeyConfig {
 interface RequestOptions {
     userApiKey?: string;
     [key: string]: unknown;
-}
-
-export function extractResourceName(
-    endpoint: string | null | undefined,
-): string | null {
-    if (endpoint == null) return null;
-    log("Extracting resource name from endpoint:", endpoint);
-
-    const match = endpoint.match(
-        /https:\/\/([^.]+)\.(?:openai|cognitiveservices)\.azure\.com/,
-    );
-    const result = match?.[1] ?? null;
-    log("Extracted resource name:", result);
-
-    if (!result || result === "undefined") {
-        log("Using default resource name: pollinations");
-        return "pollinations";
-    }
-    return result;
-}
-
-export function extractDeploymentName(
-    endpoint: string | null | undefined,
-): string | null {
-    if (!endpoint) return null;
-    log("Extracting deployment name from endpoint:", endpoint);
-
-    const match = endpoint.match(/\/deployments\/([^/]+)/);
-    log("Extracted deployment name:", match?.[1] ?? null);
-    return match?.[1] ?? null;
-}
-
-export function extractApiVersion(endpoint: string | null | undefined): string {
-    if (!endpoint) return process.env.OPENAI_API_VERSION || DEFAULT_API_VERSION;
-    log("Extracting API version from endpoint:", endpoint);
-
-    const match = endpoint.match(/api-version=([^&]+)/);
-    const version =
-        match?.[1] ?? process.env.OPENAI_API_VERSION ?? DEFAULT_API_VERSION;
-    log("Extracted API version:", version);
-    return version;
 }
 
 async function resolveAuthKey(

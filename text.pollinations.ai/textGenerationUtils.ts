@@ -96,7 +96,3 @@ export function normalizeOptions(
 
     return normalized;
 }
-
-export function generateRequestId(): string {
-    return Math.random().toString(36).substring(7);
-}

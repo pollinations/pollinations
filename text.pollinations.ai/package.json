@@ -20,10 +20,8 @@
     "type": "module",
     "dependencies": {
         "@hono/node-server": "^1.19.9",
-        "axios": "^1.7.7",
         "debug": "^4.4.1",
         "dotenv": "^16.0.3",
-        "eventsource-parser": "^3.0.2",
         "hono": "^4.11.4",
         "jsonwebtoken": "^9.0.2",
         "node-fetch": "^3.3.2",

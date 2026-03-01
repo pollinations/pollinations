@@ -189,14 +189,15 @@ function buildRequestBody(
             requestBody.size = size;
         }
 
-        // Support image-to-video: pass reference image URL if provided
-        const imageUrl = Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image;
-        if (imageUrl) {
-            requestBody.image = imageUrl;
+        // Support image-to-video: pass reference image URLs if provided
+        // airforce expects "image_urls" as an array of URLs
+        if (safeParams.image && safeParams.image.length > 0) {
+            requestBody.image_urls = safeParams.image;
         }
-    } else if (airforceModel === "imagen-4") {
+    } else if (
+        airforceModel === "imagen-4" ||
+        airforceModel === "grok-imagine"
+    ) {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
     } else if (safeParams.width && safeParams.height) {

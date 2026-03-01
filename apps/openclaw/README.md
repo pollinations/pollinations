@@ -74,21 +74,21 @@ If you prefer to edit `~/.openclaw/openclaw.json` directly:
             "name": "Kimi K2.5",
             "reasoning": true,
             "input": ["text", "image"],
-            "contextWindow": 256000,
+            "contextLength": 256000,
             "maxTokens": 8192
           },
           {
             "id": "deepseek",
             "name": "DeepSeek V3.2",
             "input": ["text"],
-            "contextWindow": 128000,
+            "contextLength": 128000,
             "maxTokens": 8192
           },
           {
             "id": "glm",
             "name": "GLM-4.7",
             "input": ["text"],
-            "contextWindow": 128000,
+            "contextLength": 128000,
             "maxTokens": 8192
           }
         ]

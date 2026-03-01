@@ -23,7 +23,7 @@ export const ModelInfoSchema = z.object({
     output_modalities: z.array(z.string()).optional(),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
-    context_window: z.number().optional(),
+    context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
     paid_only: z.boolean().optional(),
@@ -43,7 +43,8 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
     }
     // Filter out date, zero, and undefined values from price definition
     const { date: _date, ...priceFields } = priceDefinition;
-    const pricing: Record<string, number | "pollen"> = { currency: "pollen" };
+    const pricing: Record<string, number | "pollen"> & { currency: "pollen" } =
+        { currency: "pollen" };
     for (const [key, value] of Object.entries(priceFields)) {
         if (typeof value === "number" && value > 0) {
             pricing[key] = value;
@@ -60,7 +61,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
         output_modalities: service.outputModalities,
         tools: service.tools,
         reasoning: service.reasoning,
-        context_window: service.contextWindow,
+        context_length: service.contextLength,
         voices: service.voices,
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,

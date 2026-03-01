@@ -497,7 +497,7 @@ export const CreateChatCompletionResponseSchema = z.object({
     model: z.string(),
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
-    usage: CompletionUsageSchema,
+    usage: CompletionUsageSchema.optional(),
     user_tier: UserTierSchema.optional(),
     citations: z.array(z.string()).optional(), // Perplexity citations
 });

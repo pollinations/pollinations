@@ -1,0 +1,36 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/prompt/a%20cat%20on%20a%20rainbow?model=nanobanana-2&width=512&height=512&seed=42",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 400,
+    "statusText": "Bad Request",
+    "headers": {
+      "access-control-allow-headers": "Content-Type",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "Content-Length",
+      "connection": "keep-alive",
+      "content-type": "application/json",
+      "date": "Fri, 27 Feb 2026 18:44:02 GMT",
+      "keep-alive": "timeout=5",
+      "transfer-encoding": "chunked",
+      "x-error-type": "Bad Request"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "{\"error\":\"Bad Request\",\"message\":\"Invalid parameters: Invalid option: expected one of \\\"kontext\\\"|\\\"seedream\\\"|\\\"seedream-pro\\\"|\\\"nanobanana\\\"|\\\"nanobanana-pro\\\"|\\\"gptimage\\\"|\\\"gptimage-large\\\"|\\\"veo\\\"|\\\"seedance\\\"|\\\"seedance-pro\\\"|\\\"wan\\\"|\\\"zimage\\\"|\\\"flux\\\"|\\\"klein\\\"|\\\"klein-large\\\"|\\\"imagen-4\\\"|\\\"grok-imagine\\\"|\\\"grok-video\\\"|\\\"ltx-2\\\"\",\"details\":[{\"code\":\"invalid_value\",\"values\":[\"kontext\",\"seedream\",\"seedream-pro\",\"nanobanana\",\"nanobanana-pro\",\"gptimage\",\"gptimage-large\",\"veo\",\"seedance\",\"seedance-pro\",\"wan\",\"zimage\",\"flux\",\"klein\",\"klein-large\",\"imagen-4\",\"grok-imagine\",\"grok-video\",\"ltx-2\"],\"path\":[\"model\"],\"message\":\"Invalid option: expected one of \\\"kontext\\\"|\\\"seedream\\\"|\\\"seedream-pro\\\"|\\\"nanobanana\\\"|\\\"nanobanana-pro\\\"|\\\"gptimage\\\"|\\\"gptimage-large\\\"|\\\"veo\\\"|\\\"seedance\\\"|\\\"seedance-pro\\\"|\\\"wan\\\"|\\\"zimage\\\"|\\\"flux\\\"|\\\"klein\\\"|\\\"klein-large\\\"|\\\"imagen-4\\\"|\\\"grok-imagine\\\"|\\\"grok-video\\\"|\\\"ltx-2\\\"\"}],\"timingInfo\":[],\"requestId\":\"75kmth\",\"requestParameters\":{\"prompt\":\"a cat on a rainbow\"},\"queueInfo\":null}",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

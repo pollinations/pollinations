@@ -18,6 +18,20 @@ import {
 const logError = debug("pollinations:error");
 const logCloudflare = debug("pollinations:cloudflare");
 
+function withTimeout<T>(
+    promise: Promise<T>,
+    ms: number,
+    label: string,
+): Promise<T> {
+    const timeout = new Promise<never>((_, reject) => {
+        setTimeout(
+            () => reject(new Error(`${label} timeout after ${ms / 1000}s`)),
+            ms,
+        );
+    });
+    return Promise.race([promise, timeout]);
+}
+
 /**
  * Calls the Azure Flux Kontext API to generate or edit images
  * Supports both text-to-image generation and image-to-image editing
@@ -54,22 +68,11 @@ export async function callAzureFluxKontext(
 
     // Check prompt safety with Azure Content Safety (with 30s timeout)
     logCloudflare("Checking prompt safety...");
-    const SAFETY_CHECK_TIMEOUT_MS = 30000; // 30 seconds
-    const safetyCheckPromise = analyzeTextSafety(prompt);
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-            reject(
-                new Error(
-                    `Azure Content Safety check timeout after ${SAFETY_CHECK_TIMEOUT_MS / 1000}s`,
-                ),
-            );
-        }, SAFETY_CHECK_TIMEOUT_MS);
-    });
-
-    const promptSafetyResult = await Promise.race([
-        safetyCheckPromise,
-        timeoutPromise,
-    ]);
+    const promptSafetyResult = await withTimeout(
+        analyzeTextSafety(prompt),
+        30000,
+        "Azure Content Safety check",
+    );
 
     // Log the prompt with safety analysis results
     await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
@@ -140,22 +143,11 @@ export async function callAzureFluxKontext(
 
             // Check safety of input image (with 30s timeout)
             logCloudflare("Checking safety of input image");
-            const IMAGE_SAFETY_TIMEOUT_MS = 30000; // 30 seconds
-            const imageSafetyCheckPromise = analyzeImageSafety(buffer);
-            const imageTimeoutPromise = new Promise<never>((_, reject) => {
-                setTimeout(() => {
-                    reject(
-                        new Error(
-                            `Azure Image Safety check timeout after ${IMAGE_SAFETY_TIMEOUT_MS / 1000}s`,
-                        ),
-                    );
-                }, IMAGE_SAFETY_TIMEOUT_MS);
-            });
-
-            const imageSafetyResult = await Promise.race([
-                imageSafetyCheckPromise,
-                imageTimeoutPromise,
-            ]);
+            const imageSafetyResult = await withTimeout(
+                analyzeImageSafety(buffer),
+                30000,
+                "Azure Image Safety check",
+            );
 
             if (!imageSafetyResult.safe) {
                 const errorMessage = `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`;

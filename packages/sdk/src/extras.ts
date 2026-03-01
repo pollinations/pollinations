@@ -1,13 +1,13 @@
+import { Pollinations } from "./client.js";
 import type {
-    ImageGenerateOptions,
-    ImageResponse,
-    VideoGenerateOptions,
-    VideoResponse,
     ChatOptions,
     ChatResponse,
+    ImageGenerateOptions,
+    ImageResponse,
     Message,
+    VideoGenerateOptions,
+    VideoResponse,
 } from "./types.js";
-import { Pollinations } from "./client.js";
 
 export interface ImageResponseExt extends ImageResponse {
     /** Save image to file (Node.js only) */
@@ -164,6 +164,38 @@ export interface BatchResult<T> {
     error?: Error;
 }
 
+/** Generate multiple media items from different prompts in parallel */
+async function generateBatch<TOptions, TResult>(
+    prompts: string[],
+    generate: (prompt: string, options?: TOptions) => Promise<TResult>,
+    options?: TOptions,
+): Promise<BatchResult<TResult>[]> {
+    const results = await Promise.allSettled(
+        prompts.map(async (prompt) => ({
+            prompt,
+            result: await generate(prompt, options),
+        })),
+    );
+
+    return results.map((settlement, index) => {
+        if (settlement.status === "fulfilled") {
+            return {
+                success: true,
+                prompt: settlement.value.prompt,
+                result: settlement.value.result,
+            };
+        }
+        return {
+            success: false,
+            prompt: prompts[index],
+            error:
+                settlement.reason instanceof Error
+                    ? settlement.reason
+                    : new Error(String(settlement.reason)),
+        };
+    });
+}
+
 /**
  * Generate multiple images from different prompts in parallel
  * Handles partial failures gracefully with detailed error info
@@ -186,32 +218,11 @@ export async function generateImages(
     client?: Pollinations,
 ): Promise<BatchResult<ImageResponseExt>[]> {
     const c = client || new Pollinations();
-
-    const results = await Promise.allSettled(
-        prompts.map(async (prompt) => ({
-            prompt,
-            result: wrapImageResponse(await c.image(prompt, options)),
-        })),
+    return generateBatch(
+        prompts,
+        (prompt, opts) => c.image(prompt, opts).then(wrapImageResponse),
+        options,
     );
-
-    return results.map((settlement, index) => {
-        if (settlement.status === "fulfilled") {
-            return {
-                success: true,
-                prompt: settlement.value.prompt,
-                result: settlement.value.result,
-            };
-        } else {
-            return {
-                success: false,
-                prompt: prompts[index],
-                error:
-                    settlement.reason instanceof Error
-                        ? settlement.reason
-                        : new Error(String(settlement.reason)),
-            };
-        }
-    });
 }
 
 /**
@@ -224,32 +235,11 @@ export async function generateVideos(
     client?: Pollinations,
 ): Promise<BatchResult<VideoResponseExt>[]> {
     const c = client || new Pollinations();
-
-    const results = await Promise.allSettled(
-        prompts.map(async (prompt) => ({
-            prompt,
-            result: wrapVideoResponse(await c.video(prompt, options)),
-        })),
+    return generateBatch(
+        prompts,
+        (prompt, opts) => c.video(prompt, opts).then(wrapVideoResponse),
+        options,
     );
-
-    return results.map((settlement, index) => {
-        if (settlement.status === "fulfilled") {
-            return {
-                success: true,
-                prompt: settlement.value.prompt,
-                result: settlement.value.result,
-            };
-        } else {
-            return {
-                success: false,
-                prompt: prompts[index],
-                error:
-                    settlement.reason instanceof Error
-                        ? settlement.reason
-                        : new Error(String(settlement.reason)),
-            };
-        }
-    });
 }
 
 // ============================================================================
@@ -452,55 +442,6 @@ export function displayImage(
 
     target.appendChild(img);
     return img;
-}
-
-// ============================================================================
-// Token Estimation (with disclaimers)
-// ============================================================================
-
-/**
- * Rough token estimation for planning purposes only.
- * This is a very approximate estimate (~4 chars per token for English text).
- *
- * **IMPORTANT**: Actual tokenization varies significantly by model and language.
- * Use this only for rough capacity planning, not for precise billing calculations.
- * For production billing, use actual token counts from API responses.
- *
- * @deprecated Consider using the `tokens` property on ChatResponseExt for actual counts
- */
-export function estimateTokens(text: string): number {
-    // Rough heuristic: ~4 characters per token for English
-    // Highly inaccurate for code, non-Latin scripts, etc.
-    return Math.ceil(text.length / 4);
-}
-
-/**
- * Estimate tokens for a message array (rough approximation)
- *
- * **IMPORTANT**: This is a very rough estimate. Actual token counts depend on model,
- * formatting, and tokenization algorithm. Use only for planning.
- *
- * @deprecated Use actual token counts from ChatResponseExt.tokens instead
- */
-export function estimateMessageTokens(messages: Message[]): {
-    estimated: number;
-    breakdown: { role: string; tokens: number }[];
-} {
-    const breakdown = messages.map((msg) => {
-        const content =
-            typeof msg.content === "string"
-                ? msg.content
-                : JSON.stringify(msg.content);
-        return {
-            role: msg.role,
-            tokens: estimateTokens(content) + 4, // +4 for role/formatting overhead
-        };
-    });
-
-    return {
-        estimated: breakdown.reduce((sum, b) => sum + b.tokens, 0) + 3, // +3 for message framing
-        breakdown,
-    };
 }
 
 // ============================================================================

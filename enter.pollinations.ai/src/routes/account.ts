@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
+import type { Logger } from "@logtape/logtape";
 import { z } from "zod";
 import {
     apikey as apikeyTable,
@@ -10,6 +11,9 @@ import {
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
 import { tierNames } from "@/tier-config.ts";
+import type { Env } from "../env.ts";
+import { auth } from "../middleware/auth.ts";
+import { validator } from "../middleware/validator.ts";
 
 // Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
 function getNextRefillAt(): string {
@@ -20,12 +24,44 @@ function getNextRefillAt(): string {
     return tomorrow.toISOString();
 }
 
-import type { Env } from "../env.ts";
-import { auth } from "../middleware/auth.ts";
-import { validator } from "../middleware/validator.ts";
-
 // Cache TTL in seconds
 const CACHE_TTL = 60 * 60; // 1 hour
+
+/**
+ * Fetch data from a Tinybird pipe endpoint.
+ * Builds the URL from the ingest origin, sets query params, and handles errors.
+ */
+async function fetchTinybird<T>(
+    env: Env["Bindings"],
+    pipe: string,
+    params: Record<string, string>,
+    log: Logger,
+): Promise<T> {
+    const tinybirdOrigin = new URL(env.TINYBIRD_INGEST_URL).origin;
+    const url = new URL(`/v0/pipes/${pipe}.json`, tinybirdOrigin);
+    for (const [k, v] of Object.entries(params)) {
+        url.searchParams.set(k, v);
+    }
+
+    log.debug("Querying Tinybird: {url}", { url: url.toString() });
+
+    const response = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${env.TINYBIRD_READ_TOKEN}` },
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        log.error(
+            "Tinybird error: url={url} status={status} error={error}",
+            { url: url.toString(), status: response.status, error: errorText },
+        );
+        throw new Error(
+            `Tinybird error: ${response.status} - ${errorText}`,
+        );
+    }
+
+    return (await response.json()) as T;
+}
 
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
@@ -345,73 +381,40 @@ export const accountRoutes = new Hono<Env>()
                 },
             );
 
-            // Build Tinybird API URL from ingest URL origin
-            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdUrl = new URL(
-                "/v0/pipes/user_usage.json",
-                tinybirdOrigin,
-            );
-            tinybirdUrl.searchParams.set("user_id", user.id);
-            tinybirdUrl.searchParams.set("limit", limit.toString());
-            if (before) {
-                tinybirdUrl.searchParams.set("before", before);
-            }
-
-            log.debug("Querying Tinybird: {url}", {
-                url: tinybirdUrl.toString(),
-            });
-
             try {
-                const response = await fetch(tinybirdUrl.toString(), {
-                    headers: {
-                        Authorization: `Bearer ${c.env.TINYBIRD_READ_TOKEN}`,
-                    },
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    log.error(
-                        "Tinybird error: url={url} status={status} error={error}",
-                        {
-                            url: tinybirdUrl.toString(),
-                            status: response.status,
-                            error: errorText,
-                        },
-                    );
-
-                    const status = response.status >= 500 ? 503 : 500;
-                    return c.json(
-                        {
-                            error: "Failed to fetch usage data",
-                            details:
-                                response.status === 401
-                                    ? "Unauthorized"
-                                    : "Service Unavailable",
-                        },
-                        status,
-                    );
+                const params: Record<string, string> = {
+                    user_id: user.id,
+                    limit: limit.toString(),
+                };
+                if (before) {
+                    params.before = before;
                 }
 
-                const data = (await response.json()) as {
-                    data: Array<{
-                        timestamp: string;
-                        type: string;
-                        model: string | null;
-                        api_key: string | null;
-                        api_key_type: string | null;
-                        meter_source: string | null;
-                        input_text_tokens: number;
-                        input_cached_tokens: number;
-                        input_audio_tokens: number;
-                        input_image_tokens: number;
-                        output_text_tokens: number;
-                        output_reasoning_tokens: number;
-                        output_audio_tokens: number;
-                        output_image_tokens: number;
-                        cost_usd: number;
-                        response_time_ms: number | null;
-                    }>;
+                type UsageRecord = {
+                    timestamp: string;
+                    type: string;
+                    model: string | null;
+                    api_key: string | null;
+                    api_key_type: string | null;
+                    meter_source: string | null;
+                    input_text_tokens: number;
+                    input_cached_tokens: number;
+                    input_audio_tokens: number;
+                    input_image_tokens: number;
+                    output_text_tokens: number;
+                    output_reasoning_tokens: number;
+                    output_audio_tokens: number;
+                    output_image_tokens: number;
+                    cost_usd: number;
+                    response_time_ms: number | null;
                 };
+
+                const data = await fetchTinybird<{ data: UsageRecord[] }>(
+                    c.env,
+                    "user_usage",
+                    params,
+                    log,
+                );
 
                 const usage = data.data;
 
@@ -488,8 +491,6 @@ export const accountRoutes = new Hono<Env>()
             }
 
             const userId = user.id;
-            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
             const kv = c.env.KV;
             const cacheKey = `usage:daily:${userId}`;
 
@@ -513,26 +514,12 @@ export const accountRoutes = new Hono<Env>()
                     );
                     const since = `${ninetyDaysAgo.toISOString().split("T")[0]} 00:00:00`;
 
-                    const url = new URL(
-                        "/v0/pipes/user_usage_daily.json",
-                        tinybirdOrigin,
+                    const data = await fetchTinybird<{ data: DailyUsageRecord[] }>(
+                        c.env,
+                        "user_usage_daily",
+                        { user_id: userId, since },
+                        log,
                     );
-                    url.searchParams.set("user_id", userId);
-                    url.searchParams.set("since", since);
-
-                    const response = await fetch(url.toString(), {
-                        headers: {
-                            Authorization: `Bearer ${tinybirdToken}`,
-                        },
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Tinybird error: ${response.status}`);
-                    }
-
-                    const data = (await response.json()) as {
-                        data: DailyUsageRecord[];
-                    };
                     usage = data.data;
 
                     try {

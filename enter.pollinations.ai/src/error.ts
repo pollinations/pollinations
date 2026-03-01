@@ -79,13 +79,6 @@ export const GenericErrorResponseSchema = z.object({
     }),
 });
 
-const ErrorResponseSchema = z.discriminatedUnion("status", [
-    createErrorResponseSchema(400),
-    GenericErrorResponseSchema,
-]);
-
-type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
-
 export const handleError: ErrorHandler<Env> = async (err, c) => {
     const log = c.get("log");
     const timestamp = new Date().toISOString();
@@ -140,7 +133,7 @@ function createErrorResponse(
     status: ContentfulStatusCode,
     timestamp: string,
     details?: any,
-): ErrorResponse {
+) {
     return {
         success: false,
         error: {
@@ -158,7 +151,7 @@ function createValidationErrorResponse(
     error: ValidationError,
     status: ContentfulStatusCode,
     timestamp: string,
-): ErrorResponse {
+) {
     const flatErrors = z.flattenError(error.zodError);
     return createErrorResponse(error, status, timestamp, {
         name: error.name,
@@ -170,7 +163,7 @@ function createInternalErrorResponse(
     error: Error,
     status: ContentfulStatusCode,
     timestamp: string,
-): ErrorResponse {
+) {
     return createErrorResponse(error, status, timestamp, {
         name: error.name,
         stack: error.stack,
@@ -186,22 +179,23 @@ export function remapUpstreamStatus(status: number): ContentfulStatusCode {
     return status as ContentfulStatusCode;
 }
 
+const ERROR_CODES: Record<number, string> = {
+    400: "BAD_REQUEST",
+    401: "UNAUTHORIZED",
+    402: "PAYMENT_REQUIRED",
+    403: "FORBIDDEN",
+    404: "NOT_FOUND",
+    405: "METHOD_NOT_ALLOWED",
+    409: "CONFLICT",
+    422: "UNPROCESSABLE_ENTITY",
+    429: "RATE_LIMITED",
+    500: "INTERNAL_ERROR",
+    502: "BAD_GATEWAY",
+    503: "SERVICE_UNAVAILABLE",
+};
+
 export function getErrorCode(status: number): string {
-    const codes: Record<number, string> = {
-        400: "BAD_REQUEST",
-        401: "UNAUTHORIZED",
-        402: "PAYMENT_REQUIRED",
-        403: "FORBIDDEN",
-        404: "NOT_FOUND",
-        405: "METHOD_NOT_ALLOWED",
-        409: "CONFLICT",
-        422: "UNPROCESSABLE_ENTITY",
-        429: "RATE_LIMITED",
-        500: "INTERNAL_ERROR",
-        502: "BAD_GATEWAY",
-        503: "SERVICE_UNAVAILABLE",
-    };
-    return codes[status] || "UNKNOWN_ERROR";
+    return ERROR_CODES[status] || "UNKNOWN_ERROR";
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
@@ -210,20 +204,21 @@ export const KNOWN_ERROR_STATUS_CODES = [
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
 
+const ERROR_MESSAGES: Record<number, string> = {
+    400: "Something was wrong with the input data, check the details for more info.",
+    401: "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
+    402: "Insufficient pollen balance or API key budget exhausted.",
+    403: "Access denied! You don't have the required permissions for this resource or model.",
+    404: "Oh no, there's nothing here.",
+    405: "That HTTP method isn't supported here. Please check the API docs.",
+    409: "Something with these details already exists. Maybe update it instead?",
+    422: "Your request looks good, but some required fields are missing or invalid.",
+    429: "You're making requests too quickly. Please slow down a bit.",
+    500: "Oh snap, something went wrong on our end. We're on it!",
+    502: "We couldn't reach our backend services. Please try again shortly.",
+    503: "We're temporarily down for maintenance. Sorry about that!",
+};
+
 export function getDefaultErrorMessage(status: number): string {
-    const messages: Record<number, string> = {
-        400: "Something was wrong with the input data, check the details for more info.",
-        401: "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
-        402: "Insufficient pollen balance or API key budget exhausted.",
-        403: "Access denied! You don't have the required permissions for this resource or model.",
-        404: "Oh no, there's nothing here.",
-        405: "That HTTP method isn't supported here. Please check the API docs.",
-        409: "Something with these details already exists. Maybe update it instead?",
-        422: "Your request looks good, but some required fields are missing or invalid.",
-        429: "You're making requests too quickly. Please slow down a bit.",
-        500: "Oh snap, something went wrong on our end. We're on it!",
-        502: "We couldn't reach our backend services. Please try again shortly.",
-        503: "We're temporarily down for maintenance. Sorry about that!",
-    };
-    return messages[status] || "UNKNOWN_ERROR";
+    return ERROR_MESSAGES[status] || "UNKNOWN_ERROR";
 }

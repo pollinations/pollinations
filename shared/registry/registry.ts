@@ -1,4 +1,4 @@
-import { safeRound } from "../utils";
+import { safeRound } from "../../enter.pollinations.ai/src/util";
 import {
     AUDIO_SERVICES,
     type AudioModelId,
@@ -12,6 +12,13 @@ import {
 import { TEXT_SERVICES, type TextModelId, type TextServiceId } from "./text";
 
 const PRECISION = 8;
+
+export const eventTypeValues = [
+    "generate.text",
+    "generate.image",
+    "generate.audio",
+] as const;
+export type EventType = (typeof eventTypeValues)[number];
 
 export type UsageType =
     | "promptTextTokens"
@@ -161,29 +168,6 @@ export function resolveServiceId(serviceId: string): ServiceId {
 }
 
 /**
- * Check if a model ID exists in the registry
- */
-export function isValidModel(modelId: ModelId): modelId is ModelId {
-    return !!MODEL_REGISTRY[modelId.toLowerCase()];
-}
-
-/**
- * Check if a service ID exists in the registry
- */
-export function isValidService(
-    serviceId: ServiceId | string,
-): serviceId is ServiceId {
-    return !!SERVICE_REGISTRY[serviceId];
-}
-
-/**
- * Get all service IDs
- */
-export function getServices(): ServiceId[] {
-    return Object.keys(SERVICE_REGISTRY) as ServiceId[];
-}
-
-/**
  * Get text service IDs
  */
 export function getTextServices(): ServiceId[] {
@@ -223,26 +207,9 @@ export function getServiceDefinition(
 }
 
 /**
- * Get aliases for a service
- */
-export function getServiceAliases(serviceId: ServiceId): readonly string[] {
-    const service = SERVICE_REGISTRY[serviceId];
-    return service?.aliases || [];
-}
-
-/**
- * Get model definition by ID
- */
-export function getModelDefinition(
-    modelId: string,
-): ModelDefinition | undefined {
-    return MODEL_REGISTRY[modelId.toLowerCase() as ModelId];
-}
-
-/**
  * Get active cost definition for a model
  */
-export function getActiveCostDefinition(
+function getActiveCostDefinition(
     modelId: ModelId,
     date: Date = new Date(),
 ): CostDefinition | null {

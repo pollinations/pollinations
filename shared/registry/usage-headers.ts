@@ -87,6 +87,12 @@ export function buildUsageHeaders(
     return headers;
 }
 
+const FLOAT_USAGE_TYPES: Set<string> = new Set([
+    "promptAudioSeconds",
+    "completionAudioSeconds",
+    "completionVideoSeconds",
+]);
+
 /**
  * Parse usage headers back to Usage object
  */
@@ -97,12 +103,6 @@ export function parseUsageHeaders(
 
     const getHeader = (name: string) =>
         headers instanceof Headers ? headers.get(name) : headers[name];
-
-    const FLOAT_USAGE_TYPES: Set<string> = new Set([
-        "promptAudioSeconds",
-        "completionAudioSeconds",
-        "completionVideoSeconds",
-    ]);
 
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = getHeader(headerName);

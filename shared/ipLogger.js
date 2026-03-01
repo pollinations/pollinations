@@ -26,9 +26,3 @@ export function logIp(ip, service, context = "") {
     }
 }
 
-/**
- * Get the log file path
- */
-export function getLogFilePath() {
-    return LOG_FILE;
-}

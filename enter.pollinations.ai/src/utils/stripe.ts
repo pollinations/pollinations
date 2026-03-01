@@ -8,19 +8,3 @@ export const createStripeClient = (env: CloudflareBindings): Stripe => {
         apiVersion: "2025-12-15.clover",
     });
 };
-
-/**
- * Verify Stripe webhook signature
- */
-export const verifyWebhookSignature = async (
-    stripe: Stripe,
-    payload: string,
-    signature: string,
-    webhookSecret: string,
-): Promise<Stripe.Event> => {
-    return stripe.webhooks.constructEventAsync(
-        payload,
-        signature,
-        webhookSecret,
-    );
-};

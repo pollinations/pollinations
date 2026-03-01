@@ -26,7 +26,7 @@ import type {
     ApiKeyType,
     EventType,
     GenerationEventContentFilterParams,
-    InsertGenerationEvent,
+    TinybirdEvent,
 } from "@/db/schema/event.ts";
 import {
     contentFilterResultsToEventParams,
@@ -413,7 +413,7 @@ function createTrackingEvent({
     requestTracking,
     responseTracking,
     errorTracking,
-}: TrackingEventInput): InsertGenerationEvent {
+}: TrackingEventInput): TinybirdEvent {
     return {
         id,
         requestId,
@@ -647,56 +647,63 @@ function safeUrl(url: string): URL | null {
     }
 }
 
-// biome-ignore format: custom formatting
+// Content filter header definitions: [headerKey, camelCaseProp, zodSchema]
+const contentFilterHeaderDefs = [
+    // Prompt severity categories
+    ...["hate", "self-harm", "sexual", "violence"].map(
+        (cat) =>
+            [
+                `x-moderation-prompt-${cat}-severity`,
+                `moderationPrompt${kebabToPascal(cat)}Severity`,
+                ContentFilterSeveritySchema.optional().catch(undefined),
+            ] as const,
+    ),
+    // Prompt boolean detection
+    [
+        "x-moderation-prompt-jailbreak-detected",
+        "moderationPromptJailbreakDetected",
+        z.boolean().optional().catch(undefined),
+    ] as const,
+    // Completion severity categories
+    ...["hate", "self-harm", "sexual", "violence"].map(
+        (cat) =>
+            [
+                `x-moderation-completion-${cat}-severity`,
+                `moderationCompletion${kebabToPascal(cat)}Severity`,
+                ContentFilterSeveritySchema.optional().catch(undefined),
+            ] as const,
+    ),
+    // Completion boolean detection
+    ...["protected-material-text", "protected-material-code"].map(
+        (cat) =>
+            [
+                `x-moderation-completion-${cat}-detected`,
+                `moderationCompletion${kebabToPascal(cat)}Detected`,
+                z.boolean().optional().catch(undefined),
+            ] as const,
+    ),
+] as const;
+
+function kebabToPascal(s: string): string {
+    return s.replace(/(^|-)([a-z])/g, (_, _sep, ch) => ch.toUpperCase());
+}
+
 const ContentFilterResultHeadersSchema = z
-    .object({
-        "x-moderation-prompt-hate-severity": 
-            ContentFilterSeveritySchema.optional().catch(undefined),
-        "x-moderation-prompt-self-harm-severity": 
-            ContentFilterSeveritySchema.optional().catch(undefined),
-        "x-moderation-prompt-sexual-severity": 
-            ContentFilterSeveritySchema.optional().catch(undefined),
-        "x-moderation-prompt-violence-severity": 
-            ContentFilterSeveritySchema.optional().catch(undefined),
-        "x-moderation-prompt-jailbreak-detected": 
-            z.boolean().optional().catch(undefined),
-        "x-moderation-completion-hate-severity": 
-            ContentFilterSeveritySchema.optional().catch(undefined),
-        "x-moderation-completion-self-harm-severity":
-            ContentFilterSeveritySchema.optional().catch(undefined),
-        "x-moderation-completion-sexual-severity": 
-            ContentFilterSeveritySchema.optional().catch(undefined),
-        "x-moderation-completion-violence-severity":
-            ContentFilterSeveritySchema.optional().catch(undefined),
-        "x-moderation-completion-protected-material-text-detected": 
-            z.boolean().optional().catch(undefined),
-        "x-moderation-completion-protected-material-code-detected": 
-            z.boolean().optional().catch(undefined),
-    })
-    .transform((headers) => removeUnset({
-        moderationPromptHateSeverity:
-            headers["x-moderation-prompt-hate-severity"],
-        moderationPromptSelfHarmSeverity:
-            headers["x-moderation-prompt-self-harm-severity"],
-        moderationPromptSexualSeverity:
-            headers["x-moderation-prompt-sexual-severity"],
-        moderationPromptViolenceSeverity:
-            headers["x-moderation-prompt-violence-severity"],
-        moderationPromptJailbreakDetected:
-            headers["x-moderation-prompt-jailbreak-detected"],
-        moderationCompletionHateSeverity:
-            headers["x-moderation-completion-hate-severity"],
-        moderationCompletionSelfHarmSeverity:
-            headers["x-moderation-completion-self-harm-severity"],
-        moderationCompletionSexualSeverity:
-            headers["x-moderation-completion-sexual-severity"],
-        moderationCompletionViolenceSeverity:
-            headers["x-moderation-completion-violence-severity"],
-        moderationCompletionProtectedMaterialTextDetected:
-            headers["x-moderation-completion-protected-material-text-detected"],
-        moderationCompletionProtectedMaterialCodeDetected:
-            headers["x-moderation-completion-protected-material-code-detected"],
-    }));
+    .object(
+        Object.fromEntries(
+            contentFilterHeaderDefs.map(([key, , schema]) => [key, schema]),
+        ),
+    )
+    .transform((headers) =>
+        removeUnset(
+            Object.fromEntries(
+                contentFilterHeaderDefs.map(([key, prop]) => [
+                    prop,
+                    headers[key as keyof typeof headers],
+                ]),
+            ),
+        ),
+    );
 
 type ErrorData = {
     errorResponseCode?: string;

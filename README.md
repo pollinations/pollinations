@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📝 baiye-ai.com](http://www.baiye-ai.com) | Cloud AI note-taking app with Markdown, AI writing, and image generation. | [@qinghuaju](https://github.com/qinghuaju) |
 | [🎓 DDCET.Trainer](https://ddcettrainer.netlify.app/) | Interactive exam prep app with structured MCQs for DDCET diploma students. | [@Parthsadaria](https://github.com/Parthsadaria) |
 | [🧩 ComfyUI-Pollinations-BYOP](https://github.com/ChunkyPanda29/ComfyUI-Pollinations-BYOP) | ComfyUI integration with BYOP support — four nodes for Image, Video, Text, and Audio generation with auto-syncing model dropdowns. | [@ChunkyPanda29](https://github.com/ChunkyPanda29) |
 | [✍️ TeleChars AI](https://telecharsai.x10.mx) | AI character creation platform for Telegram with memory, image/audio understanding, and BYOP key support. | [@MarcosFRG](https://github.com/MarcosFRG) |
@@ -26,7 +27,6 @@
 | [⚖️ Marid V2.0](https://ai.al-mohamy.com/) | LangGraph-driven legal AI multi-agent system with RAG for high-fidelity legal analysis. | [@ahmedmetwali1](https://github.com/ahmedmetwali1) |
 | [🖌️ Viso](https://viso-l.netlify.app/) | Clean brutalist AI image generator with multiple art styles and aspect ratios. | [@xxooxannn](https://github.com/xxooxannn) |
 | [🎨 AnimePollen](https://animepollen.vercel.app/) | Free AI anime art generator — describe scenes to get instant illustrations. | [@Pelz01](https://github.com/Pelz01) |
-| [🌊 Dream-Stream](https://dream-stream-ai.huangxiaogang.workers.dev/) | Serverless AI art gallery on Cloudflare Workers using Pollinations API. | [@huangxiaogang-ctrl](https://github.com/huangxiaogang-ctrl) |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

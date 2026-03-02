@@ -70,6 +70,17 @@ export const auth = (options: AuthOptions) =>
                 headers: c.req.raw.headers,
             });
             if (!result?.user) return null;
+
+            // Block banned users
+            if (result.user.banned === true) {
+                if (
+                    !result.user.banExpires ||
+                    new Date(result.user.banExpires) > new Date()
+                ) {
+                    return null;
+                }
+            }
+
             return {
                 user: result?.user,
                 session: result?.session,
@@ -121,6 +132,16 @@ export const auth = (options: AuthOptions) =>
             // Check if the key is disabled
             if (fullApiKey?.enabled === false) {
                 return null;
+            }
+
+            // Block banned users
+            if (fullApiKey?.user?.banned === true) {
+                if (
+                    !fullApiKey.user.banExpires ||
+                    new Date(fullApiKey.user.banExpires) > new Date()
+                ) {
+                    return null;
+                }
             }
 
             return {

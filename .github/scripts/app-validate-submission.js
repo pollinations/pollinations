@@ -6,7 +6,6 @@
  * Checks:
  * 1. Issue author is registered at Enter
  * 2. No duplicate submissions
- * 3. Fetches GitHub stars if repo provided
  *
  * Outputs JSON with validation results.
  *
@@ -26,7 +25,6 @@ async function main() {
         issue_author: ISSUE_AUTHOR,
         checks: {},
         errors: [],
-        stars: null,
         repo_url: null,
     };
 
@@ -189,25 +187,7 @@ async function main() {
             }
         }
 
-        // 4. Fetch GitHub stars if repo URL found
-        if (result.repo_url) {
-            try {
-                const repoPath = result.repo_url.replace(
-                    /https?:\/\/github\.com\//i,
-                    "",
-                );
-                const starsCmd = `gh api repos/${repoPath} --jq '.stargazers_count'`;
-                const stars = parseInt(
-                    execSync(starsCmd, { encoding: "utf-8" }).trim(),
-                    10,
-                );
-                result.stars = isNaN(stars) ? 0 : stars;
-            } catch {
-                result.stars = 0;
-            }
-        }
-
-        // 5. Check for existing PR for this issue
+        // 4. Check for existing PR for this issue
         try {
             const prCmd = `gh pr list --repo pollinations/pollinations --search "Fixes #${ISSUE_NUMBER}" --json number,headRefName,url --jq '.[0]'`;
             const prOutput = execSync(prCmd, { encoding: "utf-8" }).trim();

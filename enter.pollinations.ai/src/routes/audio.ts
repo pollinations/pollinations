@@ -509,8 +509,8 @@ export async function generateSunoMusic(opts: {
 
             const audioBuffer = await downloadResponse.arrayBuffer();
 
-            // Estimate duration from file size: music MP4 ~500KB/min ≈ 8333 bytes/sec
-            const estimatedDuration = audioBuffer.byteLength / 8333;
+            // Estimate duration from file size: music MP4 ~2.7MB/min ≈ 46000 bytes/sec
+            const estimatedDuration = audioBuffer.byteLength / 46000;
 
             const usageHeaders = buildUsageHeaders(
                 "suno",

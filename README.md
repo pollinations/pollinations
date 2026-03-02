@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎨 Pollinations-ai-STUDIO](https://pollinations-ai-studio.pages.dev/) | API endpoints, authentication, and image-generation parameters for developer integration. | [@rikunarita](https://github.com/rikunarita) |
 | [📚 Cryonex](https://www.cryonex.app/app) | All-in-one study assistant replacing tabs to save students money. | [@BlazeGlitchz2](https://github.com/BlazeGlitchz2) |
 | [🧮 BhaskarMath](https://bhaskarmath.github.io/BhaskarMath/) | Math lessons, practice problems, and step-by-step solutions across algebra, calculus, and geometry for study and exam preparation. | [@miguelsaldanha1213-byte](https://github.com/miguelsaldanha1213-byte) |
 | [📝 baiye-ai.com](http://www.baiye-ai.com) | Cloud AI note-taking app with Markdown, AI writing, and image generation. | [@qinghuaju](https://github.com/qinghuaju) |
@@ -26,7 +27,6 @@
 | [🎮 Plaiyground](https://playground.endoxi.dev) | BYOP vibe coding tool using multiple Pollinations AI models to generate web apps. | [@MetaMysteries8](https://github.com/MetaMysteries8) |
 | [🧠 EnneAI](https://t.me/typologyAIbot) | Telegram personality typing bot using AI via Pollinations across two personality systems. | [@Gl0wdy](https://github.com/Gl0wdy) |
 | [🌐 wwwsim](https://wwwsim.netlify.app/) | AI website builder using multiple models like Gemini, Claude, and Kimi for design and code generation. | [@Brybod123](https://github.com/Brybod123) |
-| [⚖️ Marid V2.0](https://ai.al-mohamy.com/) | LangGraph-driven legal AI multi-agent system with RAG for high-fidelity legal analysis. | [@ahmedmetwali1](https://github.com/ahmedmetwali1) |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

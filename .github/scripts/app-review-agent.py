@@ -386,9 +386,9 @@ Respond with ONLY a JSON object (no markdown, no explanation):
         "issue_url": issue_url,
     }
 
-    row_json = json.dumps(row_data)
+    row_json = json.dumps(row_data, indent=2)
 
-    # Build preview comment
+    # Build preview comment — fully visible, no hidden data
     comment = f"""## App Review Preview
 
 | Field | Value |
@@ -405,9 +405,13 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 | Discord | {discord or '—'} |
 | Submitted | {issue_created_at} |
 
-> A maintainer will review this and add the `TIER-APP-APPROVED` label to proceed.
+**APPS.md row data** (used by the approval workflow):
 
-<!-- APP_REVIEW_DATA {row_json} APP_REVIEW_DATA -->"""
+```json
+{row_json}
+```
+
+> Add the `TIER-APP-APPROVED` label to create a PR and merge this app."""
 
     # Post preview comment
     gh_api(f"/repos/pollinations/pollinations/issues/{ISSUE_NUMBER}/comments", "POST", {"body": comment})

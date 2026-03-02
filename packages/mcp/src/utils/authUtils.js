@@ -1,4 +1,5 @@
 let apiKey = process.env.POLLINATIONS_API_KEY || null;
+let oauthToken = null;
 
 /**
  * @param {string} key - The API key (pk_ or sk_ prefixed)
@@ -7,6 +8,26 @@ export function setApiKey(key) {
     if (key && typeof key === "string") {
         apiKey = key;
     }
+}
+
+/**
+ * @param {string} token - OAuth JWT access token
+ */
+export function setOAuthToken(token) {
+    if (token && typeof token === "string") {
+        oauthToken = token;
+    }
+}
+
+/**
+ * @returns {string|null} - The stored OAuth token or null
+ */
+export function getOAuthToken() {
+    return oauthToken;
+}
+
+export function clearOAuthToken() {
+    oauthToken = null;
 }
 
 /**
@@ -28,9 +49,10 @@ export function hasApiKey() {
 }
 
 /**
- * @returns {string|null} - 'publishable', 'secret', or null if no key
+ * @returns {string|null} - 'oauth', 'publishable', 'secret', or null if no key
  */
 export function getKeyType() {
+    if (oauthToken) return "oauth";
     if (!apiKey) return null;
     if (apiKey.startsWith("pk_")) return "publishable";
     if (apiKey.startsWith("sk_")) return "secret";
@@ -38,9 +60,10 @@ export function getKeyType() {
 }
 
 /**
- * @returns {Object} - Headers object with Authorization if key is set
+ * @returns {Object} - Headers object with Authorization if key/token is set
  */
 export function getAuthHeaders() {
+    if (oauthToken) return { Authorization: `Bearer ${oauthToken}` };
     if (!apiKey) return {};
     return {
         Authorization: `Bearer ${apiKey}`,
@@ -68,7 +91,7 @@ export function requireApiKey() {
     if (!hasApiKey()) {
         throw new Error(
             "API key required. Use setApiKey tool first or set POLLINATIONS_API_KEY environment variable. " +
-            "Get your key at https://enter.pollinations.ai"
+                "Get your key at https://enter.pollinations.ai",
         );
     }
 }

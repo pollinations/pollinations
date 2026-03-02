@@ -19,11 +19,14 @@ CREATE TABLE IF NOT EXISTS `oauth_client` (
   `response_types` text,
   `scopes` text,
   `type` text,
+  `public` integer DEFAULT false,
+  `require_pkce` integer DEFAULT false,
   `disabled` integer DEFAULT false,
   `skip_consent` integer DEFAULT false,
   `enable_end_session` integer DEFAULT false,
   `user_id` text REFERENCES `user`(`id`) ON DELETE CASCADE,
   `reference_id` text,
+  `post_logout_redirect_uris` text,
   `metadata` text,
   `created_at` integer DEFAULT (unixepoch()) NOT NULL,
   `updated_at` integer DEFAULT (unixepoch()) NOT NULL
@@ -34,7 +37,7 @@ CREATE INDEX IF NOT EXISTS `idx_oauth_client_client_id` ON `oauth_client` (`clie
 CREATE TABLE IF NOT EXISTS `oauth_access_token` (
   `id` text PRIMARY KEY NOT NULL,
   `token` text NOT NULL,
-  `client_id` text NOT NULL REFERENCES `oauth_client`(`id`) ON DELETE CASCADE,
+  `client_id` text NOT NULL REFERENCES `oauth_client`(`client_id`) ON DELETE CASCADE,
   `user_id` text REFERENCES `user`(`id`) ON DELETE CASCADE,
   `session_id` text REFERENCES `session`(`id`) ON DELETE CASCADE,
   `refresh_id` text,
@@ -49,7 +52,7 @@ CREATE INDEX IF NOT EXISTS `idx_oauth_access_token_token` ON `oauth_access_token
 CREATE TABLE IF NOT EXISTS `oauth_refresh_token` (
   `id` text PRIMARY KEY NOT NULL,
   `token` text NOT NULL,
-  `client_id` text NOT NULL REFERENCES `oauth_client`(`id`) ON DELETE CASCADE,
+  `client_id` text NOT NULL REFERENCES `oauth_client`(`client_id`) ON DELETE CASCADE,
   `user_id` text NOT NULL REFERENCES `user`(`id`) ON DELETE CASCADE,
   `session_id` text REFERENCES `session`(`id`) ON DELETE CASCADE,
   `reference_id` text,
@@ -65,7 +68,7 @@ CREATE INDEX IF NOT EXISTS `idx_oauth_refresh_token_token` ON `oauth_refresh_tok
 CREATE TABLE IF NOT EXISTS `oauth_consent` (
   `id` text PRIMARY KEY NOT NULL,
   `user_id` text NOT NULL REFERENCES `user`(`id`) ON DELETE CASCADE,
-  `client_id` text NOT NULL REFERENCES `oauth_client`(`id`) ON DELETE CASCADE,
+  `client_id` text NOT NULL REFERENCES `oauth_client`(`client_id`) ON DELETE CASCADE,
   `reference_id` text,
   `scopes` text,
   `created_at` integer DEFAULT (unixepoch()) NOT NULL,

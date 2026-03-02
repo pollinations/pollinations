@@ -24,6 +24,13 @@ function addKeyPrefix(key: string) {
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
 
+    const baseURL =
+        env.ENVIRONMENT === "production"
+            ? "https://enter.pollinations.ai"
+            : env.ENVIRONMENT === "staging"
+              ? "https://staging.enter.pollinations.ai"
+              : "http://localhost:3000";
+
     const PUBLISHABLE_KEY_PREFIX = "pk";
 
     const apiKeyPlugin = apiKey({
@@ -100,6 +107,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     });
 
     return betterAuth({
+        baseURL,
         basePath: "/api/auth",
         disabledPaths: ["/token"],
         database: drizzleAdapter(db, {
@@ -122,6 +130,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                       },
                   }
                 : undefined,
+        },
+        session: {
+            storeSessionInDatabase: true,
         },
         secondaryStorage: {
             get: async (key) => {

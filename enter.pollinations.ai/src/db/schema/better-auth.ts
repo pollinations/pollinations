@@ -135,6 +135,90 @@ export const apikey = sqliteTable("apikey", {
   index("idx_apikey_user_id").on(table.userId),
 ]);
 
+// OAuth 2.1 Provider tables (added by @better-auth/oauth-provider + jwt plugins)
+
+export const oauthClient = sqliteTable("oauth_client", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id").notNull().unique(),
+  clientSecret: text("client_secret"),
+  name: text("name"),
+  icon: text("icon"),
+  uri: text("uri"),
+  contacts: text("contacts"),
+  tos: text("tos"),
+  policy: text("policy"),
+  softwareId: text("software_id"),
+  softwareVersion: text("software_version"),
+  softwareStatement: text("software_statement"),
+  redirectUris: text("redirect_uris").notNull(),
+  tokenEndpointAuthMethod: text("token_endpoint_auth_method"),
+  grantTypes: text("grant_types"),
+  responseTypes: text("response_types"),
+  scopes: text("scopes"),
+  type: text("type"),
+  disabled: integer("disabled", { mode: "boolean" }).default(false),
+  skipConsent: integer("skip_consent", { mode: "boolean" }).default(false),
+  enableEndSession: integer("enable_end_session", { mode: "boolean" }).default(false),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  referenceId: text("reference_id"),
+  metadata: text("metadata"),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow().$onUpdate(() => new Date()).notNull(),
+}, (table) => [
+  index("idx_oauth_client_client_id").on(table.clientId),
+]);
+
+export const oauthAccessToken = sqliteTable("oauth_access_token", {
+  id: text("id").primaryKey(),
+  token: text("token").notNull(),
+  clientId: text("client_id").notNull().references(() => oauthClient.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  sessionId: text("session_id").references(() => session.id, { onDelete: "cascade" }),
+  refreshId: text("refresh_id"),
+  referenceId: text("reference_id"),
+  scopes: text("scopes"),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+}, (table) => [
+  index("idx_oauth_access_token_token").on(table.token),
+]);
+
+export const oauthRefreshToken = sqliteTable("oauth_refresh_token", {
+  id: text("id").primaryKey(),
+  token: text("token").notNull(),
+  clientId: text("client_id").notNull().references(() => oauthClient.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  sessionId: text("session_id").references(() => session.id, { onDelete: "cascade" }),
+  referenceId: text("reference_id"),
+  scopes: text("scopes"),
+  revoked: integer("revoked", { mode: "timestamp" }),
+  authTime: integer("auth_time", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+}, (table) => [
+  index("idx_oauth_refresh_token_token").on(table.token),
+]);
+
+export const oauthConsent = sqliteTable("oauth_consent", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  clientId: text("client_id").notNull().references(() => oauthClient.id, { onDelete: "cascade" }),
+  referenceId: text("reference_id"),
+  scopes: text("scopes"),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow().$onUpdate(() => new Date()).notNull(),
+}, (table) => [
+  index("idx_oauth_consent_user_client").on(table.userId, table.clientId),
+]);
+
+export const jwks = sqliteTable("jwks", {
+  id: text("id").primaryKey(),
+  publicKey: text("public_key").notNull(),
+  privateKey: text("private_key").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+});
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),

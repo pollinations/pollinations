@@ -6,6 +6,10 @@
  * at the SQL level — they never leave D1.
  *
  * Triggered daily via GitHub Actions calling POST /api/admin/trigger-d1-sync.
+ *
+ * Safety: new data is appended BEFORE old data is removed, so the datasource
+ * is never empty. If the cleanup step fails, old + new rows coexist (doubled
+ * but present) and the next run will clean up.
  */
 
 const TINYBIRD_BASE_URL = "https://api.europe-west2.gcp.tinybird.co";
@@ -49,20 +53,25 @@ const TABLES: TableConfig[] = [
     },
 ];
 
-/** Truncate a Tinybird datasource. Requires DATASOURCES:CREATE token scope. */
-async function truncateDatasource(
+/** Delete rows matching a condition from a Tinybird datasource. */
+async function deleteOldRows(
     datasource: string,
     token: string,
+    condition: string,
 ): Promise<void> {
-    const url = `${TINYBIRD_BASE_URL}/v0/datasources/${datasource}/truncate`;
+    const url = `${TINYBIRD_BASE_URL}/v0/datasources/${datasource}/delete`;
     const res = await fetch(url, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `delete_condition=${encodeURIComponent(condition)}`,
     });
     if (!res.ok) {
         const body = await res.text();
         throw new Error(
-            `Truncate ${datasource} failed (${res.status}): ${body}`,
+            `Delete old rows from ${datasource} failed (${res.status}): ${body}`,
         );
     }
 }
@@ -132,6 +141,13 @@ interface SyncResult {
 /**
  * Run the D1 → Tinybird sync for all tables.
  * Returns per-table results for the HTTP response.
+ *
+ * Strategy (append-then-delete):
+ *   1. Append new rows with a fresh synced_at timestamp
+ *   2. Delete old rows where synced_at != the fresh timestamp
+ *
+ * If step 1 fails → old data stays intact (no data loss).
+ * If step 2 fails → old + new coexist (doubled, not empty). Next run cleans up.
  */
 export async function runD1TinybirdSync(
     db: D1Database,
@@ -151,10 +167,7 @@ export async function runD1TinybirdSync(
                 `D1→Tinybird sync: ${table.datasource} — ${rows.length} rows`,
             );
 
-            // Truncate then append. The empty window between these two calls
-            // is milliseconds for our table sizes (~thousands of rows).
-            await truncateDatasource(table.datasource, tinybirdSyncToken);
-
+            // 1. Append new snapshot (old data still present)
             if (rows.length > 0) {
                 await appendInChunks(
                     table.datasource,
@@ -163,6 +176,13 @@ export async function runD1TinybirdSync(
                     syncedAt,
                 );
             }
+
+            // 2. Delete old rows (only after successful append)
+            await deleteOldRows(
+                table.datasource,
+                tinybirdSyncToken,
+                `synced_at != '${syncedAt}'`,
+            );
 
             console.log(`D1→Tinybird sync: ${table.datasource} — done`);
             results.push({

@@ -118,12 +118,15 @@ async function checkGitHubUser(
 
     const rateLimitRemaining = Number.parseInt(
         res.headers.get("x-ratelimit-remaining") || "5000",
+        10,
     );
     const rateLimitReset = Number.parseInt(
         res.headers.get("x-ratelimit-reset") || "0",
+        10,
     );
     const rateLimitTotal = Number.parseInt(
         res.headers.get("x-ratelimit-limit") || "5000",
+        10,
     );
 
     if (res.status === 200) {
@@ -631,7 +634,7 @@ const applyCommand = command({
                     const cols = line.split("|");
                     const userIdStr = cols[9]?.trim();
                     if (!userIdStr) continue;
-                    const githubId = Number.parseInt(userIdStr);
+                    const githubId = Number.parseInt(userIdStr, 10);
                     if (Number.isNaN(githubId)) continue;
 
                     const rename = renamedById.get(githubId);

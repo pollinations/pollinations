@@ -10,6 +10,7 @@
 
 const TINYBIRD_BASE_URL = "https://api.europe-west2.gcp.tinybird.co";
 const MAX_RETRIES = 3;
+const CHUNK_SIZE = 5000;
 
 interface TableConfig {
     /** Tinybird datasource name */
@@ -101,15 +102,24 @@ async function appendRows(
 }
 
 /** Convert D1 result rows to NDJSON string with synced_at timestamp. */
-function toNdjson(rows: Record<string, unknown>[]): string {
-    const syncedAt = new Date()
-        .toISOString()
-        .replace("T", " ")
-        .replace(/\.\d+Z$/, "");
-
+function toNdjson(rows: Record<string, unknown>[], syncedAt: string): string {
     return rows
         .map((row) => JSON.stringify({ ...row, synced_at: syncedAt }))
         .join("\n");
+}
+
+/** Append rows in chunks to stay within Tinybird's 10MB payload limit. */
+async function appendInChunks(
+    datasource: string,
+    token: string,
+    rows: Record<string, unknown>[],
+    syncedAt: string,
+): Promise<void> {
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+        const chunk = rows.slice(i, i + CHUNK_SIZE);
+        const ndjson = toNdjson(chunk, syncedAt);
+        await appendRows(datasource, token, ndjson);
+    }
 }
 
 interface SyncResult {
@@ -128,6 +138,10 @@ export async function runD1TinybirdSync(
     tinybirdSyncToken: string,
 ): Promise<SyncResult[]> {
     const results: SyncResult[] = [];
+    const syncedAt = new Date()
+        .toISOString()
+        .replace("T", " ")
+        .replace(/\.\d+Z$/, "");
 
     for (const table of TABLES) {
         try {
@@ -137,11 +151,17 @@ export async function runD1TinybirdSync(
                 `D1→Tinybird sync: ${table.datasource} — ${rows.length} rows`,
             );
 
+            // Truncate then append. The empty window between these two calls
+            // is milliseconds for our table sizes (~thousands of rows).
             await truncateDatasource(table.datasource, tinybirdSyncToken);
 
             if (rows.length > 0) {
-                const ndjson = toNdjson(rows);
-                await appendRows(table.datasource, tinybirdSyncToken, ndjson);
+                await appendInChunks(
+                    table.datasource,
+                    tinybirdSyncToken,
+                    rows,
+                    syncedAt,
+                );
             }
 
             console.log(`D1→Tinybird sync: ${table.datasource} — done`);

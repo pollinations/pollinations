@@ -168,8 +168,7 @@ export const adminRoutes = new Hono<Env>()
         }
 
         // Tinybird sync token: authenticates the GH Action AND is used for Tinybird API calls
-        const syncToken = (c.env as unknown as Record<string, string>)
-            .TINYBIRD_SYNC_TOKEN;
+        const syncToken = c.env.TINYBIRD_SYNC_TOKEN;
         if (
             syncToken &&
             providedKey === syncToken &&
@@ -381,8 +380,7 @@ export const adminRoutes = new Hono<Env>()
         });
     })
     .post("/trigger-d1-sync", async (c) => {
-        const syncToken = (c.env as unknown as Record<string, string>)
-            .TINYBIRD_SYNC_TOKEN;
+        const syncToken = c.env.TINYBIRD_SYNC_TOKEN;
         if (!syncToken) {
             throw new HTTPException(500, {
                 message: "TINYBIRD_SYNC_TOKEN not configured",

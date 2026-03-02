@@ -1,15 +1,17 @@
-import { config } from "./config.ts";
-import { apiKeyClient } from "better-auth/client/plugins";
-import { createAuthClient } from "better-auth/react";
-import { createAuth } from "@/auth.ts";
-import { inferAdditionalFields } from "better-auth/client/plugins";
+import { apiKeyClient } from "@better-auth/api-key/client";
+import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import { redirect } from "@tanstack/react-router";
+import { inferAdditionalFields } from "better-auth/client/plugins";
+import { createAuthClient } from "better-auth/react";
+import type { createAuth } from "@/auth.ts";
+import { config } from "./config.ts";
 
 export const authClient = createAuthClient({
     baseURL: config.baseUrl,
     basePath: config.authPath,
     plugins: [
         apiKeyClient(),
+        oauthProviderClient(),
         inferAdditionalFields<ReturnType<typeof createAuth>>(),
     ],
 });

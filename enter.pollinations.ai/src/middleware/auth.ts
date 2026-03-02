@@ -1,3 +1,4 @@
+import { verifyAccessToken } from "better-auth/oauth2";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -15,12 +16,15 @@ export type AuthVariables = {
         user?: User;
         session?: Session;
         apiKey?: ApiKey;
+        oauthScopes?: string[];
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => User;
         /** Throws 403 if the API key doesn't have access to the resolved model from c.var.model. */
         requireModelAccess: () => void;
         /** Throws 402 if the API key has a budget set and remaining <= 0. */
         requireKeyBudget: () => void;
+        /** Throws 403 if the OAuth token doesn't have the required scope. No-op for API key auth. */
+        requireScope: (scope: string) => void;
     };
 };
 
@@ -48,15 +52,28 @@ interface AuthResult {
     session?: Session;
     apiKey?: ApiKey;
     rawApiKey?: string;
+    oauthScopes?: string[];
 }
 
-/** Extracts Bearer token from Authorization header (RFC 6750) or query parameter */
-function extractApiKey(c: Context<AuthEnv>): string | null {
+/** Extracts Bearer token from Authorization header (RFC 6750) */
+function extractBearerToken(c: Context<AuthEnv>): string | null {
     const auth = c.req.header("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
-    if (match?.[1]) return match[1];
+    return match?.[1] || null;
+}
 
-    return c.req.query("key") || null;
+/** Returns true if the token looks like a Pollinations API key (pk_ or sk_ prefix) */
+function isApiKeyToken(token: string): boolean {
+    return token.startsWith("pk_") || token.startsWith("sk_");
+}
+
+/** Extracts an API key from Bearer header or query parameter, skipping OAuth JWT tokens */
+function extractApiKey(c: Context<AuthEnv>): string | null {
+    const bearer = extractBearerToken(c);
+    if (bearer && isApiKeyToken(bearer)) return bearer;
+    // Only use query param for API keys (not OAuth tokens)
+    if (!bearer) return c.req.query("key") || null;
+    return null;
 }
 
 export const auth = (options: AuthOptions) =>
@@ -137,12 +154,59 @@ export const auth = (options: AuthOptions) =>
             };
         };
 
-        // Try session authentication first, then API key
+        const authenticateOAuthToken = async (): Promise<AuthResult | null> => {
+            if (!options.allowApiKey) return null;
+            const bearer = extractBearerToken(c);
+            // Only try OAuth JWT for non-API-key tokens
+            if (!bearer || isApiKeyToken(bearer)) return null;
+
+            try {
+                const payload = await verifyAccessToken(bearer, {
+                    verifyOptions: {
+                        issuer:
+                            new URL("/api/auth", c.req.url).origin +
+                            "/api/auth",
+                        audience: [
+                            "https://gen.pollinations.ai",
+                            "https://enter.pollinations.ai",
+                        ],
+                    },
+                });
+
+                if (!payload?.sub) return null;
+
+                const db = drizzle(c.env.DB, { schema });
+                const userData = await db
+                    .select()
+                    .from(schema.user)
+                    .where(eq(schema.user.id, payload.sub))
+                    .get();
+
+                if (!userData) return null;
+
+                const scopes =
+                    typeof payload.scope === "string"
+                        ? payload.scope.split(" ").filter(Boolean)
+                        : [];
+
+                return {
+                    user: userData as User,
+                    oauthScopes: scopes,
+                };
+            } catch {
+                return null;
+            }
+        };
+
+        // Try session authentication first, then OAuth JWT, then API key
         let authResult = await authenticateSession();
+        if (!authResult) {
+            authResult = await authenticateOAuthToken();
+        }
         if (!authResult) {
             authResult = await authenticateApiKey();
         }
-        const { user, session, apiKey } = authResult || {};
+        const { user, session, apiKey, oauthScopes } = authResult || {};
 
         const requireAuthorization = async (options?: {
             message?: string;
@@ -186,15 +250,27 @@ export const auth = (options: AuthOptions) =>
             }
         }
 
+        function requireScope(scope: string): void {
+            // Only enforce scopes for OAuth token auth (API keys have no scope restrictions)
+            if (!oauthScopes) return;
+            if (!oauthScopes.includes(scope)) {
+                throw new HTTPException(403, {
+                    message: `Missing required scope: ${scope}`,
+                });
+            }
+        }
+
         c.set("auth", {
             client,
             user,
             session,
             apiKey,
+            oauthScopes,
             requireAuthorization,
             requireUser,
             requireModelAccess,
             requireKeyBudget,
+            requireScope,
         });
 
         await next();

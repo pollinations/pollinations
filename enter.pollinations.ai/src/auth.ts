@@ -1,3 +1,5 @@
+import { apiKey } from "@better-auth/api-key";
+import { oauthProvider } from "@better-auth/oauth-provider";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -7,7 +9,7 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
-import { admin, apiKey, openAPI } from "better-auth/plugins";
+import { admin, jwt, openAPI } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
@@ -71,8 +73,35 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         disableDefaultReference: true,
     });
 
+    const jwtPlugin = jwt({
+        jwks: {
+            keyPairConfig: { alg: "ES256" },
+        },
+    });
+
+    const oauthProviderPlugin = oauthProvider({
+        loginPage: "/sign-in",
+        consentPage: "/consent",
+        scopes: [
+            "openid",
+            "profile",
+            "email",
+            "offline_access",
+            "generate",
+            "read:usage",
+            "read:balance",
+        ],
+        allowDynamicClientRegistration: true,
+        allowUnauthenticatedClientRegistration: true,
+        validAudiences: [
+            "https://gen.pollinations.ai",
+            "https://enter.pollinations.ai",
+        ],
+    });
+
     return betterAuth({
         basePath: "/api/auth",
+        disabledPaths: ["/token"],
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
             provider: "sqlite",
@@ -136,6 +165,8 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             },
         },
         plugins: [
+            jwtPlugin,
+            oauthProviderPlugin,
             adminPlugin,
             apiKeyPlugin,
             tierPlugin(env, ctx),
@@ -159,7 +190,7 @@ function tierPlugin(
 ): BetterAuthPlugin {
     return {
         id: "tier",
-        init: () => ({
+        init: (_ctx) => ({
             options: {
                 databaseHooks: {
                     user: {
@@ -181,7 +212,7 @@ function onAfterUserCreate(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
 ) {
-    return async (user: GenericUser, _ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, _ctx: GenericEndpointContext | null) => {
         try {
             const db = drizzle(env.DB);
             const tierBalance = getTierPollen(DEFAULT_TIER);

@@ -21,7 +21,7 @@ App submissions use a **two-phase review** via `app-review-submission.yml`: AI r
 TIER-APP (new issue)
   → TIER-APP-REJECTED (validation failed: duplicate/spore)
   → TIER-APP-INCOMPLETE (not registered, user needs to fix)
-  → TIER-APP-REVIEW + TIER-APP-AI-APPROVED (AI review passed, preview posted)
+  → TIER-APP-REVIEW (AI review passed, preview posted, awaiting human)
     → TIER-APP-APPROVED (maintainer approves → PR created + auto-merged)
       → TIER-APP-COMPLETE (PR merged, tier upgraded, issue closed)
     → TIER-APP-REJECTED (maintainer closes issue)

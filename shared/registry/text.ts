@@ -67,6 +67,7 @@ export const TEXT_SERVICES = {
         aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
         modelId: "gpt-5.2-2025-12-11",
         provider: "azure",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,

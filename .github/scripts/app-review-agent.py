@@ -416,8 +416,8 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     # Post preview comment
     gh_api(f"/repos/pollinations/pollinations/issues/{ISSUE_NUMBER}/comments", "POST", {"body": comment})
 
-    # Update issue labels: mark as reviewed + AI-approved
-    run_cmd(["gh", "issue", "edit", ISSUE_NUMBER, "--remove-label", "TIER-APP", "--remove-label", "TIER-APP-INCOMPLETE", "--add-label", "TIER-APP-REVIEW", "--add-label", "TIER-APP-AI-APPROVED"])
+    # Update issue label — TIER-APP-REVIEW means AI reviewed and passed
+    run_cmd(["gh", "issue", "edit", ISSUE_NUMBER, "--remove-label", "TIER-APP", "--remove-label", "TIER-APP-INCOMPLETE", "--add-label", "TIER-APP-REVIEW"])
 
     print(f"   ✅ Done!")
 

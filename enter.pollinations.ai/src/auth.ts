@@ -159,7 +159,7 @@ function tierPlugin(
 ): BetterAuthPlugin {
     return {
         id: "tier",
-        init: () => ({
+        init: (_ctx) => ({
             options: {
                 databaseHooks: {
                     user: {
@@ -190,7 +190,7 @@ function onAfterSessionCreate(
 ) {
     return async (
         session: { userId: string },
-        _ctx?: GenericEndpointContext,
+        _ctx?: GenericEndpointContext | null,
     ) => {
         executionCtx?.waitUntil(
             (async () => {
@@ -244,7 +244,7 @@ function onAfterUserCreate(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
 ) {
-    return async (user: GenericUser, _ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, _ctx?: GenericEndpointContext | null) => {
         try {
             const db = drizzle(env.DB);
             const tierBalance = getTierPollen(DEFAULT_TIER);

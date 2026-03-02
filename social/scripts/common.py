@@ -20,12 +20,12 @@ GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
-# Models - single source of truth for all social scripts
-MODEL = "gemini-large"  # Text generation model
-MODEL_FALLBACK = "gemini-fast"  # Text fallback when primary model fails
-IMAGE_MODEL = "nanobanana-pro"  # Image generation model
-IMAGE_MODEL_FALLBACK = "zimage"  # Image fallback when primary model fails
-WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
+
+MODEL = "gemini-large"  
+MODEL_FALLBACK = "gemini-fast"  
+IMAGE_MODEL = "nanobanana-pro"  
+IMAGE_MODEL_FALLBACK = "zimage"  
+WEBSEARCH_MODEL = "perplexity-reasoning"  
 
 # Limits and retry settings
 MAX_SEED = 2147483647

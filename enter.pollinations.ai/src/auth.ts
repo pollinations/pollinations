@@ -207,14 +207,17 @@ function onAfterSessionCreate(
 
                     if (!user?.githubId) return;
 
+                    const headers: Record<string, string> = {
+                        Accept: "application/vnd.github+json",
+                        "User-Agent": "pollinations-enter",
+                    };
+                    // Use OAuth app credentials for 5,000 req/hr (vs 60 unauthenticated)
+                    if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
+                        headers.Authorization = `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`;
+                    }
                     const res = await fetch(
                         `https://api.github.com/user/${user.githubId}`,
-                        {
-                            headers: {
-                                Accept: "application/vnd.github+json",
-                                "User-Agent": "pollinations-enter",
-                            },
-                        },
+                        { headers },
                     );
                     if (!res.ok) return;
 

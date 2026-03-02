@@ -71,13 +71,17 @@ export const auth = (options: AuthOptions) =>
             });
             if (!result?.user) return null;
 
-            // Block banned users
+            // Block banned users with explicit 403
             if (result.user.banned === true) {
                 if (
                     !result.user.banExpires ||
                     new Date(result.user.banExpires) > new Date()
                 ) {
-                    return null;
+                    throw new HTTPException(403, {
+                        message: result.user.banReason
+                            ? `Account banned: ${result.user.banReason}`
+                            : "Account banned",
+                    });
                 }
             }
 
@@ -134,13 +138,17 @@ export const auth = (options: AuthOptions) =>
                 return null;
             }
 
-            // Block banned users
+            // Block banned users with explicit 403
             if (fullApiKey?.user?.banned === true) {
                 if (
                     !fullApiKey.user.banExpires ||
                     new Date(fullApiKey.user.banExpires) > new Date()
                 ) {
-                    return null;
+                    throw new HTTPException(403, {
+                        message: fullApiKey.user.banReason
+                            ? `Account banned: ${fullApiKey.user.banReason}`
+                            : "Account banned",
+                    });
                 }
             }
 

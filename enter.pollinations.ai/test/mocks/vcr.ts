@@ -40,8 +40,12 @@ type Snapshot = {
 };
 
 const hosts = [
-    { name: "text", host: new URL(env.TEXT_SERVICE_URL).host },
-    { name: "image", host: new URL(env.IMAGE_SERVICE_URL).host },
+    ...(env.TEXT_SERVICE_URL
+        ? [{ name: "text", host: new URL(env.TEXT_SERVICE_URL).host }]
+        : []),
+    ...(env.IMAGE_SERVICE_URL
+        ? [{ name: "image", host: new URL(env.IMAGE_SERVICE_URL).host }]
+        : []),
 ];
 
 async function getSnapshotHash(request: Request): Promise<string> {

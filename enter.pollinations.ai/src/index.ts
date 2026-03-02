@@ -13,9 +13,9 @@ import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { customerRoutes } from "./routes/customer.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
+import { internalRoutes } from "./routes/internal.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
-import { proxyRoutes } from "./routes/proxy.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
@@ -38,8 +38,8 @@ export const api = new Hono<Env>()
     .route("/webhooks", webhooksCryptoRoutes)
     .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes)
+    .route("/internal", internalRoutes)
     .route("/model-stats", modelStatsRoutes)
-    .route("/generate", proxyRoutes)
     .route("/generate/v1/audio", audioRoutes);
 
 export type ApiRoutes = typeof api;

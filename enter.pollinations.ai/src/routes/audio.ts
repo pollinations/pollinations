@@ -21,7 +21,6 @@ import {
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
@@ -397,7 +396,6 @@ export async function generateMusic(opts: {
 }
 
 export const audioRoutes = new Hono<Env>()
-    .use("*", edgeRateLimit)
     .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), balance)
     .post(
         "/speech",

@@ -9,8 +9,14 @@
         "noEmit": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "allowImportingTsExtensions": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"],
+            "@shared/*": ["../shared/*"]
+        }
     },
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "../shared/**/*.ts"],
     "exclude": ["node_modules"]
 }

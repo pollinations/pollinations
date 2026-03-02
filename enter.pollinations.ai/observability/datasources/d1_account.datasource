@@ -1,0 +1,21 @@
+TOKEN d1_account_append APPEND
+TOKEN d1_account_read READ
+
+DESCRIPTION >
+    Daily snapshot of D1 account table (OAuth providers, no tokens/passwords)
+
+SCHEMA >
+    `id` String `json:$.id`,
+    `account_id` String `json:$.account_id`,
+    `provider_id` String `json:$.provider_id`,
+    `user_id` String `json:$.user_id`,
+    `access_token_expires_at` Nullable(Int64) `json:$.access_token_expires_at`,
+    `refresh_token_expires_at` Nullable(Int64) `json:$.refresh_token_expires_at`,
+    `scope` Nullable(String) `json:$.scope`,
+    `created_at` Nullable(Int64) `json:$.created_at`,
+    `updated_at` Nullable(Int64) `json:$.updated_at`,
+    `synced_at` DateTime `json:$.synced_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(synced_at)"
+ENGINE_SORTING_KEY "id"

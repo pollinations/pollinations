@@ -1,0 +1,41 @@
+name: Daily D1 → Tinybird Sync
+
+on:
+  schedule:
+    # Run at 03:00 UTC daily
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Manual trigger from GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync D1 tables to Tinybird
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://enter.pollinations.ai/api/admin/trigger-d1-sync" \
+            -H "Authorization: Bearer ${{ secrets.TINYBIRD_SYNC_TOKEN }}" \
+            -H "Content-Type: application/json")
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+
+          echo "Response: $body"
+          echo "HTTP Status: $http_code"
+
+          # 207 means partial success (some tables failed)
+          if [ "$http_code" != "200" ] && [ "$http_code" != "207" ]; then
+            echo "::error::D1→Tinybird sync failed with HTTP $http_code"
+            exit 1
+          fi
+
+          # Report per-table results
+          echo "$body" | jq -r '.tables[] | "  \(.datasource): \(.rows) rows (\(.status))"'
+
+          if [ "$http_code" = "207" ]; then
+            echo "::warning::Some tables failed to sync"
+            echo "$body" | jq -r '.tables[] | select(.status == "error") | "  ERROR: \(.datasource) - \(.error)"'
+            exit 1
+          fi
+
+          echo "::notice::D1→Tinybird sync complete"

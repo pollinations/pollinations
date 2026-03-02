@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { sendTierEventToTinybird } from "@/events.ts";
+import { runD1TinybirdSync } from "@/scheduled/d1-tinybird-sync.ts";
 import {
     getTierPollen,
     isValidTier,
@@ -162,6 +163,17 @@ export const adminRoutes = new Hono<Env>()
         if (
             providedKey === c.env.REFILL_TOKEN &&
             c.req.path.endsWith("/trigger-refill")
+        ) {
+            return await next();
+        }
+
+        // Tinybird sync token: authenticates the GH Action AND is used for Tinybird API calls
+        const syncToken = (c.env as unknown as Record<string, string>)
+            .TINYBIRD_SYNC_TOKEN;
+        if (
+            syncToken &&
+            providedKey === syncToken &&
+            c.req.path.endsWith("/trigger-d1-sync")
         ) {
             return await next();
         }
@@ -367,4 +379,21 @@ export const adminRoutes = new Hono<Env>()
             tierBreakdown,
             timestamp,
         });
+    })
+    .post("/trigger-d1-sync", async (c) => {
+        const syncToken = (c.env as unknown as Record<string, string>)
+            .TINYBIRD_SYNC_TOKEN;
+        if (!syncToken) {
+            throw new HTTPException(500, {
+                message: "TINYBIRD_SYNC_TOKEN not configured",
+            });
+        }
+
+        const results = await runD1TinybirdSync(c.env.DB, syncToken);
+        const hasErrors = results.some((r) => r.status === "error");
+
+        return c.json(
+            { success: !hasErrors, tables: results },
+            hasErrors ? 207 : 200,
+        );
     });

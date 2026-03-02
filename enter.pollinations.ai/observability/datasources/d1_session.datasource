@@ -1,0 +1,19 @@
+TOKEN d1_session_append APPEND
+TOKEN d1_session_read READ
+
+DESCRIPTION >
+    Daily snapshot of D1 session table (active sessions, no tokens/IPs)
+
+SCHEMA >
+    `id` String `json:$.id`,
+    `expires_at` Int64 `json:$.expires_at`,
+    `created_at` Nullable(Int64) `json:$.created_at`,
+    `updated_at` Nullable(Int64) `json:$.updated_at`,
+    `user_agent` Nullable(String) `json:$.user_agent`,
+    `user_id` String `json:$.user_id`,
+    `impersonated_by` Nullable(String) `json:$.impersonated_by`,
+    `synced_at` DateTime `json:$.synced_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(synced_at)"
+ENGINE_SORTING_KEY "id"

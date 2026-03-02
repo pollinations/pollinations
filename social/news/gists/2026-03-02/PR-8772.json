@@ -1,0 +1,34 @@
+{
+  "pr_number": 8772,
+  "title": "scope tinybird tokens to minimum permissions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8772",
+  "merged_at": "2026-03-02T23:17:49Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidying the token drawer",
+    "blurb": "We've tightened up our internal security by scoping our analytics tokens to minimum permissions. Just doing some routine housekeeping to keep the hive safe and tidy!",
+    "summary": "Replaced admin-level Tinybird tokens with scoped, append-only tokens across all environments and removed unused secrets.",
+    "impact": "Improves internal security by adhering to the principle of least privilege for analytics data ingestion.",
+    "keywords": [
+      "security",
+      "infrastructure",
+      "tinybird",
+      "tokens",
+      "cleanup"
+    ],
+    "visual_concept": "The pollinations.ai bee mascot organizing glowing keys or locking a small, cozy safe. A tiny bird (representing Tinybird) could be present. The robot companion helping sort files or keys.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot organizing glowing pastel keys into a small wooden safe. A tiny blue bird sits on top of the safe. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and secure."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-02T23:18:34.499090+00:00"
+}

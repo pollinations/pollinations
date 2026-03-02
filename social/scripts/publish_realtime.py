@@ -19,6 +19,7 @@ from common import (
     DISCORD_CHAR_LIMIT,
     GISTS_BRANCH,
     GITHUB_API_BASE,
+    MODEL_FALLBACK,
     call_pollinations_api,
     get_env,
     get_repo_root,
@@ -135,13 +136,24 @@ def main():
     )
 
     if not snippet:
-        snippet = summary
-    lines = snippet.split('\n', 1)
-    if lines:
-        lines[0] = f"### {lines[0]}"
-        snippet = '\n\n'.join(lines)
+        print(f"  Primary snippet model failed — trying fallback ({MODEL_FALLBACK})...")
+        snippet = call_pollinations_api(
+            voice, task, pollinations_token, temperature=0.7,
+            model=MODEL_FALLBACK, exit_on_failure=False
+        )
+
     pr_url = gist["url"]
     author = gist["author"]
+
+    if snippet:
+        lines = snippet.split('\n', 1)
+        if lines:
+            lines[0] = f"### {lines[0]}"
+            snippet = '\n\n'.join(lines)
+    else:
+        # Both models failed — use plain format
+        print("  All snippet models failed — using plain format")
+        snippet = f"### `#{pr_number}` — {gist['title']}"
 
     timestamp_str = ""
     if merged_at:

@@ -1,8 +1,4 @@
-import {
-    extractApiVersion,
-    extractDeploymentName,
-    extractResourceName,
-} from "../portkeyUtils.js";
+const DEFAULT_AZURE_API_VERSION = "2024-08-01-preview";
 
 // =============================================================================
 // Shared Types
@@ -36,6 +32,32 @@ function createOpenAICompatibleConfig(
     };
 }
 
+function extractAzureResourceName(endpoint: string | undefined): string {
+    if (!endpoint) return "pollinations";
+    const match = endpoint.match(
+        /https:\/\/([^.]+)\.(?:openai|cognitiveservices)\.azure\.com/,
+    );
+    const result = match?.[1];
+    return !result || result === "undefined" ? "pollinations" : result;
+}
+
+function extractAzureDeploymentName(
+    endpoint: string | undefined,
+): string | null {
+    if (!endpoint) return null;
+    return endpoint.match(/\/deployments\/([^/]+)/)?.[1] ?? null;
+}
+
+function extractAzureApiVersion(endpoint: string | undefined): string {
+    if (!endpoint)
+        return process.env.OPENAI_API_VERSION || DEFAULT_AZURE_API_VERSION;
+    return (
+        endpoint.match(/api-version=([^&]+)/)?.[1] ??
+        process.env.OPENAI_API_VERSION ??
+        DEFAULT_AZURE_API_VERSION
+    );
+}
+
 // =============================================================================
 // Provider Factories
 // =============================================================================
@@ -46,13 +68,14 @@ export function createAzureModelConfig(
     modelName: string,
     resourceName?: string,
 ): ProviderConfig {
-    const deploymentId = extractDeploymentName(endpoint) || modelName;
+    const deploymentId = extractAzureDeploymentName(endpoint) || modelName;
     return {
         provider: "azure-openai",
         "azure-api-key": apiKey,
-        "azure-resource-name": resourceName || extractResourceName(endpoint),
+        "azure-resource-name":
+            resourceName || extractAzureResourceName(endpoint),
         "azure-deployment-id": deploymentId,
-        "azure-api-version": extractApiVersion(endpoint),
+        "azure-api-version": extractAzureApiVersion(endpoint),
         "azure-model-name": deploymentId,
         authKey: apiKey,
     };
@@ -77,16 +100,6 @@ export function createMyceliGrok4FastConfig(
         "https://myceli.services.ai.azure.com/openai/v1",
         process.env.AZURE_MYCELI_GROK_API_KEY,
         { model: "grok-4-fast-non-reasoning", ...overrides },
-    );
-}
-
-export function createScalewayModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        process.env.SCALEWAY_BASE_URL || "https://api.scaleway.com/ai-apis/v1",
-        process.env.SCALEWAY_API_KEY,
-        overrides,
     );
 }
 

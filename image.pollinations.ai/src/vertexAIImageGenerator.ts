@@ -10,7 +10,6 @@ import type {
 } from "./createAndReturnImages.js";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.js";
-import { withTimeoutSignal } from "./util.ts";
 import { downloadImageAsBase64 } from "./utils/imageDownload.ts";
 import { generateTransparentImage } from "./utils/transparentImage.ts";
 import type { VertexAIImageData } from "./vertexAIClient.ts";
@@ -19,6 +18,22 @@ import { writeExifMetadata } from "./writeExifMetadata.js";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
+
+/** Mapping from pollinations model names to Vertex AI model IDs and display names */
+const NANOBANANA_MODELS: Record<string, { vertex: string; name: string }> = {
+    "nanobanana-pro": {
+        vertex: "gemini-3-pro-image-preview",
+        name: "Vertex AI Gemini 3 Pro Image Preview",
+    },
+    "nanobanana-2": {
+        vertex: "gemini-3.1-flash-image-preview",
+        name: "Vertex AI Gemini 3.1 Flash Image Preview",
+    },
+    "nanobanana": {
+        vertex: "gemini-2.5-flash-image-preview",
+        name: "Vertex AI Gemini 2.5 Flash Image Preview",
+    },
+};
 
 /**
  * Add simple prefix to help Nano Banana understand the prompt better
@@ -44,11 +59,8 @@ async function processNanobananaRequest(
     processedParams: ImageParams;
     transparentImage?: VertexAIImageData;
 }> {
-    // Check if this is a nanobanana/nanobanana-pro request with height/width parameters
-    const isNanoBananaModel =
-        safeParams.model === "nanobanana" ||
-        safeParams.model === "nanobanana-2" ||
-        safeParams.model === "nanobanana-pro";
+    // Check if this is a nanobanana model request with height/width parameters
+    const isNanoBananaModel = safeParams.model in NANOBANANA_MODELS;
     if (!isNanoBananaModel || !safeParams.width || !safeParams.height) {
         // Return original values for non-nanobanana models or when dimensions are missing
         return { processedPrompt: prompt, processedParams: safeParams };
@@ -95,6 +107,56 @@ async function processNanobananaRequest(
         // Return original values on error to maintain backward compatibility
         return { processedPrompt: prompt, processedParams: safeParams };
     }
+}
+
+/**
+ * Build an informative HttpError when Vertex AI returns no image data.
+ * Checks in order: Gemini text explanation, blocked safety categories,
+ * high-probability safety categories, finish reason, then a generic fallback.
+ */
+function buildNoImageDataError(result: {
+    textResponse?: string;
+    finishReason?: string;
+    safetyRatings?: any[];
+}): HttpError {
+    if (result.textResponse) {
+        return new HttpError(`Gemini: ${result.textResponse}`, 400);
+    }
+
+    if (result.safetyRatings && result.safetyRatings.length > 0) {
+        const blockedCategories = result.safetyRatings
+            .filter((r: any) => r.blocked)
+            .map((r: any) => r.category)
+            .join(", ");
+
+        if (blockedCategories) {
+            return new HttpError(
+                `${result.finishReason || "Content blocked"}: ${blockedCategories}`,
+                400,
+            );
+        }
+
+        const highProbCategories = result.safetyRatings
+            .filter(
+                (r: any) =>
+                    r.probability === "HIGH" || r.probability === "MEDIUM",
+            )
+            .map((r: any) => `${r.category} (${r.probability})`)
+            .join(", ");
+
+        if (highProbCategories) {
+            return new HttpError(
+                `${result.finishReason || "Content flagged"}: ${highProbCategories}`,
+                400,
+            );
+        }
+    }
+
+    if (result.finishReason) {
+        return new HttpError(result.finishReason, 400);
+    }
+
+    return new HttpError("No image data returned from Vertex AI", 400);
 }
 
 /**
@@ -179,12 +241,10 @@ export async function callVertexAIGemini(
         }
 
         // Determine the Vertex AI model based on the model parameter
-        const vertexModel =
-            safeParams.model === "nanobanana-pro"
-                ? "gemini-3-pro-image-preview" // Nano Banana Pro
-                : safeParams.model === "nanobanana-2"
-                  ? "gemini-3.1-flash-image-preview" // Nano Banana 2
-                  : "gemini-2.5-flash-image-preview"; // Nano Banana (default)
+        const modelConfig =
+            NANOBANANA_MODELS[safeParams.model] ||
+            NANOBANANA_MODELS["nanobanana"];
+        const vertexModel = modelConfig.vertex;
 
         const vertexRequest = {
             prompt: enhancedPrompt,
@@ -240,57 +300,7 @@ export async function callVertexAIGemini(
             errorLog(
                 "ERROR: No imageData in result from generateImageWithVertexAI - likely content policy violation",
             );
-
-            // Extract all available information from the response
-            const geminiExplanation = result.textResponse;
-            const finishReason = result.finishReason;
-            const safetyRatings = result.safetyRatings;
-
-            // Build informative error message with all available information
-            if (geminiExplanation) {
-                // Return Gemini's actual explanation to the user
-                throw new HttpError(`Gemini: ${geminiExplanation}`, 400);
-            }
-
-            // If we have safety ratings, extract details
-            if (safetyRatings && safetyRatings.length > 0) {
-                const blockedCategories = safetyRatings
-                    .filter((rating: any) => rating.blocked)
-                    .map((rating: any) => rating.category)
-                    .join(", ");
-
-                const highProbCategories = safetyRatings
-                    .filter(
-                        (rating: any) =>
-                            rating.probability === "HIGH" ||
-                            rating.probability === "MEDIUM",
-                    )
-                    .map(
-                        (rating: any) =>
-                            `${rating.category} (${rating.probability})`,
-                    )
-                    .join(", ");
-
-                if (blockedCategories) {
-                    throw new HttpError(
-                        `${finishReason || "Content blocked"}: ${blockedCategories}`,
-                        400,
-                    );
-                } else if (highProbCategories) {
-                    throw new HttpError(
-                        `${finishReason || "Content flagged"}: ${highProbCategories}`,
-                        400,
-                    );
-                }
-            }
-
-            // Return finish reason if available
-            if (finishReason) {
-                throw new HttpError(finishReason, 400);
-            }
-
-            // Fallback for cases with no additional information
-            throw new HttpError("No image data returned from Vertex AI", 400);
+            throw buildNoImageDataError(result);
         }
 
         // Convert base64 to buffer
@@ -310,12 +320,7 @@ export async function callVertexAIGemini(
                     height: safeParams.height,
                 },
                 {
-                    generator:
-                        safeParams.model === "nanobanana-pro"
-                            ? "Vertex AI Gemini 3 Pro Image Preview"
-                            : safeParams.model === "nanobanana-2"
-                              ? "Vertex AI Gemini 3.1 Flash Image Preview"
-                              : "Vertex AI Gemini 2.5 Flash Image Preview",
+                    generator: modelConfig.name,
                     textResponse: result.textResponse,
                     usage: result.usage,
                 },
@@ -348,25 +353,6 @@ export async function callVertexAIGemini(
         };
     } catch (error) {
         errorLog("Error in callVertexAIGemini:", error);
-
-        // Extract response data from error if available
-        const errorResponseData = (error as any).responseData || null;
-
-        // Extract refusal reason from error response if available
-        const refusalDetails = errorResponseData
-            ? {
-                  refusalReason:
-                      errorResponseData.textResponse ||
-                      errorResponseData.candidates?.[0]?.finishReason ||
-                      error.message,
-                  textResponse: errorResponseData.textResponse,
-                  finishReason: errorResponseData.candidates?.[0]?.finishReason,
-              }
-            : {
-                  refusalReason: error.message,
-                  textResponse: null,
-                  finishReason: null,
-              };
 
         // Preserve Gemini's text response if it's already formatted (starts with "Gemini:")
         const errorMessage = error.message;

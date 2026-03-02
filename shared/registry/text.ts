@@ -615,7 +615,8 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.01),
             },
         ],
-        description: "Step 3.5 Flash - Fast reasoning model via api.airforce",
+        description:
+            "Step 3.5 Flash (api.airforce) - Fast reasoning model",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: false,

@@ -22,8 +22,6 @@ GH_TOKEN = os.environ.get("GH_TOKEN")
 POLLINATIONS_API_KEY = os.environ.get("POLLINATIONS_API_KEY", "")
 VALIDATION_RESULT = os.environ.get("VALIDATION_RESULT", "{}")
 ISSUE_AUTHOR = os.environ.get("ISSUE_AUTHOR", "")
-BOT_NAME = os.environ.get("BOT_NAME", "pollinations-ai[bot]")
-BOT_EMAIL = os.environ.get("BOT_EMAIL", "pollinations-ai[bot]@users.noreply.github.com")
 
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "openai"
@@ -339,19 +337,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 
     print(f"   Description: {description}")
 
-    # Get stars from validation result
-    stars = validation.get("stars", 0)
-    stars_str = f"⭐{stars}" if stars else ""
-
-    # Create branch
-    slug = parsed['name'].lower().replace(" ", "-").replace("_", "-")[:20]
-    branch = f"auto/app-{ISSUE_NUMBER}-{slug}"
-
-    run_cmd(["git", "fetch", "origin", "main"])
-    run_cmd(["git", "checkout", "-b", branch, "origin/main"])
-
-    # Build the row
-    today = datetime.now().strftime("%Y-%m-%d")
+    # Build row data for preview (no stars — daily metrics workflow handles it)
     repo_url = parsed['repo'] if parsed['repo'] and parsed['repo'] != "_No response_" else ""
     discord = parsed['discord'] if parsed['discord'] and parsed['discord'] != "_No response_" else ""
 
@@ -362,10 +348,9 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     # Determine if app URL is a GitHub repo or a web URL
     app_url = parsed['url'] if parsed['url'] and parsed['url'] != "_No response_" else ""
     is_github_repo = "github.com" in app_url and "github.io" not in app_url
-    
+
     if is_github_repo:
         web_url = ""
-        # Use app URL as repo if no separate repo provided
         if not repo_url:
             repo_url = app_url
     else:
@@ -380,39 +365,52 @@ Respond with ONLY a JSON object (no markdown, no explanation):
             issue_created_at = created_at[:10]  # YYYY-MM-DD
     except Exception as e:
         print(f"   Warning: Could not fetch issue creation date: {e}")
-        issue_created_at = today  # Fallback to today
+        issue_created_at = datetime.now().strftime("%Y-%m-%d")
 
     issue_url = f"https://github.com/pollinations/pollinations/issues/{ISSUE_NUMBER}"
 
-    # Format: | Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h | Health |
-    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | {platform} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |  |  |  |"
+    # Build JSON with all row data (Approved_Date omitted — set on merge)
+    row_data = {
+        "emoji": emoji,
+        "name": parsed['name'],
+        "web_url": web_url,
+        "description": description,
+        "language": language,
+        "category": category,
+        "platform": platform,
+        "github_username": f"@{ISSUE_AUTHOR}",
+        "github_user_id": github_user_id,
+        "repo_url": repo_url,
+        "discord": discord,
+        "submitted_date": issue_created_at,
+        "issue_url": issue_url,
+    }
 
-    # Add row using the prepend script
-    os.environ["NEW_ROW"] = new_row
-    run_cmd(["node", ".github/scripts/app-prepend-row.js"])
-    run_cmd(["node", ".github/scripts/app-update-greenhouse.js"])
+    row_json = json.dumps(row_data)
 
-    # Configure git
-    run_cmd(["git", "config", "user.name", BOT_NAME])
-    run_cmd(["git", "config", "user.email", BOT_EMAIL])
+    # Build preview comment
+    comment = f"""## App Review Preview
 
-    # Commit with issue author as co-author
-    commit_msg = f"""Add {parsed['name']} to {category}
+| Field | Value |
+|-------|-------|
+| Emoji | {emoji} |
+| Name | {parsed['name']} |
+| URL | {web_url or repo_url or '—'} |
+| Description | {description} |
+| Category | {category} |
+| Platform | {platform} |
+| Language | {language} |
+| GitHub | @{ISSUE_AUTHOR} |
+| Repo | {repo_url or '—'} |
+| Discord | {discord or '—'} |
+| Submitted | {issue_created_at} |
 
-Co-authored-by: {ISSUE_AUTHOR} <{ISSUE_AUTHOR}@users.noreply.github.com>"""
+> A maintainer will review this and add the `TIER-APP-APPROVED` label to proceed.
 
-    run_cmd(["git", "add", "-A"])
-    run_cmd(["git", "commit", "-m", commit_msg])
-    run_cmd(["git", "push", "origin", branch, "--force-with-lease"])
+<!-- APP_REVIEW_DATA {row_json} APP_REVIEW_DATA -->"""
 
-    # Check for existing PR
-    existing_pr = validation.get("existing_pr")
-    if existing_pr:
-        print(f"   📝 Updating existing PR #{existing_pr['number']}")
-    else:
-        # Create PR
-        pr_body = f"- Adds [{parsed['name']}]({parsed['url']}) to {category}\n- {description}\n\nFixes #{ISSUE_NUMBER}"
-        run_cmd(["gh", "pr", "create", "--title", f"Add {parsed['name']} to {category}", "--body", pr_body, "--label", "TIER-APP-REVIEW-PR"])
+    # Post preview comment
+    gh_api(f"/repos/pollinations/pollinations/issues/{ISSUE_NUMBER}/comments", "POST", {"body": comment})
 
     # Update issue label (remove both TIER-APP and TIER-APP-INCOMPLETE if present)
     run_cmd(["gh", "issue", "edit", ISSUE_NUMBER, "--remove-label", "TIER-APP", "--remove-label", "TIER-APP-INCOMPLETE", "--add-label", "TIER-APP-REVIEW"])

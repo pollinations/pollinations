@@ -17,16 +17,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎛️ Mharomo.systems](https://mharomo.systems) | Generate AI images, music, videos, and voice content from simple prompts. | [@Mharomoincpass](https://github.com/Mharomoincpass) |
+| [🤖 amerli chat app](https://amerli.ir/) | Persian-language conversational AI and messaging with a responsive mobile-first PWA for the Persian-speaking community. | [@JustinStar-py](https://github.com/JustinStar-py) |
+| [📰 The Tech Chronicle](https://www.justnansuri.com/) | Hosts Forum, Chat, Pool, and Mini Apps within The Tech Chronicle, allowing users to create and run their own applications inside the web app. | [@nansuri](https://github.com/nansuri) |
+| [🎨 Pollinations-ai-STUDIO](https://pollinations-ai-studio.pages.dev/) | API endpoints, authentication, and image-generation parameters for developer integration. | [@rikunarita](https://github.com/rikunarita) |
+| [📚 Cryonex](https://www.cryonex.app/app) | All-in-one study assistant replacing tabs to save students money. | [@BlazeGlitchz2](https://github.com/BlazeGlitchz2) |
+| [🧮 BhaskarMath](https://bhaskarmath.github.io/BhaskarMath/) | Math lessons, practice problems, and step-by-step solutions across algebra, calculus, and geometry for study and exam preparation. | [@miguelsaldanha1213-byte](https://github.com/miguelsaldanha1213-byte) |
+| [📝 baiye-ai.com](http://www.baiye-ai.com) | Cloud AI note-taking app with Markdown, AI writing, and image generation. | [@qinghuaju](https://github.com/qinghuaju) |
+| [🎓 DDCET.Trainer](https://ddcettrainer.netlify.app/) | Interactive exam prep app with structured MCQs for DDCET diploma students. | [@Parthsadaria](https://github.com/Parthsadaria) |
 | [🧩 ComfyUI-Pollinations-BYOP](https://github.com/ChunkyPanda29/ComfyUI-Pollinations-BYOP) | ComfyUI integration with BYOP support — four nodes for Image, Video, Text, and Audio generation with auto-syncing model dropdowns. | [@ChunkyPanda29](https://github.com/ChunkyPanda29) |
 | [✍️ TeleChars AI](https://telecharsai.x10.mx) | AI character creation platform for Telegram with memory, image/audio understanding, and BYOP key support. | [@MarcosFRG](https://github.com/MarcosFRG) |
-| [🎮 Plaiyground](https://playground.endoxi.dev) | BYOP vibe coding tool using multiple Pollinations AI models to generate web apps. | [@MetaMysteries8](https://github.com/MetaMysteries8) |
-| [🧠 EnneAI](https://t.me/typologyAIbot) | Telegram personality typing bot using AI via Pollinations across two personality systems. | [@Gl0wdy](https://github.com/Gl0wdy) |
-| [🌐 wwwsim](https://wwwsim.netlify.app/) | AI website builder using multiple models like Gemini, Claude, and Kimi for design and code generation. | [@Brybod123](https://github.com/Brybod123) |
-| [⚖️ Marid V2.0](https://ai.al-mohamy.com/) | LangGraph-driven legal AI multi-agent system with RAG for high-fidelity legal analysis. | [@ahmedmetwali1](https://github.com/ahmedmetwali1) |
-| [🖌️ Viso](https://viso-l.netlify.app/) | Clean brutalist AI image generator with multiple art styles and aspect ratios. | [@xxooxannn](https://github.com/xxooxannn) |
-| [🎨 AnimePollen](https://animepollen.vercel.app/) | Free AI anime art generator — describe scenes to get instant illustrations. | [@Pelz01](https://github.com/Pelz01) |
-| [🌊 Dream-Stream](https://dream-stream-ai.huangxiaogang.workers.dev/) | Serverless AI art gallery on Cloudflare Workers using Pollinations API. | [@huangxiaogang-ctrl](https://github.com/huangxiaogang-ctrl) |
-| [🖼️ StickerForge](https://stickerforge-two.vercel.app/) | Generate custom stickers for Telegram and WhatsApp from images or text prompts. | [@patangal](https://github.com/patangal) |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

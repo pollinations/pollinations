@@ -235,24 +235,26 @@ jobs:
               per_page: 100,
             });
 
-            // Find the latest bot comment with APP_REVIEW_DATA
+            // Find the latest bot comment with JSON code block
             const botSlug = '${{ steps.token.outputs.app-slug }}[bot]';
             let rowData = null;
             for (const c of comments.data.reverse()) {
               if (c.user.login === botSlug || c.user.type === 'Bot') {
-                const match = c.body.match(/<!-- APP_REVIEW_DATA (.+?) APP_REVIEW_DATA -->/);
+                const match = c.body.match(/```json\n([\s\S]+?)\n```/);
                 if (match) {
-                  rowData = match[1];
+                  rowData = match[1].trim();
                   break;
                 }
               }
             }
 
             if (!rowData) {
-              core.setFailed('No APP_REVIEW_DATA found in issue comments');
+              core.setFailed('No review data JSON found in bot comments');
               return;
             }
 
+            // Validate it's parseable
+            JSON.parse(rowData);
             core.setOutput('row_data', rowData);
 
       - name: Create branch, update APPS.md, push

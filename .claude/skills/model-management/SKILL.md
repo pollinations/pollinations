@@ -8,6 +8,7 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 1. Update `.env` and `secrets/env.json` (sops) with credentials
 2. Update config/handler with model routing
 3. Update registry with **pricing** and **provider**
+4. Run tests (see [Testing](#testing) below)
 
 > ⚠️ **Pricing depends on BOTH model AND provider.** Always verify pricing on the provider's website.
 
@@ -45,6 +46,25 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 | Change provider | ✅ | ✅ | ✅ (pricing!) |
 | Make paid-only | - | - | ✅ (`paidOnly: true`) |
 | Disable model | - | ✅ (remove) | ✅ (remove) |
+| Upgrade model | ✅ (if provider changes) | ✅ | ✅ (pricing!) |
+
+---
+
+# Testing
+
+After updating model files, run these tests from `enter.pollinations.ai/`:
+
+```bash
+# 1. Alias resolution (fast, no network) — verifies aliases map to service IDs
+npx vitest run test/aliases.test.ts
+
+# 2. Integration tests for the specific model (uses VCR snapshots)
+npx vitest run test/integration/text.test.ts --testNamePattern="<service-name> "
+```
+
+**Notes:**
+- VCR snapshots are auto-recorded on first run if the EC2 text service is reachable
+- Run `npm run decrypt-vars` first if you haven't already
 
 ---
 

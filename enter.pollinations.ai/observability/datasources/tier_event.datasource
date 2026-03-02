@@ -9,7 +9,7 @@ SCHEMA >
     `environment` LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
     `user_id` Nullable(String) `json:$.user_id`,
     `tier` Nullable(String) `json:$.tier`,
-    `pollen_amount` Nullable(Int32) `json:$.pollen_amount`,
+    `pollen_amount` Nullable(Float64) `json:$.pollen_amount`,
     `previous_balance` Nullable(Float64) `json:$.previous_balance`,
     `user_count` Nullable(Int32) `json:$.user_count`,
     `timestamp` DateTime `json:$.timestamp`
@@ -19,4 +19,4 @@ ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "timestamp, environment, event_type"
 
 FORWARD_QUERY >
-    SELECT event_type, environment, user_id, tier, pollen_amount, defaultValueOfTypeName('Nullable(Float64)') AS previous_balance, user_count, timestamp
+    SELECT event_type, environment, user_id, tier, CAST(pollen_amount AS Nullable(Float64)) AS pollen_amount, defaultValueOfTypeName('Nullable(Float64)') AS previous_balance, user_count, timestamp

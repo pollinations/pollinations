@@ -1,10 +1,4 @@
 import { useCallback } from "react";
-import {
-    isColorToken,
-    isFontToken,
-    isOpacityToken,
-    isRadiusToken,
-} from "../utils/token-helpers";
 
 type BucketState<T> = Record<string, { tokens: string[] } & T>;
 
@@ -55,9 +49,3 @@ export function useDragAndDrop<T>(
 
     return { handleDrop, handleDragOver };
 }
-
-// Specific token filters
-export const colorTokenFilter = (token: string) => isColorToken(token);
-export const radiusTokenFilter = (token: string) => isRadiusToken(token);
-export const fontTokenFilter = (token: string) => isFontToken(token);
-export const opacityTokenFilter = (token: string) => isOpacityToken(token);

@@ -40,6 +40,24 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "nanobanana-2": {
+        aliases: ["nanobanana2"],
+        modelId: "nanobanana-2",
+        provider: "google",
+        paidOnly: true,
+        cost: [
+            // Gemini 3.1 Flash Image via Vertex AI
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.5), // $0.50 per 1M input tokens
+                promptImageTokens: perMillion(0.5), // $0.50 per 1M input tokens
+                completionImageTokens: perMillion(60), // $60 per 1M tokens × 2520 tokens/image = $0.151 per image
+            },
+        ],
+        description: "NanoBanana 2 - Gemini 3.1 Flash Image",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "nanobanana-pro": {
         aliases: [],
         modelId: "nanobanana-pro",
@@ -60,19 +78,36 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "seedream5": {
+        aliases: [],
+        modelId: "seedream5",
+        provider: "bytedance",
+        paidOnly: true,
+        cost: [
+            // ByteDance ARK Seedream 5.0 Lite - $0.035 per image
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.035, // $0.035 per image (3.5 cents)
+            },
+        ],
+        description:
+            "Seedream 5.0 Lite - ByteDance ARK (web search, reasoning)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "seedream": {
         aliases: [],
         modelId: "seedream",
         provider: "bytedance",
         paidOnly: true,
+        hidden: true,
         cost: [
-            // ByteDance ARK Seedream 4.0 - $0.03 per image
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.03, // $0.03 per image (3 cents)
+                completionImageTokens: 0.03, // $0.03 per image (real 4.0)
             },
         ],
-        description: "Seedream 4.0 - ByteDance ARK (better quality)",
+        description: "Seedream 4.0 - ByteDance ARK (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -81,14 +116,14 @@ export const IMAGE_SERVICES = {
         modelId: "seedream-pro",
         provider: "bytedance",
         paidOnly: true,
+        hidden: true,
         cost: [
-            // ByteDance ARK Seedream 4.5 - $0.04 per image
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.04, // $0.04 per image (4 cents)
+                completionImageTokens: 0.04, // $0.04 per image (real 4.5)
             },
         ],
-        description: "Seedream 4.5 Pro - ByteDance ARK (4K, Multi-Image)",
+        description: "Seedream 4.5 Pro - ByteDance ARK (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

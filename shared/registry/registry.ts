@@ -79,7 +79,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     reasoning?: boolean;
     search?: boolean;
     codeExecution?: boolean;
-    contextWindow?: number;
+    contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
     persona?: boolean;
@@ -280,7 +280,7 @@ export function calculateCost(modelId: ModelId, usage: Usage): UsageCost {
         );
     const usageCost = convertUsage(usage, costDefinition);
     const totalCost = safeRound(
-        Object.values(usageCost).reduce((total, cost) => total + cost),
+        Object.values(usageCost).reduce((total, cost) => total + cost, 0),
         PRECISION,
     );
     return {
@@ -300,7 +300,7 @@ export function calculatePrice(serviceId: ServiceId, usage: Usage): UsagePrice {
         );
     const usagePrice = convertUsage(usage, priceDefinition);
     const totalPrice = safeRound(
-        Object.values(usagePrice).reduce((total, price) => total + price),
+        Object.values(usagePrice).reduce((total, price) => total + price, 0),
         PRECISION,
     );
     return {
@@ -308,5 +308,3 @@ export function calculatePrice(serviceId: ServiceId, usage: Usage): UsagePrice {
         totalPrice,
     };
 }
-
-// ModelInfo, getModelInfo, getTextModelsInfo, getImageModelsInfo are in model-info.ts

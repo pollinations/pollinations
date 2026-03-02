@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Dedup test 1772217849067"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1846",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 27 Feb 2026 18:44:16 GMT",
+      "etag": "W/\"736-Pb8jkWeFe7QmlEcI+WPu/NkLPGo\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "448",
+      "x-usage-completion-text-tokens": "189",
+      "x-usage-prompt-text-tokens": "256"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Got the test ID: 1772217849067.\n\nDo you want me to actually dedupe something, or was this just a ping? If you want help, tell me the data format (CSV/SQL/table/list) and the dedupe criteria. Quick snippets if useful:\n\n- Python (pandas): df = df.drop_duplicates(subset=['colA','colB'], keep='first')\n- SQL (keep lowest id per group): WITH cte AS (SELECT id, ROW_NUMBER() OVER (PARTITION BY colA,colB ORDER BY id) rn FROM my_table) DELETE FROM my_table USING cte WHERE my_table.id = cte.id AND cte.rn > 1\n- Shell (lines): sort -u input.txt > deduped.txt\n\nWhich one do you want to use, or paste a small sample and I’ll show exactly how.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772217850,
+        "id": "pllns_b07d2b73c305d70f7cd37a778bac3b60",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 637,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 448,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 256,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 893
+        }
+      }
+    }
+  }
+}

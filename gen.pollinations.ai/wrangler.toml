@@ -101,3 +101,23 @@ simple = { limit = 10000, period = 10 }
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+
+# ---------- Test ----------
+[env.test]
+
+[[env.test.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.test.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+[[env.test.kv_namespaces]]
+binding = "KV"
+id = "aa0d0aceb6bd45de93032270c7adf4ab"
+
+[env.test.vars]
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"

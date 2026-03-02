@@ -289,12 +289,18 @@ export const proxyRoutes = new Hono<Env>()
         return c.json(filterModels(getAudioModelsInfo(), allowedModels, paid));
     })
 
+    // Cache runs BEFORE auth (cache-first pattern)
+    .use("/image/*", imageCache)
+    .use("/video/*", imageCache)
+    .use("/v1/chat/completions", textCache)
+    .use("/text/*", textCache)
+
     // Auth required for all generation endpoints below
     .use(auth({ required: true }))
     .use(requestDeduplication)
 
     // --- Chat Completions ---
-    .post("/v1/chat/completions", textCache, async (c) => {
+    .post("/v1/chat/completions", async (c) => {
         requireAuth(c);
 
         // Parse body to get model
@@ -355,7 +361,7 @@ export const proxyRoutes = new Hono<Env>()
     })
 
     // --- Simple Text ---
-    .get("/text/:prompt", textCache, async (c) => {
+    .get("/text/:prompt", async (c) => {
         requireAuth(c);
         const model = resolveModelFromRequest(c, DEFAULT_TEXT_MODEL);
         requireModelAccess(c, model.resolved);
@@ -395,7 +401,7 @@ export const proxyRoutes = new Hono<Env>()
     })
 
     // --- Image Generation ---
-    .get("/image/:prompt{[\\s\\S]+}", imageCache, async (c) => {
+    .get("/image/:prompt{[\\s\\S]+}", async (c) => {
         requireAuth(c);
         const model = resolveModelFromRequest(c, DEFAULT_IMAGE_MODEL);
         requireModelAccess(c, model.resolved);
@@ -435,7 +441,7 @@ export const proxyRoutes = new Hono<Env>()
     })
 
     // --- Video Generation ---
-    .get("/video/:prompt{[\\s\\S]+}", imageCache, async (c) => {
+    .get("/video/:prompt{[\\s\\S]+}", async (c) => {
         requireAuth(c);
         const model = resolveModelFromRequest(c, DEFAULT_IMAGE_MODEL);
         requireModelAccess(c, model.resolved);

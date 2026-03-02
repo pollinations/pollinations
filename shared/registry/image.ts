@@ -318,6 +318,22 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "flux-2-dev": {
+        aliases: ["flux-2", "flux2-dev"],
+        modelId: "flux-2-dev",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-03-02").getTime(),
+                completionImageTokens: 0.001, // $0.001 per image
+            },
+        ],
+        description:
+            "FLUX.2 Dev (api.airforce) - Next-gen Flux image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "grok-imagine": {
         aliases: [],
         modelId: "grok-imagine",

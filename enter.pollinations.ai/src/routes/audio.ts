@@ -396,6 +396,166 @@ export async function generateMusic(opts: {
     });
 }
 
+/**
+ * Generate music via Suno (api.airforce).
+ * Calls the airforce images/generations endpoint with SSE, downloads the MP4 result.
+ * Falls back to suno-v4.5 if suno-v5 fails.
+ */
+export async function generateSunoMusic(opts: {
+    prompt: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { prompt, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Suno music service is not configured (missing API key)",
+        });
+    }
+
+    if (prompt.length > 10000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+        });
+    }
+
+    const models = ["suno-v5", "suno-v4.5"];
+
+    for (const model of models) {
+        try {
+            log.info("Suno request: model={model}, chars={chars}", {
+                model,
+                chars: prompt.length,
+            });
+
+            const response = await fetch(
+                "https://api.airforce/v1/images/generations",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model,
+                        prompt,
+                        n: 1,
+                        sse: true,
+                        response_format: "url",
+                    }),
+                },
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                log.warn("Suno {model} error {status}: {body}", {
+                    model,
+                    status: response.status,
+                    body: errorText,
+                });
+                if (model !== models[models.length - 1]) continue;
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        errorText || getDefaultErrorMessage(response.status),
+                });
+            }
+
+            // Parse SSE response to find the result URL
+            const text = await response.text();
+            let resultUrl: string | undefined;
+
+            for (const line of text.split("\n")) {
+                const trimmed = line.trim();
+                if (
+                    !trimmed.startsWith("data: ") ||
+                    trimmed === "data: [DONE]" ||
+                    trimmed === "data: : keepalive"
+                ) {
+                    continue;
+                }
+                try {
+                    const parsed = JSON.parse(trimmed.slice(6)) as {
+                        data?: Array<{ url?: string }>;
+                        error?: string;
+                    };
+                    if (parsed.error) {
+                        throw new Error(parsed.error);
+                    }
+                    const url = parsed.data?.[0]?.url;
+                    if (url) resultUrl = url;
+                } catch (e) {
+                    if (e instanceof UpstreamError) throw e;
+                    log.debug("Skipping SSE line: {line}", { line: trimmed });
+                }
+            }
+
+            if (!resultUrl) {
+                log.warn("Suno {model} SSE returned no URL", { model });
+                if (model !== models[models.length - 1]) continue;
+                throw new UpstreamError(500 as ContentfulStatusCode, {
+                    message: "Suno returned no result URL",
+                });
+            }
+
+            // Download the MP4 result
+            log.info("Downloading Suno result from {url}", { url: resultUrl });
+            const downloadResponse = await fetch(resultUrl);
+            if (!downloadResponse.ok) {
+                throw new UpstreamError(500 as ContentfulStatusCode, {
+                    message: `Failed to download Suno result: ${downloadResponse.status}`,
+                });
+            }
+
+            const audioBuffer = await downloadResponse.arrayBuffer();
+
+            // Estimate duration from file size: music MP4 ~500KB/min ≈ 8333 bytes/sec
+            const estimatedDuration = audioBuffer.byteLength / 8333;
+
+            const usageHeaders = buildUsageHeaders(
+                "suno",
+                createCompletionAudioSecondsUsage(estimatedDuration),
+            );
+
+            const contentType =
+                downloadResponse.headers.get("content-type") || "audio/mpeg";
+
+            log.info(
+                "Suno success: model={model}, {bytes} bytes, ~{duration}s",
+                {
+                    model,
+                    bytes: audioBuffer.byteLength,
+                    duration: Math.round(estimatedDuration),
+                },
+            );
+
+            return new Response(audioBuffer, {
+                status: 200,
+                headers: {
+                    "Content-Type": contentType,
+                    ...usageHeaders,
+                },
+            });
+        } catch (e) {
+            if (e instanceof UpstreamError) throw e;
+            log.warn("Suno {model} failed: {error}", {
+                model,
+                error: (e as Error).message,
+            });
+            if (model === models[models.length - 1]) {
+                throw new UpstreamError(500 as ContentfulStatusCode, {
+                    message: `Suno music generation failed: ${(e as Error).message}`,
+                });
+            }
+        }
+    }
+
+    // Should never reach here, but TypeScript needs it
+    throw new UpstreamError(500 as ContentfulStatusCode, {
+        message: "Suno music generation failed",
+    });
+}
+
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), balance)
@@ -455,6 +615,17 @@ export const audioRoutes = new Hono<Env>()
             ) as CreateSpeechRequest;
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "suno") {
+                const airforceApiKey = (
+                    c.env as unknown as { AIRFORCE_API_KEY: string }
+                ).AIRFORCE_API_KEY;
+                return generateSunoMusic({
+                    prompt: input,
+                    apiKey: airforceApiKey,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(

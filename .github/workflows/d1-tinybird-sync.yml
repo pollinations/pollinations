@@ -6,6 +6,8 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch: # Manual trigger from GitHub UI
 
+permissions: {}
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -29,8 +31,13 @@ jobs:
             exit 1
           fi
 
-          # Report per-table results
-          echo "$body" | jq -r '.tables[] | "  \(.datasource): \(.rows) rows (\(.status))"'
+          # Report per-table results (handle non-JSON responses gracefully)
+          if echo "$body" | jq -e '.tables' > /dev/null 2>&1; then
+            echo "$body" | jq -r '.tables[] | "  \(.datasource): \(.rows) rows (\(.status))"'
+          else
+            echo "::warning::Unexpected response format: $body"
+            exit 1
+          fi
 
           if [ "$http_code" = "207" ]; then
             echo "::warning::Some tables failed to sync"

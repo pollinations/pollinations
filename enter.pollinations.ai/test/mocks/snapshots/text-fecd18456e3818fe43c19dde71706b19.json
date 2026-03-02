@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sequential test 1772219386239"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1766",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 27 Feb 2026 19:10:05 GMT",
+      "etag": "W/\"6e6-Y2XPapTK6cvjZdrDjzAjhPPfQHA\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "1472",
+      "x-usage-completion-text-tokens": "152",
+      "x-usage-prompt-text-tokens": "255"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Got the string \"Sequential test 1772219386239\". What do you want me to do with that?\n\nOptions I can do right away:\n- Treat the number as data and run quick checks (primality/factorization). Quick result: 1772219386239 = 3 × 590739795413, so it’s divisible by 3.\n- Interpret it as a Unix timestamp (ms since epoch) and convert to a human date/time.\n- Use it as an ID and look up or simulate a sequential test run (tell me what tests you want).\n- Anything else you had in mind — pattern search, encode/decode, checksum, etc.\n\nWhich would you like?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772219386,
+        "id": "pllns_c7f7a8f7cd8830dc4ba2172ffefa93de",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1624,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1472,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 255,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1879
+        }
+      }
+    }
+  }
+}

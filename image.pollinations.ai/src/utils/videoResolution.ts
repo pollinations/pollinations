@@ -92,12 +92,3 @@ export function calculateVideoResolution(
 
     return { aspectRatio, resolution: defaultRes };
 }
-
-/**
- * Lowercase format for APIs that use lowercase (e.g., "720p" instead of "720P")
- */
-export function resolutionToLowercase(
-    resolution: "480P" | "720P" | "1080P",
-): "480p" | "720p" | "1080p" {
-    return resolution.toLowerCase() as "480p" | "720p" | "1080p";
-}

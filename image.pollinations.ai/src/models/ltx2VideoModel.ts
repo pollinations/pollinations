@@ -1,8 +1,8 @@
-import sleep from "await-sleep";
 import debug from "debug";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { sleep } from "../util.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 // Logger

@@ -28,7 +28,7 @@ Devvit.addTrigger({
       process.exit(0);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       if (errorMessage.includes('being created asynchronously')) {
         console.log('✅ Image is being posted asynchronously and will appear soon');
         process.exit(0);
@@ -41,43 +41,3 @@ Devvit.addTrigger({
 });
 
 export default Devvit;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

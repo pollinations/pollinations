@@ -2,7 +2,7 @@
 
 > Content-addressed media upload service for Pollinations
 
-Upload media files (images/audio/video) and get back a content-addressed URL to use with Pollinations models.
+Upload files and get back a content-addressed URL to use with Pollinations models.
 
 ## 🎯 What it does
 
@@ -18,15 +18,18 @@ Upload media files (images/audio/video) and get back a content-addressed URL to 
 ```bash
 # Multipart form-data
 curl -X POST https://media.pollinations.ai/upload \
+  -H "Authorization: Bearer <your-api-key>" \
   -F "file=@image.jpg"
 
 # Raw binary
 curl -X POST https://media.pollinations.ai/upload \
+  -H "Authorization: Bearer <your-api-key>" \
   -H "Content-Type: image/jpeg" \
   --data-binary "@image.jpg"
 
 # Base64 JSON
 curl -X POST https://media.pollinations.ai/upload \
+  -H "Authorization: Bearer <your-api-key>" \
   -H "Content-Type: application/json" \
   -d '{
     "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
@@ -51,6 +54,16 @@ curl https://media.pollinations.ai/a3f2b1c4d5e6f7...
 # Returns: original file with correct content-type
 ```
 
+### Delete your own upload
+
+```bash
+curl -X DELETE https://media.pollinations.ai/a3f2b1c4d5e6f7... \
+  -H "Authorization: Bearer <your-api-key>"
+
+# Returns:
+# { "deleted": true, "id": "a3f2b1c4d5e6f7..." }
+```
+
 ### Check if file exists (HEAD request)
 
 ```bash
@@ -66,7 +79,7 @@ Upload a media file.
 
 **Request:**
 - `Content-Type: multipart/form-data` with `file` field
-- Or raw binary with appropriate `Content-Type` header (e.g., `image/jpeg`)
+- Or raw binary with a `Content-Type` header (e.g., `image/jpeg`)
 - Or JSON with `Content-Type: application/json`:
   ```json
   {
@@ -90,7 +103,6 @@ Upload a media file.
 **Errors:**
 - `400` - No file provided, empty file, or invalid JSON/base64
 - `413` - File too large (max 10MB)
-- `415` - Invalid file type (must be image/*, audio/*, or video/*)
 
 ### `GET /:hash`
 
@@ -109,6 +121,21 @@ Retrieve a media file by its hash.
 - `400` - Invalid hash format
 - `404` - File not found
 
+### `DELETE /:hash`
+
+Delete a file you uploaded. Only the original uploader can delete their own files.
+
+**Response:**
+```json
+{ "deleted": true, "id": "a3f2b1c4d5e6f7..." }
+```
+
+**Errors:**
+- `400` - Invalid hash format
+- `401` - Missing or invalid API key
+- `403` - Not the original uploader
+- `404` - File not found
+
 ### `HEAD /:hash`
 
 Check if a file exists without downloading.
@@ -121,16 +148,7 @@ Check if a file exists without downloading.
 
 Service info and health check.
 
-## 🔧 Supported File Types
 
-### Images
-- JPEG, PNG, GIF, WebP, SVG, BMP, ICO
-
-### Audio
-- MP3, WAV, OGG, M4A, FLAC, AAC
-
-### Video
-- MP4, WebM, MOV, AVI, MKV
 
 ## 💡 Use Cases
 
@@ -169,8 +187,8 @@ npm run deploy:production
 ## 📊 Limits
 
 - **Max file size:** 10MB
-- **Supported types:** image/*, audio/*, video/*
-- **Storage:** Cloudflare R2 (content-addressed, immutable)
+- **Storage:** Cloudflare R2
+- **Default expiry:** 14 days
 
 ## 🔒 Content Addressing
 

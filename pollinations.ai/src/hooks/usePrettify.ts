@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { prettifyCopy } from "../copy/translation/prettify";
 
 /** Feature flag — flip to false to disable prettification globally */
-export const PRETTIFY_ENABLED = true;
+const PRETTIFY_ENABLED = true;
 
 /**
  * Hook to prettify a string field on an array of items via Pollinations API.

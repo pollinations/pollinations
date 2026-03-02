@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAirforceModelConfig,
@@ -12,121 +11,84 @@ import {
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
-    createScalewayModelConfig,
 } from "./providerConfigs.js";
 
-dotenv.config();
+// =============================================================================
+// Helpers
+// =============================================================================
 
-// Config keys can be modelIds or custom names - not all modelIds need entries
-type PortkeyConfigMap = Record<string, () => unknown>;
+type PortkeyConfigFactory = () => Record<string, unknown>;
+type PortkeyConfigMap = Record<string, PortkeyConfigFactory>;
 
-// Unified flat Portkey configuration for all providers and models
-// Only configs used by public models in availableModels.ts
+/** Creates a Vertex AI config for Gemini models. */
+function createVertexGeminiConfig(
+    modelId: string,
+    region: string,
+): PortkeyConfigFactory {
+    return () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": region,
+        "vertex-model-id": modelId,
+        "strict-openai-compliance": "false",
+    });
+}
+
+/** Creates an Azure config with a max-completion-tokens limit. */
+function createAzureWithMaxTokens(
+    apiKeyEnv: string | undefined,
+    endpointEnv: string | undefined,
+    modelName: string,
+    maxTokens: number,
+): PortkeyConfigFactory {
+    return () => ({
+        ...createAzureModelConfig(apiKeyEnv, endpointEnv, modelName),
+        "max-completion-tokens": maxTokens,
+    });
+}
+
+// =============================================================================
+// Portkey Configuration Map
+// =============================================================================
+
 export const portkeyConfig: PortkeyConfigMap = {
-    // ============================================================================
-    // Azure (Myceli) - openai, openai-large, openai-audio
-    // ============================================================================
-    "gpt-5-mini": () => ({
-        ...createAzureModelConfig(
-            process.env.AZURE_PF_GPT5MINI_API_KEY,
-            process.env.AZURE_PF_GPT5MINI_ENDPOINT,
-            "gpt-5-mini",
-        ),
-        "max-completion-tokens": 16384,
-    }),
-    "gpt-5.2-2025-12-11": () => ({
-        ...createAzureModelConfig(
-            process.env.AZURE_MYCELI_GPT52_API_KEY,
-            process.env.AZURE_MYCELI_GPT52_ENDPOINT,
-            "gpt-5.2-2025-12-11",
-        ),
-        "max-completion-tokens": 16384,
-    }),
-    "gpt-4o-mini-audio-preview-2024-12-17": () => ({
-        ...createAzureModelConfig(
-            process.env.AZURE_MYCELI_GPT4O_AUDIO_API_KEY,
-            process.env.AZURE_MYCELI_GPT4O_AUDIO_ENDPOINT,
-            "gpt-4o-mini-audio-preview-2024-12-17",
-        ),
-        "max-completion-tokens": 2048,
-    }),
-    "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
+    // -- Azure (Myceli) -------------------------------------------------------
+    "gpt-5-mini": createAzureWithMaxTokens(
+        process.env.AZURE_PF_GPT5MINI_API_KEY,
+        process.env.AZURE_PF_GPT5MINI_ENDPOINT,
+        "gpt-5-mini",
+        16384,
+    ),
+    "gpt-5.2-2025-12-11": createAzureWithMaxTokens(
+        process.env.AZURE_MYCELI_GPT52_API_KEY,
+        process.env.AZURE_MYCELI_GPT52_ENDPOINT,
+        "gpt-5.2-2025-12-11",
+        16384,
+    ),
+    "gpt-4o-mini-audio-preview-2024-12-17": createAzureWithMaxTokens(
+        process.env.AZURE_MYCELI_GPT4O_AUDIO_API_KEY,
+        process.env.AZURE_MYCELI_GPT4O_AUDIO_ENDPOINT,
+        "gpt-4o-mini-audio-preview-2024-12-17",
+        2048,
+    ),
+    "myceli-grok-4-fast": createMyceliGrok4FastConfig,
 
-    // ============================================================================
-    // Azure-2 (PointsFlyer) - openai-fast
-    // ============================================================================
-    "gpt-5-nano-2025-08-07": () => ({
-        ...createAzureModelConfig(
-            process.env.AZURE_PF_GPT5NANO_API_KEY,
-            process.env.AZURE_PF_GPT5NANO_ENDPOINT,
-            "gpt-5-nano-2025-08-07",
-        ),
-        "max-completion-tokens": 512,
-    }),
+    // -- Azure (PointsFlyer) --------------------------------------------------
+    "gpt-5-nano-2025-08-07": createAzureWithMaxTokens(
+        process.env.AZURE_PF_GPT5NANO_API_KEY,
+        process.env.AZURE_PF_GPT5NANO_ENDPOINT,
+        "gpt-5-nano-2025-08-07",
+        512,
+    ),
 
-    // ============================================================================
-    // Scaleway - qwen-coder (legacy)
-    // ============================================================================
-    "qwen2.5-coder-32b-instruct": () =>
-        createScalewayModelConfig({
-            model: "qwen2.5-coder-32b-instruct",
-        }),
-
-    // ============================================================================
-    // OVHcloud - Mistral
-    // ============================================================================
+    // -- OVHcloud Mistral -----------------------------------------------------
     "mistral-small-3.2-24b-instruct-2506": () =>
         createOVHcloudMistralConfig({
             model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),
 
-    // ============================================================================
-    // AWS Bedrock - claude-fast, claude, claude-large, nova-fast
-    // ============================================================================
-    "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-        }),
-    "us.anthropic.claude-sonnet-4-5-20250929-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        }),
-    "us.anthropic.claude-sonnet-4-6": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-6",
-        }),
-    "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        }),
-    "global.anthropic.claude-opus-4-6-v1": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-6-v1",
-        }),
-
-    // ============================================================================
-    // Google Vertex AI - Claude models (alternative to Bedrock)
-    // ============================================================================
-    "claude-opus-4-5-vertex": () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": "europe-west1",
-        "vertex-model-id": "anthropic.claude-opus-4-5@20251101",
-        "strict-open-ai-compliance": "true",
-    }),
-    "claude-sonnet-4-6-vertex": () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": "europe-west1",
-        "vertex-model-id": "anthropic.claude-sonnet-4-6",
-        "strict-open-ai-compliance": "true",
-    }),
-
-    // ============================================================================
-    // Claude Models - Direct Anthropic API (primary)
-    // ============================================================================
+    // -- Claude Direct Anthropic API ------------------------------------------
     "claude-sonnet-4-6": () =>
         createAnthropicConfig({
             model: "claude-sonnet-4-6",
@@ -147,119 +109,59 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "claude-haiku-4-5-20251001",
             defaultOptions: { max_tokens: 64000 },
         }),
-    "amazon.nova-micro-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "amazon.nova-micro-v1:0",
-        }),
-    // Nova Micro with Nova Lite fallback for rate limiting
+
+    // -- AWS Bedrock (Nova) ---------------------------------------------------
     "nova-micro-fallback": () => ({
         strategy: { mode: "fallback" },
         targets: [
-            // Primary: Nova Micro (cheapest)
             {
                 provider: "bedrock",
                 aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
                 aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
                 aws_region: process.env.AWS_REGION || "us-east-1",
-                override_params: {
-                    model: "amazon.nova-micro-v1:0",
-                },
+                override_params: { model: "amazon.nova-micro-v1:0" },
             },
-            // Fallback: Nova Lite (multimodal, slightly more expensive but still cheap)
             {
                 provider: "bedrock",
                 aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
                 aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
                 aws_region: process.env.AWS_REGION || "us-east-1",
-                override_params: {
-                    model: "amazon.nova-lite-v1:0",
-                },
+                override_params: { model: "amazon.nova-lite-v1:0" },
             },
         ],
     }),
 
-    // ============================================================================
-    // Google Vertex AI - gemini, gemini-fast, gemini-large, gemini-search, kimi-k2-thinking
-    // ============================================================================
-    "gemini-3-flash-preview": () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": "global",
-        "vertex-model-id": "gemini-3-flash-preview",
-        "strict-openai-compliance": "false",
-    }),
-    "gemini-3.1-pro-preview": () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": "global",
-        "vertex-model-id": "gemini-3.1-pro-preview",
-        "strict-openai-compliance": "false",
-    }),
-    "gemini-2.5-flash-lite": () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": "us-central1",
-        "vertex-model-id": "gemini-2.5-flash-lite",
-        "strict-openai-compliance": "false",
-    }),
-    "gemini-3-pro-preview": () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": "global",
-        "vertex-model-id": "gemini-3-pro-preview",
-        "strict-openai-compliance": "false",
-    }),
-    "gemini-2.5-pro": () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": "us-central1",
-        "vertex-model-id": "gemini-2.5-pro",
-        "strict-openai-compliance": "false",
-    }),
-    "kimi-k2-thinking-maas": () => ({
-        provider: "openai",
-        authKey: googleCloudAuth.getAccessToken,
-        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GOOGLE_PROJECT_ID}/locations/global/endpoints/openapi`,
-        "strict-openai-compliance": "false",
-        model: "moonshotai/kimi-k2-thinking-maas",
-    }),
+    // -- Google Vertex AI (Gemini) --------------------------------------------
+    "gemini-3-flash-preview": createVertexGeminiConfig(
+        "gemini-3-flash-preview",
+        "global",
+    ),
+    "gemini-3.1-pro-preview": createVertexGeminiConfig(
+        "gemini-3.1-pro-preview",
+        "global",
+    ),
+    "gemini-2.5-flash-lite": createVertexGeminiConfig(
+        "gemini-2.5-flash-lite",
+        "us-central1",
+    ),
+    "gemini-3-pro-preview": createVertexGeminiConfig(
+        "gemini-3-pro-preview",
+        "global",
+    ),
+    "gemini-2.5-pro": createVertexGeminiConfig("gemini-2.5-pro", "us-central1"),
 
-    // ============================================================================
-    // Perplexity - perplexity-fast, perplexity-reasoning
-    // ============================================================================
-    "sonar": () =>
-        createPerplexityModelConfig({
-            model: "sonar",
-        }),
-    "sonar-reasoning": () =>
-        createPerplexityModelConfig({
-            model: "sonar-reasoning",
-        }),
+    // -- Perplexity -----------------------------------------------------------
+    "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
     "sonar-reasoning-pro": () =>
-        createPerplexityModelConfig({
-            model: "sonar-reasoning-pro",
-        }),
+        createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
-    // ============================================================================
-    // OVHcloud AI Endpoints - qwen3-coder, qwen3guard
-    // ============================================================================
+    // -- OVHcloud (Qwen) ------------------------------------------------------
     "qwen3-coder-30b-a3b-instruct": () =>
-        createOVHcloudModelConfig({
-            model: "Qwen3-Coder-30B-A3B-Instruct",
-        }),
+        createOVHcloudModelConfig({ model: "Qwen3-Coder-30B-A3B-Instruct" }),
     "Qwen3Guard-Gen-8B": () =>
-        createOVHcloudMistralConfig({
-            model: "Qwen3Guard-Gen-8B",
-        }),
+        createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
 
-    // ============================================================================
-    // Fireworks AI - glm-5, minimax-m2.1, deepseek-v3.2, kimi-k2.5
-    // ============================================================================
+    // -- Fireworks AI ---------------------------------------------------------
     "accounts/fireworks/models/kimi-k2p5": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p5",
@@ -268,18 +170,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5",
         }),
-    "accounts/fireworks/models/minimax-m2p1": () =>
+    "accounts/fireworks/models/minimax-m2p5": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/minimax-m2p1",
+            model: "accounts/fireworks/models/minimax-m2p5",
         }),
     "accounts/fireworks/models/deepseek-v3p2": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v3p2",
         }),
 
-    // ============================================================================
-    // Community Models
-    // ============================================================================
+    // -- Community Models -----------------------------------------------------
     "nomnom": () =>
         createNomNomConfig({
             model: "nomnom",
@@ -289,11 +189,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "polly",
         }),
 
-    // ============================================================================
-    // api.airforce - qwen-character (RP/character model)
-    // ============================================================================
+    // -- api.airforce ---------------------------------------------------------
     "qwen-character": () =>
-        createAirforceModelConfig({
-            model: "qwen-character",
-        }),
+        createAirforceModelConfig({ model: "qwen-character" }),
 };

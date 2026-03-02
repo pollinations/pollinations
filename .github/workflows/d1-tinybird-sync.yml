@@ -16,7 +16,7 @@ jobs:
         run: |
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "https://enter.pollinations.ai/api/admin/trigger-d1-sync" \
-            -H "Authorization: Bearer ${{ secrets.TINYBIRD_SYNC_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.TINYBIRD_D1_SYNC_TOKEN }}" \
             -H "Content-Type: application/json")
 
           http_code=$(echo "$response" | tail -n1)

@@ -200,6 +200,11 @@ function buildRequestBody(
     ) {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
+
+        // Support image-to-image: pass reference image URLs if provided
+        if (safeParams.image && safeParams.image.length > 0) {
+            requestBody.image_urls = safeParams.image;
+        }
     } else if (safeParams.width && safeParams.height) {
         requestBody.size = `${safeParams.width}x${safeParams.height}`;
     }

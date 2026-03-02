@@ -1,6 +1,11 @@
-import { serve } from "@hono/node-server";
-import debug from "debug";
-import app from "./server.js";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.local" });
+dotenv.config();
+
+const { serve } = await import("@hono/node-server");
+const { default: app } = await import("./server.js");
+const { default: debug } = await import("debug");
 
 const log = debug("pollinations:startup");
 

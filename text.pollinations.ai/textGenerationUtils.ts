@@ -11,11 +11,11 @@ export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
     return messages.map((raw: unknown) => {
         const msg = raw as ChatMessage;
         const hasToolContext = msg.tool_calls || msg.role === "tool";
-        let content: string | null;
+        let content: string | unknown[] | null;
         if (hasToolContext) {
-            content = msg.content != null ? String(msg.content) : null;
+            content = msg.content != null ? msg.content : null;
         } else {
-            content = msg.content ? String(msg.content) : "";
+            content = msg.content || "";
         }
 
         const normalizedMsg: ChatMessage = {
@@ -95,8 +95,4 @@ export function normalizeOptions(
     }
 
     return normalized;
-}
-
-export function generateRequestId(): string {
-    return Math.random().toString(36).substring(7);
 }

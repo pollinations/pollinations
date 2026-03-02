@@ -24,12 +24,6 @@ async function refreshToken(): Promise<string | null> {
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
     const projectId = process.env.GOOGLE_PROJECT_ID;
 
-    log("Checking Google Cloud credentials from environment...");
-    log("- GOOGLE_PRIVATE_KEY:", privateKey ? "[SET]" : "[NOT SET]");
-    log("- GOOGLE_PRIVATE_KEY_ID:", privateKeyId ? "[SET]" : "[NOT SET]");
-    log("- GOOGLE_CLIENT_EMAIL:", clientEmail ? "[SET]" : "[NOT SET]");
-    log("- GOOGLE_PROJECT_ID:", projectId);
-
     if (!privateKey || !privateKeyId || !clientEmail) {
         errorLog(
             "Missing required Google Cloud credentials. Need: GOOGLE_PRIVATE_KEY, GOOGLE_PRIVATE_KEY_ID, GOOGLE_CLIENT_EMAIL",
@@ -44,10 +38,6 @@ async function refreshToken(): Promise<string | null> {
         private_key: privateKey.replace(/\\n/g, "\n"),
         client_email: clientEmail,
     };
-
-    log("Service account credentials loaded from environment");
-    log("Project ID:", keyData.project_id);
-    log("Client email:", keyData.client_email);
 
     const jwt = await generateJwtToken(keyData);
     if (!jwt) return null;
@@ -87,7 +77,6 @@ async function generateJwtToken(
             },
         );
 
-        log("JWT token generated successfully");
         return signedJwt;
     } catch (error) {
         errorLog("Failed to generate JWT token:", error);
@@ -108,8 +97,6 @@ async function exchangeJwtForAccessToken(jwt: string): Promise<string | null> {
             }),
         });
 
-        log("Response status:", response.status, response.statusText);
-
         if (!response.ok) {
             const errorText = await response.text();
             errorLog(
@@ -128,7 +115,6 @@ async function exchangeJwtForAccessToken(jwt: string): Promise<string | null> {
             return null;
         }
 
-        log("Token response received with expires_in:", data.expires_in);
         return data.access_token;
     } catch (error) {
         errorLog("Error exchanging JWT for access token:", error);
@@ -138,10 +124,6 @@ async function exchangeJwtForAccessToken(jwt: string): Promise<string | null> {
 
 async function getAccessToken(): Promise<string | null> {
     if (cachedToken && Date.now() < tokenExpiration) {
-        log(
-            "Using existing token, expires at:",
-            new Date(tokenExpiration).toISOString(),
-        );
         return cachedToken;
     }
 
@@ -157,19 +139,15 @@ async function getAccessToken(): Promise<string | null> {
 
 // Start periodic token refresh if credentials are configured
 if (process.env.GOOGLE_PRIVATE_KEY) {
-    log("Initializing Google Cloud authentication...");
     getAccessToken().catch((error) => {
         errorLog("Failed to initialize Google Cloud authentication:", error);
     });
 
     setInterval(() => {
-        log("Refreshing Google Cloud access token");
         getAccessToken().catch((error) => {
             errorLog("Failed to refresh Google Cloud access token:", error);
         });
     }, TOKEN_REFRESH_INTERVAL_MS);
-} else {
-    log("GOOGLE_PRIVATE_KEY not set, Google Cloud auth disabled");
 }
 
 export default { getAccessToken };

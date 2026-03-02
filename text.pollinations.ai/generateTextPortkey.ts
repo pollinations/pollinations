@@ -8,7 +8,6 @@ import { processParameters } from "./transforms/parameterProcessor.js";
 import type {
     ChatCompletion,
     ChatMessage,
-    TransformFn,
     TransformOptions,
     TransformResult,
 } from "./types.js";
@@ -16,35 +15,17 @@ import { resolveModelConfig } from "./utils/modelResolver.js";
 
 export const log = debug("pollinations:portkey");
 
-const DEFAULT_OPTIONS = {
-    model: "openai-fast",
-    jsonMode: false,
-};
-
 const clientConfig = {
     endpoint: () =>
         `${process.env.PORTKEY_GATEWAY_URL || "https://portkey.pollinations.ai"}/v1/chat/completions`,
     authHeaderName: "Authorization",
     authHeaderValue: () => `Bearer ${process.env.PORTKEY_API_KEY}`,
     additionalHeaders: {},
-    defaultOptions: DEFAULT_OPTIONS,
+    defaultOptions: {
+        model: "openai-fast",
+        jsonMode: false,
+    },
 };
-
-/** Applies a transform step, destructuring and reassigning messages/options. */
-async function applyTransform(
-    state: TransformResult,
-    transform: TransformFn,
-    label: string,
-): Promise<TransformResult> {
-    const result = await transform(state.messages, state.options);
-    log(
-        "After %s: modelDef=%s modelConfig=%s",
-        label,
-        !!result.options.modelDef,
-        !!result.options.modelConfig,
-    );
-    return result;
-}
 
 export async function generateTextPortkey(
     messages: ChatMessage[],
@@ -64,27 +45,14 @@ export async function generateTextPortkey(
     }
 
     if (state.options.model) {
-        state = await applyTransform(
-            state,
-            resolveModelConfig,
-            "resolveModelConfig",
+        state = await resolveModelConfig(state.messages, state.options);
+        state = await generateHeaders(state.messages, state.options);
+        state = await createImageUrlToBase64Transform()(
+            state.messages,
+            state.options,
         );
-        state = await applyTransform(state, generateHeaders, "generateHeaders");
-        state = await applyTransform(
-            state,
-            createImageUrlToBase64Transform(),
-            "imageUrlTransform",
-        );
-        state = await applyTransform(
-            state,
-            sanitizeMessages,
-            "sanitizeMessages",
-        );
-        state = await applyTransform(
-            state,
-            processParameters,
-            "processParameters",
-        );
+        state = await sanitizeMessages(state.messages, state.options);
+        state = await processParameters(state.messages, state.options);
     }
 
     const requestConfig = {

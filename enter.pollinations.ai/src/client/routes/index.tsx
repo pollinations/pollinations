@@ -9,6 +9,7 @@ import {
 } from "../components/api-keys";
 import { PollenBalance, TierPanel } from "../components/balance";
 import { Button } from "../components/button.tsx";
+import { CryptoTopup } from "../components/crypto-topup.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Footer } from "../components/layout/footer.tsx";
 import { Header } from "../components/layout/header.tsx";
@@ -292,6 +293,9 @@ function RouteComponent() {
                                 >
                                     💎 $50
                                 </Button>
+                                <div className="w-full mt-4 pt-4 border-t border-gray-100">
+                                    <CryptoTopup />
+                                </div>
                             </div>
                         )}
                         {activeTab === "usage" && (

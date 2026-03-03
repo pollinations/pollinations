@@ -13,7 +13,7 @@ fi
 
 if [ -z "$TINYBIRD_TOKEN" ]; then
     echo "Error: TINYBIRD_TOKEN not set"
-    echo "Run: export TINYBIRD_TOKEN=\$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_ACCESS_TOKEN')"
+    echo "Run: export TINYBIRD_TOKEN=\$(sops -d apps/operation/kpi/secrets/env.json | jq -r '.TINYBIRD_TOKEN')"
     exit 1
 fi
 

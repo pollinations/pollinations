@@ -73,6 +73,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
 
     return betterAuth({
         basePath: "/api/auth",
+        onAPIError: {
+            errorURL: "/error",
+        },
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
             provider: "sqlite",
@@ -167,10 +170,76 @@ function tierPlugin(
                             after: onAfterUserCreate(env, executionCtx),
                         },
                     },
+                    session: {
+                        create: {
+                            after: onAfterSessionCreate(env, executionCtx),
+                        },
+                    },
                 },
             } satisfies Partial<BetterAuthOptions>,
         }),
     } satisfies BetterAuthPlugin;
+}
+
+/**
+ * Sync github_username on every login.
+ * GitHub usernames are mutable — users can rename their account.
+ * We fetch the current username from GitHub API using the immutable github_id
+ * and update D1 if it changed. Non-blocking via waitUntil.
+ */
+function onAfterSessionCreate(
+    env: Cloudflare.Env,
+    executionCtx?: ExecutionContext,
+) {
+    return async (
+        session: { userId: string },
+        _ctx?: GenericEndpointContext | null,
+    ) => {
+        executionCtx?.waitUntil(
+            (async () => {
+                try {
+                    const db = drizzle(env.DB);
+                    const [user] = await db
+                        .select({
+                            githubId: userTable.githubId,
+                            githubUsername: userTable.githubUsername,
+                        })
+                        .from(userTable)
+                        .where(eq(userTable.id, session.userId))
+                        .limit(1);
+
+                    if (!user?.githubId) return;
+
+                    const headers: Record<string, string> = {
+                        Accept: "application/vnd.github+json",
+                        "User-Agent": "pollinations-enter",
+                    };
+                    // Use OAuth app credentials for 5,000 req/hr (vs 60 unauthenticated)
+                    if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
+                        headers.Authorization = `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`;
+                    }
+                    const res = await fetch(
+                        `https://api.github.com/user/${user.githubId}`,
+                        { headers },
+                    );
+                    if (!res.ok) return;
+
+                    const profile = (await res.json()) as { login: string };
+                    if (
+                        profile.login &&
+                        profile.login !== user.githubUsername
+                    ) {
+                        await db
+                            .update(userTable)
+                            .set({ githubUsername: profile.login })
+                            .where(eq(userTable.id, session.userId));
+                    }
+                } catch {
+                    // Silently ignore — username sync is best-effort
+                }
+            })(),
+        );
+    };
 }
 
 /**

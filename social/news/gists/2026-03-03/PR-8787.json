@@ -1,0 +1,34 @@
+{
+  "pr_number": 8787,
+  "title": "feat: abuse detection cron support",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8787",
+  "merged_at": "2026-03-03T09:52:18Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Automated hive defense",
+    "blurb": "We've automated our abuse detection to keep the platform fast and reliable. Spam gets weeded out automatically, leaving more compute for your actual projects.",
+    "summary": "Introduced automated cron jobs and time-filtering flags to the abuse detection system to proactively manage platform resources.",
+    "impact": "Legitimate users will experience more consistent performance as automated systems now continuously identify and mitigate spam traffic.",
+    "keywords": [
+      "infrastructure",
+      "reliability",
+      "automation",
+      "security",
+      "cron"
+    ],
+    "visual_concept": "The pollinations.ai bee mascot acting as a friendly gardener weeding a digital garden. A cute chunky robot companion scanning the area with a magnifying glass. Metaphor: weeding the garden to let the good plants (legitimate users) grow.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, happily pulling a digital weed from a lime green (#ecf874) flower pot. A chunky robot with a CRT monitor head stands nearby holding a magnifying glass, screen glowing softly. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-03T09:53:09.998234+00:00"
+}

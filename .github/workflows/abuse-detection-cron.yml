@@ -1,13 +1,20 @@
 name: Abuse Detection Cron
 
+permissions:
+  contents: read
+
 on:
   schedule:
+    # Run daily at 06:00 UTC
     - cron: '0 6 * * *'
   workflow_dispatch:
 
 jobs:
   detect-and-block:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: enter.pollinations.ai
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -15,13 +22,13 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
-        run: cd enter.pollinations.ai && npm install
+        run: npm install
 
       - name: Create API token file
-        run: echo "ENTER_API_TOKEN_REMOTE=${{ secrets.ENTER_API_TOKEN }}" > enter.pollinations.ai/.testingtokens
+        run: echo "ENTER_API_TOKEN_REMOTE=${{ secrets.ENTER_API_TOKEN }}" > .testingtokens
 
       - name: Run abuse detection and apply blocks
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: cd enter.pollinations.ai && npx tsx scripts/detect-abuse.ts --last 24h --parallel 3 --auto-apply
+        run: npx tsx scripts/detect-abuse.ts --last 24h --parallel 3 --auto-apply

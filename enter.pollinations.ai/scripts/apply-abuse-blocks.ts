@@ -34,43 +34,45 @@ interface AbuseReportRow {
     registered: string;
 }
 
+function parseCSVLine(line: string): string[] {
+    const values: string[] = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"' && inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+        } else if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === "," && !inQuotes) {
+            values.push(current.trim());
+            current = "";
+        } else {
+            current += char;
+        }
+    }
+    values.push(current.trim());
+    return values;
+}
+
 function parseCSV(content: string): AbuseReportRow[] {
     const lines = content.trim().split("\n");
     if (lines.length < 2) return [];
 
     const headers = lines[0].split(",");
-    const rows: AbuseReportRow[] = [];
 
-    for (let i = 1; i < lines.length; i++) {
-        // Simple CSV parsing that handles quoted values
-        const values: string[] = [];
-        let current = "";
-        let inQuotes = false;
-
-        for (let j = 0; j < lines[i].length; j++) {
-            const char = lines[i][j];
-            if (char === '"' && inQuotes && lines[i][j + 1] === '"') {
-                current += '"';
-                j++; // skip escaped quote
-            } else if (char === '"') {
-                inQuotes = !inQuotes;
-            } else if (char === "," && !inQuotes) {
-                values.push(current.trim());
-                current = "";
-            } else {
-                current += char;
-            }
-        }
-        values.push(current.trim());
-
-        if (values.length < headers.length) continue;
+    return lines.slice(1).flatMap((line) => {
+        const values = parseCSVLine(line);
+        if (values.length < headers.length) return [];
 
         const row: Record<string, string> = {};
-        headers.forEach((h, idx) => {
-            row[h] = values[idx] || "";
-        });
+        for (let i = 0; i < headers.length; i++) {
+            row[headers[i]] = values[i] || "";
+        }
 
-        rows.push({
+        return {
             action: row.action || "",
             score: parseInt(row.score, 10) || 0,
             email: row.email || "",
@@ -78,24 +80,19 @@ function parseCSV(content: string): AbuseReportRow[] {
             signals: row.signals || "",
             tier: row.tier || "",
             registered: row.registered || "",
-        });
-    }
-
-    return rows;
+        };
+    });
 }
 
 function queryD1(env: Environment, sql: string): string {
-    const envFlag = env === "production" ? "--env production" : "--env staging";
-    const cmd = `npx wrangler d1 execute DB --remote ${envFlag} --command "${sql}" --json`;
+    const cmd = `npx wrangler d1 execute DB --remote --env ${env} --command "${sql}" --json`;
 
     try {
-        const result = execSync(cmd, {
-            cwd: process.cwd(),
+        return execSync(cmd, {
             encoding: "utf-8",
             stdio: ["pipe", "pipe", "pipe"],
             maxBuffer: 100 * 1024 * 1024,
         });
-        return result;
     } catch (error) {
         console.error(
             "D1 query failed:",
@@ -172,7 +169,6 @@ const applyBlocksCommand = command({
             console.log(`🔍 Mode: DRY RUN (no changes will be made)\n`);
         }
 
-        // Read and parse CSV
         if (!existsSync(reportPath)) {
             console.error(`❌ Report file not found: ${reportPath}`);
             process.exit(1);
@@ -182,11 +178,9 @@ const applyBlocksCommand = command({
         const allRows = parseCSV(content);
         console.log(`📊 Total rows in report: ${allRows.length}`);
 
-        // Filter for block action only
         let blockedUsers = allRows.filter((row) => row.action === "block");
         console.log(`🔴 Users to block: ${blockedUsers.length}`);
 
-        // Apply tier filter if specified
         if (opts.tier) {
             const beforeCount = blockedUsers.length;
             blockedUsers = blockedUsers.filter((row) => row.tier === opts.tier);
@@ -195,13 +189,11 @@ const applyBlocksCommand = command({
             );
         }
 
-        // Filter out users already at microbe tier
         let usersToDowngrade = blockedUsers.filter(
             (row) => row.tier !== "microbe",
         );
         console.log(`⬇️  Users needing downgrade: ${usersToDowngrade.length}`);
 
-        // Apply max limit if specified
         if (opts.max && opts.max < usersToDowngrade.length) {
             console.log(`🔢 Limiting to first ${opts.max} users (--max)`);
             usersToDowngrade = usersToDowngrade.slice(0, opts.max);
@@ -225,7 +217,6 @@ const applyBlocksCommand = command({
             }
         }
 
-        // Process in batches
         const batches = Math.ceil(usersToDowngrade.length / opts["batch-size"]);
         let processed = 0;
         let succeeded = 0;
@@ -246,9 +237,6 @@ const applyBlocksCommand = command({
             );
 
             if (!opts["dry-run"]) {
-                // Build batch UPDATE using email (more reliable than github_username)
-                // D1 doesn't support UPDATE with IN clause well, so we do individual updates
-                // but batch them in a single transaction-like approach
                 for (const user of batch) {
                     try {
                         if (!validateEmail(user.email)) {
@@ -269,7 +257,6 @@ const applyBlocksCommand = command({
                     }
                     processed++;
 
-                    // Progress indicator every 10 users
                     if (processed % 10 === 0) {
                         process.stdout.write(
                             `   📊 ${processed}/${usersToDowngrade.length}\r`,
@@ -277,7 +264,6 @@ const applyBlocksCommand = command({
                     }
                 }
             } else {
-                // Dry run - just count
                 for (const user of batch) {
                     console.log(
                         `   📝 Would downgrade: ${user.email} (${user.tier} → microbe)`,
@@ -286,7 +272,6 @@ const applyBlocksCommand = command({
                 }
             }
 
-            // Rate limit between batches
             if (b < batches - 1) {
                 await sleep(opts.delay);
             }

@@ -566,8 +566,8 @@ export async function generateSunoMusic(opts: {
                 createCompletionAudioSecondsUsage(estimatedDuration),
             );
 
-            const contentType =
-                downloadResponse.headers.get("content-type") || "audio/mpeg";
+            // Always serve as audio/mpeg for consistency with other audio endpoints
+            const contentType = "audio/mpeg";
 
             log.info(
                 "Suno success: model={model}, {bytes} bytes, ~{duration}s",

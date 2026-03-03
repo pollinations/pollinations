@@ -73,6 +73,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
 
     return betterAuth({
         basePath: "/api/auth",
+        onAPIError: {
+            errorURL: "/error",
+        },
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
             provider: "sqlite",

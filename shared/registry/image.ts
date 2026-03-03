@@ -345,7 +345,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Grok Imagine (api.airforce) - xAI image gen",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "grok-video": {

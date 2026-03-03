@@ -604,6 +604,23 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         isSpecialized: true,
     },
+    "step-3.5-flash": {
+        aliases: ["step-flash", "step-3.5"],
+        modelId: "step-3.5-flash:free",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-03-02").getTime(),
+                promptTextTokens: perMillion(0.01),
+                completionTextTokens: perMillion(0.01),
+            },
+        ],
+        description: "Step 3.5 Flash (api.airforce) - Fast reasoning model",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        isSpecialized: false,
+        alpha: true,
+    },
     "qwen-character": {
         aliases: [],
         modelId: "qwen-character",

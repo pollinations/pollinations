@@ -1,0 +1,34 @@
+{
+  "pr_number": 8775,
+  "title": "Ban deleted GitHub accounts and sync renamed usernames",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8775",
+  "merged_at": "2026-03-03T19:12:49Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Self-healing name tags",
+    "blurb": "We've taught the hive to keep itself tidy! Your Pollinations account now automatically syncs if you change your GitHub username, and we've swept out thousands of ghost accounts to keep the database fresh.",
+    "summary": "Added self-healing GitHub username synchronization on login and implemented automated cleanup for deleted or renamed accounts.",
+    "impact": "If you change your GitHub handle, your Pollinations account will automatically update to match, ensuring your apps and credits stay linked to the right identity.",
+    "keywords": [
+      "auth",
+      "github",
+      "sync",
+      "database",
+      "cleanup"
+    ],
+    "visual_concept": "Polly the bee organizing glowing name tags in a cozy server room, representing the username sync and database cleanup.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, happily organizing glowing lime green (#ecf874) name tags on a retro server rack. Soft lavender and peach pastel gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-03T19:25:55.941911+00:00"
+}

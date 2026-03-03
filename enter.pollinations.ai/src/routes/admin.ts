@@ -232,7 +232,7 @@ export const adminRoutes = new Hono<Env>()
                     pollen_amount: tierBalance,
                 },
                 c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
+                c.env.TINYBIRD_TIER_INGEST_TOKEN,
             ),
         );
 
@@ -351,7 +351,7 @@ export const adminRoutes = new Hono<Env>()
                 timestamp,
                 c.env.ENVIRONMENT || "unknown",
                 c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
+                c.env.TINYBIRD_TIER_INGEST_TOKEN,
                 log,
             ),
         );

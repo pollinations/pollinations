@@ -29,13 +29,20 @@ open http://localhost:3000
 ### Tinybird (ClickHouse)
 - **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
 - **Database:** `default`
-- **Token:** `TINYBIRD_GENERATION_EVENT_READ`
+- **Token:** `TINYBIRD_GENERATION_READ_TOKEN`
 - **UID:** `PAD1A0A25CD30D456`
+
+### Tinybird Stripe (ClickHouse)
+- **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
+- **Database:** `default` (workspace: `pollinations_enter`)
+- **Token:** `TINYBIRD_STRIPE_READ_TOKEN`
+- **UID:** `PAD1A0A25CD30D457`
+- **Table:** `stripe_event`
 
 ### Tinybird Legacy (ClickHouse)
 - **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
 - **Database:** `default` (workspace: `pollinations_ai`)
-- **Token:** `TINYBIRD_TEXT_EVENT_READ`
+- **Token:** `TINYBIRD_LEGACY_GENERATION_READ_TOKEN`
 - **UID:** `PAD1A0A25CD30D458`
 - **Table:** `text_events` — legacy API (Flux Z image, gpt-oss text)
 
@@ -54,7 +61,9 @@ Secrets are stored in `.env` (gitignored) locally and on the production server.
 | `GF_ADMIN_PASSWORD` | Grafana admin password |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Cloudflare Tunnel token (prod) |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token for D1 |
-| `TINYBIRD_GENERATION_EVENT_READ` | Read token for generation_event |
+| `TINYBIRD_GENERATION_READ_TOKEN` | Read token for generation_event + scoring_snapshot |
+| `TINYBIRD_STRIPE_READ_TOKEN` | Read token for stripe_event |
+| `TINYBIRD_LEGACY_GENERATION_READ_TOKEN` | Read token for text_events (legacy workspace) |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
 
 **Security:** `.env` is gitignored. Share secrets securely via 1Password or similar.

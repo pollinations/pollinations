@@ -1,6 +1,6 @@
 TOKEN scoring_snapshot_append APPEND
 TOKEN scoring_snapshot_read READ
-TOKEN all_datasources_read READ
+TOKEN grafana_generation_read READ
 
 DESCRIPTION >
     Periodic snapshots of user tier scoring metrics. Each row captures

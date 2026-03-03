@@ -157,6 +157,13 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
+    // Flux 2 Dev - Next-gen Flux image generation via api.airforce
+    "flux-2-dev": {
+        type: "airforce",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Imagen 4 - Google's latest image generation via api.airforce
     "imagen-4": {
         type: "airforce",

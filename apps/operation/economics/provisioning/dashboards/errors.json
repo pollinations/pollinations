@@ -126,7 +126,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\nGROUP BY ts, provider_model\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -229,7 +229,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  ts,\n  provider_model,\n  error_count * 100.0 / (error_count + success_count) AS error_rate\nFROM (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n    countIf(response_status >= 400 AND response_status != 403) AS error_count,\n    countIf(response_status >= 200 AND response_status < 300) AS success_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  GROUP BY ts, provider_model\n  HAVING error_count > 0 OR success_count > 0\n)\nWHERE error_count > 0\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  ts,\n  provider_model,\n  error_count * 100.0 / (error_count + success_count) AS error_rate\nFROM (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n    countIf(response_status >= 400 AND response_status != 403) AS error_count,\n    countIf(response_status >= 200 AND response_status < 300) AS success_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  GROUP BY ts, provider_model\n  HAVING error_count > 0 OR success_count > 0\n)\nWHERE error_count > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -341,7 +341,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 400) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 400) > 0\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 400) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 400) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -440,7 +440,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 401) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 401) > 0\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 401) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 401) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -539,7 +539,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 402) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 402) > 0\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 402) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 402) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -638,7 +638,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 404) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 404) > 0\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 404) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 404) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -737,7 +737,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 422) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 422) > 0\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 422) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 422) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -836,7 +836,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 429) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 429) > 0\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 429) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 429) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -948,7 +948,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 500) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 500) > 0\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 500) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 500) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -1047,7 +1047,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 502) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 502) > 0\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 502) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 502) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -1146,7 +1146,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 503) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 503) > 0\nORDER BY ts ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 503) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 503) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -1285,7 +1285,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  count(DISTINCT request_id) AS error_count,\n  response_status,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  error_source,\n  error_message\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\n  AND error_message != 'undefined'\n  AND error_message != ''\nGROUP BY response_status, provider_model, error_source, error_message\nORDER BY error_count DESC\nLIMIT 50",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  GROUP BY github_username\n)\nSELECT\n  count(DISTINCT request_id) AS error_count,\n  response_status,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  error_source,\n  error_message\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\n  AND error_message != 'undefined'\n  AND error_message != ''\nGROUP BY response_status, provider_model, error_source, error_message\nORDER BY error_count DESC\nLIMIT 50",
           "refId": "A"
         }
       ],
@@ -1427,7 +1427,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  start_time,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  response_status,\n  error_source,\n  error_message,\n  user_github_username,\n  request_path,\n  request_id\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\nORDER BY start_time DESC\nLIMIT 200",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  GROUP BY github_username\n)\nSELECT\n  start_time,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  response_status,\n  error_source,\n  error_message,\n  user_github_username,\n  request_path,\n  request_id\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\nORDER BY start_time DESC\nLIMIT 200",
           "refId": "A"
         }
       ],

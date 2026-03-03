@@ -247,7 +247,7 @@ function onAfterUserCreate(
                         pollen_amount: tierBalance,
                     },
                     env.TINYBIRD_TIER_INGEST_URL,
-                    env.TINYBIRD_INGEST_TOKEN,
+                    env.TINYBIRD_TIER_INGEST_TOKEN,
                 ),
             );
         } catch (e: unknown) {

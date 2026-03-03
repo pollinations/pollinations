@@ -31,7 +31,9 @@ from common import (
     github_api_request,
     GITHUB_API_BASE,
     GISTS_BRANCH,
+    IMAGE_MODEL_FALLBACK,
     MODEL,
+    MODEL_FALLBACK,
     OWNER,
     REPO,
 )
@@ -116,6 +118,13 @@ Changed files:
     )
 
     if not response:
+        print(f"  Primary model ({MODEL}) failed — trying fallback ({MODEL_FALLBACK})...")
+        response = call_pollinations_api(
+            system_prompt, user_prompt, token,
+            temperature=0.2, model=MODEL_FALLBACK, exit_on_failure=False
+        )
+
+    if not response:
         return None
 
     return parse_json_response(response)
@@ -156,10 +165,13 @@ def generate_gist_image(gist: Dict, pollinations_token: str,
 
     print(f"  Image prompt: {image_prompt[:100]}...")
 
-    # Generate the image
+    # Generate the image (try primary model, then fallback)
     image_bytes, _ = generate_image(image_prompt, pollinations_token)
     if not image_bytes:
-        print("  Image generation failed")
+        print(f"  Primary image model failed — trying fallback ({IMAGE_MODEL_FALLBACK})...")
+        image_bytes, _ = generate_image(image_prompt, pollinations_token, model=IMAGE_MODEL_FALLBACK)
+    if not image_bytes:
+        print("  Image generation failed on both models")
         return None
 
     # Commit image to repo on news branch

@@ -217,6 +217,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedance",
         provider: "bytedance",
+        paidOnly: true,
         cost: [
             // Seedance Lite - $1.8/M tokens
             // Token formula: (height × width × FPS × duration) / 1024

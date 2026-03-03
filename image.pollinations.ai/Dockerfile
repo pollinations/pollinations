@@ -4,7 +4,7 @@
 # of the monorepo, like this: `docker build -f Dockerfile ..`
 
 # Build
-FROM node:22-slim AS builder
+FROM --platform=linux/amd64 node:22-slim AS builder
 
 WORKDIR /workspace
 
@@ -23,7 +23,7 @@ WORKDIR /workspace/app
 RUN npm clean-install --omit=dev
 
 # Deployment
-FROM node:22-slim
+FROM --platform=linux/amd64 node:22-slim
 
 WORKDIR /workspace
 
@@ -38,7 +38,6 @@ COPY --from=builder /workspace/shared/node_modules ./shared/node_modules
 COPY image.pollinations.ai/package*.json ./app/
 COPY image.pollinations.ai/tsconfig.json ./app/
 COPY image.pollinations.ai/src           ./app/src
-COPY image.pollinations.ai/observability ./app/observability
 COPY image.pollinations.ai/auth          ./app/auth
 COPY --from=builder /workspace/app/node_modules ./app/node_modules
 

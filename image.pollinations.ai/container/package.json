@@ -1,0 +1,16 @@
+{
+	"name": "image-service-container",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "wrangler dev",
+		"deploy": "wrangler deploy",
+		"deploy:production": "wrangler deploy --env production",
+		"deploy:staging": "wrangler deploy --env staging"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20250214.0",
+		"wrangler": "^4.0.0"
+	}
+}

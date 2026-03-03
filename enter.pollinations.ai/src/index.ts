@@ -40,7 +40,27 @@ export const api = new Hono<Env>()
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes)
     .route("/generate", proxyRoutes)
-    .route("/generate/v1/audio", audioRoutes);
+    .route("/generate/v1/audio", audioRoutes)
+    .post("/image-register", async (c) => {
+        // Proxy GPU heartbeat registrations to the image service container
+        const imageService = (c.env as Record<string, unknown>).IMAGE_SERVICE as Fetcher | undefined;
+        if (imageService) {
+            const url = new URL(c.req.url);
+            url.pathname = "/register";
+            return imageService.fetch(new Request(url.toString(), {
+                method: "POST",
+                headers: Object.fromEntries(c.req.raw.headers),
+                body: c.req.raw.body,
+            }));
+        }
+        // Fallback to HTTP proxy to EC2
+        const targetUrl = `${c.env.IMAGE_SERVICE_URL}/register`;
+        return fetch(targetUrl, {
+            method: "POST",
+            headers: Object.fromEntries(c.req.raw.headers),
+            body: c.req.raw.body,
+        });
+    });
 
 export type ApiRoutes = typeof api;
 

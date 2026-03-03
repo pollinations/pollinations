@@ -8,12 +8,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import player from "play-sound";
-
+import { audioTools } from "./services/audioService.js";
+import { authTools } from "./services/authService.js";
 // Import tools from services
 import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
-import { audioTools } from "./services/audioService.js";
-import { authTools } from "./services/authService.js";
 
 // Combine all tools
 const allTools = [...imageTools, ...textTools, ...audioTools, ...authTools];
@@ -73,6 +72,46 @@ All requests go through: https://gen.pollinations.ai
 - Reasoning: Use kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large`;
 
 /**
+ * Create a configured MCP server with all tools registered.
+ * Shared by both STDIO and HTTP transports.
+ */
+export function createMcpServer() {
+    const server = new McpServer(
+        {
+            name: "pollinations-mcp",
+            version: "2.0.0",
+            instructions: SERVER_INSTRUCTIONS,
+        },
+        {
+            capabilities: {
+                tools: {},
+            },
+        },
+    );
+
+    // Register all tools
+    allTools.forEach((tool) => {
+        try {
+            if (!Array.isArray(tool) || tool.length < 4) {
+                throw new Error(
+                    `Invalid tool format for ${tool[0] || "unknown"}`,
+                );
+            }
+            const [name, description, inputSchema, handler] = tool;
+            server.tool(name, description, inputSchema, handler);
+        } catch (error) {
+            console.error(`Failed to register tool ${tool[0]}:`, error.message);
+        }
+    });
+
+    server.onerror = (error) => {
+        console.error(`Server error: ${error.message}`);
+    };
+
+    return server;
+}
+
+/**
  * Start the MCP server with STDIO transport
  */
 export async function startMcpServer() {
@@ -84,43 +123,7 @@ export async function startMcpServer() {
             console.error("Audio player not available:", error.message);
         }
 
-        // Create the MCP server
-        const server = new McpServer(
-            {
-                name: "pollinations-mcp",
-                version: "2.0.0",
-                instructions: SERVER_INSTRUCTIONS,
-            },
-            {
-                capabilities: {
-                    tools: {},
-                },
-            },
-        );
-
-        // Register all tools
-        allTools.forEach((tool) => {
-            try {
-                // Tool format: [name, description, inputSchema, handler]
-                if (!Array.isArray(tool) || tool.length < 4) {
-                    throw new Error(
-                        `Invalid tool format for ${tool[0] || "unknown"}`,
-                    );
-                }
-                const [name, description, inputSchema, handler] = tool;
-                server.tool(name, description, inputSchema, handler);
-            } catch (error) {
-                console.error(
-                    `Failed to register tool ${tool[0]}:`,
-                    error.message,
-                );
-            }
-        });
-
-        // Error handling
-        server.onerror = (error) => {
-            console.error(`Server error: ${error.message}`);
-        };
+        const server = createMcpServer();
 
         process.on("uncaughtException", (error) => {
             console.error(`Uncaught exception: ${error.message}`);
@@ -146,5 +149,8 @@ export async function startMcpServer() {
     }
 }
 
-// Start the server
-startMcpServer();
+// Auto-start stdio when this file is run directly
+const isDirectRun = process.argv[1]?.endsWith("src/index.js");
+if (isDirectRun) {
+    startMcpServer();
+}

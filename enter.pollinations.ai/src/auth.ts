@@ -1,3 +1,5 @@
+import { apiKey } from "@better-auth/api-key";
+import { oauthProvider } from "@better-auth/oauth-provider";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -7,7 +9,7 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
-import { admin, apiKey, openAPI } from "better-auth/plugins";
+import { admin, jwt, openAPI } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
@@ -21,6 +23,13 @@ function addKeyPrefix(key: string) {
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
+
+    const baseURL =
+        env.ENVIRONMENT === "production"
+            ? "https://enter.pollinations.ai"
+            : env.ENVIRONMENT === "staging"
+              ? "https://staging.enter.pollinations.ai"
+              : "http://localhost:3000";
 
     const PUBLISHABLE_KEY_PREFIX = "pk";
 
@@ -71,8 +80,36 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         disableDefaultReference: true,
     });
 
+    const jwtPlugin = jwt({
+        jwks: {
+            keyPairConfig: { alg: "ES256" },
+        },
+    });
+
+    const oauthProviderPlugin = oauthProvider({
+        loginPage: "/sign-in",
+        consentPage: "/consent",
+        scopes: [
+            "openid",
+            "profile",
+            "email",
+            "offline_access",
+            "generate",
+            "read:usage",
+            "read:balance",
+        ],
+        allowDynamicClientRegistration: true,
+        allowUnauthenticatedClientRegistration: true,
+        validAudiences: [
+            "https://gen.pollinations.ai",
+            "https://enter.pollinations.ai",
+        ],
+    });
+
     return betterAuth({
+        baseURL,
         basePath: "/api/auth",
+        disabledPaths: ["/token"],
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
             provider: "sqlite",
@@ -93,6 +130,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                       },
                   }
                 : undefined,
+        },
+        session: {
+            storeSessionInDatabase: true,
         },
         secondaryStorage: {
             get: async (key) => {
@@ -136,6 +176,8 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             },
         },
         plugins: [
+            jwtPlugin,
+            oauthProviderPlugin,
             adminPlugin,
             apiKeyPlugin,
             tierPlugin(env, ctx),

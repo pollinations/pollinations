@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 
 [vars]
-PORTKEY_GATEWAY_URL = "https://portkey.pollinations.ai"
+PORTKEY_GATEWAY_URL = "https://portkey.myceli.ai"
 
 # Secrets (set via: wrangler secret put <NAME>):
 # PORTKEY_API_KEY

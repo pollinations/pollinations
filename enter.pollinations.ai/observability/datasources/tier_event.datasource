@@ -1,5 +1,4 @@
 TOKEN tier_event_append APPEND
-TOKEN tier_event_read READ
 
 DESCRIPTION >
     Tier events for tracking tier refills, changes, and user registrations

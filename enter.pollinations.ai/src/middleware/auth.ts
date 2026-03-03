@@ -61,7 +61,7 @@ function extractApiKey(c: Context<AuthEnv>): string | null {
 
 function assertNotBanned(user: {
     banned?: boolean | null;
-    banExpires?: string | null;
+    banExpires?: Date | string | null;
     banReason?: string | null;
 }): void {
     if (user.banned !== true) return;

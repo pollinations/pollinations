@@ -67,6 +67,7 @@ export const TEXT_SERVICES = {
         aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
         modelId: "gpt-5.2-2025-12-11",
         provider: "azure",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -602,6 +603,23 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,
+    },
+    "step-3.5-flash": {
+        aliases: ["step-flash", "step-3.5"],
+        modelId: "step-3.5-flash:free",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-03-02").getTime(),
+                promptTextTokens: perMillion(0.01),
+                completionTextTokens: perMillion(0.01),
+            },
+        ],
+        description: "Step 3.5 Flash (api.airforce) - Fast reasoning model",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        isSpecialized: false,
+        alpha: true,
     },
     "qwen-character": {
         aliases: [],

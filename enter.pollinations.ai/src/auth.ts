@@ -250,7 +250,7 @@ function onAfterUserCreate(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
 ) {
-    return async (user: GenericUser, _ctx?: GenericEndpointContext | null) => {
+    return async (user: GenericUser, _ctx: GenericEndpointContext | null) => {
         try {
             const db = drizzle(env.DB);
             const tierBalance = getTierPollen(DEFAULT_TIER);
@@ -274,7 +274,7 @@ function onAfterUserCreate(
                         pollen_amount: tierBalance,
                     },
                     env.TINYBIRD_TIER_INGEST_URL,
-                    env.TINYBIRD_INGEST_TOKEN,
+                    env.TINYBIRD_TIER_INGEST_TOKEN,
                 ),
             );
         } catch (e: unknown) {

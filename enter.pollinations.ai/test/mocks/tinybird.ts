@@ -1,6 +1,6 @@
 import { Hono } from "hono";
+import type { SelectGenerationEvent } from "@/db/schema/event.ts";
 import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
-import { SelectGenerationEvent } from "@/db/schema/event.ts";
 
 type TinybirdGenerationEvent = Omit<
     SelectGenerationEvent,
@@ -24,26 +24,28 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
 
     const tinybirdAPI = new Hono().post("/v0/events", async (c) => {
         const eventName = c.req.query("name");
-        if (eventName !== "generation_event") {
-            throw new Error(
-                "Failed to ingest mock tinybird events: wrong event name",
-            );
+        const body = await c.req.text();
+        const rows = parseNdjson(body);
+
+        // Only track generation_event in state (other event types are accepted silently)
+        if (eventName === "generation_event") {
+            const events: TinybirdGenerationEvent[] = rows;
+            // simulate failure if id starts with "simulate_error"
+            if (
+                events.find((event) =>
+                    event.id.includes("simulate_tinybird_error"),
+                )
+            ) {
+                throw new Error(
+                    "Failed to ingest mock tinybird events: simulated error",
+                );
+            }
+            state.events.push(...events);
         }
-        const events: TinybirdGenerationEvent[] = parseNdjson(
-            await c.req.text(),
-        );
-        // simulate failure if id starts with "simulate_error"
-        if (
-            events.find((event) => event.id.includes("simulate_tinybird_error"))
-        ) {
-            throw new Error(
-                "Failed to ingest mock tinybird events: simulated error",
-            );
-        }
-        state.events.push(...events);
+
         return c.json(
             {
-                successful_rows: events.length,
+                successful_rows: rows.length,
                 quarantined_rows: 0,
             },
             200,

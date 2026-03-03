@@ -16,6 +16,9 @@
  *   --model NAME      LLM model to use (default: gemini)
  *   --single-chunk    Only process first chunk (for testing)
  *   --parallel N      Process N chunks in parallel (default: 1)
+ *   --since DATE      Only scan users created after this date (YYYY-MM-DD)
+ *   --last DURATION   Only scan users from the last N hours/days (e.g. 24h, 7d)
+ *   --auto-apply      Automatically apply blocks after scanning (no dry-run)
  *
  * OUTPUT:
  *   abuse-report.csv - All users sorted by score (action, score, email, github, signals, date)
@@ -51,6 +54,8 @@ interface ParsedArgs {
     modelName: string;
     parallelism: number;
     singleChunk: boolean;
+    sinceTimestamp: number | null;
+    autoApply: boolean;
 }
 
 /**
@@ -72,12 +77,36 @@ function parseArguments(): ParsedArgs {
         return defaultValue;
     }
 
+    const sinceDate = getArgValue("--since", "") as string;
+    const lastDuration = getArgValue("--last", "") as string;
+    let sinceTimestamp: number | null = null;
+
+    if (lastDuration) {
+        const match = lastDuration.match(/^(\d+)(h|d)$/);
+        if (!match) {
+            console.error(`❌ Invalid --last format: ${lastDuration} (use e.g. 24h or 7d)`);
+            process.exit(1);
+        }
+        const amount = parseInt(match[1], 10);
+        const unit = match[2];
+        const ms = unit === "h" ? amount * 3600 * 1000 : amount * 86400 * 1000;
+        sinceTimestamp = Math.floor((Date.now() - ms) / 1000);
+    } else if (sinceDate) {
+        sinceTimestamp = Math.floor(new Date(sinceDate).getTime() / 1000);
+        if (isNaN(sinceTimestamp)) {
+            console.error(`❌ Invalid --since date: ${sinceDate}`);
+            process.exit(1);
+        }
+    }
+
     return {
         userLimit: getArgValue("--limit", 5000) as number,
         chunkSize: getArgValue("--chunk-size", 100) as number,
         modelName: getArgValue("--model", "gemini") as string,
         parallelism: getArgValue("--parallel", 1) as number,
         singleChunk: args.includes("--single-chunk"),
+        sinceTimestamp,
+        autoApply: args.includes("--auto-apply"),
     };
 }
 
@@ -107,12 +136,19 @@ function loadApiKey(): string {
 /**
  * Fetch users from D1 database
  */
-function fetchUsers(limit: number): User[] {
-    console.log(`📊 Fetching ${limit} most recent users...`);
+function fetchUsers(limit: number, sinceTimestamp: number | null): User[] {
+    const sinceLabel = sinceTimestamp
+        ? ` created after ${new Date(sinceTimestamp * 1000).toISOString().split("T")[0]}`
+        : "";
+    console.log(`📊 Fetching ${limit} most recent users${sinceLabel}...`);
 
+    const whereClause = sinceTimestamp
+        ? `WHERE created_at > ${sinceTimestamp}`
+        : "";
     const query = `
         SELECT email, github_username, created_at, tier
         FROM user
+        ${whereClause}
         ORDER BY created_at DESC
         LIMIT ${limit}
     `.replace(/\n/g, " ");
@@ -513,11 +549,14 @@ async function main(): Promise<void> {
 
     console.log("🚀 Abuse Detection");
     console.log("=".repeat(50));
+    const sinceLabel = config.sinceTimestamp
+        ? `, since ${new Date(config.sinceTimestamp * 1000).toISOString().split("T")[0]}`
+        : "";
     console.log(
-        `📋 Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}`,
+        `📋 Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}${sinceLabel}`,
     );
 
-    const users = fetchUsers(config.userLimit);
+    const users = fetchUsers(config.userLimit, config.sinceTimestamp);
     if (users.length === 0) {
         console.log("⚠️  No users found");
         return;
@@ -525,6 +564,24 @@ async function main(): Promise<void> {
 
     const scored = await scoreUsers(users, config);
     exportResults(scored);
+
+    if (config.autoApply) {
+        const blockCount = scored.filter((u) => u.action === "block").length;
+        if (blockCount === 0) {
+            console.log("\n✅ No users to block, skipping apply step");
+            return;
+        }
+        console.log(`\n🚫 Auto-applying blocks to ${blockCount} users...`);
+        try {
+            execSync(
+                "npx tsx scripts/apply-abuse-blocks.ts apply-blocks --env production --batch-size 50",
+                { encoding: "utf-8", stdio: "inherit" },
+            );
+        } catch (error) {
+            console.error("❌ Failed to apply blocks:", error);
+            process.exit(1);
+        }
+    }
 }
 
 main().catch(console.error);

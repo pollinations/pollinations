@@ -217,6 +217,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedance",
         provider: "bytedance",
+        paidOnly: true,
         cost: [
             // Seedance Lite - $1.8/M tokens
             // Token formula: (height × width × FPS × duration) / 1024
@@ -314,6 +315,21 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Imagen 4 (api.airforce) - Google's latest image gen",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "flux-2-dev": {
+        aliases: ["flux-2", "flux2-dev"],
+        modelId: "flux-2-dev",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-03-02").getTime(),
+                completionImageTokens: 0.001, // $0.001 per image
+            },
+        ],
+        description: "FLUX.2 Dev (api.airforce) - Flux 2 image generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },

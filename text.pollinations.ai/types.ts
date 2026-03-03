@@ -79,7 +79,7 @@ export interface ChatCompletion {
     citations?: string[];
     error?: string | { message?: string; status?: number; details?: unknown };
     stream?: boolean;
-    responseStream?: AsyncIterable<unknown> | NodeJS.ReadableStream | null;
+    responseStream?: ReadableStream | null;
     requestData?: unknown;
     [key: string]: unknown;
 }

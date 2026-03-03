@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
 import debug from "debug";
-import dotenv from "dotenv";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -21,10 +20,19 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 
-dotenv.config({ path: ".env.local" });
-dotenv.config();
-
 const app = new Hono();
+
+// Sync Cloudflare Worker env bindings to process.env so that modules
+// using process.env (debug, googleCloudAuth, generateTextPortkey) work
+// without refactoring every function signature.
+app.use("*", async (c, next) => {
+    for (const [key, value] of Object.entries(c.env)) {
+        if (typeof value === "string") {
+            process.env[key] = value;
+        }
+    }
+    await next();
+});
 
 const log = debug("pollinations:server");
 const errorLog = debug("pollinations:error");

@@ -76,11 +76,16 @@ function serverQueueInfo(servers: ServerMap): ServerInfo[] {
     });
 }
 
-// Decay errors every minute
-setInterval(decayErrors, 60 * 1000); // Every 1 minute
-
-// Log server queue info every 10 seconds
-setInterval(() => console.table(serverQueueInfo(SERVERS)), 10000);
+// Lazy-start intervals (Workers disallows setInterval at module scope)
+let intervalsStarted = false;
+function ensureIntervals() {
+    if (intervalsStarted) return;
+    intervalsStarted = true;
+    // Decay errors every minute
+    setInterval(decayErrors, 60 * 1000);
+    // Log server queue info every 10 seconds
+    setInterval(() => console.table(serverQueueInfo(SERVERS)), 10000);
+}
 
 /**
  * Returns the total load (pending + queued jobs) for a specific type
@@ -105,6 +110,7 @@ export const countFluxJobs = () => countJobs("flux");
  * @param {string} type - The type of service (default: 'flux')
  */
 export const registerServer = (url: string, type: ServerType = "flux") => {
+    ensureIntervals();
     // Only allow predefined types, fall back to 'flux' for unknown types
     if (!Object.hasOwn(SERVERS, type)) {
         logServer(

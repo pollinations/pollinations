@@ -30,7 +30,7 @@ datasources:
       dialTimeout: "10"
       queryTimeout: "60"
     secureJsonData:
-      password: "$__env{TINYBIRD_GENERATION_EVENT_READ}"
+      password: "$__env{TINYBIRD_GENERATION_READ_TOKEN}"
     editable: true
 
   - name: Tinybird Stripe
@@ -48,7 +48,7 @@ datasources:
       dialTimeout: "10"
       queryTimeout: "60"
     secureJsonData:
-      password: "$__env{TINYBIRD_STRIPE_EVENT_READ}"
+      password: "$__env{TINYBIRD_STRIPE_READ_TOKEN}"
     editable: true
 
   - name: Tinybird Legacy
@@ -66,5 +66,5 @@ datasources:
       dialTimeout: "10"
       queryTimeout: "60"
     secureJsonData:
-      password: "$__env{TINYBIRD_TEXT_EVENT_READ}"
+      password: "$__env{TINYBIRD_LEGACY_GENERATION_READ_TOKEN}"
     editable: true

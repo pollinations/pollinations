@@ -1,5 +1,4 @@
 import debug from "debug";
-import fetch from "node-fetch";
 import { createSseStreamConverter } from "./sseStreamConverter.js";
 import {
     normalizeOptions,

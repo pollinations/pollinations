@@ -1,5 +1,4 @@
 import debug from "debug";
-import fetch from "node-fetch";
 
 const log = debug("pollinations:google-auth");
 const errorLog = debug("pollinations:google-auth:error");

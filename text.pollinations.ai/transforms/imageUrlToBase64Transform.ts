@@ -1,5 +1,4 @@
 import debug from "debug";
-import fetch from "node-fetch";
 import type { TransformFn } from "../types.js";
 
 const log = debug("pollinations:transforms:imageUrl");

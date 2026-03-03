@@ -1,95 +1,106 @@
-# pollinations.ai API
+# Pollinations API
 
 - **OpenAPI Version:** `3.1.0`
 - **API Version:** `0.3.0`
 
-Documentation for `gen.pollinations.ai` - the pollinations.ai API gateway.
+## Introduction
 
-[📝 Edit docs](https://github.com/pollinations/pollinations/edit/master/enter.pollinations.ai/src/routes/docs.ts)
+Generate text, images, video, and audio with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
+
+**Base URL:** `https://gen.pollinations.ai`
+
+**Get your API key:** [enter.pollinations.ai](https://enter.pollinations.ai)
+
+## Overview
+
+| Capability | Endpoint             | Format                          |                   |
+| ---------- | -------------------- | ------------------------------- | ----------------- |
+| ✍️         | **Text Generation**  | `POST /v1/chat/completions`     | OpenAI-compatible |
+| ✍️         | **Simple Text**      | `GET /text/{prompt}`            | Plain text        |
+| 🖼️        | **Image Generation** | `GET /image/{prompt}`           | JPEG / PNG        |
+| 🎬         | **Video Generation** | `GET /video/{prompt}`           | MP4               |
+| 🔊         | **Text-to-Speech**   | `GET /audio/{text}`             | MP3               |
+| 🔊         | **Music Generation** | `GET /audio/{text}`             | MP3               |
+| 🔊         | **Transcription**    | `POST /v1/audio/transcriptions` | JSON              |
+| 🤖         | **Model Discovery**  | `GET /v1/models`                | JSON              |
 
 ## Quick Start
 
-Get your API key at <https://enter.pollinations.ai>
+### Generate an Image
 
-### Image Generation
+Paste this URL in your browser — no code needed:
 
-```bash
-curl 'https://gen.pollinations.ai/image/a%20cat?model=flux' \
-  -H 'Authorization: Bearer YOUR_API_KEY'
+```perl
+https://gen.pollinations.ai/image/a%20cat%20in%20space
 ```
 
-### Text Generation
+Or use it directly in HTML:
 
-```bash
-curl 'https://gen.pollinations.ai/v1/chat/completions' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}'
+```html
+<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space" />
 ```
 
-### Vision (Image Input)
+### Generate Text (OpenAI-compatible)
 
 ```bash
-curl 'https://gen.pollinations.ai/v1/chat/completions' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": [{"type": "text", "text": "Describe this image"}, {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}]}]}'
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "openai", "messages": [{"role": "user", "content": "Hello!"}]}'
 ```
 
-**Gemini Tools:** `gemini`, `gemini-large` have `code_execution` enabled (can generate images/plots). `gemini-search` has `google_search` enabled. Responses may include `content_blocks` with `image_url`, `text`, or `thinking` types.
-
-### Simple Text Endpoint
+### Generate Speech
 
 ```bash
-curl 'https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY'
+curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \
+  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
 ```
 
-### Streaming
+## 🔐 Authentication
+
+All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.
+
+**Two key types:**
+
+| Type        | Prefix | Use case                | Rate limits      |
+| ----------- | ------ | ----------------------- | ---------------- |
+| Secret      | `sk_`  | Server-side apps        | None             |
+| Publishable | `pk_`  | Client-side apps (beta) | 1 pollen/IP/hour |
+
+**How to authenticate:**
 
 ```bash
-curl 'https://gen.pollinations.ai/v1/chat/completions' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": "Write a poem"}], "stream": true}' \
-  --no-buffer
+# Option 1: Authorization header (recommended)
+curl -H "Authorization: Bearer YOUR_API_KEY" ...
+
+# Option 2: Query parameter
+curl "https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY"
 ```
 
-### Model Discovery
+> **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.
 
-**Always check available models before testing:**
+## ❌ Errors
 
-- **Image models:** [/image/models](https://gen.pollinations.ai/image/models)
-- **Text models:** [/v1/models](https://gen.pollinations.ai/v1/models)
+All errors return JSON with a consistent format:
 
-## Authentication
-
-**Two key types (both consume Pollen from your balance):**
-
-- **Publishable Keys (`pk_`):** ⚠️ **Beta - not yet ready for production use.** For client-side apps, IP rate-limited (1 pollen per IP per hour). **Warning:** Exposing in public code will consume your Pollen if your app gets traffic.
-- **Secret Keys (`sk_`):** Server-side only, no rate limits. Keep secret - never expose publicly.
-
-**Auth methods:**
-
-1. Header: `Authorization: Bearer YOUR_API_KEY`
-2. Query param: `?key=YOUR_API_KEY`
-
-## Account Management
-
-Check your balance and usage:
-
-```bash
-# Check pollen balance
-curl 'https://gen.pollinations.ai/account/balance' \
-  -H 'Authorization: Bearer YOUR_API_KEY'
-
-# Get profile info
-curl 'https://gen.pollinations.ai/account/profile' \
-  -H 'Authorization: Bearer YOUR_API_KEY'
-
-# View usage history
-curl 'https://gen.pollinations.ai/account/usage' \
-  -H 'Authorization: Bearer YOUR_API_KEY'
+```json
+{
+  "status": 400,
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Description of what went wrong"
+  }
+}
 ```
+
+| Status | Meaning                                 |
+| ------ | --------------------------------------- |
+| `400`  | Invalid parameters or malformed request |
+| `401`  | Missing or invalid API key              |
+| `402`  | Insufficient pollen balance             |
+| `403`  | API key lacks required permission       |
+| `500`  | Internal server error                   |
 
 ## Servers
 
@@ -97,17 +108,17 @@ curl 'https://gen.pollinations.ai/account/usage' \
 
 ## Operations
 
-### GET /account/profile
+### Get Profile
 
 - **Method:** `GET`
 - **Path:** `/account/profile`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 👤 Account
 
-Get user profile info (name, email, GitHub username, tier, createdAt, nextResetAt). Requires `account:profile` permission for API keys.
+Returns your account profile including name, email, tier level, and account creation date. Requires `account:profile` permission when using API keys.
 
 #### Responses
 
-##### Status: 200 User profile with name, email, githubUsername, tier, createdAt, nextResetAt
+##### Status: 200 User profile
 
 ###### Content-Type: application/json
 
@@ -157,17 +168,17 @@ Get user profile info (name, email, GitHub username, tier, createdAt, nextResetA
 
 ##### Status: 403 Permission denied - API key missing \`account:profile\` permission
 
-### GET /account/balance
+### Get Balance
 
 - **Method:** `GET`
 - **Path:** `/account/balance`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 👤 Account
 
-Get pollen balance. Returns the key's remaining budget if set, otherwise the user's total balance. Requires `account:balance` permission for API keys.
+Returns your current pollen balance. If the API key has a budget limit, returns the key's remaining budget instead. Requires `account:balance` permission when using API keys.
 
 #### Responses
 
-##### Status: 200 Balance (remaining pollen)
+##### Status: 200 Pollen balance
 
 ###### Content-Type: application/json
 
@@ -187,17 +198,17 @@ Get pollen balance. Returns the key's remaining budget if set, otherwise the use
 
 ##### Status: 403 Permission denied - API key missing \`account:balance\` permission
 
-### GET /account/usage
+### Get Usage History
 
 - **Method:** `GET`
 - **Path:** `/account/usage`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 👤 Account
 
-Get request history and spending data. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.
+Returns your request history with per-request details: model used, token counts, cost, and response time. Supports JSON and CSV export. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.
 
 #### Responses
 
-##### Status: 200 Usage records with timestamp, model, tokens, cost\_usd, etc.
+##### Status: 200 Usage records
 
 ###### Content-Type: application/json
 
@@ -307,13 +318,13 @@ Get request history and spending data. Supports JSON and CSV formats. Requires `
 
 ##### Status: 403 Permission denied - API key missing \`account:usage\` permission
 
-### GET /account/usage/daily
+### Get Daily Usage
 
 - **Method:** `GET`
 - **Path:** `/account/usage/daily`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 👤 Account
 
-Get daily aggregated usage data (last 90 days). Supports JSON and CSV formats. Requires `account:usage` permission for API keys. Results are cached for 1 hour.
+Returns daily aggregated usage for the last 90 days, grouped by date and model. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.
 
 #### Responses
 
@@ -372,13 +383,13 @@ Get daily aggregated usage data (last 90 days). Supports JSON and CSV formats. R
 
 ##### Status: 403 Permission denied - API key missing \`account:usage\` permission
 
-### GET /account/key
+### Get API Key Info
 
 - **Method:** `GET`
 - **Path:** `/account/key`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 👤 Account
 
-Get API key status and information. Returns key validity, type, expiry, permissions, and remaining budget. This endpoint allows validating keys without making expensive generation requests. Requires API key authentication.
+Returns information about the API key used in the request: validity, type (secret/publishable), expiry, permissions, and remaining budget. Useful for validating keys without making generation requests.
 
 #### Responses
 
@@ -450,13 +461,13 @@ Get API key status and information. Returns key validity, type, expiry, permissi
 
 ##### Status: 401 Invalid or missing API key
 
-### GET /v1/models
+### List Text Models (OpenAI-compatible)
 
 - **Method:** `GET`
 - **Path:** `/v1/models`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 🤖 Models
 
-Get available text models (OpenAI-compatible). If an API key with model restrictions is provided, only allowed models are returned.
+Returns available text models in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 #### Responses
 
@@ -557,13 +568,13 @@ Get available text models (OpenAI-compatible). If an API key with model restrict
 }
 ```
 
-### GET /image/models
+### List Image & Video Models
 
 - **Method:** `GET`
 - **Path:** `/image/models`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 🤖 Models
 
-Get a list of available image generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.
+Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 #### Responses
 
@@ -635,13 +646,13 @@ Get a list of available image generation models with pricing, capabilities, and 
 }
 ```
 
-### GET /text/models
+### List Text Models (Detailed)
 
 - **Method:** `GET`
 - **Path:** `/text/models`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 🤖 Models
 
-Get a list of available text generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.
+Returns all available text generation models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 #### Responses
 
@@ -713,13 +724,13 @@ Get a list of available text generation models with pricing, capabilities, and m
 }
 ```
 
-### GET /audio/models
+### List Audio Models
 
 - **Method:** `GET`
 - **Path:** `/audio/models`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 🤖 Models
 
-Get a list of available audio models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.
+Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 #### Responses
 
@@ -791,23 +802,15 @@ Get a list of available audio models with pricing, capabilities, and metadata. I
 }
 ```
 
-### POST /v1/chat/completions
+### Chat Completions
 
 - **Method:** `POST`
 - **Path:** `/v1/chat/completions`
-- **Tags:** gen.pollinations.ai
+- **Tags:** ✍️ Text Generation
 
-OpenAI-compatible chat completions endpoint.
+Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.
 
-**Legacy endpoint:** `/openai` (deprecated, use `/v1/chat/completions` instead)
-
-**Authentication (Secret Keys Only):**
-
-Include your API key in the `Authorization` header as a Bearer token:
-
-`Authorization: Bearer YOUR_API_KEY`
-
-API keys can be created from your dashboard at enter.pollinations.ai. Both key types consume Pollen. Secret keys have no rate limits.
+Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.
 
 #### Request Body
 
@@ -1268,10 +1271,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
 
   `string`
 
-- **`usage` (required)**
-
-  `object`
-
 - **`citations`**
 
   `array`
@@ -1285,6 +1284,10 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
   `object`
 
 - **`system_fingerprint`**
+
+  `object`
+
+- **`usage`**
 
   `object`
 
@@ -1596,6 +1599,62 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
 }
 ```
 
+##### Status: 429 You're making requests too quickly. Please slow down a bit.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 429,
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "You're making requests too quickly. Please slow down a bit.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
 ##### Status: 500 Oh snap, something went wrong on our end. We're on it!
 
 ###### Content-Type: application/json
@@ -1652,22 +1711,15 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
 }
 ```
 
-### GET /text/{prompt}
+### Simple Text Generation
 
 - **Method:** `GET`
 - **Path:** `/text/{prompt}`
-- **Tags:** gen.pollinations.ai
+- **Tags:** ✍️ Text Generation
 
-Generates text from text prompts.
+Generate text from a prompt via a simple GET request. Returns plain text.
 
-**Authentication:**
-
-Include your API key either:
-
-- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`
-- As a query parameter: `?key=YOUR_API_KEY`
-
-API keys can be created from your dashboard at enter.pollinations.ai.
+This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions` endpoint — ideal for quick prototyping or simple integrations.
 
 #### Responses
 
@@ -1907,6 +1959,62 @@ true
 }
 ```
 
+##### Status: 429 You're making requests too quickly. Please slow down a bit.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 429,
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "You're making requests too quickly. Please slow down a bit.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
 ##### Status: 500 Oh snap, something went wrong on our end. We're on it!
 
 ###### Content-Type: application/json
@@ -1963,33 +2071,21 @@ true
 }
 ```
 
-### GET /image/{prompt}
+### Generate Image
 
 - **Method:** `GET`
 - **Path:** `/image/{prompt}`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 🖼️ Image Generation
 
-Generate an image or video from a text prompt.
+Generate an image from a text prompt. Returns JPEG or PNG.
 
-**Image Models:** `flux` (default), `turbo`, `gptimage`, `kontext`, `seedream`, `nanobanana`, `nanobanana-pro`
+**Available models:** `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-pro`, `seedream5`, `seedream`, `seedream-pro`, `gptimage`, `gptimage-large`, `flux`, `zimage`, `klein`, `klein-large`, `imagen-4`, `grok-imagine`. `zimage` is the default.
 
-**Video Models:** `veo`, `seedance`
-
-- `veo`: Text-to-video only (4-8 seconds)
-- `seedance`: Text-to-video and image-to-video (2-10 seconds)
-
-**Authentication:**
-
-Include your API key either:
-
-- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`
-- As a query parameter: `?key=YOUR_API_KEY`
-
-API keys can be created from your dashboard at enter.pollinations.ai.
+Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
 #### Responses
 
-##### Status: 200 Success - Returns the generated image or video
+##### Status: 200 Success - Returns the generated image
 
 ###### Content-Type: image/jpeg
 
@@ -2010,6 +2106,362 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 ```json
 {}
 ```
+
+##### Status: 400 Something was wrong with the input data, check the details for more info.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 400,
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Something was wrong with the input data, check the details for more info.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 401 Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 401,
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 402 Insufficient pollen balance or API key budget exhausted.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 402,
+  "success": false,
+  "error": {
+    "code": "PAYMENT_REQUIRED",
+    "message": "Insufficient pollen balance or API key budget exhausted.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 403 Access denied! You don't have the required permissions for this resource or model.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 403,
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Access denied! You don't have the required permissions for this resource or model.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 429 You're making requests too quickly. Please slow down a bit.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 429,
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "You're making requests too quickly. Please slow down a bit.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 500 Oh snap, something went wrong on our end. We're on it!
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 500,
+  "success": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Oh snap, something went wrong on our end. We're on it!",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+### Generate Video
+
+- **Method:** `GET`
+- **Path:** `/video/{prompt}`
+- **Tags:** 🎬 Video Generation
+
+Generate a video from a text prompt. Returns MP4.
+
+**Available models:** `veo`, `seedance`, `seedance-pro`, `wan`, `grok-video`, `ltx-2`.
+
+Use `duration` to set video length, `aspectRatio` for orientation, and `audio` to enable soundtrack generation.
+
+You can also pass reference images via the `image` parameter — for example, `veo` supports start and end frames for interpolation.
+
+Browse all available models at [`/image/models`](https://gen.pollinations.ai/image/models).
+
+#### Responses
+
+##### Status: 200 Success - Returns the generated video
 
 ###### Content-Type: video/mp4
 
@@ -2245,6 +2697,62 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 }
 ```
 
+##### Status: 429 You're making requests too quickly. Please slow down a bit.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 429,
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "You're making requests too quickly. Please slow down a bit.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
 ##### Status: 500 Oh snap, something went wrong on our end. We're on it!
 
 ###### Content-Type: application/json
@@ -2301,39 +2809,477 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 }
 ```
 
-### GET /audio/{text}
+### Generate Audio
 
 - **Method:** `GET`
 - **Path:** `/audio/{text}`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 🔊 Audio Generation
 
-Generate audio from text — speech (TTS) or music.
+Generate speech or music from text via a simple GET request.
 
-**Models:** Use `model` query param to select:
+**Text-to-speech (default):** Returns spoken audio in the selected voice and format.
 
-- TTS (default): `elevenlabs`, `tts-1`, etc.
-- Music: `elevenmusic` (or `music`)
+**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
-**TTS Voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+**Output formats:** mp3 (default), opus, aac, flac, wav, pcm
 
-**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm
-
-**Music options:** `duration` in seconds (3-300), `instrumental=true`
-
-**Authentication:**
-
-Include your API key either:
-
-- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`
-- As a query parameter: `?key=YOUR_API_KEY`
-
-API keys can be created from your dashboard at enter.pollinations.ai.
+**Music generation:** Set `model=elevenmusic` to generate music instead of speech. Supports `duration` (3-300 seconds) and `instrumental` mode.
 
 #### Responses
 
 ##### Status: 200 Success - Returns audio data
 
 ###### Content-Type: audio/mpeg
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+##### Status: 400 Something was wrong with the input data, check the details for more info.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 400,
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Something was wrong with the input data, check the details for more info.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 401 Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 401,
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 402 Insufficient pollen balance or API key budget exhausted.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 402,
+  "success": false,
+  "error": {
+    "code": "PAYMENT_REQUIRED",
+    "message": "Insufficient pollen balance or API key budget exhausted.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 403 Access denied! You don't have the required permissions for this resource or model.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 403,
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Access denied! You don't have the required permissions for this resource or model.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 429 You're making requests too quickly. Please slow down a bit.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 429,
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "You're making requests too quickly. Please slow down a bit.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 500 Oh snap, something went wrong on our end. We're on it!
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 500,
+  "success": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Oh snap, something went wrong on our end. We're on it!",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+### Text to Speech (OpenAI-compatible)
+
+- **Method:** `POST`
+- **Path:** `/v1/audio/speech`
+- **Tags:** 🔊 Audio Generation
+
+Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.
+
+Set `model` to `elevenmusic` to generate music instead of speech.
+
+**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+**Output formats:** mp3 (default), opus, aac, flac, wav, pcm
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`input` (required)**
+
+  `string` — The text to generate audio for. Maximum 4096 characters.
+
+- **`duration`**
+
+  `number` — Music duration in seconds, 3-300 (elevenmusic only)
+
+- **`instrumental`**
+
+  `boolean` — If true, guarantees instrumental output (elevenmusic only)
+
+- **`model`**
+
+  `string`
+
+- **`response_format`**
+
+  `string`, possible values: `"mp3", "opus", "aac", "flac", "wav", "pcm"`, default: `"mp3"` — The audio format for the output.
+
+- **`speed`**
+
+  `number`, default: `1` — The speed of the generated audio. 0.25 to 4.0, default 1.0.
+
+- **`voice`**
+
+  `string`, default: `"alloy"` — The voice to use. Can be any preset name (alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill) OR a custom ElevenLabs voice ID (UUID from your dashboard).
+
+**Example:**
+
+```json
+{
+  "model": "",
+  "input": "Hello, welcome to Pollinations!",
+  "voice": "rachel",
+  "response_format": "mp3",
+  "speed": 1,
+  "duration": 30,
+  "instrumental": false
+}
+```
+
+#### Responses
+
+##### Status: 200 Success - Returns audio data
+
+###### Content-Type: audio/mpeg
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+###### Content-Type: audio/opus
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+###### Content-Type: audio/aac
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+###### Content-Type: audio/flac
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+###### Content-Type: audio/wav
 
 `string`, format: `binary`
 
@@ -2623,301 +3569,21 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 }
 ```
 
-### POST /v1/audio/speech
-
-- **Method:** `POST`
-- **Path:** `/v1/audio/speech`
-- **Tags:** gen.pollinations.ai
-
-Generate audio from text — speech (TTS) or music.
-
-This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or alias `music`) to generate music instead of speech.
-
-**TTS Voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
-
-**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm
-
-#### Request Body
-
-##### Content-Type: application/json
-
-- **`input` (required)**
-
-  `string` — The text to generate audio for. Maximum 4096 characters.
-
-- **`duration`**
-
-  `number` — Music duration in seconds, 3-300 (elevenmusic only)
-
-- **`instrumental`**
-
-  `boolean` — If true, guarantees instrumental output (elevenmusic only)
-
-- **`model`**
-
-  `string`
-
-- **`response_format`**
-
-  `string`, possible values: `"mp3", "opus", "aac", "flac", "wav", "pcm"`, default: `"mp3"` — The audio format for the output.
-
-- **`speed`**
-
-  `number`, default: `1` — The speed of the generated audio. 0.25 to 4.0, default 1.0.
-
-- **`voice`**
-
-  `string`, default: `"alloy"` — The voice to use. Can be any preset name (alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill) OR a custom ElevenLabs voice ID (UUID from your dashboard).
-
-**Example:**
-
-```json
-{
-  "model": "",
-  "input": "Hello, welcome to Pollinations!",
-  "voice": "rachel",
-  "response_format": "mp3",
-  "speed": 1,
-  "duration": 30,
-  "instrumental": false
-}
-```
-
-#### Responses
-
-##### Status: 200 Success - Returns audio data
-
-###### Content-Type: audio/mpeg
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
-###### Content-Type: audio/opus
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
-###### Content-Type: audio/aac
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
-###### Content-Type: audio/flac
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
-###### Content-Type: audio/wav
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
-##### Status: 400 Something was wrong with the input data, check the details for more info.
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 400,
-  "success": false,
-  "error": {
-    "code": "BAD_REQUEST",
-    "message": "Something was wrong with the input data, check the details for more info.",
-    "timestamp": "",
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-##### Status: 401 Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 401,
-  "success": false,
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
-    "timestamp": "",
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-##### Status: 500 Oh snap, something went wrong on our end. We're on it!
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 500,
-  "success": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "Oh snap, something went wrong on our end. We're on it!",
-    "timestamp": "",
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-### POST /v1/audio/transcriptions
+### Transcribe Audio
 
 - **Method:** `POST`
 - **Path:** `/v1/audio/transcriptions`
-- **Tags:** gen.pollinations.ai
+- **Tags:** 🔊 Audio Generation
 
-Transcribe audio to text using Whisper or ElevenLabs Scribe.
+Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 
-This endpoint is OpenAI Whisper API compatible.
+**Supported audio formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm
 
-**Supported formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm
+**Models:**
 
-**Models:** `whisper-large-v3` (default), `whisper-1`, `scribe`
+- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud
+- `whisper-1` — Alias for whisper-large-v3
+- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)
 
 #### Request Body
 
@@ -3090,6 +3756,118 @@ This endpoint is OpenAI Whisper API compatible.
 }
 ```
 
+##### Status: 402 Insufficient pollen balance or API key budget exhausted.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 402,
+  "success": false,
+  "error": {
+    "code": "PAYMENT_REQUIRED",
+    "message": "Insufficient pollen balance or API key budget exhausted.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 403 Access denied! You don't have the required permissions for this resource or model.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 403,
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Access denied! You don't have the required permissions for this resource or model.",
+    "timestamp": "",
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
 ##### Status: 500 Oh snap, something went wrong on our end. We're on it!
 
 ###### Content-Type: application/json
@@ -3150,7 +3928,7 @@ This endpoint is OpenAI Whisper API compatible.
 
 - **Method:** `POST`
 - **Path:** `/upload`
-- **Tags:** media.pollinations.ai
+- **Tags:** 📦 Media Storage
 
 Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.
 
@@ -3224,22 +4002,6 @@ Upload an image, audio, or video file. Supports multipart/form-data, raw binary,
 }
 ```
 
-##### Status: 415 Unsupported media type
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `string`
-
-**Example:**
-
-```json
-{
-  "error": ""
-}
-```
-
 ### SERVERS /upload
 
 - **Method:** `SERVERS`
@@ -3249,7 +4011,7 @@ Upload an image, audio, or video file. Supports multipart/form-data, raw binary,
 
 - **Method:** `GET`
 - **Path:** `/{hash}`
-- **Tags:** media.pollinations.ai
+- **Tags:** 📦 Media Storage
 
 Get a file by its content hash. No authentication required. Responses are cached immutably.
 
@@ -3293,7 +4055,7 @@ Get a file by its content hash. No authentication required. Responses are cached
 
 - **Method:** `HEAD`
 - **Path:** `/{hash}`
-- **Tags:** media.pollinations.ai
+- **Tags:** 📦 Media Storage
 
 Check existence and metadata without downloading the file.
 
@@ -3304,6 +4066,101 @@ Check existence and metadata without downloading the file.
 ##### Status: 400 Invalid hash format
 
 ##### Status: 404 File not found
+
+### Delete media
+
+- **Method:** `DELETE`
+- **Path:** `/{hash}`
+- **Tags:** 📦 Media Storage
+
+Delete a file by its content hash. Only the original uploader can delete their own files.
+
+#### Responses
+
+##### Status: 200 File deleted
+
+###### Content-Type: application/json
+
+- **`deleted` (required)**
+
+  `boolean`
+
+- **`id` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "deleted": true,
+  "id": ""
+}
+```
+
+##### Status: 400 Invalid hash format
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "error": ""
+}
+```
+
+##### Status: 401 Missing or invalid API key
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "error": ""
+}
+```
+
+##### Status: 403 Not the original uploader
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "error": ""
+}
+```
+
+##### Status: 404 File not found
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "error": ""
+}
+```
 
 ### SERVERS /{hash}
 

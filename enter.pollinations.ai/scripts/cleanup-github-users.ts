@@ -286,6 +286,10 @@ function sanitizeUsername(username: string): string {
     return username.replace(/[^a-zA-Z0-9-]/g, "");
 }
 
+function sanitizeId(id: string): string {
+    return id.replace(/[^a-zA-Z0-9]/g, "");
+}
+
 // ── Audit command ──────────────────────────────────────────────
 
 const auditCommand = command({
@@ -537,7 +541,7 @@ const applyCommand = command({
                         try {
                             queryD1(
                                 env,
-                                `UPDATE user SET github_username = '${safeName}' WHERE id = '${entry.userId}';`,
+                                `UPDATE user SET github_username = '${safeName}' WHERE id = '${sanitizeId(entry.userId)}';`,
                             );
                             console.log(
                                 `   ✅ ${entry.d1Username} → ${safeName}`,
@@ -575,7 +579,7 @@ const applyCommand = command({
                         try {
                             queryD1(
                                 env,
-                                `UPDATE user SET banned = 1, ban_reason = 'github_account_deleted' WHERE id = '${entry.userId}';`,
+                                `UPDATE user SET banned = 1, ban_reason = 'github_account_deleted' WHERE id = '${sanitizeId(entry.userId)}';`,
                             );
                             banned++;
                         } catch {

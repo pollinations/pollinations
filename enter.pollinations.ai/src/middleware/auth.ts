@@ -59,6 +59,20 @@ function extractApiKey(c: Context<AuthEnv>): string | null {
     return c.req.query("key") || null;
 }
 
+function assertNotBanned(user: {
+    banned?: boolean | null;
+    banExpires?: string | null;
+    banReason?: string | null;
+}): void {
+    if (user.banned !== true) return;
+    if (user.banExpires && new Date(user.banExpires) <= new Date()) return;
+    throw new HTTPException(403, {
+        message: user.banReason
+            ? `Account banned: ${user.banReason}`
+            : "Account banned",
+    });
+}
+
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
         const _log = c.get("log").getChild("auth");
@@ -71,19 +85,7 @@ export const auth = (options: AuthOptions) =>
             });
             if (!result?.user) return null;
 
-            // Block banned users with explicit 403
-            if (result.user.banned === true) {
-                if (
-                    !result.user.banExpires ||
-                    new Date(result.user.banExpires) > new Date()
-                ) {
-                    throw new HTTPException(403, {
-                        message: result.user.banReason
-                            ? `Account banned: ${result.user.banReason}`
-                            : "Account banned",
-                    });
-                }
-            }
+            assertNotBanned(result.user);
 
             return {
                 user: result?.user,
@@ -138,18 +140,8 @@ export const auth = (options: AuthOptions) =>
                 return null;
             }
 
-            // Block banned users with explicit 403
-            if (fullApiKey?.user?.banned === true) {
-                if (
-                    !fullApiKey.user.banExpires ||
-                    new Date(fullApiKey.user.banExpires) > new Date()
-                ) {
-                    throw new HTTPException(403, {
-                        message: fullApiKey.user.banReason
-                            ? `Account banned: ${fullApiKey.user.banReason}`
-                            : "Account banned",
-                    });
-                }
+            if (fullApiKey?.user) {
+                assertNotBanned(fullApiKey.user);
             }
 
             return {

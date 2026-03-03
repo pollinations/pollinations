@@ -4,7 +4,6 @@ export const Route = createFileRoute("/error")({
     component: ErrorPage,
     validateSearch: (search: Record<string, unknown>) => ({
         error: (search.error as string) || "",
-        error_description: (search.error_description as string) || "",
     }),
 });
 

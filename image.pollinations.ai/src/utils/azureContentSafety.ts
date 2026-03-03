@@ -1,21 +1,8 @@
-import { AzureKeyCredential } from "@azure/core-auth";
-import ContentSafetyClient, {
-    isUnexpected,
-} from "@azure-rest/ai-content-safety";
-import "dotenv/config";
-
-const endpoint = process.env.AZURE_CONTENT_SAFETY_ENDPOINT;
-const apiKey = process.env.AZURE_CONTENT_SAFETY_API_KEY;
-
-if (!endpoint || !apiKey) {
-    console.warn(
-        "Azure Content Safety not configured - missing AZURE_CONTENT_SAFETY_ENDPOINT or AZURE_CONTENT_SAFETY_API_KEY",
-    );
-}
-
-const credential = apiKey ? new AzureKeyCredential(apiKey) : null;
-const client =
-    endpoint && credential ? ContentSafetyClient(endpoint, credential) : null;
+/**
+ * Azure Content Safety client — Workers-compatible.
+ * Uses plain fetch instead of the Azure SDK to avoid Node.js dependencies
+ * and module-load-time env capture issues.
+ */
 
 const CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
 const SEVERITY_THRESHOLD = 4; // Block medium (4) and high (6) severity content
@@ -45,6 +32,13 @@ const SAFE_RESULT: ContentSafetyResults = {
     formattedViolations: "No violations detected",
 };
 
+function getConfig() {
+    const endpoint = process.env.AZURE_CONTENT_SAFETY_ENDPOINT;
+    const apiKey = process.env.AZURE_CONTENT_SAFETY_API_KEY;
+    if (!endpoint || !apiKey) return null;
+    return { endpoint: endpoint.replace(/\/$/, ""), apiKey };
+}
+
 function buildResultFromCategories(
     categoriesAnalysis: Array<{ category: string; severity?: number }>,
 ): ContentSafetyResults {
@@ -72,7 +66,8 @@ function buildResultFromCategories(
 export async function analyzeTextSafety(
     text: string,
 ): Promise<ContentSafetyResults> {
-    if (!client) {
+    const cfg = getConfig();
+    if (!cfg) {
         console.warn(
             "Azure Content Safety not configured - skipping text analysis",
         );
@@ -80,16 +75,31 @@ export async function analyzeTextSafety(
     }
 
     try {
-        const result = await client
-            .path("/text:analyze")
-            .post({ body: { text } });
+        const response = await fetch(
+            `${cfg.endpoint}/contentsafety/text:analyze?api-version=2023-10-01`,
+            {
+                method: "POST",
+                headers: {
+                    "Ocp-Apim-Subscription-Key": cfg.apiKey,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ text }),
+            },
+        );
 
-        if (isUnexpected(result)) {
-            console.error("Azure Content Safety text analysis error:", result);
+        if (!response.ok) {
+            console.error(
+                "Azure Content Safety text analysis error:",
+                response.status,
+                await response.text(),
+            );
             return SAFE_RESULT;
         }
 
-        return buildResultFromCategories(result.body.categoriesAnalysis);
+        const data = (await response.json()) as {
+            categoriesAnalysis: Array<{ category: string; severity?: number }>;
+        };
+        return buildResultFromCategories(data.categoriesAnalysis);
     } catch (error) {
         console.error("Azure Content Safety text analysis error:", error);
         return SAFE_RESULT;
@@ -99,7 +109,8 @@ export async function analyzeTextSafety(
 export async function analyzeImageSafety(
     imageData: Buffer | string,
 ): Promise<ContentSafetyResults> {
-    if (!client) {
+    const cfg = getConfig();
+    if (!cfg) {
         console.warn(
             "Azure Content Safety not configured - skipping image analysis",
         );
@@ -111,16 +122,31 @@ export async function analyzeImageSafety(
             ? imageData.toString("base64")
             : imageData;
 
-        const result = await client
-            .path("/image:analyze")
-            .post({ body: { image: { content } } });
+        const response = await fetch(
+            `${cfg.endpoint}/contentsafety/image:analyze?api-version=2023-10-01`,
+            {
+                method: "POST",
+                headers: {
+                    "Ocp-Apim-Subscription-Key": cfg.apiKey,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ image: { content } }),
+            },
+        );
 
-        if (isUnexpected(result)) {
-            console.error("Azure Content Safety image analysis error:", result);
+        if (!response.ok) {
+            console.error(
+                "Azure Content Safety image analysis error:",
+                response.status,
+                await response.text(),
+            );
             return SAFE_RESULT;
         }
 
-        return buildResultFromCategories(result.body.categoriesAnalysis);
+        const data = (await response.json()) as {
+            categoriesAnalysis: Array<{ category: string; severity?: number }>;
+        };
+        return buildResultFromCategories(data.categoriesAnalysis);
     } catch (error) {
         console.error("Azure Content Safety image analysis error:", error);
         return SAFE_RESULT;
@@ -138,5 +164,7 @@ function formatViolations(violations: ContentViolation[]): string {
 export const config = {
     SEVERITY_THRESHOLD,
     CATEGORIES,
-    isConfigured: !!client,
+    get isConfigured() {
+        return !!getConfig();
+    },
 };

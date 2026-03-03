@@ -1,7 +1,5 @@
 import debug from "debug";
 import { isMature } from "./utils/mature.ts";
-import "dotenv/config";
-import type { IncomingMessage, ServerResponse } from "node:http";
 
 const logFeed = debug("pollinations:feed");
 const logAuth = debug("pollinations:auth");

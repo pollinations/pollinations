@@ -16,6 +16,19 @@ import { parseMp4Duration } from "./mp4-duration.ts";
 
 const DEFAULT_ELEVENLABS_MODEL = "eleven_v3";
 
+async function throwIfNotOk(response: Response, log: Logger, label: string) {
+    if (response.ok) return;
+    const errorText = await response.text();
+    log.warn("{label} error {status}: {body}", {
+        label,
+        status: response.status,
+        body: errorText,
+    });
+    throw new UpstreamError(remapUpstreamStatus(response.status), {
+        message: errorText || getDefaultErrorMessage(response.status),
+    });
+}
+
 function mapOutputFormat(format: string): string {
     const formatMap: Record<string, string> = {
         mp3: "mp3_44100_128",
@@ -89,16 +102,7 @@ export async function generateSpeech(opts: {
         body: JSON.stringify(elevenLabsBody),
     });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("ElevenLabs error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-        });
-    }
+    await throwIfNotOk(response, log, "ElevenLabs");
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
@@ -171,16 +175,7 @@ export async function generateMusic(opts: {
         body: JSON.stringify(elevenLabsBody),
     });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("ElevenLabs Music error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-        });
-    }
+    await throwIfNotOk(response, log, "ElevenLabs Music");
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
@@ -262,16 +257,7 @@ export async function transcribeWithElevenLabs(opts: {
         },
     );
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("ElevenLabs transcription error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-        });
-    }
+    await throwIfNotOk(response, log, "ElevenLabs transcription");
 
     const elevenLabsData: ElevenLabsTranscriptionResponse =
         await response.json();

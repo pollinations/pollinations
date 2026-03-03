@@ -135,8 +135,7 @@ export const audioRoutes = new Hono<Env>()
 
             const { input, voice, response_format, duration, instrumental } =
                 c.req.valid("json" as never) as CreateSpeechRequest;
-            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
-                .ELEVENLABS_API_KEY;
+            const apiKey = c.env.ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "suno") {
                 const airforceApiKey = (
@@ -280,9 +279,7 @@ export const audioRoutes = new Hono<Env>()
             }
 
             if (c.var.model.resolved === "scribe") {
-                const elevenLabsApiKey = (
-                    c.env as unknown as { ELEVENLABS_API_KEY: string }
-                ).ELEVENLABS_API_KEY;
+                const elevenLabsApiKey = c.env.ELEVENLABS_API_KEY;
                 const response = await transcribeWithElevenLabs({
                     file,
                     language: language || undefined,

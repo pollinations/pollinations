@@ -1,0 +1,30 @@
+TOKEN d1_user_append APPEND
+TOKEN grafana_generation_read READ
+
+DESCRIPTION >
+    Daily snapshot of D1 user table (auth state, tiers, balances)
+
+SCHEMA >
+    `id` String `json:$.id`,
+    `name` String `json:$.name`,
+    `email` String `json:$.email`,
+    `email_verified` UInt8 `json:$.email_verified` DEFAULT 0,
+    `image` Nullable(String) `json:$.image`,
+    `created_at` Nullable(Int64) `json:$.created_at`,
+    `updated_at` Nullable(Int64) `json:$.updated_at`,
+    `role` Nullable(String) `json:$.role`,
+    `banned` UInt8 `json:$.banned` DEFAULT 0,
+    `ban_reason` Nullable(String) `json:$.ban_reason`,
+    `ban_expires` Nullable(Int64) `json:$.ban_expires`,
+    `github_id` Nullable(Int32) `json:$.github_id`,
+    `github_username` Nullable(String) `json:$.github_username`,
+    `tier` String `json:$.tier` DEFAULT 'spore',
+    `tier_balance` Nullable(Float64) `json:$.tier_balance`,
+    `pack_balance` Nullable(Float64) `json:$.pack_balance`,
+    `crypto_balance` Nullable(Float64) `json:$.crypto_balance`,
+    `last_tier_grant` Nullable(Int64) `json:$.last_tier_grant`,
+    `synced_at` DateTime `json:$.synced_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(synced_at)"
+ENGINE_SORTING_KEY "id"

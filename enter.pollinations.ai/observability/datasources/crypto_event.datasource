@@ -1,5 +1,4 @@
 TOKEN crypto_event_append APPEND
-TOKEN crypto_event_read READ
 
 DESCRIPTION >
 NOWPayments crypto webhook events (payments) with full JSON payload

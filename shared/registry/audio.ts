@@ -101,6 +101,23 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         alpha: true,
     },
+    suno: {
+        aliases: ["suno-v5", "suno-music"],
+        modelId: "suno-v5",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-03-02").getTime(),
+                // Suno music: ~$0.001 per second of output audio
+                completionAudioSeconds: 0.001,
+            },
+        ],
+        description:
+            "Suno v5 (api.airforce) - AI music generation from text prompts",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        alpha: true,
+    },
     scribe: {
         aliases: ["scribe_v2", "scribe-v2"],
         modelId: "scribe_v2",

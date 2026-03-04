@@ -156,6 +156,18 @@ export function KPITrendTable({ weeklyData, title }) {
                 "Average Revenue Per Active user. Formula: Weekly Revenue / WAU. Measures monetization efficiency.",
         },
         {
+            key: "grossMargin",
+            name: "Gross Margin",
+            category: "Efficiency",
+            format: "percent",
+            calc: (w) =>
+                w.revenue > 0
+                    ? ((w.revenue - (w.costUsd || 0)) / w.revenue) * 100
+                    : null,
+            tooltip:
+                "Formula: (Revenue - COGS) / Revenue × 100. Higher is better. COGS = compute costs from generation_event.total_cost (GPU, tokens, providers).",
+        },
+        {
             key: "revenuePerMTokens",
             name: "Rev/1M Tokens",
             category: "Efficiency",
@@ -212,6 +224,14 @@ export function KPITrendTable({ weeklyData, title }) {
             format: "number",
             tooltip:
                 "Count of users active 4 weeks ago but inactive in the last 2 weeks.",
+        },
+        {
+            key: "appSubmissions",
+            name: "App Submissions",
+            category: "Community",
+            format: "number",
+            tooltip:
+                "New app submissions via GitHub issues (TIER-APP label). Counts issues created this week.",
         },
     ];
 

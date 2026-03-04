@@ -4,6 +4,7 @@ import { MainGameScreen } from "./components/MainGameScreen.tsx";
 import { StoryHistory } from "./components/StoryHistory.tsx";
 import { AuthGate } from "./components/AuthGate.tsx";
 import { useAuth } from "./hooks/useAuth.ts";
+import { uploadToMedia, countPendingUploads } from "./utils/mediaUpload.ts";
 
 // API Configuration
 const API_URL = {
@@ -91,6 +92,9 @@ export default function App() {
   });
 
   const [isStoryHistoryOpen, setIsStoryHistoryOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'confirm' | 'uploading' | 'done' | 'error'>('idle');
+  const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
   // Load game state from localStorage on mount
   useEffect(() => {
@@ -127,38 +131,69 @@ export default function App() {
     }
   }, []);
 
-  // Save game state to localStorage
-  const saveGame = () => {
+  // Initiate save — shows confirmation if there are images to upload
+  const initiateSave = () => {
+    if (!gameState.character) return;
+    const count = countPendingUploads(gameState);
+    setPendingUploadCount(count);
+    if (count > 0) {
+      setSaveStatus('confirm');
+    } else {
+      doSave(false);
+    }
+  };
+
+  // Execute save, optionally uploading images to media.pollinations.ai
+  const doSave = async (withUpload: boolean) => {
+    if (!gameState.character) return;
+    setIsSaving(true);
+    setSaveStatus(withUpload ? 'uploading' : 'idle');
+
     try {
-      // Only save if we have a character (valid game state)
-      if (!gameState.character) {
-        console.warn('Cannot save: No character created yet');
-        return;
+      const character = { ...gameState.character };
+      const storyHistory = gameState.storyHistory.map(e => ({ ...e }));
+      const inventory = gameState.inventory.map(i => ({ ...i }));
+
+      if (withUpload && apiKey) {
+        await Promise.all([
+          uploadToMedia(character.avatar, apiKey).then(url => { character.avatar = url; }),
+          ...storyHistory.map((entry, idx) =>
+            uploadToMedia(entry.image, apiKey).then(url => { storyHistory[idx].image = url; })
+          ),
+          ...inventory.map((item, idx) =>
+            uploadToMedia(item.image, apiKey).then(url => { inventory[idx].image = url; })
+          ),
+        ]);
       }
 
-      // Create a clean save object with only necessary data
+      setGameState(prev => ({
+        ...prev,
+        character,
+        storyHistory,
+        inventory,
+      }));
+
       const saveData = {
-        character: gameState.character,
-        inventory: gameState.inventory,
+        character,
+        inventory,
         currentScene: gameState.currentScene,
         choices: gameState.choices,
         gamePhase: gameState.gamePhase,
         currentEnemy: gameState.currentEnemy,
-        storyHistory: gameState.storyHistory,
-        // Add a timestamp and version for save validation
+        storyHistory,
         saveTimestamp: Date.now(),
-        saveVersion: '1.0'
+        saveVersion: '1.0',
       };
 
       localStorage.setItem('rpgGameState', JSON.stringify(saveData));
-      console.log('Game saved successfully!', new Date().toLocaleTimeString());
-      console.log('Save data size:', JSON.stringify(saveData).length, 'characters');
-
-      // TODO: Add visual feedback to user (toast notification)
-
+      setSaveStatus('done');
+      setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (error) {
       console.error('Error saving game:', error);
-      // TODO: Show error message to user
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -813,7 +848,12 @@ export default function App() {
             isLoading={gameState.isLoading}
             onChoice={handleChoice}
             onCombat={handleCombat}
-            onSave={saveGame}
+            onSave={initiateSave}
+            isSaving={isSaving}
+            saveStatus={saveStatus}
+            pendingUploadCount={pendingUploadCount}
+            onConfirmSave={() => doSave(true)}
+            onSkipUpload={() => doSave(false)}
             onAddItem={addItem}
             onViewStoryHistory={() => setIsStoryHistoryOpen(true)}
           />

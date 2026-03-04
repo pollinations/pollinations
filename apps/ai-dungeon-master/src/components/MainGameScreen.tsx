@@ -52,6 +52,11 @@ interface MainGameScreenProps {
     onChoice: (choice: GameChoice) => Promise<void>;
     onCombat: () => Promise<{ playerRoll: number; enemyRoll: number; playerSuccess: boolean; enemyDefeated: boolean; combatResult: string; } | null>;
     onSave: () => void;
+    isSaving?: boolean;
+    saveStatus?: 'idle' | 'confirm' | 'uploading' | 'done' | 'error';
+    pendingUploadCount?: number;
+    onConfirmSave?: () => void;
+    onSkipUpload?: () => void;
     onAddItem: (item: InventoryItem) => void;
     onViewStoryHistory?: () => void;
 }
@@ -65,8 +70,13 @@ export function MainGameScreen({
     onChoice,
     onCombat,
     onSave,
+    isSaving,
+    saveStatus,
+    pendingUploadCount,
+    onConfirmSave,
+    onSkipUpload,
     onAddItem,
-    onViewStoryHistory
+    onViewStoryHistory,
 }: MainGameScreenProps) {
     const [inventoryOpen, setInventoryOpen] = useState(false);
     const [combatOpen, setCombatOpen] = useState(false);
@@ -203,13 +213,47 @@ export function MainGameScreen({
                                 Enter Combat
                             </Button>
 
-                            <Button
-                                onClick={onSave}
-                                className="w-full bg-[#4a3422] hover:bg-[#5a4332] text-[#f5e6d3] border border-[#d4a76a] justify-start gap-3"
-                            >
-                                <Save className="w-5 h-5 text-[#d4a76a]" />
-                                Save Game
-                            </Button>
+                            {saveStatus === 'confirm' ? (
+                                <div className="w-full bg-[#3a2817] border border-[#d4a76a] rounded-lg p-3 space-y-2">
+                                    <p className="text-[#f5e6d3] text-sm">
+                                        Save & upload <strong className="text-[#d4a76a]">{pendingUploadCount}</strong> image{pendingUploadCount !== 1 ? 's' : ''}?
+                                        <span className="block text-[#b8a389] text-xs mt-1">Uses pollen credits</span>
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={onConfirmSave}
+                                            size="sm"
+                                            className="flex-1 bg-[#d4a76a] text-[#2c1e12] hover:bg-[#e5b77b]"
+                                        >
+                                            Upload & Save
+                                        </Button>
+                                        <Button
+                                            onClick={onSkipUpload}
+                                            size="sm"
+                                            variant="outline"
+                                            className="flex-1 border-[#d4a76a] text-[#d4a76a] hover:bg-[#4a3422]"
+                                        >
+                                            Save Only
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <Button
+                                    onClick={onSave}
+                                    disabled={isSaving}
+                                    className="w-full bg-[#4a3422] hover:bg-[#5a4332] text-[#f5e6d3] border border-[#d4a76a] justify-start gap-3 disabled:opacity-50"
+                                >
+                                    {saveStatus === 'uploading' ? (
+                                        <Loader2 className="w-5 h-5 text-[#d4a76a] animate-spin" />
+                                    ) : (
+                                        <Save className="w-5 h-5 text-[#d4a76a]" />
+                                    )}
+                                    {saveStatus === 'uploading' ? 'Uploading images…'
+                                        : saveStatus === 'done' ? 'Saved ✓'
+                                        : saveStatus === 'error' ? 'Error — try again'
+                                        : 'Save Game'}
+                                </Button>
+                            )}
 
                             <Button
                                 onClick={onViewStoryHistory}

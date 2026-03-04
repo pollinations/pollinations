@@ -1,0 +1,12 @@
+{
+  "name": "text-worker-validation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4",
+    "typescript": "^5.7.0"
+  }
+}

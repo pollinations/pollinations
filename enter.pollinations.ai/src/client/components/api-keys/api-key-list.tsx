@@ -187,6 +187,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     <LimitsBadge
                                                         expiresAt={
                                                             apiKey.expiresAt
+                                                                ? new Date(
+                                                                      apiKey.expiresAt,
+                                                                  )
+                                                                : null
                                                         }
                                                         pollenBudget={
                                                             apiKey.pollenBalance

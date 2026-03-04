@@ -177,7 +177,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         <p className="text-sm text-gray-500 mt-1">
                             {simplified ? (
                                 <>
-                                    Register your app for{" "}
+                                    🐝 Register your app for{" "}
                                     <a
                                         href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
                                         target="_blank"
@@ -186,7 +186,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     >
                                         BYOP
                                     </a>
-                                    {" "}&mdash; let users bring their own pollen.
+                                    <br />
+                                    🌼 Let your users connect and use their own pollen in your app.
                                 </>
                             ) : (
                                 "Access AI models for text, image, and audio generation."

@@ -186,8 +186,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     >
                                         BYOP
                                     </a>
-                                    <br />
-                                    🌼 Let your users connect and use their own pollen in your app.
+                                    <br />🌼 Let your users connect and use
+                                    their own pollen in your app.
                                 </>
                             ) : (
                                 "Access AI models for text, image, and audio generation."

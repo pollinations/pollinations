@@ -178,8 +178,7 @@ app.post("/register", async (c) => {
 });
 
 app.get("/register", (c) => {
-    // Simplified for Worker - returns empty server list
-    return c.json([]);
+    return c.text("Registration not available in Workers mode", 501);
 });
 
 // --- Feed endpoint ---

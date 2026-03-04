@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { stream } from "hono/streaming";
-import { getIp } from "../shared/extractFromRequest.js";
+import { getClientIp } from "../shared/extractFromRequest.js";
 import { logIp } from "../shared/ipLogger.js";
 import {
     getServiceDefinition,
@@ -24,6 +24,9 @@ const app = new Hono();
 // Sync Cloudflare Worker env bindings to process.env so that modules
 // using process.env (debug, googleCloudAuth, generateTextPortkey) work
 // without refactoring every function signature.
+// NOTE: This writes to a shared global. Safe because all requests within
+// an isolate share the same env bindings, but would need revisiting if
+// per-request env bindings ever differ.
 app.use("*", async (c, next) => {
     for (const [key, value] of Object.entries(c.env)) {
         if (typeof value === "string") {
@@ -42,7 +45,7 @@ app.use("*", async (c, next) => {
         return;
     }
     if (c.req.header("x-proxy-psk") !== expectedPsk) {
-        return c.text("Unauthorized", 401);
+        return c.json({ error: "Unauthorized" }, 401);
     }
     await next();
 });
@@ -63,7 +66,7 @@ app.use(
 );
 
 app.use("*", async (c, next) => {
-    const ip = getIp(c.req.raw);
+    const ip = getClientIp(c.req.raw);
     const model = new URL(c.req.url).searchParams.get("model") || "unknown";
     logIp(ip, "text", `path=${c.req.path} model=${model}`);
     await next();
@@ -82,12 +85,12 @@ app.use("*", async (c, next) => {
     if (token !== expectedToken) {
         authLog(
             "Invalid or missing PLN_ENTER_TOKEN from IP:",
-            getIp(c.req.raw),
+            getClientIp(c.req.raw),
         );
         return c.json({ error: "Unauthorized" }, 401);
     }
 
-    authLog("Valid PLN_ENTER_TOKEN from IP:", getIp(c.req.raw));
+    authLog("Valid PLN_ENTER_TOKEN from IP:", getClientIp(c.req.raw));
     await next();
 });
 
@@ -292,7 +295,7 @@ function sendErrorResponse(
     const errorResponse: Record<string, unknown> = {
         error: errorType,
         message: error.message || "An error occurred",
-        requestId: Math.random().toString(36).substring(7),
+        requestId: generatePollinationsId(),
         requestParameters: requestData || {},
     };
     if (errorDetails) errorResponse.details = errorDetails;
@@ -306,7 +309,7 @@ function sendErrorResponse(
         responseStatus,
         error.model || requestData?.model || "unknown",
         authResult.username || "anonymous",
-        getIp(c.req.raw) || "unknown",
+        getClientIp(c.req.raw),
         error.message,
     );
 

@@ -8,7 +8,7 @@ import { useAuth } from "./hooks/useAuth.ts";
 // API Configuration
 const API_URL = {
   story: 'https://gen.pollinations.ai/v1/chat/completions',
-  image: 'https://gen.pollinations.ai/image',
+  image: 'https://gen.pollinations.ai/image/',
 };
 // Enhanced interfaces
 interface Character {

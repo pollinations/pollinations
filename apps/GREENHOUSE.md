@@ -13,6 +13,7 @@
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
 | [📖 Fantasy Story Generator](https://bringtone.github.io/ChildrenStory/) | Generate fantasy stories by specifying characters, settings, themes, and length with Fantasy Story Generator. Export story text for editing, saving, or sharing. | [@web](https://github.com/web) |  | 🫧 |
+| [🏃 Spix - Personal Fitness Companion](85549951) | Track workouts, activity, and health metrics with Spix - Personal Fitness Companion, built with React Native 0.81 Expo TypeScript and designed to keep your data local and private. | [@android](https://github.com/android) |  | 🫧 |
 | [🧠 EnneAI](https://t.me/typologyAIbot) | Telegram personality typing bot using AI via Pollinations across two personality systems. | [@telegram](https://github.com/telegram) |  | 🫧 |
 | [🧩 ComfyUI-Pollinations-BYOP](https://github.com/ChunkyPanda29/ComfyUI-Pollinations-BYOP) | ComfyUI integration with BYOP support — four nodes for Image, Video, Text, and Audio generation with auto-syncing model dropdowns. | [@library](https://github.com/library) |  | 🫧 |
 | [📝 Noted](https://app-noted.netlify.app/) | Create and organize markdown notes, to-do lists, and expense records with AI image and text generation. | [@web](https://github.com/web) |  | 🫧 |
@@ -228,6 +229,12 @@
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
 | [📊 LandPPT](https://landppt.com) | LLM-powered platform converting documents into professional PPT presentations. | [@web](https://github.com/web) |  | 🫧 |
+| [📊 LandPPT](https://landppt.com) | LLM-powered platform converting documents into professional PPT presentations. | [@web](https://github.com/web) |  | 🫧 |
+
+<details><summary>Show all 64 apps</summary>
+
+| App | Description | Author | ⭐ | |
+|-----|-------------|--------|---:|---|
 | [✍️ StoryFlux](https://play.google.com/store/apps/details?id=com.storyflux) | Create and read interactive AI-powered stories with social features. | [@android](https://github.com/android) |  | 🫧 |
 | [📖 TaleCrafter AI](https://www.talecrafter.tech/) | Interactive storytelling platform turning prompts into digital storybooks with AI illustrations. | [@web](https://github.com/web) |  | 🫧 |
 | [📖 Korpi.AI](https://korpi.ai) | Generates AI stories with the Pollinations Flux model. | [@web](https://github.com/web) |  | 🫧 |
@@ -704,6 +711,7 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🏃 Spix - Personal Fitness Companion](85549951) | Track workouts, activity, and health metrics with Spix - Personal Fitness Companion, built with React Native 0.81 Expo TypeScript and designed to keep your data local and private. | [@android](https://github.com/android) |  | 🫧 |
 | [⚖️ AutoTutela](https://angelromero.co/autotutela) | AI legal assistant that drafts Acciones de Tutela for Colombian citizens. | [@web](https://github.com/web) |  | 🫧 |
 | [🧾 Transport Document OCR](https://xfynder99-byte.github.io/OCR/) | Standalone web app extracting product data from images and PDFs via AI OCR. | [@web](https://github.com/web) |  | 🫧 |
 | [🛒 THISX](https://www.thisx.ai/en) | AI platform for e-commerce: store fixes and Meta AI-driven ads. | [@web](https://github.com/web) |  | 🫧 |
@@ -713,12 +721,12 @@
 | [🛍️ SnapSell](202450182) | Generate AI-powered product listings for Facebook, Shopify, eBay, and more. | [@api](https://github.com/api) |  | 🫧 |
 | [⚙️ Productivity Gears](http://productivitygears.com/) | Suite of 100+ free productivity tools: AI assistants, converters, PDF editors. | [@web](https://github.com/web) |  | 🫧 |
 | [🛠️ convertorz.com](https://www.convertorz.com/) | Web portal with AI image generation, file conversion, text summarization, and productivity tools | [@web](https://github.com/web) |  | 🫧 |
-| [🛠️ SteamKit](https://steamkit.dev/) | AI toolkit for Steam developers to generate marketing and store page assets. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 33 apps</summary>
+<details><summary>Show all 34 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🛠️ SteamKit](https://steamkit.dev/) | AI toolkit for Steam developers to generate marketing and store page assets. | [@web](https://github.com/web) |  | 🫧 |
 | [🐾 AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | [@web](https://github.com/web) |  | 🫧 |
 | [📈 Wall Street Vision](239730701) | AI platform turning market data into predictive insights for investors | [@api](https://github.com/api) |  | 🫧 |
 | [🍎 CaloriX](https://yediginibil.vercel.app) | AI calorie counter PWA with food photo recognition & barcode scanning | [@web](https://github.com/web) |  | 🫧 |

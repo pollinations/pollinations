@@ -73,7 +73,8 @@ function formatExpiry(expiresAt: Date | null | undefined): string {
 
 function formatBudget(pollenBudget: number | null | undefined): string {
     if (pollenBudget == null) return "∞";
-    if (pollenBudget <= 0) return "empty";
+    if (pollenBudget === 0) return "0";
+    if (pollenBudget < 0) return "empty";
 
     return Number.isInteger(pollenBudget)
         ? `${pollenBudget}p`

@@ -8,7 +8,15 @@ import { IMAGE_MODELS } from "./models";
 
 // Models we test but allow to fail (alpha/unstable/known issues)
 // Gemini image models intermittently return reasoning text instead of images at 512x512
-const ALLOW_FAIL = new Set(["imagen-4", "flux-2-dev", "grok-imagine", "nanobanana", "nanobanana-2", "nanobanana-pro", "seedream"]);
+const ALLOW_FAIL = new Set([
+    "imagen-4",
+    "flux-2-dev",
+    "grok-imagine",
+    "nanobanana",
+    "nanobanana-2",
+    "nanobanana-pro",
+    "seedream",
+]);
 
 // Models that require self-hosted GPU servers (will fail without registered servers)
 const SELF_HOSTED = new Set(["flux", "zimage"]);
@@ -32,10 +40,15 @@ describe("image models — text-to-image", () => {
         const label = `${model.id} (${model.provider})`;
 
         it(label, async () => {
-            const res = await imageRequest("a simple red circle on white background", model.id);
+            const res = await imageRequest(
+                "a simple red circle on white background",
+                model.id,
+            );
 
             if (ALLOW_FAIL.has(model.id) && !res.ok) {
-                console.warn(`[ALPHA] ${model.id} returned ${res.status} — allowed to fail`);
+                console.warn(
+                    `[ALPHA] ${model.id} returned ${res.status} — allowed to fail`,
+                );
                 return;
             }
 
@@ -53,7 +66,9 @@ describe("image models — text-to-image", () => {
             const buffer = await res.arrayBuffer();
             expect(buffer.byteLength).toBeGreaterThan(1000); // Reasonable image size
 
-            console.log(`  ✓ ${model.id}: ${contentType}, ${(buffer.byteLength / 1024).toFixed(0)} KB`);
+            console.log(
+                `  ✓ ${model.id}: ${contentType}, ${(buffer.byteLength / 1024).toFixed(0)} KB`,
+            );
         });
     }
 });
@@ -67,7 +82,9 @@ describe("image models — self-hosted (expect failure without servers)", () => 
         it(`${modelId} (self-hosted — no servers registered)`, async () => {
             const res = await imageRequest("a cat", modelId);
             // These should fail with a meaningful error (no active servers)
-            console.log(`  ${modelId}: status ${res.status} (expected — no GPU servers registered)`);
+            console.log(
+                `  ${modelId}: status ${res.status} (expected — no GPU servers registered)`,
+            );
             // We just log the status, don't assert 200
         });
     }
@@ -78,7 +95,10 @@ describe("image models — self-hosted (expect failure without servers)", () => 
 // ---------------------------------------------------------------------------
 
 const imageInputModels = testableImageModels.filter(
-    (m) => m.inputModalities.includes("image") && !m.hidden && !ALLOW_FAIL.has(m.id),
+    (m) =>
+        m.inputModalities.includes("image") &&
+        !m.hidden &&
+        !ALLOW_FAIL.has(m.id),
 );
 
 // A tiny 1x1 red PNG served as a public URL for image input
@@ -98,7 +118,9 @@ describe("image models — image-to-image (with reference image)", () => {
 
             if (!res.ok) {
                 // Some models may not support image input via query param
-                console.warn(`  ${model.id} image input: ${res.status} (may not support query param image input)`);
+                console.warn(
+                    `  ${model.id} image input: ${res.status} (may not support query param image input)`,
+                );
                 return;
             }
 
@@ -108,7 +130,9 @@ describe("image models — image-to-image (with reference image)", () => {
             const buffer = await res.arrayBuffer();
             expect(buffer.byteLength).toBeGreaterThan(1000);
 
-            console.log(`  ✓ ${model.id} image input: ${contentType}, ${(buffer.byteLength / 1024).toFixed(0)} KB`);
+            console.log(
+                `  ✓ ${model.id} image input: ${contentType}, ${(buffer.byteLength / 1024).toFixed(0)} KB`,
+            );
         });
     }
 });

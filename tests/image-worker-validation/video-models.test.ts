@@ -29,10 +29,15 @@ describe("video models — text-to-video", () => {
         it(
             label,
             async () => {
-                const res = await videoRequest("a cat walking slowly", model.id);
+                const res = await videoRequest(
+                    "a cat walking slowly",
+                    model.id,
+                );
 
                 if (ALLOW_FAIL.has(model.id) && !res.ok) {
-                    console.warn(`[ALPHA] ${model.id} returned ${res.status} — allowed to fail`);
+                    console.warn(
+                        `[ALPHA] ${model.id} returned ${res.status} — allowed to fail`,
+                    );
                     return;
                 }
 
@@ -83,7 +88,9 @@ describe("video models — image-to-video", () => {
                 );
 
                 if (!res.ok) {
-                    console.warn(`  ${model.id} i2v: ${res.status} (may not support image-to-video via query)`);
+                    console.warn(
+                        `  ${model.id} i2v: ${res.status} (may not support image-to-video via query)`,
+                    );
                     return;
                 }
 

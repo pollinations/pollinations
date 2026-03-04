@@ -240,7 +240,7 @@ jobs:
             let rowData = null;
             for (const c of comments.data.reverse()) {
               if (c.user.login === botSlug || c.user.type === 'Bot') {
-                const match = c.body.match(/```json\n([\s\S]+?)\n```/);
+                const match = c.body.match(/<!-- APP_REVIEW_DATA -->\s*```json\n([\s\S]+?)\n```/);
                 if (match) {
                   rowData = match[1].trim();
                   break;
@@ -269,7 +269,7 @@ jobs:
             const d = JSON.parse(process.env.ROW_DATA_JSON);
             const today = new Date().toISOString().slice(0, 10);
             const issueNum = context.issue.number;
-            const slug = d.name.toLowerCase().replace(/[ _]/g, '-').slice(0, 20);
+            const slug = d.name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 20);
             const branch = `auto/app-${issueNum}-${slug}`;
 
             const run = (cmd, env) => execSync(cmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, ...env } });
@@ -288,9 +288,11 @@ jobs:
             run(`git config user.name "${botName}"`);
             run(`git config user.email "${botEmail}"`);
 
-            const issueAuthor = d.github_username.replace(/^@/, '');
+            const issueAuthor = d.github_username.replace(/^@/, '').replace(/[^a-zA-Z0-9_-]/g, '');
+            const safeName = d.name.replace(/["`$\\]/g, '');
+            const safeCategory = d.category.replace(/[^a-z_]/g, '');
             run('git add -A');
-            run(`git commit -m "Add ${d.name} to ${d.category}\n\nCo-authored-by: ${issueAuthor} <${issueAuthor}@users.noreply.github.com>"`);
+            run(`git commit -m "Add ${safeName} to ${safeCategory}\n\nCo-authored-by: ${issueAuthor} <${issueAuthor}@users.noreply.github.com>"`);
             run(`git push origin ${branch}`);
 
             core.setOutput('branch', branch);

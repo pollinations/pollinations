@@ -405,8 +405,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 | Discord | {discord or '—'} |
 | Submitted | {issue_created_at} |
 
-**APPS.md row data** (used by the approval workflow):
-
+<!-- APP_REVIEW_DATA -->
 ```json
 {row_json}
 ```

@@ -169,6 +169,66 @@ describe("sanitizeToolSchemas transform", () => {
         expect(result.options.tools).toBeUndefined();
     });
 
+    it("should remove patternProperties from tool parameters", () => {
+        const options = {
+            tools: [
+                {
+                    type: "function",
+                    function: {
+                        name: "test",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                config: {
+                                    type: "object",
+                                    patternProperties: {
+                                        "^x-": { type: "string" },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        };
+
+        const result = transform([], options);
+        const params = result.options.tools[0].function.parameters;
+
+        expect(params.properties.config.patternProperties).toBeUndefined();
+        expect(params.properties.config.type).toBe("object");
+    });
+
+    it("should remove any unsupported schema properties", () => {
+        const options = {
+            tools: [
+                {
+                    type: "function",
+                    function: {
+                        name: "test",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                value: {
+                                    type: "string",
+                                    customExtension: true,
+                                    "x-custom": "foo",
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        };
+
+        const result = transform([], options);
+        const params = result.options.tools[0].function.parameters;
+
+        expect(params.properties.value.customExtension).toBeUndefined();
+        expect(params.properties.value["x-custom"]).toBeUndefined();
+        expect(params.properties.value.type).toBe("string");
+    });
+
     it("should preserve messages unchanged", () => {
         const messages = [{ role: "user", content: "test" }];
         const result = transform(messages, {});

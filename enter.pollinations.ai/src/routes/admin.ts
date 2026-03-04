@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { sendTierEventToTinybird } from "@/events.ts";
+import { runD1TinybirdSync } from "@/scheduled/d1-tinybird-sync.ts";
 import {
     getTierPollen,
     isValidTier,
@@ -166,6 +167,16 @@ export const adminRoutes = new Hono<Env>()
             return await next();
         }
 
+        // Tinybird sync token: authenticates the GH Action AND is used for Tinybird API calls
+        const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
+        if (
+            syncToken &&
+            providedKey === syncToken &&
+            c.req.path.endsWith("/trigger-d1-sync")
+        ) {
+            return await next();
+        }
+
         throw new HTTPException(401, { message: "Unauthorized" });
     })
     .post("/update-tier", async (c) => {
@@ -221,7 +232,7 @@ export const adminRoutes = new Hono<Env>()
                     pollen_amount: tierBalance,
                 },
                 c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
+                c.env.TINYBIRD_TIER_INGEST_TOKEN,
             ),
         );
 
@@ -340,7 +351,7 @@ export const adminRoutes = new Hono<Env>()
                 timestamp,
                 c.env.ENVIRONMENT || "unknown",
                 c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
+                c.env.TINYBIRD_TIER_INGEST_TOKEN,
                 log,
             ),
         );
@@ -367,4 +378,20 @@ export const adminRoutes = new Hono<Env>()
             tierBreakdown,
             timestamp,
         });
+    })
+    .post("/trigger-d1-sync", async (c) => {
+        const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
+        if (!syncToken) {
+            throw new HTTPException(500, {
+                message: "TINYBIRD_D1_SYNC_TOKEN not configured",
+            });
+        }
+
+        const results = await runD1TinybirdSync(c.env.DB, syncToken);
+        const hasErrors = results.some((r) => r.status === "error");
+
+        return c.json(
+            { success: !hasErrors, tables: results },
+            hasErrors ? 207 : 200,
+        );
     });

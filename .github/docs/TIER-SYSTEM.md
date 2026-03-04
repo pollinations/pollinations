@@ -97,27 +97,28 @@ flowchart TD
     subgraph submit [" "]
         A[👤 User submits issue]
     end
-    
+
     A --> B[TIER-APP]
     B --> V{Validation}
-    
+
     V -->|Not registered| E1[TIER-APP-INCOMPLETE]
     V -->|Spore tier| E2[TIER-APP-REJECTED]
     V -->|Duplicate| E3[TIER-APP-REJECTED]
-    
+
     E1 -->|User registers + comments| V
     E2 --> CLOSED1[Issue Closed]
     E3 --> CLOSED2[Issue Closed]
-    
-    V -->|Valid| G[🤖 AI creates PR]
+
+    V -->|Valid| G[🤖 AI posts preview]
     G --> H[TIER-APP-REVIEW]
-    H --> PR[TIER-APP-REVIEW-PR]
-    PR --> I{Maintainer Review}
-    
-    I -->|Close| REJ[TIER-APP-REJECTED]
+    H --> I{Maintainer Review}
+
+    I -->|Rejects| REJ[TIER-APP-REJECTED]
     REJ --> CLOSED3[Issue Closed]
-    
-    I -->|Merge| J[TIER-APP-COMPLETE]
+
+    I -->|Adds TIER-APP-APPROVED| AP[TIER-APP-APPROVED]
+    AP --> PR[🔀 PR created + auto-merge]
+    PR --> J[TIER-APP-COMPLETE]
     J --> K[⬆️ Upgrade to Flower]
     K --> L[🎉 Celebrate!]
 
@@ -126,6 +127,7 @@ flowchart TD
     style E2 fill:#ef4444,color:#fff
     style E3 fill:#ef4444,color:#fff
     style H fill:#8b5cf6,color:#fff
+    style AP fill:#3b82f6,color:#fff
     style PR fill:#8b5cf6,color:#fff
     style REJ fill:#ef4444,color:#fff
     style J fill:#22c55e,color:#fff
@@ -173,9 +175,7 @@ flowchart TD
 | **Duplicate URL** | Check `apps/APPS.md` for same URL | Not found | → REJECTED + closed |
 | **Duplicate Repo** | Check `apps/APPS.md` for same GitHub repo | Not found | → REJECTED + closed |
 | **Duplicate Name+User** | Same app name by same user | Not found | → REJECTED + closed |
-| **GitHub Stars** | `gh api repos/{owner}/{repo}` | Fetches count | 0 if unavailable |
-
-**Validation output:** JSON with `valid: true/false`, `errors: []`, `stars: number`
+**Validation output:** JSON with `valid: true/false`, `errors: []`
 
 ---
 
@@ -208,38 +208,40 @@ flowchart TD
 
 ---
 
-#### Step 3B: Validation PASSED → PR Created
+#### Step 3B: Validation PASSED → Preview Posted
 
 | Action | Details |
 |--------|---------|
 | AI processing | Selects emoji, category, description, language |
-| Branch | `auto/app-{issue_number}-{app_name_slug}` |
-| Files updated | `apps/APPS.md`, `README.md` |
-| PR label | `TIER-APP-REVIEW-PR` |
+| Preview comment | Table with all fields + `APP_REVIEW_DATA` JSON block |
 | Issue label | `TIER-APP` → `TIER-APP-REVIEW` |
 
-**Bot comments posted:**
-
-> 🟢 **PR Created**
-> 
-> 🎉 Thanks @user! PR created to add **App Name** to **category**.
-> 
-> A maintainer will review shortly. Issue closes automatically when PR merges.
-
-> 💡 **Credit Suggestion**
-> 
-> @user, it would be awesome if you could add a credit to pollinations.ai in your app!
+**Bot posts preview comment** with app details table and JSON data block for the approval workflow.
 
 ---
 
-#### Step 4: Maintainer Review
+#### Step 4: Maintainer Review (Approval Gate)
 
-**Manual step** - maintainer reviews the PR
+**Manual step** - maintainer reviews the preview comment on the issue.
 
 **Options:**
-- **Approve & Merge:** Triggers tier upgrade
-- **Request changes:** User updates, PR re-reviewed
-- **Close without merge:** Submission rejected
+- **Approve:** Add `TIER-APP-APPROVED` label → triggers PR creation + auto-merge
+- **Reject:** Close issue → `TIER-APP-REJECTED`
+
+---
+
+#### Step 4B: Approval → PR Created + Auto-Merged
+
+**Trigger:** Maintainer adds `TIER-APP-APPROVED` label to issue.
+
+| Action | Details |
+|--------|---------|
+| Branch | `auto/app-{issue_number}-{app_name_slug}` |
+| Files updated | `apps/APPS.md`, `GREENHOUSE.md` |
+| PR label | `TIER-APP-REVIEW-PR` |
+| Auto-merge | Enabled (squash + delete branch) |
+
+The `app-approve` job in `app-review-submission.yml` parses the `APP_REVIEW_DATA` JSON from the bot's preview comment, creates a branch, updates APPS.md, and opens a PR with auto-merge enabled.
 
 ---
 
@@ -295,6 +297,7 @@ flowchart TD
 | Issue opened | `app-review-submission.yml` | Has `TIER-APP` label |
 | Issue edited | `app-review-submission.yml` | Has `TIER-APP-INCOMPLETE` label |
 | Issue comment | `app-review-submission.yml` | Has `TIER-APP-INCOMPLETE`, not from bot |
+| Issue labeled | `app-review-submission.yml` | `TIER-APP-APPROVED` added + has `TIER-APP-REVIEW` |
 | Manual | `app-review-submission.yml` | `workflow_dispatch` with issue number |
 | PR merged | `app-upgrade-tier.yml` | Has `TIER-APP-REVIEW-PR` label |
 | PR closed | `app-upgrade-tier.yml` | Has `TIER-APP-REVIEW-PR` label |
@@ -305,9 +308,9 @@ flowchart TD
 
 | Script | Location | Purpose |
 |--------|----------|---------|
-| `app-review-agent.py` | `.github/scripts/` | Main agent - validation handling, PR creation |
-| `app-validate-submission.ts` | `.github/scripts/` | Pre-validation (registration, tier, duplicates) |
-| `app-check-duplicate.ts` | `.github/scripts/` | Duplicate detection logic |
+| `app-review-agent.py` | `.github/scripts/` | Main agent - validation handling, preview posting |
+| `app-validate-submission.js` | `.github/scripts/` | Pre-validation (registration, tier, duplicates) |
+| `app-check-duplicate.js` | `.github/scripts/` | Duplicate detection logic |
 | `app-prepend-row.js` | `.github/scripts/` | Add app row to APPS.md |
 | `app-update-greenhouse.js` | `.github/scripts/` | Generate GREENHOUSE.md (curated app showcase) |
 | `tier-update-user.ts` | `enter.pollinations.ai/scripts/` | Update user tier in D1 |
@@ -320,7 +323,8 @@ flowchart TD
 |-------|-------|-------------|
 | `TIER-APP` | New | Submission received, validation pending |
 | `TIER-APP-INCOMPLETE` | Waiting | Validation failed, user can fix and retry |
-| `TIER-APP-REVIEW` | In Review | PR created, awaiting maintainer |
+| `TIER-APP-REVIEW` | In Review | AI reviewed, preview posted, awaiting human approval |
+| `TIER-APP-APPROVED` | Approved | Maintainer approved, PR created with auto-merge |
 | `TIER-APP-REVIEW-PR` | PR | Applied to the PR itself |
 | `TIER-APP-COMPLETE` | Done | PR merged, tier upgraded |
 | `TIER-APP-REJECTED` | Closed | Declined (duplicate/invalid/spore tier) |

@@ -11,6 +11,7 @@ import { sendToFeedListeners } from "./feedListeners.js";
 import { HttpError } from "./httpError.js";
 import { IMAGE_CONFIG } from "./models.js";
 import {
+    type MinimalRequest,
     normalizeAndTranslatePrompt,
     type TimingStep,
 } from "./normalizeAndTranslatePrompt.js";
@@ -307,11 +308,10 @@ app.get("/prompt/*", async (c) => {
         const { prompt, wasPimped, wasTransformedForBadDomain } =
             await normalizeAndTranslatePrompt(
                 originalPrompt,
-                // Create a minimal req-like object for the prompt normalizer
                 {
                     headers: Object.fromEntries(c.req.raw.headers.entries()),
                     url: c.req.url,
-                } as any,
+                } satisfies MinimalRequest,
                 timingInfo,
                 safeParams,
                 referrer,
@@ -322,23 +322,25 @@ app.get("/prompt/*", async (c) => {
         logApi("safeParams", safeParams);
 
         // Generate image
-        const { buffer, ...maturity } = await createAndReturnImageCached(
-            prompt,
-            safeParams,
-            countFluxJobs(),
-            originalPrompt,
-            progress,
-            requestId,
-            wasTransformedForBadDomain,
-            authResult,
-        );
+        const { buffer, trackingData, ...maturity } =
+            await createAndReturnImageCached(
+                prompt,
+                safeParams,
+                countFluxJobs(),
+                originalPrompt,
+                progress,
+                requestId,
+                wasTransformedForBadDomain,
+                authResult,
+            );
 
         timingInfo.push({
             step: "End generating job",
             timestamp: Date.now(),
         });
 
-        // Safety checks
+        // Safety: delay response for flagged child+mature content to discourage abuse.
+        // Reduced from 15s (Node.js) to 5s for Workers wall-clock budget.
         if (maturity.isChild && maturity.isMature) {
             logApi("isChild and isMature, delaying response by 5 seconds");
             await sleep(5000);
@@ -368,8 +370,26 @@ app.get("/prompt/*", async (c) => {
             // Non-critical
         }
 
+        // Detect image format from magic bytes
+        const isPng =
+            buffer[0] === 0x89 &&
+            buffer[1] === 0x50 &&
+            buffer[2] === 0x4e &&
+            buffer[3] === 0x47;
+        const isWebp =
+            buffer[8] === 0x57 &&
+            buffer[9] === 0x45 &&
+            buffer[10] === 0x42 &&
+            buffer[11] === 0x50;
+        const contentType = isPng
+            ? "image/png"
+            : isWebp
+              ? "image/webp"
+              : "image/jpeg";
+        const ext = isPng ? "png" : isWebp ? "webp" : "jpg";
+
         // Response headers
-        c.header("Content-Type", "image/jpeg");
+        c.header("Content-Type", contentType);
         c.header("Cache-Control", "public, max-age=31536000, immutable");
 
         if (originalPrompt) {
@@ -380,13 +400,13 @@ app.get("/prompt/*", async (c) => {
                 .replace(/-+/g, "-")
                 .replace(/^-|-$/g, "")
                 .toLowerCase();
-            const filename = `${baseFilename || "generated-image"}.jpg`;
+            const filename = `${baseFilename || "generated-image"}.${ext}`;
             c.header("Content-Disposition", `inline; filename="${filename}"`);
         }
 
         const trackingHeaders = buildTrackingHeaders(
             safeParams.model,
-            (maturity as any).trackingData,
+            trackingData,
         );
         for (const [key, value] of Object.entries(trackingHeaders)) {
             c.header(key, String(value));

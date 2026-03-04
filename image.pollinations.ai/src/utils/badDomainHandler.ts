@@ -1,5 +1,6 @@
-import type { IncomingHttpHeaders } from "node:http";
 import debug from "debug";
+
+type Headers = Record<string, string | string[] | undefined>;
 
 const logger = debug("pollinations:badDomain");
 const memoizedResults = new Map();
@@ -11,7 +12,7 @@ const memoizedResults = new Map();
  * @returns {string|null} - Extracted referrer
  */
 function getRefererFromHeaders(
-    headers: IncomingHttpHeaders,
+    headers: Headers,
     explicitReferrer: string | null = null,
 ): string | null {
     if (explicitReferrer) {
@@ -139,7 +140,7 @@ type ProcessPromtResult = {
  */
 async function processPrompt(
     prompt: string,
-    headers: IncomingHttpHeaders = {},
+    headers: Headers = {},
     explicitReferrer: string | null = null,
     transformProbability: number = 0.6,
 ): Promise<ProcessPromtResult> {

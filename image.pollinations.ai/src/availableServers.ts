@@ -15,16 +15,6 @@ type Server = {
 type ServerMap = typeof SERVERS;
 type ServerType = keyof ServerMap;
 
-type ServerInfo = {
-    type: ServerType;
-    url: string;
-    queueSize: number;
-    totalRequests: number;
-    errors: number;
-    errorRate: string;
-    requestsPerSecond: string;
-};
-
 // Server storage by type
 const SERVERS = {
     flux: [] as Server[],
@@ -49,41 +39,14 @@ function decayErrors() {
     });
 }
 
-function errorRate(server: Server): number {
-    return (server.errors / server.totalRequests) * 100 || 0;
-}
-
-function requestsPerSecond(server: Server): number {
-    return server.totalRequests / ((Date.now() - server.startTime) / 1000);
-}
-
-function serverInfo(server: Server, type: ServerType): ServerInfo {
-    return {
-        type,
-        url: server.url,
-        queueSize: server.queue.size + server.queue.pending,
-        totalRequests: server.totalRequests,
-        errors: server.errors,
-        errorRate: `${errorRate(server).toFixed(2)}%`,
-        requestsPerSecond: requestsPerSecond(server).toFixed(2),
-    };
-}
-
-function serverQueueInfo(servers: ServerMap): ServerInfo[] {
-    return Object.entries(servers).flatMap(([type, servers]) => {
-        return servers.map((server) => serverInfo(server, type as ServerType));
-    });
-}
-
-// Lazy-start intervals (Workers disallows setInterval at module scope)
+// Lazy-start intervals (Workers disallows setInterval at module scope).
+// Note: In Workers, isolate state is per-request so these intervals have limited
+// effect — they only run within a single isolate's lifetime.
 let intervalsStarted = false;
 function ensureIntervals() {
     if (intervalsStarted) return;
     intervalsStarted = true;
-    // Decay errors every minute
     setInterval(decayErrors, 60 * 1000);
-    // Log server queue info every 10 seconds
-    setInterval(() => console.table(serverQueueInfo(SERVERS)), 10000);
 }
 
 /**

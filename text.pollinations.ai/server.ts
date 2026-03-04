@@ -473,7 +473,7 @@ async function handleRequest(
             return await sendAsOpenAIStream(c, completion);
         }
 
-        if (c.req.method === "GET" || c.req.path === "/") {
+        if (c.req.method === "GET") {
             return sendContentResponse(c, completion);
         }
         return sendOpenAIResponse(c, completion);

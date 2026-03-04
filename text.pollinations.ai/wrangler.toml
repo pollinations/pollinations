@@ -1,6 +1,6 @@
 name = "text-pollinations"
 main = "src/index.ts"
-compatibility_date = "2025-01-01"
+compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 

@@ -53,7 +53,7 @@ export async function genericOpenAIClient(
         additionalHeaders = {},
     } = config;
     const startTime = Date.now();
-    const requestId = Math.random().toString(36).substring(7);
+    const requestId = crypto.randomUUID();
 
     log(`[${requestId}] Starting request`, {
         messageCount: messages?.length || 0,

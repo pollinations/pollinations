@@ -12,15 +12,20 @@ export function createSseStreamConverter(
     return new TransformStream({
         transform(chunk, controller) {
             buffer += decoder.decode(chunk, { stream: true });
-            const eventRegex = /(^|\n)data:(.*?)(?=\n\n|$)/gs;
-            let match: RegExpExecArray | null;
-            let lastIndex = 0;
 
-            while (true) {
-                match = eventRegex.exec(buffer);
-                if (match === null) break;
-                const dataLine = match[2].trim();
-                lastIndex = eventRegex.lastIndex;
+            // Split on double-newline boundaries only — never consume
+            // a partial event that hasn't been terminated yet.
+            for (
+                let boundary = buffer.indexOf("\n\n");
+                boundary !== -1;
+                boundary = buffer.indexOf("\n\n")
+            ) {
+                const segment = buffer.slice(0, boundary);
+                buffer = buffer.slice(boundary + 2);
+
+                const dataMatch = segment.match(/(?:^|\n)data:(.*)/s);
+                if (!dataMatch) continue;
+                const dataLine = dataMatch[1].trim();
 
                 if (!dataLine) continue;
                 if (dataLine === "[DONE]") {
@@ -36,8 +41,6 @@ export function createSseStreamConverter(
                     );
                 } catch {}
             }
-
-            buffer = buffer.slice(lastIndex);
         },
         flush(controller) {
             // Process any remaining buffered data

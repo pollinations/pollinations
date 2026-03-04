@@ -1,0 +1,34 @@
+{
+  "pr_number": 8564,
+  "title": "feat: add app URL tracking and BYOP settings for publishable keys",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8564",
+  "merged_at": "2026-03-04T10:14:58Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Name tags for your apps",
+    "blurb": "Apps can now introduce themselves properly. We've added app attribution to the authorization screen and new Bring Your Own Pollen settings for developers.",
+    "summary": "Developers can now attach app URLs and Bring Your Own Pollen (BYOP) settings to publishable keys, enabling richer attribution on the user authorization screen.",
+    "impact": "Users will now see the specific app name and developer GitHub handle when authorizing apps, making it clearer who they are sharing their pollen with.",
+    "keywords": [
+      "auth",
+      "byop",
+      "api-keys",
+      "developer-tools",
+      "security"
+    ],
+    "visual_concept": "The pollinations bee acting as a friendly greeter, checking a cute pixelated ID badge or name tag held by a robot. The ID badge represents the new app attribution and BYOP settings.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny greeter's visor, inspecting a glowing digital name tag held by a chunky monitor-head robot. The name tag shows a tiny pixelated app icon. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-04T10:15:55.866782+00:00"
+}

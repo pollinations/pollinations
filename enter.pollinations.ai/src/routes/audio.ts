@@ -28,6 +28,53 @@ import type { Env } from "../env.ts";
 
 const DEFAULT_ELEVENLABS_MODEL = "eleven_v3";
 
+/**
+ * Parse MP4/M4A container to extract exact duration from the `mvhd` atom.
+ * Returns duration in seconds, or null if the atom isn't found.
+ *
+ * mvhd layout (after the 4-byte "mvhd" tag):
+ *   - 1 byte version (0 or 1)
+ *   - 3 bytes flags
+ *   - version 0: 4B created, 4B modified, 4B timescale, 4B duration
+ *   - version 1: 8B created, 8B modified, 4B timescale, 8B duration
+ */
+function parseMp4Duration(buffer: ArrayBuffer): number | null {
+    const view = new DataView(buffer);
+    const bytes = new Uint8Array(buffer);
+
+    // Find "mvhd" marker
+    const mvhd = [0x6d, 0x76, 0x68, 0x64]; // "mvhd"
+    let offset = -1;
+    for (let i = 0; i < bytes.length - 28; i++) {
+        if (
+            bytes[i] === mvhd[0] &&
+            bytes[i + 1] === mvhd[1] &&
+            bytes[i + 2] === mvhd[2] &&
+            bytes[i + 3] === mvhd[3]
+        ) {
+            offset = i;
+            break;
+        }
+    }
+    if (offset === -1) return null;
+
+    const version = bytes[offset + 4];
+    let timescale: number;
+    let duration: number;
+
+    if (version === 0) {
+        timescale = view.getUint32(offset + 16);
+        duration = view.getUint32(offset + 20);
+    } else {
+        timescale = view.getUint32(offset + 24);
+        // Read 64-bit duration — for practical music lengths, low 32 bits suffice
+        duration = Number(view.getBigUint64(offset + 28));
+    }
+
+    if (timescale === 0) return null;
+    return duration / timescale;
+}
+
 const CreateSpeechRequestSchema = z
     .object({
         model: z.string().optional(),
@@ -371,10 +418,11 @@ export async function generateMusic(opts: {
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
-    // Buffer response to estimate duration from MP3 byte size
-    // MP3 at 128kbps ≈ 16000 bytes/second (±20% for VBR or different bitrates)
+    // Buffer response and extract duration
     const audioBuffer = await response.arrayBuffer();
-    const estimatedDuration = audioBuffer.byteLength / 16000;
+    // Try MP4 header parsing first, fall back to MP3 byte-size estimate
+    const estimatedDuration =
+        parseMp4Duration(audioBuffer) ?? audioBuffer.byteLength / 16000;
 
     const usageHeaders = buildUsageHeaders(
         "elevenmusic",
@@ -392,6 +440,167 @@ export async function generateMusic(opts: {
             "Content-Type": contentType,
             ...usageHeaders,
         },
+    });
+}
+
+/**
+ * Generate music via Suno (api.airforce).
+ * Calls the airforce images/generations endpoint with SSE, downloads the MP4 result.
+ * Falls back to suno-v4.5 if suno-v5 fails.
+ */
+export async function generateSunoMusic(opts: {
+    prompt: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { prompt, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Suno music service is not configured (missing API key)",
+        });
+    }
+
+    if (prompt.length > 10000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+        });
+    }
+
+    const models = ["suno-v5", "suno-v4.5"];
+
+    for (const model of models) {
+        try {
+            log.info("Suno request: model={model}, chars={chars}", {
+                model,
+                chars: prompt.length,
+            });
+
+            const response = await fetch(
+                "https://api.airforce/v1/images/generations",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model,
+                        prompt,
+                        n: 1,
+                        sse: true,
+                        response_format: "url",
+                    }),
+                },
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                log.warn("Suno {model} error {status}: {body}", {
+                    model,
+                    status: response.status,
+                    body: errorText,
+                });
+                if (model !== models[models.length - 1]) continue;
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        errorText || getDefaultErrorMessage(response.status),
+                });
+            }
+
+            // Parse SSE response to find the result URL
+            const text = await response.text();
+            let resultUrl: string | undefined;
+
+            for (const line of text.split("\n")) {
+                const trimmed = line.trim();
+                if (
+                    !trimmed.startsWith("data: ") ||
+                    trimmed === "data: [DONE]" ||
+                    trimmed === "data: : keepalive"
+                ) {
+                    continue;
+                }
+                try {
+                    const parsed = JSON.parse(trimmed.slice(6)) as {
+                        data?: Array<{ url?: string }>;
+                        error?: string;
+                    };
+                    if (parsed.error) {
+                        throw new Error(parsed.error);
+                    }
+                    const url = parsed.data?.[0]?.url;
+                    if (url) resultUrl = url;
+                } catch (e) {
+                    if (e instanceof UpstreamError) throw e;
+                    log.debug("Skipping SSE line: {line}", { line: trimmed });
+                }
+            }
+
+            if (!resultUrl) {
+                log.warn("Suno {model} SSE returned no URL", { model });
+                if (model !== models[models.length - 1]) continue;
+                throw new UpstreamError(500 as ContentfulStatusCode, {
+                    message: "Suno returned no result URL",
+                });
+            }
+
+            // Download the MP4 result
+            log.info("Downloading Suno result from {url}", { url: resultUrl });
+            const downloadResponse = await fetch(resultUrl);
+            if (!downloadResponse.ok) {
+                throw new UpstreamError(500 as ContentfulStatusCode, {
+                    message: `Failed to download Suno result: ${downloadResponse.status}`,
+                });
+            }
+
+            const audioBuffer = await downloadResponse.arrayBuffer();
+
+            // Parse exact duration from MP4 header, fall back to byte-size estimate
+            const estimatedDuration =
+                parseMp4Duration(audioBuffer) ?? audioBuffer.byteLength / 46000;
+
+            const usageHeaders = buildUsageHeaders(
+                "suno",
+                createCompletionAudioSecondsUsage(estimatedDuration),
+            );
+
+            // Always serve as audio/mpeg for consistency with other audio endpoints
+            const contentType = "audio/mpeg";
+
+            log.info(
+                "Suno success: model={model}, {bytes} bytes, ~{duration}s",
+                {
+                    model,
+                    bytes: audioBuffer.byteLength,
+                    duration: Math.round(estimatedDuration),
+                },
+            );
+
+            return new Response(audioBuffer, {
+                status: 200,
+                headers: {
+                    "Content-Type": contentType,
+                    ...usageHeaders,
+                },
+            });
+        } catch (e) {
+            if (e instanceof UpstreamError) throw e;
+            log.warn("Suno {model} failed: {error}", {
+                model,
+                error: (e as Error).message,
+            });
+            if (model === models[models.length - 1]) {
+                throw new UpstreamError(500 as ContentfulStatusCode, {
+                    message: `Suno music generation failed: ${(e as Error).message}`,
+                });
+            }
+        }
+    }
+
+    // Should never reach here, but TypeScript needs it
+    throw new UpstreamError(500 as ContentfulStatusCode, {
+        message: "Suno music generation failed",
     });
 }
 
@@ -453,6 +662,17 @@ export const audioRoutes = new Hono<Env>()
             ) as CreateSpeechRequest;
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "suno") {
+                const airforceApiKey = (
+                    c.env as unknown as { AIRFORCE_API_KEY: string }
+                ).AIRFORCE_API_KEY;
+                return generateSunoMusic({
+                    prompt: input,
+                    apiKey: airforceApiKey,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(

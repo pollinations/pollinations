@@ -102,7 +102,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  round(count(DISTINCT request_id) / GREATEST(1, uniqExact(toDate(start_time))), 0) AS daily_requests\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(count(DISTINCT request_id) / GREATEST(1, uniqExact(toDate(start_time))), 0) AS daily_requests\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -176,7 +176,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  round(count(DISTINCT request_id) / GREATEST(1, dateDiff('minute', min(start_time), max(start_time))), 1) AS avg_rpm\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(count(DISTINCT request_id) / GREATEST(1, dateDiff('minute', min(start_time), max(start_time))), 1) AS avg_rpm\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -250,7 +250,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT max(rpm) AS peak_rpm_1min\nFROM (\n  SELECT\n    toStartOfMinute(start_time) AS ts,\n    count(DISTINCT request_id) AS rpm\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY ts\n)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT max(rpm) AS peak_rpm_1min\nFROM (\n  SELECT\n    toStartOfMinute(start_time) AS ts,\n    count(DISTINCT request_id) AS rpm\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  GROUP BY ts\n)",
           "refId": "A"
         }
       ],
@@ -324,7 +324,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH per_min AS (\n  SELECT\n    toStartOfMinute(start_time) AS ts,\n    count(DISTINCT request_id) AS rpm\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY ts\n)\nSELECT round(max(rolling_rpm), 1) AS peak_rpm_15min\nFROM (\n  SELECT avg(rpm) OVER (ORDER BY ts ROWS BETWEEN 14 PRECEDING AND CURRENT ROW) AS rolling_rpm\n  FROM per_min\n)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n),\nper_min AS (\n  SELECT\n    toStartOfMinute(start_time) AS ts,\n    count(DISTINCT request_id) AS rpm\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  GROUP BY ts\n)\nSELECT round(max(rolling_rpm), 1) AS peak_rpm_15min\nFROM (\n  SELECT avg(rpm) OVER (ORDER BY ts ROWS BETWEEN 14 PRECEDING AND CURRENT ROW) AS rolling_rpm\n  FROM per_min\n)",
           "refId": "A"
         }
       ],
@@ -398,7 +398,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT round(peak_rpm / GREATEST(1, avg_rpm), 2) AS peak_to_avg\nFROM (\n  SELECT\n    max(rpm) AS peak_rpm,\n    avg(rpm) AS avg_rpm\n  FROM (\n    SELECT\n      toStartOfMinute(start_time) AS ts,\n      count(DISTINCT request_id) AS rpm\n    FROM generation_event\n    WHERE start_time >= $__fromTime AND start_time < $__toTime\n      AND response_status >= 200 AND response_status < 300\n    GROUP BY ts\n  )\n)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round(peak_rpm / GREATEST(1, avg_rpm), 2) AS peak_to_avg\nFROM (\n  SELECT\n    max(rpm) AS peak_rpm,\n    avg(rpm) AS avg_rpm\n  FROM (\n    SELECT\n      toStartOfMinute(start_time) AS ts,\n      count(DISTINCT request_id) AS rpm\n    FROM generation_event\n    WHERE start_time >= $__fromTime AND start_time < $__toTime\n      AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    GROUP BY ts\n  )\n)",
           "refId": "A"
         }
       ],
@@ -856,7 +856,7 @@
               },
               "format": 0,
               "range": true,
-              "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  count(DISTINCT request_id) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 1\n      WHEN 'hour' THEN 60\n      WHEN 'day' THEN 1440\n      WHEN 'week' THEN 10080\n      WHEN 'month' THEN 43200\n    END AS rpm\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\nGROUP BY ts\nORDER BY ts",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  count(DISTINCT request_id) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 1\n      WHEN 'hour' THEN 60\n      WHEN 'day' THEN 1440\n      WHEN 'week' THEN 10080\n      WHEN 'month' THEN 43200\n    END AS rpm\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY ts\nORDER BY ts",
               "refId": "A"
             }
           ],
@@ -1012,7 +1012,7 @@
               },
               "format": 0,
               "range": true,
-              "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  event_type,\n  count(DISTINCT request_id) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 1\n      WHEN 'hour' THEN 60\n      WHEN 'day' THEN 1440\n      WHEN 'week' THEN 10080\n      WHEN 'month' THEN 43200\n    END AS rpm\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\nGROUP BY ts, event_type\nORDER BY ts",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  event_type,\n  count(DISTINCT request_id) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 1\n      WHEN 'hour' THEN 60\n      WHEN 'day' THEN 1440\n      WHEN 'week' THEN 10080\n      WHEN 'month' THEN 43200\n    END AS rpm\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY ts, event_type\nORDER BY ts",
               "refId": "A"
             }
           ],
@@ -1294,7 +1294,7 @@
               },
               "format": 0,
               "range": true,
-              "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  model_provider_used AS provider,\n  count(DISTINCT request_id) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 1\n      WHEN 'hour' THEN 60\n      WHEN 'day' THEN 1440\n      WHEN 'week' THEN 10080\n      WHEN 'month' THEN 43200\n    END AS rpm\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY ts, provider\nORDER BY ts",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  model_provider_used AS provider,\n  count(DISTINCT request_id) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 1\n      WHEN 'hour' THEN 60\n      WHEN 'day' THEN 1440\n      WHEN 'week' THEN 10080\n      WHEN 'month' THEN 43200\n    END AS rpm\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY ts, provider\nORDER BY ts",
               "refId": "A"
             }
           ],
@@ -1463,7 +1463,7 @@
               },
               "format": 0,
               "range": true,
-              "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  SUM(token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 60\n      WHEN 'hour' THEN 3600\n      WHEN 'day' THEN 86400\n      WHEN 'week' THEN 604800\n      WHEN 'month' THEN 2592000\n    END AS input_tok_per_sec,\n  SUM(token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 60\n      WHEN 'hour' THEN 3600\n      WHEN 'day' THEN 86400\n      WHEN 'week' THEN 604800\n      WHEN 'month' THEN 2592000\n    END AS output_tok_per_sec,\n  SUM(\n    token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached +\n    token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image\n  ) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 60\n      WHEN 'hour' THEN 3600\n      WHEN 'day' THEN 86400\n      WHEN 'week' THEN 604800\n      WHEN 'month' THEN 2592000\n    END AS total_tok_per_sec\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n  AND event_type = 'generate.text'\nGROUP BY ts\nORDER BY ts",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  SUM(token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 60\n      WHEN 'hour' THEN 3600\n      WHEN 'day' THEN 86400\n      WHEN 'week' THEN 604800\n      WHEN 'month' THEN 2592000\n    END AS input_tok_per_sec,\n  SUM(token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 60\n      WHEN 'hour' THEN 3600\n      WHEN 'day' THEN 86400\n      WHEN 'week' THEN 604800\n      WHEN 'month' THEN 2592000\n    END AS output_tok_per_sec,\n  SUM(\n    token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached +\n    token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image\n  ) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 60\n      WHEN 'hour' THEN 3600\n      WHEN 'day' THEN 86400\n      WHEN 'week' THEN 604800\n      WHEN 'month' THEN 2592000\n    END AS total_tok_per_sec\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND event_type = 'generate.text'\nGROUP BY ts\nORDER BY ts",
               "refId": "A"
             }
           ],
@@ -1529,7 +1529,7 @@
               },
               "format": 1,
               "range": true,
-              "rawSql": "SELECT\n  round(SUM(token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached)\n    / GREATEST(1, dateDiff('second', min(start_time), max(start_time))), 0) AS avg_input_tok_sec\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n  AND event_type = 'generate.text'",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached)\n    / GREATEST(1, dateDiff('second', min(start_time), max(start_time))), 0) AS avg_input_tok_sec\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND event_type = 'generate.text'",
               "refId": "A"
             }
           ],
@@ -1595,7 +1595,7 @@
               },
               "format": 1,
               "range": true,
-              "rawSql": "SELECT\n  round(SUM(token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image)\n    / GREATEST(1, dateDiff('second', min(start_time), max(start_time))), 0) AS avg_output_tok_sec\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n  AND event_type = 'generate.text'",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image)\n    / GREATEST(1, dateDiff('second', min(start_time), max(start_time))), 0) AS avg_output_tok_sec\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND event_type = 'generate.text'",
               "refId": "A"
             }
           ],
@@ -1661,7 +1661,7 @@
               },
               "format": 1,
               "range": true,
-              "rawSql": "SELECT\n  round(SUM(\n    token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached +\n    token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image\n  ) / GREATEST(1, dateDiff('second', min(start_time), max(start_time))), 0) AS total_tok_sec\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n  AND event_type = 'generate.text'",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(\n    token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached +\n    token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image\n  ) / GREATEST(1, dateDiff('second', min(start_time), max(start_time))), 0) AS total_tok_sec\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND event_type = 'generate.text'",
               "refId": "A"
             }
           ],
@@ -1727,7 +1727,7 @@
               },
               "format": 1,
               "range": true,
-              "rawSql": "SELECT round(max(total_tok_sec), 0) AS peak_total_tok_sec\nFROM (\n  SELECT\n    toStartOfMinute(start_time) AS ts,\n    SUM(\n      token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached +\n      token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image\n    ) / 60.0 AS total_tok_sec\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND response_status >= 200 AND response_status < 300\n    AND event_type = 'generate.text'\n  GROUP BY ts\n)",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round(max(total_tok_sec), 0) AS peak_total_tok_sec\nFROM (\n  SELECT\n    toStartOfMinute(start_time) AS ts,\n    SUM(\n      token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached +\n      token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image\n    ) / 60.0 AS total_tok_sec\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND event_type = 'generate.text'\n  GROUP BY ts\n)",
               "refId": "A"
             }
           ],
@@ -1827,7 +1827,7 @@
               },
               "format": 0,
               "range": true,
-              "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  model_used,\n  SUM(\n    token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached +\n    token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image\n  ) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 60\n      WHEN 'hour' THEN 3600\n      WHEN 'day' THEN 86400\n      WHEN 'week' THEN 604800\n      WHEN 'month' THEN 2592000\n    END AS tok_per_sec\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n  AND event_type = 'generate.text'\n  AND model_used != ''\n  AND model_used != 'undefined'\nGROUP BY ts, model_used\nORDER BY ts",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  model_used,\n  SUM(\n    token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached +\n    token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image\n  ) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 60\n      WHEN 'hour' THEN 3600\n      WHEN 'day' THEN 86400\n      WHEN 'week' THEN 604800\n      WHEN 'month' THEN 2592000\n    END AS tok_per_sec\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND event_type = 'generate.text'\n  AND model_used != ''\n  AND model_used != 'undefined'\nGROUP BY ts, model_used\nORDER BY ts",
               "refId": "A"
             }
           ],
@@ -1939,7 +1939,7 @@
               },
               "format": 0,
               "range": true,
-              "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  count(DISTINCT request_id) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 1\n      WHEN 'hour' THEN 60\n      WHEN 'day' THEN 1440\n      WHEN 'week' THEN 10080\n      WHEN 'month' THEN 43200\n    END AS images_per_min\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n  AND event_type = 'generate.image'\nGROUP BY ts\nORDER BY ts",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  count(DISTINCT request_id) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 1\n      WHEN 'hour' THEN 60\n      WHEN 'day' THEN 1440\n      WHEN 'week' THEN 10080\n      WHEN 'month' THEN 43200\n    END AS images_per_min\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND event_type = 'generate.image'\nGROUP BY ts\nORDER BY ts",
               "refId": "A"
             }
           ],
@@ -2039,7 +2039,7 @@
               },
               "format": 0,
               "range": true,
-              "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  model_used,\n  count(DISTINCT request_id) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 1\n      WHEN 'hour' THEN 60\n      WHEN 'day' THEN 1440\n      WHEN 'week' THEN 10080\n      WHEN 'month' THEN 43200\n    END AS images_per_min\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n  AND event_type = 'generate.image'\n  AND model_used != ''\n  AND model_used != 'undefined'\nGROUP BY ts, model_used\nORDER BY ts",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  model_used,\n  count(DISTINCT request_id) /\n    CASE '$granularity'\n      WHEN 'minute' THEN 1\n      WHEN 'hour' THEN 60\n      WHEN 'day' THEN 1440\n      WHEN 'week' THEN 10080\n      WHEN 'month' THEN 43200\n    END AS images_per_min\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND event_type = 'generate.image'\n  AND model_used != ''\n  AND model_used != 'undefined'\nGROUP BY ts, model_used\nORDER BY ts",
               "refId": "A"
             }
           ],
@@ -2130,7 +2130,7 @@
               },
               "format": 1,
               "range": true,
-              "rawSql": "SELECT\n  model_used AS model,\n  count(DISTINCT request_id) AS total_images\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n  AND event_type = 'generate.image'\n  AND model_used != ''\n  AND model_used != 'undefined'\nGROUP BY model\nORDER BY total_images DESC\nLIMIT 10",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  model_used AS model,\n  count(DISTINCT request_id) AS total_images\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND event_type = 'generate.image'\n  AND model_used != ''\n  AND model_used != 'undefined'\nGROUP BY model\nORDER BY total_images DESC\nLIMIT 10",
               "refId": "A"
             }
           ],
@@ -2307,7 +2307,7 @@
               },
               "format": 1,
               "range": true,
-              "rawSql": "SELECT\n  model_used AS Model,\n  model_provider_used AS Provider,\n  count(DISTINCT request_id) AS Requests,\n  round(count(DISTINCT request_id) / GREATEST(1, dateDiff('minute', min(start_time), max(start_time))), 2) AS Avg_RPM,\n  round(avg(token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached), 0) AS Avg_Input_Tokens,\n  round(avg(token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image), 0) AS Avg_Output_Tokens,\n  round(SUM(total_cost), 2) AS Total_Cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n  AND model_used != ''\n  AND model_used != 'undefined'\nGROUP BY model_used, model_provider_used\nORDER BY Requests DESC",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  model_used AS Model,\n  model_provider_used AS Provider,\n  count(DISTINCT request_id) AS Requests,\n  round(count(DISTINCT request_id) / GREATEST(1, dateDiff('minute', min(start_time), max(start_time))), 2) AS Avg_RPM,\n  round(avg(token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached), 0) AS Avg_Input_Tokens,\n  round(avg(token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image), 0) AS Avg_Output_Tokens,\n  round(SUM(total_cost), 2) AS Total_Cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND model_used != ''\n  AND model_used != 'undefined'\nGROUP BY model_used, model_provider_used\nORDER BY Requests DESC",
               "refId": "A"
             }
           ],
@@ -2407,7 +2407,7 @@
               },
               "format": 0,
               "range": true,
-              "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  model_used,\n  count(DISTINCT request_id) AS requests\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n  AND model_used != ''\n  AND model_used != 'undefined'\nGROUP BY ts, model_used\nORDER BY ts",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  model_used,\n  count(DISTINCT request_id) AS requests\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND model_used != ''\n  AND model_used != 'undefined'\nGROUP BY ts, model_used\nORDER BY ts",
               "refId": "A"
             }
           ],
@@ -2576,7 +2576,7 @@
               },
               "format": 0,
               "range": true,
-              "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  event_type,\n  avg(date_diff('millisecond', start_time, end_time)) AS avg_response_ms\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n  AND end_time > start_time\nGROUP BY ts, event_type\nORDER BY ts",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  event_type,\n  avg(date_diff('millisecond', start_time, end_time)) AS avg_response_ms\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND end_time > start_time\nGROUP BY ts, event_type\nORDER BY ts",
               "refId": "A"
             }
           ],
@@ -2712,7 +2712,7 @@
               },
               "format": 0,
               "range": true,
-              "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  round(avg(token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached), 0) AS avg_input_tokens,\n  round(avg(token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image), 0) AS avg_output_tokens\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n  AND event_type = 'generate.text'\nGROUP BY ts\nORDER BY ts",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  date_trunc('$granularity', start_time) AS ts,\n  round(avg(token_count_prompt_text + token_count_prompt_audio + token_count_prompt_image + token_count_prompt_cached), 0) AS avg_input_tokens,\n  round(avg(token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image), 0) AS avg_output_tokens\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND event_type = 'generate.text'\nGROUP BY ts\nORDER BY ts",
               "refId": "A"
             }
           ],
@@ -2792,7 +2792,7 @@
               },
               "format": 1,
               "range": true,
-              "rawSql": "SELECT\n  event_type,\n  round(countIf(cache_hit = true) * 100.0 / GREATEST(1, count()), 2) AS cache_hit_pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\nGROUP BY event_type\nORDER BY cache_hit_pct DESC",
+              "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  event_type,\n  round(countIf(cache_hit = true) * 100.0 / GREATEST(1, count()), 2) AS cache_hit_pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY event_type\nORDER BY cache_hit_pct DESC",
               "refId": "A"
             }
           ],

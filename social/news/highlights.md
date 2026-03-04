@@ -1,3 +1,4 @@
+- **2026-03-03** – **🚀 Suno v5, Flux 2 Dev & Step 3.5 Flash** We wired up three new models. Generate music, pixels, and text through the [Unified API](https://gen.pollinations.ai) without changing your integration.
 - **2026-02-27** – **🎨 Seedream 5.0** New `seedream5` model added for image generation. It's lighter, newer, and available on the [Unified API](https://gen.pollinations.ai).
 - **2026-02-27** – **🚀 Gemini 3.1 Arrives** Upgraded `gemini-large` to 3.1 Pro and added `nanobanana-2` (Gemini 3.1 Flash) for high-speed image generation.
 - **2026-02-26** – **📚 Docs Overhaul** Restructured [API Docs](https://enter.pollinations.ai/api/docs) with copy-pasteable code samples in multiple languages. Less reading, more building.

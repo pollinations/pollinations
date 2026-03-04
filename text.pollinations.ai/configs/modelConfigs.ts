@@ -190,6 +190,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- api.airforce ---------------------------------------------------------
+    "step-3.5-flash:free": () =>
+        createAirforceModelConfig({ model: "step-3.5-flash:free" }),
     "qwen-character": () =>
         createAirforceModelConfig({ model: "qwen-character" }),
 };

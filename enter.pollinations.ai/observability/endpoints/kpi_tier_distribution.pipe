@@ -1,0 +1,19 @@
+DESCRIPTION >
+    Tier distribution from d1_user snapshot.
+
+TOKEN model_usage READ
+
+NODE tier_distribution
+SQL >
+    %
+    SELECT
+        tier,
+        count() AS user_count
+    FROM d1_user
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
+        AND created_at IS NOT NULL
+        AND created_at >= {{Int64(min_created_at, 0)}}
+    GROUP BY tier
+    ORDER BY user_count DESC
+
+TYPE endpoint

@@ -16,6 +16,7 @@ scripts/flagged-users*.csv
 scripts/flagged-users*.md
 abuse-report*.csv
 
+# Script outputs
 
 # GitHub user audit outputs (generated, contain user IDs)
 scripts/audit-*.json

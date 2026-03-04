@@ -1,0 +1,34 @@
+{
+  "pr_number": 8803,
+  "title": "feat: add pinned news section to news banner",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8803",
+  "merged_at": "2026-03-04T01:41:06Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pinning the good stuff",
+    "blurb": "We've added a pinned section to the news banner so you never miss the biggest updates. Now the most important model drops and features stay right at the top where they belong.",
+    "summary": "Added a pinned news section to the frontend news banner to highlight major announcements like new model launches.",
+    "impact": "Users will now see the most important updates pinned in a highlighted violet box at the top of the news banner, ensuring major releases aren't missed.",
+    "keywords": [
+      "frontend",
+      "ui",
+      "news",
+      "banner",
+      "announcements"
+    ],
+    "visual_concept": "Polly the bee pinning an important news bulletin to a digital board, with the Monitor Robot reading it excitedly. Represents the new pinned news banner feature.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny newsboy cap, pinning a glowing violet news bulletin to a digital community board. A chunky pixel robot with a CRT monitor head reads the board excitedly, screen glowing lime green (#ecf874). Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'NEWS'. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-04T01:41:57.118201+00:00"
+}

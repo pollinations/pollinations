@@ -10,7 +10,7 @@ App submissions use a **two-phase review** via `app-review-submission.yml`: AI r
 
 1. User opens issue with `TIER-APP` label
 2. Workflow validates (Enter registration, duplicates), AI generates emoji + description
-3. Bot posts preview comment with hidden `APP_REVIEW_DATA` JSON, labels `TIER-APP-REVIEW`
+3. Bot posts preview comment with `APP_REVIEW_DATA` JSON block, labels `TIER-APP-REVIEW`
 4. Maintainer reviews preview, adds `TIER-APP-APPROVED` label
 5. Workflow creates branch, prepends row to `apps/APPS.md`, creates PR with auto-merge
 6. After checks pass, PR merges automatically, issue closed with `TIER-APP-COMPLETE`

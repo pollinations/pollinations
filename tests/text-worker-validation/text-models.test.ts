@@ -14,12 +14,20 @@ const TINY_PNG_BASE64 =
 const SKIP_MODELS = new Set(["nomnom", "polly", "openai-audio"]);
 
 // Models we test but allow to fail (alpha/unstable/intermittent)
-const ALLOW_FAIL = new Set(["step-3.5-flash", "qwen-character", "perplexity-reasoning"]);
+const ALLOW_FAIL = new Set([
+    "step-3.5-flash",
+    "qwen-character",
+    "perplexity-reasoning",
+]);
 
 // Models that don't support vision despite declaring image input
 const SKIP_VISION = new Set(["openai-fast"]);
 
-function chatRequest(model: string, messages: any[], extra: Record<string, any> = {}) {
+function chatRequest(
+    model: string,
+    messages: unknown[],
+    extra: Record<string, unknown> = {},
+) {
     return fetch(`${TEXT_URL}/v1/chat/completions`, {
         method: "POST",
         headers: textHeaders(),
@@ -27,11 +35,21 @@ function chatRequest(model: string, messages: any[], extra: Record<string, any> 
     });
 }
 
-function streamRequest(model: string, messages: any[], extra: Record<string, any> = {}) {
+function streamRequest(
+    model: string,
+    messages: unknown[],
+    extra: Record<string, unknown> = {},
+) {
     return fetch(`${TEXT_URL}/v1/chat/completions`, {
         method: "POST",
         headers: textHeaders(),
-        body: JSON.stringify({ model, messages, max_tokens: 256, stream: true, ...extra }),
+        body: JSON.stringify({
+            model,
+            messages,
+            max_tokens: 256,
+            stream: true,
+            ...extra,
+        }),
     });
 }
 
@@ -51,11 +69,16 @@ describe("text models — basic completion", () => {
             ]);
 
             if (ALLOW_FAIL.has(model.id) && !res.ok) {
-                console.warn(`[ALPHA] ${model.id} returned ${res.status} — allowed to fail`);
+                console.warn(
+                    `[ALPHA] ${model.id} returned ${res.status} — allowed to fail`,
+                );
                 return;
             }
 
-            expect(res.status, `${model.id} returned ${res.status}: ${await res.clone().text()}`).toBe(200);
+            expect(
+                res.status,
+                `${model.id} returned ${res.status}: ${await res.clone().text()}`,
+            ).toBe(200);
 
             const data = await res.json();
             expect(data.choices).toBeDefined();
@@ -63,10 +86,13 @@ describe("text models — basic completion", () => {
 
             const msg = data.choices[0].message;
             const hasContent = !!msg.content;
-            const hasReasoning = data.usage?.completion_tokens_details?.reasoning_tokens > 0;
+            const hasReasoning =
+                data.usage?.completion_tokens_details?.reasoning_tokens > 0;
 
             if (ALLOW_FAIL.has(model.id) && !hasContent && !hasReasoning) {
-                console.warn(`[ALPHA] ${model.id} returned 200 but empty content — allowed to fail`);
+                console.warn(
+                    `[ALPHA] ${model.id} returned 200 but empty content — allowed to fail`,
+                );
                 return;
             }
 
@@ -75,7 +101,9 @@ describe("text models — basic completion", () => {
                 `${model.id}: no content and no reasoning tokens`,
             ).toBe(true);
 
-            console.log(`  ✓ ${model.id}: "${(msg.content || "[reasoning only]").slice(0, 80)}"`);
+            console.log(
+                `  ✓ ${model.id}: "${(msg.content || "[reasoning only]").slice(0, 80)}"`,
+            );
         });
     }
 });
@@ -94,21 +122,33 @@ describe("text models — streaming", () => {
             ]);
 
             if (ALLOW_FAIL.has(model.id) && !res.ok) {
-                console.warn(`[ALPHA] ${model.id} streaming returned ${res.status} — allowed to fail`);
+                console.warn(
+                    `[ALPHA] ${model.id} streaming returned ${res.status} — allowed to fail`,
+                );
                 return;
             }
 
-            expect(res.status, `${model.id} streaming returned ${res.status}`).toBe(200);
+            expect(
+                res.status,
+                `${model.id} streaming returned ${res.status}`,
+            ).toBe(200);
 
             const contentType = res.headers.get("content-type") || "";
-            if (ALLOW_FAIL.has(model.id) && !contentType.includes("text/event-stream")) {
-                console.warn(`[ALPHA] ${model.id} streaming: not SSE (${contentType}) — allowed to fail`);
+            if (
+                ALLOW_FAIL.has(model.id) &&
+                !contentType.includes("text/event-stream")
+            ) {
+                console.warn(
+                    `[ALPHA] ${model.id} streaming: not SSE (${contentType}) — allowed to fail`,
+                );
                 return;
             }
             expect(contentType).toContain("text/event-stream");
 
             // Read a few chunks to verify streaming works
-            const reader = res.body!.getReader();
+            const reader = res.body?.getReader();
+            if (!reader)
+                throw new Error(`${model.id} streaming: response body is null`);
             const decoder = new TextDecoder();
             let chunks = "";
             let chunkCount = 0;
@@ -122,11 +162,15 @@ describe("text models — streaming", () => {
             reader.cancel();
 
             if (ALLOW_FAIL.has(model.id) && !chunks.includes("data:")) {
-                console.warn(`[ALPHA] ${model.id} streaming: no SSE data in response — allowed to fail`);
+                console.warn(
+                    `[ALPHA] ${model.id} streaming: no SSE data in response — allowed to fail`,
+                );
                 return;
             }
             expect(chunks).toContain("data:");
-            console.log(`  ✓ ${model.id} streaming: ${chunkCount} chunks received`);
+            console.log(
+                `  ✓ ${model.id} streaming: ${chunkCount} chunks received`,
+            );
         });
     }
 });
@@ -136,7 +180,10 @@ describe("text models — streaming", () => {
 // ---------------------------------------------------------------------------
 
 const visionModels = testableModels.filter(
-    (m) => m.inputModalities.includes("image") && !m.hidden && !SKIP_VISION.has(m.id),
+    (m) =>
+        m.inputModalities.includes("image") &&
+        !m.hidden &&
+        !SKIP_VISION.has(m.id),
 );
 
 describe("text models — vision (image input)", () => {
@@ -148,7 +195,10 @@ describe("text models — vision (image input)", () => {
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: "What color is this image? Reply with one word." },
+                        {
+                            type: "text",
+                            text: "What color is this image? Reply with one word.",
+                        },
                         {
                             type: "image_url",
                             image_url: {
@@ -160,15 +210,22 @@ describe("text models — vision (image input)", () => {
             ]);
 
             if (ALLOW_FAIL.has(model.id) && !res.ok) {
-                console.warn(`[ALPHA] ${model.id} vision returned ${res.status} — allowed to fail`);
+                console.warn(
+                    `[ALPHA] ${model.id} vision returned ${res.status} — allowed to fail`,
+                );
                 return;
             }
 
-            expect(res.status, `${model.id} vision returned ${res.status}: ${await res.clone().text()}`).toBe(200);
+            expect(
+                res.status,
+                `${model.id} vision returned ${res.status}: ${await res.clone().text()}`,
+            ).toBe(200);
 
             const data = await res.json();
             expect(data.choices[0].message.content).toBeTruthy();
-            console.log(`  ✓ ${model.id} vision: "${data.choices[0].message.content.slice(0, 80)}"`);
+            console.log(
+                `  ✓ ${model.id} vision: "${data.choices[0].message.content.slice(0, 80)}"`,
+            );
         });
     }
 });
@@ -209,7 +266,9 @@ describe("text models — tool calling", () => {
                 { tools, tool_choice: "auto" },
             );
 
-            expect(res.status, `${model.id} tools returned ${res.status}`).toBe(200);
+            expect(res.status, `${model.id} tools returned ${res.status}`).toBe(
+                200,
+            );
 
             const data = await res.json();
             const choice = data.choices[0];
@@ -224,9 +283,13 @@ describe("text models — tool calling", () => {
             ).toBe(true);
 
             if (hasTool) {
-                console.log(`  ✓ ${model.id} tools: called ${choice.message.tool_calls[0].function.name}`);
+                console.log(
+                    `  ✓ ${model.id} tools: called ${choice.message.tool_calls[0].function.name}`,
+                );
             } else {
-                console.log(`  ✓ ${model.id} tools: responded with text (no tool call)`);
+                console.log(
+                    `  ✓ ${model.id} tools: responded with text (no tool call)`,
+                );
             }
         });
     }

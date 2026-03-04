@@ -3,7 +3,6 @@ import {
     createAirforceModelConfig,
     createAnthropicConfig,
     createAzureModelConfig,
-    createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
     createNomNomConfig,

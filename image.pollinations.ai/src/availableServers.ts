@@ -1,4 +1,3 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
 import debug from "debug";
 import PQueue from "p-queue";
 
@@ -171,58 +170,6 @@ export const getNextServerUrl = async (
 };
 
 export const getNextTranslationServerUrl = () => getNextServerUrl("translate");
-
-/**
- * Handles the /register endpoint requests.
- * @param {IncomingMessage} req - The request object.
- * @param {Object} res - The response object.
- */
-export const handleRegisterEndpoint = (
-    req: IncomingMessage,
-    res: ServerResponse,
-) => {
-    if (req.method === "POST") {
-        let body = "";
-        req.on("data", (chunk) => {
-            body += chunk.toString();
-        });
-        req.on("end", () => {
-            try {
-                const server = JSON.parse(body);
-                if (server.url) {
-                    registerServer(server.url, server.type || "flux");
-                    res.end(
-                        JSON.stringify({
-                            success: true,
-                            message: "Server registered successfully",
-                        }),
-                    );
-                } else {
-                    res.end(
-                        JSON.stringify({
-                            success: false,
-                            message: "Invalid request body - url is required",
-                        }),
-                    );
-                }
-            } catch (_error) {
-                res.end(
-                    JSON.stringify({ success: false, message: "Invalid JSON" }),
-                );
-            }
-        });
-    } else if (req.method === "GET") {
-        const availableServersInfo = Object.entries(SERVERS).flatMap(
-            ([type, servers]) =>
-                servers.map((server) => serverInfo(server, type as ServerType)),
-        );
-        res.end(JSON.stringify(availableServersInfo));
-    } else {
-        res.end(
-            JSON.stringify({ success: false, message: "Method not allowed" }),
-        );
-    }
-};
 
 /**
  * Filters out inactive servers based on the SERVER_TIMEOUT.

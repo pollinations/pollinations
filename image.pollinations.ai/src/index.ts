@@ -29,7 +29,10 @@ const app = new Hono();
 
 app.use("*", cors());
 
-// Sync Cloudflare Worker env bindings to process.env
+// Sync Cloudflare Worker env bindings to process.env.
+// NOTE: This is safe because all bindings are identical across concurrent requests
+// on the same isolate. If per-request env values ever differ, this becomes a race condition
+// and should be replaced with explicit env passing via Hono context.
 app.use("*", async (c, next) => {
     for (const [key, value] of Object.entries(c.env)) {
         if (typeof value === "string") {

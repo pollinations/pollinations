@@ -2,75 +2,19 @@ import debug from "debug";
 import { isMature } from "./utils/mature.ts";
 
 const logFeed = debug("pollinations:feed");
-const logAuth = debug("pollinations:auth");
 
-type FeedListener = { res: ServerResponse; isAuthenticated: boolean };
-
-let feedListeners: FeedListener[] = [];
+const feedListeners: {
+    res: WritableStreamDefaultWriter;
+    isAuthenticated: boolean;
+}[] = [];
 const lastStates: unknown[] = [];
-
-function getAbsoluteUrl(req: IncomingMessage): URL {
-    const host = req.headers.host;
-    const protocol = req.headers["x-forwarded-proto"] || "http";
-    const base = `${protocol}://${host}`;
-    return new URL(req.url, base);
-}
-
-// create a server sent event stream
-export const registerFeedListener = async (
-    req: IncomingMessage,
-    res: ServerResponse,
-) => {
-    // Parse the URL to extract query parameters
-    const parsedUrl = getAbsoluteUrl(req);
-
-    // Set CORS headers
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-    res.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-    });
-
-    // Check if the password query parameter matches the PLN_FEED_PASSWORD
-    const isAuthenticated =
-        parsedUrl.searchParams.get("password") ===
-        process.env.PLN_FEED_PASSWORD;
-
-    if (isAuthenticated) {
-        logAuth("Authenticated feed access granted");
-    }
-
-    // add listener to feedListeners with authentication status
-    feedListeners.push({ res, isAuthenticated });
-
-    // remove listener when connection closes
-    req.on("close", () => {
-        // remove listener from feedListeners
-        feedListeners = feedListeners.filter(
-            (listener) => listener.res !== res,
-        );
-    });
-
-    const pastResults =
-        parseInt(parsedUrl.searchParams.get("past_results"), 10) || 20;
-
-    const statesToSend = lastStates.slice(-pastResults);
-
-    for (const lastState of statesToSend) {
-        await sendToListener(res, lastState, isAuthenticated);
-    }
-};
 
 export type SendToListenersOptions = {
     saveAsLastState?: boolean;
 };
 
 export const sendToFeedListeners = (
-    data,
+    data: any,
     options: SendToListenersOptions = {},
 ) => {
     // Check if prompt contains mature content and flag it
@@ -86,10 +30,8 @@ export const sendToFeedListeners = (
     }
 };
 
-function sendToListener(listener, data, isAuthenticated = false) {
-    // If authenticated with the correct password, send all data without filtering
+function sendToListener(listener: any, data: any, isAuthenticated = false) {
     if (!isAuthenticated) {
-        // Filter out mature content for non-authenticated users
         if (
             data?.private ||
             data?.nsfw ||

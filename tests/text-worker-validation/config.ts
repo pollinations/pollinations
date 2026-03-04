@@ -1,22 +1,26 @@
 /**
  * Text Worker validation test configuration.
  *
- * Set environment variables to override defaults:
- *   TEXT_WORKER_URL  — text service base URL
+ * Required environment variables:
  *   WORKER_PSK      — pre-shared key for Worker auth
  *   ENTER_TOKEN     — PLN_ENTER_TOKEN value
+ *
+ * Optional:
+ *   TEXT_WORKER_URL  — text service base URL (defaults to myceli.ai staging)
  */
 
 export const TEXT_URL =
     process.env.TEXT_WORKER_URL ||
     "https://text-pollinations.elliot-b6e.workers.dev";
 
-export const PSK =
-    process.env.WORKER_PSK ||
-    "62c964a740b3870d00ec9fad336d09166638e91d3e8f3a366b2bb67c464a9d12";
+const PSK = process.env.WORKER_PSK;
+const ENTER_TOKEN = process.env.ENTER_TOKEN;
 
-export const ENTER_TOKEN =
-    process.env.ENTER_TOKEN || "LObKFt3SkykBxTKgmOxaxqN8XNjFiSKQQtVZJ6KL";
+if (!PSK || !ENTER_TOKEN) {
+    throw new Error(
+        "Missing required env vars: WORKER_PSK and ENTER_TOKEN must be set",
+    );
+}
 
 /** Standard headers for text Worker requests. */
 export function textHeaders(extra: Record<string, string> = {}) {

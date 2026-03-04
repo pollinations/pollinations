@@ -1,3 +1,4 @@
+import { getServiceDefinition } from "@shared/registry/registry.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -21,6 +22,8 @@ export type AuthVariables = {
         requireModelAccess: () => void;
         /** Throws 402 if the API key has a budget set and remaining <= 0. */
         requireKeyBudget: () => void;
+        /** Throws 403 if the API key has freeOnly set and the resolved model is paid-only. */
+        requireFreeModel: () => void;
     };
 };
 
@@ -207,6 +210,20 @@ export const auth = (options: AuthOptions) =>
             }
         }
 
+        function requireFreeModel(): void {
+            if (!apiKey?.permissions?.freeOnly) return;
+
+            const model = c.var.model;
+            if (!model) return;
+
+            const serviceDef = getServiceDefinition(model.resolved);
+            if (serviceDef?.paidOnly) {
+                throw new HTTPException(403, {
+                    message: `Model '${model.requested}' is paid-only. This API key is restricted to free models.`,
+                });
+            }
+        }
+
         c.set("auth", {
             client,
             user,
@@ -216,6 +233,7 @@ export const auth = (options: AuthOptions) =>
             requireUser,
             requireModelAccess,
             requireKeyBudget,
+            requireFreeModel,
         });
 
         await next();

@@ -44,7 +44,7 @@ import {
 } from "@/schemas/openai.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import { generateMusic, generateSpeech } from "./audio.ts";
+import { generateMusic, generateSpeech, generateSunoMusic } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
@@ -678,6 +678,17 @@ export const proxyRoutes = new Hono<Env>()
             const text = decodeURIComponent(c.req.param("text"));
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "suno") {
+                const airforceApiKey = (
+                    c.env as unknown as { AIRFORCE_API_KEY: string }
+                ).AIRFORCE_API_KEY;
+                return generateSunoMusic({
+                    prompt: text,
+                    apiKey: airforceApiKey,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(

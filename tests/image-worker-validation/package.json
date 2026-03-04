@@ -1,0 +1,14 @@
+{
+  "name": "image-worker-validation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:image": "vitest run image-models",
+    "test:video": "vitest run video-models"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4",
+    "typescript": "^5.7.0"
+  }
+}

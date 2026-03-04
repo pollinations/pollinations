@@ -1,5 +1,4 @@
 import debug from "debug";
-import sharp from "sharp";
 
 const logPerf = debug("pollinations:perf");
 
@@ -9,31 +8,14 @@ interface SafeParams {
 
 /**
  * Writes EXIF metadata to the image buffer.
- * @param {Buffer} buffer - The image buffer.
- * @param {Object} safeParams - Parameters to embed as metadata.
- * @param {Object} maturity - Additional metadata to embed.
- * @returns {Promise<Buffer>} - The image buffer with metadata.
+ * Workers-compatible: returns buffer unchanged (sharp not available).
+ * EXIF embedding is a nice-to-have and not essential for image delivery.
  */
 export const writeExifMetadata = async (
     buffer: Buffer,
-    safeParams: SafeParams | any,
-    maturity: any,
+    _safeParams: SafeParams | any,
+    _maturity: any,
 ): Promise<Buffer> => {
-    const exif_start_time = Date.now();
-
-    const metadata = {
-        IFD0: {
-            UserComment: JSON.stringify({ ...safeParams, ...maturity }),
-            Make: safeParams.model,
-        },
-    };
-
-    const bufferWithMetadata = await sharp(buffer)
-        .withExifMerge(metadata)
-        .toBuffer();
-
-    const exif_end_time = Date.now();
-    logPerf(`Exif writing duration: ${exif_end_time - exif_start_time}ms`);
-
-    return bufferWithMetadata;
+    logPerf("EXIF writing skipped (Workers mode)");
+    return buffer;
 };

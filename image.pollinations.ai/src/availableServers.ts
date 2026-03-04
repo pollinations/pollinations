@@ -1,4 +1,3 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
 import debug from "debug";
 import PQueue from "p-queue";
 
@@ -15,16 +14,6 @@ type Server = {
 
 type ServerMap = typeof SERVERS;
 type ServerType = keyof ServerMap;
-
-type ServerInfo = {
-    type: ServerType;
-    url: string;
-    queueSize: number;
-    totalRequests: number;
-    errors: number;
-    errorRate: string;
-    requestsPerSecond: string;
-};
 
 // Server storage by type
 const SERVERS = {
@@ -50,37 +39,15 @@ function decayErrors() {
     });
 }
 
-function errorRate(server: Server): number {
-    return (server.errors / server.totalRequests) * 100 || 0;
+// Lazy-start intervals (Workers disallows setInterval at module scope).
+// Note: In Workers, isolate state is per-request so these intervals have limited
+// effect — they only run within a single isolate's lifetime.
+let intervalsStarted = false;
+function ensureIntervals() {
+    if (intervalsStarted) return;
+    intervalsStarted = true;
+    setInterval(decayErrors, 60 * 1000);
 }
-
-function requestsPerSecond(server: Server): number {
-    return server.totalRequests / ((Date.now() - server.startTime) / 1000);
-}
-
-function serverInfo(server: Server, type: ServerType): ServerInfo {
-    return {
-        type,
-        url: server.url,
-        queueSize: server.queue.size + server.queue.pending,
-        totalRequests: server.totalRequests,
-        errors: server.errors,
-        errorRate: `${errorRate(server).toFixed(2)}%`,
-        requestsPerSecond: requestsPerSecond(server).toFixed(2),
-    };
-}
-
-function serverQueueInfo(servers: ServerMap): ServerInfo[] {
-    return Object.entries(servers).flatMap(([type, servers]) => {
-        return servers.map((server) => serverInfo(server, type as ServerType));
-    });
-}
-
-// Decay errors every minute
-setInterval(decayErrors, 60 * 1000); // Every 1 minute
-
-// Log server queue info every 10 seconds
-setInterval(() => console.table(serverQueueInfo(SERVERS)), 10000);
 
 /**
  * Returns the total load (pending + queued jobs) for a specific type
@@ -105,6 +72,7 @@ export const countFluxJobs = () => countJobs("flux");
  * @param {string} type - The type of service (default: 'flux')
  */
 export const registerServer = (url: string, type: ServerType = "flux") => {
+    ensureIntervals();
     // Only allow predefined types, fall back to 'flux' for unknown types
     if (!Object.hasOwn(SERVERS, type)) {
         logServer(
@@ -165,58 +133,6 @@ export const getNextServerUrl = async (
 };
 
 export const getNextTranslationServerUrl = () => getNextServerUrl("translate");
-
-/**
- * Handles the /register endpoint requests.
- * @param {IncomingMessage} req - The request object.
- * @param {Object} res - The response object.
- */
-export const handleRegisterEndpoint = (
-    req: IncomingMessage,
-    res: ServerResponse,
-) => {
-    if (req.method === "POST") {
-        let body = "";
-        req.on("data", (chunk) => {
-            body += chunk.toString();
-        });
-        req.on("end", () => {
-            try {
-                const server = JSON.parse(body);
-                if (server.url) {
-                    registerServer(server.url, server.type || "flux");
-                    res.end(
-                        JSON.stringify({
-                            success: true,
-                            message: "Server registered successfully",
-                        }),
-                    );
-                } else {
-                    res.end(
-                        JSON.stringify({
-                            success: false,
-                            message: "Invalid request body - url is required",
-                        }),
-                    );
-                }
-            } catch (_error) {
-                res.end(
-                    JSON.stringify({ success: false, message: "Invalid JSON" }),
-                );
-            }
-        });
-    } else if (req.method === "GET") {
-        const availableServersInfo = Object.entries(SERVERS).flatMap(
-            ([type, servers]) =>
-                servers.map((server) => serverInfo(server, type as ServerType)),
-        );
-        res.end(JSON.stringify(availableServersInfo));
-    } else {
-        res.end(
-            JSON.stringify({ success: false, message: "Method not allowed" }),
-        );
-    }
-};
 
 /**
  * Filters out inactive servers based on the SERVER_TIMEOUT.

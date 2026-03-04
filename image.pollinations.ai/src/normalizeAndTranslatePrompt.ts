@@ -1,4 +1,3 @@
-import type { IncomingMessage } from "node:http";
 import debug from "debug";
 import type { ImageParams } from "./params.ts";
 import { pimpPrompt } from "./promptEnhancer.ts";
@@ -12,9 +11,15 @@ const memoizedPrompts = new Map();
 
 export type TimingStep = { step: string; timestamp: number };
 
+/** Minimal request shape needed by the prompt normalizer */
+export type MinimalRequest = {
+    headers: Record<string, string | string[] | undefined>;
+    url: string;
+};
+
 export const normalizeAndTranslatePrompt = async (
     originalPrompt: string,
-    req: IncomingMessage,
+    req: MinimalRequest,
     timingInfo: TimingStep[],
     safeParams: ImageParams,
     referrer = null,
@@ -61,7 +66,9 @@ export const normalizeAndTranslatePrompt = async (
     // Skip enhancement for bad domains
     if (!wasTransformedForBadDomain) {
         // check from the request headers if the user most likely speaks english (value starts with en)
-        const englishLikely = req.headers["accept-language"]?.startsWith("en");
+        const acceptLang = req.headers["accept-language"];
+        const englishLikely =
+            typeof acceptLang === "string" && acceptLang.startsWith("en");
 
         if (!englishLikely) {
             const startTime = Date.now();

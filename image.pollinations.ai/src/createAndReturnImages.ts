@@ -1,7 +1,5 @@
 import debug from "debug";
-import dotenv from "dotenv";
-import { fileTypeFromBuffer } from "file-type";
-import sharp from "sharp";
+
 import {
     fetchFromLeastBusyFluxServer,
     fetchFromLeastBusyServer,
@@ -28,8 +26,6 @@ import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
 
-dotenv.config();
-
 // Loggers
 const logError = debug("pollinations:error");
 const logPerf = debug("pollinations:perf");
@@ -38,11 +34,6 @@ const logCloudflare = debug("pollinations:cloudflare");
 
 // Constants
 const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
-// Max pixels for GPT Image input to control token costs
-// GPT Image 1.5 calculates input tokens as: (width × height) / 750
-// At 1536x1536 = 2.36M pixels = ~3,145 input tokens (reasonable cost)
-// At 4K (3840x2160) = 8.3M pixels = ~11,000 input tokens (expensive!)
-const GPT_IMAGE_MAX_INPUT_PIXELS = 1536 * 1536; // ~2.36 megapixels
 
 // Performance tracking variables
 const totalStartTime = Date.now();
@@ -104,43 +95,10 @@ export function calculateScaledDimensions(
  * @returns Resized buffer (PNG format) if image exceeds max pixels, otherwise original
  */
 async function resizeInputImageForGptImage(buffer: Buffer): Promise<Buffer> {
-    try {
-        const metadata = await sharp(buffer).metadata();
-        const width = metadata.width || 0;
-        const height = metadata.height || 0;
-        const currentPixels = width * height;
-
-        if (currentPixels <= GPT_IMAGE_MAX_INPUT_PIXELS) {
-            logCloudflare(
-                `Input image ${width}x${height} (${currentPixels} pixels) within limit, no resize needed`,
-            );
-            return buffer;
-        }
-
-        // Calculate new dimensions maintaining aspect ratio
-        const scalingFactor = Math.sqrt(
-            GPT_IMAGE_MAX_INPUT_PIXELS / currentPixels,
-        );
-        const newWidth = Math.round(width * scalingFactor);
-        const newHeight = Math.round(height * scalingFactor);
-
-        logCloudflare(
-            `Resizing input image from ${width}x${height} to ${newWidth}x${newHeight} to reduce token costs`,
-        );
-        logCloudflare(
-            `Token reduction: ~${Math.round(currentPixels / 750)} → ~${Math.round((newWidth * newHeight) / 750)} tokens`,
-        );
-
-        const resizedBuffer = await sharp(buffer)
-            .resize(newWidth, newHeight, { fit: "inside" })
-            .png() // Use PNG for lossless quality
-            .toBuffer();
-
-        return resizedBuffer;
-    } catch (error) {
-        logError("Failed to resize input image, using original:", error);
-        return buffer;
-    }
+    // Workers mode: return buffer unchanged (sharp not available).
+    // Minor token cost increase for large input images is acceptable.
+    logCloudflare("Input image resize skipped (Workers mode)");
+    return buffer;
 }
 
 /**
@@ -170,8 +128,10 @@ export const callSelfHostedServer = async (
         prompt = sanitizeString(prompt);
 
         // Calculate scaled dimensions
-        const { scaledWidth, scaledHeight, scalingFactor } =
-            calculateScaledDimensions(safeParams.width, safeParams.height);
+        const { scaledWidth, scaledHeight } = calculateScaledDimensions(
+            safeParams.width,
+            safeParams.height,
+        );
 
         const body = {
             prompts: [prompt],
@@ -254,38 +214,10 @@ export const callSelfHostedServer = async (
 
         const buffer = Buffer.from(image, "base64");
 
-        // Resize back to original dimensions if scaling was applied
-        if (scalingFactor > 1) {
-            const resizedBuffer = await sharp(buffer)
-                .resize(safeParams.width, safeParams.height, {
-                    fit: "fill",
-                    withoutEnlargement: false,
-                })
-                .jpeg()
-                .toBuffer();
-            return {
-                buffer: resizedBuffer,
-                ...rest,
-                trackingData: {
-                    actualModel: safeParams.model,
-                    usage: {
-                        completionImageTokens: 1,
-                        totalTokenCount: 1,
-                    },
-                },
-            };
-        }
-
-        // Convert to JPEG even if no resize was needed
-        const jpegBuffer = await sharp(buffer)
-            .jpeg({
-                quality: 90,
-                mozjpeg: true,
-            })
-            .toBuffer();
-
+        // Workers mode: return buffer as-is (sharp not available for resize/JPEG conversion).
+        // Self-hosted backends already return images at usable dimensions.
         return {
-            buffer: jpegBuffer,
+            buffer,
             ...rest,
             trackingData: {
                 actualModel: safeParams.model,
@@ -539,12 +471,8 @@ function getCloudflareCredentials(): { accountId: string; apiToken: string } {
  * @returns {Promise<Buffer>} - The converted image buffer.
  */
 export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
-    const fileType = await fileTypeFromBuffer(buffer);
-    // no need to check for jpeg here, according to type information
-    if (!fileType || fileType.ext !== "jpg") {
-        const result = await sharp(buffer).jpeg().toBuffer();
-        return result;
-    }
+    // Workers mode: return buffer as-is (sharp not available).
+    // Backends return images in usable formats (PNG/JPEG) already.
     return buffer;
 }
 

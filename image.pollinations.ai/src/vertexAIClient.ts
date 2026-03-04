@@ -4,7 +4,6 @@
  */
 
 import debug from "debug";
-import fetch from "node-fetch";
 import googleCloudAuth from "../auth/googleCloudAuth.ts";
 
 const log = debug("pollinations:vertex-ai");

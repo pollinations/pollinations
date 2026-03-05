@@ -375,8 +375,10 @@ function App() {
                 return dir * (a.name || "").localeCompare(b.name || "");
             case "requests":
             case "share": {
-                const aReqs = (a.stats?.total_requests || 0) - (a.stats?.total_4xx || 0);
-                const bReqs = (b.stats?.total_requests || 0) - (b.stats?.total_4xx || 0);
+                const aReqs =
+                    (a.stats?.total_requests || 0) - (a.stats?.total_4xx || 0);
+                const bReqs =
+                    (b.stats?.total_requests || 0) - (b.stats?.total_4xx || 0);
                 return dir * (aReqs - bReqs);
             }
             case "ok2xx":
@@ -674,7 +676,9 @@ function App() {
                                             <td className="px-3 py-2 text-right tabular-nums text-gray-600">
                                                 {total > 0 ? (
                                                     <>
-                                                        {(total - total4xx).toLocaleString()}
+                                                        {(
+                                                            total - total4xx
+                                                        ).toLocaleString()}
                                                         {total4xx > 0 && (
                                                             <span className="text-gray-400 text-xs ml-1">
                                                                 (

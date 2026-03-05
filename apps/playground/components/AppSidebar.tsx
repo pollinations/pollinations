@@ -133,7 +133,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={example.id}>
                     <Link
                       href={example.path}
-                      className="[&:not(:focus-visible)]:focus:outline-none"
+                      className="not-focus-visible:focus:outline-none"
                     >
                       <SidebarMenuButton isActive={isActive}>
                         <Icon className="size-4" />
@@ -157,7 +157,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={example.id}>
                     <Link
                       href={example.path}
-                      className="[&:not(:focus-visible)]:focus:outline-none"
+                      className="not-focus-visible:focus:outline-none"
                     >
                       <SidebarMenuButton isActive={isActive}>
                         <Icon className="size-4" />
@@ -181,7 +181,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={example.id}>
                     <Link
                       href={example.path}
-                      className="[&:not(:focus-visible)]:focus:outline-none"
+                      className="not-focus-visible:focus:outline-none"
                     >
                       <SidebarMenuButton isActive={isActive}>
                         <Icon className="size-4" />
@@ -205,7 +205,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={example.id}>
                     <Link
                       href={example.path}
-                      className="[&:not(:focus-visible)]:focus:outline-none"
+                      className="not-focus-visible:focus:outline-none"
                     >
                       <SidebarMenuButton isActive={isActive}>
                         <Icon className="size-4" />

@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const { colors, gradients, shadows, fonts } = require('./theme');
+
 module.exports = {
   darkMode: ['class'],
   content: [
@@ -17,39 +19,44 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: fonts.body.split(',').map(f => f.trim().replace(/"/g, '')),
+        display: fonts.display.split(',').map(f => f.trim().replace(/"/g, '')),
+        mono: [fonts.mono],
+      },
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)',
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground)',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
+          DEFAULT: 'var(--popover)',
+          foreground: 'var(--popover-foreground)',
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)',
         },
         sidebar: {
           DEFAULT: 'var(--sidebar)',
@@ -61,6 +68,56 @@ module.exports = {
           border: 'var(--sidebar-border)',
           ring: 'var(--sidebar-ring)',
         },
+        // Theme-specific colors from theme.js
+        lime: {
+          DEFAULT: colors.lime.main,
+          light: colors.lime.light,
+          dim: colors.lime.dim,
+          glow: colors.lime.glow,
+        },
+        sage: {
+          DEFAULT: colors.sage.main,
+          dim: colors.sage.dim,
+        },
+        honey: {
+          DEFAULT: colors.honey.main,
+          dim: colors.honey.dim,
+        },
+        lavender: {
+          DEFAULT: colors.lavender.main,
+          light: colors.lavender.light,
+          dim: colors.lavender.dim,
+        },
+        deep: colors.bg.deep,
+        'card-glass': colors.bg.cardGlass,
+        'card-glass-hover': colors.bg.cardGlassHover,
+      },
+      borderColor: {
+        lime: colors.lime.border,
+        sage: colors.sage.border,
+        honey: colors.honey.border,
+        lavender: colors.lavender.border,
+        glass: colors.border.light,
+        'glass-medium': colors.border.medium,
+        'glass-strong': colors.border.strong,
+        'glass-hover': colors.border.hover,
+      },
+      boxShadow: {
+        card: shadows.card,
+        'card-hover': shadows.cardHover,
+        'card-large': shadows.cardLarge,
+        'glow-lime': shadows.glowLime,
+        'glow-white': shadows.glowWhite,
+        button: shadows.button,
+      },
+      backgroundImage: {
+        'gradient-card': gradients.bgCard,
+        'gradient-page': gradients.bgPage,
+        'gradient-accent': gradients.cardAccent,
+        'gradient-text': gradients.textAccent,
+        'gradient-overlay': gradients.bgOverlay,
+        'glow-lime': gradients.glowLime,
+        'glow-white': gradients.glowWhite,
       },
       borderRadius: {
         lg: 'var(--radius)',

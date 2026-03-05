@@ -1,4 +1,4 @@
-import { createPollinations } from 'playground';
+import { createPollinations } from '@/src';
 import { convertToModelMessages, streamText, UIMessage } from 'ai';
 import { NextRequest } from 'next/server';
 

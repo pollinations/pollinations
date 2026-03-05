@@ -20,7 +20,7 @@ import { Form, FormField, FormFieldItem } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type LanguageModelUsage, streamText } from 'ai';
-import { createPollinations } from 'playground';
+import { createPollinations } from '@/src';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -197,7 +197,7 @@ export default function Streaming() {
               <div>
                 <h3 className="text-lg font-semibold mb-4">Reasoning</h3>
               </div>
-              <div className="rounded-md border bg-muted/50 p-4 min-h-[100px]">
+              <div className="rounded-md border bg-muted/50 p-4 min-h-25">
                 <div className="text-sm whitespace-pre-wrap font-mono">
                   {reasoningText}
                 </div>

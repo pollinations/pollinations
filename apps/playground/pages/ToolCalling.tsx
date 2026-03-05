@@ -13,7 +13,7 @@ import { Form, FormField, FormFieldItem } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { generateText, GenerateTextResult, tool } from 'ai';
-import { createPollinations } from 'playground';
+import { createPollinations } from '@/src';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';

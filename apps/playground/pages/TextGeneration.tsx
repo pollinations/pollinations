@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { generateText } from 'ai';
-import { createPollinations } from 'playground';
+import { createPollinations } from '@/src';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 

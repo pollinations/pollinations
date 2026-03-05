@@ -24,19 +24,17 @@
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
       "content-length": "327",
-      "content-type": "application/json; charset=utf-8",
-      "date": "Fri, 27 Feb 2026 18:41:03 GMT",
-      "etag": "W/\"147-ttKQWAulhU9HtXmvDGYTTiWCccY\"",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:42:30 GMT",
       "keep-alive": "timeout=5",
-      "x-model-used": "polly",
-      "x-powered-by": "Express"
+      "x-model-used": "polly"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_97a581fbdd76f32c213784214b057758",
+        "id": "pllns_068901f221d97a69781aac0e6e072ba4",
         "object": "chat.completion",
-        "created": 1772217663,
+        "created": 1772710950,
         "model": "polly",
         "choices": [
           {

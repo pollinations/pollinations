@@ -19,41 +19,28 @@
     "params": {}
   },
   "response": {
-    "status": 404,
-    "statusText": "Not Found",
+    "status": 200,
+    "statusText": "OK",
     "headers": {
       "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
       "connection": "keep-alive",
-      "content-length": "342",
-      "content-type": "application/json; charset=utf-8",
-      "date": "Fri, 27 Feb 2026 18:41:14 GMT",
-      "etag": "W/\"156-62lwanpqfm9qhxNk+73pAY2ZLCw\"",
-      "keep-alive": "timeout=5",
-      "x-powered-by": "Express"
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Thu, 05 Mar 2026 11:42:37 GMT",
+      "transfer-encoding": "chunked"
     },
     "body": {
-      "type": "json",
-      "data": {
-        "error": "Not Found",
-        "message": "Model not found: gemini-3-pro-preview",
-        "requestId": "v86elu",
-        "requestParameters": {
-          "messages": [
-            {
-              "role": "user",
-              "content": "Is Berlin the capital of Germany? Reply yes or no."
-            }
-          ],
-          "jsonMode": false,
-          "seed": 42,
-          "model": "gemini-3-pro-preview",
-          "referrer": null,
-          "stream": true,
-          "isPrivate": true,
-          "voice": "alloy",
-          "private": true
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"vertex-ai-1772",
+          "delay": 21
+        },
+        {
+          "data": "710957485\",\"object\":\"chat.completion.chunk\",\"created\":1772710957,\"model\":\"gemini-3-pro-preview\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"Yes\"}}]},\"index\":0,\"finish_reason\":\"STOP\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":121,\"total_tokens\":133,\"completion_tokens_details\":{\"reasoning_tokens\":120,\"audio_tokens\":0},\"prompt_tokens_details\":{\"audio_tokens\":0}}}\n\n",
+          "delay": 0
         }
-      }
+      ]
     }
   }
 }

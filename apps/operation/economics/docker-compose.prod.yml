@@ -13,11 +13,10 @@ services:
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_AUTH_DISABLE_LOGIN_FORM=false
       - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/economics.json
-      - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource,yesoreyeram-infinity-datasource
+      - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
       - TINYBIRD_GENERATION_READ_TOKEN=${TINYBIRD_GENERATION_READ_TOKEN}
       - TINYBIRD_STRIPE_READ_TOKEN=${TINYBIRD_STRIPE_READ_TOKEN}
       - TINYBIRD_LEGACY_GENERATION_READ_TOKEN=${TINYBIRD_LEGACY_GENERATION_READ_TOKEN}
-      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
     volumes:
       - grafana-data:/var/lib/grafana

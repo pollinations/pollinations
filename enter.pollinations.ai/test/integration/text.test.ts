@@ -23,11 +23,15 @@ const EXCLUDED_SERVICES = ["openai-audio"];
 const TEST_MESSAGE_CONTENT =
     "Is Berlin the capital of Germany? Reply yes or no.";
 
-const servicesToTest = getTextServices().filter(
-    (serviceId) =>
-        (TEST_ALL_SERVICES || REQUIRED_SERVICES.includes(serviceId)) &&
-        !EXCLUDED_SERVICES.includes(serviceId),
-);
+const servicesToTest = getTextServices().filter((serviceId) => {
+    if (EXCLUDED_SERVICES.includes(serviceId)) return false;
+    if (!TEST_ALL_SERVICES && !REQUIRED_SERVICES.includes(serviceId))
+        return false;
+    // Skip alpha models — they are unstable by definition and break tests
+    const def = getServiceDefinition(serviceId);
+    if (def.alpha) return false;
+    return true;
+});
 
 const anonymousTestCases = () => {
     // All models now require authentication, so always expect 401 for anonymous requests

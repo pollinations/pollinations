@@ -42,7 +42,7 @@ export POLAR_ACCESS_TOKEN=$(grep POLAR_ACCESS_TOKEN enter.pollinations.ai/.testi
 ## Get Tinybird Token
 
 ```bash
-export TINYBIRD_TOKEN=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_ACCESS_TOKEN')
+export TINYBIRD_TOKEN=$(sops -d apps/operation/kpi/secrets/env.json | jq -r '.TINYBIRD_TOKEN')
 ```
 
 ---

@@ -23,33 +23,30 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "381",
-      "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 24 Jan 2026 07:58:42 GMT",
-      "etag": "W/\"17d-i/BMln5RMiy6xJeFccJa97+MVL0\"",
-      "keep-alive": "timeout=5",
-      "x-powered-by": "Express"
+      "content-length": "367",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:42:19 GMT",
+      "keep-alive": "timeout=5"
     },
     "body": {
       "type": "json",
       "data": {
         "error": "Unauthorized",
         "message": "401 Unauthorized",
-        "requestId": "8pyrd",
+        "requestId": "i7b9n3",
         "requestParameters": {
+          "seed": 42,
+          "model": "nomnom",
+          "voice": "alloy",
+          "jsonMode": false,
           "messages": [
             {
               "role": "user",
               "content": "Is Berlin the capital of Germany? Reply yes or no."
             }
           ],
-          "jsonMode": false,
-          "seed": 42,
-          "model": "nomnom",
           "referrer": null,
-          "isPrivate": true,
-          "voice": "alloy",
-          "private": true
+          "isPrivate": true
         },
         "details": {
           "detail": "Invalid API key. Get your key at https://enter.pollinations.ai"

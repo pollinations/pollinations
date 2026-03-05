@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎨 junk journal Ai](https://junkjournalai.shop/) | Generate junk journal pages with junk journal Ai, creating printable, customizable layouts and collage-style elements for scrapbooking and mixed-media projects. | [@nadiaa1987](https://github.com/nadiaa1987) |
 | [🎨 AI img gen stant](https://jic-server.xo.je/?i=1) | Generate images from text prompts with control over style, resolution, and seeds, and export outputs for iteration. | [@JIC-Jevgin](https://github.com/JIC-Jevgin) |
 | [🤖 OpenLLM](https://randomcatuser.github.io/chat.openllm/) | Run OpenLLM to deploy, serve, and manage LLMs with a unified CLI and API, handling model loading, inference endpoints, and scaling for local or production environments. | [@web](https://github.com/web) |
 | [🌐 GeoCitAIes.com](https://geocitaies.com) | Surf 1990s-style web and generate retro personal homepages on demand using AI personas. | [@web](https://github.com/web) |

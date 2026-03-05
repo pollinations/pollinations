@@ -104,7 +104,7 @@ export default function AgenticToolCalling() {
     step: number,
     input?: unknown,
   ): string => {
-    const id = `timeline-${Date.now()}-${Math.random()}`;
+    const id = `timeline-${Date.now()}-${crypto.randomUUID()}`;
     const item: TimelineItem = {
       id,
       step,

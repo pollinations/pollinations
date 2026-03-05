@@ -374,12 +374,11 @@ function App() {
             case "name":
                 return dir * (a.name || "").localeCompare(b.name || "");
             case "requests":
-            case "share":
-                return (
-                    dir *
-                    ((a.stats?.total_requests || 0) -
-                        (b.stats?.total_requests || 0))
-                );
+            case "share": {
+                const aReqs = (a.stats?.total_requests || 0) - (a.stats?.total_4xx || 0);
+                const bReqs = (b.stats?.total_requests || 0) - (b.stats?.total_4xx || 0);
+                return dir * (aReqs - bReqs);
+            }
             case "ok2xx":
                 return dir * (get2xx(a.stats) - get2xx(b.stats));
             case "errors":

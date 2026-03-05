@@ -1,12 +1,7 @@
 import type { NextConfig } from 'next';
-import path from 'path';
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    resolveAlias: {
-      playground: path.resolve(__dirname, 'src'),
-    },
-  },
+  turbopack: {},
 };
 
 export default nextConfig;

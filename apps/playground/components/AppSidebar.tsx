@@ -18,6 +18,7 @@ import {
   Code2,
   FileText,
   Image as ImageIcon,
+  ImagePlus,
   MessageCircle,
   Radio,
   Video,
@@ -61,6 +62,12 @@ const imageVideoExamples = [
     label: 'Video Generation',
     path: '/video-generation',
     icon: Video,
+  },
+  {
+    id: 'media-upload',
+    label: 'Media Upload',
+    path: '/media-upload',
+    icon: ImagePlus,
   },
 ];
 

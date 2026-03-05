@@ -16,6 +16,9 @@
  *   --model NAME      LLM model to use (default: gemini)
  *   --single-chunk    Only process first chunk (for testing)
  *   --parallel N      Process N chunks in parallel (default: 1)
+ *   --since DATE      Only scan users created after this date (YYYY-MM-DD)
+ *   --last DURATION   Only scan users from the last N hours/days (e.g. 24h, 7d)
+ *   --auto-apply      Automatically apply blocks after scanning (no dry-run)
  *
  * OUTPUT:
  *   abuse-report.csv - All users sorted by score (action, score, email, github, signals, date)
@@ -24,13 +27,12 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
-// Configuration
 const SCORE_THRESHOLDS = {
     block: 70,
     review: 40,
 } as const;
 
-const OVERLAP_SIZE = 20; // Fixed 20 user overlap
+const OVERLAP_SIZE = 20;
 
 interface User {
     email: string;
@@ -51,39 +53,68 @@ interface ParsedArgs {
     modelName: string;
     parallelism: number;
     singleChunk: boolean;
+    sinceTimestamp: number | null;
+    autoApply: boolean;
 }
 
-/**
- * Parse command line arguments
- */
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
 
-    function getArgValue(
-        flag: string,
-        defaultValue: number | string,
-    ): number | string {
+    function getStr(flag: string, defaultValue: string): string {
         const index = args.indexOf(flag);
-        if (index >= 0 && args[index + 1]) {
-            return typeof defaultValue === "number"
-                ? parseInt(args[index + 1], 10)
-                : args[index + 1];
-        }
-        return defaultValue;
+        return index >= 0 && args[index + 1] ? args[index + 1] : defaultValue;
     }
 
+    function getNum(flag: string, defaultValue: number): number {
+        const value = getStr(flag, "");
+        return value ? parseInt(value, 10) : defaultValue;
+    }
+
+    const sinceTimestamp = parseSinceTimestamp(
+        getStr("--since", ""),
+        getStr("--last", ""),
+    );
+
     return {
-        userLimit: getArgValue("--limit", 5000) as number,
-        chunkSize: getArgValue("--chunk-size", 100) as number,
-        modelName: getArgValue("--model", "gemini") as string,
-        parallelism: getArgValue("--parallel", 1) as number,
+        userLimit: getNum("--limit", 5000),
+        chunkSize: getNum("--chunk-size", 100),
+        modelName: getStr("--model", "gemini"),
+        parallelism: getNum("--parallel", 1),
         singleChunk: args.includes("--single-chunk"),
+        sinceTimestamp,
+        autoApply: args.includes("--auto-apply"),
     };
 }
 
-/**
- * Load API key from .testingtokens file
- */
+function parseSinceTimestamp(
+    sinceDate: string,
+    lastDuration: string,
+): number | null {
+    if (lastDuration) {
+        const match = lastDuration.match(/^(\d+)(h|d)$/);
+        if (!match) {
+            console.error(
+                `Invalid --last format: ${lastDuration} (use e.g. 24h or 7d)`,
+            );
+            process.exit(1);
+        }
+        const amount = parseInt(match[1], 10);
+        const ms = match[2] === "h" ? amount * 3600_000 : amount * 86400_000;
+        return Math.floor((Date.now() - ms) / 1000);
+    }
+
+    if (sinceDate) {
+        const timestamp = Math.floor(new Date(sinceDate).getTime() / 1000);
+        if (Number.isNaN(timestamp)) {
+            console.error(`Invalid --since date: ${sinceDate}`);
+            process.exit(1);
+        }
+        return timestamp;
+    }
+
+    return null;
+}
+
 function loadApiKey(): string {
     const tokenFile = ".testingtokens";
     if (!existsSync(tokenFile)) {
@@ -104,15 +135,19 @@ function loadApiKey(): string {
     return match[1].trim();
 }
 
-/**
- * Fetch users from D1 database
- */
-function fetchUsers(limit: number): User[] {
-    console.log(`📊 Fetching ${limit} most recent users...`);
+function fetchUsers(limit: number, sinceTimestamp: number | null): User[] {
+    const sinceLabel = sinceTimestamp
+        ? ` created after ${new Date(sinceTimestamp * 1000).toISOString().split("T")[0]}`
+        : "";
+    console.log(`📊 Fetching ${limit} most recent users${sinceLabel}...`);
 
+    const whereClause = sinceTimestamp
+        ? `WHERE created_at > ${sinceTimestamp}`
+        : "";
     const query = `
         SELECT email, github_username, created_at, tier
         FROM user
+        ${whereClause}
         ORDER BY created_at DESC
         LIMIT ${limit}
     `.replace(/\n/g, " ");
@@ -133,42 +168,27 @@ function fetchUsers(limit: number): User[] {
     }
 }
 
-/**
- * Format date to human-readable string
- */
 function formatDate(timestamp: number): string {
     const d = new Date(Number(timestamp) * 1000);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hours = String(d.getHours()).padStart(2, "0");
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    return d.toISOString().slice(0, 16).replace("T", " ");
 }
 
-/**
- * Build chunk ranges with overlap
- */
 function buildChunkRanges(
     totalUsers: number,
     chunkSize: number,
     singleChunk: boolean,
 ): Array<{ start: number; end: number }> {
     const ranges: Array<{ start: number; end: number }> = [];
-    const maxIterations = singleChunk ? 1 : totalUsers;
+    const step = chunkSize - OVERLAP_SIZE;
 
-    for (let i = 0; i < maxIterations; i += chunkSize - OVERLAP_SIZE) {
-        const end = Math.min(i + chunkSize, totalUsers);
-        if (i >= totalUsers) break;
-        ranges.push({ start: i, end });
+    for (let i = 0; i < totalUsers; i += step) {
+        ranges.push({ start: i, end: Math.min(i + chunkSize, totalUsers) });
+        if (singleChunk) break;
     }
 
     return ranges;
 }
 
-/**
- * Prepare CSV data for API prompt
- */
 function prepareChunkData(chunk: User[]): {
     csvRows: string[];
     githubToIndex: Map<string, number>;
@@ -187,9 +207,6 @@ function prepareChunkData(chunk: User[]): {
     return { csvRows, githubToIndex };
 }
 
-/**
- * Build the scoring prompt for the LLM
- */
 function buildScoringPrompt(csvRows: string[]): string {
     return `Detect coordinated abuse by analyzing PATTERNS ACROSS MULTIPLE USERS. Score 0-100.
 
@@ -222,54 +239,44 @@ Data (github,email,registered,upgraded):
 ${csvRows.join("\n")}`;
 }
 
-/**
- * Parse LLM response into scores
- */
 function parseLLMResponse(
     content: string,
     githubToIndex: Map<string, number>,
     chunkLength: number,
 ): Array<{ score: number; signals: string[] }> {
-    const results: Array<{ score: number; signals: string[] }> = new Array(
-        chunkLength,
-    )
-        .fill(null)
-        .map(() => ({ score: 0, signals: [] }));
+    const results = Array.from({ length: chunkLength }, () => ({
+        score: 0,
+        signals: [] as string[],
+    }));
 
-    const lines = content.split("\n").filter((line) => line.trim());
-
-    for (const line of lines) {
-        // Skip header if present
-        if (line.startsWith("github,") || !line.includes(",")) continue;
+    for (const line of content.split("\n")) {
+        if (!line.trim() || line.startsWith("github,") || !line.includes(","))
+            continue;
 
         const parts = line.split(",");
-        if (parts.length >= 2) {
-            const github = parts[0]?.trim();
-            const score = parseInt(parts[1], 10) || 0;
-            const reason = parts[2]?.trim() || "";
+        if (parts.length < 2) continue;
 
-            const idx = githubToIndex.get(github);
-            if (idx !== undefined) {
-                // Convert reason to signals array (split on +)
-                const signals =
-                    reason === "ok" || reason === ""
-                        ? []
-                        : reason.split("+").filter((s) => s.trim());
+        const github = parts[0]?.trim();
+        const score = parseInt(parts[1], 10) || 0;
+        const reason = parts[2]?.trim() || "";
 
-                results[idx] = {
-                    score: Math.min(100, Math.max(0, score)),
-                    signals,
-                };
-            }
-        }
+        const idx = githubToIndex.get(github);
+        if (idx === undefined) continue;
+
+        const signals =
+            reason === "ok" || reason === ""
+                ? []
+                : reason.split("+").filter((s) => s.trim());
+
+        results[idx] = {
+            score: Math.min(100, Math.max(0, score)),
+            signals,
+        };
     }
 
     return results;
 }
 
-/**
- * Call Pollinations API for scoring a single chunk
- */
 async function callScoringAPI(
     chunk: User[],
     apiKey: string,
@@ -310,9 +317,6 @@ async function callScoringAPI(
     }
 }
 
-/**
- * Process a batch of chunks in parallel
- */
 async function processBatch(
     batch: Array<{ start: number; end: number }>,
     users: User[],
@@ -343,37 +347,27 @@ async function processBatch(
     return Promise.all(promises);
 }
 
-/**
- * Print progress statistics
- */
 function printProgress(
     completedChunks: number,
     totalChunks: number,
     allScores: Map<string, { score: number; signals: string[] }>,
 ): void {
-    const processedUsers = Array.from(allScores.entries());
-    const stats = {
-        block: processedUsers.filter(
-            ([_, s]) => s.score >= SCORE_THRESHOLDS.block,
-        ).length,
-        review: processedUsers.filter(
-            ([_, s]) =>
-                s.score >= SCORE_THRESHOLDS.review &&
-                s.score < SCORE_THRESHOLDS.block,
-        ).length,
-        ok: processedUsers.filter(([_, s]) => s.score < SCORE_THRESHOLDS.review)
-            .length,
-    };
+    let block = 0;
+    let review = 0;
+    let ok = 0;
+
+    for (const { score } of allScores.values()) {
+        if (score >= SCORE_THRESHOLDS.block) block++;
+        else if (score >= SCORE_THRESHOLDS.review) review++;
+        else ok++;
+    }
 
     console.log(
-        `   📊 Progress: ${completedChunks}/${totalChunks} chunks (${allScores.size} users) | ` +
-            `🔴 ${stats.block} block | 🟡 ${stats.review} review | 🟢 ${stats.ok} ok`,
+        `   Progress: ${completedChunks}/${totalChunks} chunks (${allScores.size} users) | ` +
+            `block: ${block} | review: ${review} | ok: ${ok}`,
     );
 }
 
-/**
- * Score users with overlap for pattern detection
- */
 async function scoreUsers(
     users: User[],
     config: ParsedArgs,
@@ -451,22 +445,15 @@ async function scoreUsers(
     return scoredUsers;
 }
 
-/**
- * Get action based on score
- */
 function getAction(score: number): "block" | "review" | "ok" {
     if (score >= SCORE_THRESHOLDS.block) return "block";
     if (score >= SCORE_THRESHOLDS.review) return "review";
     return "ok";
 }
 
-/**
- * Export results to CSV
- */
 function exportResults(users: ScoredUser[]): void {
     const sorted = [...users].sort((a, b) => b.score - a.score);
 
-    // Single CSV with action column
     const csv = [
         "action,score,email,github_username,signals,tier,registered",
         ...sorted.map(
@@ -476,48 +463,43 @@ function exportResults(users: ScoredUser[]): void {
     ].join("\n");
 
     writeFileSync("abuse-report.csv", csv);
-    console.log("\n📄 Results: abuse-report.csv");
+    console.log("\nResults: abuse-report.csv");
 
-    // Statistics
-    const stats = {
-        block: sorted.filter((u) => u.action === "block").length,
-        review: sorted.filter((u) => u.action === "review").length,
-        ok: sorted.filter((u) => u.action === "ok").length,
-    };
+    const counts = { block: 0, review: 0, ok: 0 };
+    for (const u of sorted) counts[u.action]++;
 
-    console.log("\n📊 Summary:");
-    console.log(`   🔴 Block (≥${SCORE_THRESHOLDS.block}): ${stats.block}`);
-    console.log(`   🟡 Review (≥${SCORE_THRESHOLDS.review}): ${stats.review}`);
-    console.log(`   🟢 OK (<${SCORE_THRESHOLDS.review}): ${stats.ok}`);
+    console.log("\nSummary:");
+    console.log(`   Block (>=${SCORE_THRESHOLDS.block}): ${counts.block}`);
+    console.log(`   Review (>=${SCORE_THRESHOLDS.review}): ${counts.review}`);
+    console.log(`   OK (<${SCORE_THRESHOLDS.review}): ${counts.ok}`);
 
-    // Top suspicious
     const topSuspicious = sorted
         .filter((u) => u.score >= SCORE_THRESHOLDS.review)
         .slice(0, 10);
 
     if (topSuspicious.length > 0) {
-        console.log("\n🎯 Top suspicious accounts:");
-        topSuspicious.forEach((u) => {
+        console.log("\nTop suspicious accounts:");
+        for (const u of topSuspicious) {
             console.log(
                 `   ${u.email} | ${u.github_username || "-"} | ${formatDate(u.created_at)}`,
             );
-        });
+        }
     }
 }
 
-/**
- * Main entry point
- */
 async function main(): Promise<void> {
     const config = parseArguments();
 
     console.log("🚀 Abuse Detection");
     console.log("=".repeat(50));
+    const sinceLabel = config.sinceTimestamp
+        ? `, since ${new Date(config.sinceTimestamp * 1000).toISOString().split("T")[0]}`
+        : "";
     console.log(
-        `📋 Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}`,
+        `📋 Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}${sinceLabel}`,
     );
 
-    const users = fetchUsers(config.userLimit);
+    const users = fetchUsers(config.userLimit, config.sinceTimestamp);
     if (users.length === 0) {
         console.log("⚠️  No users found");
         return;
@@ -525,6 +507,24 @@ async function main(): Promise<void> {
 
     const scored = await scoreUsers(users, config);
     exportResults(scored);
+
+    if (config.autoApply) {
+        const blockCount = scored.filter((u) => u.action === "block").length;
+        if (blockCount === 0) {
+            console.log("\n✅ No users to block, skipping apply step");
+            return;
+        }
+        console.log(`\n🚫 Auto-applying blocks to ${blockCount} users...`);
+        try {
+            execSync(
+                "npx tsx scripts/apply-abuse-blocks.ts apply-blocks --env production --batch-size 50",
+                { encoding: "utf-8", stdio: "inherit" },
+            );
+        } catch (error) {
+            console.error("❌ Failed to apply blocks:", error);
+            process.exit(1);
+        }
+    }
 }
 
 main().catch(console.error);

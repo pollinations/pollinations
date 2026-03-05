@@ -1,3 +1,4 @@
+// Note: Some common words removed to reduce false positives
 export const words = [
     // A
     "a55",
@@ -290,16 +291,8 @@ export const words = [
 
     // K
     "kawk",
-    // "knob",
-    // "knobead",
-    // "knobed",
-    // "knobend",
     "knobhead",
-    // "knobjocky",
-    // "knobjokey",
     "kock",
-    // "kondum",
-    // "kondums",
     "kum",
     "kummer",
     "kumming",
@@ -381,7 +374,6 @@ export const words = [
     "niggaz",
     "nigger",
     "niggers",
-    // "nob",
     "nob jokey",
     "nobhead",
     "nobjocky",
@@ -401,7 +393,6 @@ export const words = [
     "onlyfans",
 
     // P
-    // "pawn",
     "p0rn",
     "panties",
     "pecker",
@@ -462,7 +453,6 @@ export const words = [
     // S
     "s hit",
     "s.o.b.",
-    // "sadist",
     "schlong",
     "screwing",
     "scroat",
@@ -519,7 +509,6 @@ export const words = [
     "suckjob",
 
     // T
-    // "tit",
     "t1tt1e5",
     "t1tties",
     "teen",

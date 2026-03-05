@@ -13,14 +13,31 @@
  * Usage: node apps/operation/economics/generate-category-dashboard.js
  */
 
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const APPS_FILE = path.resolve(__dirname, "../../APPS.md");
 const OUTPUT_FILE = path.resolve(
     __dirname,
     "provisioning/dashboards/category-economics.json",
 );
+
+const _PLATFORM_META = {
+    web: { emoji: "🌐", label: "Web" },
+    api: { emoji: "🔌", label: "API" },
+    telegram: { emoji: "✈️", label: "Telegram" },
+    discord: { emoji: "🎮", label: "Discord" },
+    android: { emoji: "🤖", label: "Android" },
+    ios: { emoji: "🍎", label: "iOS" },
+    roblox: { emoji: "🟥", label: "Roblox" },
+    "browser-ext": { emoji: "🧩", label: "Browser Ext" },
+    cli: { emoji: "⌨️", label: "CLI" },
+    library: { emoji: "📦", label: "Library" },
+    wordpress: { emoji: "🔷", label: "WordPress" },
+    desktop: { emoji: "🖥️", label: "Desktop" },
+    windows: { emoji: "🪟", label: "Windows" },
+    whatsapp: { emoji: "💬", label: "WhatsApp" },
+};
 
 const CATEGORY_META = {
     image: { emoji: "\u{1f5bc}\ufe0f", label: "Image" },
@@ -71,6 +88,7 @@ function parseAppsMarkdown() {
 
     const COL = {
         category: col("Category"),
+        platform: col("Platform"),
         githubId: col("GitHub_UserID"),
         webUrl: col("Web_URL"),
         byop: col("BYOP"),
@@ -90,6 +108,7 @@ function parseAppsMarkdown() {
         apps.push({
             name: (cols[COL.name] || "").trim(),
             category,
+            platform: (cols[COL.platform] || "").trim(),
             githubId: (cols[COL.githubId] || "").trim(),
             hostname: extractHostname((cols[COL.webUrl] || "").trim()),
             isBYOP: (cols[COL.byop] || "").trim() === "true",
@@ -172,6 +191,21 @@ function buildCategoryExpr(githubIdToCategory, hostnameToCategory) {
     return `transform(user_github_id, [${gh.keys}], [${gh.vals}], '')`;
 }
 
+function buildPlatformMappings(apps) {
+    const userApps = new Map();
+    for (const app of apps) {
+        if (app.githubId && app.platform && !userApps.has(app.githubId)) {
+            userApps.set(app.githubId, app.platform);
+        }
+    }
+    return userApps; // githubId → platform
+}
+
+function buildPlatformExpr(githubIdToPlatform) {
+    const { keys, vals } = buildTransformArrays(githubIdToPlatform);
+    return `transform(user_github_id, [${keys}], [${vals}], '')`;
+}
+
 /**
  * Build Grafana value mappings for category column (raw key → emoji label).
  */
@@ -236,7 +270,256 @@ function statPanel(id, title, description, sql, gridPos, color, unit) {
     };
 }
 
-function buildPanels(categoryExpr, categoryAppCounts) {
+function buildPlatformPanels(platformExpr, startId, startY) {
+    const panels = [];
+    let id = startId;
+
+    panels.push({
+        collapsed: false,
+        gridPos: { h: 1, w: 24, x: 0, y: startY },
+        id: id++,
+        panels: [],
+        title: "Platform Distribution",
+        type: "row",
+    });
+
+    // Pie: Pollen by Platform
+    panels.push({
+        datasource: CH_DATASOURCE,
+        description:
+            "Total pollen consumption split by app platform (web, api, telegram, discord, etc.).",
+        fieldConfig: {
+            defaults: {
+                color: { mode: "palette-classic" },
+                mappings: [],
+                thresholds: {
+                    mode: "absolute",
+                    steps: [{ color: "green", value: null }],
+                },
+                unit: "currencyUSD",
+            },
+            overrides: [],
+        },
+        gridPos: { h: 12, w: 12, x: 0, y: startY + 1 },
+        id: id++,
+        options: {
+            displayLabels: ["name", "percent"],
+            legend: {
+                displayMode: "table",
+                placement: "right",
+                showLegend: true,
+                values: ["value", "percent"],
+            },
+            pieType: "pie",
+            reduceOptions: { calcs: ["lastNotNull"], fields: "", values: true },
+            tooltip: { mode: "single", sort: "none" },
+        },
+        pluginVersion: "12.4.0",
+        targets: [
+            {
+                datasource: CH_DATASOURCE,
+                format: 1,
+                rawSql: [
+                    "SELECT",
+                    `  ${platformExpr} as platform,`,
+                    "  sum(total_price) as pollen",
+                    "FROM generation_event",
+                    `WHERE ${FILTERS}`,
+                    "GROUP BY platform",
+                    "HAVING platform != ''",
+                    "ORDER BY pollen DESC",
+                ].join("\n"),
+                refId: "A",
+            },
+        ],
+        transformations: [
+            {
+                id: "rowsToFields",
+                options: {
+                    mappings: [
+                        { fieldName: "platform", handlerKey: "field.name" },
+                        { fieldName: "pollen", handlerKey: "field.value" },
+                    ],
+                },
+            },
+        ],
+        title: "Pollen by Platform",
+        type: "piechart",
+    });
+
+    // Bar: Tier vs Pack by Platform
+    panels.push({
+        datasource: CH_DATASOURCE,
+        description: "Tier subsidy vs pack revenue breakdown per platform.",
+        fieldConfig: {
+            defaults: {
+                color: { mode: "palette-classic" },
+                custom: {
+                    axisBorderShow: false,
+                    axisCenteredZero: false,
+                    axisColorMode: "text",
+                    axisPlacement: "auto",
+                    fillOpacity: 80,
+                    gradientMode: "none",
+                    hideFrom: { legend: false, tooltip: false, viz: false },
+                    lineWidth: 1,
+                    scaleDistribution: { type: "linear" },
+                    thresholdsStyle: { mode: "off" },
+                },
+                mappings: [],
+                thresholds: {
+                    mode: "absolute",
+                    steps: [{ color: "green", value: null }],
+                },
+                unit: "currencyUSD",
+            },
+            overrides: [
+                {
+                    matcher: { id: "byName", options: "tier_pollen" },
+                    properties: [
+                        { id: "displayName", value: "Tier \u03c1" },
+                        {
+                            id: "color",
+                            value: { fixedColor: "orange", mode: "fixed" },
+                        },
+                    ],
+                },
+                {
+                    matcher: { id: "byName", options: "pack_pollen" },
+                    properties: [
+                        { id: "displayName", value: "Pack \u03c1" },
+                        {
+                            id: "color",
+                            value: { fixedColor: "green", mode: "fixed" },
+                        },
+                    ],
+                },
+            ],
+        },
+        gridPos: { h: 12, w: 12, x: 12, y: startY + 1 },
+        id: id++,
+        options: {
+            barRadius: 0.1,
+            barWidth: 0.8,
+            fullHighlight: false,
+            groupWidth: 0.7,
+            legend: {
+                calcs: ["sum"],
+                displayMode: "table",
+                placement: "bottom",
+                showLegend: true,
+            },
+            orientation: "horizontal",
+            showValue: "auto",
+            stacking: "normal",
+            tooltip: { mode: "multi", sort: "desc" },
+            xTickLabelRotation: 0,
+            xTickLabelSpacing: 0,
+        },
+        pluginVersion: "12.4.0",
+        targets: [
+            {
+                datasource: CH_DATASOURCE,
+                format: 1,
+                rawSql: [
+                    "SELECT",
+                    `  ${platformExpr} as platform,`,
+                    "  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,",
+                    "  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen",
+                    "FROM generation_event",
+                    `WHERE ${FILTERS}`,
+                    "GROUP BY platform",
+                    "HAVING platform != ''",
+                    "ORDER BY tier_pollen + pack_pollen DESC",
+                ].join("\n"),
+                refId: "A",
+            },
+        ],
+        title: "Tier vs Pack by Platform",
+        type: "barchart",
+    });
+
+    // Timeseries: Daily Pollen by Platform
+    panels.push({
+        datasource: CH_DATASOURCE,
+        description:
+            "Daily pollen consumption by platform. Stacked to show total and relative contribution.",
+        fieldConfig: {
+            defaults: {
+                color: { mode: "palette-classic" },
+                custom: {
+                    axisBorderShow: false,
+                    axisCenteredZero: false,
+                    axisColorMode: "text",
+                    axisLabel: "Pollen",
+                    axisPlacement: "left",
+                    barAlignment: 0,
+                    drawStyle: "bars",
+                    fillOpacity: 80,
+                    gradientMode: "none",
+                    hideFrom: { legend: false, tooltip: false, viz: false },
+                    insertNulls: false,
+                    lineInterpolation: "linear",
+                    lineWidth: 1,
+                    pointSize: 5,
+                    scaleDistribution: { type: "linear" },
+                    showPoints: "never",
+                    spanNulls: false,
+                    stacking: { group: "A", mode: "normal" },
+                    thresholdsStyle: { mode: "off" },
+                },
+                mappings: [],
+                thresholds: {
+                    mode: "absolute",
+                    steps: [{ color: "green", value: null }],
+                },
+                unit: "currencyUSD",
+            },
+            overrides: [],
+        },
+        gridPos: { h: 12, w: 24, x: 0, y: startY + 13 },
+        id: id++,
+        options: {
+            legend: {
+                calcs: ["sum", "mean"],
+                displayMode: "table",
+                placement: "bottom",
+                showLegend: true,
+            },
+            tooltip: { mode: "multi", sort: "desc" },
+            xTickLabelRotation: 0,
+            xTickLabelSpacing: 200,
+        },
+        pluginVersion: "12.4.0",
+        targets: [
+            {
+                datasource: CH_DATASOURCE,
+                format: 1,
+                rawSql: [
+                    "SELECT",
+                    "  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,",
+                    `  ${platformExpr} as platform,`,
+                    "  sum(total_price) as pollen",
+                    "FROM generation_event",
+                    `WHERE ${FILTERS}`,
+                    "GROUP BY time, platform",
+                    "HAVING platform != ''",
+                    "ORDER BY time",
+                ].join("\n"),
+                refId: "A",
+            },
+        ],
+        transformations: [
+            { id: "prepareTimeSeries", options: { format: "many" } },
+        ],
+        title: "Daily Pollen by Platform",
+        type: "timeseries",
+    });
+
+    return panels;
+}
+
+function buildPanels(categoryExpr, categoryAppCounts, platformExpr) {
     const panels = [];
     let nextId = 1;
     const valueMappings = buildCategoryValueMappings();
@@ -762,6 +1045,9 @@ function buildPanels(categoryExpr, categoryAppCounts) {
         type: "timeseries",
     });
 
+    // Platform Distribution section (starts after the last category panel at y=44)
+    panels.push(...buildPlatformPanels(platformExpr, nextId, 44));
+
     return panels;
 }
 
@@ -813,7 +1099,14 @@ function main() {
         githubIdToCategory,
         hostnameToCategory,
     );
-    const panels = buildPanels(categoryExpr, categoryAppCounts);
+
+    const githubIdToPlatform = buildPlatformMappings(apps);
+    console.log(
+        `\n  Platform mappings: ${githubIdToPlatform.size} users → platform`,
+    );
+    const platformExpr = buildPlatformExpr(githubIdToPlatform);
+
+    const panels = buildPanels(categoryExpr, categoryAppCounts, platformExpr);
 
     const dashboard = {
         annotations: {
@@ -848,7 +1141,7 @@ function main() {
         version: 1,
     };
 
-    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(dashboard, null, 4) + "\n");
+    fs.writeFileSync(OUTPUT_FILE, `${JSON.stringify(dashboard, null, 4)}\n`);
     console.log(`\nDashboard written to ${OUTPUT_FILE}`);
 }
 

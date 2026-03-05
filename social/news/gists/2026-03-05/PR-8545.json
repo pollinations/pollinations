@@ -1,0 +1,34 @@
+{
+  "pr_number": 8545,
+  "title": "Add junk journal Ai to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8545",
+  "merged_at": "2026-03-05T04:42:08Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Scrapbooking, minus the glue",
+    "blurb": "Junk Journal AI just landed in the community showcase. Generate printable collage layouts and mixed-media elements without getting your fingers sticky.",
+    "summary": "Added Junk Journal AI to the community app showcase, a tool for generating printable, collage-style layouts for scrapbooking.",
+    "impact": "Creators can now easily generate custom mixed-media elements and journal pages for their physical or digital scrapbooking projects.",
+    "keywords": [
+      "community",
+      "app",
+      "scrapbooking",
+      "image-generation",
+      "art"
+    ],
+    "visual_concept": "The PR is about a junk journaling and scrapbooking app. The visual should feature Polly the bee doing arts and crafts, surrounded by paper scraps, photos, and a scrapbook, representing the collage and mixed-media aspect.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, sitting at a wooden desk making a scrapbook collage. Scattered around are pixelated vintage photos, paper scraps, and a glue stick. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-05T04:43:05.259317+00:00"
+}

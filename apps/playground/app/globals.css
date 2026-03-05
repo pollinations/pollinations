@@ -45,98 +45,57 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Pollinations dark-first theme (from theme.js) */
+/* Pollinations organic dark theme */
 :root {
-  --radius: 1rem;
+  --radius: 0.75rem;
 
-  /* Dark theme by default — matches theme.js deep organic palette */
   --background: #0c0f0a;
-  --foreground: #f5f5f4;
+  --foreground: rgba(245, 245, 244, 0.85);
 
-  --card: rgba(16, 24, 12, 0.8);
-  --card-foreground: #f5f5f4;
+  --card: rgba(255, 255, 255, 0.03);
+  --card-foreground: rgba(245, 245, 244, 0.85);
 
-  --popover: rgba(16, 24, 12, 0.95);
-  --popover-foreground: #f5f5f4;
+  --popover: rgba(16, 24, 12, 0.9);
+  --popover-foreground: rgba(245, 245, 244, 0.85);
 
-  /* Lime as primary */
+  /* Lime primary — slightly muted */
   --primary: #a3e635;
   --primary-foreground: #0c0f0a;
 
-  /* Glass secondary */
-  --secondary: rgba(255, 255, 255, 0.05);
-  --secondary-foreground: #f5f5f4;
+  /* Glass surfaces */
+  --secondary: rgba(255, 255, 255, 0.04);
+  --secondary-foreground: rgba(245, 245, 244, 0.7);
 
-  --muted: rgba(255, 255, 255, 0.05);
-  --muted-foreground: rgba(245, 245, 244, 0.5);
+  --muted: rgba(255, 255, 255, 0.04);
+  --muted-foreground: rgba(245, 245, 244, 0.4);
 
-  /* Sage as accent */
-  --accent: rgba(134, 239, 172, 0.15);
-  --accent-foreground: #86efac;
+  /* Sage accent */
+  --accent: rgba(163, 230, 53, 0.08);
+  --accent-foreground: rgba(190, 242, 100, 0.9);
 
   --destructive: #f87171;
-  --destructive-foreground: #f5f5f4;
+  --destructive-foreground: rgba(245, 245, 244, 0.9);
 
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.15);
-  --ring: rgba(163, 230, 53, 0.6);
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: rgba(163, 230, 53, 0.3);
 
-  /* Charts — lime, sage, honey, lavender, info */
+  /* Charts */
   --chart-1: #a3e635;
   --chart-2: #86efac;
   --chart-3: #fbbf24;
   --chart-4: #c4b5fd;
   --chart-5: #818cf8;
 
-  /* Sidebar */
-  --sidebar: #0c0f0a;
-  --sidebar-foreground: #f5f5f4;
+  /* Sidebar — slightly lifted from background */
+  --sidebar: rgba(255, 255, 255, 0.02);
+  --sidebar-foreground: rgba(245, 245, 244, 0.7);
   --sidebar-primary: #a3e635;
   --sidebar-primary-foreground: #0c0f0a;
-  --sidebar-accent: rgba(163, 230, 53, 0.15);
-  --sidebar-accent-foreground: #bef264;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: rgba(163, 230, 53, 0.6);
-}
-
-/* Light mode override (optional — app is dark-first) */
-.light {
-  --background: #f5f5f4;
-  --foreground: #0c0f0a;
-
-  --card: #ffffff;
-  --card-foreground: #0c0f0a;
-
-  --popover: #ffffff;
-  --popover-foreground: #0c0f0a;
-
-  --primary: #65a30d;
-  --primary-foreground: #ffffff;
-
-  --secondary: #f0f0ef;
-  --secondary-foreground: #0c0f0a;
-
-  --muted: #f0f0ef;
-  --muted-foreground: rgba(12, 15, 10, 0.5);
-
-  --accent: #ecfccb;
-  --accent-foreground: #365314;
-
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-
-  --border: rgba(0, 0, 0, 0.1);
-  --input: rgba(0, 0, 0, 0.1);
-  --ring: #65a30d;
-
-  --sidebar: #f5f5f4;
-  --sidebar-foreground: #0c0f0a;
-  --sidebar-primary: #65a30d;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ecfccb;
-  --sidebar-accent-foreground: #365314;
-  --sidebar-border: rgba(0, 0, 0, 0.1);
-  --sidebar-ring: #65a30d;
+  --sidebar-accent: rgba(163, 230, 53, 0.1);
+  --sidebar-accent-foreground: rgba(190, 242, 100, 0.9);
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: rgba(163, 230, 53, 0.3);
 }
 
 @layer base {
@@ -149,7 +108,93 @@
   }
 }
 
-/* Hide scrollbar for conversation */
+/* ─── Sidebar cursor & hover ────────────────────────────────────── */
+[data-sidebar="menu-button"] {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+[data-sidebar="menu-button"]:hover {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+}
+[data-sidebar="menu-button"][data-active="true"] {
+  background: rgba(163, 230, 53, 0.1);
+  backdrop-filter: blur(12px);
+}
+
+/* ─── Glass cards ────────────────────────────────────────────────── */
+[data-slot="card"] {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  border-color: rgba(255, 255, 255, 0.06);
+  transition: all 0.3s ease;
+}
+[data-slot="card"]:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* ─── Form inputs — dark glass ───────────────────────────────────── */
+textarea,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+select,
+[data-slot="select-trigger"],
+[data-slot="sidebar-input"] {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(245, 245, 244, 0.85) !important;
+  transition: all 0.2s ease;
+}
+textarea:focus,
+input:focus,
+select:focus,
+[data-slot="select-trigger"]:focus {
+  border-color: rgba(163, 230, 53, 0.3) !important;
+  box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.08);
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+textarea::placeholder,
+input::placeholder {
+  color: rgba(245, 245, 244, 0.25);
+}
+
+/* ─── Primary button glow ────────────────────────────────────────── */
+[data-slot="button"][data-variant="default"] {
+  box-shadow: 0 0 16px rgba(163, 230, 53, 0.15);
+  transition: all 0.2s ease;
+}
+[data-slot="button"][data-variant="default"]:hover {
+  box-shadow: 0 0 24px rgba(163, 230, 53, 0.25);
+  transform: translateY(-1px);
+}
+
+/* ─── Ghost / outline buttons ────────────────────────────────────── */
+[data-slot="button"][data-variant="ghost"],
+[data-slot="button"][data-variant="outline"] {
+  transition: all 0.2s ease;
+}
+[data-slot="button"][data-variant="ghost"]:hover,
+[data-slot="button"][data-variant="outline"]:hover {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+/* ─── Content area — subtle inner glow ───────────────────────────── */
+[data-slot="sidebar-inset"] > div > div {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ─── Header border soften ───────────────────────────────────────── */
+header {
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────── */
 @layer utilities {
   .scrollbar-hide,
   .scrollbar-hide *,
@@ -167,18 +212,6 @@
     height: 0 !important;
   }
 
-  /* Glassmorphism card utility */
-  .glass-card {
-    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  .glass-card:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
-  }
-
-  /* Gradient text utility */
   .text-gradient {
     background: linear-gradient(135deg, #a3e635 0%, #86efac 50%, #fbbf24 100%);
     -webkit-background-clip: text;

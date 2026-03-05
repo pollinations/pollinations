@@ -36,6 +36,7 @@ export type TinybirdEvent = {
 
     // Network
     ipSubnet?: string;
+    ipHash?: string;
 
     // Referrer
     referrerUrl?: string;

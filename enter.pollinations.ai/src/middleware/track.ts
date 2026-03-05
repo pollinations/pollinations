@@ -111,7 +111,8 @@ export const track = (eventType: EventType) =>
         const modelInfo = c.var.model;
         const requestTracking = await trackRequest(modelInfo, c.req);
 
-        const ipSubnet = truncateIpToSubnet(c.req.header("cf-connecting-ip"));
+        const clientIp = c.req.header("cf-connecting-ip");
+        const ipSubnet = truncateIpToSubnet(clientIp);
 
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
@@ -163,6 +164,8 @@ export const track = (eventType: EventType) =>
                     balances: c.var.balance.balanceCheckResult?.balances || {},
                 } satisfies BalanceData;
 
+                const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
+
                 const finalEvent = createTrackingEvent({
                     id: generateRandomId(),
                     requestId: c.get("requestId"),
@@ -172,6 +175,7 @@ export const track = (eventType: EventType) =>
                     environment: c.env.ENVIRONMENT,
                     eventType,
                     ipSubnet,
+                    ipHash,
                     userTracking,
                     balanceTracking,
                     requestTracking,
@@ -397,6 +401,7 @@ type TrackingEventInput = {
     environment: string;
     eventType: EventType;
     ipSubnet?: string;
+    ipHash?: string;
     userTracking: UserData;
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
@@ -413,6 +418,7 @@ function createTrackingEvent({
     environment,
     eventType,
     ipSubnet,
+    ipHash,
     userTracking,
     balanceTracking,
     requestTracking,
@@ -430,6 +436,7 @@ function createTrackingEvent({
         environment,
         eventType,
         ipSubnet,
+        ipHash,
 
         ...userTracking,
         ...requestTracking.referrerData,
@@ -703,6 +710,16 @@ const ContentFilterResultHeadersSchema = z
         moderationCompletionProtectedMaterialCodeDetected:
             headers["x-moderation-completion-protected-material-code-detected"],
     }));
+
+/** Salted SHA-256 hash of the full IP — irreversible without the salt. */
+async function hashIp(ip: string | undefined, salt: string): Promise<string | undefined> {
+    if (!ip) return undefined;
+    const data = new TextEncoder().encode(`${salt}:${ip}`);
+    const hash = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(hash))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+}
 
 /** Truncate IP to /24 subnet (first 3 octets for IPv4, first 3 groups for IPv6). */
 function truncateIpToSubnet(ip: string | undefined): string | undefined {

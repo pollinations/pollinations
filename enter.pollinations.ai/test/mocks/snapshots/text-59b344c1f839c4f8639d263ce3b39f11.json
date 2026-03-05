@@ -1,0 +1,126 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Dedup test 1772709917945"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2234",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:25:26 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-usage-completion-reasoning-tokens": "384",
+      "x-usage-completion-text-tokens": "287",
+      "x-usage-prompt-text-tokens": "15"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Got it — I received \"Dedup test 1772709917945\". Is this just a receipt check, or do you want help deduplicating some data? If you want dedup guidance, tell me the data type (text file, CSV, database table, JSON, list in code) and whether you must preserve order. Quick reference options:\n\n- Unix shell (preserve order): awk '!seen[$0]++' input.txt > deduped.txt\n- Unix shell (sorted): sort -u input.txt > deduped.txt\n- Python (preserve order for a list):\n  seen = set(); out = []\n  for x in data:\n      if x not in seen:\n          seen.add(x); out.append(x)\n- Pandas (CSV/DataFrame):\n  df = pd.read_csv('in.csv')\n  df = df.drop_duplicates()  # or drop_duplicates(subset=['colA'], keep='first')\n- SQL (Postgres example by id):\n  WITH ranked AS (\n    SELECT id, ROW_NUMBER() OVER (PARTITION BY key_col ORDER BY id) rn\n    FROM my_table\n  )\n  DELETE FROM my_table\n  USING ranked\n  WHERE my_table.id = ranked.id AND ranked.rn > 1\n\nTell me which one applies or paste a sample and I’ll give a specific solution.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772709918,
+        "id": "pllns_1bab52921b4641bd3ea8e2851fc4c0fa",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 671,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 384,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 15,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 686
+        }
+      }
+    }
+  }
+}

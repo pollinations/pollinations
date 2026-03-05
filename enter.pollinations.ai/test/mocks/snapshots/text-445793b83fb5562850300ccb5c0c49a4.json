@@ -9,39 +9,24 @@
     "params": {}
   },
   "response": {
-    "status": 404,
-    "statusText": "Not Found",
+    "status": 200,
+    "statusText": "OK",
     "headers": {
       "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-length": "313",
-      "content-type": "application/json; charset=utf-8",
-      "date": "Fri, 27 Feb 2026 18:41:31 GMT",
-      "etag": "W/\"139-s2I07bZai5rBEzZ16ho0hJLYMSo\"",
+      "content-length": "3",
+      "content-type": "text/plain; charset=UTF-8",
+      "date": "Thu, 05 Mar 2026 11:42:44 GMT",
       "keep-alive": "timeout=5",
-      "x-powered-by": "Express"
+      "x-model-used": "gemini-3-pro-preview",
+      "x-usage-completion-reasoning-tokens": "88",
+      "x-usage-completion-text-tokens": "1",
+      "x-usage-prompt-text-tokens": "14"
     },
     "body": {
-      "type": "json",
-      "data": {
-        "error": "Not Found",
-        "message": "Model not found: gemini-3-pro-preview",
-        "requestId": "sev2g",
-        "requestParameters": {
-          "messages": [
-            {
-              "role": "user",
-              "content": "Is Berlin the capital of Germany? Reply yes or no."
-            }
-          ],
-          "jsonMode": false,
-          "seed": 42,
-          "model": "gemini-3-pro-preview",
-          "referrer": null,
-          "isPrivate": false,
-          "voice": "alloy"
-        }
-      }
+      "type": "text",
+      "data": "Yes"
     }
   }
 }

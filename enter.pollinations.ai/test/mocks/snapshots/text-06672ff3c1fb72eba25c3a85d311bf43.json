@@ -1,0 +1,126 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sequential test 1772711540903"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2140",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:52:44 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-usage-completion-reasoning-tokens": "2496",
+      "x-usage-completion-text-tokens": "250",
+      "x-usage-prompt-text-tokens": "14"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Do you mean something specific by \"sequential test\" here? A few possibilities — tell me which you want (or describe what you want):\n\n- Primality/factorization test on the integer 1772711540903 (I can run probable-prime tests and attempt factoring).  \n- A randomness/serial (runs) test for a sequence generated from the number (e.g., if this is a seed or a bit string).  \n- A sequential probability ratio test (SPRT) using 1772711540903 as a label or threshold.  \n- Look up the number in OEIS or check whether it appears in some known sequence.\n\nQuick basic facts about the integer 1772711540903 while you decide:\n- Odd (not divisible by 2).  \n- Digit sum = 47 → not divisible by 3.  \n- Not divisible by 5 (last digit 3).  \n- 11-test difference = 17 → not divisible by 11.  \n- Also not divisible by 7, 13, 17, or 19 (checked by modular reduction).\n\nWhich of the above did you mean, or what exact test should I run?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772711541,
+        "id": "pllns_25cde2c33c48239dff8624a34ab925d7",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 2746,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 2496,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 14,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 2760
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Different message 2 - 1772709787057"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2095",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:23:14 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-usage-completion-reasoning-tokens": "448",
+      "x-usage-completion-text-tokens": "225",
+      "x-usage-prompt-text-tokens": "17"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "I’m not sure what you mean by “Different message 2 - 1772709787057.” Can you clarify?\n\nA few ways I can help — tell me which you want:\n- Paste the original message you want rewritten and I’ll produce alternate versions.\n- Tell me the purpose, audience, desired tone (formal, casual, urgent, friendly), and length, and I’ll draft options.\n- If 1772709787057 is an ID or context, tell me how it should be used.\n\nIf it helps, here are three quick example rewrites of a generic notification so you can confirm the style you want:\n\n1) Short/casual: “Heads up — your appointment is confirmed for Tue at 3 PM. See you then!”\n2) Friendly/formal: “Your appointment has been confirmed for Tuesday at 3:00 PM. Please arrive 10 minutes early.”\n3) Urgent/concise: “Appointment confirmed: Tue, 3:00 PM. Reply if you need to reschedule.”\n\nWhich direction should I take?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772709788,
+        "id": "pllns_ed57dffdba706684c483977b894e487f",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 673,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 448,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 17,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 690
+        }
+      }
+    }
+  }
+}

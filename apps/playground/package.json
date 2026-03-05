@@ -1,0 +1,77 @@
+{
+  "name": "ai-sdk-pollinations",
+  "version": "0.0.1",
+  "description": "Pollinations AI provider for Vercel AI SDK - supporting text generation, image generation, and tool calling",
+  "keywords": [
+    "ai",
+    "pollinations",
+    "vercel",
+    "ai-sdk",
+    "openai",
+    "image-generation",
+    "text-generation",
+    "tool-calling",
+    "llm",
+    "generative-ai",
+    "gpt",
+    "flux"
+  ],
+  "author": "Artsiom Barouski",
+  "license": "MIT",
+  "homepage": "https://github.com/artsiombarouski/ai-sdk-pollinations#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/artsiombarouski/ai-sdk-pollinations.git"
+  },
+  "bugs": {
+    "url": "https://github.com/artsiombarouski/ai-sdk-pollinations/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "workspaces": [
+    "examples"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check-types": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "ai": "^6.0.27",
+    "@ai-sdk/provider": "^3.0.2",
+    "@ai-sdk/provider-utils": "^4.0.4"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.0.0",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.0.0",
+    "zod": "^4.1.8",
+    "prettier": "^3.7.4",
+    "prettier-plugin-organize-imports": "4.1.0",
+    "tsup": "^8.5.1",
+    "dotenv": "^17.2.3"
+  }
+}

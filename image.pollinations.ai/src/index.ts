@@ -19,6 +19,7 @@ import { ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.js";
 import { convertToJpeg, setImagesBinding } from "./utils/imageTransform.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
+import { writeExifMetadata } from "./writeExifMetadata.js";
 
 // Singleton no-op progress tracker (Workers-compatible)
 const progress = new ProgressManager();
@@ -323,8 +324,11 @@ app.get("/prompt/*", async (c) => {
             try {
                 finalBuffer = await convertToJpeg(c.env.IMAGES, buffer);
                 timingInfo.push({ step: "JPEG conversion", timestamp: Date.now() });
+                // Write EXIF metadata (model name, parameters) into JPEG
+                finalBuffer = await writeExifMetadata(finalBuffer, safeParams, maturity);
+                timingInfo.push({ step: "EXIF metadata", timestamp: Date.now() });
             } catch (err) {
-                logError("Cloudflare Images JPEG conversion failed, using original buffer:", err);
+                logError("JPEG conversion/EXIF failed, using original buffer:", err);
                 finalBuffer = buffer;
             }
         }

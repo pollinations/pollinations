@@ -33,9 +33,7 @@ from common import (
     filter_daily_gists,
     parse_json_response,
     github_api_request,
-    create_branch_from_main,
     commit_files_to_branch,
-    create_or_update_pr,
     GITHUB_API_BASE,
     GISTS_BRANCH,
     IMAGE_SIZE,
@@ -224,35 +222,6 @@ def commit_daily_to_news(
     commit_files_to_branch(files_to_commit, GISTS_BRANCH, github_token, owner, repo, label=f"for {date_str}")
     print(f"  Committed {len(files_to_commit)} files to {GISTS_BRANCH} branch")
     return True
-
-
-# ── Step 5: README-only PR to main ────────────────────────────────
-
-def create_readme_pr(
-    date_str: str,
-    readme_content: str,
-    github_token: str,
-    owner: str,
-    repo: str,
-) -> Optional[int]:
-    """Create a small PR to main containing only the README update."""
-    branch = f"readme-news-{date_str}"
-
-    if create_branch_from_main(branch, github_token, owner, repo) is None:
-        return None
-
-    commit_files_to_branch(
-        [("README.md", readme_content)],
-        branch, github_token, owner, repo,
-        label=f"for {date_str}",
-    )
-
-    pr_body = f"Update README Latest News section for {date_str}.\n\nGenerated automatically by GitHub Actions."
-
-    return create_or_update_pr(
-        f"Update README news — {date_str}", pr_body, branch,
-        github_token, owner, repo,
-    )
 
 
 # ── Main ─────────────────────────────────────────────────────────────

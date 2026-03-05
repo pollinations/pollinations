@@ -5,38 +5,40 @@
     "body": {
       "type": "json",
       "data": {
-        "model": "nomnom",
+        "model": "step-3.5-flash",
         "messages": [
           {
             "role": "user",
             "content": "Is Berlin the capital of Germany? Reply yes or no."
           }
         ],
+        "stream": true,
         "seed": 42
       }
     },
     "params": {}
   },
   "response": {
-    "status": 401,
-    "statusText": "Unauthorized",
+    "status": 404,
+    "statusText": "Not Found",
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "367",
+      "content-length": "315",
       "content-type": "application/json",
-      "date": "Thu, 05 Mar 2026 11:42:19 GMT",
+      "date": "Thu, 05 Mar 2026 11:42:39 GMT",
       "keep-alive": "timeout=5"
     },
     "body": {
       "type": "json",
       "data": {
-        "error": "Unauthorized",
-        "message": "401 Unauthorized",
-        "requestId": "i7b9n3",
+        "error": "Not Found",
+        "message": "Model not found: step-3.5-flash",
+        "requestId": "4t5rwk",
         "requestParameters": {
           "seed": 42,
-          "model": "nomnom",
+          "stream": true,
+          "model": "step-3.5-flash",
           "voice": "alloy",
           "jsonMode": false,
           "messages": [
@@ -47,9 +49,6 @@
           ],
           "referrer": null,
           "isPrivate": true
-        },
-        "details": {
-          "detail": "Invalid API key. Get your key at https://enter.pollinations.ai"
         }
       }
     }

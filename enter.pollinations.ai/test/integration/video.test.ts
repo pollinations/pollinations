@@ -24,7 +24,7 @@ describe("Video Generation Integration Tests", () => {
     test(
         "seedance T2V should return video/mp4",
         { timeout: 120000 }, // Video gen takes ~30-60 seconds
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             const response = await SELF.fetch(
@@ -32,7 +32,7 @@ describe("Video Generation Integration Tests", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -58,7 +58,7 @@ describe("Video Generation Integration Tests", () => {
     test(
         "seedance I2V should return video/mp4",
         { timeout: 120000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             // Use a simple white image - results in smaller compressed video
@@ -70,7 +70,7 @@ describe("Video Generation Integration Tests", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -99,7 +99,7 @@ describe("Video Generation Integration Tests", () => {
     test(
         "seedance I2V with long prompt should not fail",
         { timeout: 120000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             // Long prompt similar to the one that was reported as failing
@@ -120,7 +120,7 @@ describe("Video Generation Integration Tests", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -146,7 +146,7 @@ describe("Video Generation Integration Tests", () => {
     test(
         "video params should be accepted",
         { timeout: 120000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             const response = await SELF.fetch(
@@ -154,7 +154,7 @@ describe("Video Generation Integration Tests", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -197,7 +197,7 @@ describe("Wan Video Generation", () => {
     test(
         "wan I2V should return video/mp4",
         { timeout: 180000 }, // Wan takes 1-2 minutes
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             const imageUrl =
@@ -208,7 +208,7 @@ describe("Wan Video Generation", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -234,7 +234,7 @@ describe("Wan Video Generation", () => {
     test(
         "wan I2V without audio should return video/mp4",
         { timeout: 180000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             const imageUrl =
@@ -245,7 +245,7 @@ describe("Wan Video Generation", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -272,7 +272,7 @@ describe("Wan Video Generation", () => {
     test(
         "wan T2V (no image) should return video/mp4",
         { timeout: 180000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             const response = await SELF.fetch(
@@ -280,7 +280,7 @@ describe("Wan Video Generation", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );

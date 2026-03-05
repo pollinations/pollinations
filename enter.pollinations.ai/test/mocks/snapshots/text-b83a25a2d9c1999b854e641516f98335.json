@@ -5,7 +5,7 @@
     "body": {
       "type": "json",
       "data": {
-        "model": "nomnom",
+        "model": "step-3.5-flash",
         "messages": [
           {
             "role": "user",
@@ -18,25 +18,25 @@
     "params": {}
   },
   "response": {
-    "status": 401,
-    "statusText": "Unauthorized",
+    "status": 404,
+    "statusText": "Not Found",
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "367",
+      "content-length": "301",
       "content-type": "application/json",
-      "date": "Thu, 05 Mar 2026 11:42:19 GMT",
+      "date": "Thu, 05 Mar 2026 11:42:31 GMT",
       "keep-alive": "timeout=5"
     },
     "body": {
       "type": "json",
       "data": {
-        "error": "Unauthorized",
-        "message": "401 Unauthorized",
-        "requestId": "i7b9n3",
+        "error": "Not Found",
+        "message": "Model not found: step-3.5-flash",
+        "requestId": "s4iigb",
         "requestParameters": {
           "seed": 42,
-          "model": "nomnom",
+          "model": "step-3.5-flash",
           "voice": "alloy",
           "jsonMode": false,
           "messages": [
@@ -47,9 +47,6 @@
           ],
           "referrer": null,
           "isPrivate": true
-        },
-        "details": {
-          "detail": "Invalid API key. Get your key at https://enter.pollinations.ai"
         }
       }
     }

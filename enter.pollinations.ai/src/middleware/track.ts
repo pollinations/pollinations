@@ -111,6 +111,8 @@ export const track = (eventType: EventType) =>
         const modelInfo = c.var.model;
         const requestTracking = await trackRequest(modelInfo, c.req);
 
+        const ipSubnet = truncateIpToSubnet(c.req.header("cf-connecting-ip"));
+
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
@@ -169,6 +171,7 @@ export const track = (eventType: EventType) =>
                     endTime,
                     environment: c.env.ENVIRONMENT,
                     eventType,
+                    ipSubnet,
                     userTracking,
                     balanceTracking,
                     requestTracking,
@@ -393,6 +396,7 @@ type TrackingEventInput = {
     endTime: Date;
     environment: string;
     eventType: EventType;
+    ipSubnet?: string;
     userTracking: UserData;
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
@@ -408,6 +412,7 @@ function createTrackingEvent({
     endTime,
     environment,
     eventType,
+    ipSubnet,
     userTracking,
     balanceTracking,
     requestTracking,
@@ -424,6 +429,7 @@ function createTrackingEvent({
         responseStatus: responseTracking.responseStatus,
         environment,
         eventType,
+        ipSubnet,
 
         ...userTracking,
         ...requestTracking.referrerData,
@@ -697,6 +703,32 @@ const ContentFilterResultHeadersSchema = z
         moderationCompletionProtectedMaterialCodeDetected:
             headers["x-moderation-completion-protected-material-code-detected"],
     }));
+
+/** Truncate IP to /24 subnet (first 3 octets for IPv4, first 3 groups for IPv6). */
+function truncateIpToSubnet(ip: string | undefined): string | undefined {
+    if (!ip) return undefined;
+    if (ip.includes(".")) {
+        const parts = ip.split(".");
+        if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
+    }
+    if (ip.includes(":")) {
+        const full = expandIPv6(ip);
+        const groups = full.split(":");
+        return `${groups[0]}:${groups[1]}:${groups[2]}::`;
+    }
+    return undefined;
+}
+
+function expandIPv6(ip: string): string {
+    const halves = ip.split("::");
+    const left = halves[0] ? halves[0].split(":") : [];
+    const right = halves[1] ? halves[1].split(":") : [];
+    const missing = 8 - left.length - right.length;
+    const middle = Array(missing).fill("0000");
+    return [...left, ...middle, ...right]
+        .map((g) => g.padStart(4, "0"))
+        .join(":");
+}
 
 type ErrorData = {
     errorResponseCode?: string;

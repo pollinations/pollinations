@@ -184,19 +184,6 @@ export type WebPreviewBodyProps = ComponentProps<'iframe'> & {
   loading?: ReactNode;
 };
 
-const sanitizeUrl = (value: string | undefined): string | undefined => {
-  if (!value) return undefined;
-  try {
-    const parsed = new URL(value);
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-      return parsed.href;
-    }
-    return undefined;
-  } catch {
-    return undefined;
-  }
-};
-
 export const WebPreviewBody = ({
   className,
   loading,

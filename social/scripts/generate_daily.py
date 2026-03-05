@@ -240,7 +240,7 @@ def main():
     print(f"  Target date: {date_str}")
 
     # ── Read gists ───────────────────────────────────────────────────
-    print(f"\n[1/6] Reading gists for {date_str}...")
+    print(f"\n[1/5] Reading gists for {date_str}...")
 
     # Try local repo first, fall back to GitHub API
     gists = read_gists_for_date(date_str)
@@ -284,7 +284,7 @@ def main():
         return
 
     # ── Generate summary ─────────────────────────────────────────────
-    print(f"\n[2/6] Generating daily summary...")
+    print(f"\n[2/5] Generating daily summary...")
     summary = generate_summary(daily_gists, date_str, pollinations_token)
     if not summary:
         print("  Summary generation failed!")
@@ -292,7 +292,7 @@ def main():
     print(f"  {len(summary.get('arcs', []))} arcs: {summary.get('one_liner', '')}")
 
     # ── Generate platform posts ──────────────────────────────────────
-    print(f"\n[3/6] Generating platform posts...")
+    print(f"\n[3/5] Generating platform posts...")
 
     print("  Twitter...")
     twitter_post = generate_twitter_post(summary, pollinations_token)

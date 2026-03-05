@@ -39,16 +39,7 @@ jobs:
           node-version: '20'
 
       - name: Update Latest News section
-        working-directory: social/scripts
-        run: |
-          python -c "
-          from update_readme import update_readme_local
-          import os
-          repo_root = os.path.abspath('../..')
-          highlights = os.path.join(repo_root, 'social/news/highlights.md')
-          readme = os.path.join(repo_root, 'README.md')
-          update_readme_local(highlights, readme)
-          "
+        run: python social/scripts/update_readme.py
 
       - name: Update Recent Apps section
         run: node .github/scripts/app-update-readme.js

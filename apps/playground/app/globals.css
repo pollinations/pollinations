@@ -45,44 +45,44 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Pollinations nature theme — deep forest greens */
+/* Pollinations nature theme — vibrant forest greens */
 :root {
   --radius: 0.75rem;
 
-  /* Deep forest green background — not black */
-  --background: #0a1a0e;
-  --foreground: rgba(210, 230, 210, 0.9);
+  /* Rich forest green background */
+  --background: #0f2414;
+  --foreground: rgba(220, 240, 220, 0.95);
 
   /* Card — green-tinted glass */
-  --card: rgba(20, 60, 30, 0.25);
-  --card-foreground: rgba(210, 230, 210, 0.9);
+  --card: rgba(25, 70, 35, 0.35);
+  --card-foreground: rgba(220, 240, 220, 0.95);
 
   /* Popover — deep leaf */
-  --popover: rgba(12, 35, 18, 0.95);
-  --popover-foreground: rgba(210, 230, 210, 0.9);
+  --popover: rgba(16, 45, 22, 0.97);
+  --popover-foreground: rgba(220, 240, 220, 0.95);
 
   /* Lime primary */
   --primary: #a3e635;
-  --primary-foreground: #0a1a0e;
+  --primary-foreground: #0f2414;
 
   /* Green glass surfaces */
-  --secondary: rgba(60, 120, 60, 0.12);
-  --secondary-foreground: rgba(190, 220, 190, 0.8);
+  --secondary: rgba(70, 140, 70, 0.16);
+  --secondary-foreground: rgba(200, 230, 200, 0.9);
 
-  --muted: rgba(60, 120, 60, 0.1);
-  --muted-foreground: rgba(180, 210, 180, 0.5);
+  --muted: rgba(70, 140, 70, 0.14);
+  --muted-foreground: rgba(190, 220, 190, 0.65);
 
   /* Sage accent */
-  --accent: rgba(100, 180, 80, 0.12);
-  --accent-foreground: rgba(160, 230, 100, 0.9);
+  --accent: rgba(110, 190, 90, 0.18);
+  --accent-foreground: rgba(170, 240, 110, 0.95);
 
   --destructive: #f87171;
-  --destructive-foreground: rgba(210, 230, 210, 0.9);
+  --destructive-foreground: rgba(220, 240, 220, 0.95);
 
-  /* Softer lime-green borders */
-  --border: rgba(120, 200, 70, 0.14);
-  --input: rgba(120, 200, 70, 0.14);
-  --ring: rgba(163, 230, 53, 0.3);
+  /* Brighter lime-green borders */
+  --border: rgba(130, 210, 80, 0.2);
+  --input: rgba(130, 210, 80, 0.2);
+  --ring: rgba(163, 230, 53, 0.4);
 
   /* Charts */
   --chart-1: #a3e635;
@@ -91,15 +91,15 @@
   --chart-4: #c4b5fd;
   --chart-5: #818cf8;
 
-  /* Sidebar — slightly lighter forest */
-  --sidebar: rgba(20, 50, 25, 0.4);
-  --sidebar-foreground: rgba(180, 210, 180, 0.6);
+  /* Sidebar — brighter forest */
+  --sidebar: rgba(25, 60, 30, 0.5);
+  --sidebar-foreground: rgba(190, 220, 190, 0.75);
   --sidebar-primary: #a3e635;
-  --sidebar-primary-foreground: #0a1a0e;
-  --sidebar-accent: rgba(100, 180, 80, 0.15);
-  --sidebar-accent-foreground: rgba(160, 230, 100, 0.9);
-  --sidebar-border: rgba(120, 200, 70, 0.1);
-  --sidebar-ring: rgba(163, 230, 53, 0.3);
+  --sidebar-primary-foreground: #0f2414;
+  --sidebar-accent: rgba(110, 190, 90, 0.2);
+  --sidebar-accent-foreground: rgba(170, 240, 110, 0.95);
+  --sidebar-border: rgba(130, 210, 80, 0.15);
+  --sidebar-ring: rgba(163, 230, 53, 0.4);
 }
 
 @layer base {
@@ -123,25 +123,25 @@
   transition: all 0.2s ease;
 }
 [data-sidebar="menu-button"]:hover {
-  background: rgba(130, 210, 60, 0.15);
+  background: rgba(130, 210, 60, 0.2);
   backdrop-filter: blur(12px);
 }
 [data-sidebar="menu-button"][data-active="true"] {
-  background: rgba(100, 180, 80, 0.18);
+  background: rgba(110, 190, 90, 0.22);
   backdrop-filter: blur(12px);
 }
 
 /* ─── Glass cards — green glassmorphism ─────────────────────────── */
 [data-slot="card"] {
-  background: rgba(20, 60, 30, 0.3);
+  background: rgba(25, 70, 35, 0.35);
   backdrop-filter: blur(16px);
-  border-color: rgba(120, 200, 70, 0.12);
+  border-color: rgba(130, 210, 80, 0.18);
   transition: all 0.3s ease;
 }
 [data-slot="card"]:hover {
-  background: rgba(25, 70, 35, 0.35);
-  border-color: rgba(130, 210, 70, 0.22);
-  box-shadow: 0 8px 32px rgba(0, 20, 0, 0.3);
+  background: rgba(30, 80, 40, 0.4);
+  border-color: rgba(140, 220, 80, 0.28);
+  box-shadow: 0 8px 32px rgba(0, 30, 0, 0.3);
 }
 
 /* ─── Form inputs — green glass ─────────────────────────────────── */
@@ -153,40 +153,40 @@ input[type="password"],
 select,
 [data-slot="select-trigger"],
 [data-slot="sidebar-input"] {
-  background: rgba(30, 70, 35, 0.3) !important;
-  border-color: rgba(120, 200, 70, 0.16) !important;
-  color: rgba(210, 230, 210, 0.9) !important;
+  background: rgba(35, 80, 40, 0.35) !important;
+  border-color: rgba(130, 210, 80, 0.22) !important;
+  color: rgba(220, 240, 220, 0.95) !important;
   transition: all 0.2s ease;
 }
 textarea:focus,
 input:focus,
 select:focus,
 [data-slot="select-trigger"]:focus {
-  border-color: rgba(150, 220, 60, 0.35) !important;
-  box-shadow: 0 0 0 2px rgba(150, 220, 60, 0.08), 0 0 20px rgba(100, 180, 80, 0.06);
-  background: rgba(35, 80, 40, 0.35) !important;
+  border-color: rgba(160, 230, 70, 0.4) !important;
+  box-shadow: 0 0 0 2px rgba(160, 230, 70, 0.12), 0 0 20px rgba(110, 190, 90, 0.1);
+  background: rgba(40, 90, 45, 0.4) !important;
 }
 textarea::placeholder,
 input::placeholder {
-  color: rgba(170, 200, 170, 0.35);
+  color: rgba(180, 210, 180, 0.45);
 }
 
 /* ─── Select dropdown content — green glass ─────────────────────── */
 [data-slot="select-content"] {
-  background: rgba(12, 35, 18, 0.95) !important;
+  background: rgba(16, 45, 22, 0.97) !important;
   backdrop-filter: blur(20px);
-  border-color: rgba(130, 210, 60, 0.22) !important;
+  border-color: rgba(140, 220, 70, 0.25) !important;
 }
 [data-slot="select-item"]:focus,
 [data-slot="select-item"][data-highlighted] {
-  background: rgba(100, 180, 80, 0.15) !important;
+  background: rgba(110, 190, 90, 0.2) !important;
 }
 
 /* ─── Dialog — green glass ──────────────────────────────────────── */
 [data-slot="dialog-content"] {
-  background: rgba(14, 40, 20, 0.97) !important;
+  background: rgba(18, 50, 25, 0.97) !important;
   backdrop-filter: blur(20px);
-  border-color: rgba(130, 210, 60, 0.22) !important;
+  border-color: rgba(140, 220, 70, 0.25) !important;
 }
 
 /* ─── Command palette — green glass ─────────────────────────────── */
@@ -194,22 +194,22 @@ input::placeholder {
   background: transparent !important;
 }
 [cmdk-input] {
-  background: rgba(30, 70, 35, 0.3) !important;
-  border-color: rgba(130, 210, 60, 0.22) !important;
-  color: rgba(210, 230, 210, 0.9) !important;
+  background: rgba(35, 80, 40, 0.35) !important;
+  border-color: rgba(140, 220, 70, 0.25) !important;
+  color: rgba(220, 240, 220, 0.95) !important;
 }
 [cmdk-item][data-selected="true"],
 [cmdk-item]:hover {
-  background: rgba(100, 180, 80, 0.15) !important;
+  background: rgba(110, 190, 90, 0.2) !important;
 }
 
 /* ─── Primary button glow ────────────────────────────────────────── */
 [data-slot="button"][data-variant="default"] {
-  box-shadow: 0 0 16px rgba(163, 230, 53, 0.15), 0 0 40px rgba(100, 180, 80, 0.05);
+  box-shadow: 0 0 16px rgba(163, 230, 53, 0.2), 0 0 40px rgba(100, 180, 80, 0.08);
   transition: all 0.2s ease;
 }
 [data-slot="button"][data-variant="default"]:hover {
-  box-shadow: 0 0 24px rgba(163, 230, 53, 0.25), 0 0 60px rgba(100, 180, 80, 0.1);
+  box-shadow: 0 0 24px rgba(163, 230, 53, 0.3), 0 0 60px rgba(100, 180, 80, 0.15);
   transform: translateY(-1px);
 }
 
@@ -220,30 +220,30 @@ input::placeholder {
 }
 [data-slot="button"][data-variant="ghost"]:hover,
 [data-slot="button"][data-variant="outline"]:hover {
-  background: rgba(130, 210, 60, 0.15);
+  background: rgba(130, 210, 60, 0.2);
   backdrop-filter: blur(8px);
 }
 
 /* ─── Content area — subtle forest glow ──────────────────────────── */
 [data-slot="sidebar-inset"] > div > div {
-  background: rgba(20, 50, 25, 0.2);
-  border: 1px solid rgba(80, 160, 80, 0.08);
+  background: rgba(22, 55, 28, 0.3);
+  border: 1px solid rgba(90, 170, 90, 0.12);
 }
 
 /* ─── Header border soften ───────────────────────────────────────── */
 header {
-  border-color: rgba(80, 160, 80, 0.1) !important;
+  border-color: rgba(90, 170, 90, 0.15) !important;
 }
 
 /* ─── Accordion — nature theme ───────────────────────────────────── */
 [data-slot="accordion-item"] {
-  border-color: rgba(130, 210, 60, 0.15);
+  border-color: rgba(140, 220, 70, 0.2);
 }
 
 /* ─── Labels and form labels ─────────────────────────────────────── */
 [data-slot="label"],
 [data-slot="form-item-label"] {
-  color: rgba(160, 220, 110, 0.7);
+  color: rgba(170, 230, 120, 0.8);
 }
 
 /* ─── Alert inside model selector ────────────────────────────────── */

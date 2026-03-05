@@ -14,15 +14,15 @@ export function TwoPaneView({
   resultRef,
 }: TwoPaneViewProps) {
   return (
-    <div className="flex flex-col lg:grid lg:grid-cols-2 gap-0 lg:gap-6 h-full overflow-y-auto lg:overflow-hidden scrollbar-hide">
+    <div className="flex flex-col lg:grid lg:grid-cols-2 gap-0 lg:gap-8 h-full overflow-y-auto lg:overflow-hidden scrollbar-hide">
       {/* Left Column: Form elements */}
-      <div className="px-2 pt-8 pb-4 lg:py-8 space-y-4 lg:min-h-0 lg:overflow-y-auto scrollbar-hide">
+      <div className="px-4 pt-10 pb-6 lg:py-10 space-y-6 lg:min-h-0 lg:overflow-y-auto scrollbar-hide">
         {leftPane}
       </div>
 
       {/* Right Column: Results */}
       <div
-        className="px-2 pt-4 pb-8 lg:py-8 space-y-4 lg:min-h-0 lg:overflow-y-auto scrollbar-hide"
+        className="px-4 pt-6 pb-10 lg:py-10 space-y-6 lg:min-h-0 lg:overflow-y-auto scrollbar-hide"
         ref={resultRef}
       >
         {rightPane}

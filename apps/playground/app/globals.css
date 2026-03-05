@@ -70,7 +70,7 @@
   --secondary-foreground: rgba(190, 220, 190, 0.8);
 
   --muted: rgba(60, 120, 60, 0.1);
-  --muted-foreground: rgba(206, 226, 206, 0.758);
+  --muted-foreground: rgba(180, 210, 180, 0.5);
 
   /* Sage accent */
   --accent: rgba(100, 180, 80, 0.12);
@@ -79,9 +79,9 @@
   --destructive: #f87171;
   --destructive-foreground: rgba(210, 230, 210, 0.9);
 
-  /* Lime-green borders */
-  --border: rgba(130, 210, 60, 0.18);
-  --input: rgba(130, 210, 60, 0.18);
+  /* Softer lime-green borders */
+  --border: rgba(120, 200, 70, 0.14);
+  --input: rgba(120, 200, 70, 0.14);
   --ring: rgba(163, 230, 53, 0.3);
 
   /* Charts */
@@ -93,12 +93,12 @@
 
   /* Sidebar — slightly lighter forest */
   --sidebar: rgba(20, 50, 25, 0.4);
-  --sidebar-foreground: rgba(190, 220, 190, 0.75);
+  --sidebar-foreground: rgba(180, 210, 180, 0.6);
   --sidebar-primary: #a3e635;
   --sidebar-primary-foreground: #0a1a0e;
   --sidebar-accent: rgba(100, 180, 80, 0.15);
   --sidebar-accent-foreground: rgba(160, 230, 100, 0.9);
-  --sidebar-border: rgba(130, 210, 60, 0.15);
+  --sidebar-border: rgba(120, 200, 70, 0.1);
   --sidebar-ring: rgba(163, 230, 53, 0.3);
 }
 
@@ -135,12 +135,12 @@
 [data-slot="card"] {
   background: rgba(20, 60, 30, 0.3);
   backdrop-filter: blur(16px);
-  border-color: rgba(130, 210, 60, 0.18);
+  border-color: rgba(120, 200, 70, 0.12);
   transition: all 0.3s ease;
 }
 [data-slot="card"]:hover {
   background: rgba(25, 70, 35, 0.35);
-  border-color: rgba(150, 230, 60, 0.3);
+  border-color: rgba(130, 210, 70, 0.22);
   box-shadow: 0 8px 32px rgba(0, 20, 0, 0.3);
 }
 
@@ -154,7 +154,7 @@ select,
 [data-slot="select-trigger"],
 [data-slot="sidebar-input"] {
   background: rgba(30, 70, 35, 0.3) !important;
-  border-color: rgba(130, 210, 60, 0.22) !important;
+  border-color: rgba(120, 200, 70, 0.16) !important;
   color: rgba(210, 230, 210, 0.9) !important;
   transition: all 0.2s ease;
 }
@@ -162,8 +162,8 @@ textarea:focus,
 input:focus,
 select:focus,
 [data-slot="select-trigger"]:focus {
-  border-color: rgba(163, 230, 53, 0.4) !important;
-  box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.1), 0 0 20px rgba(100, 180, 80, 0.08);
+  border-color: rgba(150, 220, 60, 0.35) !important;
+  box-shadow: 0 0 0 2px rgba(150, 220, 60, 0.08), 0 0 20px rgba(100, 180, 80, 0.06);
   background: rgba(35, 80, 40, 0.35) !important;
 }
 textarea::placeholder,
@@ -243,7 +243,7 @@ header {
 /* ─── Labels and form labels ─────────────────────────────────────── */
 [data-slot="label"],
 [data-slot="form-item-label"] {
-  color: rgba(160, 230, 100, 0.8);
+  color: rgba(160, 220, 110, 0.7);
 }
 
 /* ─── Alert inside model selector ────────────────────────────────── */

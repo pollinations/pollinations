@@ -33,15 +33,15 @@ export const colors = {
     text: {
         primary: "rgba(210, 230, 210, 0.9)",
         secondary: "rgba(190, 220, 190, 0.8)",
-        muted: "rgba(170, 200, 170, 0.65)",
-        subtle: "rgba(150, 190, 150, 0.5)",
-        disabled: "rgba(140, 180, 140, 0.4)",
+        muted: "rgba(180, 210, 180, 0.5)",
+        subtle: "rgba(160, 195, 160, 0.4)",
+        disabled: "rgba(150, 185, 150, 0.3)",
     },
     border: {
-        light: "rgba(130, 210, 60, 0.15)",
-        medium: "rgba(130, 210, 60, 0.22)",
-        strong: "rgba(130, 210, 60, 0.3)",
-        hover: "rgba(150, 230, 60, 0.4)",
+        light: "rgba(120, 200, 70, 0.12)",
+        medium: "rgba(120, 200, 70, 0.16)",
+        strong: "rgba(120, 200, 70, 0.24)",
+        hover: "rgba(130, 210, 70, 0.32)",
     },
     status: {
         success: {

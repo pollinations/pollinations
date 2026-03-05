@@ -182,6 +182,30 @@ def generate_discord_post(digest: Dict, token: str, week_end: str) -> Optional[D
     return result
 
 
+def generate_github_post(digest: Dict, token: str, week_end: str) -> Optional[Dict]:
+    """Generate weekly github.json for GitHub Releases."""
+    voice = load_prompt("tone/discord") # Using discord tone as base, but prompt/format will override
+    pr_summary = digest.get("pr_summary", "")
+    arc_titles = str([a["headline"] for a in digest.get("arcs", [])])
+    pr_count = digest.get("pr_count", 0)
+
+    fmt = load_format("github").replace("{date_str}", week_end)
+    task = f"Write a GitHub Release description about the latest updates.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}"
+    if pr_count:
+        task += f"\nTotal PRs merged: {pr_count}"
+    task += "\n\n" + fmt + _weekly_image_context()
+
+    response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
+    if not response:
+        return None
+
+    text = response.strip()
+    result = parse_json_response(text)
+    if result:
+        result["date"] = week_end
+    return result
+
+
 # ── Step 3: Generate images ────────────────────────────────────────
 
 def generate_platform_images(
@@ -196,6 +220,7 @@ def generate_platform_images(
     branch: str,
     reddit_post: Optional[Dict] = None,
     discord_post: Optional[Dict] = None,
+    github_post: Optional[Dict] = None,
 ) -> None:
     """Generate images for all platforms and commit to branch."""
     image_dir = f"{WEEKLY_REL_DIR}/{week_end}/images"
@@ -265,6 +290,22 @@ def generate_platform_images(
             if url:
                 discord_post["image"] = {"url": url, "prompt": discord_post["image_prompt"]}
 
+    # GitHub: 1 image (Uses Discord image if available)
+    if github_post:
+        if discord_post and discord_post.get("image"):
+             github_post["image"] = discord_post["image"]
+             print("  Using Discord image for GitHub Release...")
+        elif github_post.get("image_prompt"):
+            print("  Generating GitHub Release image...")
+            img_bytes, _ = generate_image(github_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
+            if img_bytes:
+                url = commit_image_to_branch(
+                    img_bytes, f"{image_dir}/github.jpg", branch,
+                    github_token, owner, repo
+                )
+                if url:
+                    github_post["image"] = {"url": url, "prompt": github_post["image_prompt"]}
+
 
 # ── Step 4: Commit to news branch ─────────────────────────────────
 
@@ -278,6 +319,7 @@ def commit_weekly_to_news(
     owner: str,
     repo: str,
     reddit_post: Optional[Dict] = None,
+    github_post: Optional[Dict] = None,
 ) -> bool:
     """Commit all weekly content directly to the news branch. Returns True on success."""
     base_path = f"{WEEKLY_REL_DIR}/{week_end}"
@@ -291,6 +333,7 @@ def commit_weekly_to_news(
         github_token, owner, repo, GISTS_BRANCH,
         reddit_post=reddit_post,
         discord_post=discord_post,
+        github_post=github_post,
     )
 
     # Add platform metadata and collect files
@@ -302,6 +345,7 @@ def commit_weekly_to_news(
         ("instagram", instagram_post, "instagram.json"),
         ("reddit", reddit_post, "reddit.json"),
         ("discord", discord_post, "discord.json"),
+        ("github", github_post, "github.json"),
     ]:
         if not post:
             continue
@@ -380,6 +424,9 @@ def main():
     print("  Discord...")
     discord_post = generate_discord_post(digest, pollinations_token, week_end)
 
+    print("  GitHub Release...")
+    github_post = generate_github_post(digest, pollinations_token, week_end)
+
     # ── Commit to news branch ────────────────────────────────────────
     print(f"\n[4/4] Committing weekly content to news branch...")
     success = commit_weekly_to_news(
@@ -387,6 +434,7 @@ def main():
         twitter_post, linkedin_post, instagram_post, discord_post,
         github_token, owner, repo,
         reddit_post=reddit_post,
+        github_post=github_post,
     )
 
     if success:

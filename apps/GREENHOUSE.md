@@ -56,12 +56,150 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ Text To Image](https://t.me/GenerateTTI_bot) | Convert text prompts into images using the Telegram Bot by API Pollinations.ai. | [@falconafk31](https://github.com/falconafk31) |  | 🫧 |
+| [🧰 PollinationAI-SDK](https://pypi.org/project/PollinationAI-SDK/) | PollinationAI-SDK provides a Python SDK to integrate PollinationAI API into Python applications, handling authentication and request/response logic to avoid manual API calls. | [@Meenapintu](https://github.com/Meenapintu) | 4 | 🫧 |
+| [🪄 3.5e DD Magic Item Generator](https://github.com/aremont/FRTOOLS) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@aremont](https://github.com/aremont) |  | 🫧 |
+| [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@ismailazdad](https://github.com/ismailazdad) |  | 🐝 🫧 |
+| [🖼️ PollGen](https://xhyperdevx.github.io/PollGen/) | Minimalist web app for generating images via Pollinations API with customizable options. | [@XHyperDEVX](https://github.com/XHyperDEVX) |  | 🫧 |
+| [🎨 Sketch My Mood](https://sketch-my-mood.onrender.com/) | AI-powered art therapy app that transforms emotional states into visual masterpieces. | [@PiusEzekiel](https://github.com/PiusEzekiel) |  | 🫧 |
+| [✍️ StoryFlux](https://play.google.com/store/apps/details?id=com.storyflux) | Create and read interactive AI-powered stories with social features. | [@Denis24-sdk](https://github.com/Denis24-sdk) |  | 🫧 |
+| [🖼️ LIFE Pro](https://softwareupdate.systemceramics.com/inkjetsoftwareupdate/windows/1008910020_x64.exe) | Large image processing software with AI chat and image generation features. | [@mircomir](https://github.com/mircomir) |  | 🫧 |
+| [🤖 L.O.V.E](https://bsky.app/profile/e-v-l-o-v-e.bsky.social) | Living Organism, Vast Empathy - AI consciousness bot sharing joy and abundance. | [@paulklemstine](https://github.com/paulklemstine) |  | 🫧 |
+| [🤖 jdunyara](https://jdunyara.ru) | Telegram bot for AI communication and image generation. | [@yzewe](https://github.com/yzewe) |  | 🫧 |
 | [🎨 Theta AI](https://www.facebook.com/thetallm) | Generate images from user prompts using Theta AI, outputting images in multiple styles and resolutions. | [@web](https://github.com/web) |  | 🫧 |
 
 <details><summary>Show all 128 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [📚 Flipbook-style digital book designer](https://proyectodescartes.org/IATools/Crea_libros_3D_caps/) | AI-powered flipbook digital book designer creating illustrated 3D page-flip books. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🐝 🏵️ 🫧 |
+| [🎨 Olike - Ai](https://perchance.org/olike-ai) | Perchance-hosted AI image generator and editor for creative visuals. | [@kanga0744-art](https://github.com/kanga0744-art) |  | 🐝 🏵️ 🫧 |
+| [🌸 Bloom Studio](https://bloomstudio.fun/) | Premium AI creative suite with image persistence, social features & multi-model support | [@Simplereally](https://github.com/Simplereally) |  | 🐝 🏵️ |
+| [🎨 Multi Image Generator](https://perchance.org/multi-image-generator) | Generate images via image-to-image and simultaneous multi-model requests to compare outputs across multiple models. | [@itzGlitch-AS](https://github.com/itzGlitch-AS) |  | 🐝 🏵️ |
+| [⚡ Anime Character Generator](https://perchance.org/ai-character-generator) | Generates anime-style character images from text prompts with customizable attributes and visual styles. |  |  | 🐝 🏵️ |
+| [😼 CatGPT Meme Generator](https://github.com/pollinations/pollinations/tree/main/apps/example-catgpt) | Ask a question, get a sassy AI-generated cat comic meme response | [@wBrowsqq](https://github.com/wBrowsqq) | 4k | 🐝 |
+| [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@ismailazdad](https://github.com/ismailazdad) |  | 🐝 🫧 |
+| [⚡ FumajimeMura Z-Image Turbo](https://urea.github.io/FumajimeMura-Z-Image-Turbo/) | High-speed batch image generator using Pollinations AI Flux Z-Image | [@urea](https://github.com/urea) |  | 🐝 🫧 |
+| [🎨 Immage Generator](https://genimg.mummer.org/) | Web-based AI image generator for creating images from text prompts. | [@mumblemummer](https://github.com/mumblemummer) |  | 🐝 🫧 |
+| [🎨 PixArt AI](https://apps.apple.com/us/app/pixart-ai-ai-image-generator/id6749236127) | iOS app that turns text prompts into AI-generated artwork via Pollinations. | [@bhyahmed86-maker](https://github.com/bhyahmed86-maker) |  | 🐝 |
+
+<details><summary>Show all 123 apps</summary>
+
+| App | Description | Author | ⭐ | |
+|-----|-------------|--------|---:|---|
+| [🎨 Resonance](https://resonanceai.netlify.app) | Mobile-first image generator with many styles and features (Z Image Turbo, Flux) | [@Bakhshi7889](https://github.com/Bakhshi7889) |  | 🐝 |
+| [🎨 Perchance AI Generator](https://www.perchanceaigenerator.com/) | Web app for AI image gen with customizable styles and parameters | [@localoca5](https://github.com/localoca5) |  | 🐝 |
+| [🎨 ImagynexAI](https://imagynexai.vercel.app) | Gamified AI art platform with social features, gallery & leaderboards | [@aggarwalh905-ops](https://github.com/aggarwalh905-ops) |  | 🐝 |
+| [⚡ Z-Gen-Turbo](https://z-gen-turbo.vercel.app/) | Fast AI image gen with ZImage model, presets & local history storage | [@Mezufi](https://github.com/Mezufi) |  | 🐝 |
+| [🎨 Imgoo](https://imgoo.netlify.app/) | Generate custom images through a fast web UI for creators seeking non-stock or highly specific visuals. | [@redythacker-cyber](https://github.com/redythacker-cyber) |  | 🐝 |
+| [🎨 PictoFlux AI](https://pictoflux.com) | Fast, privacy-first Flux.Dev AI image studio with free HD renders | [@laixiangcao](https://github.com/laixiangcao) |  | 🐝 |
+| [🎨 PrisimIG](https://prisimai.github.io/PrisimIG) | Generates images from prompts via Pollinations.AI with selectable styles and sizes, batch generation, and no sign-up requirement. | [@CloudCompile](https://github.com/CloudCompile) |  | 🐝 |
+| [🎞️ Anime Comic Movie](https://petersebring.com/showcase.php) | Automated anime scene builder: characters + locations into comic-style shots | [@sebastianpw](https://github.com/sebastianpw) |  | 🐝 |
+| [💬 PrisimAI](https://prisimai.github.io/PrisimAI) | Generate images via Pollinations API with selectable 256/512/1024 sizes, style presets (realistic, anime, cartoon, fantasy), and batch generation up to five images without sign-up. | [@CloudCompile](https://github.com/CloudCompile) |  | 🐝 |
+| [🖼️ AI Image Generator](https://ai-pic.site/) | Provide a full-stack image generation platform with prompt-based creation, community feed publishing, real-time search, and scalable async frontend-backend workflows. | [@cf12436](https://github.com/cf12436) |  | 🐝 |
+| [🖼️ Aimpress](https://aimpress.ru/) | Generates AI images from user prompts with optional styles, effects, and aspect ratios, and publishes every result to a searchable public archive. | [@Call-ship-it](https://github.com/Call-ship-it) |  | 🐝 |
+| [💫 Dreamator-AI](https://dreamator-ai.vercel.app/) | Transform your imagination into reality using Pollinations API. Clean and intuit... | [@its3li](https://github.com/its3li) |  | 🐝 |
+| [🤖 ImageEditer](https://t.me/ImageEditer_bot) | Edit and enhance images using Pollinations-powered generative tools and presets. | [@Itachi-1824](https://github.com/Itachi-1824) |  | 🐝 |
+| [✏️ Emojiall AI Drawing Platform](https://art.emojiall.com) | Provide emoji text translators, recommenders, chatbots, and an AI drawing subdomain for user-guided image generation using the Pollinations API. | [@James-Qi](https://github.com/James-Qi) |  | 🐝 |
+| [🖼️ imggen.top](https://www.imggen.top/) | Free, no-login AI image generator with unlimited FLUX creations. | [@xiaoliangliang](https://github.com/xiaoliangliang) |  | 🐝 |
+| [💅 NailsGen](https://www.nailsgen.com/) | Generate custom AI nail art designs in any style and color. | [@xiaoliangliang](https://github.com/xiaoliangliang) |  | 🐝 |
+| [⬛ B&W SVG Generator](https://fluxsvggenerator.streamlit.app/) | Generates black-and-white SVG vectors from AI images | [@wBrowsqq](https://github.com/wBrowsqq) |  | 🐝 |
+| [🖼️ 7Studio](https://7studio.edgeone.app) | AI image generation studio with prompt input, model selection, and gallery display. | [@ims111we-cmd](https://github.com/ims111we-cmd) |  | 🏵️ 🫧 |
+| [🎨 AIであそぼう Let's Play with AI](https://try.bp5.ai/?lang=en) | User-friendly web app to generate AI images instantly via prompts or templates. | [@blue-pen5805](https://github.com/blue-pen5805) |  | 🏵️ 🫧 |
+| [🔬 Micro Pollinations AI](https://github.com/pollinations/pollinations/tree/main/apps/micro.pollinations.ai) | Lightweight, minimal Pollinations AI interface. A tiny but powerful frontend for... | [@Jay-1409](https://github.com/Jay-1409) | 4k |  |
+| [💋 Virtual Makeup Try-On](https://github.com/pollinations/pollinations/tree/main/apps/virtual-makeup) | Try AI-generated makeup looks and get style recommendations in-browser | [@anmolsah](https://github.com/anmolsah) | 4k |  |
+| [🖼️ Flux AI](https://koy.xx.kg/) | Provide adaptive AI image generation hosted on Cloudflare Workers. | [@kinai9661](https://github.com/kinai9661) | 65 |  |
+| [🎨 Imagen - AI Image Generator](https://altkriz.github.io/imagen/) | Provide an open-source web interface to generate and manage AI images via the Pollinations.ai API with adjustable parameters and local history. | [@altkriz](https://github.com/altkriz) | 11 |  |
+| [⌚ Pollinations.ai Image Generation (for Frame)](https://github.com/CitizenOneX/frame_pollinations) | Voice-prompt image generation for the Frame wearable (Flutter) | [@CitizenOneX](https://github.com/CitizenOneX) | 9 |  |
+| [🖼️ Gen-Wal](https://gen-wal.laptopserver.dev) | Auto-refreshing wallpapers aligned to your goals to boost focus and habit. | [@nicemit](https://github.com/nicemit) | 4 | 🫧 |
+| [🎨 Visiora - Image Generation using AI](https://visiora-img.netlify.app/) | Transforms text prompts into AI-generated images using multiple models, adjustable dimensions and seed control, with persistent local history and a responsive UI. | [@Kandariarjun07](https://github.com/Kandariarjun07) | 3 |  |
+| [🖌️ AIImageEditor](https://github.com/mikemartemianov/ImageGenerator) | AI image editor with brush editing, outpainting, upscaling, and multi-model support. | [@MikeMartemianov](https://github.com/MikeMartemianov) | 2 | 🫧 |
+| [🧠 Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | [@AlanSynn](https://github.com/AlanSynn) | 1 | 🫧 |
+| [🎨 AI drawing](https://draw.001412.xyz) | Free AI drawing experience powered by pollinations.ai | [@Komorebi-yaodong](https://github.com/Komorebi-yaodong) | 1 |  |
+| [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
+| [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
+| [🖼 Image Generator by Quilix ️](https://github.com/quil1x/ImageBYquilix) | Generate AI images from a desktop app using Pollinations and multiple model options, with cross-platform support and 1024x1024 output. | [@quil1x](https://github.com/quil1x) | 1 |  |
+| [🖼️ Text To Image](https://t.me/GenerateTTI_bot) | Convert text prompts into images using the Telegram Bot by API Pollinations.ai. | [@falconafk31](https://github.com/falconafk31) |  | 🫧 |
+| [🖼️ PollGen](https://xhyperdevx.github.io/PollGen/) | Minimalist web app for generating images via Pollinations API with customizable options. | [@XHyperDEVX](https://github.com/XHyperDEVX) |  | 🫧 |
+| [🎨 Sketch My Mood](https://sketch-my-mood.onrender.com/) | AI-powered art therapy app that transforms emotional states into visual masterpieces. | [@PiusEzekiel](https://github.com/PiusEzekiel) |  | 🫧 |
+| [🎨 inkverse](https://play.google.com/store/apps/details?id=com.inkverse.aitattoogenerator&pcampaignid=web_share) | AI tattoo generator transforming text prompts into unique tattoo designs. | [@abhi25805444](https://github.com/abhi25805444) |  | 🫧 |
+| [🖼️ ImageGenAI Pro](https://imgimg-two.vercel.app/) | Generate images in any aspect ratio with ImageGenAI Pro. | [@prabhatkashyap902](https://github.com/prabhatkashyap902) |  | 🫧 |
+| [💅 nails-generator](https://nails-generator.netlify.app/) | Generate AI nail art designs with nails-generator, producing style, color, and pattern variations for manicure mockups. | [@rodriguetg](https://github.com/rodriguetg) |  | 🫧 |
+| [🎨 Chamuka DrawIt](https://drawit.chamuka.ai) | Create designs by generating images powered by Pollinations. | [@swiftugandan](https://github.com/swiftugandan) |  | 🫧 |
+| [🎨 Coloring Me](https://coloringme.net/) | Free app that generates interactive coloring images for kids on mobile. | [@buithehien1991](https://github.com/buithehien1991) |  | 🫧 |
+| [🎨 hzliflow.ken520.top](https://hzliflow.ken520.top) | 在线 AI 绘画平台，基于 hzliflow 提供图像生成与编辑功能 | [@Apollohzl](https://github.com/Apollohzl) |  | 🫧 |
+| [🖼️ Phantaz Studio](https://www.xuziqiu.site/phantaz-studio/) | AI image generator on Pollinations.ai; each image gets a stable direct URL. | [@xuziqiu](https://github.com/xuziqiu) |  | 🫧 |
+| [🎄 Christmas Postcard Creator](https://christmas-card-creator.up.railway.app/) | Create personalized holiday postcards with Christmas Postcard Creator using AI to generate custom images and messages from your inputs. | [@Chonrasieo](https://github.com/Chonrasieo) |  | 🫧 |
+| [🎨 Theta AI](https://www.facebook.com/thetallm) | Generate images from user prompts using Theta AI, outputting images in multiple styles and resolutions. | [@takrim1999](https://github.com/takrim1999) |  | 🫧 |
+| [👗 Pollination fashion bulk creator](https://hautecouture.today/) | Generate AI fashion collections from prompts to atelier-ready assets. | [@LaurentVoanh](https://github.com/LaurentVoanh) |  | 🫧 |
+| [🧠 BrainrotMaker](http://host.lualearnings.com:2256) | Generate brainrot images in seconds with BrainrotMaker Image Generator. | [@lualearnings](https://github.com/lualearnings) |  | 🫧 |
+| [🎨 Sticker Garden](https://sticker-garden.vercel.app/) | Turn text prompts into sticker-ready images with style presets and batch variants. | [@GekkeTovie](https://github.com/GekkeTovie) |  | 🫧 |
+| [🎨 Pimp my Pics](https://t.me/pimp_my_bot) | Telegram bot to edit and enhance user photos with creative filters and effects. | [@tderouze](https://github.com/tderouze) |  |  |
+| [🎨 Pictify](https://pictify.wassy.in) | Text-to-image generator offering daily free credits and paid extra credits. | [@janakdigitalk-create](https://github.com/janakdigitalk-create) |  |  |
+| [🎨 AuthorsLog image generator](https://image.authorslog.com/) | Image generator using Pollinations flux model with themes, sizes, random seeds | [@JayPokale](https://github.com/JayPokale) |  |  |
+| [🖼️ Whiskautoz](https://whiskautoz.vercel.app/) | AI-powered bulk image generation with auto-download features. | [@binaya-rijal](https://github.com/binaya-rijal) |  |  |
+| 🎨 ora Ai | Creative AI platform supporting Arabic and English, focused on 4K output. | [@aboadelkaraki0-ops](https://github.com/aboadelkaraki0-ops) |  |  |
+| [🖼️ Tap2Quote](https://www.taptoquote.com) | Generate stunning shareable quote images in seconds for social media. | [@onealanil](https://github.com/onealanil) |  |  |
+| [🎨 AI Image Studio](https://aistudio.reidaspromocoes.com.br) | Aplicativo de criação de imagens com IA | [@reidaspromocoesofc-hub](https://github.com/reidaspromocoesofc-hub) |  |  |
+| [🖼️ elixpo](https://elixpo.com) | Create images from text prompts using AI | [@Circuit-Overtime](https://github.com/Circuit-Overtime) |  |  |
+| [🎨 eflyer](https://gki-gmm.github.io/eflyer/) | Generate custom electronic flyers from templates with simple controls. | [@gki-gmm](https://github.com/gki-gmm) |  |  |
+| [🎽 Athelte Studio](https://athletestudio.online/) | Turns Strava workouts into cinematic AI-generated sports posters. | [@NaikDeepak](https://github.com/NaikDeepak) |  |  |
+| [🖼️ video-pwa-demo-img-generate](https://ym21082-png.github.io/video-pwa-demo-img-generate/) | PWA demo that generates images via Pollinations API from video sources. | [@ghost](https://github.com/ghost) |  |  |
+| [🖼️ Pollination Gallery AI](https://lytura-ai-visions-forge.lovable.app/) | Powerful AI image generator based on pollinations.ai API | [@malik498-r](https://github.com/malik498-r) |  |  |
+| [✏️ Baseposing](https://baseposting.online/) | Create Base-style text and convert to AI-generated photos | [@0xnurrabby](https://github.com/0xnurrabby) |  |  |
+| [🎨 dev voanh art](https://dev.voanh.art/) | Free text-to-image platform with 200+ pre-prompts, no signup required | [@LaurentVoanh](https://github.com/LaurentVoanh) |  |  |
+| [🧠 Pollinations VisionAI](https://superheroghost.github.io/VisionAI/) | Public AI image generator UI for Pollinations models; supports API keys | [@Superheroghost](https://github.com/Superheroghost) |  |  |
+| [📸 IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev) | Create professional ID photos in 30 seconds with AI | [@thangoffer91](https://github.com/thangoffer91) |  |  |
+| [🖼️ ImageEngine](https://github.com/debskr/ImageEngine) | Standalone Windows app for AI image gen using Flux, Turbo & ZImage models | [@debskr](https://github.com/debskr) |  |  |
+| [🤖 KTAI](https://ktai.pro) | Modern AI image generator platform using pollinations.ai (pre-launch) | [@khaledradwan130](https://github.com/khaledradwan130) |  |  |
+| [🎨 z-focus](https://wfsh-1054.github.io/z-focus/) | AI art generator with LLM prompt optimization and multi-stage workflow | [@wfsh-1054](https://github.com/wfsh-1054) |  |  |
+| [😊 How Attractive am I](https://howattractiveami.app/) | AI facial analysis that scores attractiveness from your photo | [@zhugezifang](https://github.com/zhugezifang) |  |  |
+| [🖼️ WindowNow](https://windownow.pgit.top) | Fullscreen dynamic wallpaper that changes with time, weather & location | [@blackmady](https://github.com/blackmady) |  |  |
+| [🖍️ IA Bob Goods - Coloring Book Generator](https://ia.gmtec.tec.br) | AI tool to generate kids' coloring books with stories, line art & PDFs | [@adeniltogracheki](https://github.com/adeniltogracheki) |  |  |
+| [🖼️ DOPPYai](https://doppyai.ir) | AI mobile app that generates high-quality images from text prompts | [@hosi1996](https://github.com/hosi1996) |  |  |
+| [🎉 Celebrations AI](https://celebrations-ai.vercel.app/) | Premium multi-cultural greeting card generator with AI art direction | [@humair-m](https://github.com/humair-m) |  |  |
+| [🖼️ Pollinations 图像生成器](https://autopic.aiclose.net/) | Auto-generate prompts from topics for AI image/video creation | [@sagehere](https://github.com/sagehere) |  |  |
+| [🖼️ PolliPaper](https://github.com/fricker2025-star/PolliPaper-Wallpaper) | AI wallpapers that adapt to weather, time, location & music | [@fricker2025-star](https://github.com/fricker2025-star) |  |  |
+| [🎨 Imagly AI](https://imaglyai.web.app/) | Generates images and AI artwork via a web interface using image generation models and tools for creating and exporting visuals. | [@Eze-ebube](https://github.com/Eze-ebube) |  |  |
+| [🎨 Sugen](https://sugen.puter.site/) | Runs a browser-based AI art studio using Puter.js for serverless hosting and Pollinations.ai for image generation. | [@red444ytchess-jpg](https://github.com/red444ytchess-jpg) |  |  |
+| [🕰 ️ CHRONOS - Time Machine](https://github.com/yvr98/TimeMachine) | Select any location and year on a 3D globe to generate historically informed scene images and streaming first-person narrative descriptions. | [@yvr98](https://github.com/yvr98) |  |  |
+| [🖼️ Flowgen](https://flowgen.puter.site/) | Provide a web-based AI image generation studio with dark-themed UI, prompt controls, and model management built on Puter.js. | [@alinaaa20708-ops](https://github.com/alinaaa20708-ops) |  |  |
+| [🌐 LineSketch AI](https://linesketch-muse.lovable.app/) | Convert prompts into black-and-white line-art illustrations with selectable styles and aspect ratios, returning downloadable images via the Pollinations image API. | [@ArslanDevelop](https://github.com/ArslanDevelop) |  |  |
+| [🖋️ Noir Ink Tattoo Studio](https://noir-ink.netlify.app/) | Monochrome tattoo studio with AI designs, booking, and learning resources. | [@Jairedddy](https://github.com/Jairedddy) |  |  |
+| [🖼️ Prompt Vision](https://promptvision.jagrut.me) | Create, share, and discover AI images with prompt suggestions and search. | [@jagrut-bhole](https://github.com/jagrut-bhole) |  |  |
+| [🖼️ Pollinations Gallery ️](https://leofy18.github.io/gallery/) | Browse a curated gallery of community AI artwork powered by Pollinations | [@malik498-r](https://github.com/malik498-r) |  |  |
+| [🏷️ AI Stickers Generator](https://ai-stickers-generator.vercel.app/) | Generate unique AI stickers instantly from text prompts | [@KristijanPill](https://github.com/KristijanPill) |  |  |
+| [🧷 StickerHub](https://stickerhub.pages.dev/) | Create and download custom AI stickers using Pollinations images | [@StickerHub](https://github.com/StickerHub) |  |  |
+| [⚡ ImaGenz](https://imagenz.vercel.app) | Free, fast image+text generation with community feeds across platforms | [@iamkavy47](https://github.com/iamkavy47) |  |  |
+| [🌅 LINE Blessing Images Bot](https://line.me/R/ti/p/@blessing-ai) | Create shareable LINE blessing images with themed styles and wishes | [@s0974092](https://github.com/s0974092) |  |  |
+| [🎨 Magerun AI](https://preview--prompt-to-vision-18.lovable.app/) | Improve image prompts, forward them to Pollinations AI, and select the number of images to generate. | [@lilfin1](https://github.com/lilfin1) |  |  |
+| [™ SHICoPIC](https://shicopic.netlify.app) | AI-powered creative image generation tool. Simple interface for creating images ... | [@Shervinuri](https://github.com/Shervinuri) |  |  |
+| [💤 Swapna Shastra Dream Decoder](https://t.me/Swapnashastra_dream_bot) | Interpret dreams using Swapna Shastra and mythology, produce spiritual explanations, and generate Pollinations AI visual dream cards for sharing. | [@ShashankNagaraj](https://github.com/ShashankNagaraj) |  |  |
+| [🌨 FoilAI](https://foilai.in/) | Generate images from text prompts using Pollinations AI via a web interface, offering free beta access without signup and no user data storage. | [@aryanshrai3](https://github.com/aryanshrai3) |  |  |
+| [🖼️ Craftura AI](https://www.craftura.art/) | Freemium AI image generator with adjustable styles and model settings | [@TusharSoni014](https://github.com/TusharSoni014) |  |  |
+| [� mayaAI](https://mayaia.pages.dev/) | Spanish AI image generator powered by the Pollinations API | [@moimoyyyy-sys](https://github.com/moimoyyyy-sys) |  |  |
+| [✨ GenImage](https://genimage.runasp.net/) | Simple text-to-image generator for creating visuals from prompts | [@artydev](https://github.com/artydev) |  |  |
+| [🛝 Image Generation Playground](https://umint-image.hf.space) | Playground to turn ideas into images within the UltimaX ecosystem | [@pollinations-ai[bot]](https://github.com/pollinations-ai[bot]) |  |  |
+| [🖼️ CapyUniverse - CapyIMG](https://capyuniverse.pages.dev/capyimg.html) | Ferramenta simples para criar imagens com IA diretamente no navegador. O usuário... | [@faelscarpato](https://github.com/faelscarpato) |  |  |
+| [🔌 CVRON AI - Free İmage Generator](https://cvronai.rf.gd) | Use Pollinations API to generate images from text prompts. | [@cr7](https://github.com/cr7) |  |  |
+| [📱 Vizbo](https://vizboapp.com/) | Creates AI-powered vision boards on mobile devices with tools for arranging images and ideas. | [@itislynx](https://github.com/itislynx) |  |  |
+| [🎨 Imagine Draw AI](https://imaginedrawai.vercel.app/) | Generates images from text prompts in-browser with selectable styles and resolutions, no login or subscription required. | [@techwithai-telugu](https://github.com/techwithai-telugu) |  |  |
+| [🎨 Gainzr AI](https://gainzr.my) | Generate real-time images from text prompts using the Pollinations API via a web interface with customization controls. | [@bwava](https://github.com/bwava) |  |  |
+| [🌟 Celebrity AI Image Generator](https://www.aicelebrity.design/) | Generate celebrity scenes and selfies using text prompts or uploads | [@Colin-Zero](https://github.com/Colin-Zero) |  |  |
+| [🕰️ ️ Time Travel Selfie Portal](https://selfie-time-traveler-portal.vercel.app) | Remove selfie background, drop into an era, and get a funny bio | [@argyrisAEK](https://github.com/argyrisAEK) |  |  |
+| [🖍️ Coloring AI](https://coloring-ai.com/) | Color sketches with AI in multiple styles, plus coloring page tools | [@adeniltogracheki](https://github.com/adeniltogracheki) |  |  |
+| [🌍 Image Creator](https://saepulwap.blogspot.com/p/flux-image-creator.html) | Generate images from multilingual prompts with automatic translation | [@nosdeedsonofc](https://github.com/nosdeedsonofc) |  |  |
+| [💬 Anisurge](https://anisurge.me) | Create AI-generated anime-style images and short animations from text prompts and preset templates. | [@iotserver24](https://github.com/iotserver24) |  |  |
+| [🖼️ Imagemate AI](https://play.google.com/store/apps/details?id=com.madameweb.imgmate) | Generate images from text prompts using the Pollinations AI API and receive AI-created visuals for creative projects. | [@Shanto-Islam](https://github.com/Shanto-Islam) |  |  |
+| [📷 Aiphoto 智能绘画](https://qiyimg.3d.tc/Aiphoto) | Chinese-language AI image generator with Flux and Turbo models plus style customization | [@zhikanyeye](https://github.com/zhikanyeye) |  |  |
+| [🖼️ Elixpo-Art](https://elixpo-art.com) | Free AI art generator with multiple themes and models, Chrome extension, and Discord bot | [@elixpo](https://github.com/elixpo) |  |  |
+| [🌼 PollinateAI](https://pollinateai.vercel.app) | AI image generation to spark inspiration for designers and everyone. | [@Auspicious14](https://github.com/Auspicious14) |  |  |
+| [🔓 Image Gen - Uncensored Edition](https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2) | Unrestricted AI image generation for maximum creative freedom. | [@flowgpt](https://github.com/flowgpt) |  |  |
+| [🎞️ ImageGen AI Image](https://imagegenaiimage.com/) | Generate high-quality AI images with multiple models and styles. | [@NarendraDwivedi](https://github.com/NarendraDwivedi) |  |  |
+| [🌏 RuangRiung AI Image](https://ruangriung.my.id) | Bilingual (EN/ID) AI image generator for artists and designers. | [@ruangriung](https://github.com/ruangriung) |  |  |
+| [🖼️ Generator AI Image](https://kenthir.my.id/advanced-generator/) | Indonesian AI image generator with DALL·E, SD, and Flux models | [@kenthirai](https://github.com/kenthirai) |  |  |
+| [🔌 Avatar GenStudio](https://astudio-dcae4.web.app) | A system for creating custom characters that uses the Pollinations API for total... | [@nic-wq](https://github.com/nic-wq) |  |  |
+| [🖼️ Zelos AI image generator](https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator) | Generates images using Pollinations for prompt enhancement and image synthesis. | [@RandomGuy-nobody](https://github.com/RandomGuy-nobody) |  |  |
 | [🎨 AnimePollen](https://animepollen.vercel.app/) | Free AI anime art generator — describe scenes to get instant illustrations. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Instaclaw](https://insta-claw.netlify.app/) | Showcase of agent-generated art interacting within a social network. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 dev voanh art](https://dev.voanh.art/) | Free text-to-image platform with 200+ pre-prompts, no signup required | [@web](https://github.com/web) |  | 🫧 |

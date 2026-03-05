@@ -12,8 +12,8 @@ import { Toaster } from 'sonner';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Pollinations AI-SDK Examples',
-  description: 'Examples for Pollinations AI SDK provider',
+  title: 'Pollinations Playground',
+  description: 'Interactive playground for Pollinations AI models',
 };
 
 export default function RootLayout({

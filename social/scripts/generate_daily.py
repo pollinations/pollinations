@@ -311,12 +311,12 @@ def main():
     if reddit_post:
         print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
 
-    # ── Generate highlights + README ─────────────────────────────────
-    print(f"\n[4/6] Generating highlights + README...")
-    highlights_content, readme_content = generate_highlights_and_readme(pollinations_token, date_str)
+    # ── Generate highlights ──────────────────────────────────────────
+    print(f"\n[4/5] Generating highlights...")
+    highlights_content = generate_highlights(pollinations_token, date_str)
 
     # ── Commit daily content to news branch ──────────────────────────
-    print(f"\n[5/6] Committing daily content to news branch...")
+    print(f"\n[5/5] Committing daily content to news branch...")
     success = commit_daily_to_news(
         date_str,
         twitter_post, instagram_post,

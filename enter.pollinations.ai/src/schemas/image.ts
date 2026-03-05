@@ -19,7 +19,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .default(DEFAULT_IMAGE_MODEL)
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream, seedream-pro, nanobanana, nanobanana-pro, klein, klein-large, imagen-4, grok-imagine. **Video:** veo, seedance, seedance-pro, wan, ltx-2, grok-video. See /image/models for full list.",
+                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, nanobanana, nanobanana-pro, klein, klein-large, imagen-4, grok-imagine. **Video:** veo, seedance, seedance-pro, wan, ltx-2, grok-video. See /image/models for full list.",
         }),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:

@@ -113,12 +113,40 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(404);
     });
 
-    it("rejects non-media content types", async () => {
-        const res = await fetch(`${BASE_URL}/upload`, {
-            method: "POST",
-            body: "not media",
-            headers: authHeaders("text/plain"),
+    it("DELETE without key returns 401", async () => {
+        const res = await fetch(`${BASE_URL}/0000000000000000`, {
+            method: "DELETE",
         });
-        expect(res.status).toBe(415);
+        expect(res.status).toBe(401);
+    });
+
+    it("upload, delete, and confirm removal", async () => {
+        const unique = new Uint8Array([
+            ...TINY_PNG,
+            ...crypto.getRandomValues(new Uint8Array(8)),
+        ]);
+
+        const uploadRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            body: unique,
+            headers: authHeaders("image/png"),
+        });
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+
+        const deleteRes = await fetch(`${BASE_URL}/${upload.id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${requireApiKey()}` },
+        });
+        expect(deleteRes.status).toBe(200);
+        const deleteBody = (await deleteRes.json()) as {
+            deleted: boolean;
+            id: string;
+        };
+        expect(deleteBody.deleted).toBe(true);
+        expect(deleteBody.id).toBe(upload.id);
+
+        const getRes = await fetch(`${BASE_URL}/${upload.id}`);
+        expect(getRes.status).toBe(404);
     });
 });

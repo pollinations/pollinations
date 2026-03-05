@@ -44,7 +44,7 @@ import {
 } from "@/schemas/openai.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import { generateMusic, generateSpeech } from "./audio.ts";
+import { generateMusic, generateSpeech, generateSunoMusic } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
@@ -189,13 +189,30 @@ const chatCompletionHandlers = factory.createHandlers(
     },
 );
 
-// Helper to filter models by API key permissions
-function filterModelsByPermissions<T extends { name: string }>(
+// Helper to filter models by API key permissions and paid balance
+function filterModelsByPermissions<
+    T extends { name: string; paid_only?: boolean },
+>(
     models: T[],
     allowedModels: string[] | undefined,
+    hasPaidBalance?: boolean,
 ): T[] {
-    if (!allowedModels?.length) return models;
-    return models.filter((m) => allowedModels.includes(m.name));
+    return models.filter((m) => {
+        if (allowedModels?.length && !allowedModels.includes(m.name))
+            return false;
+        if (m.paid_only && hasPaidBalance === false) return false;
+        return true;
+    });
+}
+
+// Check if authenticated user has paid balance (pack or crypto > 0)
+// Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
+// Returns undefined if no user (unauthenticated), true/false otherwise.
+// biome-ignore lint/suspicious/noExplicitAny: User type doesn't include balance fields from SELECT *
+function hasPaidBalance(c: any): boolean | undefined {
+    const user = c.var?.auth?.user;
+    if (!user) return undefined;
+    return (user.packBalance ?? 0) > 0 || (user.cryptoBalance ?? 0) > 0;
 }
 
 export const proxyRoutes = new Hono<Env>()
@@ -218,7 +235,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (OpenAI-compatible)",
             description:
-                'Returns available text models in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models` instead.',
+                'Returns available text models in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
             responses: {
                 200: {
                     description: "Success",
@@ -233,9 +250,11 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getTextModelsInfo(),
                 allowedModels,
+                paidBalance,
             );
             const now = Date.now();
             return c.json({
@@ -254,7 +273,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -275,9 +294,11 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             try {
                 const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+                const paidBalance = hasPaidBalance(c);
                 const models = filterModelsByPermissions(
                     getImageModelsInfo(),
                     allowedModels,
+                    paidBalance,
                 );
                 return c.json(models);
             } catch (error) {
@@ -294,7 +315,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
-                "Returns all available text generation models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support.",
+                "Returns all available text generation models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -312,11 +333,13 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        (c) => {
+        async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getTextModelsInfo(),
                 allowedModels,
+                paidBalance,
             );
             return c.json(models);
         },
@@ -327,7 +350,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Audio Models",
             description:
-                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata.",
+                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -345,11 +368,13 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        (c) => {
+        async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getAudioModelsInfo(),
                 allowedModels,
+                paidBalance,
             );
             return c.json(models);
         },
@@ -653,6 +678,17 @@ export const proxyRoutes = new Hono<Env>()
             const text = decodeURIComponent(c.req.param("text"));
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "suno") {
+                const airforceApiKey = (
+                    c.env as unknown as { AIRFORCE_API_KEY: string }
+                ).AIRFORCE_API_KEY;
+                return generateSunoMusic({
+                    prompt: text,
+                    apiKey: airforceApiKey,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(

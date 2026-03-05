@@ -3,12 +3,9 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import http from "node:http";
 import { parse } from "node:url";
 import debug from "debug";
-import urldecode from "urldecode";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { logIp } from "../../shared/ipLogger.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
-// IMAGE_CONFIG imported but used elsewhere
-// import { IMAGE_CONFIG } from "./models.js";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -17,8 +14,7 @@ import {
 import { createAndReturnVideo, isVideoModel } from "./createAndReturnVideos.js";
 import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
 import { HttpError } from "./httpError.js";
-import { getModelCounts } from "./modelCounter.js";
-import { MODELS } from "./models.js";
+import { IMAGE_CONFIG } from "./models.js";
 import {
     normalizeAndTranslatePrompt,
     type TimingStep,
@@ -28,51 +24,9 @@ import { createProgressTracker, type ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
-// Queue configuration for image service (reserved for future use)
-// const QUEUE_CONFIG = {
-//     interval: 30000, // 30 seconds between requests per IP (no auth)
-//     cap: 1, // Max 1 concurrent request per IP
-// };
-
 const logError = debug("pollinations:error");
 const logApi = debug("pollinations:api");
 const logAuth = debug("pollinations:auth");
-
-export const currentJobs = [];
-
-// In-memory hourly rate limiter for seedream and nanobanana
-interface HourlyUsage {
-    count: number;
-    hourStart: number;
-}
-const hourlyUsage = new Map<string, HourlyUsage>();
-const HOURLY_LIMIT = 10;
-const HOUR_MS = 60 * 60 * 1000;
-
-// Check and update hourly usage for an IP (reserved for future use)
-const _checkHourlyLimit = (
-    ip: string,
-): { allowed: boolean; remaining: number; resetIn: number } => {
-    const now = Date.now();
-    const usage = hourlyUsage.get(ip);
-
-    // No usage yet or hour has passed - reset
-    if (!usage || now - usage.hourStart >= HOUR_MS) {
-        hourlyUsage.set(ip, { count: 1, hourStart: now });
-        return { allowed: true, remaining: HOURLY_LIMIT - 1, resetIn: HOUR_MS };
-    }
-
-    // Within the same hour
-    if (usage.count >= HOURLY_LIMIT) {
-        const resetIn = HOUR_MS - (now - usage.hourStart);
-        return { allowed: false, remaining: 0, resetIn };
-    }
-
-    // Increment and allow
-    usage.count++;
-    const resetIn = HOUR_MS - (now - usage.hourStart);
-    return { allowed: true, remaining: HOURLY_LIMIT - usage.count, resetIn };
-};
 
 /**
  * @function
@@ -227,26 +181,17 @@ const imageGen = async ({
 
         // Cache and feed updates
         progress.updateBar(requestId, 95, "Cache", "Updating feed...");
-        // if (!safeParams.nofeed) {
-        //   if (!(maturity.isChild && maturity.isMature)) {
-        // Create a clean object with consistent data types
         const feedData = {
-            // Start with properly sanitized parameters
             ...safeParams,
             concurrentRequests: countFluxJobs(),
             imageURL,
-            // Always use the display prompt which will be original prompt for bad domains
             prompt,
-            // Extract only the specific properties we need from maturity, ensuring boolean types
             isChild: !!maturity.isChild,
             isMature: !!maturity.isMature,
-            // Include maturity as a nested object for backward compatibility
             maturity,
             timingInfo: relativeTiming(timingInfo),
-            // ip: getIp(req),
             status: "end_generating",
             referrer,
-            // Use original wasPimped for normal domains, never for bad domains
             wasPimped,
             nsfw: !!(maturity.isChild || maturity.isMature),
             private: !!safeParams.nofeed,
@@ -254,8 +199,6 @@ const imageGen = async ({
         };
 
         sendToFeedListeners(feedData, { saveAsLastState: true });
-        // }
-        // }
         progress.updateBar(requestId, 100, "Cache", "Updated");
 
         // Complete main progress
@@ -299,9 +242,13 @@ const checkCacheAndGenerate = async (
 
     if (!needsProcessing) return;
 
-    const originalPrompt = urldecode(
-        pathname.split("/prompt/")[1] || "random_prompt",
-    );
+    const rawPrompt = pathname.split("/prompt/")[1] || "random_prompt";
+    let originalPrompt: string;
+    try {
+        originalPrompt = decodeURIComponent(rawPrompt);
+    } catch {
+        originalPrompt = rawPrompt;
+    }
 
     const referrer = req.headers?.["referer"] || req.headers?.origin;
 
@@ -450,22 +397,11 @@ const checkCacheAndGenerate = async (
             headers["Content-Disposition"] = `inline; filename="${filename}"`;
         }
 
-        // Debug: Log trackingData before building headers
-        logApi("=== TRACKING DATA BEFORE HEADERS ===");
-        logApi(
-            "bufferAndMaturity.trackingData:",
-            JSON.stringify(bufferAndMaturity.trackingData, null, 2),
-        );
-        logApi("====================================");
-
         // Add tracking headers for enter service (GitHub issue #4170)
         const trackingHeaders = buildTrackingHeaders(
             safeParams.model,
             bufferAndMaturity.trackingData,
         );
-        logApi("=== BUILT TRACKING HEADERS ===");
-        logApi("trackingHeaders:", JSON.stringify(trackingHeaders, null, 2));
-        logApi("===============================");
         Object.assign(headers, trackingHeaders);
 
         res.writeHead(200, headers);
@@ -626,30 +562,16 @@ const server = http.createServer((req, res) => {
             Pragma: "no-cache",
             Expires: "0",
         });
-        const modelDetails = Object.entries(MODELS).map(([name, config]) => ({
-            name,
-            enhance: config.enhance || false,
-            defaultSideLength: config.defaultSideLength ?? 1024,
-        }));
+        const modelDetails = Object.entries(IMAGE_CONFIG).map(
+            ([name, config]) => ({
+                name,
+                enhance: config.enhance || false,
+                defaultSideLength:
+                    (config as { defaultSideLength?: number })
+                        .defaultSideLength ?? 1024,
+            }),
+        );
         res.end(JSON.stringify(modelDetails));
-        return;
-    }
-
-    if (pathname === "/model-stats") {
-        res.writeHead(200, {
-            "Content-Type": "application/json",
-            "Cache-Control":
-                "no-store, no-cache, must-revalidate, proxy-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-        });
-        getModelCounts()
-            .then((counts) => {
-                res.end(JSON.stringify(counts));
-            })
-            .catch(() => {
-                res.end(JSON.stringify({}));
-            });
         return;
     }
 

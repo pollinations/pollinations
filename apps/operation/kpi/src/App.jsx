@@ -16,6 +16,7 @@ import { getWeeklyRevenue } from "./api/polar";
 import {
     getWeeklyActivations,
     getWeeklyActiveUsers,
+    getWeeklyAppSubmissions,
     getWeeklyChurn,
     getWeeklyHealthStats,
     getWeeklyRetention,
@@ -52,6 +53,7 @@ export default function App() {
         "Retention",
         "User segments",
         "Activations",
+        "App submissions",
     ];
 
     useEffect(() => {
@@ -99,6 +101,9 @@ export default function App() {
                 );
                 const tinybirdActivations = await step("Activations", () =>
                     getWeeklyActivations(12),
+                );
+                const appSubmissions = await step("App submissions", () =>
+                    getWeeklyAppSubmissions(),
                 );
 
                 // Check for missing data
@@ -157,6 +162,7 @@ export default function App() {
                             tokensPerUser: row.tokens_per_user,
                             textRequests: row.text_requests,
                             imageRequests: row.image_requests,
+                            costUsd: row.cost_usd,
                         });
                     }
                 }
@@ -233,6 +239,19 @@ export default function App() {
                         if (existing) {
                             existing.activations = row.activations;
                         }
+                    }
+                }
+
+                // GitHub: App submissions and approvals
+                if (appSubmissions) {
+                    for (const row of appSubmissions) {
+                        const existing = weekMap.get(row.week) || {
+                            week: row.week,
+                        };
+                        weekMap.set(row.week, {
+                            ...existing,
+                            appSubmissions: row.submitted,
+                        });
                     }
                 }
 

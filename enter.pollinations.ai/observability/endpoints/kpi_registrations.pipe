@@ -1,0 +1,19 @@
+DESCRIPTION >
+    Weekly user registration counts from d1_user snapshot.
+
+TOKEN model_usage READ
+
+NODE registrations
+SQL >
+    %
+    SELECT
+        formatDateTime(toStartOfWeek(fromUnixTimestamp(assumeNotNull(created_at)), 1), '%Y-%m-%d') AS week_start,
+        count() AS registrations
+    FROM d1_user
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
+        AND created_at IS NOT NULL
+        AND created_at >= {{Int64(min_created_at, 0)}}
+    GROUP BY week_start
+    ORDER BY week_start ASC
+
+TYPE endpoint

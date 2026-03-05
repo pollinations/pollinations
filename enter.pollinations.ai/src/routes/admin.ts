@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { sendTierEventToTinybird } from "@/events.ts";
+import { runD1TinybirdSync } from "@/scheduled/d1-tinybird-sync.ts";
 import {
     getTierPollen,
     isValidTier,
@@ -73,6 +74,14 @@ async function sendBulkTierRefillEvents(
     logger: Logger,
 ): Promise<void> {
     if (!tinybirdUrl || !tinybirdToken || users.length === 0) {
+        logger.warn(
+            "TINYBIRD_TIER_SKIP: url={url} token={token} users={users}",
+            {
+                url: !!tinybirdUrl,
+                token: !!tinybirdToken,
+                users: users.length,
+            },
+        );
         return;
     }
 
@@ -102,18 +111,33 @@ async function sendBulkTierRefillEvents(
             body: events,
         });
 
+        const responseText = await response.text();
+
         if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(
-                "Failed to send tier refill events to Tinybird: {error}",
-                {
-                    error: errorText,
-                    status: response.status,
-                },
-            );
+            logger.error("TINYBIRD_TIER_ERROR: status={status} error={error}", {
+                status: response.status,
+                error: responseText,
+            });
+        } else {
+            try {
+                const result = JSON.parse(responseText);
+                logger.info(
+                    "TINYBIRD_TIER_SENT: total={total} success={success} quarantined={quarantined}",
+                    {
+                        total: users.length,
+                        success: result.successful_rows ?? 0,
+                        quarantined: result.quarantined_rows ?? 0,
+                    },
+                );
+            } catch {
+                logger.info(
+                    "TINYBIRD_TIER_SENT: total={total} response={response}",
+                    { total: users.length, response: responseText },
+                );
+            }
         }
     } catch (err) {
-        logger.error("Failed to send tier refill events to Tinybird: {error}", {
+        logger.error("TINYBIRD_TIER_FAIL: error={error}", {
             error: err instanceof Error ? err.message : String(err),
         });
     }
@@ -139,6 +163,16 @@ export const adminRoutes = new Hono<Env>()
         if (
             providedKey === c.env.REFILL_TOKEN &&
             c.req.path.endsWith("/trigger-refill")
+        ) {
+            return await next();
+        }
+
+        // Tinybird sync token: authenticates the GH Action AND is used for Tinybird API calls
+        const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
+        if (
+            syncToken &&
+            providedKey === syncToken &&
+            c.req.path.endsWith("/trigger-d1-sync")
         ) {
             return await next();
         }
@@ -198,7 +232,7 @@ export const adminRoutes = new Hono<Env>()
                     pollen_amount: tierBalance,
                 },
                 c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
+                c.env.TINYBIRD_TIER_INGEST_TOKEN,
             ),
         );
 
@@ -317,7 +351,7 @@ export const adminRoutes = new Hono<Env>()
                 timestamp,
                 c.env.ENVIRONMENT || "unknown",
                 c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
+                c.env.TINYBIRD_TIER_INGEST_TOKEN,
                 log,
             ),
         );
@@ -344,4 +378,20 @@ export const adminRoutes = new Hono<Env>()
             tierBreakdown,
             timestamp,
         });
+    })
+    .post("/trigger-d1-sync", async (c) => {
+        const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
+        if (!syncToken) {
+            throw new HTTPException(500, {
+                message: "TINYBIRD_D1_SYNC_TOKEN not configured",
+            });
+        }
+
+        const results = await runD1TinybirdSync(c.env.DB, syncToken);
+        const hasErrors = results.some((r) => r.status === "error");
+
+        return c.json(
+            { success: !hasErrors, tables: results },
+            hasErrors ? 207 : 200,
+        );
     });

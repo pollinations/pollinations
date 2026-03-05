@@ -21,6 +21,11 @@ function get2xxColor(ok2xx, total, excludedUserErrors = 0) {
     return "text-red-500";
 }
 
+// Helper to extract 2xx count from stats (used for sorting)
+function get2xx(stats) {
+    return stats?.status_2xx || 0;
+}
+
 // Helper to get latency color
 function getLatencyColor(latencySec) {
     if (latencySec < 2) return "text-blue-600";
@@ -30,13 +35,17 @@ function getLatencyColor(latencySec) {
 }
 
 // Compute health status from stats
-// Based on 5xx error rate against total requests (4xx are user errors, not model failures)
+// Based on 5xx error rate against model requests (4xx are user errors, not model failures)
 function computeHealthStatus(stats) {
     if (!stats || !stats.total_requests) return "on";
 
-    const total = stats.total_requests;
+    const success = stats.status_2xx || 0;
     const total5xx = stats.total_5xx || 0;
-    const pct5xx = (total5xx / total) * 100;
+    const modelRequests = success + total5xx;
+
+    if (modelRequests < 3) return "on";
+
+    const pct5xx = (total5xx / modelRequests) * 100;
 
     // OFF: 5xx >= 50% of total requests (model is mostly broken)
     if (pct5xx >= 50) return "off";
@@ -55,7 +64,7 @@ function GlobalHealthSummary({ models }) {
 
     // Calculate aggregate stats for a group of models
     const calcGroupStats = (group) => {
-        let totalRequests = 0;
+        let total2xx = 0;
         let total5xx = 0;
         let countOn = 0;
         let countDegraded = 0;
@@ -65,7 +74,7 @@ function GlobalHealthSummary({ models }) {
             const stats = m.stats;
             if (!stats) return;
 
-            totalRequests += stats.total_requests || 0;
+            total2xx += stats.status_2xx || 0;
             total5xx += stats.total_5xx || 0;
 
             const status = computeHealthStatus(stats);
@@ -74,11 +83,10 @@ function GlobalHealthSummary({ models }) {
             else countOff++;
         });
 
-        // Success rate = % of requests that didn't fail with 5xx
+        // Success rate = 2xx / (2xx + 5xx), excluding 4xx user errors from denominator
+        const modelRequests = total2xx + total5xx;
         const successRate =
-            totalRequests > 0
-                ? ((totalRequests - total5xx) / totalRequests) * 100
-                : 100;
+            modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
 
         // Determine aggregate status based on success rate (traffic-weighted)
         let status = "healthy";
@@ -758,12 +766,12 @@ function App() {
                     <span className="inline-block px-1 py-0.5 rounded text-[8px] font-bold bg-red-100 text-red-700 border border-red-300 mr-1">
                         OFF
                     </span>
-                    5xx ≥ 20%
+                    5xx ≥ 50%
                     <span className="mx-3">•</span>
                     <span className="inline-block px-1 py-0.5 rounded text-[8px] font-bold bg-yellow-100 text-yellow-700 border border-yellow-300 mr-1">
                         DEGRADED
                     </span>
-                    5xx ≥ 5%
+                    5xx ≥ 10%
                 </div>
             </div>
         </div>

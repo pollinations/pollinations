@@ -16,7 +16,8 @@ interface UserProfile {
     name: string;
     email: string;
     githubUsername: string | null;
-    tier: "anonymous" | "microbe" | "spore" | "seed" | "flower" | "nectar";
+    image: string | null;
+    tier: "seed" | "flower" | "nectar" | null;
 }
 
 interface UserBalance {
@@ -95,7 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         name: data.name,
                         email: data.email,
                         githubUsername: data.githubUsername,
-                        tier: data.tier || "anonymous",
+                        image: data.image ?? null,
+                        tier: data.tier ?? null,
                     });
                 } else if (response.status === 401) {
                     // Invalid/expired key - clear it

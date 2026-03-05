@@ -9,7 +9,6 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Secrets (set via: wrangler secret put <NAME>):
 # PLN_ENTER_TOKEN
-# PROXY_PSK
 # GOOGLE_PRIVATE_KEY
 # GOOGLE_PRIVATE_KEY_ID
 # GOOGLE_CLIENT_EMAIL

@@ -57,19 +57,6 @@ app.use("*", async (c, next) => {
     await next();
 });
 
-// Validate pre-shared key from proxy
-app.use("*", async (c, next) => {
-    const expectedPsk = process.env.PROXY_PSK;
-    if (!expectedPsk) {
-        await next();
-        return;
-    }
-    if (c.req.header("x-proxy-psk") !== expectedPsk) {
-        return c.text("Unauthorized", 401);
-    }
-    await next();
-});
-
 // Verify PLN_ENTER_TOKEN (skip for certain endpoints)
 app.use("*", async (c, next) => {
     const path = c.req.path;

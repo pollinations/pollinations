@@ -20,7 +20,7 @@ export function TextResult({
       </div>
       <div className="rounded-md border bg-muted/50 p-4 min-h-[200px]">
         {text ? (
-          <div className="text-sm whitespace-pre-wrap prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0">
+          <div className="text-sm whitespace-pre-wrap prose prose-sm max-w-none prose-invert prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0">
             <ReactMarkdown>{text}</ReactMarkdown>
           </div>
         ) : (

@@ -41,9 +41,9 @@ export function JsonResult({
             enableClipboard={false}
             displayDataTypes={false}
             displayObjectSize={false}
-            theme="rjv-default"
+            theme="monokai"
             style={{
-              backgroundColor: 'white',
+              backgroundColor: 'rgba(20, 60, 30, 0.3)',
               borderRadius: '0.5rem',
               padding: '0.75rem',
               fontSize: '0.8rem',

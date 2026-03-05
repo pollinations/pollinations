@@ -1,11 +1,11 @@
 export const colors = {
     bg: {
-        deep: "#0c0f0a",
-        card: "rgba(16, 24, 12, 0.8)",
-        cardGlass: "rgba(255,255,255,0.05)",
-        cardGlassHover: "rgba(255,255,255,0.08)",
-        overlay: "rgba(12, 15, 10, 0.95)",
-        overlayLight: "rgba(12, 15, 10, 0.8)",
+        deep: "#0a1a0e",
+        card: "rgba(20, 60, 30, 0.4)",
+        cardGlass: "rgba(30, 70, 35, 0.2)",
+        cardGlassHover: "rgba(40, 85, 45, 0.25)",
+        overlay: "rgba(10, 26, 14, 0.95)",
+        overlayLight: "rgba(10, 26, 14, 0.8)",
     },
     lime: {
         main: "#a3e635",
@@ -31,17 +31,17 @@ export const colors = {
         border: "rgba(168, 85, 247, 0.3)",
     },
     text: {
-        primary: "#f5f5f4",
-        secondary: "rgba(245, 245, 244, 0.8)",
-        muted: "rgba(245, 245, 244, 0.7)",
-        subtle: "rgba(255, 255, 255, 0.5)",
-        disabled: "rgba(255, 255, 255, 0.4)",
+        primary: "rgba(210, 230, 210, 0.9)",
+        secondary: "rgba(190, 220, 190, 0.8)",
+        muted: "rgba(170, 200, 170, 0.65)",
+        subtle: "rgba(150, 190, 150, 0.5)",
+        disabled: "rgba(140, 180, 140, 0.4)",
     },
     border: {
-        light: "rgba(255, 255, 255, 0.1)",
-        medium: "rgba(255, 255, 255, 0.15)",
-        strong: "rgba(255, 255, 255, 0.2)",
-        hover: "rgba(255, 255, 255, 0.3)",
+        light: "rgba(80, 160, 80, 0.12)",
+        medium: "rgba(80, 160, 80, 0.18)",
+        strong: "rgba(80, 160, 80, 0.25)",
+        hover: "rgba(100, 180, 80, 0.35)",
     },
     status: {
         success: {
@@ -65,9 +65,9 @@ export const colors = {
             border: "rgba(88, 101, 242, 0.3)",
         },
         neutral: {
-            main: "#d1d5db",
-            bg: "rgba(156, 163, 175, 0.1)",
-            border: "rgba(156, 163, 175, 0.2)",
+            main: "#86efac",
+            bg: "rgba(134, 239, 172, 0.1)",
+            border: "rgba(134, 239, 172, 0.2)",
         },
     },
     category: {
@@ -97,9 +97,9 @@ export const colors = {
             border: "rgba(16, 185, 129, 0.3)",
         },
         default: {
-            bg: "rgba(156, 163, 175, 0.1)",
-            text: "#9ca3af",
-            border: "rgba(156, 163, 175, 0.3)",
+            bg: "rgba(134, 239, 172, 0.1)",
+            text: "#86efac",
+            border: "rgba(134, 239, 172, 0.3)",
         },
     },
     social: {
@@ -109,9 +109,9 @@ export const colors = {
             border: "rgba(88, 101, 242, 0.3)",
         },
         github: {
-            main: "#fff",
-            bg: "rgba(255, 255, 255, 0.1)",
-            border: "rgba(255, 255, 255, 0.2)",
+            main: "#86efac",
+            bg: "rgba(134, 239, 172, 0.1)",
+            border: "rgba(134, 239, 172, 0.2)",
         },
         linkedin: {
             main: "#0077b5",
@@ -121,28 +121,28 @@ export const colors = {
 
 export const gradients = {
     cardAccent: "linear-gradient(90deg, #a3e635, #86efac, #fbbf24)",
-    textHeading: "linear-gradient(to bottom right, #f5f5f4, #a1a1aa)",
+    textHeading: "linear-gradient(to bottom right, rgba(210, 230, 210, 0.9), rgba(130, 180, 130, 0.7))",
     textHero:
-        "linear-gradient(135deg, #f5f5f4 0%, #a3e635 30%, #86efac 60%, #fbbf24 100%)",
+        "linear-gradient(135deg, rgba(210, 230, 210, 0.9) 0%, #a3e635 30%, #86efac 60%, #fbbf24 100%)",
     textAccent:
         "linear-gradient(135deg, #a3e635 0%, #86efac 50%, #fbbf24 100%)",
-    bgPage: "linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)",
-    bgCard: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+    bgPage: "linear-gradient(135deg, #0a1a0e 0%, #0e2414 50%, #0a1a0e 100%)",
+    bgCard: "linear-gradient(135deg, rgba(30, 70, 35, 0.25) 0%, rgba(20, 50, 25, 0.15) 100%)",
     bgOverlay:
-        "linear-gradient(135deg, rgba(12, 15, 10, 0.95) 0%, rgba(12, 15, 10, 0.8) 100%)",
+        "linear-gradient(135deg, rgba(10, 26, 14, 0.95) 0%, rgba(10, 26, 14, 0.8) 100%)",
     glowLime:
-        "radial-gradient(circle, rgba(163, 230, 53, 0.08) 0%, rgba(0,0,0,0) 70%)",
+        "radial-gradient(circle, rgba(163, 230, 53, 0.08) 0%, rgba(0, 20, 0, 0) 70%)",
     glowWhite:
-        "radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%)",
+        "radial-gradient(circle, rgba(100, 180, 80, 0.08) 0%, rgba(0, 20, 0, 0) 70%)",
 };
 
 export const shadows = {
-    card: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
-    cardHover: "0 20px 40px -10px rgba(0,0,0,0.4)",
-    cardLarge: "0 25px 50px -10px rgba(0,0,0,0.5)",
+    card: "0 8px 32px 0 rgba(0, 20, 0, 0.4)",
+    cardHover: "0 20px 40px -10px rgba(0, 20, 0, 0.5)",
+    cardLarge: "0 25px 50px -10px rgba(0, 20, 0, 0.6)",
     glowLime: "0 0 20px rgba(163, 230, 53, 0.6)",
-    glowWhite: "0 0 20px rgba(255,255,255,0.6)",
-    button: "0 8px 25px rgba(0,0,0,0.3)",
+    glowWhite: "0 0 20px rgba(100, 180, 80, 0.4)",
+    button: "0 8px 25px rgba(0, 20, 0, 0.35)",
 };
 
 export const fonts = {
@@ -183,13 +183,13 @@ export const sx = {
         boxShadow: shadows.cardHover,
     },
     buttonGlass: {
-        bgcolor: "rgba(255,255,255,0.15)",
+        bgcolor: "rgba(60, 120, 60, 0.15)",
         color: colors.text.primary,
         textTransform: "none",
         fontWeight: 600,
         border: `1px solid ${colors.border.strong}`,
         "&:hover": {
-            bgcolor: "rgba(255,255,255,0.25)",
+            bgcolor: "rgba(80, 160, 80, 0.25)",
             transform: "translateY(-2px)",
         },
     },
@@ -208,7 +208,7 @@ export const sx = {
         fontSize: "0.7rem",
         height: "24px",
         background: colors.bg.cardGlassHover,
-        color: "#e5e7eb",
+        color: "rgba(190, 220, 190, 0.8)",
         border: `1px solid ${colors.border.light}`,
         fontWeight: 500,
     },

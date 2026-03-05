@@ -83,10 +83,11 @@ export default function AgenticToolCalling() {
   const { apiKey } = usePollinationsApiKey();
   const availableTextModels = useTextModels();
 
-  const randomQuery = useMemo(
-    () => exampleQueries[Math.floor(Math.random() * exampleQueries.length)],
-    [],
-  );
+  const randomQuery = useMemo(() => {
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    return exampleQueries[array[0] % exampleQueries.length];
+  }, []);
 
   const form = useForm<CustomerSupportFormValues>({
     resolver: zodResolver(customerSupportFormSchema),
@@ -104,7 +105,7 @@ export default function AgenticToolCalling() {
     step: number,
     input?: unknown,
   ): string => {
-    const id = `timeline-${Date.now()}-${Math.random()}`;
+    const id = `timeline-${Date.now()}-${crypto.randomUUID()}`;
     const item: TimelineItem = {
       id,
       step,

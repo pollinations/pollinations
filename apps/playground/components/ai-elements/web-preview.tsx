@@ -169,6 +169,19 @@ export type WebPreviewBodyProps = ComponentProps<'iframe'> & {
   loading?: ReactNode;
 };
 
+const sanitizeUrl = (value: string | undefined): string | undefined => {
+  if (!value) return undefined;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.href;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 export const WebPreviewBody = ({
   className,
   loading,
@@ -176,13 +189,14 @@ export const WebPreviewBody = ({
   ...props
 }: WebPreviewBodyProps) => {
   const { url } = useWebPreview();
+  const safeSrc = sanitizeUrl(src ?? url);
 
   return (
     <div className="flex-1">
       <iframe
         className={cn('size-full', className)}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        src={(src ?? url) || undefined}
+        src={safeSrc}
         title="Preview"
         {...props}
       />

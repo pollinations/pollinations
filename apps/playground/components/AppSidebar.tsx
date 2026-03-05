@@ -1,6 +1,5 @@
 'use client';
 
-import { MediaUpload } from '@/components/MediaUpload';
 import {
   Sidebar,
   SidebarContent,
@@ -221,14 +220,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarGroup>
-          <SidebarGroupLabel>Media</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <MediaUpload />
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarFooter>
+      <SidebarFooter />
     </Sidebar>
   );
 }

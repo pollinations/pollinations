@@ -18,6 +18,21 @@ import { ChevronDownIcon } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 
+const sanitizeUrl = (rawUrl: string | null | undefined): string | undefined => {
+  if (!rawUrl) {
+    return undefined;
+  }
+  try {
+    const url = new URL(rawUrl, typeof window !== 'undefined' ? window.location.href : 'http://localhost');
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      return url.toString();
+    }
+  } catch {
+    // If parsing fails, treat the URL as unsafe.
+  }
+  return undefined;
+};
+
 export type WebPreviewContextValue = {
   url: string;
   setUrl: (url: string) => void;
@@ -176,13 +191,14 @@ export const WebPreviewBody = ({
   ...props
 }: WebPreviewBodyProps) => {
   const { url } = useWebPreview();
+  const safeSrc = sanitizeUrl(src ?? url);
 
   return (
     <div className="flex-1">
       <iframe
         className={cn('size-full', className)}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        src={(src ?? url) || undefined}
+        src={safeSrc}
         title="Preview"
         {...props}
       />

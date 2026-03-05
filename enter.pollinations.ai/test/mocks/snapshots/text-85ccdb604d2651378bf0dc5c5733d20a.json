@@ -18,38 +18,56 @@
     "params": {}
   },
   "response": {
-    "status": 404,
-    "statusText": "Not Found",
+    "status": 200,
+    "statusText": "OK",
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "328",
-      "content-type": "application/json; charset=utf-8",
-      "date": "Fri, 27 Feb 2026 18:40:47 GMT",
-      "etag": "W/\"148-ErzRsd0e+dtA1xtwUCdXvUvA8oQ\"",
+      "content-length": "494",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:42:17 GMT",
       "keep-alive": "timeout=5",
-      "x-powered-by": "Express"
+      "x-model-used": "gemini-3-pro-preview",
+      "x-usage-completion-reasoning-tokens": "120",
+      "x-usage-completion-text-tokens": "1",
+      "x-usage-prompt-text-tokens": "12"
     },
     "body": {
       "type": "json",
       "data": {
-        "error": "Not Found",
-        "message": "Model not found: gemini-3-pro-preview",
-        "requestId": "spvcs8",
-        "requestParameters": {
-          "messages": [
-            {
-              "role": "user",
-              "content": "Is Berlin the capital of Germany? Reply yes or no."
-            }
-          ],
-          "jsonMode": false,
-          "seed": 42,
-          "model": "gemini-3-pro-preview",
-          "referrer": null,
-          "isPrivate": true,
-          "voice": "alloy",
-          "private": true
+        "id": "pllns_3008f9b5c1d93da7917f853c1c7f3ab3",
+        "object": "chat.completion",
+        "created": 1772710937,
+        "model": "gemini-3-pro-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "Yes",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Yes"
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 12,
+          "completion_tokens": 121,
+          "total_tokens": 133,
+          "completion_tokens_details": {
+            "reasoning_tokens": 120,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
         }
       }
     }

@@ -1,6 +1,6 @@
 {
   "request": {
-    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Is%20Berlin%20the%20capital%20of%20Germany%3F%20Reply%20yes%20or%20no.?model=nomnom&seed=42",
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Is%20Berlin%20the%20capital%20of%20Germany%3F%20Reply%20yes%20or%20no.?model=step-3.5-flash&seed=42",
     "method": "GET",
     "body": {
       "type": "empty",
@@ -9,25 +9,25 @@
     "params": {}
   },
   "response": {
-    "status": 401,
-    "statusText": "Unauthorized",
+    "status": 404,
+    "statusText": "Not Found",
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "370",
+      "content-length": "303",
       "content-type": "application/json",
-      "date": "Thu, 05 Mar 2026 11:42:45 GMT",
+      "date": "Thu, 05 Mar 2026 11:42:46 GMT",
       "keep-alive": "timeout=5"
     },
     "body": {
       "type": "json",
       "data": {
-        "error": "Unauthorized",
-        "message": "401 Unauthorized",
-        "requestId": "vka7dg",
+        "error": "Not Found",
+        "message": "Model not found: step-3.5-flash",
+        "requestId": "u7glr",
         "requestParameters": {
           "seed": 42,
-          "model": "nomnom",
+          "model": "step-3.5-flash",
           "voice": "alloy",
           "jsonMode": false,
           "messages": [
@@ -38,9 +38,6 @@
           ],
           "referrer": null,
           "isPrivate": false
-        },
-        "details": {
-          "detail": "Invalid API key. Get your key at https://enter.pollinations.ai"
         }
       }
     }

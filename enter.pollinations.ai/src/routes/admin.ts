@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { sendTierEventToTinybird } from "@/events.ts";
+import { runD1TinybirdSync } from "@/scheduled/d1-tinybird-sync.ts";
 import {
     getTierPollen,
     isValidTier,
@@ -50,7 +51,7 @@ function calculateTierBreakdown(
             if (!acc[tier]) {
                 acc[tier] = {
                     count: 0,
-                    pollenAmount: TIER_POLLEN[tier] ?? TIER_POLLEN.spore,
+                    pollenAmount: TIER_POLLEN[tier] ?? 0,
                 };
             }
             acc[tier].count++;
@@ -73,13 +74,21 @@ async function sendBulkTierRefillEvents(
     logger: Logger,
 ): Promise<void> {
     if (!tinybirdUrl || !tinybirdToken || users.length === 0) {
+        logger.warn(
+            "TINYBIRD_TIER_SKIP: url={url} token={token} users={users}",
+            {
+                url: !!tinybirdUrl,
+                token: !!tinybirdToken,
+                users: users.length,
+            },
+        );
         return;
     }
 
     const events = users
         .map((user) => {
             const tierName = user.tier as TierName;
-            const pollenAmount = TIER_POLLEN[tierName] ?? TIER_POLLEN.spore;
+            const pollenAmount = TIER_POLLEN[tierName] ?? 0;
             return JSON.stringify({
                 event_type: "tier_refill",
                 environment,
@@ -102,18 +111,33 @@ async function sendBulkTierRefillEvents(
             body: events,
         });
 
+        const responseText = await response.text();
+
         if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(
-                "Failed to send tier refill events to Tinybird: {error}",
-                {
-                    error: errorText,
-                    status: response.status,
-                },
-            );
+            logger.error("TINYBIRD_TIER_ERROR: status={status} error={error}", {
+                status: response.status,
+                error: responseText,
+            });
+        } else {
+            try {
+                const result = JSON.parse(responseText);
+                logger.info(
+                    "TINYBIRD_TIER_SENT: total={total} success={success} quarantined={quarantined}",
+                    {
+                        total: users.length,
+                        success: result.successful_rows ?? 0,
+                        quarantined: result.quarantined_rows ?? 0,
+                    },
+                );
+            } catch {
+                logger.info(
+                    "TINYBIRD_TIER_SENT: total={total} response={response}",
+                    { total: users.length, response: responseText },
+                );
+            }
         }
     } catch (err) {
-        logger.error("Failed to send tier refill events to Tinybird: {error}", {
+        logger.error("TINYBIRD_TIER_FAIL: error={error}", {
             error: err instanceof Error ? err.message : String(err),
         });
     }
@@ -139,6 +163,16 @@ export const adminRoutes = new Hono<Env>()
         if (
             providedKey === c.env.REFILL_TOKEN &&
             c.req.path.endsWith("/trigger-refill")
+        ) {
+            return await next();
+        }
+
+        // Tinybird sync token: authenticates the GH Action AND is used for Tinybird API calls
+        const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
+        if (
+            syncToken &&
+            providedKey === syncToken &&
+            c.req.path.endsWith("/trigger-d1-sync")
         ) {
             return await next();
         }
@@ -198,7 +232,7 @@ export const adminRoutes = new Hono<Env>()
                     pollen_amount: tierBalance,
                 },
                 c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
+                c.env.TINYBIRD_TIER_INGEST_TOKEN,
             ),
         );
 
@@ -253,26 +287,46 @@ export const adminRoutes = new Hono<Env>()
             .from(userTable)
             .where(sql`tier IS NOT NULL`);
 
-        // Bulk update all tier balances
-        const result = await db.run(sql`
+        // Check if today is Monday (for weekly spore refill)
+        const now = new Date();
+        const isMonday = now.getUTCDay() === 1;
+
+        // Capture timestamp once for consistent last_tier_grant across all users
+        const refillTimestamp = Date.now();
+        const timestamp = new Date(refillTimestamp).toISOString();
+
+        // Daily refill: only tiers with pollen > 0 and daily cadence
+        // NOTE: If a new tier is added to tier-config.ts, this CASE must be updated.
+        const dailyResult = await db.run(sql`
             UPDATE user
             SET
                 tier_balance = CASE tier
-                    WHEN 'microbe' THEN ${TIER_POLLEN.microbe}
-                    WHEN 'spore' THEN ${TIER_POLLEN.spore}
                     WHEN 'seed' THEN ${TIER_POLLEN.seed}
                     WHEN 'flower' THEN ${TIER_POLLEN.flower}
                     WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
                     WHEN 'router' THEN ${TIER_POLLEN.router}
-                    ELSE ${TIER_POLLEN.spore}
+                    ELSE 0
                 END,
-                last_tier_grant = ${Date.now()}
-            WHERE tier IS NOT NULL
+                last_tier_grant = ${refillTimestamp}
+            WHERE tier IN ('seed', 'flower', 'nectar', 'router')
         `);
 
-        const refillCount = result.meta.changes ?? 0;
-        const refillTimestamp = Date.now();
-        const timestamp = new Date(refillTimestamp).toISOString();
+        const dailyRefillCount = dailyResult.meta.changes ?? 0;
+
+        // Weekly refill: spore tier (Monday only)
+        let sporeRefillCount = 0;
+        if (isMonday) {
+            const sporeResult = await db.run(sql`
+                UPDATE user
+                SET
+                    tier_balance = ${TIER_POLLEN.spore},
+                    last_tier_grant = ${refillTimestamp}
+                WHERE tier = 'spore'
+            `);
+            sporeRefillCount = sporeResult.meta.changes ?? 0;
+        }
+
+        const refillCount = dailyRefillCount + sporeRefillCount;
 
         // Store bulk refill timestamp in KV for idempotency
         await setLastBulkRefillTime(kv, refillTimestamp);
@@ -280,29 +334,64 @@ export const adminRoutes = new Hono<Env>()
         // Calculate tier breakdown for response
         const tierBreakdown = calculateTierBreakdown(usersToRefill);
 
-        // Send per-user events to Tinybird
+        // Send Tinybird events only for tiers that actually got refilled
+        const refilledTiers = new Set([
+            "seed",
+            "flower",
+            "nectar",
+            "router",
+            ...(isMonday ? ["spore"] : []),
+        ]);
+        const usersForEvents = usersToRefill.filter(
+            (u) => u.tier && refilledTiers.has(u.tier),
+        );
         c.executionCtx.waitUntil(
             sendBulkTierRefillEvents(
-                usersToRefill,
+                usersForEvents,
                 timestamp,
                 c.env.ENVIRONMENT || "unknown",
                 c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
+                c.env.TINYBIRD_TIER_INGEST_TOKEN,
                 log,
             ),
         );
 
-        log.info("TIER_REFILL_COMPLETE: usersUpdated={usersUpdated}", {
-            eventType: "tier_refill_complete",
-            usersUpdated: refillCount,
-            tierBreakdown,
-        });
+        log.info(
+            "TIER_REFILL_COMPLETE: usersUpdated={usersUpdated} (daily={daily}, spore={spore}, isMonday={isMonday})",
+            {
+                eventType: "tier_refill_complete",
+                usersUpdated: refillCount,
+                dailyRefillCount,
+                sporeRefillCount,
+                isMonday,
+                tierBreakdown,
+            },
+        );
 
         return c.json({
             success: true,
             skipped: false,
             usersRefilled: refillCount,
+            dailyRefillCount,
+            sporeRefillCount,
+            isMonday,
             tierBreakdown,
             timestamp,
         });
+    })
+    .post("/trigger-d1-sync", async (c) => {
+        const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
+        if (!syncToken) {
+            throw new HTTPException(500, {
+                message: "TINYBIRD_D1_SYNC_TOKEN not configured",
+            });
+        }
+
+        const results = await runD1TinybirdSync(c.env.DB, syncToken);
+        const hasErrors = results.some((r) => r.status === "error");
+
+        return c.json(
+            { success: !hasErrors, tables: results },
+            hasErrors ? 207 : 200,
+        );
     });

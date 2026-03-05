@@ -26,7 +26,7 @@ const PINNED_NEWS: Highlight[] = [
         emoji: "🏷️",
         title: "Image Pricing Update",
         description:
-            "Flux $0.001/img, Z-Image $0.002/img, Klein $0.01/img, Klein-Large $0.015/img. Pollen tier compatible.",
+            "Flux $0.001/img, Z-Image $0.002/img, Klein $0.01/img, Klein-Large $0.015/img.",
     },
 ];
 

@@ -14,7 +14,6 @@ import { downloadImageAsBase64 } from "./utils/imageDownload.ts";
 import { generateTransparentImage } from "./utils/transparentImage.ts";
 import type { VertexAIImageData } from "./vertexAIClient.ts";
 import { generateImageWithVertexAI } from "./vertexAIClient.ts";
-import { writeExifMetadata } from "./writeExifMetadata.js";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
@@ -308,35 +307,9 @@ export async function callVertexAIGemini(
 
         log("Converted to buffer, size:", imageBuffer.length);
 
-        // Add EXIF metadata to the image (use original prompt, not enhanced)
-        let finalImageBuffer: Buffer;
-        try {
-            finalImageBuffer = await writeExifMetadata(
-                imageBuffer,
-                {
-                    prompt, // Original user prompt, not enhanced
-                    model: safeParams.model,
-                    width: safeParams.width,
-                    height: safeParams.height,
-                },
-                {
-                    generator: modelConfig.name,
-                    textResponse: result.textResponse,
-                    usage: result.usage,
-                },
-            );
-            log("EXIF metadata added successfully");
-        } catch (exifError) {
-            errorLog(
-                "Failed to add EXIF metadata, using original image:",
-                exifError,
-            );
-            finalImageBuffer = imageBuffer;
-        }
-
         // Return in the expected ImageGenerationResult format
         return {
-            buffer: finalImageBuffer,
+            buffer: imageBuffer,
             isMature: false, // Gemini has built-in safety, assume safe
             isChild: false, // Gemini has built-in safety, assume not child content
             // Include tracking data for enter service headers

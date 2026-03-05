@@ -244,35 +244,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /feed:
-    get:
-      summary: Real-time generation feed
-      description: |
-        Server-Sent Events (SSE) endpoint for real-time updates on image generation progress.
-        This endpoint streams live updates about ongoing generations and completed images.
-      operationId: getFeed
-      responses:
-        '200':
-          description: SSE stream of generation updates
-          content:
-            text/event-stream:
-              schema:
-                type: string
-                description: Server-sent events stream with generation updates
-
-  /crossdomain.xml:
-    get:
-      summary: Cross-domain policy file
-      description: Adobe Flash cross-domain policy file for legacy compatibility
-      operationId: getCrossDomainPolicy
-      responses:
-        '200':
-          description: Cross-domain policy XML
-          content:
-            application/xml:
-              schema:
-                type: string
-
 components:
   schemas:
     ErrorResponse:

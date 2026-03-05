@@ -24,7 +24,6 @@ import {
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
-import { writeExifMetadata } from "./writeExifMetadata.ts";
 
 // Loggers
 const logError = debug("pollinations:error");
@@ -35,14 +34,9 @@ const logCloudflare = debug("pollinations:cloudflare");
 // Constants
 const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
 
-// Performance tracking variables
-const totalStartTime = Date.now();
-let accumulatedFetchDurations = 0;
-
 type ScaledDimensions = {
     scaledWidth: number;
     scaledHeight: number;
-    scalingFactor: number;
 };
 
 export type ImageGenerationResult = {
@@ -76,29 +70,14 @@ export function calculateScaledDimensions(
 ): ScaledDimensions {
     const currentPixels = width * height;
     if (currentPixels >= TARGET_PIXEL_COUNT) {
-        return { scaledWidth: width, scaledHeight: height, scalingFactor: 1 };
+        return { scaledWidth: width, scaledHeight: height };
     }
 
     const scalingFactor = Math.sqrt(TARGET_PIXEL_COUNT / currentPixels);
     const scaledWidth = Math.round(width * scalingFactor);
     const scaledHeight = Math.round(height * scalingFactor);
 
-    return { scaledWidth, scaledHeight, scalingFactor };
-}
-
-/**
- * Resizes an input image buffer for GPT Image editing to reduce token costs.
- * GPT Image 1.5 calculates input tokens as: (width × height) / 750
- * Large images can result in very high token costs (e.g., 4K = ~11,000 tokens)
- *
- * @param buffer - The input image buffer
- * @returns Resized buffer (PNG format) if image exceeds max pixels, otherwise original
- */
-async function resizeInputImageForGptImage(buffer: Buffer): Promise<Buffer> {
-    // Workers mode: return buffer unchanged (sharp not available).
-    // Minor token cost increase for large input images is acceptable.
-    logCloudflare("Input image resize skipped (Workers mode)");
-    return buffer;
+    return { scaledWidth, scaledHeight };
 }
 
 /**
@@ -181,18 +160,8 @@ export const callSelfHostedServer = async (
         }
 
         const fetchEndTime = Date.now();
-
-        // Calculate the time spent in fetch
         const fetchDuration = fetchEndTime - fetchStartTime;
         logPerf(`Fetch duration: ${fetchDuration}ms`);
-        accumulatedFetchDurations += fetchDuration;
-
-        // Calculate the total time the app has been running
-        const totalTime = Date.now() - totalStartTime;
-
-        // Calculate and print the percentage of time spent in fetch
-        const fetchPercentage = (accumulatedFetchDurations / totalTime) * 100;
-        logPerf(`Fetch time percentage: ${fetchPercentage}%`);
 
         if (!response.ok) {
             logError("Error from server. input was", body);
@@ -466,17 +435,6 @@ function getCloudflareCredentials(): { accountId: string; apiToken: string } {
 }
 
 /**
- * Converts an image buffer to JPEG format if it's not already a JPEG.
- * @param {Buffer} buffer - The image buffer to convert.
- * @returns {Promise<Buffer>} - The converted image buffer.
- */
-export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
-    // Workers mode: return buffer as-is (sharp not available).
-    // Backends return images in usable formats (PNG/JPEG) already.
-    return buffer;
-}
-
-/**
  * Configuration for Azure GPT Image endpoints
  */
 interface AzureGPTImageConfig {
@@ -625,12 +583,7 @@ const callAzureGPTImageWithEndpoint = async (
                     }
 
                     const imageArrayBuffer = await imageResponse.arrayBuffer();
-                    const originalBuffer = Buffer.from(imageArrayBuffer);
-
-                    // Resize large input images to reduce token costs
-                    // GPT Image 1.5 calculates input tokens as: (width × height) / 750
-                    const buffer =
-                        await resizeInputImageForGptImage(originalBuffer);
+                    const buffer = Buffer.from(imageArrayBuffer);
 
                     // Only check safety after we've successfully fetched the image
                     logCloudflare(
@@ -1122,44 +1075,6 @@ const extractMaturityFlags = (
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if prompt was transformed
  * @returns {Object} - Metadata object
  */
-const prepareMetadata = (
-    prompt: string,
-    originalPrompt: string,
-    safeParams: ImageParams,
-    wasTransformedForBadDomain: boolean,
-): ImageParams & { prompt: string; originalPrompt: string } => {
-    // When a prompt was transformed due to bad domain, always use the original prompt in metadata
-    // This ensures clients never see the transformed prompt
-    return wasTransformedForBadDomain
-        ? { ...safeParams, prompt: originalPrompt, originalPrompt }
-        : { prompt, originalPrompt, ...safeParams };
-};
-
-/**
- * Processes the image buffer with format conversion and metadata
- * @param {Buffer} buffer - The raw image buffer
- * @param {Object} metadataObj - Metadata to embed in the image
- * @param {Object} maturity - Additional maturity information
- * @param {Object} progress - Progress tracking object
- * @param {string} requestId - Request ID for progress tracking
- * @returns {Promise<Buffer>} - The processed image buffer
- */
-const processImageBuffer = async (
-    buffer: Buffer,
-    metadataObj: object,
-    maturity: object,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<Buffer> => {
-    // Convert format to JPEG
-    progress.updateBar(requestId, 85, "Processing", "Converting to JPEG...");
-    const processedBuffer = await convertToJpeg(buffer);
-
-    // Add metadata
-    progress.updateBar(requestId, 90, "Processing", "Writing metadata...");
-    return await writeExifMetadata(processedBuffer, metadataObj, maturity);
-};
-
 /**
  * Creates and returns images with metadata, checking for NSFW content.
  * @param {string} prompt - The prompt for image generation.
@@ -1211,26 +1126,8 @@ export async function createAndReturnImageCached(
             );
         }
 
-        // Prepare metadata
-        const { buffer: _buffer, ...maturity } = result;
-        const metadataObj = prepareMetadata(
-            prompt,
-            originalPrompt,
-            safeParams,
-            wasTransformedForBadDomain,
-        );
-
-        // Process the image buffer
-        const processedBuffer = await processImageBuffer(
-            result.buffer,
-            metadataObj,
-            maturity,
-            progress,
-            requestId,
-        );
-
         return {
-            buffer: processedBuffer,
+            buffer: result.buffer,
             isChild,
             isMature,
             trackingData: result.trackingData,

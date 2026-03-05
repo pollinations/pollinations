@@ -1,6 +1,5 @@
 import debug from "debug";
 import type { ImageParams } from "./params.ts";
-import { pimpPrompt } from "./promptEnhancer.ts";
 import { detectLanguage, sanitizeString } from "./translateIfNecessary.ts";
 import { badDomainHandler } from "./utils/badDomainHandler.ts";
 
@@ -85,11 +84,7 @@ export const normalizeAndTranslatePrompt = async (
             logPerf(`Translation time: ${endTime - startTime}ms`);
         }
 
-        if (enhance) {
-            logPrompt("pimping prompt", prompt, seed);
-            prompt = await pimpPrompt(prompt, seed);
-            logPrompt(`Pimped prompt: ${prompt}`);
-        }
+        // pimpPrompt was a no-op (returned prompt unchanged) — removed
     }
 
     timingInfo.push({

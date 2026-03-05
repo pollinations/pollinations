@@ -7,7 +7,6 @@ import {
     createAndReturnImageCached,
 } from "./createAndReturnImages.js";
 import { createAndReturnVideo, isVideoModel } from "./createAndReturnVideos.js";
-import { sendToFeedListeners } from "./feedListeners.js";
 import { HttpError } from "./httpError.js";
 import { IMAGE_CONFIG } from "./models.js";
 import {
@@ -16,9 +15,12 @@ import {
     type TimingStep,
 } from "./normalizeAndTranslatePrompt.js";
 import { type ImageParams, ImageParamsSchema } from "./params.js";
-import { createProgressTracker } from "./progressBar.js";
+import { ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
+
+// Singleton no-op progress tracker (Workers-compatible)
+const progress = new ProgressManager();
 
 const logError = debug("pollinations:error");
 const logApi = debug("pollinations:api");
@@ -28,7 +30,9 @@ const app = new Hono();
 
 // --- Middleware ---
 
-app.use("*", cors());
+app.use("*", cors({
+    exposeHeaders: ["Content-Length"],
+}));
 
 // Sync Cloudflare Worker env bindings to process.env.
 // NOTE: This is safe because all bindings are identical across concurrent requests
@@ -65,7 +69,6 @@ app.use("*", async (c, next) => {
         path === "/register" ||
         path === "/models" ||
         path === "/about" ||
-        path === "/crossdomain.xml" ||
         path === "/"
     ) {
         await next();
@@ -134,15 +137,6 @@ app.get("/about", (c) => {
     return c.json(modelDetails);
 });
 
-app.get("/crossdomain.xml", (c) => {
-    c.header("Content-Type", "application/xml");
-    return c.text(`<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
-<cross-domain-policy>
-  <allow-access-from domain="*" secure="false"/>
-</cross-domain-policy>`);
-});
-
 // --- Register endpoint (heartbeat from GPU servers) ---
 
 app.post("/register", async (c) => {
@@ -168,13 +162,6 @@ app.get("/register", (c) => {
     return c.text("Registration not available in Workers mode", 501);
 });
 
-// --- Feed endpoint ---
-
-app.get("/feed*", (c) => {
-    // SSE feed is not supported in Workers mode.
-    return c.text("Feed not available in Workers mode", 501);
-});
-
 // --- Helper functions ---
 
 function relativeTiming(timingInfo: TimingStep[]) {
@@ -198,8 +185,6 @@ app.get("/prompt/*", async (c) => {
 
     const referrer = c.req.header("referer") || c.req.header("origin") || null;
     const requestId = Math.random().toString(36).substring(7);
-    const progress = createProgressTracker().startRequest(requestId);
-    progress.updateBar(requestId, 0, "Starting", "Request received");
 
     let timingInfo: TimingStep[] = [];
     let safeParams: ImageParams | undefined;
@@ -235,9 +220,7 @@ app.get("/prompt/*", async (c) => {
         const isVideo = isVideoModel(safeParams.model);
 
         if (isVideo) {
-            progress.updateBar(requestId, 10, "Processing", "Generating video");
             timingInfo = [{ step: "Request received.", timestamp: Date.now() }];
-            progress.setProcessing(requestId);
 
             const videoResult = await createAndReturnVideo(
                 originalPrompt,
@@ -281,16 +264,11 @@ app.get("/prompt/*", async (c) => {
         }
 
         // Image generation
-        progress.updateBar(requestId, 10, "Processing", "Generating image");
         timingInfo = [{ step: "Request received.", timestamp: Date.now() }];
         timingInfo.push({
             step: "Start generating job",
             timestamp: Date.now(),
         });
-        progress.setProcessing(requestId);
-
-        // Prompt processing
-        progress.updateBar(requestId, 20, "Prompt", "Normalizing...");
         const { prompt, wasPimped, wasTransformedForBadDomain } =
             await normalizeAndTranslatePrompt(
                 originalPrompt,
@@ -302,7 +280,6 @@ app.get("/prompt/*", async (c) => {
                 safeParams,
                 referrer,
             );
-        progress.updateBar(requestId, 30, "Prompt", "Normalized");
 
         logApi("display prompt", prompt);
         logApi("safeParams", safeParams);
@@ -333,28 +310,6 @@ app.get("/prompt/*", async (c) => {
         }
 
         timingInfo.push({ step: "Image returned", timestamp: Date.now() });
-
-        // Feed update (best-effort, non-blocking)
-        try {
-            const feedData = {
-                ...safeParams,
-                concurrentRequests: countFluxJobs(),
-                imageURL: `https://image.pollinations.ai${c.req.path}`,
-                prompt,
-                isChild: !!maturity.isChild,
-                isMature: !!maturity.isMature,
-                maturity,
-                timingInfo: relativeTiming(timingInfo),
-                status: "end_generating",
-                referrer,
-                wasPimped,
-                nsfw: !!(maturity.isChild || maturity.isMature),
-                private: !!safeParams.nofeed,
-            };
-            sendToFeedListeners(feedData, { saveAsLastState: true });
-        } catch {
-            // Non-critical
-        }
 
         // Detect image format from magic bytes
         const isPng =
@@ -398,14 +353,9 @@ app.get("/prompt/*", async (c) => {
             c.header(key, String(value));
         }
 
-        progress.completeBar(requestId, "Image generation complete");
-        progress.stop();
-
         return c.body(buffer);
     } catch (error: any) {
         logError("Error generating image:", error);
-        progress.errorBar(requestId, error.message || "Internal Server Error");
-        progress.stop();
 
         const statusCode = error.status || 500;
         const errorType =

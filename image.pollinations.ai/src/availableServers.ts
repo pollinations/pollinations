@@ -26,29 +26,6 @@ const SERVER_TIMEOUT = 45000; // 45 seconds
 
 const concurrency = 2;
 
-function decayErrors() {
-    Object.values(SERVERS).forEach((servers) => {
-        servers.forEach((server) => {
-            if (server.errors > 0) {
-                server.errors--;
-                logServer(
-                    `Decreased errors for ${server.url} to ${server.errors}`,
-                );
-            }
-        });
-    });
-}
-
-// Lazy-start intervals (Workers disallows setInterval at module scope).
-// Note: In Workers, isolate state is per-request so these intervals have limited
-// effect — they only run within a single isolate's lifetime.
-let intervalsStarted = false;
-function ensureIntervals() {
-    if (intervalsStarted) return;
-    intervalsStarted = true;
-    setInterval(decayErrors, 60 * 1000);
-}
-
 /**
  * Returns the total load (pending + queued jobs) for a specific type
  * Only counts active servers (with recent heartbeats)
@@ -72,7 +49,6 @@ export const countFluxJobs = () => countJobs("flux");
  * @param {string} type - The type of service (default: 'flux')
  */
 export const registerServer = (url: string, type: ServerType = "flux") => {
-    ensureIntervals();
     // Only allow predefined types, fall back to 'flux' for unknown types
     if (!Object.hasOwn(SERVERS, type)) {
         logServer(

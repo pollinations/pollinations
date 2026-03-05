@@ -31,6 +31,7 @@
     "devDependencies": {
         "@fast-check/vitest": "^0.2.2",
         "@types/node": "^24.0.14",
+        "dotenv": "^17.3.1",
         "esbuild": "^0.15.18",
         "fast-check": "^4.2.0",
         "vitest": "^3.2.4"

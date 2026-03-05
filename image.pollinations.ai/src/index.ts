@@ -33,6 +33,7 @@ const app = new Hono();
 // --- Middleware ---
 
 app.use("*", cors({
+    origin: "*",
     exposeHeaders: ["Content-Length"],
 }));
 
@@ -47,8 +48,9 @@ app.use("*", async (c, next) => {
         }
     }
     // Store the IMAGES binding (object, can't go through process.env)
-    if (c.env.IMAGES) {
-        setImagesBinding(c.env.IMAGES);
+    const env = c.env as Record<string, unknown>;
+    if (env.IMAGES) {
+        setImagesBinding(env.IMAGES);
     }
     await next();
 });
@@ -322,7 +324,7 @@ app.get("/prompt/*", async (c) => {
         let finalBuffer = buffer;
         if (!safeParams.transparent) {
             try {
-                finalBuffer = await convertToJpeg(c.env.IMAGES, buffer);
+                finalBuffer = await convertToJpeg((c.env as any).IMAGES, buffer);
                 timingInfo.push({ step: "JPEG conversion", timestamp: Date.now() });
                 // Write EXIF metadata (model name, parameters) into JPEG
                 finalBuffer = await writeExifMetadata(finalBuffer, safeParams, maturity);

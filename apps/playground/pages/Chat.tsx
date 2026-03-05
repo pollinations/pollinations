@@ -25,7 +25,6 @@ import {
   ModelSelectorItem,
   ModelSelectorList,
   ModelSelectorLogo,
-  ModelSelectorLogoGroup,
   ModelSelectorName,
   ModelSelectorTrigger,
 } from '@/components/ai-elements/model-selector';
@@ -210,10 +209,26 @@ export default function Chat() {
         <Conversation className="scrollbar-hide">
           <ConversationContent className="scrollbar-hide">
             {messages.length === 0 ? (
-              <ConversationEmptyState
-                title="No messages yet"
-                description="Start a conversation by typing a message below."
-              />
+              <ConversationEmptyState>
+                <div className="space-y-3">
+                  {selectedModelData && (
+                    <div className="flex items-center justify-center gap-2">
+                      {selectedProvider.chefSlug && (
+                        <ModelSelectorLogo
+                          provider={selectedProvider.chefSlug as any}
+                          className="size-5 opacity-60"
+                        />
+                      )}
+                      <span className="text-lg font-semibold tracking-tight text-foreground/80">
+                        {selectedModelData.name}
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-sm text-muted-foreground/60">
+                    Start a conversation by typing a message below.
+                  </p>
+                </div>
+              </ConversationEmptyState>
             ) : (
               messages.map((message) => {
                 const messageParts = message.parts || [];
@@ -368,16 +383,17 @@ export default function Chat() {
                     open={modelSelectorOpen}
                   >
                     <ModelSelectorTrigger asChild>
-                      <PromptInputButton>
+                      <PromptInputButton className="gap-2.5 px-3.5 py-1.5 rounded-full border border-border/50 hover:border-primary/30 transition-colors">
                         {selectedProvider.chefSlug && (
                           <ModelSelectorLogo
                             provider={selectedProvider.chefSlug as any}
+                            className="size-4 opacity-80"
                           />
                         )}
                         {selectedModelData?.name && (
-                          <ModelSelectorName>
+                          <span className="text-[13px] font-semibold tracking-tight text-foreground/85">
                             {selectedModelData.name}
-                          </ModelSelectorName>
+                          </span>
                         )}
                       </PromptInputButton>
                     </ModelSelectorTrigger>
@@ -404,17 +420,25 @@ export default function Chat() {
                                   >
                                     <ModelSelectorLogo
                                       provider={provider.chefSlug as any}
+                                      className="size-4"
                                     />
-                                    <ModelSelectorName>
-                                      {m.name}
-                                    </ModelSelectorName>
-                                    <ModelSelectorLogoGroup>
-                                      <ModelSelectorLogo
-                                        provider={provider.chefSlug as any}
-                                      />
-                                    </ModelSelectorLogoGroup>
+                                    <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                                      <ModelSelectorName className="text-[13px]">
+                                        {m.name}
+                                      </ModelSelectorName>
+                                      {m.descriptionShort && (
+                                        <span className="text-[11px] text-muted-foreground/60 truncate">
+                                          {m.descriptionShort}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {m.paidOnly && (
+                                      <span className="inline-flex items-center rounded-full bg-[rgba(251,191,36,0.15)] border border-[rgba(251,191,36,0.3)] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-[#fbbf24]">
+                                        Paid
+                                      </span>
+                                    )}
                                     {model === m.id ? (
-                                      <CheckIcon className="ml-auto size-4" />
+                                      <CheckIcon className="ml-auto size-4 text-primary" />
                                     ) : (
                                       <div className="ml-auto size-4" />
                                     )}

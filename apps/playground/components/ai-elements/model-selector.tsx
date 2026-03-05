@@ -60,7 +60,7 @@ export const ModelSelectorInput = ({
   className,
   ...props
 }: ModelSelectorInputProps) => (
-  <CommandInput className={cn('h-auto py-3.5', className)} {...props} />
+  <CommandInput className={cn('h-auto py-4 text-sm', className)} {...props} />
 );
 
 export type ModelSelectorListProps = ComponentProps<typeof CommandList>;
@@ -201,5 +201,8 @@ export const ModelSelectorName = ({
   className,
   ...props
 }: ModelSelectorNameProps) => (
-  <span className={cn('flex-1 truncate text-left', className)} {...props} />
+  <span
+    className={cn('flex-1 truncate text-left font-medium tracking-tight', className)}
+    {...props}
+  />
 );

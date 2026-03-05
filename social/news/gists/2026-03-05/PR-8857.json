@@ -1,0 +1,33 @@
+{
+  "pr_number": 8857,
+  "title": "[PATCH]: Unified workflow for both \"Latest News\" and \"Recent Apps\" README sections",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/8857",
+  "merged_at": "2026-03-05T19:12:47Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Tidying the front page",
+    "blurb": "We've streamlined how our GitHub README gets updated with the latest news and community apps. Everything now runs smoothly on a single daily schedule.",
+    "summary": "Consolidated the GitHub Actions workflows for updating the 'Latest News' and 'Recent Apps' sections of the README into a single daily job.",
+    "impact": "This reduces CI clutter and ensures the repository's front page stays consistently up-to-date with community highlights.",
+    "keywords": [
+      "readme",
+      "automation",
+      "github-actions",
+      "infrastructure"
+    ],
+    "visual_concept": "The pollinations.ai bee organizing a giant digital bulletin board (README) with the help of the monitor robot. The board has sections for 'News' and 'Apps'. The robot is holding a daily schedule.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot organizing a large wooden bulletin board. The board has glowing pixel-font text reading 'README'. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-05T19:13:45.863125+00:00"
+}

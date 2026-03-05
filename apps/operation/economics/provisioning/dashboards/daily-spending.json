@@ -110,7 +110,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Average daily paid GPU cost (io.net).",
+      "description": "Fixed daily paid GPU cost (Vast.ai). Flux: 4 GPUs @ $1.65/h, Z-Image: 4 GPUs @ $1.65/h.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -168,7 +168,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as gpu_daily_spend\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'io.net'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "SELECT ($gpu_flux_daily + $gpu_zimage_daily) as gpu_daily_spend",
           "refId": "A"
         }
       ],
@@ -267,7 +267,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Average daily free GPU cost (modal GPU + OVH GPU models).",
+      "description": "Fixed daily free GPU cost (Modal Klein + Klein-Large).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -321,7 +321,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as free_gpu_daily\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used = 'modal' AND (model_used IN ('klein', 'klein-large', 'ltx-2') OR model_used LIKE 'flux_klein%'))\n    OR (model_provider_used = 'ovhcloud' AND model_used NOT IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "SELECT ($gpu_klein_daily + $gpu_klein_large_daily) as free_gpu_daily",
           "refId": "A"
         }
       ],
@@ -534,7 +534,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as spend\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance', 'io.net')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as spend\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "B",
           "hide": true
         },
@@ -551,10 +551,21 @@
         },
         {
           "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT ($gpu_flux_daily + $gpu_zimage_daily) as gpu",
+          "refId": "E",
+          "hide": true
+        },
+        {
+          "datasource": {
             "type": "__expr__",
             "uid": "__expr__"
           },
-          "expression": "$A - $B - $D",
+          "expression": "$A - $B - $D - $E",
           "refId": "C",
           "type": "math"
         }
@@ -678,7 +689,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily paid GPU cost by provider/model (io.net).",
+      "description": "Daily paid GPU cost by provider/model (io.net/vast.ai).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -764,7 +775,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'io.net'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('io.net', 'vast.ai')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
           "refId": "A"
         }
       ],
@@ -1783,6 +1794,78 @@
       },
       {
         "type": "constant",
+        "name": "gpu_flux_daily",
+        "label": "Flux GPU Cost ($/day) - 4x GPUs @ $1.65/h",
+        "query": "158.40",
+        "current": {
+          "text": "158.40",
+          "value": "158.40"
+        },
+        "hide": 2,
+        "options": [
+          {
+            "text": "158.40",
+            "value": "158.40",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "type": "constant",
+        "name": "gpu_zimage_daily",
+        "label": "Z-Image GPU Cost ($/day) - 4x GPUs @ $1.65/h",
+        "query": "158.40",
+        "current": {
+          "text": "158.40",
+          "value": "158.40"
+        },
+        "hide": 2,
+        "options": [
+          {
+            "text": "158.40",
+            "value": "158.40",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "type": "constant",
+        "name": "gpu_klein_daily",
+        "label": "Klein GPU Cost ($/day) - Modal L40S",
+        "query": "61.90",
+        "current": {
+          "text": "61.90",
+          "value": "61.90"
+        },
+        "hide": 2,
+        "options": [
+          {
+            "text": "61.90",
+            "value": "61.90",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "type": "constant",
+        "name": "gpu_klein_large_daily",
+        "label": "Klein-Large GPU Cost ($/day) - Modal L40S",
+        "query": "46.61",
+        "current": {
+          "text": "46.61",
+          "value": "46.61"
+        },
+        "hide": 2,
+        "options": [
+          {
+            "text": "46.61",
+            "value": "46.61",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "type": "constant",
         "name": "infra_cloudflare_daily",
         "label": "Cloudflare Gateway ($/day)",
         "query": "60",
@@ -1803,16 +1886,16 @@
         "type": "constant",
         "name": "infra_aws_daily",
         "label": "AWS AI Services ($/day)",
-        "query": "140",
+        "query": "35",
         "current": {
-          "text": "140",
-          "value": "140"
+          "text": "35",
+          "value": "35"
         },
         "hide": 2,
         "options": [
           {
-            "text": "140",
-            "value": "140",
+            "text": "35",
+            "value": "35",
             "selected": true
           }
         ]

@@ -241,12 +241,11 @@ This makes all generated content available locally for scripts that read files (
 |---|---|
 | `generate_realtime.py` | Per-PR: AI analysis → gist JSON → image gen (source of truth) |
 | `publish_realtime.py` | Per-PR: reads gist → AI announcement → Discord webhook post |
-| `generate_daily.py` | Daily: read gists → summary + platform posts (X, IG, Reddit) + images → commit to news → README-only PR to main |
+| `generate_daily.py` | Daily: read gists → summary + platform posts (X, IG, Reddit) + images + highlights → commit to news |
 | `generate_weekly.py` | Weekly: read gists directly (Sun→Sat) → synthesize themes → all 5 platform posts + images → commit to news |
 | `publish_daily.py` | PUBLISH_MODE=buffer: stage X + IG to Buffer. PUBLISH_MODE=direct: Reddit VPS deployment. |
 | `publish_weekly.py` | PUBLISH_MODE=buffer: stage X + LI + IG to Buffer. PUBLISH_MODE=direct: Reddit VPS + Discord webhook. |
-| `update_highlights.py` | Daily: reads yesterday's gists, AI curates highlights, updates highlights.md + README |
-| `update_readme.py` | Utility functions: `get_top_highlights()`, `update_readme_news_section()` (used by update_highlights.py) |
+| `update_readme.py` | Utility functions: `get_top_highlights()`, `update_readme_news_section()` (called by `readme-daily-update.yml`) |
 | `common.py` | Shared utils: prompt loading, brand injection, API calls, gist I/O, retry logic, `read_news_file()`, constants |
 | `buffer_publish.py` | Buffer API staging with scheduled delivery |
 | `buffer_utils.py` | Buffer GraphQL API helpers |

@@ -27,7 +27,7 @@
         "./*"
       ],
       "ai-sdk-pollinations": [
-        "../src"
+        "./src"
       ]
     }
   },

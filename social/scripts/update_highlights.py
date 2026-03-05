@@ -100,19 +100,19 @@ def merge_highlights(new_highlights: str, existing_highlights: str) -> str:
     return new_clean + "\n" + existing_clean + "\n"
 
 
-def generate_highlights_and_readme(pollinations_token: str, date_str: str) -> tuple[str | None, str | None]:
-    """Generate updated highlights.md and README.md content without creating a PR.
+def generate_highlights(pollinations_token: str, date_str: str) -> str | None:
+    """Generate updated highlights.md content without creating a PR.
 
     Reads gists for the given date, AI-curates highlights, merges with existing
-    highlights.md, and updates the README "Latest News" section.
+    highlights.md.
 
-    Returns (highlights_content, readme_content). Either may be None if no updates.
+    Returns merged highlights content, or None if no updates.
     """
     # Load gists and format as changelog
     changelog, gist_count = load_gists_as_changelog(date_str)
     if not changelog:
         print(f"  Highlights: no qualifying gists for {date_str}")
-        return None, None
+        return None
     print(f"  Highlights: {gist_count} qualifying gists for {date_str}")
 
     # Generate highlights via AI
@@ -123,12 +123,12 @@ def generate_highlights_and_readme(pollinations_token: str, date_str: str) -> tu
     )
     if not ai_response:
         print("  Highlights: AI generation failed")
-        return None, None
+        return None
 
     new_highlights = parse_response(ai_response)
     if not new_highlights.strip():
         print("  Highlights: empty response from AI")
-        return None, None
+        return None
 
     print(f"  Highlights: generated new entries")
 
@@ -149,32 +149,18 @@ def generate_highlights_and_readme(pollinations_token: str, date_str: str) -> tu
                 print("  Highlights: fetched existing from news branch via API")
     merged_highlights = merge_highlights(new_highlights, existing_highlights)
 
-    # Update README (read locally)
-    readme_path = os.path.join(repo_root, README_PATH)
-    updated_readme = None
-    if os.path.exists(readme_path):
-        with open(readme_path, "r") as f:
-            readme_content = f.read()
-        top_entries = get_top_highlights(merged_highlights)
-        if top_entries:
-            result = update_readme_news_section(readme_content, top_entries)
-            if result and result != readme_content:
-                updated_readme = result
-                print("  Highlights: README will be updated")
-
-    return merged_highlights, updated_readme
+    return merged_highlights
 
 
 def create_highlights_pr(
     highlights_content: str,
-    readme_content: str | None,
     new_highlights: str,
     github_token: str,
     owner: str,
     repo: str,
     date_str: str,
 ):
-    """Create a PR with updated highlights.md and README.md."""
+    """Create a PR with updated highlights.md."""
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}",

@@ -671,18 +671,15 @@ function App() {
                                                     />
                                                 </div>
                                             </td>
-                                            {/* Requests - total with adjusted count in smaller text */}
+                                            {/* Requests - non-4xx as primary, total in parentheses */}
                                             <td className="px-3 py-2 text-right tabular-nums text-gray-600">
                                                 {total > 0 ? (
                                                     <>
-                                                        {total.toLocaleString()}
+                                                        {(total - total4xx).toLocaleString()}
                                                         {total4xx > 0 && (
                                                             <span className="text-gray-400 text-xs ml-1">
                                                                 (
-                                                                {(
-                                                                    total -
-                                                                    total4xx
-                                                                ).toLocaleString()}
+                                                                {total.toLocaleString()}
                                                                 )
                                                             </span>
                                                         )}
@@ -691,17 +688,17 @@ function App() {
                                                     "—"
                                                 )}
                                             </td>
-                                            {/* Success = non-5xx rate of total (4xx excluded from errors) */}
+                                            {/* Success = 2xx / (total - 4xx), so only 2xx vs 5xx */}
                                             <td
                                                 className={`px-3 py-2 text-right tabular-nums ${get2xxColor(
-                                                    total - total5xx,
-                                                    total,
+                                                    stats?.status_2xx || 0,
+                                                    total - total4xx,
                                                     0,
                                                 )}`}
                                             >
                                                 {formatPercent(
-                                                    total - total5xx,
-                                                    total,
+                                                    stats?.status_2xx || 0,
+                                                    total - total4xx,
                                                     true,
                                                 )}
                                             </td>

@@ -22,6 +22,7 @@ import {
     type ContentSafetyFlags,
 } from "./utils/azureContentSafety.ts";
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
+import { getImagesBinding, resizeForGptImage } from "./utils/imageTransform.js";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 
@@ -183,8 +184,7 @@ export const callSelfHostedServer = async (
 
         const buffer = Buffer.from(image, "base64");
 
-        // Workers mode: return buffer as-is (sharp not available for resize/JPEG conversion).
-        // Self-hosted backends already return images at usable dimensions.
+        // Return buffer as-is; JPEG conversion happens in the response handler (index.ts).
         return {
             buffer,
             ...rest,
@@ -583,7 +583,14 @@ const callAzureGPTImageWithEndpoint = async (
                     }
 
                     const imageArrayBuffer = await imageResponse.arrayBuffer();
-                    const buffer = Buffer.from(imageArrayBuffer);
+                    let buffer = Buffer.from(imageArrayBuffer);
+
+                    // Resize input image for GPT Image API (~2.36MP max)
+                    try {
+                        buffer = await resizeForGptImage(getImagesBinding(), buffer);
+                    } catch (resizeErr) {
+                        logError(`Image ${i + 1} resize failed, using original:`, resizeErr);
+                    }
 
                     // Only check safety after we've successfully fetched the image
                     logCloudflare(

@@ -4,6 +4,9 @@ compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 
+[images]
+binding = "IMAGES"
+
 [vars]
 # Non-secret config vars can go here
 

@@ -17,6 +17,7 @@ import {
 import { type ImageParams, ImageParamsSchema } from "./params.js";
 import { ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.js";
+import { convertToJpeg, setImagesBinding } from "./utils/imageTransform.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Singleton no-op progress tracker (Workers-compatible)
@@ -43,6 +44,10 @@ app.use("*", async (c, next) => {
         if (typeof value === "string") {
             process.env[key] = value;
         }
+    }
+    // Store the IMAGES binding (object, can't go through process.env)
+    if (c.env.IMAGES) {
+        setImagesBinding(c.env.IMAGES);
     }
     await next();
 });
@@ -311,17 +316,30 @@ app.get("/prompt/*", async (c) => {
 
         timingInfo.push({ step: "Image returned", timestamp: Date.now() });
 
+        // Convert to JPEG using Cloudflare Images binding (if available).
+        // Skip conversion for transparent images (keep PNG).
+        let finalBuffer = buffer;
+        if (!safeParams.transparent) {
+            try {
+                finalBuffer = await convertToJpeg(c.env.IMAGES, buffer);
+                timingInfo.push({ step: "JPEG conversion", timestamp: Date.now() });
+            } catch (err) {
+                logError("Cloudflare Images JPEG conversion failed, using original buffer:", err);
+                finalBuffer = buffer;
+            }
+        }
+
         // Detect image format from magic bytes
         const isPng =
-            buffer[0] === 0x89 &&
-            buffer[1] === 0x50 &&
-            buffer[2] === 0x4e &&
-            buffer[3] === 0x47;
+            finalBuffer[0] === 0x89 &&
+            finalBuffer[1] === 0x50 &&
+            finalBuffer[2] === 0x4e &&
+            finalBuffer[3] === 0x47;
         const isWebp =
-            buffer[8] === 0x57 &&
-            buffer[9] === 0x45 &&
-            buffer[10] === 0x42 &&
-            buffer[11] === 0x50;
+            finalBuffer[8] === 0x57 &&
+            finalBuffer[9] === 0x45 &&
+            finalBuffer[10] === 0x42 &&
+            finalBuffer[11] === 0x50;
         const contentType = isPng
             ? "image/png"
             : isWebp
@@ -353,7 +371,7 @@ app.get("/prompt/*", async (c) => {
             c.header(key, String(value));
         }
 
-        return c.body(buffer);
+        return c.body(finalBuffer);
     } catch (error: any) {
         logError("Error generating image:", error);
 

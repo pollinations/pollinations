@@ -270,6 +270,10 @@ header {
     height: 0 !important;
   }
 
+  .logo-lime-tint {
+    filter: invert(1) sepia(1) saturate(5) hue-rotate(40deg) brightness(0.85);
+  }
+
   .text-gradient {
     background: linear-gradient(135deg, #a3e635 0%, #86efac 50%, #fbbf24 100%);
     -webkit-background-clip: text;

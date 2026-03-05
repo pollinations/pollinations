@@ -1,14 +1,11 @@
-import sleep from "await-sleep";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { sleep } from "../util.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
-import {
-    calculateVideoResolution,
-    resolutionToLowercase,
-} from "../utils/videoResolution.ts";
+import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 // Logger
 const logOps = debug("pollinations:seedance:ops");
@@ -120,7 +117,10 @@ async function generateSeedanceVideo(
             aspectRatio: safeParams.aspectRatio,
             defaultResolution: "720P",
         });
-    const resolution = resolutionToLowercase(resolutionUpper);
+    const resolution = resolutionUpper.toLowerCase() as
+        | "480p"
+        | "720p"
+        | "1080p";
     // Map aspectRatio to Seedance format: "16:9" -> "16_9", "9:16" -> "9_16"
     const aspectRatioFormatted = aspectRatio.replace(":", "_");
 

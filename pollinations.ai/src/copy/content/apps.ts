@@ -47,56 +47,47 @@ export const GENRE_FILTERS = [
     {
         id: "image",
         label: "🖼️ Image",
-        tooltip: "Image gen, editing, design, avatars, stickers",
         match: (app: App) => app.category === "image",
-    },
-    {
-        id: "video_audio",
-        label: "🎬 Video & Audio",
-        tooltip: "Video gen, animation, music, TTS",
-        match: (app: App) => app.category === "video_audio",
-    },
-    {
-        id: "writing",
-        label: "✍️ Write",
-        tooltip: "Content creation, storytelling, copy, slides",
-        match: (app: App) => app.category === "writing",
     },
     {
         id: "chat",
         label: "💬 Chat",
-        tooltip: "Assistants, companions, AI studio, multi-modal chat",
         match: (app: App) => app.category === "chat",
     },
     {
+        id: "build",
+        label: "🛠️ Build",
+        match: (app: App) => app.category === "build",
+    },
+    {
+        id: "writing",
+        label: "✍️ Write",
+        match: (app: App) => app.category === "writing",
+    },
+    {
         id: "games",
-        label: "🎮 Play",
-        tooltip: "AI games, interactive fiction, Roblox worlds",
+        label: "🎮 Games",
         match: (app: App) => app.category === "games",
     },
     {
         id: "learn",
         label: "📚 Learn",
-        tooltip: "Education, tutoring, language learning",
         match: (app: App) => app.category === "learn",
-    },
-    {
-        id: "bots",
-        label: "🤖 Bots",
-        tooltip: "Discord, Telegram, WhatsApp bots",
-        match: (app: App) => app.category === "bots",
-    },
-    {
-        id: "build",
-        label: "🛠️ Build",
-        tooltip: "Dev tools, SDKs, integrations, vibe coding",
-        match: (app: App) => app.category === "build",
     },
     {
         id: "business",
         label: "💼 Business",
-        tooltip: "Productivity, finance, marketing, health, food",
         match: (app: App) => app.category === "business",
+    },
+    {
+        id: "bots",
+        label: "🤖 Bots",
+        match: (app: App) => app.category === "bots",
+    },
+    {
+        id: "video_audio",
+        label: "🎬 Video & Audio",
+        match: (app: App) => app.category === "video_audio",
     },
 ];
 

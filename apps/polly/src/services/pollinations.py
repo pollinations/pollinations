@@ -1,12 +1,11 @@
 import asyncio
+import json
 import logging
 import random
 import time
 from collections.abc import Callable
 from contextvars import ContextVar
 from typing import Any
-
-import json
 
 try:
     import orjson
@@ -170,6 +169,7 @@ class PollinationsClient:
         is_admin: bool = False,
         tool_context: dict | None = None,
         mode: str = "discord",
+        api_params: dict | None = None,
     ) -> dict:
         system_content = get_tool_system_prompt(is_admin=is_admin, mode=mode)
         if is_admin:
@@ -278,6 +278,7 @@ class PollinationsClient:
             user_message=user_message,
             tool_context=tool_context,
             mode=mode,
+            api_params=api_params,
         )
         return result
 
@@ -290,6 +291,7 @@ class PollinationsClient:
         user_message: str = "",
         tool_context: dict | None = None,
         mode: str = "discord",
+        api_params: dict | None = None,
     ) -> dict:
         """Make API call with tool support and handle tool calls."""
 
@@ -318,12 +320,19 @@ class PollinationsClient:
             logger.info(f"Filtered tools to: {', '.join(filtered_tool_names)}")
 
         all_content_blocks = []
+        total_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
         for iteration in range(max_iterations):
             start_time = time.time()
-            response = await self._call_api_with_tools(messages, tools=tools, mode=mode)
+            response = await self._call_api_with_tools(messages, tools=tools, mode=mode, api_params=api_params)
             api_time = time.time() - start_time
             logger.info(f"AI API call took {api_time:.1f}s (iteration {iteration + 1})")
+
+            # Accumulate token usage from each API call
+            resp_usage = response.get("usage") if response else None
+            if resp_usage:
+                for k in total_usage:
+                    total_usage[k] += resp_usage.get(k, 0)
 
             if not response:
                 return {
@@ -331,6 +340,7 @@ class PollinationsClient:
                     "tool_calls": all_tool_calls,
                     "tool_results": all_tool_results,
                     "content_blocks": all_content_blocks,
+                    "usage": total_usage,
                     "error": True,
                 }
 
@@ -350,6 +360,7 @@ class PollinationsClient:
                     "tool_calls": all_tool_calls,
                     "tool_results": all_tool_results,
                     "content_blocks": all_content_blocks,
+                    "usage": total_usage,
                 }
 
             # Execute tool calls in parallel
@@ -402,17 +413,22 @@ class PollinationsClient:
                 )
 
         # Max iterations reached, get final response
-        final_response = await self._call_api_with_tools(messages, tools=None, mode=mode)
+        final_response = await self._call_api_with_tools(messages, tools=None, mode=mode, api_params=api_params)
         # Collect any remaining content_blocks from final response
         if final_response:
             final_blocks = final_response.get("content_blocks", [])
             if final_blocks:
                 all_content_blocks.extend(final_blocks)
+            resp_usage = final_response.get("usage")
+            if resp_usage:
+                for k in total_usage:
+                    total_usage[k] += resp_usage.get(k, 0)
         return {
             "response": final_response.get("content", "") if final_response else "",
             "tool_calls": all_tool_calls,
             "tool_results": all_tool_results,
             "content_blocks": all_content_blocks,
+            "usage": total_usage,
         }
 
     async def _execute_tools_parallel(
@@ -503,6 +519,7 @@ class PollinationsClient:
         tools: list | None = None,
         timeout: int = API_TIMEOUT,
         mode: str = "discord",
+        api_params: dict | None = None,
     ) -> dict | None:
         """Make API call to Pollinations with tool definitions.
 
@@ -510,6 +527,7 @@ class PollinationsClient:
         - Random seed parameter (0 to int32 max) for each request
         - 3 retry attempts with 5s delay between retries
         - New random seed for each retry attempt
+        - Pass-through of OpenAI generation params (temperature, max_tokens, etc.)
         """
         # API mode: MUST use the user's passed-through key, never the bot's internal token.
         # Discord mode: uses the bot's own token (no override set).
@@ -532,14 +550,21 @@ class PollinationsClient:
         last_error = None
 
         for attempt in range(MAX_RETRIES):
-            # Generate new random seed for each attempt
-            seed = random.randint(0, MAX_SEED)
+            # Use caller's seed if provided (default 42), otherwise random per attempt
+            caller_seed = (api_params or {}).get("seed") if api_params else None
+            seed = caller_seed if caller_seed is not None else 42
 
             payload = {
                 "model": config.pollinations_model,
                 "messages": messages,
                 "seed": seed,
             }
+
+            # Merge caller-provided OpenAI params (temperature, max_tokens, etc.)
+            if api_params:
+                for k, v in api_params.items():
+                    if k != "seed" and v is not None:
+                        payload[k] = v
 
             if tools:
                 payload["tools"] = tools
@@ -570,6 +595,7 @@ class PollinationsClient:
                             "content": message.get("content", ""),
                             "tool_calls": message.get("tool_calls", []),
                             "content_blocks": content_blocks,
+                            "usage": data.get("usage"),
                         }
                     else:
                         error_text = await response.text()

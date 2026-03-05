@@ -101,7 +101,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     </div>
                                     <div>
                                         <strong>/sec</strong> = per second of
-                                        video
+                                        video/audio
                                     </div>
                                     <div>
                                         <strong>/1K chars</strong> = per 1000

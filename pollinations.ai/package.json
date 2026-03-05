@@ -6,7 +6,9 @@
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
+        "build:staging": "CLOUDFLARE_ENV=staging tsc && CLOUDFLARE_ENV=staging vite build --mode=staging",
         "preview": "vite preview",
+        "deploy:staging": "npm run build:staging && CLOUDFLARE_ACCOUNT_ID=efdcb0933eaac64f27c0b295039b28f2 wrangler deploy",
         "deploy:production": "npm run build && wrangler deploy"
     },
     "dependencies": {

@@ -2,6 +2,20 @@
 
 All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 
+## [4.1.0] - 2026-03-05
+
+### Added
+- **Speech-to-Text (STT)**: `transcribe()` method and helper for audio transcription via `/v1/audio/transcriptions` (whisper-large-v3, scribe models)
+- **Media Upload**: `upload()` method for uploading images, audio, and video to `media.pollinations.ai` with content-addressed deduplication
+- **BYOP (Bring Your Own Pollen)**: `authorizeUrl()` to build authorization URLs that let users grant apps access to their Pollen balance with model/budget/permission scoping
+- **Account endpoints**:
+  - `accountProfile()` / `getProfile()` - Get user profile (name, email, tier)
+  - `accountBalance()` / `getBalance()` - Get pollen balance
+  - `accountUsage()` / `getUsage()` - Get detailed usage history with pagination
+  - `accountUsageDaily()` / `getDailyUsage()` - Get daily aggregated usage
+  - `validateKey()` - Validate API key and inspect permissions, budget, expiry
+- New types: `TranscribeOptions`, `TranscriptionResponse`, `TranscriptionVerboseResponse`, `UploadOptions`, `UploadResponse`, `AuthorizeOptions`, `AccountProfile`, `AccountBalance`, `UsageRecord`, `UsageResponse`, `DailyUsageRecord`, `DailyUsageResponse`, `KeyInfo`, `AccountPermission`
+
 ## [4.0.1] - 2026-01-10
 
 ### Changed

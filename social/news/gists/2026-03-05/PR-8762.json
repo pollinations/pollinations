@@ -1,0 +1,34 @@
+{
+  "pr_number": 8762,
+  "title": "Add Pollinations Extension to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8762",
+  "merged_at": "2026-03-05T04:13:03Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive in your browser",
+    "blurb": "A new community-built browser extension just landed in the greenhouse. Bring your own pollen and generate images right from your toolbar.",
+    "summary": "Added the community-built Pollinations Browser Extension to the apps showcase.",
+    "impact": "Users can now easily access Pollinations.ai image generation directly from their browser using their own Pollen credits.",
+    "keywords": [
+      "community",
+      "app",
+      "browser extension",
+      "BYOP",
+      "image generation"
+    ],
+    "visual_concept": "Polly the bee interacting with a browser extension puzzle piece or a tiny browser window, representing the new community-built browser extension.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing browser extension puzzle piece next to a retro computer monitor. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. The bee wears a tiny tool belt, rendered with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-05T04:13:59.971586+00:00"
+}

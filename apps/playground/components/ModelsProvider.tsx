@@ -11,22 +11,36 @@ import { type ModelOption } from './ModelSelector';
 
 // Shared mapping of feature labels to emojis used across model-related UI.
 export const FEATURE_EMOJI: Record<string, string> = {
-  'Text input': '📝',
-  'Image input': '🖼️',
-  'Audio input': '🎤',
-  'Video input': '🎥',
-  'Text output': '📤',
-  'Image output': '📷',
-  'Audio output': '🔊',
-  'Video output': '📺',
-  Tools: '🛠️',
-  Reasoning: '🧠',
-  Specialized: '🎯',
-  Text: '📝',
-  Image: '🖼️',
-  Video: '🎬',
-  'Search / Web': '🔍',
+  'Text input': '\u{1F4DD}',
+  'Image input': '\u{1F5BC}\uFE0F',
+  'Audio input': '\u{1F3A4}',
+  'Video input': '\u{1F3A5}',
+  'Text output': '\u{1F4E4}',
+  'Image output': '\u{1F4F7}',
+  'Audio output': '\u{1F50A}',
+  'Video output': '\u{1F4FA}',
+  Tools: '\u{1F6E0}\uFE0F',
+  Reasoning: '\u{1F9E0}',
+  Specialized: '\u{1F3AF}',
+  Text: '\u{1F4DD}',
+  Image: '\u{1F5BC}\uFE0F',
+  Video: '\u{1F3AC}',
+  'Search / Web': '\u{1F50D}',
 };
+
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+const CACHE_KEYS = {
+  text: 'pollinations_models_text',
+  image: 'pollinations_models_image',
+  audio: 'pollinations_models_audio',
+} as const;
+
+const API_ENDPOINTS = {
+  text: 'https://gen.pollinations.ai/text/models',
+  image: 'https://gen.pollinations.ai/image/models',
+  audio: 'https://gen.pollinations.ai/audio/models',
+} as const;
 
 // API Response type
 interface PollinationsModel {
@@ -41,354 +55,54 @@ interface PollinationsModel {
     completionImageTokens?: number;
     completionVideoTokens?: number;
     completionVideoSeconds?: number;
+    completionAudioTokens?: number;
+    completionAudioSeconds?: number;
+    promptAudioSeconds?: number;
   };
   input_modalities?: string[];
   output_modalities?: string[];
   tools?: boolean;
   reasoning?: boolean;
   is_specialized?: boolean;
+  paid_only?: boolean;
+  context_length?: number;
+  voices?: string[];
 }
 
-// Hardcoded fallback models based on current API response
-// These should be updated when the API response changes significantly
-const FALLBACK_TEXT_MODELS_RAW: readonly PollinationsModel[] = [
-  {
-    name: 'openai',
-    aliases: [],
-    description: 'OpenAI GPT-5 Mini - Fast & Balanced',
-    input_modalities: ['text', 'image'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'openai-fast',
-    aliases: ['gpt-5-nano', 'gpt-5-nano-2025-08-07'],
-    description: 'OpenAI GPT-5 Nano - Ultra Fast & Affordable',
-    input_modalities: ['text', 'image'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'openai-large',
-    aliases: ['gpt-5.2', 'openai-reasoning', 'gpt-5.2-reasoning'],
-    description: 'OpenAI GPT-5.2 - Most Powerful & Intelligent',
-    input_modalities: ['text', 'image'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: true,
-    is_specialized: false,
-  },
-  {
-    name: 'openai-audio',
-    aliases: [
-      'gpt-4o-mini-audio-preview',
-      'gpt-4o-mini-audio-preview-2024-12-17',
-    ],
-    description: 'OpenAI GPT-4o Mini Audio - Voice Input & Output',
-    input_modalities: ['text', 'image', 'audio'],
-    output_modalities: ['audio', 'text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'gemini',
-    aliases: ['gemini-3-flash', 'gemini-3-flash-preview'],
-    description: 'Google Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed',
-    input_modalities: ['text', 'image', 'audio', 'video'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'gemini-fast',
-    aliases: ['gemini-2.5-flash-lite'],
-    description: 'Google Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective',
-    input_modalities: ['text', 'image'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'deepseek',
-    aliases: ['deepseek-v3', 'deepseek-reasoning'],
-    description: 'DeepSeek V3.2 - Efficient Reasoning & Agentic AI',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: true,
-    is_specialized: false,
-  },
-  {
-    name: 'grok',
-    aliases: ['grok-fast', 'grok-4', 'grok-4-fast'],
-    description: 'xAI Grok 4 Fast - High Speed & Real-Time',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'gemini-search',
-    aliases: ['gemini-3-flash-search'],
-    description: 'Google Gemini 3 Flash - With Google Search',
-    input_modalities: ['text', 'image'],
-    output_modalities: ['text'],
-    tools: false,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'chickytutor',
-    aliases: [],
-    description: 'ChickyTutor AI Language Tutor - (chickytutor.com)',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: true,
-  },
-  {
-    name: 'midijourney',
-    aliases: [],
-    description: 'MIDIjourney - AI Music Composition Assistant',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: true,
-  },
-  {
-    name: 'claude-fast',
-    aliases: ['claude-haiku-4.5', 'claude-haiku'],
-    description: 'Anthropic Claude Haiku 4.5 - Fast & Intelligent',
-    input_modalities: ['text', 'image'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'claude',
-    aliases: ['claude-sonnet-4.5', 'claude-sonnet'],
-    description: 'Anthropic Claude Sonnet 4.5 - Most Capable & Balanced',
-    input_modalities: ['text', 'image'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'claude-large',
-    aliases: ['claude-opus-4.5', 'claude-opus'],
-    description: 'Anthropic Claude Opus 4.5 - Most Intelligent Model',
-    input_modalities: ['text', 'image'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: true,
-    is_specialized: false,
-  },
-  {
-    name: 'perplexity-fast',
-    aliases: ['sonar'],
-    description: 'Perplexity Sonar - Fast & Affordable with Web Search',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: false,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'perplexity-reasoning',
-    aliases: ['sonar-reasoning', 'sonar-reasoning-pro'],
-    description:
-      'Perplexity Sonar Reasoning - Advanced Reasoning with Web Search',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: false,
-    reasoning: true,
-    is_specialized: false,
-  },
-  {
-    name: 'qwen-coder',
-    aliases: ['qwen3-coder', 'qwen3-coder-30b-a3b-instruct'],
-    description: 'Qwen3 Coder 30B - Specialized for Code Generation',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'gemini-large',
-    aliases: ['gemini-3-pro', 'gemini-3', 'gemini-3-pro-preview'],
-    description:
-      'Google Gemini 3 Pro - Most Intelligent Model with 1M Context (Preview)',
-    input_modalities: ['text', 'image', 'audio', 'video'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: true,
-    is_specialized: false,
-  },
-  {
-    name: 'nova-fast',
-    aliases: ['amazon-nova-micro', 'nova', 'nova-micro'],
-    description: 'Amazon Nova Micro - Ultra Fast & Ultra Cheap',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-  {
-    name: 'glm',
-    aliases: ['glm-4.7', 'glm-4p7'],
-    description: 'Z.ai GLM-4.7 - Coding, Reasoning & Agentic Workflows',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: true,
-    is_specialized: false,
-  },
-  {
-    name: 'minimax',
-    aliases: ['minimax-m2.1', 'minimax-m2p1'],
-    description: 'MiniMax M2.1 - Multi-Language & Agent Workflows',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: true,
-    is_specialized: false,
-  },
-  {
-    name: 'nomnom',
-    aliases: ['gemini-scrape', 'web-research'],
-    description:
-      'NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)',
-    input_modalities: ['text'],
-    output_modalities: ['text'],
-    tools: true,
-    reasoning: false,
-    is_specialized: false,
-  },
-] as const;
+interface CachedData<T> {
+  data: T;
+  timestamp: number;
+}
 
-const FALLBACK_IMAGE_MODELS_RAW: readonly PollinationsModel[] = [
-  {
-    name: 'kontext',
-    aliases: [],
-    description: 'FLUX.1 Kontext - In-context editing & generation',
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-  {
-    name: 'turbo',
-    aliases: [],
-    description: 'SDXL Turbo - Single-step real-time generation',
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-  {
-    name: 'nanobanana',
-    aliases: [],
-    description: 'NanoBanana - Gemini 2.5 Flash Image',
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-  {
-    name: 'nanobanana-pro',
-    aliases: [],
-    description: 'NanoBanana Pro - Gemini 3 Pro Image (4K, Thinking)',
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-  {
-    name: 'seedream',
-    aliases: [],
-    description: 'Seedream 4.0 - ByteDance ARK (better quality)',
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-  {
-    name: 'seedream-pro',
-    aliases: [],
-    description: 'Seedream 4.5 Pro - ByteDance ARK (4K, Multi-Image)',
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-  {
-    name: 'gptimage',
-    aliases: [],
-    description: "GPT Image 1 Mini - OpenAI's image generation model",
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-  {
-    name: 'gptimage-large',
-    aliases: [],
-    description: "GPT Image 1.5 - OpenAI's advanced image generation model",
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-  {
-    name: 'flux',
-    aliases: [],
-    description: 'Flux Schnell - Fast high-quality image generation',
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-  {
-    name: 'zimage',
-    aliases: [],
-    description: 'Z-Image Turbo - Fast 6B Flux with 2x upscaling',
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-  {
-    name: 'klein',
-    aliases: [],
-    description: 'FLUX.2 Klein 4B - Fast image generation & editing on Modal',
-    input_modalities: ['text'],
-    output_modalities: ['image'],
-  },
-] as const;
+function getFromCache<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const cached: CachedData<T> = JSON.parse(raw);
+    if (Date.now() - cached.timestamp > CACHE_TTL_MS) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return cached.data;
+  } catch {
+    return null;
+  }
+}
 
-const FALLBACK_VIDEO_MODELS_RAW: readonly PollinationsModel[] = [
-  {
-    name: 'veo',
-    aliases: [],
-    description: "Veo 3.1 Fast - Google's video generation model (preview)",
-    input_modalities: ['text'],
-    output_modalities: ['video'],
-  },
-  {
-    name: 'seedance',
-    aliases: [],
-    description: 'Seedance Lite - BytePlus video generation (better quality)',
-    input_modalities: ['text'],
-    output_modalities: ['video'],
-  },
-  {
-    name: 'seedance-pro',
-    aliases: [],
-    description:
-      'Seedance Pro-Fast - BytePlus video generation (better prompt adherence)',
-    input_modalities: ['text'],
-    output_modalities: ['video'],
-  },
-] as const;
+function setCache<T>(key: string, data: T): void {
+  try {
+    const cached: CachedData<T> = { data, timestamp: Date.now() };
+    localStorage.setItem(key, JSON.stringify(cached));
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
 
 interface ModelsContextValue {
   textModels: readonly ModelOption[];
   imageModels: readonly ModelOption[];
   videoModels: readonly ModelOption[];
+  audioModels: readonly ModelOption[];
   allModels: readonly ModelOption[];
   loading: boolean;
   error: string | null;
@@ -403,7 +117,7 @@ function sortModels(models: readonly ModelOption[]): readonly ModelOption[] {
 
 function buildFeatures(
   model: PollinationsModel,
-  category: 'text' | 'image' | 'video',
+  category: 'text' | 'image' | 'video' | 'audio',
 ): { features: string[]; featuresTitle?: string } {
   const features: string[] = [];
   const emojis: string[] = [];
@@ -461,7 +175,7 @@ function buildFeatures(
 
 function transformApiModelToOption(
   model: PollinationsModel,
-  category: 'text' | 'image' | 'video',
+  category: 'text' | 'image' | 'video' | 'audio',
 ): ModelOption {
   const fullDescription = model.description || '';
   const [short] = fullDescription.split(' - ');
@@ -476,57 +190,26 @@ function transformApiModelToOption(
     category,
     features,
     featuresTitle,
+    paidOnly: model.paid_only === true,
+    voices: model.voices,
   };
 }
 
-const FALLBACK_TEXT_MODELS: readonly ModelOption[] =
-  FALLBACK_TEXT_MODELS_RAW.map((model) =>
-    transformApiModelToOption(model, 'text'),
-  );
+async function fetchModelsFromEndpoint(
+  endpoint: string,
+  cacheKey: string,
+): Promise<PollinationsModel[]> {
+  // Try cache first
+  const cached = getFromCache<PollinationsModel[]>(cacheKey);
+  if (cached) return cached;
 
-const FALLBACK_IMAGE_MODELS: readonly ModelOption[] =
-  FALLBACK_IMAGE_MODELS_RAW.map((model) =>
-    transformApiModelToOption(model, 'image'),
-  );
-
-const FALLBACK_VIDEO_MODELS: readonly ModelOption[] =
-  FALLBACK_VIDEO_MODELS_RAW.map((model) =>
-    transformApiModelToOption(model, 'video'),
-  );
-
-async function fetchTextModels(): Promise<ModelOption[]> {
-  try {
-    const response = await fetch('https://gen.pollinations.ai/text/models');
-    if (!response.ok) {
-      throw new Error(`Failed to fetch text models: ${response.statusText}`);
-    }
-    const apiModels: PollinationsModel[] = await response.json();
-    return apiModels.map((model) => transformApiModelToOption(model, 'text'));
-  } catch (error) {
-    console.error('Error fetching text models:', error);
-    throw error;
+  const response = await fetch(endpoint);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch models from ${endpoint}: ${response.statusText}`);
   }
-}
-
-async function fetchImageVideoModels(): Promise<ModelOption[]> {
-  try {
-    const response = await fetch('https://gen.pollinations.ai/image/models');
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch image/video models: ${response.statusText}`,
-      );
-    }
-    const apiModels: PollinationsModel[] = await response.json();
-    return apiModels.map((model) => {
-      // Determine category based on output_modalities
-      const outputModalities = model.output_modalities || [];
-      const category = outputModalities.includes('video') ? 'video' : 'image';
-      return transformApiModelToOption(model, category);
-    });
-  } catch (error) {
-    console.error('Error fetching image/video models:', error);
-    throw error;
-  }
+  const models: PollinationsModel[] = await response.json();
+  setCache(cacheKey, models);
+  return models;
 }
 
 interface ModelsProviderProps {
@@ -534,14 +217,10 @@ interface ModelsProviderProps {
 }
 
 export function ModelsProvider({ children }: ModelsProviderProps) {
-  const [textModels, setTextModels] =
-    useState<readonly ModelOption[]>(FALLBACK_TEXT_MODELS);
-  const [imageModels, setImageModels] = useState<readonly ModelOption[]>(
-    FALLBACK_IMAGE_MODELS,
-  );
-  const [videoModels, setVideoModels] = useState<readonly ModelOption[]>(
-    FALLBACK_VIDEO_MODELS,
-  );
+  const [textModels, setTextModels] = useState<readonly ModelOption[]>([]);
+  const [imageModels, setImageModels] = useState<readonly ModelOption[]>([]);
+  const [videoModels, setVideoModels] = useState<readonly ModelOption[]>([]);
+  const [audioModels, setAudioModels] = useState<readonly ModelOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -549,29 +228,35 @@ export function ModelsProvider({ children }: ModelsProviderProps) {
     setLoading(true);
     setError(null);
     try {
-      const [fetchedTextModels, fetchedImageVideoModels] = await Promise.all([
-        fetchTextModels(),
-        fetchImageVideoModels(),
+      const [textRaw, imageVideoRaw, audioRaw] = await Promise.all([
+        fetchModelsFromEndpoint(API_ENDPOINTS.text, CACHE_KEYS.text),
+        fetchModelsFromEndpoint(API_ENDPOINTS.image, CACHE_KEYS.image),
+        fetchModelsFromEndpoint(API_ENDPOINTS.audio, CACHE_KEYS.audio),
       ]);
 
-      setTextModels(sortModels(fetchedTextModels));
-
-      // Split image/video models based on category
-      const image = fetchedImageVideoModels.filter(
-        (m) => m.category === 'image',
-      );
-      const video = fetchedImageVideoModels.filter(
-        (m) => m.category === 'video',
+      setTextModels(
+        sortModels(textRaw.map((m) => transformApiModelToOption(m, 'text'))),
       );
 
-      setImageModels(sortModels(image));
-      setVideoModels(sortModels(video));
+      // Split image/video models based on output_modalities
+      const imageList: ModelOption[] = [];
+      const videoList: ModelOption[] = [];
+      for (const m of imageVideoRaw) {
+        const outputs = m.output_modalities || [];
+        if (outputs.includes('video')) {
+          videoList.push(transformApiModelToOption(m, 'video'));
+        } else {
+          imageList.push(transformApiModelToOption(m, 'image'));
+        }
+      }
+      setImageModels(sortModels(imageList));
+      setVideoModels(sortModels(videoList));
+
+      setAudioModels(
+        sortModels(audioRaw.map((m) => transformApiModelToOption(m, 'audio'))),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch models');
-      // Use fallback models on error
-      setTextModels(sortModels(FALLBACK_TEXT_MODELS));
-      setImageModels(sortModels(FALLBACK_IMAGE_MODELS));
-      setVideoModels(sortModels(FALLBACK_VIDEO_MODELS));
     } finally {
       setLoading(false);
     }
@@ -582,14 +267,15 @@ export function ModelsProvider({ children }: ModelsProviderProps) {
   }, [refresh]);
 
   const allModels = React.useMemo(
-    () => [...textModels, ...imageModels, ...videoModels],
-    [textModels, imageModels, videoModels],
+    () => [...textModels, ...imageModels, ...videoModels, ...audioModels],
+    [textModels, imageModels, videoModels, audioModels],
   );
 
   const value: ModelsContextValue = {
     textModels,
     imageModels,
     videoModels,
+    audioModels,
     allModels,
     loading,
     error,
@@ -614,7 +300,7 @@ export function useTextModels(): readonly ModelOption[] {
     const { textModels } = useModels();
     return textModels;
   } catch {
-    return FALLBACK_TEXT_MODELS;
+    return [];
   }
 }
 
@@ -623,7 +309,7 @@ export function useImageModels(): readonly ModelOption[] {
     const { imageModels } = useModels();
     return imageModels;
   } catch {
-    return FALLBACK_IMAGE_MODELS;
+    return [];
   }
 }
 
@@ -632,21 +318,29 @@ export function useVideoModels(): readonly ModelOption[] {
     const { videoModels } = useModels();
     return videoModels;
   } catch {
-    return FALLBACK_VIDEO_MODELS;
+    return [];
+  }
+}
+
+export function useAudioModels(): readonly ModelOption[] {
+  try {
+    const { audioModels } = useModels();
+    return audioModels;
+  } catch {
+    return [];
   }
 }
 
 export function useSpeechModels(): readonly ModelOption[] {
   try {
-    const { textModels } = useModels();
-    // Filter models that support audio output
-    return textModels.filter((model) =>
-      model.features?.includes('Audio output'),
+    const { audioModels } = useModels();
+    // Filter to TTS models (text input, audio output)
+    return audioModels.filter(
+      (m) =>
+        m.features?.includes('Text input') &&
+        m.features?.includes('Audio output'),
     );
   } catch {
-    // Fallback: return only openai-audio from fallback models
-    return FALLBACK_TEXT_MODELS.filter((model) =>
-      model.features?.includes('Audio output'),
-    );
+    return [];
   }
 }

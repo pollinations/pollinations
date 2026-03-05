@@ -26,6 +26,8 @@ export interface ModelOption {
   category?: string;
   features?: string[];
   featuresTitle?: string;
+  paidOnly?: boolean;
+  voices?: string[];
 }
 
 type ModelSelectorProps = {
@@ -76,7 +78,14 @@ export function ModelSelector({
                   >
                     {selectedModel ? (
                       <Alert className={'flex-1 border-0 p-0 text-start'}>
-                        <AlertTitle>{selectedModel.description}</AlertTitle>
+                        <AlertTitle className="flex items-center gap-1.5">
+                          {selectedModel.description}
+                          {selectedModel.paidOnly && (
+                            <span className="inline-flex items-center rounded-full bg-[rgba(251,191,36,0.15)] border border-[rgba(251,191,36,0.3)] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-[#fbbf24]">
+                              Paid
+                            </span>
+                          )}
+                        </AlertTitle>
                         <AlertDescription>
                           {selectedModel.features &&
                             selectedModel.features.length > 0 && (
@@ -113,8 +122,13 @@ export function ModelSelector({
                     textValue={model.name}
                   >
                     <span className="flex flex-col gap-0.5">
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1.5">
                         <b>{model.name}</b>
+                        {model.paidOnly && (
+                          <span className="inline-flex items-center rounded-full bg-[rgba(251,191,36,0.15)] border border-[rgba(251,191,36,0.3)] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-[#fbbf24]">
+                            Paid
+                          </span>
+                        )}
                         {model.featuresTitle && (
                           <span aria-hidden="true">{model.featuresTitle}</span>
                         )}

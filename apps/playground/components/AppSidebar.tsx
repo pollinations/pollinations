@@ -55,12 +55,6 @@ const imageVideoExamples = [
     icon: ImageIcon,
   },
   {
-    id: 'legacy-image-generation',
-    label: 'Legacy Image Generation',
-    path: '/legacy-image-generation',
-    icon: Clock,
-  },
-  {
     id: 'video-generation',
     label: 'Video Generation',
     path: '/video-generation',
@@ -104,9 +98,9 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className={'gap-1'}>
-        <h1 className="text-xl font-bold px-2 pt-2">Pollinations AI-SDK</h1>
+        <h1 className="text-xl font-bold px-2 pt-2">Playground</h1>
         <a
-          href="https://github.com/artsiombarouski/playground"
+          href="https://github.com/pollinations/pollinations/tree/main/apps/playground"
           target="_blank"
           rel="noopener noreferrer"
           className="text-sm text-muted-foreground px-2"

@@ -74,6 +74,11 @@ export function ChatModelSelector({
                   <div className="flex flex-col gap-0.5 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{model.name}</span>
+                      {model.paidOnly && (
+                        <span className="inline-flex items-center rounded-full bg-[rgba(251,191,36,0.15)] border border-[rgba(251,191,36,0.3)] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-[#fbbf24]">
+                          Paid
+                        </span>
+                      )}
                       {model.featuresTitle && (
                         <span className="text-xs text-muted-foreground">
                           {model.featuresTitle}

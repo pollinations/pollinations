@@ -27,7 +27,7 @@ import {
   tool,
   ToolLoopAgent,
 } from 'ai';
-import { createPollinations } from 'ai-sdk-pollinations';
+import { createPollinations } from 'playground';
 import { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';

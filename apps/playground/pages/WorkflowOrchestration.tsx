@@ -31,7 +31,7 @@ import { accumulateUsage } from '@/lib/usage';
 import type { LanguageModelV3Source } from '@ai-sdk/provider';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { generateText, type LanguageModelUsage, Output } from 'ai';
-import { createPollinations } from 'ai-sdk-pollinations';
+import { createPollinations } from 'playground';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';

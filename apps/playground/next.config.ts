@@ -3,7 +3,7 @@ import path from 'path';
 
 const nextConfig: NextConfig = {
   webpack: (config) => {
-    config.resolve.alias['ai-sdk-pollinations'] = path.resolve(__dirname, 'src');
+    config.resolve.alias['playground'] = path.resolve(__dirname, 'src');
     return config;
   },
 };

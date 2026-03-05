@@ -20,7 +20,7 @@ import { Form, FormField, FormFieldItem } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type LanguageModelUsage, streamText } from 'ai';
-import { createPollinations } from 'ai-sdk-pollinations';
+import { createPollinations } from 'playground';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 

@@ -1,5 +1,5 @@
 import { generateImage } from 'ai';
-import { createPollinations } from 'ai-sdk-pollinations';
+import { createPollinations } from 'playground';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';

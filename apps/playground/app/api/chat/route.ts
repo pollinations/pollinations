@@ -1,4 +1,4 @@
-import { createPollinations } from 'ai-sdk-pollinations';
+import { createPollinations } from 'playground';
 import { convertToModelMessages, streamText, UIMessage } from 'ai';
 import { NextRequest } from 'next/server';
 

@@ -559,13 +559,13 @@ interface AzureGPTImageConfig {
 
 const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
     gptimage: {
-        apiKeyEnvVar: "AZURE_PF_GPTIMAGE_API_KEY",
-        endpointEnvVar: "AZURE_PF_GPTIMAGE_ENDPOINT",
+        apiKeyEnvVar: "AZURE_GPTIMAGE_1_MINI_API_KEY",
+        endpointEnvVar: "AZURE_GPTIMAGE_1_MINI_ENDPOINT",
         modelName: "gpt-image-1-mini",
     },
     "gptimage-large": {
-        apiKeyEnvVar: "AZURE_MYCELI_GPTIMAGE_LARGE_API_KEY",
-        endpointEnvVar: "AZURE_MYCELI_GPTIMAGE_LARGE_ENDPOINT",
+        apiKeyEnvVar: "AZURE_GPTIMAGE_15_API_KEY",
+        endpointEnvVar: "AZURE_GPTIMAGE_15_ENDPOINT",
         modelName: "gpt-image-1.5",
     },
 };

@@ -47,19 +47,8 @@ export function PollinationsApiKeyProvider({
       ? process.env.NEXT_PUBLIC_POLLINATIONS_API_KEY
       : null;
 
-  // Initialize from localStorage if available
-  const getStoredKey = () => {
-    if (typeof window === 'undefined') return null;
-    try {
-      return localStorage.getItem(STORAGE_KEY);
-    } catch {
-      return null;
-    }
-  };
-
-  const [apiKey, setApiKeyState] = useState<string | null>(
-    envKey || getStoredKey() || null,
-  );
+  // Initialize from environment variable only; do not persist API key in localStorage
+  const [apiKey, setApiKeyState] = useState<string | null>(envKey || null);
   const [isChecking, setIsChecking] = useState(true);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
 
@@ -78,13 +67,8 @@ export function PollinationsApiKeyProvider({
     const apiKeyFromUrl = params.get('api_key');
 
     if (apiKeyFromUrl) {
-      // Store the API key in both state and localStorage
+      // Store the API key in state only; do not persist in localStorage to avoid cleartext storage
       setApiKeyState(apiKeyFromUrl);
-      try {
-        localStorage.setItem(STORAGE_KEY, apiKeyFromUrl);
-      } catch {
-        // Ignore localStorage errors
-      }
 
       // Clean up URL by removing the hash fragment
       const newUrl = window.location.href.split('#')[0];

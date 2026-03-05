@@ -1,7 +1,7 @@
 {
-  "name": "ai-sdk-pollinations",
-  "version": "0.0.1",
-  "description": "Pollinations AI provider for Vercel AI SDK - supporting text generation, image generation, and tool calling",
+  "name": "playground",
+  "version": "1.0.0",
+  "description": "Pollinations ai playground supported by the @pollinations_ai/sdk npm package",
   "keywords": [
     "ai",
     "pollinations",
@@ -16,15 +16,15 @@
     "gpt",
     "flux"
   ],
-  "author": "Artsiom Barouski",
+  "author": "Ayushman Bhattacharya",
   "license": "MIT",
-  "homepage": "https://github.com/artsiombarouski/ai-sdk-pollinations#readme",
+  "homepage": "https://playground.pollinations.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/artsiombarouski/ai-sdk-pollinations.git"
+    "url": "https://github.com/pollinations/pollinations/apps/playground"
   },
   "bugs": {
-    "url": "https://github.com/artsiombarouski/ai-sdk-pollinations/issues"
+    "url": "https://github.com/pollinations/pollinations/issues"
   },
   "engines": {
     "node": ">=18.0.0"

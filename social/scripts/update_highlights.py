@@ -25,10 +25,8 @@ from common import (
     OWNER,
     REPO,
 )
-from update_readme import get_top_highlights
 
 HIGHLIGHTS_PATH = "social/news/highlights.md"
-README_PATH = "README.md"
 
 
 def load_gists_as_changelog(date_str: str) -> tuple[str, int]:

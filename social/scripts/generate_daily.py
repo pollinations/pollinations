@@ -40,7 +40,7 @@ from common import (
     GISTS_BRANCH,
     IMAGE_SIZE,
 )
-from update_highlights import generate_highlights_and_readme
+from update_highlights import generate_highlights
 
 # ── Constants ────────────────────────────────────────────────────────
 

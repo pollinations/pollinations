@@ -14,9 +14,12 @@ export function StoryText({ text, isLoading = false }: StoryTextProps) {
             transition={{ duration: 0.6 }}
             className="bg-[#3a2817] rounded-lg p-6 border-2 border-[#d4a76a] shadow-xl"
         >
-            <h3 className="text-[#d4a76a] text-lg font-semibold mb-4 font-serif">Adventure Story</h3>
+            <h3 className="text-[#d4a76a] text-lg font-semibold mb-4 font-serif flex items-center gap-2">
+                <span className="inline-block w-1.5 h-5 bg-[#d4a76a] rounded-full" />
+                Adventure Story
+            </h3>
 
-            <ScrollArea className="h-40 w-full rounded border border-[#5a4332] bg-[#2c1e12]/50 p-4">
+            <ScrollArea className="h-56 md:h-64 w-full rounded border border-[#5a4332] bg-[#2c1e12]/50 p-4">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-full">
                         <div className="text-[#b8a389] italic">The tale unfolds...</div>
@@ -27,7 +30,7 @@ export function StoryText({ text, isLoading = false }: StoryTextProps) {
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.2, duration: 0.6 }}
                     >
-                        <p className="text-[#f5e6d3] leading-relaxed whitespace-pre-wrap text-sm">
+                        <p className="text-[#f5e6d3] leading-relaxed whitespace-pre-wrap">
                             {text}
                         </p>
                     </motion.div>

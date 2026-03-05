@@ -259,7 +259,7 @@ Core rules you must ALWAYS follow:
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai-large',
+          model: 'mistral',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
@@ -394,7 +394,7 @@ Core rules you must ALWAYS follow:
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai-large',
+          model: 'mistral',
           messages: [
             { role: 'system', content: 'You are an ancient bestiary keeper who catalogs the creatures of this realm. You speak only in structured data. When given a scene description, identify the most fitting adversary and return ONLY a single JSON object with the exact keys: name (string), type (string), hp (number 20-80), attackPower (number 5-15), description (string, one evocative sentence). No markdown, no commentary, no explanation — only the raw JSON object.' },
             { role: 'user', content: enemyPrompt }
@@ -473,7 +473,7 @@ Core rules you must ALWAYS follow:
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai-large',
+          model: 'mistral',
           messages: [
             { role: 'system', content: 'You are a wandering merchant and lore-keeper who knows every artifact in the realm. You speak only in structured data. When given a scene description, identify 1-3 items a hero might discover there. Return ONLY a JSON array where each element has the exact keys: name (string), type ("weapon"|"armor"|"misc"|"consumable"), description (string, one evocative sentence), rarity ("common"|"uncommon"|"rare"|"epic"|"legendary"), value (number 10-1000), quantity (number 1-5). If no items would logically be found, return an empty array []. No markdown, no commentary — only the raw JSON array.' },
             { role: 'user', content: itemPrompt }
@@ -798,14 +798,6 @@ Core rules you must ALWAYS follow:
     };
   };
 
-  // Inventory management
-  const addItem = (item: InventoryItem) => {
-    setGameState(prev => ({
-      ...prev,
-      inventory: [...prev.inventory, item],
-    }));
-  };
-
   // HARD BYOP: block everything until the user connects
   if (!isLoggedIn) {
     return <AuthGate onLogin={login} />;
@@ -869,7 +861,6 @@ Core rules you must ALWAYS follow:
             pendingUploadCount={pendingUploadCount}
             onConfirmSave={() => doSave(true)}
             onSkipUpload={() => doSave(false)}
-            onAddItem={addItem}
             onViewStoryHistory={() => setIsStoryHistoryOpen(true)}
             onViewGallery={() => setIsGalleryOpen(true)}
           />

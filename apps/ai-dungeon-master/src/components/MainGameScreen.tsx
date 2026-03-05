@@ -7,7 +7,7 @@ import { ChoicesSection } from "./ChoicesSection";
 import { InventoryGrid, type InventoryItem } from "./InventoryGrid";
 import { InventoryModal } from "./InventoryModal";
 import { Button } from "./ui/button";
-import { Backpack, Dices, Save, Upload, Loader2, ScrollText, Images } from "lucide-react";
+import { Backpack, Dices, Save, Loader2, ScrollText, Images, Swords, Shield, Skull } from "lucide-react";
 
 interface Character {
     name: string;
@@ -57,7 +57,6 @@ interface MainGameScreenProps {
     pendingUploadCount?: number;
     onConfirmSave?: () => void;
     onSkipUpload?: () => void;
-    onAddItem: (item: InventoryItem) => void;
     onViewStoryHistory?: () => void;
     onViewGallery?: () => void;
 }
@@ -76,7 +75,6 @@ export function MainGameScreen({
     pendingUploadCount,
     onConfirmSave,
     onSkipUpload,
-    onAddItem,
     onViewStoryHistory,
     onViewGallery,
 }: MainGameScreenProps) {
@@ -90,11 +88,19 @@ export function MainGameScreen({
         combatResult: string;
     } | null>(null);
 
-    // Convert game choices to the format expected by ChoicesSection
+    // Assign icons based on choice text content
+    const getChoiceIcon = (text: string): "sword" | "explore" | "talk" | "defend" => {
+        const lower = text.toLowerCase();
+        if (lower.match(/attack|fight|strike|slay|kill|battle|draw.*sword|weapon/)) return "sword";
+        if (lower.match(/defend|block|shield|protect|brace|dodge|parry/)) return "defend";
+        if (lower.match(/talk|speak|ask|negotiate|persuade|convince|greet|say|tell|plead|call|shout|whisper/)) return "talk";
+        return "explore";
+    };
+
     const formattedChoices = choices.map(choice => ({
         id: choice.id.toString(),
         text: choice.text,
-        icon: "explore" as const, // Default icon, could be enhanced based on choice type
+        icon: getChoiceIcon(choice.text),
     }));
 
     // Use inventory directly since interfaces now match
@@ -130,18 +136,6 @@ export function MainGameScreen({
         }
     };
 
-    const handleAddSampleItem = () => {
-        onAddItem({
-            id: `item_${Date.now()}`,
-            name: "Mysterious Artifact",
-            description: "A strange object that pulses with magical energy",
-            type: "misc",
-            rarity: "rare",
-            quantity: 1,
-            image: "https://image.pollinations.ai/prompt/fantasy%20magical%20artifact%20glowing%20mysterious?width=256&height=256&model=flux",
-        });
-    };
-
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -159,7 +153,6 @@ export function MainGameScreen({
                     <div className="lg:col-span-2 space-y-6">
                         <SceneArea
                             imageUrl={scene.image}
-                            text="A mystical scene unfolds before you..."
                         />
 
                         <StoryText
@@ -273,13 +266,6 @@ export function MainGameScreen({
                                 Gallery
                             </Button>
 
-                            <Button
-                                onClick={handleAddSampleItem}
-                                className="w-full bg-[#4a3422] hover:bg-[#5a4332] text-[#f5e6d3] border border-[#d4a76a] justify-start gap-3"
-                            >
-                                <Upload className="w-5 h-5 text-[#d4a76a]" />
-                                Find Item
-                            </Button>
                         </div>
                     </div>
                 </div>
@@ -292,22 +278,44 @@ export function MainGameScreen({
                 items={formattedInventory}
             />
 
-            {/* Simple Combat Modal */}
+            {/* Combat Modal */}
             {combatOpen && scene.enemy && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-[#2c1e12] border-2 border-[#d4a76a] rounded-lg p-6 max-w-md w-full mx-4">
-                        <h2 className="text-[#d4a76a] text-xl font-bold mb-4">Combat!</h2>
-                        <p className="text-[#f5e6d3] mb-4">You are fighting {scene.enemy.name}!</p>
-                        <div className="flex gap-2">
-                            <Button onClick={handleAttack} className="bg-[#8b4513] hover:bg-[#a0522d]">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+                >
+                    <motion.div
+                        initial={{ scale: 0.85, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: 'spring', damping: 20 }}
+                        className="bg-[#2c1e12] border-4 border-[#8b0000] rounded-lg p-8 max-w-md w-full mx-4 shadow-[0_0_40px_rgba(139,0,0,0.4)]"
+                    >
+                        <div className="flex items-center gap-3 mb-4">
+                            <Skull className="w-7 h-7 text-[#8b0000]" />
+                            <h2 className="text-[#d4a76a] text-xl font-bold">Combat!</h2>
+                        </div>
+                        <p className="text-[#f5e6d3] mb-2 text-lg">{scene.enemy.name}</p>
+                        <p className="text-[#b8a389] text-sm mb-6">{scene.enemy.description}</p>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={handleAttack}
+                                className="flex-1 bg-[#8b0000] hover:bg-[#a00000] text-[#f5e6d3] py-5 gap-2 transition-all hover:shadow-[0_0_20px_rgba(139,0,0,0.5)]"
+                            >
+                                <Swords className="w-5 h-5" />
                                 Attack
                             </Button>
-                            <Button variant="outline" onClick={() => setCombatOpen(false)} className="border-[#d4a76a] text-[#d4a76a]">
+                            <Button
+                                variant="outline"
+                                onClick={() => setCombatOpen(false)}
+                                className="flex-1 border-[#d4a76a] text-[#d4a76a] py-5 gap-2 hover:bg-[#4a3422]"
+                            >
+                                <Shield className="w-5 h-5" />
                                 Flee
                             </Button>
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             )}
 
             {/* Combat Result Display */}

@@ -9,12 +9,13 @@ At 06:00 UTC daily:
   4. Generate platform posts using existing prompts: twitter.json, instagram.json, reddit.json
   5. Generate platform images (1 twitter + 3 instagram + 1 reddit)
   Note: LinkedIn is weekly-only — no daily LinkedIn posts.
-  6. Commit all content to the news branch
-  7. Create a small README-only PR to main
+  6. Generate highlights from gists
+  7. Commit all content (posts, images, highlights) to the news branch
 
 See social/PIPELINE.md for full architecture.
 """
 
+import os
 import sys
 import json
 import time
@@ -25,11 +26,13 @@ from typing import Dict, List, Optional
 from common import (
     load_prompt,
     get_env,
+    get_repo_root,
     call_pollinations_api,
     generate_image,
     generate_platform_post,
     commit_image_to_branch,
     read_gists_for_date,
+    read_news_text_file,
     filter_daily_gists,
     parse_json_response,
     github_api_request,
@@ -37,12 +40,133 @@ from common import (
     GITHUB_API_BASE,
     GISTS_BRANCH,
     IMAGE_SIZE,
+    OWNER,
+    REPO,
 )
-from update_highlights import generate_highlights
 
 # ── Constants ────────────────────────────────────────────────────────
 
 DAILY_REL_DIR = "social/news/daily"
+HIGHLIGHTS_PATH = "social/news/highlights.md"
+
+
+# ── Highlights ────────────────────────────────────────────────────────
+
+def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
+    """Read gists for a date and format as a changelog for the highlights prompt.
+
+    Filters to user-facing, publishable gists only.
+    Returns (changelog_text, gist_count).
+    """
+    gists = read_gists_for_date(date_str)
+
+    filtered = [
+        g for g in gists
+        if g.get("gist", {}).get("publish_tier") != "none"
+        and g.get("gist", {}).get("user_facing", False)
+    ]
+
+    if not filtered:
+        return "", 0
+
+    lines = [f"# Updates for {date_str}\n"]
+    for g in filtered:
+        ai = g.get("gist", {})
+        lines.append(f"## PR #{g['pr_number']}: {g['title']}")
+        if ai.get("summary"):
+            lines.append(f"**Summary:** {ai['summary']}")
+        if ai.get("impact"):
+            lines.append(f"**Impact:** {ai['impact']}")
+        if ai.get("headline"):
+            lines.append(f"**Headline:** {ai['headline']}")
+        if ai.get("keywords"):
+            lines.append(f"**Keywords:** {', '.join(ai['keywords'])}")
+        lines.append("")
+
+    return "\n".join(lines), len(filtered)
+
+
+def create_highlights_prompt(news_content: str, news_date: str) -> tuple:
+    """Create prompt to extract only the most significant highlights."""
+    template = load_prompt("highlights")
+    system_prompt = (template.replace("{news_date}", news_date)
+                     .replace("{news_content}", news_content))
+
+    return system_prompt, "Generate the highlights now."
+
+
+def parse_highlights_response(response: str) -> str:
+    """Clean up AI response, removing code blocks if present"""
+    message = response.strip()
+
+    if message.startswith('```'):
+        lines = message.split('\n')
+        if lines[0].strip() == '```' or lines[0].startswith('```'):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == '```':
+            lines = lines[:-1]
+        message = '\n'.join(lines)
+
+    return message.strip()
+
+
+def merge_highlights(new_highlights: str, existing_highlights: str) -> str:
+    """Prepend new highlights to existing ones"""
+    new_clean = new_highlights.strip()
+    existing_clean = existing_highlights.strip()
+
+    if not existing_clean:
+        return new_clean + "\n"
+
+    return new_clean + "\n" + existing_clean + "\n"
+
+
+def generate_highlights(pollinations_token: str, date_str: str) -> str | None:
+    """Generate updated highlights.md content without creating a PR.
+
+    Reads gists for the given date, AI-curates highlights, merges with existing
+    highlights.md.
+
+    Returns merged highlights content, or None if no updates.
+    """
+    changelog, gist_count = load_gists_as_changelog(date_str)
+    if not changelog:
+        print(f"  Highlights: no qualifying gists for {date_str}")
+        return None
+    print(f"  Highlights: {gist_count} qualifying gists for {date_str}")
+
+    system_prompt, user_prompt = create_highlights_prompt(changelog, date_str)
+    ai_response = call_pollinations_api(
+        system_prompt, user_prompt, pollinations_token,
+        temperature=0.3, exit_on_failure=False,
+    )
+    if not ai_response:
+        print("  Highlights: AI generation failed")
+        return None
+
+    new_highlights = parse_highlights_response(ai_response)
+    if not new_highlights.strip():
+        print("  Highlights: empty response from AI")
+        return None
+
+    print(f"  Highlights: generated new entries")
+
+    repo_root = get_repo_root()
+    highlights_path = os.path.join(repo_root, HIGHLIGHTS_PATH)
+    existing_highlights = ""
+    if os.path.exists(highlights_path):
+        with open(highlights_path, "r") as f:
+            existing_highlights = f.read()
+    else:
+        github_token = get_env("GITHUB_TOKEN", required=False)
+        if github_token:
+            fetched = read_news_text_file(HIGHLIGHTS_PATH, github_token, OWNER, REPO)
+            if fetched:
+                existing_highlights = fetched
+                print("  Highlights: fetched existing from news branch via API")
+    merged_highlights = merge_highlights(new_highlights, existing_highlights)
+
+    return merged_highlights
 
 
 # ── Helpers ──────────────────────────────────────────────────────────

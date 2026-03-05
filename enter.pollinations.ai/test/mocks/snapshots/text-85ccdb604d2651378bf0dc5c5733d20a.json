@@ -1,0 +1,57 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-3-pro-preview",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 404,
+    "statusText": "Not Found",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "328",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 27 Feb 2026 18:40:47 GMT",
+      "etag": "W/\"148-ErzRsd0e+dtA1xtwUCdXvUvA8oQ\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Not Found",
+        "message": "Model not found: gemini-3-pro-preview",
+        "requestId": "spvcs8",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "Is Berlin the capital of Germany? Reply yes or no."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "gemini-3-pro-preview",
+          "referrer": null,
+          "isPrivate": true,
+          "voice": "alloy",
+          "private": true
+        }
+      }
+    }
+  }
+}

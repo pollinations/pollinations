@@ -1,8 +1,8 @@
 import { env } from "cloudflare:test";
-import { test } from "./fixtures.ts";
-import { sendToTinybird, flattenBalances } from "@/events.ts";
-import { exponentialBackoffDelay } from "@/util.ts";
 import { expect } from "vitest";
+import { flattenBalances, sendToTinybird } from "@/events.ts";
+import { exponentialBackoffDelay } from "@/util.ts";
+import { test } from "./fixtures.ts";
 
 test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
     await mocks.enable("tinybird");
@@ -51,7 +51,7 @@ test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
     await sendToTinybird(
         event,
         env.TINYBIRD_INGEST_URL,
-        env.TINYBIRD_INGEST_TOKEN,
+        env.TINYBIRD_GENERATION_INGEST_TOKEN,
         log,
     );
 
@@ -107,7 +107,7 @@ test("sendToTinybird handles API errors gracefully", async ({ log, mocks }) => {
     await sendToTinybird(
         event,
         env.TINYBIRD_INGEST_URL,
-        env.TINYBIRD_INGEST_TOKEN,
+        env.TINYBIRD_GENERATION_INGEST_TOKEN,
         log,
     );
 

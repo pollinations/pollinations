@@ -17,7 +17,7 @@ Think: the person in the hackerspace who just deployed something and pops into t
 - **Wry and playful** — humor through understatement, not through forced energy
 
 ### Do:
-- Use **bold** for emphasis, `code` for technical terms
+- Use `code` for technical terms
 - Bullet points with emojis for scannable reading
 - Frame changes as: "you can now do X" or "X is faster/fixed/new"
 - Keep it short — say more with less

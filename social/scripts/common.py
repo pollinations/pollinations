@@ -22,7 +22,9 @@ POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
 # Models - single source of truth for all social scripts
 MODEL = "gemini-large"  # Text generation model
+MODEL_FALLBACK = "gemini-fast"  # Text fallback when primary model fails
 IMAGE_MODEL = "nanobanana-pro"  # Image generation model
+IMAGE_MODEL_FALLBACK = "zimage"  # Image fallback when primary model fails
 WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
 
 # Limits and retry settings
@@ -369,8 +371,9 @@ def call_pollinations_api(
     return None
 
 
-def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
+def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image via the pollinations.ai image API."""
+    use_model = model or IMAGE_MODEL
 
     # Append character descriptions if not already present (loaded from prompt file)
     if "bee mascot" not in prompt.lower():
@@ -386,7 +389,7 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
     encoded_prompt = quote(sanitized)
     base_url = f"{POLLINATIONS_IMAGE_BASE}/{encoded_prompt}"
 
-    print(f"\n  Generating image {index + 1}: {prompt[:80]}...")
+    print(f"\n  Generating image {index + 1} (model={use_model}): {prompt[:80]}...")
 
     last_error = None
 
@@ -394,7 +397,7 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
         seed = random.randint(0, MAX_SEED)
 
         params = {
-            "model": IMAGE_MODEL,
+            "model": use_model,
             "width": width,
             "height": height,
             "quality": "hd",

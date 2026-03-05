@@ -13,6 +13,9 @@ const AIRFORCE_API_URL = "https://api.airforce/v1/images/generations";
 
 const VIDEO_MODELS = ["grok-imagine-video"];
 
+// Image models that support image-to-image via image_urls parameter
+const IMAGE_MODELS_WITH_IMAGE_INPUT = ["flux-2-dev"];
+
 // api.airforce only supports these exact sizes (OpenAI DALL-E 3 compatible)
 const SUPPORTED_SIZES: Array<{ width: number; height: number }> = [
     { width: 1024, height: 1024 }, // 1:1
@@ -189,18 +192,30 @@ function buildRequestBody(
             requestBody.size = size;
         }
 
-        // Support image-to-video: pass reference image URL if provided
-        const imageUrl = Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image;
-        if (imageUrl) {
-            requestBody.image = imageUrl;
+        // Support image-to-video: pass reference image URLs if provided
+        // airforce expects "image_urls" as an array of URLs
+        if (safeParams.image && safeParams.image.length > 0) {
+            requestBody.image_urls = safeParams.image;
         }
-    } else if (airforceModel === "imagen-4") {
+    } else if (
+        airforceModel === "imagen-4" ||
+        airforceModel === "grok-imagine"
+    ) {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
-    } else if (safeParams.width && safeParams.height) {
-        requestBody.size = `${safeParams.width}x${safeParams.height}`;
+    } else {
+        if (safeParams.width && safeParams.height) {
+            requestBody.size = `${safeParams.width}x${safeParams.height}`;
+        }
+
+        // Support image-to-image for eligible image models
+        if (
+            IMAGE_MODELS_WITH_IMAGE_INPUT.includes(airforceModel) &&
+            safeParams.image &&
+            safeParams.image.length > 0
+        ) {
+            requestBody.image_urls = safeParams.image;
+        }
     }
 
     return requestBody;

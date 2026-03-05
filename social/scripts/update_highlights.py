@@ -219,31 +219,6 @@ def create_highlights_pr(
         sys.exit(1)
     print(f"Updated {HIGHLIGHTS_PATH} on branch {branch_name}")
 
-    # Commit README.md (if changed)
-    if readme_content:
-        readme_sha = get_file_sha(github_token, owner, repo, README_PATH, branch_name)
-        if not readme_sha:
-            readme_sha = get_file_sha(github_token, owner, repo, README_PATH, "main")
-
-        readme_payload = {
-            "message": f"docs: update README latest news — {date_str}",
-            "content": base64.b64encode(readme_content.encode()).decode(),
-            "branch": branch_name,
-        }
-        if readme_sha:
-            readme_payload["sha"] = readme_sha
-
-        resp = github_api_request(
-            "PUT",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{README_PATH}",
-            headers=headers,
-            json=readme_payload,
-        )
-        if resp.status_code not in [200, 201]:
-            print(f"Warning: Failed to update README.md: {resp.text[:200]}")
-        else:
-            print(f"Updated {README_PATH} on branch {branch_name}")
-
     # Count new highlights for PR title
     new_count = len([line for line in new_highlights.split("\n") if line.strip().startswith("- **")])
 
@@ -316,7 +291,7 @@ def main():
 
     print(f"=== Highlights Update for {date_str} ===")
 
-    highlights_content, readme_content = generate_highlights_and_readme(pollinations_token, date_str)
+    highlights_content = generate_highlights(pollinations_token, date_str)
 
     if highlights_content is None:
         print("No highlights to update. Exiting cleanly.")
@@ -332,7 +307,7 @@ def main():
     new_highlights = highlights_content.replace(existing, "").strip() if existing else highlights_content.strip()
 
     create_highlights_pr(
-        highlights_content, readme_content, new_highlights,
+        highlights_content, new_highlights,
         github_token, owner, repo, date_str,
     )
     print("Highlights update completed!")

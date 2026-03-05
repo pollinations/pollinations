@@ -1,0 +1,35 @@
+{
+  "pr_number": 8616,
+  "title": "docs: document media.pollinations.ai service",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8616",
+  "merged_at": "2026-03-05T14:54:58Z",
+  "labels": [
+    "API",
+    ".DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The manual gets an upgrade",
+    "blurb": "We've polished up the documentation for our media service. Expect accurate file limits, proper header examples, and clear retention policies.",
+    "summary": "Updated the media.pollinations.ai documentation to reflect the actual 24MB file limit, correct header usage, and detail retention policies.",
+    "impact": "Developers can now integrate media uploads more easily with accurate code examples and clear constraints.",
+    "keywords": [
+      "docs",
+      "media",
+      "api",
+      "upload",
+      "documentation"
+    ],
+    "visual_concept": "Polly the bee reading a large, glowing manual or scroll in a cozy library setting. The Nomnom creature is eating an old, incorrect page of documentation, symbolizing the removal of outdated info.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, studying a glowing digital manual on a retro computer terminal. The round tan nomnom creature happily eats a crumpled piece of paper nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-05T14:55:52.488656+00:00"
+}

@@ -330,7 +330,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "FLUX.2 Dev (api.airforce) - Flux 2 image generation",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "grok-imagine": {

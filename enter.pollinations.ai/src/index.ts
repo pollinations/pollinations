@@ -10,6 +10,7 @@ import { logger } from "./middleware/logger.ts";
 import { accountRoutes } from "./routes/account.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
+import { appLookupRoutes } from "./routes/app-lookup.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { customerRoutes } from "./routes/customer.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
@@ -33,6 +34,7 @@ export const api = new Hono<Env>()
     .route("/nowpayments", nowpaymentsRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
+    .route("/app-lookup", appLookupRoutes)
     .route("/account", accountRoutes)
     .route("/webhooks", webhooksRoutes)
     .route("/webhooks", webhooksCryptoRoutes)

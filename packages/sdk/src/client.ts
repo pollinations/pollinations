@@ -12,6 +12,18 @@ import type {
     Message,
     ModelInfo,
     PollinationsErrorDetails,
+    TranscribeOptions,
+    TranscriptionResponse,
+    TranscriptionVerboseResponse,
+    UploadOptions,
+    UploadResponse,
+    AuthorizeOptions,
+    AccountProfile,
+    AccountBalance,
+    UsageOptions,
+    UsageResponse,
+    DailyUsageResponse,
+    KeyInfo,
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 

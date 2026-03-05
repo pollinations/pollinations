@@ -329,20 +329,6 @@ def main():
         print("\n=== Failed to commit daily content ===")
         sys.exit(1)
 
-    # ── Create README-only PR to main ────────────────────────────────
-    if readme_content:
-        print(f"\n[6/6] Creating README-only PR to main...")
-        pr_number = create_readme_pr(
-            date_str, readme_content,
-            github_token, owner, repo,
-        )
-        if pr_number:
-            print(f"  README PR #{pr_number} created")
-        else:
-            print("  Warning: Failed to create README PR (non-fatal)")
-    else:
-        print(f"\n[6/6] No README content — skipping PR")
-
     print("\n=== Done! ===")
 
 

@@ -18,6 +18,21 @@ import { ChevronDownIcon } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 
+const sanitizeUrl = (rawUrl: string | null | undefined): string | undefined => {
+  if (!rawUrl) {
+    return undefined;
+  }
+  try {
+    const url = new URL(rawUrl, typeof window !== 'undefined' ? window.location.href : 'http://localhost');
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      return url.toString();
+    }
+  } catch {
+    // If parsing fails, treat the URL as unsafe.
+  }
+  return undefined;
+};
+
 export type WebPreviewContextValue = {
   url: string;
   setUrl: (url: string) => void;

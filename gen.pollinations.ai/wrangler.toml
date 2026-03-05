@@ -8,10 +8,31 @@ services = [
     { binding = "ENTER", service = "pollinations-enter" }
 ]
 
+# R2 buckets for caching (shared with enter during transition)
+[[r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+remote = true
+
+[[r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+remote = true
+
+[[kv_namespaces]]
+# development-pollinations-enter-kv (shared)
+binding = "KV"
+id = "aa0d0aceb6bd45de93032270c7adf4ab"
+
+[vars]
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+
 [dev]
 port = 8788
 
-# Production routes
+# ---------- Production ----------
 [env.production]
 
 [[env.production.routes]]
@@ -23,7 +44,30 @@ custom_domain = true
 binding = "ENTER"
 service = "pollinations-enter-production"
 
-# Staging routes
+[[env.production.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.production.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "eb4ea5149a5a413db53902bf2b8c1d95"
+
+# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
+[[env.production.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 10000, period = 10 }
+
+[env.production.vars]
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+
+# ---------- Staging ----------
 [env.staging]
 
 [[env.staging.routes]]
@@ -34,3 +78,46 @@ custom_domain = true
 [[env.staging.services]]
 binding = "ENTER"
 service = "pollinations-enter-staging"
+
+[[env.staging.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.staging.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+[[env.staging.kv_namespaces]]
+binding = "KV"
+id = "eb4ea5149a5a413db53902bf2b8c1d95"
+
+# Edge rate limiter
+[[env.staging.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 10000, period = 10 }
+
+[env.staging.vars]
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+
+# ---------- Test ----------
+[env.test]
+
+[[env.test.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.test.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+[[env.test.kv_namespaces]]
+binding = "KV"
+id = "aa0d0aceb6bd45de93032270c7adf4ab"
+
+[env.test.vars]
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"

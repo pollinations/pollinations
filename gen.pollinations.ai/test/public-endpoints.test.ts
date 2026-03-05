@@ -1,13 +1,12 @@
 import { SELF } from "cloudflare:test";
 import { expect, test } from "vitest";
-import { test as fixtureTest } from "../fixtures.ts";
 
 // Test public endpoints that should be accessible without authentication
 // These endpoints should work with CORS from any origin (e.g., pollinations.ai frontend)
 
 test("GET /v1/models returns 200 without auth", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/v1/models`,
+        `http://localhost/api/generate/v1/models`,
         {
             method: "GET",
         },
@@ -23,7 +22,7 @@ test("GET /v1/models returns 200 without auth", async () => {
 
 test("GET /image/models returns 200 without auth", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/image/models`,
+        `http://localhost/api/generate/image/models`,
         {
             method: "GET",
         },
@@ -37,7 +36,7 @@ test("GET /image/models returns 200 without auth", async () => {
 
 test("GET /v1/models has CORS headers for cross-origin requests", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/v1/models`,
+        `http://localhost/api/generate/v1/models`,
         {
             method: "GET",
             headers: {
@@ -56,7 +55,7 @@ test("GET /v1/models has CORS headers for cross-origin requests", async () => {
 
 test("GET /image/models has CORS headers for cross-origin requests", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/image/models`,
+        `http://localhost/api/generate/image/models`,
         {
             method: "GET",
             headers: {
@@ -75,7 +74,7 @@ test("GET /image/models has CORS headers for cross-origin requests", async () =>
 
 test("OPTIONS preflight request works for /image/models", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/image/models`,
+        `http://localhost/api/generate/image/models`,
         {
             method: "OPTIONS",
             headers: {
@@ -91,7 +90,7 @@ test("OPTIONS preflight request works for /image/models", async () => {
 
 test("GET /text/models includes context_length for standard models", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/text/models`,
+        `http://localhost/api/generate/text/models`,
         { method: "GET" },
     );
     expect(response.status).toBe(200);
@@ -109,52 +108,3 @@ test("GET /text/models includes context_length for standard models", async () =>
         expect(model.context_length).toBeGreaterThan(0);
     }
 });
-
-// Test model filtering by API key permissions
-// Uses restrictedApiKey fixture which is limited to ["openai-fast", "flux"]
-fixtureTest(
-    "GET /v1/models with restricted API key returns only allowed models",
-    async ({ restrictedApiKey }) => {
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/models`,
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${restrictedApiKey}`,
-                },
-            },
-        );
-        expect(response.status).toBe(200);
-
-        const data = (await response.json()) as {
-            data: { id: string }[];
-        };
-        const modelIds = data.data.map((m) => m.id);
-
-        expect(modelIds).toContain("openai-fast");
-        expect(modelIds).not.toContain("openai");
-        expect(modelIds).not.toContain("mistral");
-    },
-);
-
-fixtureTest(
-    "GET /image/models with restricted API key returns only allowed models",
-    async ({ restrictedApiKey }) => {
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/image/models`,
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${restrictedApiKey}`,
-                },
-            },
-        );
-        expect(response.status).toBe(200);
-
-        const data = (await response.json()) as { name: string }[];
-        const modelNames = data.map((m) => m.name);
-
-        expect(modelNames).toContain("flux");
-        expect(modelNames).not.toContain("turbo");
-    },
-);

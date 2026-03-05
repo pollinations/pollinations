@@ -8,6 +8,10 @@ import { createHonoMockHandler, type MockAPI } from "./fetch";
 const log = getLogger(["test", "mock", "vcr"]);
 const snapshotServerUrl = inject("snapshotServerUrl");
 
+// Limit binary/stream snapshot bodies to 16KB to avoid multi-MB video snapshots.
+// Tests only need enough data to verify content-type and minimum size.
+const MAX_SNAPSHOT_BODY_BYTES = 16 * 1024;
+
 type RequestBodySnapshot = {
     type: "json" | "text" | "binary" | "formdata" | "empty";
     data: unknown;
@@ -217,11 +221,21 @@ async function recordResponseBody(
     if (!response.body) {
         return { type: "empty", data: null };
     }
-    // stream
+    // binary stream (video/octet-stream) — truncate to limit snapshot size
+    if (contentType?.includes("application/octet-stream")) {
+        const chunks = await recordChunks(
+            response.clone(),
+            MAX_SNAPSHOT_BODY_BYTES,
+        );
+        return {
+            type: "stream",
+            data: chunks,
+        };
+    }
+    // text stream (SSE, chunked) — record in full
     if (
         transferEncoding === "chunked" ||
-        contentType?.includes("text/event-stream") ||
-        contentType?.includes("application/octet-stream")
+        contentType?.includes("text/event-stream")
     ) {
         const chunks = await recordChunks(response.clone());
         return {
@@ -254,16 +268,21 @@ async function recordResponseBody(
             data: await response.text(),
         };
     }
-    // binary
+    // binary — truncate to avoid multi-MB video/image snapshots
     const buffer = await response.arrayBuffer();
+    const truncated =
+        buffer.byteLength > MAX_SNAPSHOT_BODY_BYTES
+            ? buffer.slice(0, MAX_SNAPSHOT_BODY_BYTES)
+            : buffer;
     return {
         type: "binary",
-        data: Buffer.from(buffer).toString("base64"),
+        data: Buffer.from(truncated).toString("base64"),
     };
 }
 
 async function recordChunks(
     response: Response,
+    maxBytes?: number,
 ): Promise<{ data: string; delay: number }[]> {
     const chunks: { data: string; delay: number }[] = [];
     const reader = response.body?.getReader();
@@ -274,6 +293,7 @@ async function recordChunks(
 
     const decoder = new TextDecoder();
     let lastTimestamp = Date.now();
+    let totalBytes = 0;
 
     try {
         while (true) {
@@ -284,11 +304,24 @@ async function recordChunks(
             const delay = now - lastTimestamp;
             lastTimestamp = now;
 
+            // When maxBytes is set, stop storing after limit (but drain the stream)
+            if (maxBytes != null && totalBytes >= maxBytes) {
+                continue;
+            }
+
+            let chunkValue = value;
+            if (maxBytes != null) {
+                const remaining = maxBytes - totalBytes;
+                if (value.byteLength > remaining) {
+                    chunkValue = value.slice(0, remaining);
+                }
+            }
+
             chunks.push({
-                // data: Buffer.from(value).toString("base64"),
-                data: decoder.decode(value, { stream: true }),
+                data: decoder.decode(chunkValue, { stream: true }),
                 delay,
             });
+            totalBytes += value.byteLength;
         }
     } finally {
         reader.releaseLock();

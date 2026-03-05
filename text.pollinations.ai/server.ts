@@ -89,16 +89,6 @@ app.get("/", (c) => {
     );
 });
 
-app.get("/crossdomain.xml", (c) => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
-<cross-domain-policy>
-  <allow-access-from domain="*" secure="false"/>
-</cross-domain-policy>`;
-    c.header("Content-Type", "application/xml");
-    return c.text(xml);
-});
-
 app.get("/models", (c) => {
     return c.json(
         {

@@ -10,10 +10,3 @@ export function logIp(ip, service, context = "") {
         `[IP-LOG] [${timestamp}] [${service}] IP=${ip} ${context}`.trim(),
     );
 }
-
-/**
- * Get the log file path
- */
-export function getLogFilePath() {
-    return null;
-}

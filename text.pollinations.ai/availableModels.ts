@@ -17,25 +17,18 @@ interface ModelDefinition {
     transform?: TransformFn;
 }
 
-const withConversational = createSystemPromptTransform(
-    BASE_PROMPTS.conversational,
-);
-
 const models: ModelDefinition[] = [
     {
         name: "openai",
         config: portkeyConfig["gpt-5-mini"],
-        transform: withConversational,
     },
     {
         name: "openai-fast",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
-        transform: withConversational,
     },
     {
         name: "openai-large",
         config: portkeyConfig["gpt-5.2-2025-12-11"],
-        transform: withConversational,
     },
     {
         name: "qwen-coder",
@@ -45,17 +38,14 @@ const models: ModelDefinition[] = [
     {
         name: "mistral",
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
-        transform: withConversational,
     },
     {
         name: "deepseek",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
-        transform: withConversational,
     },
     {
         name: "grok",
         config: portkeyConfig["myceli-grok-4-fast"],
-        transform: withConversational,
     },
     {
         name: "openai-audio",
@@ -64,28 +54,23 @@ const models: ModelDefinition[] = [
     {
         name: "claude-fast",
         config: portkeyConfig["claude-haiku-4-5"],
-        transform: withConversational,
     },
     {
         name: "claude",
         config: portkeyConfig["claude-sonnet-4-6"],
-        transform: withConversational,
     },
     {
         name: "claude-large",
         config: portkeyConfig["claude-opus-4-6"],
-        transform: withConversational,
     },
     {
         name: "claude-legacy",
         config: portkeyConfig["claude-opus-4-5"],
-        transform: withConversational,
     },
     {
         name: "gemini",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
-            withConversational,
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
@@ -96,7 +81,6 @@ const models: ModelDefinition[] = [
         name: "gemini-fast",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
-            withConversational,
             sanitizeToolSchemas(),
             createGeminiThinkingTransform("v2.5"),
         ),
@@ -118,23 +102,19 @@ const models: ModelDefinition[] = [
     {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
-        transform: withConversational,
     },
     {
         name: "perplexity-reasoning",
         config: portkeyConfig["sonar-reasoning-pro"],
-        transform: withConversational,
     },
     {
         name: "kimi",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
-        transform: withConversational,
     },
     {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(
-            withConversational,
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
@@ -145,7 +125,6 @@ const models: ModelDefinition[] = [
         name: "gemini-3-pro-preview",
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
-            withConversational,
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
@@ -156,7 +135,6 @@ const models: ModelDefinition[] = [
         name: "gemini-legacy",
         config: portkeyConfig["gemini-2.5-pro"],
         transform: pipe(
-            withConversational,
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
@@ -166,17 +144,14 @@ const models: ModelDefinition[] = [
     {
         name: "nova-fast",
         config: portkeyConfig["nova-micro-fallback"],
-        transform: withConversational,
     },
     {
         name: "glm",
         config: portkeyConfig["accounts/fireworks/models/glm-5"],
-        transform: withConversational,
     },
     {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
-        transform: withConversational,
     },
     {
         name: "nomnom",

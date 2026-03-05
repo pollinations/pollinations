@@ -16,13 +16,11 @@ const MIME_TYPES: Record<string, string> = {
 
 class ImageFetchError extends Error {
     status: number;
-    url: string;
 
-    constructor(message: string, statusCode: number, url: string) {
+    constructor(message: string, statusCode: number) {
         super(message);
         this.name = "ImageFetchError";
         this.status = statusCode;
-        this.url = url;
     }
 }
 
@@ -74,7 +72,7 @@ async function fetchImageAsBase64(url: string): Promise<string> {
                     errorMessage = base;
             }
 
-            throw new ImageFetchError(errorMessage, response.status, url);
+            throw new ImageFetchError(errorMessage, response.status);
         }
 
         const contentType = response.headers.get("content-type");
@@ -82,7 +80,6 @@ async function fetchImageAsBase64(url: string): Promise<string> {
             throw new ImageFetchError(
                 `Invalid content type for ${url}: received ${contentType}, expected image/*. Please provide a direct link to an image file.`,
                 400,
-                url,
             );
         }
 
@@ -91,7 +88,6 @@ async function fetchImageAsBase64(url: string): Promise<string> {
             throw new ImageFetchError(
                 `Image too large: ${contentLength} bytes (max ${MAX_IMAGE_SIZE} bytes). Please use a smaller image.`,
                 400,
-                url,
             );
         }
 
@@ -102,7 +98,6 @@ async function fetchImageAsBase64(url: string): Promise<string> {
             throw new ImageFetchError(
                 `Image too large: ${arrayBuffer.byteLength} bytes (max ${MAX_IMAGE_SIZE} bytes). Please use a smaller image.`,
                 400,
-                url,
             );
         }
 
@@ -115,23 +110,23 @@ async function fetchImageAsBase64(url: string): Promise<string> {
             throw thrown;
         }
 
-        const error = thrown as {
-            message?: string;
-            name?: string;
-            code?: string;
-        };
-        let errorMessage = `Failed to fetch image from ${url}: ${error.message}`;
+        const error = thrown as { message?: string; name?: string };
+        const msg = error.message || "Unknown error";
+        let errorMessage = `Failed to fetch image from ${url}: ${msg}`;
 
         if (error.name === "AbortError") {
             errorMessage = `Image fetch timeout for ${url}: The server took too long to respond (>30 seconds). Please try a faster image host.`;
-        } else if (error.code === "ENOTFOUND") {
-            errorMessage = `Invalid image URL ${url}: The domain could not be found. Please check the URL is correct.`;
-        } else if (error.code === "ECONNREFUSED") {
-            errorMessage = `Cannot connect to image server ${url}: Connection refused. The server may be down.`;
+        } else if (error instanceof TypeError) {
+            // In Workers, DNS failures and connection refusals throw TypeError
+            if (/dns|domain|not found|resolve/i.test(msg)) {
+                errorMessage = `Invalid image URL ${url}: The domain could not be found. Please check the URL is correct.`;
+            } else if (/connect|refused|unreachable/i.test(msg)) {
+                errorMessage = `Cannot connect to image server ${url}: Connection refused. The server may be down.`;
+            }
         }
 
-        errorLog(`Failed to fetch image ${url}: ${error.message}`);
-        throw new ImageFetchError(errorMessage, 400, url);
+        errorLog(`Failed to fetch image ${url}: ${msg}`);
+        throw new ImageFetchError(errorMessage, 400);
     }
 }
 
@@ -166,12 +161,6 @@ async function processContentPart(part: ContentPart): Promise<ContentPart> {
         ...part,
         image_url: { ...part.image_url, url: dataUrl },
     };
-}
-
-async function processMessageContent(
-    content: ContentPart[],
-): Promise<ContentPart[]> {
-    return Promise.all(content.map(processContentPart));
 }
 
 /**
@@ -211,8 +200,8 @@ export function createImageUrlToBase64Transform(): TransformFn {
                     return message;
                 }
 
-                const processedContent = await processMessageContent(
-                    message.content as ContentPart[],
+                const processedContent = await Promise.all(
+                    (message.content as ContentPart[]).map(processContentPart),
                 );
                 return { ...message, content: processedContent };
             }),

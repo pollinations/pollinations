@@ -24,9 +24,6 @@ export {
     // Conversation class
     Conversation,
     displayImage,
-    estimateMessageTokens,
-    // Token estimation
-    estimateTokens,
     // Batch generation (multiple different prompts)
     generateImages,
     // Progress tracking

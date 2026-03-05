@@ -22,8 +22,6 @@ GH_TOKEN = os.environ.get("GH_TOKEN")
 POLLINATIONS_API_KEY = os.environ.get("POLLINATIONS_API_KEY", "")
 VALIDATION_RESULT = os.environ.get("VALIDATION_RESULT", "{}")
 ISSUE_AUTHOR = os.environ.get("ISSUE_AUTHOR", "")
-BOT_NAME = os.environ.get("BOT_NAME", "pollinations-ai[bot]")
-BOT_EMAIL = os.environ.get("BOT_EMAIL", "pollinations-ai[bot]@users.noreply.github.com")
 
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "openai"
@@ -118,6 +116,65 @@ def call_llm(system_prompt, user_message):
         raise Exception(f"API error: {response.status_code} {response.text}")
 
     return response.json()["choices"][0]["message"]["content"]
+
+def infer_platform(name, url, description):
+    """Deterministically infer platform from name, URL, and description."""
+    from urllib.parse import urlparse
+    d = (description or "").lower()
+    n = (name or "").lower()
+    nd = f"{n} {d}"
+
+    # Parse URL for safe hostname/path checks
+    hostname = ""
+    url_path_lower = ""
+    if url:
+        try:
+            raw = url if url.startswith(("http://", "https://")) else f"https://{url}"
+            parsed = urlparse(raw.lower())
+            hostname = parsed.hostname or ""
+            url_path_lower = (parsed.path or "").lower()
+        except Exception:
+            pass
+
+    def host_is(domain):
+        return hostname == domain or hostname.endswith(f".{domain}")
+
+    # URL-based rules (safe hostname matching)
+    if host_is("play.google.com"): return "android"
+    if host_is("apps.apple.com"): return "ios"
+    if host_is("routinehub.co"): return "ios"
+    if host_is("api.whatsapp.com") or host_is("chat.whatsapp.com"): return "whatsapp"
+    if host_is("t.me"): return "telegram"
+    if host_is("discord.gg") or host_is("discord.com"): return "discord"
+    if host_is("addons.mozilla.org"): return "browser-ext"
+    if host_is("chromewebstore.google.com") or (host_is("chrome.google.com") and url_path_lower.startswith("/webstore")): return "browser-ext"
+    if host_is("roblox.com"): return "roblox"
+    if host_is("pypi.org"): return "library"
+    if host_is("npmjs.com"): return "library"
+    if host_is("wordpress.org") and url_path_lower.startswith("/plugins"): return "wordpress"
+    if host_is("bsky.app"): return "api"
+    if host_is("pkg.go.dev") or host_is("crates.io"): return "library"
+    if url_path_lower.endswith(".exe"): return "windows"
+
+    # Description/name-based rules
+    if "discord bot" in nd or "discord slash" in nd: return "discord"
+    if "telegram bot" in nd or ("telegram" in nd and "bot" in nd): return "telegram"
+    if "whatsapp" in nd: return "whatsapp"
+    if "roblox" in nd: return "roblox"
+    if "wordpress plugin" in nd or "wordpress" in nd: return "wordpress"
+    if "home assistant" in nd: return "api"
+    if "obsidian plugin" in nd: return "library"
+    if "firefox extension" in nd or "chrome extension" in nd or "browser extension" in nd: return "browser-ext"
+    if "command-line" in nd or "command line" in nd or " cli " in nd: return "cli"
+    if "pyqt" in nd or "tkinter" in nd or "desktop app" in nd or "desktop application" in nd: return "desktop"
+    if "rimworld" in nd or "steam workshop" in nd or "game mod" in nd: return "desktop"
+    if "discord" in nd and not hostname: return "discord"
+    if "telegram" in nd and not hostname: return "telegram"
+
+    # Default
+    if hostname: return "web"
+    return "api"
+
 
 def parse_issue(body):
     """Parse issue body to extract app details."""
@@ -232,8 +289,9 @@ Discord: {parsed['discord']}
 Respond with ONLY a JSON object (no markdown, no explanation):
 {{
     "emoji": "single emoji that represents this app",
-    "category": "one of: Creative, Chat, Games, Dev_Tools, Vibes, Social_Bots, Learn",
-    "language": "ISO code like en, zh-CN, es, ja"
+    "category": "one of: image, video_audio, writing, chat, games, learn, bots, build, business",
+    "language": "ISO code like en, zh-CN, es, ja",
+    "platform": "one of: web, android, ios, windows, macos, desktop, cli, discord, telegram, whatsapp, library, browser-ext, roblox, wordpress, api"
 }}"""
 
     print("🤖 Asking LLM for emoji/category...")
@@ -250,13 +308,14 @@ Respond with ONLY a JSON object (no markdown, no explanation):
         print(f"   ⚠️ Could not parse LLM response, using defaults")
         llm_data = {
             "emoji": "🚀",
-            "category": parsed['category'] or "Dev_Tools",
+            "category": parsed['category'] or "build",
             "language": "en"
         }
 
     emoji = llm_data.get("emoji", "🚀")
-    category = llm_data.get("category", "Dev_Tools")
+    category = llm_data.get("category", "build")
     language = llm_data.get("language", "en")
+    platform = llm_data.get("platform") or infer_platform(parsed['name'], parsed['url'], parsed['description'])
 
     print(f"   Emoji: {emoji}")
     print(f"   Category: {category}")
@@ -278,19 +337,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 
     print(f"   Description: {description}")
 
-    # Get stars from validation result
-    stars = validation.get("stars", 0)
-    stars_str = f"⭐{stars}" if stars else ""
-
-    # Create branch
-    slug = parsed['name'].lower().replace(" ", "-").replace("_", "-")[:20]
-    branch = f"auto/app-{ISSUE_NUMBER}-{slug}"
-
-    run_cmd(["git", "fetch", "origin", "main"])
-    run_cmd(["git", "checkout", "-b", branch, "origin/main"])
-
-    # Build the row
-    today = datetime.now().strftime("%Y-%m-%d")
+    # Build row data for preview (no stars — daily metrics workflow handles it)
     repo_url = parsed['repo'] if parsed['repo'] and parsed['repo'] != "_No response_" else ""
     discord = parsed['discord'] if parsed['discord'] and parsed['discord'] != "_No response_" else ""
 
@@ -301,10 +348,9 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     # Determine if app URL is a GitHub repo or a web URL
     app_url = parsed['url'] if parsed['url'] and parsed['url'] != "_No response_" else ""
     is_github_repo = "github.com" in app_url and "github.io" not in app_url
-    
+
     if is_github_repo:
         web_url = ""
-        # Use app URL as repo if no separate repo provided
         if not repo_url:
             repo_url = app_url
     else:
@@ -319,41 +365,57 @@ Respond with ONLY a JSON object (no markdown, no explanation):
             issue_created_at = created_at[:10]  # YYYY-MM-DD
     except Exception as e:
         print(f"   Warning: Could not fetch issue creation date: {e}")
-        issue_created_at = today  # Fallback to today
+        issue_created_at = datetime.now().strftime("%Y-%m-%d")
 
     issue_url = f"https://github.com/pollinations/pollinations/issues/{ISSUE_NUMBER}"
 
-    # Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
-    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |  |  |"
+    # Build JSON with all row data (Approved_Date omitted — set on merge)
+    row_data = {
+        "emoji": emoji,
+        "name": parsed['name'],
+        "web_url": web_url,
+        "description": description,
+        "language": language,
+        "category": category,
+        "platform": platform,
+        "github_username": f"@{ISSUE_AUTHOR}",
+        "github_user_id": github_user_id,
+        "repo_url": repo_url,
+        "discord": discord,
+        "submitted_date": issue_created_at,
+        "issue_url": issue_url,
+    }
 
-    # Add row using the prepend script
-    os.environ["NEW_ROW"] = new_row
-    run_cmd(["node", ".github/scripts/app-prepend-row.js"])
-    run_cmd(["node", ".github/scripts/app-update-greenhouse.js"])
+    row_json = json.dumps(row_data, indent=2)
 
-    # Configure git
-    run_cmd(["git", "config", "user.name", BOT_NAME])
-    run_cmd(["git", "config", "user.email", BOT_EMAIL])
+    # Build preview comment — fully visible, no hidden data
+    comment = f"""## App Review Preview
 
-    # Commit with issue author as co-author
-    commit_msg = f"""Add {parsed['name']} to {category}
+| Field | Value |
+|-------|-------|
+| Emoji | {emoji} |
+| Name | {parsed['name']} |
+| URL | {web_url or repo_url or '—'} |
+| Description | {description} |
+| Category | {category} |
+| Platform | {platform} |
+| Language | {language} |
+| GitHub | @{ISSUE_AUTHOR} |
+| Repo | {repo_url or '—'} |
+| Discord | {discord or '—'} |
+| Submitted | {issue_created_at} |
 
-Co-authored-by: {ISSUE_AUTHOR} <{ISSUE_AUTHOR}@users.noreply.github.com>"""
+<!-- APP_REVIEW_DATA -->
+```json
+{row_json}
+```
 
-    run_cmd(["git", "add", "-A"])
-    run_cmd(["git", "commit", "-m", commit_msg])
-    run_cmd(["git", "push", "origin", branch, "--force-with-lease"])
+> Add the `TIER-APP-APPROVED` label to create a PR and merge this app."""
 
-    # Check for existing PR
-    existing_pr = validation.get("existing_pr")
-    if existing_pr:
-        print(f"   📝 Updating existing PR #{existing_pr['number']}")
-    else:
-        # Create PR
-        pr_body = f"- Adds [{parsed['name']}]({parsed['url']}) to {category}\n- {description}\n\nFixes #{ISSUE_NUMBER}"
-        run_cmd(["gh", "pr", "create", "--title", f"Add {parsed['name']} to {category}", "--body", pr_body, "--label", "TIER-APP-REVIEW-PR"])
+    # Post preview comment
+    gh_api(f"/repos/pollinations/pollinations/issues/{ISSUE_NUMBER}/comments", "POST", {"body": comment})
 
-    # Update issue label (remove both TIER-APP and TIER-APP-INCOMPLETE if present)
+    # Update issue label — TIER-APP-REVIEW means AI reviewed and passed
     run_cmd(["gh", "issue", "edit", ISSUE_NUMBER, "--remove-label", "TIER-APP", "--remove-label", "TIER-APP-INCOMPLETE", "--add-label", "TIER-APP-REVIEW"])
 
     print(f"   ✅ Done!")

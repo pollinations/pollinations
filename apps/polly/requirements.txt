@@ -42,7 +42,6 @@ litellm==1.81.6
 lxml==5.4.0
 MarkupSafe==3.0.3
 multidict==6.7.1
-numpy==2.4.2
 openai==2.16.0
 packaging==26.0
 pillow==12.1.0

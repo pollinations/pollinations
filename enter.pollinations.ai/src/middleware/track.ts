@@ -192,7 +192,7 @@ export const track = (eventType: EventType) =>
                 await sendToTinybird(
                     finalEvent,
                     c.env.TINYBIRD_INGEST_URL,
-                    c.env.TINYBIRD_INGEST_TOKEN,
+                    c.env.TINYBIRD_GENERATION_INGEST_TOKEN,
                     log,
                 );
 

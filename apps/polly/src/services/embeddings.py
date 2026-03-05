@@ -3,6 +3,7 @@ import hashlib
 import logging
 import os
 import subprocess
+import time
 from pathlib import Path
 
 import tiktoken
@@ -478,8 +479,36 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
     return embedded_count
 
 
+# TTL cache for search results (avoids redundant OpenAI API calls)
+_search_cache: dict[str, tuple[float, list[dict]]] = {}
+_SEARCH_CACHE_TTL = 300  # 5 minutes
+_SEARCH_CACHE_MAX = 256
+
+
+def _cache_get(key: str) -> list[dict] | None:
+    if key in _search_cache:
+        ts, val = _search_cache[key]
+        if time.time() - ts < _SEARCH_CACHE_TTL:
+            return val
+        del _search_cache[key]
+    return None
+
+
+def _cache_set(key: str, val: list[dict]):
+    # Evict oldest if full
+    if len(_search_cache) >= _SEARCH_CACHE_MAX:
+        oldest = min(_search_cache, key=lambda k: _search_cache[k][0])
+        del _search_cache[oldest]
+    _search_cache[key] = (time.time(), val)
+
+
 async def search_code(query: str, top_k: int = 5) -> list[dict]:
     await wait_for_initialization()
+
+    cache_key = f"{query}:{top_k}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
 
     model = _get_model()
     collection = _get_collection()
@@ -513,6 +542,7 @@ async def search_code(query: str, top_k: int = 5) -> list[dict]:
             }
         )
 
+    _cache_set(cache_key, formatted)
     return formatted
 
 

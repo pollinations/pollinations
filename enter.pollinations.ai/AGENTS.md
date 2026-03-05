@@ -580,20 +580,21 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 
 ---
 
-## 🔐 OAuth Authorization Flow
+## 🔐 BYOP Authorization Flow
 
-Third-party apps can redirect users to the authorize page to get an API key with pre-selected permissions.
+Third-party apps redirect users to get an API key. With `app_key`, the consent screen shows app name + developer GitHub.
 
 ### Base URL
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL
+https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL&app_key=pk_yourkey
 ```
 
-### Optional Preselection Parameters
+### Parameters
 
 | Param | Description | Example |
 |-------|-------------|---------|
+| `app_key` | Publishable key (shows app name + author) | `pk_abc123` |
 | `models` | Comma-separated allowed models | `flux,openai,gptimage` |
 | `budget` | Pollen budget limit | `10` |
 | `expiry` | Expiry in days (default: 30) | `7` |
@@ -605,16 +606,26 @@ https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL
 - `balance`: Read pollen balance
 - `usage`: Read usage history
 
+### App Registration
+
+Register a `pk_` key at enter.pollinations.ai with **App URL** + **BYOP** toggle enabled. The key name becomes the app display name on the consent screen.
+
 ### Example
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&permissions=profile,balance&expiry=7&models=flux,openai
+https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&app_key=pk_abc123&permissions=profile,balance&expiry=7
 ```
 
-After authorization, the user is redirected back with the API key in the URL fragment:
+After authorization, the user is redirected back with an `sk_` key in the URL fragment:
 ```
-https://myapp.com/callback#api_key=pk_xxxxx
+https://myapp.com/callback#api_key=sk_xxxxx
 ```
+
+### App Lookup Endpoint
+
+`GET /api/app-lookup` — resolves app attribution (no auth required):
+- `?app_key=pk_xxx` — direct key lookup
+- `?redirect_url=https://...` — matches against registered `appUrl` values
 
 ---
 
@@ -667,3 +678,73 @@ npx tsx scripts/manage-polar.ts user update-tier --email USER@EMAIL.COM --tier f
 - **DB tier** = what user CAN activate
 - **Polar subscription** = what user HAS activated
 - If no Polar subscription, user must click "Activate" at enter.pollinations.ai
+
+---
+
+## API Documentation Pipeline
+
+The API reference at `gen.pollinations.ai/api/docs` is auto-generated from source code. **Never edit `APIDOCS.md` directly** — it gets overwritten by CI.
+
+### How It Works
+
+```
+Source files (routes + Zod schemas)
+        │
+        ▼
+hono-openapi introspects describeRoute() + validators
+        │
+        ▼
+OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
+        │
+        ├──► Scalar UI at /api/docs (interactive, runtime)
+        ├──► /api/docs/llm.txt (compact plain text for AI agents)
+        └──► scripts/generate-apidocs.ts → APIDOCS.md (offline, via CI)
+```
+
+### Source Files (what you edit)
+
+| File | What it controls |
+|------|-----------------|
+| `src/routes/proxy.ts` | Endpoint descriptions, summaries, response schemas, error codes |
+| `src/routes/account.ts` | Account endpoint descriptions |
+| `src/routes/docs.ts` | OpenAPI info/intro text, tag descriptions, code samples, LLM doc, schema transformations |
+| `src/schemas/image.ts` | Image/video query param definitions (auto-become OpenAPI params) |
+| `src/schemas/text.ts` | Text query param definitions |
+| `src/schemas/openai.ts` | OpenAI-compatible request/response schemas |
+| `src/utils/api-docs.ts` | `errorResponseDescriptions()` helper |
+| `src/error.ts` | Known error status codes list |
+
+### Key Concepts
+
+- **`describeRoute()`** — each route declares its tags, summary, description, and response schemas inline
+- **Zod schemas with `.meta()`** — query/body params become OpenAPI parameters automatically (types, defaults, descriptions, enums)
+- **`transformOpenAPISchema()`** in `docs.ts` does three things:
+  1. Strips `/generate/` prefix from paths (internal mount point → public API paths)
+  2. `filterAliases()` removes model aliases from enums (only primary IDs shown)
+  3. Injects `x-codeSamples` (curl, Python, JS examples) from the `CODE_SAMPLES` object
+- **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/api/docs/llm.txt`, separate from OpenAPI
+- **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`, `/tiers/view`)
+
+### Three Output Surfaces
+
+1. **Scalar UI** (`/api/docs`) — interactive docs page, fetches OpenAPI JSON client-side at runtime
+2. **LLM text** (`/api/docs/llm.txt`) — compact plain text for AI agents, generated from `generateLLMDoc()` at startup
+3. **APIDOCS.md** — markdown version, generated offline by `scripts/generate-apidocs.ts` using `@scalar/openapi-to-markdown`
+
+### Regenerating APIDOCS.md
+
+- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs on push to `main`
+- **Manual**: `npm run docs:generate` (fetches from production `enter.pollinations.ai`, so changes must be deployed first)
+
+### Where to Make Changes
+
+| Want to change... | Edit this |
+|-------------------|----------|
+| Endpoint description or summary | `describeRoute()` in the route file (`proxy.ts`, `account.ts`) |
+| Query/body parameters | Zod schema in `src/schemas/` |
+| Error response codes shown | `errorResponseDescriptions()` call in the route |
+| Tag descriptions (sidebar categories) | `tags` array in `docs.ts` OpenAPI config |
+| Code samples (curl/Python/JS tabs) | `CODE_SAMPLES` object in `docs.ts` |
+| API intro text (Quick Start, Auth, Errors) | `documentation.info.description` in `docs.ts` |
+| LLM doc content | `generateLLMDoc()` in `docs.ts` |
+| Model lists in enums | Model registries in `shared/registry/` (auto-picked up) |

@@ -48,3 +48,10 @@ export async function getWeeklyChurn(weeksBack = 12) {
     const data = await res.json();
     return data.data || [];
 }
+
+export async function getWeeklyAppSubmissions() {
+    const res = await fetch("/api/kpi/app-submissions");
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+}

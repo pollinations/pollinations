@@ -88,6 +88,32 @@ Each app gets:
 - `manifest.json`
 - `og-image.png` (1200×630 social preview)
 
+## What Makes a Good App Submission
+
+To increase the chances of approval during app review, submitted apps should meet the following criteria:
+
+### Required
+- Clearly and meaningfully use **Pollinations.ai APIs** (text, image, or multimodal)
+- Be **open-source** with a public GitHub repository
+- Include a **working demo URL** (auto-deployed or external)
+- Contain a clear `README.md` inside the app folder explaining:
+  - What the app does
+  - Which Pollinations models/APIs are used
+  - How to run or build the app locally
+- Provide real user value (not just a thin API wrapper)
+
+### Strongly Recommended
+- Clean and usable UI
+- Focused scope (one clear purpose)
+
+### Common Reasons for Rejection
+- No clear Pollinations API usage
+- Vague or incomplete app descriptions
+- Missing or private repository
+- Spam, affiliate links, or misleading “money earning” claims
+- Very low-effort generators
+
+Following these guidelines helps maintain a high-quality app ecosystem and speeds up the review process.
 ## Community Showcase
 
 - 🔆 [**Greenhouse**](GREENHOUSE.md) — Curated highlights from every category

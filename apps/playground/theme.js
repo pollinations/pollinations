@@ -38,10 +38,10 @@ export const colors = {
         disabled: "rgba(140, 180, 140, 0.4)",
     },
     border: {
-        light: "rgba(80, 160, 80, 0.12)",
-        medium: "rgba(80, 160, 80, 0.18)",
-        strong: "rgba(80, 160, 80, 0.25)",
-        hover: "rgba(100, 180, 80, 0.35)",
+        light: "rgba(130, 210, 60, 0.15)",
+        medium: "rgba(130, 210, 60, 0.22)",
+        strong: "rgba(130, 210, 60, 0.3)",
+        hover: "rgba(150, 230, 60, 0.4)",
     },
     status: {
         success: {

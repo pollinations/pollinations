@@ -79,9 +79,9 @@
   --destructive: #f87171;
   --destructive-foreground: rgba(210, 230, 210, 0.9);
 
-  /* Green-tinted borders */
-  --border: rgba(80, 160, 80, 0.15);
-  --input: rgba(80, 160, 80, 0.15);
+  /* Lime-green borders */
+  --border: rgba(130, 210, 60, 0.18);
+  --input: rgba(130, 210, 60, 0.18);
   --ring: rgba(163, 230, 53, 0.3);
 
   /* Charts */
@@ -98,7 +98,7 @@
   --sidebar-primary-foreground: #0a1a0e;
   --sidebar-accent: rgba(100, 180, 80, 0.15);
   --sidebar-accent-foreground: rgba(160, 230, 100, 0.9);
-  --sidebar-border: rgba(80, 160, 80, 0.12);
+  --sidebar-border: rgba(130, 210, 60, 0.15);
   --sidebar-ring: rgba(163, 230, 53, 0.3);
 }
 
@@ -123,7 +123,7 @@
   transition: all 0.2s ease;
 }
 [data-sidebar="menu-button"]:hover {
-  background: rgba(80, 160, 80, 0.12);
+  background: rgba(130, 210, 60, 0.15);
   backdrop-filter: blur(12px);
 }
 [data-sidebar="menu-button"][data-active="true"] {
@@ -135,12 +135,12 @@
 [data-slot="card"] {
   background: rgba(20, 60, 30, 0.3);
   backdrop-filter: blur(16px);
-  border-color: rgba(80, 160, 80, 0.15);
+  border-color: rgba(130, 210, 60, 0.18);
   transition: all 0.3s ease;
 }
 [data-slot="card"]:hover {
   background: rgba(25, 70, 35, 0.35);
-  border-color: rgba(100, 180, 80, 0.25);
+  border-color: rgba(150, 230, 60, 0.3);
   box-shadow: 0 8px 32px rgba(0, 20, 0, 0.3);
 }
 
@@ -154,7 +154,7 @@ select,
 [data-slot="select-trigger"],
 [data-slot="sidebar-input"] {
   background: rgba(30, 70, 35, 0.3) !important;
-  border-color: rgba(80, 160, 80, 0.2) !important;
+  border-color: rgba(130, 210, 60, 0.22) !important;
   color: rgba(210, 230, 210, 0.9) !important;
   transition: all 0.2s ease;
 }
@@ -175,7 +175,7 @@ input::placeholder {
 [data-slot="select-content"] {
   background: rgba(12, 35, 18, 0.95) !important;
   backdrop-filter: blur(20px);
-  border-color: rgba(80, 160, 80, 0.2) !important;
+  border-color: rgba(130, 210, 60, 0.22) !important;
 }
 [data-slot="select-item"]:focus,
 [data-slot="select-item"][data-highlighted] {
@@ -186,7 +186,7 @@ input::placeholder {
 [data-slot="dialog-content"] {
   background: rgba(14, 40, 20, 0.97) !important;
   backdrop-filter: blur(20px);
-  border-color: rgba(80, 160, 80, 0.2) !important;
+  border-color: rgba(130, 210, 60, 0.22) !important;
 }
 
 /* ─── Command palette — green glass ─────────────────────────────── */
@@ -195,7 +195,7 @@ input::placeholder {
 }
 [cmdk-input] {
   background: rgba(30, 70, 35, 0.3) !important;
-  border-color: rgba(80, 160, 80, 0.2) !important;
+  border-color: rgba(130, 210, 60, 0.22) !important;
   color: rgba(210, 230, 210, 0.9) !important;
 }
 [cmdk-item][data-selected="true"],
@@ -220,7 +220,7 @@ input::placeholder {
 }
 [data-slot="button"][data-variant="ghost"]:hover,
 [data-slot="button"][data-variant="outline"]:hover {
-  background: rgba(80, 160, 80, 0.12);
+  background: rgba(130, 210, 60, 0.15);
   backdrop-filter: blur(8px);
 }
 
@@ -237,7 +237,7 @@ header {
 
 /* ─── Accordion — nature theme ───────────────────────────────────── */
 [data-slot="accordion-item"] {
-  border-color: rgba(80, 160, 80, 0.12);
+  border-color: rgba(130, 210, 60, 0.15);
 }
 
 /* ─── Labels and form labels ─────────────────────────────────────── */

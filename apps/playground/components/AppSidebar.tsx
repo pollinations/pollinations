@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/sidebar';
 import {
   ArrowRight,
-  Clock,
   Code2,
   FileText,
   Image as ImageIcon,

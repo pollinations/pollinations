@@ -36,20 +36,6 @@ app.use("*", async (c, next) => {
     await next();
 });
 
-// Validate pre-shared key from proxy (prevents direct access to myceli.ai endpoints).
-// Skip validation if PROXY_PSK is not configured (local dev).
-app.use("*", async (c, next) => {
-    const expectedPsk = process.env.PROXY_PSK;
-    if (!expectedPsk) {
-        await next();
-        return;
-    }
-    if (c.req.header("x-proxy-psk") !== expectedPsk) {
-        return c.json({ error: "Unauthorized" }, 401);
-    }
-    await next();
-});
-
 const log = debug("pollinations:server");
 const errorLog = debug("pollinations:error");
 const authLog = debug("pollinations:auth");

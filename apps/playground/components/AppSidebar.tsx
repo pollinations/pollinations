@@ -15,6 +15,7 @@ import {
 import {
   ArrowRight,
   Code2,
+  FileAudio,
   FileText,
   Image as ImageIcon,
   ImagePlus,
@@ -76,6 +77,12 @@ const speechExamples = [
     label: 'Speech Generation',
     path: '/speech-generation',
     icon: Volume2,
+  },
+  {
+    id: 'speech-transcribe',
+    label: 'Speech Transcription',
+    path: '/speech-transcribe',
+    icon: FileAudio,
   },
 ];
 

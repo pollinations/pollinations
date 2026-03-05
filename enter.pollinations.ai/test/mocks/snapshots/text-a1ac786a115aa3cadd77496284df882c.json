@@ -61,32 +61,30 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "848",
-      "content-type": "application/json; charset=utf-8",
-      "date": "Sun, 25 Jan 2026 03:06:56 GMT",
-      "etag": "W/\"350-ibvXNEHwmZMBvPO3LcyU5YhC2zc\"",
-      "keep-alive": "timeout=5",
-      "x-powered-by": "Express"
+      "content-length": "832",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:42:56 GMT",
+      "keep-alive": "timeout=5"
     },
     "body": {
       "type": "json",
       "data": {
         "error": "Unauthorized",
         "message": "401 Unauthorized",
-        "requestId": "xs59xp",
+        "requestId": "jrfpi",
         "requestParameters": {
+          "seed": 42,
+          "model": "nomnom",
+          "voice": "alloy",
+          "jsonMode": false,
           "messages": [
             {
               "role": "user",
               "content": "What is 5 + 3? You must use the calculator tool to compute this."
             }
           ],
-          "jsonMode": false,
-          "seed": 42,
-          "model": "nomnom",
           "referrer": null,
           "isPrivate": true,
-          "voice": "alloy",
           "tools": [
             {
               "type": "function",
@@ -124,8 +122,7 @@
               }
             }
           ],
-          "tool_choice": "required",
-          "private": true
+          "tool_choice": "required"
         },
         "details": {
           "detail": "Invalid API key. Get your key at https://enter.pollinations.ai"

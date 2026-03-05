@@ -101,9 +101,12 @@ describe("Tier System End-to-End", () => {
             const db = drizzle(env.DB);
             const executionContext = createExecutionContext();
 
+            // Spore tier only refills on Mondays (weekly cadence)
+            const isMonday = new Date().getUTCDay() === 1;
+
             // Setup diverse user base
             const users = [
-                { id: "free-user", tier: "spore", expectedPollen: 1 },
+                { id: "free-user", tier: "spore", expectedPollen: isMonday ? 1.5 : 0 },
                 { id: "basic-user", tier: "seed", expectedPollen: 3 },
                 { id: "pro-user", tier: "flower", expectedPollen: 10 },
                 { id: "enterprise-user", tier: "nectar", expectedPollen: 20 },

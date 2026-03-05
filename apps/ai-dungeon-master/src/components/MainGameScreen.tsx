@@ -7,7 +7,7 @@ import { ChoicesSection } from "./ChoicesSection";
 import { InventoryGrid, type InventoryItem } from "./InventoryGrid";
 import { InventoryModal } from "./InventoryModal";
 import { Button } from "./ui/button";
-import { Backpack, Dices, Save, Upload, Loader2, ScrollText } from "lucide-react";
+import { Backpack, Dices, Save, Upload, Loader2, ScrollText, Images } from "lucide-react";
 
 interface Character {
     name: string;
@@ -59,6 +59,7 @@ interface MainGameScreenProps {
     onSkipUpload?: () => void;
     onAddItem: (item: InventoryItem) => void;
     onViewStoryHistory?: () => void;
+    onViewGallery?: () => void;
 }
 
 export function MainGameScreen({
@@ -77,6 +78,7 @@ export function MainGameScreen({
     onSkipUpload,
     onAddItem,
     onViewStoryHistory,
+    onViewGallery,
 }: MainGameScreenProps) {
     const [inventoryOpen, setInventoryOpen] = useState(false);
     const [combatOpen, setCombatOpen] = useState(false);
@@ -217,7 +219,7 @@ export function MainGameScreen({
                                 <div className="w-full bg-[#3a2817] border border-[#d4a76a] rounded-lg p-3 space-y-2">
                                     <p className="text-[#f5e6d3] text-sm">
                                         Save & upload <strong className="text-[#d4a76a]">{pendingUploadCount}</strong> image{pendingUploadCount !== 1 ? 's' : ''}?
-                                        <span className="block text-[#b8a389] text-xs mt-1">Uses pollen credits</span>
+                                        <span className="block text-[#b8a389] text-xs mt-1">Images will be stored permanently</span>
                                     </p>
                                     <div className="flex gap-2">
                                         <Button
@@ -261,6 +263,14 @@ export function MainGameScreen({
                             >
                                 <ScrollText className="w-5 h-5 text-[#d4a76a]" />
                                 View Story History
+                            </Button>
+
+                            <Button
+                                onClick={onViewGallery}
+                                className="w-full bg-[#4a3422] hover:bg-[#5a4332] text-[#f5e6d3] border border-[#d4a76a] justify-start gap-3"
+                            >
+                                <Images className="w-5 h-5 text-[#d4a76a]" />
+                                Gallery
                             </Button>
 
                             <Button

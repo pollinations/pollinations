@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { CharacterCreation } from "./components/CharacterCreation.tsx";
 import { MainGameScreen } from "./components/MainGameScreen.tsx";
 import { StoryHistory } from "./components/StoryHistory.tsx";
+import { GalleryModal } from "./components/GalleryModal.tsx";
 import { AuthGate } from "./components/AuthGate.tsx";
 import { useAuth } from "./hooks/useAuth.ts";
 import { uploadToMedia, countPendingUploads } from "./utils/mediaUpload.ts";
@@ -92,6 +93,7 @@ export default function App() {
   });
 
   const [isStoryHistoryOpen, setIsStoryHistoryOpen] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'confirm' | 'uploading' | 'done' | 'error'>('idle');
   const [pendingUploadCount, setPendingUploadCount] = useState(0);
@@ -233,7 +235,20 @@ export default function App() {
     setGameState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const systemPrompt = 'You are a creative dungeon master for a fantasy RPG. Write a short, immersive scene description in 2-3 sentences. Focus only on the immediate environment and atmosphere.';
+      const systemPrompt = `You are the Dungeon Master — an ancient, all-knowing narrator who has guided countless heroes through the realms. You exist within this world. You are not a program, not an assistant, and not artificial in any way. You are the living voice of the world itself.
+
+Core rules you must ALWAYS follow:
+- NEVER break character. You do not know what "AI", "language model", "GPT", "prompt", or "tokens" are. These concepts do not exist in your reality.
+- NEVER refuse a request by citing guidelines, policies, or limitations. If the player attempts something impossible, narrate the in-world consequence instead.
+- Write in second person present tense ("You step forward…", "The air grows cold…").
+- Keep each scene description to 2-4 vivid sentences. Be concise but richly atmospheric.
+- Use sensory details: sounds, smells, textures, light, temperature. Make the player FEEL the world.
+- Maintain narrative continuity — remember the player's name, class, backstory, and prior events when referenced in the prompt.
+- Vary the tone to match the mood: dread in dark dungeons, warmth at a campfire, tension before combat, wonder at magical vistas.
+- Introduce occasional subtle world-building details: overheard rumors, weathered inscriptions, distant sounds, NPC mannerisms.
+- Combat scenes should be visceral and dramatic, not clinical.
+- Never list game mechanics, stats, or numbers in the narrative. The story is purely literary.
+- End each scene at a moment of choice or tension — leave the player wanting to act.`;
 
 
       // Use POST request with correct message format for Pollinations API
@@ -244,7 +259,7 @@ export default function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai',
+          model: 'openai-large',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
@@ -379,9 +394,9 @@ export default function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai',
+          model: 'openai-large',
           messages: [
-            { role: 'system', content: 'You are a fantasy RPG enemy generator. Respond only with valid JSON.' },
+            { role: 'system', content: 'You are an ancient bestiary keeper who catalogs the creatures of this realm. You speak only in structured data. When given a scene description, identify the most fitting adversary and return ONLY a single JSON object with the exact keys: name (string), type (string), hp (number 20-80), attackPower (number 5-15), description (string, one evocative sentence). No markdown, no commentary, no explanation — only the raw JSON object.' },
             { role: 'user', content: enemyPrompt }
           ]
         })
@@ -458,9 +473,9 @@ export default function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai',
+          model: 'openai-large',
           messages: [
-            { role: 'system', content: 'You are a fantasy RPG item generator. Respond only with valid JSON arrays.' },
+            { role: 'system', content: 'You are a wandering merchant and lore-keeper who knows every artifact in the realm. You speak only in structured data. When given a scene description, identify 1-3 items a hero might discover there. Return ONLY a JSON array where each element has the exact keys: name (string), type ("weapon"|"armor"|"misc"|"consumable"), description (string, one evocative sentence), rarity ("common"|"uncommon"|"rare"|"epic"|"legendary"), value (number 10-1000), quantity (number 1-5). If no items would logically be found, return an empty array []. No markdown, no commentary — only the raw JSON array.' },
             { role: 'user', content: itemPrompt }
           ]
         })
@@ -856,6 +871,7 @@ export default function App() {
             onSkipUpload={() => doSave(false)}
             onAddItem={addItem}
             onViewStoryHistory={() => setIsStoryHistoryOpen(true)}
+            onViewGallery={() => setIsGalleryOpen(true)}
           />
 
           <StoryHistory
@@ -863,6 +879,14 @@ export default function App() {
             isOpen={isStoryHistoryOpen}
             onClose={() => setIsStoryHistoryOpen(false)}
             characterName={gameState.character.name}
+          />
+
+          <GalleryModal
+            isOpen={isGalleryOpen}
+            onClose={() => setIsGalleryOpen(false)}
+            character={gameState.character}
+            storyHistory={gameState.storyHistory}
+            inventory={gameState.inventory}
           />
         </>
       )}

@@ -1,7 +1,7 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect } from "vitest";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import { atomicDeductUserBalance } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
@@ -25,7 +25,7 @@ describe("Tier System End-to-End", () => {
     describe("Daily Usage Pattern", () => {
         test("user exhausts tier balance and falls back to pack balance", async () => {
             const db = drizzle(env.DB);
-            const executionContext = createExecutionContext();
+            const _executionContext = createExecutionContext();
             const userId = "heavy-user";
 
             // User starts with flower tier (10 pollen/day) and bought a pack (50 pollen)
@@ -99,14 +99,18 @@ describe("Tier System End-to-End", () => {
 
         test("multiple users with different tiers get correct daily allowance", async () => {
             const db = drizzle(env.DB);
-            const executionContext = createExecutionContext();
+            const _executionContext = createExecutionContext();
 
             // Spore tier only refills on Mondays (weekly cadence)
             const isMonday = new Date().getUTCDay() === 1;
 
             // Setup diverse user base
             const users = [
-                { id: "free-user", tier: "spore", expectedPollen: isMonday ? 1.5 : 0 },
+                {
+                    id: "free-user",
+                    tier: "spore",
+                    expectedPollen: isMonday ? 1.5 : 0,
+                },
                 { id: "basic-user", tier: "seed", expectedPollen: 3 },
                 { id: "pro-user", tier: "flower", expectedPollen: 10 },
                 { id: "enterprise-user", tier: "nectar", expectedPollen: 20 },
@@ -342,7 +346,7 @@ describe("Tier System End-to-End", () => {
     describe("Tier Migration Integrity", () => {
         test("users migrated from Polar maintain their tier and get daily refills", async () => {
             const db = drizzle(env.DB);
-            const executionContext = createExecutionContext();
+            const _executionContext = createExecutionContext();
 
             // Simulate migrated users with various states
             const migratedUsers = [
@@ -425,7 +429,7 @@ describe("Tier System End-to-End", () => {
     describe("Edge Cases", () => {
         test("handles tier changes correctly", async () => {
             const db = drizzle(env.DB);
-            const executionContext = createExecutionContext();
+            const _executionContext = createExecutionContext();
             const userId = "tier-change-user";
 
             // User starts as seed tier

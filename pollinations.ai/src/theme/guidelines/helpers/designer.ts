@@ -4,7 +4,6 @@
  */
 
 import { generateText } from "../../../services/pollinationsAPI";
-import { assembleStylePrompt } from "../../buildPrompts";
 import type { MacroConfig } from "../../style/simplified-config.types";
 import { macrosToTheme } from "../../style/simplified-to-theme";
 import {
@@ -12,30 +11,6 @@ import {
     themeToDictionary,
 } from "../../style/theme-processor";
 import { STYLING_GUIDELINES } from "../designer";
-
-// ==============================================
-// TYPE DEFINITIONS
-// ==============================================
-
-// New full theme format
-export interface FullThemeStyle {
-    colors: ThemeDictionary["colors"];
-    borderRadius?: Record<string, string>;
-    fonts?: {
-        title: string;
-        headline: string;
-        body: string;
-    };
-    opacity?: Record<string, string>;
-    spacing?: {
-        xs: string;
-        sm: string;
-        md: string;
-        lg: string;
-        xl: string;
-        "2xl": string;
-    };
-}
 
 // ==============================================
 // JSON PARSING HELPERS
@@ -108,30 +83,6 @@ export function parseThemeResponse(text: string): ThemeDictionary {
     });
 }
 
-/**
- * Parse full theme response (colors + fonts + spacing)
- */
-export function parseFullThemeResponse(text: string): FullThemeStyle {
-    // For now, we reuse parseThemeResponse which handles the heavy lifting
-    // The MacroConfig response doesn't explicitly return "spacing" in the same way the old one might have
-    // But our new prompt asks for MacroConfig which maps to tokens.
-    // The old FullThemeStyle interface expects 'spacing'.
-    // The new prompt DOES NOT ask for spacing in the JSON schema I wrote in styling.ts?
-    // Wait, I removed spacing from the JSON schema in styling.ts!
-    // So 'spacing' will be undefined. That's fine for now as it's optional.
-
-    const themeDictionary = parseThemeResponse(text);
-
-    return {
-        colors: themeDictionary.colors,
-        borderRadius: themeDictionary.borderRadius,
-        // biome-ignore lint/suspicious/noExplicitAny: Type casting for legacy format
-        fonts: themeDictionary.fonts as any,
-        opacity: themeDictionary.opacity,
-        spacing: undefined, // We dropped spacing from the macro prompt for now
-    };
-}
-
 // ==============================================
 // THEME GENERATION HELPERS
 // ==============================================
@@ -155,20 +106,6 @@ Generate the theme JSON now:`;
     const text = await generateText(fullPrompt, undefined, model, apiKey);
     console.log("🎨 [DESIGNER] ← Theme tokens received");
     return parseThemeResponse(text);
-}
-
-/**
- * Generate full theme style (colors + fonts + spacing)
- * Uses the GEN STYLE pipeline with styling guidelines
- */
-export async function generateFullTheme(
-    themeDescription: string,
-): Promise<FullThemeStyle> {
-    const fullPrompt = assembleStylePrompt(themeDescription);
-    console.log("🎨 [DESIGNER] → Requesting full theme...");
-    const text = await generateText(fullPrompt);
-    console.log("🎨 [DESIGNER] ← Full theme received");
-    return parseFullThemeResponse(text);
 }
 
 // ==============================================

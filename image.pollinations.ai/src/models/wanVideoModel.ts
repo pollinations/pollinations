@@ -1,9 +1,9 @@
-import sleep from "await-sleep";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { sleep } from "../util.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
@@ -11,8 +11,6 @@ const logOps = debug("pollinations:wan:ops");
 const logError = debug("pollinations:wan:error");
 
 // API Configuration
-const AIRFORCE_API_BASE = "https://api.airforce/v1";
-const AIRFORCE_WAN_MODEL = "wan-2.6";
 const DASHSCOPE_API_BASE = "https://dashscope-intl.aliyuncs.com/api/v1";
 const WAN_T2V_MODEL = "wan2.6-t2v";
 const WAN_I2V_MODEL = "wan2.6-i2v-flash";
@@ -26,14 +24,6 @@ const DEFAULT_RESOLUTION = "720P"; // Supports 480P, 720P, 1080P
 // Polling configuration for Alibaba DashScope
 const POLL_MAX_ATTEMPTS = 60; // 5 minutes max
 const POLL_DELAY_MS = 5000; // 5 second intervals
-
-interface AirforceVideoResponse {
-    created: number;
-    data: Array<{
-        url: string | null;
-        b64_json: string | null;
-    }>;
-}
 
 interface WanTaskResponse {
     output?: {
@@ -74,21 +64,6 @@ interface DashScopeRequest {
 }
 
 /**
- * Retry wrapper for flaky operations
- */
-async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            return await fn();
-        } catch (error) {
-            if (attempt === maxRetries) throw error;
-            logOps(`Attempt ${attempt}/${maxRetries} failed, retrying...`);
-        }
-    }
-    throw new Error("Unreachable");
-}
-
-/**
  * Generates a video using Alibaba DashScope API (wan-2.6)
  * Supports both text-to-video and image-to-video with optional audio
  */
@@ -99,59 +74,6 @@ export async function callWanAPI(
     requestId: string,
 ): Promise<VideoGenerationResult> {
     return await callWanAlibabaAPI(prompt, safeParams, progress, requestId);
-}
-
-/**
- * Generates a video using Airforce API (wan-2.6)
- * Supports both text-to-video and image-to-video with optional audio
- */
-async function callWanAirforceAPI(
-    prompt: string,
-    safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<VideoGenerationResult> {
-    const apiKey = process.env.AIRFORCE_API_KEY;
-    if (!apiKey) {
-        throw new HttpError(
-            "AIRFORCE_API_KEY environment variable is required for Wan model",
-            500,
-        );
-    }
-
-    const videoParams = prepareVideoParameters(safeParams);
-    const imageUrl = extractFirstImage(safeParams.image);
-
-    logOps("Calling Wan 2.6 API (Airforce) with params:", {
-        prompt,
-        ...videoParams,
-        hasImage: !!imageUrl,
-        model: AIRFORCE_WAN_MODEL,
-    });
-
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Starting video generation with Wan 2.6...",
-    );
-
-    const requestBody = buildAirforceRequest(prompt, videoParams, imageUrl);
-    logOps("Airforce API request:", JSON.stringify(requestBody, null, 2));
-
-    progress.updateBar(
-        requestId,
-        45,
-        "Processing",
-        "Initiating video generation...",
-    );
-
-    const videoUrl = await withRetry(() =>
-        streamAirforceResponse(apiKey, requestBody, progress, requestId),
-    );
-
-    const videoBuffer = await downloadVideo(videoUrl, progress, requestId);
-    return createVideoResult(videoBuffer, videoParams);
 }
 
 /**
@@ -213,146 +135,6 @@ function createVideoResult(
 }
 
 /**
- * Build request body for Airforce API
- */
-function buildAirforceRequest(
-    prompt: string,
-    videoParams: ReturnType<typeof prepareVideoParameters>,
-    imageUrl?: string,
-) {
-    const requestBody = {
-        model: AIRFORCE_WAN_MODEL,
-        prompt,
-        n: 1,
-        size: "1024x1024",
-        response_format: "url",
-        sse: true,
-        aspectRatio: videoParams.aspectRatio,
-        duration: videoParams.durationSeconds,
-        resolution: videoParams.resolution,
-        sound: videoParams.generateAudio,
-    };
-
-    return imageUrl ? { ...requestBody, image: imageUrl } : requestBody;
-}
-
-/**
- * Stream and parse SSE response from Airforce API
- */
-async function streamAirforceResponse(
-    apiKey: string,
-    requestBody: ReturnType<typeof buildAirforceRequest>,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<string> {
-    const response = await fetch(`${AIRFORCE_API_BASE}/images/generations`, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError("Airforce API failed:", response.status, errorText);
-        throw new HttpError(
-            `Airforce API request failed: ${errorText}`,
-            response.status,
-        );
-    }
-
-    progress.updateBar(
-        requestId,
-        50,
-        "Processing",
-        "Generating video (streaming updates)...",
-    );
-
-    if (!response.body)
-        throw new HttpError("No response body from Airforce API", 500);
-
-    const videoUrl = await parseSSEStream(response.body, progress, requestId);
-    if (!videoUrl)
-        throw new HttpError("No video URL received from Airforce API", 500);
-
-    return videoUrl;
-}
-
-/**
- * Parse Server-Sent Events stream from Airforce API
- */
-async function parseSSEStream(
-    body: ReadableStream<Uint8Array>,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<string | null> {
-    const reader = body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let videoUrl: string | null = null;
-
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (!trimmedLine || trimmedLine === ": keepalive") continue;
-
-            if (trimmedLine === "data: [DONE]") {
-                logOps("SSE stream completed");
-                return videoUrl;
-            }
-
-            if (trimmedLine.startsWith("data: ")) {
-                videoUrl = parseSSEData(
-                    trimmedLine.slice(6),
-                    progress,
-                    requestId,
-                );
-            }
-        }
-    }
-
-    return videoUrl;
-}
-
-/**
- * Parse individual SSE data message
- */
-function parseSSEData(
-    dataString: string,
-    progress: ProgressManager,
-    requestId: string,
-): string | null {
-    try {
-        const data = JSON.parse(dataString) as AirforceVideoResponse;
-
-        if (data.data?.[0]?.url) {
-            const videoUrl = data.data[0].url;
-            logOps("Video URL received:", videoUrl);
-            progress.updateBar(
-                requestId,
-                80,
-                "Processing",
-                "Video generation completed, downloading...",
-            );
-            return videoUrl;
-        }
-    } catch (e) {
-        logError("Failed to parse SSE data:", dataString, e);
-    }
-
-    return null;
-}
-
-/**
  * Download video from URL
  */
 async function downloadVideo(
@@ -378,10 +160,6 @@ async function downloadVideo(
 
     return buffer;
 }
-
-// ============================================================================
-// Alibaba DashScope Fallback Implementation
-// ============================================================================
 
 /**
  * Generates a video using Alibaba DashScope API (wan-2.6)

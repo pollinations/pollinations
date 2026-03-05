@@ -41,6 +41,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 400000,
         isSpecialized: false,
     },
     "openai-fast": {
@@ -59,12 +60,14 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 400000,
         isSpecialized: false,
     },
     "openai-large": {
         aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
         modelId: "gpt-5.2-2025-12-11",
         provider: "azure",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -78,6 +81,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
+        contextLength: 400000,
         isSpecialized: false,
     },
     "qwen-coder": {
@@ -95,6 +99,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "mistral": {
@@ -116,6 +121,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 131072,
         isSpecialized: false,
     },
     "openai-audio": {
@@ -139,6 +145,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],
         tools: true,
+        contextLength: 128000,
         isSpecialized: false,
     },
     "gemini": {
@@ -162,6 +169,7 @@ export const TEXT_SERVICES = {
         tools: true,
         search: true,
         codeExecution: true,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-fast": {
@@ -184,6 +192,7 @@ export const TEXT_SERVICES = {
         tools: true,
         search: true,
         codeExecution: true,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "deepseek": {
@@ -203,6 +212,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
+        contextLength: 163840,
         isSpecialized: false,
     },
     "grok": {
@@ -222,6 +232,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 128000,
         isSpecialized: false,
     },
     "gemini-search": {
@@ -243,6 +254,7 @@ export const TEXT_SERVICES = {
         tools: false,
         search: true,
         codeExecution: true,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "midijourney": {
@@ -279,6 +291,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "claude": {
@@ -298,6 +311,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "claude-large": {
@@ -317,6 +331,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "claude-legacy": {
@@ -337,6 +352,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "perplexity-fast": {
@@ -355,6 +371,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: false,
         search: true,
+        contextLength: 127072,
         isSpecialized: false,
     },
     "perplexity-reasoning": {
@@ -375,6 +392,7 @@ export const TEXT_SERVICES = {
         tools: false,
         reasoning: true,
         search: true,
+        contextLength: 128000,
         isSpecialized: false,
     },
     "kimi": {
@@ -395,30 +413,56 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextWindow: 256000,
+        contextLength: 256000,
         isSpecialized: false,
     },
     "gemini-large": {
-        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
-        modelId: "gemini-3-pro-preview",
+        aliases: ["gemini-3.1-pro"],
+        modelId: "gemini-3.1-pro-preview",
         provider: "google",
         paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(2.0),
-                promptCachedTokens: perMillion(0.2), // 10% of input price (same ratio as other Gemini models)
+                promptCachedTokens: perMillion(0.2),
                 completionTextTokens: perMillion(12.0),
             },
         ],
         description:
-            "Google Gemini 3 Pro - Most Intelligent Model with 1M Context (Preview)",
+            "Google Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
         search: true,
         codeExecution: false, // Disabled - was breaking gemini-large
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "gemini-3-pro-preview": {
+        aliases: ["gemini-3-pro", "gemini-3"],
+        modelId: "gemini-3-pro-preview",
+        provider: "google",
+        paidOnly: true,
+        hidden: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.0),
+                promptCachedTokens: perMillion(0.2),
+                completionTextTokens: perMillion(12.0),
+            },
+        ],
+        description:
+            "Google Gemini 3 Pro (deprecated Mar 9, 2026) - use gemini-large",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        search: true,
+        codeExecution: false,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-legacy": {
@@ -443,6 +487,7 @@ export const TEXT_SERVICES = {
         reasoning: true,
         search: true,
         codeExecution: true,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "nova-fast": {
@@ -460,6 +505,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
+        contextLength: 128000,
         isSpecialized: false,
     },
     "glm": {
@@ -480,27 +526,27 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextWindow: 198000,
+        contextLength: 198000,
         isSpecialized: false,
     },
     "minimax": {
-        aliases: ["minimax-m2.1", "minimax-m2p1"],
-        modelId: "accounts/fireworks/models/minimax-m2p1",
+        aliases: ["minimax-m2.5", "minimax-m2p5"],
+        modelId: "accounts/fireworks/models/minimax-m2p5",
         provider: "fireworks",
         cost: [
             {
                 date: new Date("2026-01-05").getTime(),
                 promptTextTokens: perMillion(0.3),
-                promptCachedTokens: perMillion(0.15),
+                promptCachedTokens: perMillion(0.03),
                 completionTextTokens: perMillion(1.2),
             },
         ],
-        description: "MiniMax M2.1 - Multi-Language & Agent Workflows",
+        description: "MiniMax M2.5 - Coding, Agentic & Multi-Language",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextWindow: 200000,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "nomnom": {
@@ -557,6 +603,23 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,
+    },
+    "step-3.5-flash": {
+        aliases: ["step-flash", "step-3.5"],
+        modelId: "step-3.5-flash:free",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-03-02").getTime(),
+                promptTextTokens: perMillion(0.01),
+                completionTextTokens: perMillion(0.01),
+            },
+        ],
+        description: "Step 3.5 Flash (api.airforce) - Fast reasoning model",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        isSpecialized: false,
+        alpha: true,
     },
     "qwen-character": {
         aliases: [],

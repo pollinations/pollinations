@@ -517,14 +517,6 @@ Get available text models (OpenAI-compatible). If an API key with model restrict
 
     `object`
 
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -559,10 +551,6 @@ Get available text models (OpenAI-compatible). If an API key with model restrict
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -607,14 +595,6 @@ Get a list of available image generation models with pricing, capabilities, and 
 
     `object`
 
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -649,10 +629,6 @@ Get a list of available image generation models with pricing, capabilities, and 
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -697,14 +673,6 @@ Get a list of available text generation models with pricing, capabilities, and m
 
     `object`
 
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -739,10 +707,6 @@ Get a list of available text generation models with pricing, capabilities, and m
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -787,14 +751,6 @@ Get a list of available audio models with pricing, capabilities, and metadata. I
 
     `object`
 
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -829,10 +785,6 @@ Get a list of available audio models with pricing, capabilities, and metadata. I
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -1320,26 +1272,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
 
   `object`
 
-  - **`completion_tokens` (required)**
-
-    `integer`
-
-  - **`prompt_tokens` (required)**
-
-    `integer`
-
-  - **`total_tokens` (required)**
-
-    `integer`
-
-  - **`completion_tokens_details`**
-
-    `object`
-
-  - **`prompt_tokens_details`**
-
-    `object`
-
 - **`citations`**
 
   `array`
@@ -1421,92 +1353,18 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
           }
         ]
       },
-      "content_filter_results": {
-        "hate": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "self_harm": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "sexual": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "violence": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "jailbreak": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_text": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_code": {
-          "filtered": true,
-          "detected": true
-        }
-      }
+      "content_filter_results": null
     }
   ],
   "prompt_filter_results": [
     {
-      "prompt_index": 0,
-      "content_filter_results": {
-        "hate": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "self_harm": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "sexual": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "violence": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "jailbreak": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_text": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_code": {
-          "filtered": true,
-          "detected": true
-        }
-      }
+      "prompt_index": 0
     }
   ],
   "created": -9007199254740991,
   "model": "",
   "system_fingerprint": "",
   "object": "chat.completion",
-  "usage": {
-    "completion_tokens": 0,
-    "completion_tokens_details": {
-      "accepted_prediction_tokens": 0,
-      "audio_tokens": 0,
-      "reasoning_tokens": 0,
-      "rejected_prediction_tokens": 0
-    },
-    "prompt_tokens": 0,
-    "prompt_tokens_details": {
-      "audio_tokens": 0,
-      "cached_tokens": 0
-    },
-    "total_tokens": 0
-  },
   "user_tier": "anonymous",
   "citations": [
     ""
@@ -1529,26 +1387,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
   - **`details` (required)**
 
     `object`
-
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1584,18 +1422,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -1617,14 +1443,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1660,10 +1478,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -1685,14 +1499,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1728,10 +1534,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -1753,14 +1555,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1796,10 +1590,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -1821,14 +1611,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1864,10 +1646,6 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -1921,26 +1699,6 @@ true
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -1975,18 +1733,6 @@ true
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -2008,14 +1754,6 @@ true
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2051,10 +1789,6 @@ true
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2076,14 +1810,6 @@ true
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2119,10 +1845,6 @@ true
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2144,14 +1866,6 @@ true
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2187,10 +1901,6 @@ true
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2212,14 +1922,6 @@ true
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2255,10 +1957,6 @@ true
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2339,26 +2037,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -2393,18 +2071,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -2426,14 +2092,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2469,10 +2127,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2494,14 +2148,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2537,10 +2183,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2562,14 +2204,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2605,10 +2239,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2630,14 +2260,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2673,10 +2295,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2741,26 +2359,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -2795,18 +2393,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -2828,14 +2414,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2871,10 +2449,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2896,14 +2470,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2939,10 +2505,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2964,14 +2526,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3007,10 +2561,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3032,14 +2582,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3075,10 +2617,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3215,26 +2753,6 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -3269,18 +2787,6 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -3302,14 +2808,6 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3345,10 +2843,6 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3370,14 +2864,6 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3413,10 +2899,6 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3512,26 +2994,6 @@ This endpoint is OpenAI Whisper API compatible.
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -3566,18 +3028,6 @@ This endpoint is OpenAI Whisper API compatible.
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -3599,14 +3049,6 @@ This endpoint is OpenAI Whisper API compatible.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3642,10 +3084,6 @@ This endpoint is OpenAI Whisper API compatible.
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3667,14 +3105,6 @@ This endpoint is OpenAI Whisper API compatible.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3710,27 +3140,43 @@ This endpoint is OpenAI Whisper API compatible.
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
 }
 ```
 
-## Schemas
+### Upload media
 
-### ErrorDetails
+- **Method:** `POST`
+- **Path:** `/upload`
+- **Tags:** media.pollinations.ai
 
-- **Type:**`object`
+Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.
 
-* **`name` (required)**
+#### Responses
+
+##### Status: 200 Upload successful
+
+###### Content-Type: application/json
+
+- **`contentType` (required)**
 
   `string`
 
-* **`stack`**
+- **`duplicate` (required)**
+
+  `boolean`
+
+- **`id` (required)**
+
+  `string`
+
+- **`size` (required)**
+
+  `integer`
+
+- **`url` (required)**
 
   `string`
 
@@ -3738,10 +3184,133 @@ This endpoint is OpenAI Whisper API compatible.
 
 ```json
 {
-  "name": "",
-  "stack": ""
+  "id": "",
+  "url": "",
+  "contentType": "",
+  "size": 1,
+  "duplicate": true
 }
 ```
+
+##### Status: 401 Missing or invalid API key
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "error": ""
+}
+```
+
+##### Status: 413 File too large (max 10MB)
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "error": ""
+}
+```
+
+##### Status: 415 Unsupported media type
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "error": ""
+}
+```
+
+### SERVERS /upload
+
+- **Method:** `SERVERS`
+- **Path:** `/upload`
+
+### Retrieve media
+
+- **Method:** `GET`
+- **Path:** `/{hash}`
+- **Tags:** media.pollinations.ai
+
+Get a file by its content hash. No authentication required. Responses are cached immutably.
+
+#### Responses
+
+##### Status: 200 File content with appropriate Content-Type
+
+##### Status: 400 Invalid hash format
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "error": ""
+}
+```
+
+##### Status: 404 File not found
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "error": ""
+}
+```
+
+### Check if media exists
+
+- **Method:** `HEAD`
+- **Path:** `/{hash}`
+- **Tags:** media.pollinations.ai
+
+Check existence and metadata without downloading the file.
+
+#### Responses
+
+##### Status: 200 File exists (headers include Content-Type, Content-Length, X-Content-Hash)
+
+##### Status: 400 Invalid hash format
+
+##### Status: 404 File not found
+
+### SERVERS /{hash}
+
+- **Method:** `SERVERS`
+- **Path:** `/{hash}`
+
+## Schemas
 
 ### CacheControl
 
@@ -3756,220 +3325,6 @@ This endpoint is OpenAI Whisper API compatible.
 ```json
 {
   "type": "ephemeral"
-}
-```
-
-### ContentFilterSeverity
-
-- **Type:**`string`
-
-**Example:**
-
-### ContentFilterResult
-
-- **Type:**`object`
-
-* **`hate`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-* **`jailbreak`**
-
-  `object`
-
-  - **`detected` (required)**
-
-    `boolean`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-* **`protected_material_code`**
-
-  `object`
-
-  - **`detected` (required)**
-
-    `boolean`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-* **`protected_material_text`**
-
-  `object`
-
-  - **`detected` (required)**
-
-    `boolean`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-* **`self_harm`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-* **`sexual`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-* **`violence`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-**Example:**
-
-```json
-{
-  "hate": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "self_harm": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "sexual": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "violence": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "jailbreak": {
-    "filtered": true,
-    "detected": true
-  },
-  "protected_material_text": {
-    "filtered": true,
-    "detected": true
-  },
-  "protected_material_code": {
-    "filtered": true,
-    "detected": true
-  }
-}
-```
-
-### CompletionUsage
-
-- **Type:**`object`
-
-* **`completion_tokens` (required)**
-
-  `integer`
-
-* **`prompt_tokens` (required)**
-
-  `integer`
-
-* **`total_tokens` (required)**
-
-  `integer`
-
-* **`completion_tokens_details`**
-
-  `object`
-
-* **`prompt_tokens_details`**
-
-  `object`
-
-**Example:**
-
-```json
-{
-  "completion_tokens": 0,
-  "completion_tokens_details": {
-    "accepted_prediction_tokens": 0,
-    "audio_tokens": 0,
-    "reasoning_tokens": 0,
-    "rejected_prediction_tokens": 0
-  },
-  "prompt_tokens": 0,
-  "prompt_tokens_details": {
-    "audio_tokens": 0,
-    "cached_tokens": 0
-  },
-  "total_tokens": 0
-}
-```
-
-### ValidationErrorDetails
-
-- **Type:**`object`
-
-* **`fieldErrors` (required)**
-
-  `object`
-
-* **`formErrors` (required)**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-* **`name` (required)**
-
-  `string`
-
-* **`stack`**
-
-  `string`
-
-**Example:**
-
-```json
-{
-  "name": "",
-  "stack": "",
-  "formErrors": [
-    ""
-  ],
-  "fieldErrors": {
-    "propertyName*": [
-      ""
-    ]
-  }
 }
 ```
 

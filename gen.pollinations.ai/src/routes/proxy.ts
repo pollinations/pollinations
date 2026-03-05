@@ -15,6 +15,12 @@ import {
     DEFAULT_AUDIO_MODEL,
     ELEVENLABS_VOICES,
 } from "@shared/registry/audio.ts";
+import {
+    generateMusic,
+    generateSpeech,
+    generateSunoMusic,
+    transcribeAudio,
+} from "./audio.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import {
     getAudioModelsInfo,
@@ -480,7 +486,7 @@ export const proxyRoutes = new Hono<Env>()
         return response;
     })
 
-    // --- Simple Audio ---
+    // --- Simple Audio (GET convenience) ---
     .get("/audio/:text", async (c) => {
         requireAuth(c);
         const model = resolveModelFromRequest(c, DEFAULT_AUDIO_MODEL);
@@ -490,9 +496,111 @@ export const proxyRoutes = new Hono<Env>()
             getServiceDefinition(model.resolved as ServiceId).paidOnly ?? false;
         requireBalance(c, isPaidOnly);
 
-        // Audio routes forward to enter for now (ElevenLabs keys live there)
-        const url = new URL(c.req.url);
-        url.pathname =
-            "/api/generate" + url.pathname.replace(/^\/api\/generate/, "");
-        return c.env.ENTER.fetch(url, c.req.raw);
+        const text = decodeURIComponent(c.req.param("text"));
+        const startTime = Date.now();
+
+        if (model.resolved === "suno") {
+            const response = await generateSunoMusic({
+                prompt: text,
+                apiKey: c.env.AIRFORCE_API_KEY || "",
+            });
+            if (response.ok) trackAndDeduct(c, { model, startTime, response: response.clone() });
+            return response;
+        }
+
+        if (model.resolved === "elevenmusic") {
+            const duration = c.req.query("duration")
+                ? parseFloat(c.req.query("duration")!)
+                : undefined;
+            const instrumental = c.req.query("instrumental") === "true";
+            const response = await generateMusic({
+                prompt: text,
+                durationSeconds: duration,
+                forceInstrumental: instrumental,
+                apiKey: c.env.ELEVENLABS_API_KEY || "",
+            });
+            if (response.ok) trackAndDeduct(c, { model, startTime, response: response.clone() });
+            return response;
+        }
+
+        const voice = c.req.query("voice") || "alloy";
+        const responseFormat = c.req.query("response_format") || "mp3";
+        const response = await generateSpeech({
+            text,
+            voice,
+            responseFormat,
+            apiKey: c.env.ELEVENLABS_API_KEY || "",
+        });
+        if (response.ok) trackAndDeduct(c, { model, startTime, response: response.clone() });
+        return response;
+    })
+
+    // --- OpenAI-compatible Audio: POST /v1/audio/speech ---
+    .post("/v1/audio/speech", async (c) => {
+        requireAuth(c);
+        const body = await c.req.json();
+        const rawModel = body.model || DEFAULT_AUDIO_MODEL;
+        const resolved = resolveServiceId(rawModel);
+        const model = { requested: rawModel, resolved };
+        requireModelAccess(c, resolved);
+        requireKeyBudget(c);
+        const isPaidOnly =
+            getServiceDefinition(resolved as ServiceId).paidOnly ?? false;
+        requireBalance(c, isPaidOnly);
+
+        const startTime = Date.now();
+        const input = body.input || "";
+
+        if (resolved === "suno") {
+            const response = await generateSunoMusic({
+                prompt: input,
+                apiKey: c.env.AIRFORCE_API_KEY || "",
+            });
+            if (response.ok) trackAndDeduct(c, { model, startTime, response: response.clone() });
+            return response;
+        }
+
+        if (resolved === "elevenmusic") {
+            const response = await generateMusic({
+                prompt: input,
+                durationSeconds: body.duration,
+                forceInstrumental: body.instrumental,
+                apiKey: c.env.ELEVENLABS_API_KEY || "",
+            });
+            if (response.ok) trackAndDeduct(c, { model, startTime, response: response.clone() });
+            return response;
+        }
+
+        const response = await generateSpeech({
+            text: input,
+            voice: body.voice || "alloy",
+            responseFormat: body.response_format || "mp3",
+            apiKey: c.env.ELEVENLABS_API_KEY || "",
+        });
+        if (response.ok) trackAndDeduct(c, { model, startTime, response: response.clone() });
+        return response;
+    })
+
+    // --- OpenAI-compatible Audio: POST /v1/audio/transcriptions ---
+    .post("/v1/audio/transcriptions", async (c) => {
+        requireAuth(c);
+        const formData = await c.req.formData();
+        const rawModel = (formData.get("model") as string) || "whisper-large-v3";
+        const resolved = resolveServiceId(rawModel);
+        const model = { requested: rawModel, resolved };
+        requireModelAccess(c, resolved);
+        requireKeyBudget(c);
+        const isPaidOnly =
+            getServiceDefinition(resolved as ServiceId).paidOnly ?? false;
+        requireBalance(c, isPaidOnly);
+
+        const startTime = Date.now();
+        const response = await transcribeAudio({
+            formData,
+            model: resolved,
+            elevenLabsApiKey: c.env.ELEVENLABS_API_KEY || "",
+            ovhApiKey: c.env.OVHCLOUD_API_KEY || "",
+        });
+        if (response.ok) trackAndDeduct(c, { model, startTime, response: response.clone() });
+        return response;
     });

@@ -11,7 +11,6 @@ import { accountRoutes } from "./routes/account.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { appLookupRoutes } from "./routes/app-lookup.ts";
-import { audioRoutes } from "./routes/audio.ts";
 import { customerRoutes } from "./routes/customer.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { internalRoutes } from "./routes/internal.ts";
@@ -41,8 +40,7 @@ export const api = new Hono<Env>()
     .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes)
     .route("/internal", internalRoutes)
-    .route("/model-stats", modelStatsRoutes)
-    .route("/generate/v1/audio", audioRoutes);
+    .route("/model-stats", modelStatsRoutes);
 
 export type ApiRoutes = typeof api;
 

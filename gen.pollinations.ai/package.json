@@ -4,11 +4,12 @@
     "type": "module",
     "description": "API gateway for pollinations.ai - routes requests, handles caching and tracking",
     "scripts": {
-        "dev": "wrangler dev",
+        "decrypt-vars": "sops decrypt secrets/dev.vars.json --output-type dotenv > .dev.vars",
+        "dev": "npm run decrypt-vars && wrangler dev",
         "deploy:staging": "wrangler deploy --env staging",
         "deploy:production": "wrangler deploy --env production",
         "typecheck": "tsc --noEmit",
-        "test": "vitest run"
+        "test": "npm run decrypt-vars && vitest run"
     },
     "dependencies": {
         "@logtape/logtape": "^1.3.1",

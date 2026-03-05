@@ -43,6 +43,7 @@ export type Bindings = {
     // API keys for audio services
     ELEVENLABS_API_KEY?: string;
     OVHCLOUD_API_KEY?: string;
+    AIRFORCE_API_KEY?: string;
     // Tinybird event ingestion
     TINYBIRD_INGEST_URL: string;
     TINYBIRD_INGEST_TOKEN?: string;

@@ -56,11 +56,6 @@ app.get("/models", (c) => {
 // Generation routes at /api/generate/*
 app.route("/api/generate", proxyRoutes);
 
-// OpenAI-compatible audio routes (forwarded to enter — ElevenLabs keys live there)
-app.all("/api/generate/v1/audio/*", (c) => {
-    return forwardToEnter(c.req.raw, new URL(c.req.url), c.env.ENTER);
-});
-
 // Convenience URL rewrites: /image/*, /text/*, /audio/*, /video/*, /v1/* → /api/generate/*
 const GEN_PREFIXES = ["/image/", "/text/", "/audio/", "/video/", "/v1/"];
 

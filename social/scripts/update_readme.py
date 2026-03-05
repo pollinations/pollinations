@@ -72,6 +72,42 @@ def update_readme_news_section(readme_content: str, new_entries: list[str]) -> s
     return updated_readme
 
 
+def update_readme_local(highlights_path: str, readme_path: str) -> bool:
+    """Read highlights.md and README.md from disk, update README in place.
+
+    Returns True if README was modified, False otherwise.
+    """
+    if not os.path.exists(highlights_path):
+        print(f"Highlights file not found: {highlights_path}")
+        return False
+
+    with open(highlights_path, "r") as f:
+        highlights_content = f.read()
+
+    top_entries = get_top_highlights(highlights_content, MAX_README_ENTRIES)
+    if not top_entries:
+        print("No highlight entries found.")
+        return False
+
+    if not os.path.exists(readme_path):
+        print(f"README file not found: {readme_path}")
+        return False
+
+    with open(readme_path, "r") as f:
+        readme_content = f.read()
+
+    updated_readme = update_readme_news_section(readme_content, top_entries)
+    if not updated_readme or updated_readme == readme_content:
+        print("No changes to README needed.")
+        return False
+
+    with open(readme_path, "w") as f:
+        f.write(updated_readme)
+
+    print(f"Updated {readme_path} with {len(top_entries)} news entries.")
+    return True
+
+
 def create_readme_pr(readme_content: str, readme_sha: str, new_entries: list[str], github_token: str, owner: str, repo: str):
     """Create a PR with updated README.md"""
 

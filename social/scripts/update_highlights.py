@@ -25,7 +25,7 @@ from common import (
     OWNER,
     REPO,
 )
-from update_readme import get_top_highlights, update_readme_news_section
+from update_readme import get_top_highlights
 
 HIGHLIGHTS_PATH = "social/news/highlights.md"
 README_PATH = "README.md"

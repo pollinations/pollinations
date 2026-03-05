@@ -101,6 +101,7 @@ SCHEMA >
 
 -- Network
 `ip_subnet`       LowCardinality(String) `json:$.ipSubnet` DEFAULT 'undefined',
+`ip_hash`         String                 `json:$.ipHash` DEFAULT 'undefined',
 
 ENGINE "MergeTree" 
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"
@@ -175,4 +176,5 @@ FORWARD_QUERY >
     error_message,
     error_stack,
     error_details,
-    defaultValueOfTypeName('LowCardinality(String)') AS ip_subnet
+    defaultValueOfTypeName('LowCardinality(String)') AS ip_subnet,
+    defaultValueOfTypeName('String') AS ip_hash

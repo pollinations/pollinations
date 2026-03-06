@@ -1,0 +1,34 @@
+{
+  "pr_number": 8573,
+  "title": "Add Comics Explorer to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8573",
+  "merged_at": "2026-03-05T04:32:14Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Comic books in the greenhouse",
+    "blurb": "Comics Explorer just dropped into the app showcase. It's a clean, modern web interface for organizing and reading digital comic collections.",
+    "summary": "Added Comics Explorer to the community app showcase, introducing a modern web interface for organizing and visualizing digital comic collections.",
+    "impact": "Users can now discover and use a new community-built tool for managing digital comics and interactive presentations.",
+    "keywords": [
+      "comics",
+      "app",
+      "community",
+      "showcase",
+      "viewer"
+    ],
+    "visual_concept": "Polly the bee reading a comic book alongside the monitor robot displaying comic panels, set in a cozy greenhouse to represent the app showcase.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at colorful comic book panels displayed on the screen of a chunky retro monitor robot. They are sitting in a cozy digital greenhouse with lime green (#ecf874) code-plants sprouting from pots. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-05/PR-8573.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-05T04:33:07.342233+00:00"
+}

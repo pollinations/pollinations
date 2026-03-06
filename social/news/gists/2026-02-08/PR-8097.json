@@ -1,0 +1,35 @@
+{
+  "pr_number": 8097,
+  "title": "fix: image model optimizations for stability and quality",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8097",
+  "merged_at": "2026-02-08T19:00:07Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tuning the dream engine",
+    "blurb": "We've given our image models a tune-up! Flux is feeling more stable, Sana is painting with more detail, and Twinflow is sprinting faster than ever.",
+    "summary": "Optimized Flux Klein for memory stability, increased generation steps for Sana to improve quality, and adjusted Twinflow for faster performance.",
+    "impact": "Users will experience significantly fewer generation failures and higher visual quality across these models.",
+    "keywords": [
+      "image generation",
+      "optimization",
+      "flux",
+      "sana",
+      "stability",
+      "performance"
+    ],
+    "visual_concept": "The Pollinations bee as a mechanic or engineer, fine-tuning a complex piece of retro-futuristic machinery (representing the image generation backend). The machine is glowing, indicating it's working better.",
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot wearing a tiny mechanic's cap, fine-tuning a glowing holographic image projector. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. No text. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8097.jpg",
+    "prompt": "Cozy pixel art scene of the 8-bit bee mascot wearing a tiny mechanic's cap, fine-tuning a glowing holographic image projector. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. No text. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-12T14:05:10.131775+00:00"
+}

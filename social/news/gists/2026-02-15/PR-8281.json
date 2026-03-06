@@ -1,0 +1,33 @@
+{
+  "pr_number": 8281,
+  "title": "feat: use unprotected news branch for gist data",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8281",
+  "merged_at": "2026-02-15T16:41:16Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "News bot gets its own lane",
+    "blurb": "Our social media bot now writes to a dedicated branch, keeping the main branch safe and sound.",
+    "summary": "Redirected automated social media data commits to an unprotected 'news' branch to bypass main branch protection rules.",
+    "impact": "Ensures the social media automation runs reliably without hitting permission errors on the main branch.",
+    "keywords": [
+      "infrastructure",
+      "ci/cd",
+      "github-actions",
+      "automation"
+    ],
+    "visual_concept": "The bee mascot sorting files into a specific 'news' bin, separating them from the main pile.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot sorting colorful data envelopes into a special box labeled 'NEWS'. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'SORTED'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-15/PR-8281.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-15T16:41:59.369535+00:00"
+}

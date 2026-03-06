@@ -1,0 +1,20 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "Agents are finally easy. Just shipped OpenClaw integration: one-command web search agents. 🕵️‍♂️\n\nAlso live:\n- Grok image-to-video\n- Qwen-character models\n- Major API upgrade\n\n27 PRs later, the hive is buzzing. 🌸",
+  "alt_tweet": "27 PRs merged this week. Biggest ship: OpenClaw agents (web search in one command). 🚢\n\nPlus Grok Img2Vid, GLM-5, and a smarter Polly API. Open source and shipping daily. What are you building? 🐝",
+  "hashtags": [
+    "#OpenSource",
+    "#AI",
+    "#BuildInPublic"
+  ],
+  "image_prompt": "Cozy pixel art scene of a wooden 'Weekly Quest' board in a sunny digital garden. Soft lime green (#ecf874) and pastel peach gradient background. The cute bee mascot (yellow/brown stripes, wings, pink blush) wears a tiny builder's hard hat and is pinning a new parchment to the board. Board has chunky pixel text headers: 'AGENTS', 'VIDEO', 'API'. Warm lighting, lo-fi Stardew Valley aesthetic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "reasoning": "Leads with the 'Agents' feature which is currently high-interest in the AI community. Uses a clean list format to show the breadth of the 27 PRs without clutter. The 'hive is buzzing' closer reinforces the brand identity.",
+  "char_count": 196,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/twitter.jpg",
+    "prompt": "Cozy pixel art scene of a wooden 'Weekly Quest' board in a sunny digital garden. Soft lime green (#ecf874) and pastel peach gradient background. The cute bee mascot (yellow/brown stripes, wings, pink blush) wears a tiny builder's hard hat and is pinning a new parchment to the board. Board has chunky pixel text headers: 'AGENTS', 'VIDEO', 'API'. Warm lighting, lo-fi Stardew Valley aesthetic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "date": "2026-02-15",
+  "generated_at": "2026-02-16T10:04:13.429831+00:00",
+  "platform": "twitter"
+}

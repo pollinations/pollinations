@@ -1,0 +1,28 @@
+{
+  "pr_number": 8522,
+  "title": "Add Plaiyground Playground AI to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8522",
+  "merged_at": "2026-03-01T18:51:17Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Add Plaiyground Playground AI to Dev_Tools",
+    "blurb": "Add Plaiyground Playground AI to Dev_Tools",
+    "summary": "Add Plaiyground Playground AI to Dev_Tools",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-01T18:52:03.340437+00:00",
+  "_minimal": true
+}

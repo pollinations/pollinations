@@ -1,0 +1,34 @@
+{
+  "pr_number": 8247,
+  "title": "fix: enable image-to-video support for grok-video model",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8247",
+  "merged_at": "2026-02-14T14:53:54Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok gets vision",
+    "blurb": "The `grok-video` model can now see! We've enabled image-to-video support, so you can turn your static masterpieces into moving magic.",
+    "summary": "Enabled image-to-video functionality for the `grok-video` model by updating the API to accept and process input images.",
+    "impact": "Users can now upload images as prompts for `grok-video` to generate animations, expanding creative possibilities beyond text-only prompts.",
+    "keywords": [
+      "grok",
+      "video",
+      "image-to-video",
+      "models",
+      "animation"
+    ],
+    "visual_concept": "The Pollinations bee acting as a movie director, holding a static picture frame that is magically turning into a flowing film reel. Represents the transition from static image to video using the Grok model.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a magical picture frame where a static flower image is transforming into a flowing film reel. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'GROK VIDEO'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-14/PR-8247.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a magical picture frame where a static flower image is transforming into a flowing film reel. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'GROK VIDEO'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-15T14:36:06.631440+00:00"
+}

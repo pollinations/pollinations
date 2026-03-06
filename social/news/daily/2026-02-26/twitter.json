@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "automated the pruning shears. the app showcase now runs daily health checks. if an app breaks, it vanishes until fixed. keeping the ecosystem distinct from the graveyard.\n\nalso: API docs now have actual code samples. you're welcome.",
+  "alt_tweet": "shipped daily health checks for the app ecosystem. broken apps get hidden automatically. less noise, more signal.\n\nplus: platform badges on app cards and docs that are actually readable. 6 PRs merged.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Cozy pixel art scene. Polly the bee mascot (yellow/brown stripes, pink blush) pruning a digital vine with bright lime green (#ecf874) leaves. A few grey 'stale' pixel leaves fall away. The monitor robot holds a checklist with a green checkmark. Soft pastel gradient background. Warm lighting, lo-fi Stardew Valley aesthetic. Text in pixel font: 'GARDEN MAINT'. Nostalgic, clean.",
+  "reasoning": "Uses the 'gardening' metaphor inherent to the brand to explain a technical maintenance feature (health checks). Dry humor about broken apps ('graveyard').",
+  "char_count": 228,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-26/images/twitter.jpg",
+    "prompt": "Cozy pixel art scene. Polly the bee mascot (yellow/brown stripes, pink blush) pruning a digital vine with bright lime green (#ecf874) leaves. A few grey 'stale' pixel leaves fall away. The monitor robot holds a checklist with a green checkmark. Soft pastel gradient background. Warm lighting, lo-fi Stardew Valley aesthetic. Text in pixel font: 'GARDEN MAINT'. Nostalgic, clean."
+  },
+  "date": "2026-02-26",
+  "generated_at": "2026-02-27T06:17:09.686070+00:00",
+  "platform": "twitter"
+}

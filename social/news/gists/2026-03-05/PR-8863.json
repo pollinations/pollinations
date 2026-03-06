@@ -1,0 +1,34 @@
+{
+  "pr_number": 8863,
+  "title": "fix: truncate VCR snapshots for binary/video responses",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8863",
+  "merged_at": "2026-03-05T14:15:12Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Putting the mocks on a diet",
+    "blurb": "We put our test snapshots on a strict 16KB diet. No more multi-megabyte mock files clogging up the repository.",
+    "summary": "Truncated binary and video VCR test snapshots to a maximum of 16KB to prevent massive mock files from bloating the codebase.",
+    "impact": "Developers will experience a cleaner repository and faster test execution without the overhead of multi-megabyte snapshot files.",
+    "keywords": [
+      "testing",
+      "vcr",
+      "snapshots",
+      "optimization",
+      "developer-experience"
+    ],
+    "visual_concept": "The Nomnom creature eating a massive, towering stack of paper (representing the huge 6K line snapshots) and leaving behind a tiny, neat little floppy disk. The bee mascot is watching with a clipboard, looking relieved. Setting is a cozy retro testing lab.",
+    "image_prompt": "Cozy pixel art scene of the round tan nomnom creature happily eating a massive, towering stack of messy code printouts, while the cute bee mascot in a tiny lab coat watches with a clipboard, looking relieved. A retro terminal nearby glows lime green (#ecf874) showing a tiny, neat floppy disk icon. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-05/PR-8863.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-05T14:16:16.743879+00:00"
+}

@@ -282,7 +282,10 @@ api.get(
             const object = await c.env.MEDIA_BUCKET.get(hash);
 
             if (!object) {
-                return c.json({ error: "Not found" }, 404);
+                return c.json(
+                    { error: "Not found" },
+                    { status: 404, headers: { "Cache-Control": "no-store" } },
+                );
             }
 
             const headers = new Headers();
@@ -330,7 +333,10 @@ api.on(
             const object = await c.env.MEDIA_BUCKET.head(hash);
 
             if (!object) {
-                return new Response(null, { status: 404 });
+                return new Response(null, {
+                    status: 404,
+                    headers: { "Cache-Control": "no-store" },
+                });
             }
 
             const headers = new Headers();
@@ -437,6 +443,14 @@ api.delete(
             }
 
             await c.env.MEDIA_BUCKET.delete(hash);
+
+            // Purge CDN cache so re-uploads of the same content are immediately accessible
+            try {
+                const cache = caches.default;
+                await cache.delete(new Request(`https://${DOMAIN}/${hash}`));
+            } catch (e) {
+                console.error("Cache purge failed (non-fatal):", e);
+            }
 
             console.log(
                 JSON.stringify({

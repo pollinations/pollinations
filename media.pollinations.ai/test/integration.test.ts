@@ -149,4 +149,46 @@ describe("media.pollinations.ai", () => {
         const getRes = await fetch(`${BASE_URL}/${upload.id}`);
         expect(getRes.status).toBe(404);
     });
+
+    it("upload, delete, and re-upload same content", async () => {
+        const unique = new Uint8Array([
+            ...TINY_PNG,
+            ...crypto.getRandomValues(new Uint8Array(8)),
+        ]);
+
+        // Upload
+        const uploadRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            body: unique,
+            headers: authHeaders("image/png"),
+        });
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(upload.duplicate).toBe(false);
+
+        // Delete
+        const deleteRes = await fetch(`${BASE_URL}/${upload.id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${requireApiKey()}` },
+        });
+        expect(deleteRes.status).toBe(200);
+
+        // Re-upload same content
+        const reuploadRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            body: unique,
+            headers: authHeaders("image/png"),
+        });
+        expect(reuploadRes.status).toBe(200);
+        const reupload = (await reuploadRes.json()) as UploadResponse;
+        expect(reupload.id).toBe(upload.id);
+        expect(reupload.duplicate).toBe(false);
+
+        // Verify retrieval works after re-upload
+        const getRes = await fetch(`${BASE_URL}/${upload.id}`);
+        expect(getRes.status).toBe(200);
+        expect(getRes.headers.get("content-type")).toBe("image/png");
+        const body = new Uint8Array(await getRes.arrayBuffer());
+        expect(body.length).toBe(unique.length);
+    });
 });

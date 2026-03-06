@@ -1,0 +1,33 @@
+{
+  "pr_number": 8886,
+  "title": "fix: media service — remove delete, add Content-Disposition, filename in hash",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8886",
+  "merged_at": "2026-03-06T12:00:28Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Name tags for your files",
+    "blurb": "We've streamlined our media service for better reliability! Uploaded files now keep their original names for perfect downloads, and re-uploading a file gives it a fresh 14-day lease on life.",
+    "summary": "The media service has been upgraded to include filenames in content hashes, enabling proper download names via Content-Disposition and automatic expiration resets for duplicate uploads.",
+    "impact": "When downloading media, users will now get their original filenames perfectly preserved, and re-uploading an existing file will automatically refresh its 14-day availability.",
+    "keywords": [
+      "media",
+      "storage",
+      "api",
+      "downloads"
+    ],
+    "visual_concept": "The pollinations bee acting as a cozy digital archivist, putting name tags on files. The bee is handing a neatly labeled file folder to the Monitor Robot, representing the new Content-Disposition and filename hashing features.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny librarian glasses, placing a glowing name tag on a chunky pixelated file folder. A cute robot with a CRT monitor head happily receives the folder, its screen showing a smiley face. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-06T12:01:47.631681+00:00"
+}

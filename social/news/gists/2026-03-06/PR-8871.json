@@ -1,0 +1,36 @@
+{
+  "pr_number": 8871,
+  "title": "fix: add step-3.5-flash to text backend available models",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8871",
+  "merged_at": "2026-03-06T14:59:08Z",
+  "labels": [
+    "TEXT",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Step into the Flash",
+    "blurb": "We squashed a pesky 404 bug that was hiding the step-3.5-flash model. It's now fully wired up and ready for your text generation needs!",
+    "summary": "Fixed a configuration issue in the text backend that caused requests for the step-3.5-flash model to return a 404 error.",
+    "impact": "Developers can now successfully route chat completion requests to step-3.5-flash and its aliases.",
+    "keywords": [
+      "text",
+      "api",
+      "models",
+      "step-3.5-flash",
+      "bugfix"
+    ],
+    "visual_concept": "The PR is about fixing a missing model connection (step-3.5-flash) in the text backend. Visuals: The bee mascot plugging in a glowing cable or finding a missing glowing 'flash' drive/cartridge. Nomnom creature happily eating the 404 error logs.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot plugging a glowing lime green (#ecf874) cartridge labeled 'FLASH' into a retro server rack. The round tan nomnom creature sits nearby happily eating a piece of paper that says '404'. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-06T15:00:04.776267+00:00"
+}

@@ -462,6 +462,189 @@ export interface AudioResponse {
 }
 
 // ============================================================================
+// Speech-to-Text (Transcription)
+// ============================================================================
+
+/** STT model options */
+export type TranscriptionModel =
+    | "whisper-large-v3"
+    | "whisper-1"
+    | "scribe"
+    | string;
+
+/** Response format for transcription */
+export type TranscriptionResponseFormat =
+    | "json"
+    | "text"
+    | "verbose_json"
+    | "srt"
+    | "vtt";
+
+/** Options for speech-to-text transcription */
+export interface TranscribeOptions extends RequestOptions {
+    /** Model to use (default: 'whisper-large-v3') */
+    model?: TranscriptionModel;
+    /** Language code (ISO-639-1, e.g. 'en', 'fr') */
+    language?: string;
+    /** Response format (default: 'json') */
+    responseFormat?: TranscriptionResponseFormat;
+    /** Optional prompt to guide transcription style */
+    prompt?: string;
+    /** Temperature 0-1 for sampling */
+    temperature?: number;
+}
+
+/** Transcription response */
+export interface TranscriptionResponse {
+    /** Transcribed text */
+    text: string;
+}
+
+/** Verbose transcription response with word/segment details */
+export interface TranscriptionVerboseResponse extends TranscriptionResponse {
+    task: string;
+    language: string;
+    duration: number;
+    words?: Array<{ word: string; start: number; end: number }>;
+    segments?: Array<{ id: number; start: number; end: number; text: string }>;
+}
+
+// ============================================================================
+// Media Upload
+// ============================================================================
+
+/** Options for media upload */
+export interface UploadOptions extends RequestOptions {
+    /** Original filename (optional) */
+    name?: string;
+    /** Content type (auto-detected if omitted) */
+    contentType?: string;
+}
+
+/** Response from media upload */
+export interface UploadResponse {
+    /** Content-addressed hash ID */
+    id: string;
+    /** Public URL for the uploaded media */
+    url: string;
+    /** Content type of the uploaded file */
+    contentType: string;
+    /** File size in bytes */
+    size: number;
+    /** Whether the file was already uploaded (dedup) */
+    duplicate: boolean;
+}
+
+// ============================================================================
+// BYOP (Bring Your Own Pollen)
+// ============================================================================
+
+/** Account permission scopes */
+export type AccountPermission = "profile" | "balance" | "usage";
+
+/** Options for building a BYOP authorization URL */
+export interface AuthorizeOptions {
+    /** URL to redirect back to after authorization */
+    redirectUrl: string;
+    /** Your app's publishable key (shows app name to user) */
+    appKey?: string;
+    /** Restrict to specific models */
+    models?: string[];
+    /** Cap pollen usage */
+    budget?: number;
+    /** Key lifetime in days (default: 30) */
+    expiry?: number;
+    /** Account permissions to request */
+    permissions?: AccountPermission[];
+}
+
+// ============================================================================
+// Account
+// ============================================================================
+
+/** User profile information */
+export interface AccountProfile {
+    name: string;
+    email: string;
+    githubUsername?: string;
+    image?: string;
+    tier: string;
+    createdAt: string;
+    nextResetAt?: string;
+}
+
+/** Account balance */
+export interface AccountBalance {
+    balance: number;
+}
+
+/** Usage record */
+export interface UsageRecord {
+    timestamp: string;
+    type: string;
+    model: string;
+    api_key: string;
+    api_key_type: string;
+    meter_source: string;
+    input_text_tokens: number;
+    input_cached_tokens: number;
+    input_audio_tokens: number;
+    input_image_tokens: number;
+    output_text_tokens: number;
+    output_reasoning_tokens: number;
+    output_audio_tokens: number;
+    output_image_tokens: number;
+    cost_usd: number;
+    response_time_ms: number;
+}
+
+/** Usage response */
+export interface UsageResponse {
+    usage: UsageRecord[];
+    count: number;
+}
+
+/** Options for fetching usage */
+export interface UsageOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Max records to return, 1-50000 (default: 100) */
+    limit?: number;
+    /** ISO timestamp cursor for pagination */
+    before?: string;
+}
+
+/** Daily usage summary */
+export interface DailyUsageRecord {
+    date: string;
+    model: string;
+    meter_source: string;
+    requests: number;
+    cost_usd: number;
+}
+
+/** Daily usage response */
+export interface DailyUsageResponse {
+    usage: DailyUsageRecord[];
+    count: number;
+}
+
+/** API key validation response */
+export interface KeyInfo {
+    valid: boolean;
+    type: string;
+    name?: string;
+    expiresAt?: string;
+    expiresIn?: number;
+    permissions?: {
+        models?: string[];
+        account?: string[];
+    };
+    pollenBudget?: number;
+    rateLimitEnabled?: boolean;
+}
+
+// ============================================================================
 // Model Information
 // ============================================================================
 

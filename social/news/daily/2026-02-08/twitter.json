@@ -1,0 +1,13 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "audio stack just leveled up 🔊\n\nshipped Whisper transcription, ElevenMusic generation, and v3 TTS. all live.\n\nalso: just open sourced Polly, our discord agent. grab the code and build your own.\n\n14 PRs merged today. we move. 🐝🌸",
+  "alt_tweet": "big shipping day:\n\n- audio transcription (Whisper)\n- music generation (ElevenMusic)\n- TTS upgraded to v3\n- Polly discord bot source code released\n\nopen source, no subscriptions, just raw credits. build something loud today. 🐝🔊",
+  "hashtags": [
+    "#OpenSource",
+    "#AI",
+    "#BuildPublic"
+  ],
+  "image_prompt": "Dynamic pixel art scene of the cute bee mascot wearing chunky pixel headphones, DJing on a retro mixing deck made of code blocks. Sound waves visualizing as lime green (#ecf874) and pastel equalizer bars. Background is a cozy studio with soft warm lighting. Text in pixel font floating: 'AUDIO LIVE'. High contrast, energetic composition. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "reasoning": "Highlights technical velocity (14 PRs) and specific high-value features (Audio suite + Open Source code). The tone is confident ('we move') and targets builders who want to use the tools or see the code.",
+  "char_count": 216
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8532,
+  "title": "[PATCH]: Updated patch order for the NPM packages",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/8532",
+  "merged_at": "2026-02-24T19:45:36Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Shorter names, faster models",
+    "blurb": "Renamed our NPM packages to save you keystrokes. `oh-my-pollicode` becomes `ompc`, and `mcp` takes the stage with `claude-fast` as the default.",
+    "summary": "Renamed NPM packages for brevity (`ompc`, `mcp`) and updated the default model to `claude-fast`.",
+    "impact": "Developers should update imports to the new package names; new installations default to the faster Claude model.",
+    "keywords": [
+      "npm",
+      "packages",
+      "mcp",
+      "ompc",
+      "claude-fast"
+    ],
+    "visual_concept": "Polly the bee and the monitor robot in a cozy shipping room, relabeling boxes with shorter names. The robot holds a label gun. Boxes are glowing slightly.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot and a monitor-headed robot in a shipping room, putting new short labels on boxes. Lime green (#ecf874) and pastel peach gradient background. Pixel text on boxes reads 'MCP' and 'OMPC'. Warm lighting, chunky sprites, lo-fi aesthetic like Stardew Valley. Emotionally warm and organized."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-24/PR-8532.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T19:46:25.630295+00:00"
+}

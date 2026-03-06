@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "shipped seedream 5.0 lite and gemini 3.1 flash. models are faster today.\n\nalso moved our pitch deck to slidev. if we have to explain the business, it's happening in markdown and getting committed to git.",
+  "alt_tweet": "new in the api: seedream 5.0 lite and gemini 3.1 flash.\n\ninternally, migrated the pitch deck to slidev. turns out infrastructure explains itself better in code than in a drag-and-drop editor.",
+  "hashtags": [
+    "#OpenSource",
+    "#GenerativeAI"
+  ],
+  "image_prompt": "Cozy pixel art, bold composition. The cute bee mascot (wearing tiny wizard glasses) stands next to a large retro monitor displaying a markdown file with lime green (#ecf874) syntax highlighting. Soft pastel gradient background. The bee holds a tiny pixelated laser pointer. Warm lighting, 8-bit aesthetic, chunky sprites. Text on screen: 'SLIDES.MD'. Nostalgic builder vibes.",
+  "reasoning": "Highlights the new models (utility) but centers the personality on moving a pitch deck to markdown (Slidev), which resonates strongly with developers who dislike traditional presentation tools.",
+  "char_count": 204,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-27/images/twitter.jpg",
+    "prompt": "Cozy pixel art, bold composition. The cute bee mascot (wearing tiny wizard glasses) stands next to a large retro monitor displaying a markdown file with lime green (#ecf874) syntax highlighting. Soft pastel gradient background. The bee holds a tiny pixelated laser pointer. Warm lighting, 8-bit aesthetic, chunky sprites. Text on screen: 'SLIDES.MD'. Nostalgic builder vibes."
+  },
+  "date": "2026-02-27",
+  "generated_at": "2026-02-28T06:07:32.604075+00:00",
+  "platform": "twitter"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8168,
+  "title": "fix: OpenClaw branding — favicon, logos, fonts",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8168",
+  "merged_at": "2026-02-11T18:51:10Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "OpenClaw gets a fresh coat",
+    "blurb": "Our OpenClaw app just got a visual upgrade with proper branding, fixed fonts, and a mobile-friendly header. The crab is looking sharp!",
+    "summary": "Updated the OpenClaw application with proper Pollinations branding, including new favicons, SVGs, and corrected font weights.",
+    "impact": "Users will see a more polished, consistent interface with correct logos and better mobile responsiveness.",
+    "keywords": [
+      "openclaw",
+      "branding",
+      "ui",
+      "mobile",
+      "design"
+    ],
+    "visual_concept": "OpenClaw project represented by a cute crab mascot. The PR is about branding/visual polish. Scene: The Pollinations bee and the crab mascot working together on a design upgrade.",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot and a cute pixel art crab character polishing a shiny digital sign together. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-11/PR-8168.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee mascot and a cute pixel art crab character polishing a shiny digital sign together. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-12T14:10:35.000411+00:00"
+}

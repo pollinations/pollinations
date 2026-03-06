@@ -1,0 +1,28 @@
+{
+  "pr_number": 8632,
+  "title": "Add StickerForge to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8632",
+  "merged_at": "2026-03-01T17:30:07Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Add StickerForge to image",
+    "blurb": "Add StickerForge to image",
+    "summary": "Add StickerForge to image",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-01T17:30:52.032340+00:00",
+  "_minimal": true
+}

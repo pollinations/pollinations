@@ -1,0 +1,34 @@
+{
+  "pr_number": 7259,
+  "title": "Add Store Image Designer to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7259",
+  "merged_at": "2026-02-24T17:34:06Z",
+  "labels": [
+    "TIER-APP-REVIEW-PR"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Open for business",
+    "blurb": "Store Image Designer has joined the hive! A new tool for crafting perfect assets for your digital storefronts.",
+    "summary": "Added Store Image Designer to the Creative category, enabling users to generate and customize professional assets for online shops.",
+    "impact": "Creators can now design high-quality store images and screenshots directly within the platform ecosystem.",
+    "keywords": [
+      "app",
+      "design",
+      "creative",
+      "storefront",
+      "community"
+    ],
+    "visual_concept": "A cozy digital main street. The bee mascot is setting up a glowing shop window display, representing the 'Store Image Designer'. The window features pixelated screenshots or art assets.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot arranging a glowing digital shop window display. The window frame is accented in lime green (#ecf874). A small robot helper holds a pixelated paintbrush nearby. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'SHOP'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-24/PR-7259.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T17:34:52.226946+00:00"
+}

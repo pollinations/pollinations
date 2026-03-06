@@ -1,0 +1,33 @@
+{
+  "pr_number": 8651,
+  "title": "replace pitch app with slidev presentation",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8651",
+  "merged_at": "2026-02-27T13:56:30Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Slidev into the future",
+    "blurb": "Swapped the React boilerplate for a slick Slidev deck. Our pitch is now written in Markdown, just like our docs.",
+    "summary": "Replaced the custom React pitch app with a Slidev presentation generated from Markdown.",
+    "impact": "The project's vision and roadmap are now easier to maintain and version control directly in the repo.",
+    "keywords": [
+      "slidev",
+      "pitch",
+      "markdown",
+      "presentation"
+    ],
+    "visual_concept": "The bee mascot standing on a small stage pointing at a projection screen with a pixelated chart. The robot is in the front row holding a '10/10' sign.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot presenting a chart on a projection screen to a small audience. The robot companion holds a sign saying '10'. Lime green (#ecf874) and pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-27/PR-8651.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-27T13:57:21.382031+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8206,
+  "title": "Upgrade GLM from 4.7 to 5, default Portkey gateway to production",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8206",
+  "merged_at": "2026-02-13T10:48:42Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "GLM-5 has entered the chat",
+    "blurb": "We've upgraded our GLM integration to version 5! This massive 744B parameter model from Z.ai brings smarter reasoning and better responses to your prompts.",
+    "summary": "Upgraded the GLM text model from version 4.7 to 5, integrating Z.ai's latest 744B MoE model via Fireworks and updating the Portkey gateway configuration.",
+    "impact": "Users can now access the more powerful GLM-5 model for text generation, while maintaining backward compatibility for older aliases.",
+    "keywords": [
+      "GLM-5",
+      "text models",
+      "Z.ai",
+      "AI upgrade",
+      "Portkey"
+    ],
+    "visual_concept": "The Pollinations bee mascot interacting with a large, glowing, futuristic monolith or server rack labeled 'GLM-5' in a cozy garden setting, symbolizing the powerful new model landing in our organic ecosystem.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot marveling at a large, glowing futuristic monolith labeled 'GLM-5' in a soft garden. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The bee wears a tiny futuristic visor. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'LEVEL 5'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-13/PR-8206.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot marveling at a large, glowing futuristic monolith labeled 'GLM-5' in a soft garden. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The bee wears a tiny futuristic visor. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'LEVEL 5'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-13T11:31:46.053453+00:00"
+}

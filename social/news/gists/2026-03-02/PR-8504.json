@@ -1,0 +1,26 @@
+{
+  "pr_number": 8504,
+  "title": "Add MLALab.ai to Learn category",
+  "author": "fcfngor-ui",
+  "url": "https://github.com/pollinations/pollinations/pull/8504",
+  "merged_at": "2026-03-02T01:31:14Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Add MLALab.ai to Learn category",
+    "blurb": "Add MLALab.ai to Learn category",
+    "summary": "Add MLALab.ai to Learn category",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-02T01:31:56.751776+00:00",
+  "_minimal": true
+}

@@ -1,0 +1,46 @@
+{
+  "content_type": "retro_infographic",
+  "linked_images": true,
+  "strategy_reasoning": "Uses the 'RPG Quest Log' metaphor to gamify the weekly updates, making technical changes feel like exciting in-game achievements. The cozy pixel art style lowers the barrier to entry for complex tech concepts.",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft CRT scanlines, and a warm, nostalgic atmosphere similar to Stardew Valley.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot standing next to a rustic wooden RPG quest board in a lush meadow. The board features a clear pixel-font headline 'WEEKLY BUZZ'. The bee wears a tiny brown messenger bag and is pointing at the board with a happy expression. Soft lime green (#ecf874) grass and lavender gradient sky. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm.",
+      "description": "Title card establishing the 'Weekly Update' as a recurring quest log or village notice.",
+      "text_in_image": "WEEKLY BUZZ",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot wearing pixelated wizard glasses, casting a spell on a floating holographic map inside a cozy treehouse lab. This represents the new OpenClaw agents and search. Retro RPG text boxes float nearby reading 'SMART AGENTS' and 'API LEVEL UP'. Soft lime green (#ecf874) magical glow effects illuminate the room. Pastel book spines in background. Warm lighting, 8-bit aesthetic. Wholesome and smart.",
+      "description": "Visualizing the 'Brain' updates (Agents, API, Search) as magical skill upgrades.",
+      "text_in_image": "SMART AGENTS",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny movie clapperboard and a vintage microphone on a small wooden stage. Background is a soft peach and lime green (#ecf874) gradient sunset. Floating pixel icons of film reels and musical notes surround the bee. A retro UI banner at the bottom reads 'VIDEO & AUDIO'. Chunky sprites, warm lighting, lo-fi aesthetic like A Short Hike. Creative and playful.",
+      "description": "Highlighting the creative tools (Grok Video, ElevenLabs) as a performance or art creation moment.",
+      "text_in_image": "VIDEO & AUDIO",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "Level Up! 🍄✨ We merged 27 PRs this week and the hive is buzzing with upgrades. \n\nHere’s the loot drop:\n🗺️ OpenClaw Agents are live (one-command web search!)\n🧠 Polly API got a massive brain boost\n🎬 Grok Image-to-Video + ElevenLabs Scribe v2 = creative power\n\nIt’s giving main character energy. Which feature are you trying first? Tell us below! 👇\n\n#pollinations #opensource #pixelart #indiedev #aiart #generativeai #cozyvibes #8bit #buildinpublic #weeklyupdate #techforgood",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#aiart",
+    "#generativeai",
+    "#cozyvibes",
+    "#8bit",
+    "#buildinpublic",
+    "#weeklyupdate",
+    "#techforgood"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images featuring a cute bee mascot in a lime green meadow. 1: Bee at a quest board saying 'Weekly Buzz'. 2: Bee as a wizard with 'Smart Agents' text. 3: Bee with film gear and 'Video & Audio' text.",
+  "date": "2026-02-15",
+  "generated_at": "2026-02-16T10:04:13.429831+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

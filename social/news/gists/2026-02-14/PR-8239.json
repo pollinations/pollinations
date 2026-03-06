@@ -1,0 +1,34 @@
+{
+  "pr_number": 8239,
+  "title": "fix: update gptimage api-version for /images/edits support",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8239",
+  "merged_at": "2026-02-14T11:38:43Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh coat of paint",
+    "blurb": "We've updated the wiring for `gptimage`, bringing image editing and inpainting capabilities back online. Time to remix your masterpieces!",
+    "summary": "Updated the Azure API version for the `gptimage` model to fully support the `/images/edits` endpoint.",
+    "impact": "Restores functionality for image editing and inpainting workflows when using GPT-based models.",
+    "keywords": [
+      "gptimage",
+      "azure",
+      "image editing",
+      "inpainting",
+      "bugfix"
+    ],
+    "visual_concept": "The bee mascot as an artist. She is wearing a beret and holding a paintbrush, working on a canvas that represents the 'edit' functionality (perhaps painting over a glitch or adding a flower to an existing scene). The vibe is creative and restorative.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret and holding a pixel paintbrush, adding bright lime green (#ecf874) details to a canvas on an easel. Soft pastel gradient background (mint to peach). Floating pixel icons of editing tools like brushes and crop frames. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'EDITS LIVE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-14/PR-8239.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret and holding a pixel paintbrush, adding bright lime green (#ecf874) details to a canvas on an easel. Soft pastel gradient background (mint to peach). Floating pixel icons of editing tools like brushes and crop frames. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'EDITS LIVE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-02-15T14:35:29.722224+00:00"
+}

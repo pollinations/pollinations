@@ -1,0 +1,34 @@
+{
+  "pr_number": 8859,
+  "title": "fix: use actual Pollinations logo in official badge",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8859",
+  "merged_at": "2026-03-05T14:31:34Z",
+  "labels": [
+    "WEB",
+    ".DOCS"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A proper badge of honor",
+    "blurb": "The official Pollinations app submission badge finally features our actual logo instead of a placeholder circle. Wear it with pride!",
+    "summary": "Updated the GitHub tier app submission template to use the official Pollinations logo in the shields.io badge.",
+    "impact": "Contributors submitting their apps to the ecosystem will now get a badge with the correct branding.",
+    "keywords": [
+      "badge",
+      "branding",
+      "community",
+      "github"
+    ],
+    "visual_concept": "Polly the bee mascot proudly polishing or wearing a shiny new official badge, showing it off to the Monitor Robot.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot proudly polishing a shiny new digital badge. A chunky retro monitor robot looks on excitedly. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-05T14:32:26.234716+00:00"
+}

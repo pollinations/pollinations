@@ -1,0 +1,45 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Translating a massive 18-PR update week into a cozy, digestible visual narrative. By rotating the cast (Polly + Robot, Polly solo, Polly + Nomnom), we keep the carousel engaging while grounding technical updates (video gen, Carl Jung bots, error log fixes) in an emotionally warm, relatable universe.",
+  "visual_style": "Cozy 8-bit pixel art with soft pastel gradients, Stardew Valley-inspired chunky sprites, warm lighting, and prominent lime green (#ecf874) accents.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing tiny 3D glasses, sitting next to a chunky pixel robot with a CRT monitor head. The robot's screen glows lime green (#ecf874) showing a tiny playing video. They are surrounded by pixelated comic book pages and film strips. Soft mint and warm cream pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm. Cozy 8-bit aesthetic.",
+      "description": "Polly and the Monitor Robot experiencing the new AI video generator and comics explorer.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-05/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing tiny reading glasses, hovering in a cozy retro library. She is reading a thick pixelated 'junk journal' resting on a lime green (#ecf874) desk. Tiny code-plants sprout from vintage teacups. Soft peach and lavender pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like A Short Hike. Nostalgic but beautiful, emotionally warm. Cozy 8-bit aesthetic.",
+      "description": "Polly in a cozy library setting, referencing the Carl Jung bot and Junk Journal AI.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-05/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of a round tan mochi-ball creature with tiny dot eyes happily eating glowing red 4xx error logs. The cute bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings hovers nearby wearing a tiny yellow hardhat, watching amused. A retro server rack in the background glows soft lime green (#ecf874). Soft lavender and cream pastel gradient background. Speech bubble in pixel font: 'NOMNOM'. Chunky retro sprites, warm lighting, lo-fi Stardew Valley vibes. Cozy 8-bit aesthetic.",
+      "description": "Nomnom eating 4xx error logs to fix the model monitor success rates, while Polly supervises.",
+      "text_in_image": "NOMNOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-05/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "18 PRs merged today. We shipped an AI video generator, a Carl Jung bot for your existential crises, and a comics explorer. Also fixed the official badge and cleaned up our model monitor logic so 4xx errors don't tank the success rate stats. The ecosystem keeps growing—browsers, roleplay, junk journals, you name it. Go build something weird. Link in bio.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#buildinpublic",
+    "#aivideo",
+    "#botdev",
+    "#webdev"
+  ],
+  "alt_text": "A carousel of 3 cozy pixel art images featuring Polly the bee, a monitor robot, and a round creature named Nomnom interacting with video screens, books, and error logs in warm, pastel-colored environments.",
+  "date": "2026-03-05",
+  "generated_at": "2026-03-06T06:15:02.776516+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

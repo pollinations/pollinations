@@ -1,0 +1,28 @@
+{
+  "pr_number": 8733,
+  "title": "Add SmartInfiniteYield to games",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8733",
+  "merged_at": "2026-03-02T02:20:22Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Add SmartInfiniteYield to games",
+    "blurb": "Add SmartInfiniteYield to games",
+    "summary": "Add SmartInfiniteYield to games",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-02T02:21:04.294822+00:00",
+  "_minimal": true
+}

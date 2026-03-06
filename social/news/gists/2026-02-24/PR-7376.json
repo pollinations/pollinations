@@ -1,0 +1,34 @@
+{
+  "pr_number": 7376,
+  "title": "Add Sketch My Mood to Vibes",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7376",
+  "merged_at": "2026-02-24T17:44:01Z",
+  "labels": [
+    "TIER-APP-REVIEW-PR"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Feelings into pixels",
+    "blurb": "Sketch My Mood joins the Vibes showcase. It's AI art therapy that turns your emotions into expressive masterpieces.",
+    "summary": "Added 'Sketch My Mood' to the platform showcase, an application that generates artwork based on user emotional input.",
+    "impact": "Users can now explore a new creative tool for visualizing emotions through AI-generated art.",
+    "keywords": [
+      "community",
+      "showcase",
+      "art",
+      "therapy",
+      "vibes"
+    ],
+    "visual_concept": "Polly the Bee as an artist. She is wearing a beret and holding a paintbrush, standing next to an easel. The canvas shows a colorful, abstract representation of a 'mood' (swirls of pastel colors). The setting is a cozy art studio or garden corner.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting colorful abstract swirls on a canvas easel. Lime green (#ecf874) and soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'MOOD ART'. Emotionally warm, creative vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-24/PR-7376.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T17:44:47.809585+00:00"
+}

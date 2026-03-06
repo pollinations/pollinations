@@ -1,0 +1,33 @@
+{
+  "pr_number": 8874,
+  "title": "fix: remove 'Pollen tier compatible' from news banner",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8874",
+  "merged_at": "2026-03-05T20:30:21Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidying the dashboard",
+    "blurb": "A quick sweep of the dashboard to keep our news banner clean and concise.",
+    "summary": "Removed redundant text from the dashboard's news banner for a cleaner UI.",
+    "impact": "Users will see a more streamlined and concise news banner on the dashboard.",
+    "keywords": [
+      "dashboard",
+      "ui",
+      "banner",
+      "cleanup"
+    ],
+    "visual_concept": "Polly the bee acting as a caretaker, dusting off a digital billboard or signboard to make it clean and readable.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny caretaker's apron, using a small feather duster to clean a glowing retro digital billboard. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-05/PR-8874.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-05T20:31:11.176668+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8305,
+  "title": "feat: remove SKIP logic from social news pipeline",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8305",
+  "merged_at": "2026-02-16T10:16:37Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Unmuting the hive",
+    "blurb": "We've removed the filter. Now the bot shares every single update, big or small.",
+    "summary": "Removed the 'SKIP' sentinel logic from the social pipeline to ensure every merged PR generates a post.",
+    "impact": "Fixes an issue where the bot posted literal 'SKIP' text and guarantees 100% coverage of merged code.",
+    "keywords": [
+      "automation",
+      "social-media",
+      "bot",
+      "pipeline",
+      "discord"
+    ],
+    "visual_concept": "The bee mascot removing a 'mute' button or tape from a microphone, symbolizing that nothing is held back anymore. The pipeline is now fully open.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot removing a piece of tape labeled 'SKIP' from a vintage microphone. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'ON AIR'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-16/PR-8305.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T10:18:49.952207+00:00"
+}

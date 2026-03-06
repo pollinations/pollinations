@@ -170,6 +170,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen-character"],
         transform: createSystemPromptTransform(BASE_PROMPTS.character),
     },
+    {
+        name: "step-3.5-flash",
+        config: portkeyConfig["step-3.5-flash:free"],
+    },
 ];
 
 export const availableModels = models;

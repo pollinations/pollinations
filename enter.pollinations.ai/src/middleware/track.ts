@@ -111,7 +111,8 @@ export const track = (eventType: EventType) =>
         const modelInfo = c.var.model;
         const requestTracking = await trackRequest(modelInfo, c.req);
 
-        const clientIp = c.req.header("cf-connecting-ip");
+        const rawIp = c.req.header("cf-connecting-ip");
+        const clientIp = rawIp ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
         const userTracking: UserData = {
@@ -712,7 +713,10 @@ const ContentFilterResultHeadersSchema = z
     }));
 
 /** Salted SHA-256 hash of the full IP — irreversible without the salt. */
-async function hashIp(ip: string | undefined, salt: string): Promise<string | undefined> {
+async function hashIp(
+    ip: string | undefined,
+    salt: string,
+): Promise<string | undefined> {
     if (!ip) return undefined;
     const data = new TextEncoder().encode(`${salt}:${ip}`);
     const hash = await crypto.subtle.digest("SHA-256", data);
@@ -721,22 +725,36 @@ async function hashIp(ip: string | undefined, salt: string): Promise<string | un
         .join("");
 }
 
-/** Truncate IP to /24 subnet (first 3 octets for IPv4, first 3 groups for IPv6). */
+/** Strip `::ffff:` prefix from IPv4-mapped IPv6 addresses. */
+function stripIPv4MappedPrefix(ip: string): string {
+    const match = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+    return match ? match[1] : ip;
+}
+
+/** Truncate IP to /24 subnet (IPv4) or /48 subnet (IPv6, first 3 groups). */
 function truncateIpToSubnet(ip: string | undefined): string | undefined {
     if (!ip) return undefined;
-    if (ip.includes(".")) {
-        const parts = ip.split(".");
+    const normalized = stripIPv4MappedPrefix(ip);
+    if (normalized.includes(".")) {
+        const parts = normalized.split(".");
         if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
     }
-    if (ip.includes(":")) {
-        const full = expandIPv6(ip);
+    if (normalized.includes(":")) {
+        const full = expandIPv6(normalized);
         const groups = full.split(":");
         return `${groups[0]}:${groups[1]}:${groups[2]}::`;
     }
     return undefined;
 }
 
+/** Expand IPv6 `::` shorthand to full 8-group form. */
 function expandIPv6(ip: string): string {
+    if (!ip.includes("::")) {
+        return ip
+            .split(":")
+            .map((g) => g.padStart(4, "0"))
+            .join(":");
+    }
     const halves = ip.split("::");
     const left = halves[0] ? halves[0].split(":") : [];
     const right = halves[1] ? halves[1].split(":") : [];

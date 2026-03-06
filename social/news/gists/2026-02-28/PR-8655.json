@@ -1,0 +1,35 @@
+{
+  "pr_number": 8655,
+  "title": "fix(media): harden upload endpoint (file size, magic bytes, logging)",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/8655",
+  "merged_at": "2026-02-28T19:48:26Z",
+  "labels": [
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The undo button arrives",
+    "blurb": "We've hardened the media upload pipes and added a shiny new DELETE endpoint. Now you can scrub your uploads if you change your mind.",
+    "summary": "Added a secure DELETE endpoint for media uploads and simplified validation logic to treat files as binary data.",
+    "impact": "Developers can now programmatically remove their uploaded media, and the upload system handles binary data more reliably.",
+    "keywords": [
+      "media",
+      "api",
+      "delete",
+      "security",
+      "upload"
+    ],
+    "visual_concept": "The 'delete' function is best represented by the Nomnom creature consuming data. The scene should show the media service as a pipeline or conveyor belt where unwanted files are fed to Nomnom.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a pixelated photo frame labeled 'DELETE'. The bee mascot hovers nearby holding a security clipboard. Lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic. Text in pixel font: 'DELETED'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-28/PR-8655.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-28T19:49:13.468899+00:00"
+}

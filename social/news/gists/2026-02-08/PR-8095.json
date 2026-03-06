@@ -1,0 +1,34 @@
+{
+  "pr_number": 8095,
+  "title": "feat: account API improvements + authorize page restyle",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8095",
+  "merged_at": "2026-02-08T21:31:39Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh Look for Auth",
+    "blurb": "The authorization page just got a cozy makeover with our signature green theme, plus smarter balance tracking in the API.",
+    "summary": "Restyled the authorization page to match the dashboard aesthetic and updated the account API to provide detailed balance breakdowns.",
+    "impact": "Users get a cleaner, consistent login experience, while developers can now track free tier credits versus paid packs separately.",
+    "keywords": [
+      "auth",
+      "ui",
+      "api",
+      "balance",
+      "design"
+    ],
+    "visual_concept": "The Pollinations bee as a friendly doorman at a stylish pixel-art gate. The gate represents the new authorize page with its lime green borders. The bee is checking a guest list (permissions) with a smile.",
+    "image_prompt": "Cozy pixel art scene of the cute round bee mascot standing next to a stylish pixelated login gate with thick lime green (#ecf874) borders. Soft pastel gradient background. The bee holds a small pixel clipboard, welcoming a visitor. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8095.jpg",
+    "prompt": "Cozy pixel art scene of the cute round bee mascot standing next to a stylish pixelated login gate with thick lime green (#ecf874) borders. Soft pastel gradient background. The bee holds a small pixel clipboard, welcoming a visitor. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-12T14:04:49.193626+00:00"
+}

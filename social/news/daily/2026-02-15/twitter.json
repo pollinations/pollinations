@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "polly-api is live. 🚀\n\ndrop-in OpenAI compatibility means you can run our open models with your existing stack. zero friction—just change the base URL.\n\nalso shipped: Qwen3Guard 8B safety + fixed grok video ratios.\n\nopen source moves fast. 🐝✨",
+  "alt_tweet": "shipped 6 PRs today, but this is the big one: full OpenAI-compatible API support. 🔌\n\nswap the URL, keep your code, access open models instantly. \n\nplus: new Qwen3Guard safety model & smoother video generation. let's build. 🌱",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tech goggles, plugging a glowing lime green (#ecf874) cable into a retro server tower. Background is a soft lavender-to-peach gradient. Floating pixel icons of locks (safety) and video reels surround the scene. Warm lighting, chunky sprites, lo-fi vibes like Stardew Valley. Text in pixel font: 'API UNLOCKED'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "reasoning": "Standardized API compatibility is a massive unlock for developers, lowering the barrier to entry significantly. Leading with this technical win establishes utility immediately.",
+  "char_count": 246,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-15/images/twitter.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tech goggles, plugging a glowing lime green (#ecf874) cable into a retro server tower. Background is a soft lavender-to-peach gradient. Floating pixel icons of locks (safety) and video reels surround the scene. Warm lighting, chunky sprites, lo-fi vibes like Stardew Valley. Text in pixel font: 'API UNLOCKED'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "date": "2026-02-15",
+  "generated_at": "2026-02-16T06:23:03.082727+00:00",
+  "platform": "twitter"
+}

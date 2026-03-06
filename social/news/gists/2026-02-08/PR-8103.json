@@ -1,0 +1,34 @@
+{
+  "pr_number": 8103,
+  "title": "feat: add BYOP and API Key Usage Grafana dashboards",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8103",
+  "merged_at": "2026-02-08T23:22:37Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Mapping the pollen paths",
+    "blurb": "We've added new visualization tools to track how API keys and the new BYOP feature are being used. Data is beautiful!",
+    "summary": "Deployed new Grafana dashboards to monitor 'Bring Your Own Pollen' adoption and API key usage statistics.",
+    "impact": "Enhances visibility into platform usage patterns and token economics for the team.",
+    "keywords": [
+      "grafana",
+      "observability",
+      "metrics",
+      "byop",
+      "ops"
+    ],
+    "visual_concept": "The pollinations.ai bee mascot in a cozy, retro server room or control center, looking at glowing screens displaying pixelated charts and graphs (representing the new dashboards). The vibe is 'mission control' but cute and low-stakes.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee mascot in a retro control room, studying glowing monitors with pixelated line graphs and charts. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text on screen: 'DATA'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8103.jpg",
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee mascot in a retro control room, studying glowing monitors with pixelated line graphs and charts. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text on screen: 'DATA'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-12T14:05:55.816252+00:00"
+}

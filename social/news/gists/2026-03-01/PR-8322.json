@@ -1,0 +1,28 @@
+{
+  "pr_number": 8322,
+  "title": "Add Bloom CLI to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8322",
+  "merged_at": "2026-03-01T16:54:42Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Add Bloom CLI to Dev_Tools",
+    "blurb": "Add Bloom CLI to Dev_Tools",
+    "summary": "Add Bloom CLI to Dev_Tools",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-01T16:55:29.194792+00:00",
+  "_minimal": true
+}

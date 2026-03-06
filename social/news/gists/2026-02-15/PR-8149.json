@@ -1,0 +1,34 @@
+{
+  "pr_number": 8149,
+  "title": "[PATCH]: Polly Bot Subtree Pull PR Workflow",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/8149",
+  "merged_at": "2026-02-15T14:06:06Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly moves house",
+    "blurb": "Our helper bot Polly is moving to a new repo structure to keep things tidy and organized.",
+    "summary": "Refactored the Polly bot application into a git subtree configuration with automated daily sync workflows.",
+    "impact": "Keeps the monorepo clean while ensuring the bot stays up to date with upstream changes.",
+    "keywords": [
+      "infrastructure",
+      "workflow",
+      "git",
+      "polly",
+      "maintenance"
+    ],
+    "visual_concept": "The Pollinations bee mascot (Polly) carrying a small pixelated moving box labeled 'BOT' from a large hive to a cute smaller hive nearby. Represents the code moving to a subtree.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot carrying a small pixelated box labeled 'BOT' towards a tiny separate digital hive. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-15/PR-8149.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot carrying a small pixelated box labeled 'BOT' towards a tiny separate digital hive. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-15T14:36:46.678874+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8073,
+  "title": "feat: upgrade TTS from eleven_multilingual_v2 to eleven_v3",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8073",
+  "merged_at": "2026-02-08T03:48:53Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive speaks with feeling",
+    "blurb": "Our text-to-speech engine just got an emotional upgrade with ElevenLabs v3. You can now direct the tone with tags like [laughing] or [whispering] across 70+ languages.",
+    "summary": "Upgraded the default text-to-speech provider to ElevenLabs v3, unlocking emotion tags and multi-speaker capabilities.",
+    "impact": "Developers can generate highly expressive speech with emotional context, though single-request character limits are now streamlined to 5,000.",
+    "keywords": [
+      "audio",
+      "tts",
+      "elevenlabs",
+      "models",
+      "api"
+    ],
+    "visual_concept": "The Pollinations bee in a recording booth, showcasing the new range of vocal emotions. Visual symbols: microphone, speech bubbles with emotion icons.",
+    "image_prompt": "Cozy pixel art scene of the cute 8-bit bee mascot singing into a vintage microphone in a warm recording studio. Soft lime green (#ecf874) and pastel gradient background. Speech bubbles with pixelated emotion icons (laughing face, crying face) floating around. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8073.jpg",
+    "prompt": "Cozy pixel art scene of the cute 8-bit bee mascot singing into a vintage microphone in a warm recording studio. Soft lime green (#ecf874) and pastel gradient background. Speech bubbles with pixelated emotion icons (laughing face, crying face) floating around. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-12T14:01:27.410484+00:00"
+}

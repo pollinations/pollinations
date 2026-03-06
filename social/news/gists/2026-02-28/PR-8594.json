@@ -1,0 +1,34 @@
+{
+  "pr_number": 8594,
+  "title": "[PATCH]: Fixed catgpt deployment",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/8594",
+  "merged_at": "2026-02-28T13:11:13Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "CatGPT lands on its feet",
+    "blurb": "The feline chatbot gets a full grooming session with fresh code, better SEO, and a stylish new look.",
+    "summary": "Updated the CatGPT community app with the latest codebase, improved SEO configuration, and refactored frontend logic.",
+    "impact": "Users will see a more polished interface and improved reliability when chatting with their favorite AI cat.",
+    "keywords": [
+      "community",
+      "apps",
+      "catgpt",
+      "seo",
+      "frontend"
+    ],
+    "visual_concept": "CatGPT represents a feline take on AI. Visual symbols: Pixel cat, chat bubbles, yarn balls made of code. Scene: Polly the Bee visiting a cozy cat condo where a pixel cat is typing on a laptop.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot sitting next to a cute white pixel cat who is typing on a tiny laptop. A speech bubble says 'MEOW'. Lime green (#ecf874) and soft pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-28/PR-8594.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-28T13:12:00.047376+00:00"
+}

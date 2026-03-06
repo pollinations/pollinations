@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "shipped image inputs for flux-2-dev and fixed a routing quirk where suno forgot how to make music. plus better app attribution and 6 new community apps hitting the showcase. 11 PRs merged today.",
+  "alt_tweet": "turns out if you route suno models correctly, they actually generate music. fixed that. also shipped image-to-image for flux-2-dev, app url tracking, and merged 6 new community apps. a solid day of plumbing.",
+  "hashtags": [
+    "#opensource",
+    "#ai"
+  ],
+  "image_prompt": "Dynamic cozy 8-bit pixel art scene. The cute bee mascot wearing tiny DJ headphones is plugging a glowing lime green (#ecf874) audio cable into a chunky retro terminal. Next to her, a cute robot with a CRT monitor head displays a generated landscape on its screen, raising its stubby arms in celebration. High contrast scroll-stopping composition against a dark purple (#110518) and lavender background. Soft warm lighting, chunky sprites, nostalgic retro gaming vibes.",
+  "reasoning": "leads with concrete shipments, uses dry humor for the routing fix, lowercase casual energy, highlights community growth.",
+  "char_count": 196,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-04/images/twitter.jpg",
+    "prompt": "Dynamic cozy 8-bit pixel art scene. The cute bee mascot wearing tiny DJ headphones is plugging a glowing lime green (#ecf874) audio cable into a chunky retro terminal. Next to her, a cute robot with a CRT monitor head displays a generated landscape on its screen, raising its stubby arms in celebration. High contrast scroll-stopping composition against a dark purple (#110518) and lavender background. Soft warm lighting, chunky sprites, nostalgic retro gaming vibes."
+  },
+  "date": "2026-03-04",
+  "generated_at": "2026-03-05T06:16:31.436274+00:00",
+  "platform": "twitter"
+}

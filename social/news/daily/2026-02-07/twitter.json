@@ -1,0 +1,12 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "massive model drop. just shipped support for elevenlabs tts, grok-video, imagen-4, and flux-2-dev.\n\none unified api for the best open & closed models. go build something wild.",
+  "alt_tweet": "shipping beats hype. today's merge: elevenlabs tts, grok-video, imagen-4, flux-2-dev.\n\nall live on the platform now. what are you building with this?",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Dynamic pixel art scene. The pollinations.ai bee mascot (round chubby yellow body, brown stripes, pink blush, blue wings) center stage, joyfully juggling glowing pixel icons: a musical note, a paintbrush, and a video film strip. Lime green (#ecf874) bursts of energy around the items. Soft pastel gradient background (mint to peach). High contrast, celebratory vibes like a level-up screen in a retro game. Warm lighting, cozy but energetic.",
+  "reasoning": "Directly lists high-demand models (ElevenLabs, Grok) to grab builder attention. Reinforces the core value prop: one API for everything. Short, punchy, and action-oriented.",
+  "char_count": 174
+}

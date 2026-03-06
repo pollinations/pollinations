@@ -1,17 +1,29 @@
 import type {
-    PollinationsConfig,
-    ImageGenerateOptions,
-    ImageResponse,
-    VideoGenerateOptions,
-    VideoResponse,
-    TextGenerateOptions,
+    AccountBalance,
+    AccountProfile,
+    AudioGenerateOptions,
+    AuthorizeOptions,
     ChatOptions,
     ChatResponse,
     ChatStreamChunk,
-    AudioGenerateOptions,
+    DailyUsageResponse,
+    ImageGenerateOptions,
+    ImageResponse,
+    KeyInfo,
     Message,
     ModelInfo,
+    PollinationsConfig,
     PollinationsErrorDetails,
+    TextGenerateOptions,
+    TranscribeOptions,
+    TranscriptionResponse,
+    TranscriptionVerboseResponse,
+    UploadOptions,
+    UploadResponse,
+    UsageOptions,
+    UsageResponse,
+    VideoGenerateOptions,
+    VideoResponse,
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 
@@ -74,7 +86,7 @@ function getRetryDelay(attempt: number, retryAfterSeconds?: number): number {
     if (retryAfterSeconds !== undefined && retryAfterSeconds > 0) {
         return retryAfterSeconds * 1000;
     }
-    return Math.pow(2, attempt) * 1000;
+    return 2 ** attempt * 1000;
 }
 
 // Parse Retry-After header (can be seconds or HTTP date)
@@ -1183,5 +1195,330 @@ export class Pollinations {
         }
 
         return response.json() as Promise<ModelInfo[]>;
+    }
+
+    // ============================================================================
+    // Speech-to-Text (Transcription)
+    // ============================================================================
+
+    /**
+     * Transcribe audio to text
+     *
+     * @example
+     * ```ts
+     * // From a file (Node.js)
+     * import fs from 'fs';
+     * const audioBuffer = fs.readFileSync('speech.mp3');
+     * const result = await pollinations.transcribe(audioBuffer, { model: 'whisper-large-v3' });
+     * console.log(result.text);
+     *
+     * // From a Blob (browser)
+     * const result = await pollinations.transcribe(audioBlob);
+     * ```
+     */
+    async transcribe(
+        audio: ArrayBuffer | Blob,
+        options: TranscribeOptions & { responseFormat: "verbose_json" },
+    ): Promise<TranscriptionVerboseResponse>;
+    async transcribe(
+        audio: ArrayBuffer | Blob,
+        options?: TranscribeOptions,
+    ): Promise<TranscriptionResponse>;
+    async transcribe(
+        audio: ArrayBuffer | Blob,
+        options: TranscribeOptions = {},
+    ): Promise<TranscriptionResponse | TranscriptionVerboseResponse> {
+        const formData = new FormData();
+
+        // Convert ArrayBuffer to Blob if needed
+        const blob =
+            audio instanceof Blob
+                ? audio
+                : new Blob([audio], { type: "audio/mpeg" });
+
+        formData.append("file", blob, "audio.mp3");
+        formData.append("model", options.model || "whisper-large-v3");
+
+        if (options.language) formData.append("language", options.language);
+        if (options.responseFormat)
+            formData.append("response_format", options.responseFormat);
+        if (options.prompt) formData.append("prompt", options.prompt);
+        if (options.temperature !== undefined)
+            formData.append("temperature", String(options.temperature));
+
+        let lastError: Error = new Error("Unknown error during transcription");
+
+        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+            try {
+                const headers = this.getHeaders();
+                // Don't set Content-Type - fetch sets it with boundary for FormData
+
+                const response = await fetchWithTimeout(
+                    `${this.baseUrl}/v1/audio/transcriptions`,
+                    {
+                        method: "POST",
+                        headers,
+                        body: formData,
+                    },
+                    this.textTimeout,
+                    options.signal,
+                );
+
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                if (
+                    options.responseFormat === "text" ||
+                    options.responseFormat === "srt" ||
+                    options.responseFormat === "vtt"
+                ) {
+                    const text = await response.text();
+                    return { text };
+                }
+
+                return response.json() as Promise<
+                    TranscriptionResponse | TranscriptionVerboseResponse
+                >;
+            } catch (err) {
+                lastError = err as Error;
+                if (!isRetriableError(err)) throw lastError;
+                if (attempt < this.maxRetries - 1) {
+                    const retryAfter =
+                        err instanceof PollinationsError
+                            ? err.retryAfter
+                            : undefined;
+                    await sleep(getRetryDelay(attempt, retryAfter));
+                }
+            }
+        }
+
+        throw lastError;
+    }
+
+    // ============================================================================
+    // Media Upload
+    // ============================================================================
+
+    /**
+     * Upload media (image, audio, video) and get a public URL
+     *
+     * @example
+     * ```ts
+     * // Upload from ArrayBuffer
+     * const result = await pollinations.upload(imageBuffer, { contentType: 'image/jpeg' });
+     * console.log(result.url); // https://media.pollinations.ai/abc123...
+     *
+     * // Upload from Blob (browser)
+     * const result = await pollinations.upload(file);
+     * ```
+     */
+    async upload(
+        data: ArrayBuffer | Blob,
+        options: UploadOptions = {},
+    ): Promise<UploadResponse> {
+        const formData = new FormData();
+
+        const blob =
+            data instanceof Blob
+                ? data
+                : new Blob([data], {
+                      type: options.contentType || "application/octet-stream",
+                  });
+
+        formData.append("file", blob, options.name || "upload");
+
+        const headers = this.getHeaders();
+
+        let lastError: Error = new Error("Unknown error during upload");
+
+        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+            try {
+                const response = await fetchWithTimeout(
+                    `https://media.pollinations.ai/upload`,
+                    {
+                        method: "POST",
+                        headers,
+                        body: formData,
+                    },
+                    this.imageTimeout,
+                    options.signal,
+                );
+
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                return response.json() as Promise<UploadResponse>;
+            } catch (err) {
+                lastError = err as Error;
+                if (!isRetriableError(err)) throw lastError;
+                if (attempt < this.maxRetries - 1) {
+                    const retryAfter =
+                        err instanceof PollinationsError
+                            ? err.retryAfter
+                            : undefined;
+                    await sleep(getRetryDelay(attempt, retryAfter));
+                }
+            }
+        }
+
+        throw lastError;
+    }
+
+    // ============================================================================
+    // BYOP (Bring Your Own Pollen)
+    // ============================================================================
+
+    /**
+     * Build a BYOP authorization URL.
+     * Redirect users here to grant your app access to their Pollen balance.
+     *
+     * @example
+     * ```ts
+     * const url = pollinations.authorizeUrl({
+     *   redirectUrl: 'https://myapp.com/callback',
+     *   models: ['flux', 'openai'],
+     *   budget: 10,
+     *   permissions: ['profile', 'balance'],
+     * });
+     * // Redirect user to this URL
+     * ```
+     */
+    authorizeUrl(options: AuthorizeOptions): string {
+        const params = new URLSearchParams();
+        params.set("redirect_url", options.redirectUrl);
+
+        if (options.appKey) params.set("app_key", options.appKey);
+        if (options.models?.length)
+            params.set("models", options.models.join(","));
+        if (options.budget !== undefined)
+            params.set("budget", String(options.budget));
+        if (options.expiry !== undefined)
+            params.set("expiry", String(options.expiry));
+        if (options.permissions?.length)
+            params.set("permissions", options.permissions.join(","));
+
+        return `https://enter.pollinations.ai/authorize?${params.toString()}`;
+    }
+
+    // ============================================================================
+    // Account
+    // ============================================================================
+
+    /**
+     * Get user profile information
+     *
+     * @example
+     * ```ts
+     * const profile = await pollinations.accountProfile();
+     * console.log(profile.name, profile.tier);
+     * ```
+     */
+    async accountProfile(): Promise<AccountProfile> {
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/profile`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<AccountProfile>;
+    }
+
+    /**
+     * Get account pollen balance
+     *
+     * @example
+     * ```ts
+     * const { balance } = await pollinations.accountBalance();
+     * console.log(`Balance: ${balance} pollen`);
+     * ```
+     */
+    async accountBalance(): Promise<AccountBalance> {
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/balance`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<AccountBalance>;
+    }
+
+    /**
+     * Get usage history
+     *
+     * @example
+     * ```ts
+     * const { usage } = await pollinations.accountUsage({ limit: 50 });
+     * usage.forEach(r => console.log(r.model, r.cost_usd));
+     * ```
+     */
+    async accountUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+        const params = new URLSearchParams();
+        if (options.format) params.set("format", options.format);
+        if (options.limit) params.set("limit", String(options.limit));
+        if (options.before) params.set("before", options.before);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<UsageResponse>;
+    }
+
+    /**
+     * Get daily aggregated usage
+     *
+     * @example
+     * ```ts
+     * const { usage } = await pollinations.accountUsageDaily();
+     * usage.forEach(r => console.log(r.date, r.requests, r.cost_usd));
+     * ```
+     */
+    async accountUsageDaily(
+        options: { format?: "json" | "csv" } = {},
+    ): Promise<DailyUsageResponse> {
+        const params = new URLSearchParams();
+        if (options.format) params.set("format", options.format);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<DailyUsageResponse>;
+    }
+
+    /**
+     * Validate API key and get key information
+     *
+     * @example
+     * ```ts
+     * const keyInfo = await pollinations.validateKey();
+     * console.log(keyInfo.valid, keyInfo.type, keyInfo.permissions);
+     * ```
+     */
+    async validateKey(): Promise<KeyInfo> {
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/key`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<KeyInfo>;
     }
 }

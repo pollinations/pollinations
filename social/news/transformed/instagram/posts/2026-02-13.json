@@ -1,0 +1,47 @@
+{
+  "date": "2026-02-13",
+  "generated_at": "2026-02-13T00:38:00.188310+00:00",
+  "post_type": "carousel",
+  "content_type": "carousel",
+  "linked_images": true,
+  "strategy_reasoning": "Adopting the 'RPG Inventory Upgrade' strategy mentioned in the updates. By visualizing technical changes (OpenClaw search, UI fixes) as game items and quest logs, we make the dev-log feel like a fun patch note drop. The cozy pixel art softens the technical nature of API configurations.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-13-image-1.jpg",
+      "prompt": "Cozy pixel art scene of the Pollinations bee mascot holding a glowing magical robotic claw (OpenClaw) that is projecting a holographic search window. The hologram shows pixelated web icons (globe, magnifying glass). Background is a soft lime green (#ecf874) and lavender gradient. Chunky retro sprites, warm lighting like Stardew Valley. Text in pixel font: 'OPENCLAW: WEB SEARCH UNLOCKED'. Nostalgic, magical tech vibes.",
+      "description": "Announces the major feature: OpenClaw can now search the web using Gemini and Perplexity."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-13-image-2.jpg",
+      "prompt": "A retro RPG-style inventory or quest menu screen displayed on a cozy CRT monitor. The screen shows a clean 'Tabbed UI' layout with a connection cable plugged in. Pixel art style like the game Unpacking. Soft pastel colors, peach and mint, with lime green (#ecf874) highlights on the buttons. A tiny pixel dev character is giving a thumbs up. Text in pixel font: 'UI LEVEL UP +10 CLARITY'. Warm, clean, satisfying.",
+      "description": "Visualizes the Landing Page and UI cleanup as an inventory organization upgrade."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-13-image-3.jpg",
+      "prompt": "A cute pixel art sleeping animation. A cookie character (representing 'nomnom' model) is tucking itself into a cozy digital treasure chest to sleep. 'Zzz' pixel particles floating up. Background is warm cream and lime green (#ecf874). Soft lighting, peaceful vibes. Text in pixel font: 'BRB NAPPING'.",
+      "description": "Friendly way to announce the temporary disabling of the nomnom model without sounding like an error."
+    }
+  ],
+  "caption": "Patch notes just dropped for OpenClaw and the vibes are immaculate 🌸✨\n\nWe treated the codebase like an RPG inventory sort today:\n\n🔮 **New Skill:** OpenClaw now has Web Search! Powered by Gemini + Perplexity, so your AI agent isn't just guessing anymore—it's grounded in reality.\n\n🗺️ **Map Update:** The landing page got a total glow-up. New tabbed UI and a zero-friction shared connect step. It’s giving *organized*.\n\n😴 **AFK:** The nomnom model is taking a quick nap (temporarily disabled) while we tweak some things.\n\nLink in bio to test the new upgrades! 🐝\n\n#pollinations #opensource #indiedev #pixelart #cozycoding #aiupdates #websearch #buildinpublic #retrogaming",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#indiedev",
+    "#pixelart",
+    "#cozycoding",
+    "#aiupdates",
+    "#websearch",
+    "#buildinpublic",
+    "#retrogaming"
+  ],
+  "alt_text": "Pixel art carousel showing a bee with a magical claw, a retro inventory screen, and a sleeping cookie character.",
+  "pr_references": [
+    "#8178",
+    "#8177",
+    "#8187",
+    "#8189",
+    "#8179",
+    "#7933"
+  ]
+}

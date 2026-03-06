@@ -75,7 +75,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                 rel="noopener noreferrer"
                 className="flex items-center justify-between px-4 py-3 bg-input-background hover:brightness-110 transition-all"
             >
-                <span className="font-headline text-lg font-black uppercase text-text-body-main">
+                <span className="font-headline text-xs font-black uppercase text-text-body-main">
                     {app.emoji && `${app.emoji} `}
                     {app.name}
                 </span>
@@ -300,9 +300,9 @@ export default function AppsPage() {
 
                 {/* CTAs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                    <div className="flex items-center gap-4 p-4 bg-surface-card">
+                    <div className="flex items-center gap-4 p-4 bg-input-background rounded-sub-card">
                         <div className="flex-1">
-                            <p className="font-headline text-base font-black text-text-body-main mb-1">
+                            <p className="font-headline text-xs font-black text-text-body-main mb-1">
                                 {pageCopy.submitCtaTitle}
                             </p>
                             <p className="font-body text-sm text-text-body-secondary">
@@ -321,9 +321,9 @@ export default function AppsPage() {
                             <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
                         </Button>
                     </div>
-                    <div className="flex items-center gap-4 p-4 bg-surface-card">
+                    <div className="flex items-center gap-4 p-4 bg-input-background rounded-sub-card">
                         <div className="flex-1">
-                            <p className="font-headline text-base font-black text-text-body-main mb-1">
+                            <p className="font-headline text-xs font-black text-text-body-main mb-1">
                                 {pageCopy.pollenCtaTitle}
                             </p>
                             <p className="font-body text-sm text-text-body-secondary">

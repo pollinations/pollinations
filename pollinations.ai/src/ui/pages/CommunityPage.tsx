@@ -43,17 +43,17 @@ export default function CommunityPage() {
                     <Body spacing="comfortable">{pageCopy.subtitle}</Body>
                 </div>
                 <p className="font-body text-base text-text-body-tertiary mb-4">
-                    <span className="font-headline text-lg font-black text-text-body-secondary">
+                    <span className="font-headline text-xs font-black text-text-body-secondary">
                         {pageCopy.heroStat1}
                     </span>{" "}
                     {pageCopy.heroStat1Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-lg font-black text-text-body-secondary">
+                    <span className="font-headline text-xs font-black text-text-body-secondary">
                         {pageCopy.heroStat2}
                     </span>{" "}
                     {pageCopy.heroStat2Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-lg font-black text-text-body-secondary">
+                    <span className="font-headline text-xs font-black text-text-body-secondary">
                         {pageCopy.heroStat3}
                     </span>{" "}
                     {pageCopy.heroStat3Label}
@@ -223,7 +223,7 @@ export default function CommunityPage() {
                                             {issue.votes} votes
                                         </span>
                                     </div>
-                                    <p className="font-headline text-base font-black text-text-body-main">
+                                    <p className="font-headline text-xs font-black text-text-body-main">
                                         {issue.title}
                                     </p>
                                 </div>

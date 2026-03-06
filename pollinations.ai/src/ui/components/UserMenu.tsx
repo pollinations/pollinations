@@ -38,7 +38,7 @@ export function UserMenu() {
                 variant="primary"
                 size={null}
                 onClick={login}
-                className="px-3 py-1.5 lg:px-5 lg:py-1.5 text-base"
+                className="px-3 py-1.5 lg:px-5 lg:py-1.5 text-xs"
             >
                 {copy.loginButton}
             </Button>
@@ -55,7 +55,7 @@ export function UserMenu() {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 font-headline text-base font-black uppercase tracking-wider text-text-body-main bg-surface-page backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button transition-all hover:bg-button-secondary-bg hover:shadow-shadow-brand-md whitespace-nowrap"
+                className="flex items-center gap-2 px-3 py-1.5 font-headline text-xs font-black uppercase tracking-wider text-text-body-main bg-surface-card border-r-4 border-b-4 border-border-strong rounded-button transition-all hover:bg-button-primary-bg hover:text-text-on-color hover:shadow-shadow-dark-md whitespace-nowrap"
             >
                 {profile?.image && (
                     <img
@@ -73,7 +73,7 @@ export function UserMenu() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 bg-[rgb(var(--surface-base))] backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button p-4 z-50 shadow-shadow-brand-lg">
+                <div className="absolute right-0 top-full mt-2 w-72 bg-[rgb(var(--surface-base))] backdrop-blur-md border-r-4 border-b-4 border-border-strong rounded-button p-4 z-50 shadow-shadow-dark-lg">
                     {/* Profile */}
                     {profile && (
                         <div className="mb-3">
@@ -88,7 +88,7 @@ export function UserMenu() {
                                         className="w-5 h-5 rounded-full shrink-0"
                                     />
                                 )}
-                                <span className="font-headline text-base font-black text-text-body-main">
+                                <span className="font-headline text-xs font-black text-text-body-main">
                                     {displayName}
                                 </span>
                             </div>
@@ -101,7 +101,7 @@ export function UserMenu() {
                             <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block">
                                 {copy.balanceLabel}
                             </span>
-                            <span className="font-headline text-base font-black text-text-brand">
+                            <span className="font-headline text-xs font-black text-text-brand">
                                 {balance.balance.toFixed(2)} {copy.pollenUnit}
                             </span>
                         </div>
@@ -113,7 +113,7 @@ export function UserMenu() {
                             <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block">
                                 {copy.tierLabel}
                             </span>
-                            <span className="font-headline text-base font-black text-text-body-main">
+                            <span className="font-headline text-xs font-black text-text-body-main">
                                 {tierEmoji}{" "}
                                 {profile.tier.charAt(0).toUpperCase() +
                                     profile.tier.slice(1)}

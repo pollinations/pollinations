@@ -23,10 +23,10 @@ const iconVariants = cva(
     {
         variants: {
             variant: {
-                brand: "w-7 h-7 bg-button-primary-bg/20 text-text-brand",
+                brand: "w-7 h-7 bg-input-background text-text-brand",
                 highlight:
-                    "w-7 h-7 bg-button-focus-ring/20 text-text-highlight",
-                muted: "w-7 h-7 bg-surface-card text-text-body-secondary",
+                    "w-7 h-7 bg-input-background text-text-highlight",
+                muted: "w-7 h-7 bg-input-background text-text-body-secondary",
             },
         },
         defaultVariants: {

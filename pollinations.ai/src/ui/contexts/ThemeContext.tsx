@@ -4,10 +4,9 @@ import {
     useCallback,
     useContext,
     useEffect,
-    useRef,
     useState,
 } from "react";
-import { PRESETS } from "../../theme/presets";
+import { DEFAULT_PRESET } from "../../theme/presets";
 import {
     dictionaryToTheme,
     processTheme,
@@ -15,29 +14,11 @@ import {
     themeToDictionary,
 } from "../../theme/style/theme-processor";
 
-// Select "cozy" preset as default, fallback to first preset
-const initialPresetIndex = Math.max(
-    0,
-    PRESETS.findIndex((p) => p.id === "cozy"),
-);
-const initialPreset = PRESETS[initialPresetIndex];
-
-const DefaultThemeDefinition = themeToDictionary(initialPreset.theme);
-const DefaultBackgroundHtml = initialPreset.backgroundHtml || null;
+const DefaultThemeDefinition = themeToDictionary(DEFAULT_PRESET.theme);
 
 interface ThemeContextValue {
     themeDefinition: ThemeDictionary;
-    themePrompt: string | null;
-    backgroundHtml: string | null;
-    showThemeCreator: boolean;
-    setShowThemeCreator: (show: boolean) => void;
-    setTheme: (
-        newTheme: ThemeDictionary,
-        prompt?: string,
-        backgroundHtml?: string,
-    ) => void;
-    resetTheme: () => void;
-    cyclePreset: () => void;
+    setTheme: (newTheme: ThemeDictionary) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
@@ -46,75 +27,35 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [themeDefinition, setThemeDefinition] = useState<ThemeDictionary>(
         DefaultThemeDefinition,
     );
-    const [themePrompt, setThemePrompt] = useState<string | null>(
-        initialPreset.id,
-    );
-    const [backgroundHtml, setBackgroundHtml] = useState<string | null>(
-        DefaultBackgroundHtml,
-    );
-    const [showThemeCreator, setShowThemeCreator] = useState(false);
-    const presetIndexRef = useRef(initialPresetIndex);
 
-    // Apply initial theme CSS variables on mount
-    useEffect(() => {
-        const theme = dictionaryToTheme(DefaultThemeDefinition);
+    // Apply theme CSS variables
+    const applyTheme = useCallback((definition: ThemeDictionary) => {
+        const theme = dictionaryToTheme(definition);
         const { cssVariables } = processTheme(theme);
         const root = document.documentElement;
-        Object.entries(cssVariables).forEach(([key, value]) => {
+        for (const [key, value] of Object.entries(cssVariables)) {
             root.style.setProperty(key, value);
-        });
+        }
     }, []);
 
+    // Apply initial theme on mount
+    useEffect(() => {
+        applyTheme(DefaultThemeDefinition);
+    }, [applyTheme]);
+
     const setTheme = useCallback(
-        (
-            newTheme: ThemeDictionary,
-            prompt?: string,
-            newBackgroundHtml?: string,
-        ) => {
+        (newTheme: ThemeDictionary) => {
             setThemeDefinition(newTheme);
-            if (prompt) setThemePrompt(prompt);
-            if (newBackgroundHtml !== undefined) {
-                setBackgroundHtml(newBackgroundHtml);
-            }
-
-            // Also apply CSS variables
-            const theme = dictionaryToTheme(newTheme);
-            const { cssVariables } = processTheme(theme);
-            const root = document.documentElement;
-            Object.entries(cssVariables).forEach(([key, value]) => {
-                root.style.setProperty(key, value);
-            });
+            applyTheme(newTheme);
         },
-        [],
+        [applyTheme],
     );
-
-    const cyclePreset = useCallback(() => {
-        const nextIndex = (presetIndexRef.current + 1) % PRESETS.length;
-        presetIndexRef.current = nextIndex;
-        const preset = PRESETS[nextIndex];
-        setTheme(
-            themeToDictionary(preset.theme),
-            preset.id,
-            preset.backgroundHtml || "",
-        );
-        setShowThemeCreator(true);
-    }, [setTheme]);
-
-    const resetTheme = useCallback(() => {
-        setTheme(DefaultThemeDefinition, initialPreset.id, "");
-    }, [setTheme]);
 
     return (
         <ThemeContext.Provider
             value={{
                 themeDefinition,
-                themePrompt,
-                backgroundHtml,
-                showThemeCreator,
-                setShowThemeCreator,
                 setTheme,
-                resetTheme,
-                cyclePreset,
             }}
         >
             {children}

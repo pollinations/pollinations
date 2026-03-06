@@ -47,17 +47,17 @@ function HelloPage() {
                     </Button>
                 </div>
                 <p className="font-body text-base text-text-body-tertiary mb-4">
-                    <span className="font-headline text-lg font-black text-text-body-secondary">
+                    <span className="font-headline text-xs font-black text-text-body-secondary">
                         {pageCopy.heroStat1}
                     </span>{" "}
                     {pageCopy.heroStat1Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-lg font-black text-text-body-secondary">
+                    <span className="font-headline text-xs font-black text-text-body-secondary">
                         {pageCopy.heroStat2}
                     </span>{" "}
                     {pageCopy.heroStat2Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-lg font-black text-text-body-secondary">
+                    <span className="font-headline text-xs font-black text-text-body-secondary">
                         {pageCopy.heroStat3}
                     </span>{" "}
                     {pageCopy.heroStat3Label}
@@ -68,35 +68,37 @@ function HelloPage() {
                 {/* Section — Flywheel & Tiers */}
                 <div className="mb-12">
                     {/* Row 1: Flywheel (left) + explanation (right) */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mb-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center justify-items-center mb-16">
                         <FlywheelRing pageCopy={pageCopy} />
-                        <div className="max-w-xs md:ml-8">
-                            <Body spacing="comfortable">
-                                {pageCopy.flywheelBody}
-                            </Body>
-                            <span className="font-body text-base text-text-body-tertiary italic">
-                                {pageCopy.tiersBetaNote}
-                            </span>
+                        <div className="max-w-xs">
+                            <p className="font-body text-base text-text-body-secondary leading-relaxed">
+                                <span className="font-bold text-text-brand">{pageCopy.flywheelBodyHighlight1}</span>
+                                {pageCopy.flywheelBodyMid}
+                                <span className="font-bold text-text-highlight">{pageCopy.flywheelBodyHighlight2}</span>
+                            </p>
                         </div>
                     </div>
 
-                    {/* Row 2: Explanation (left) + Tier cards (right) */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    {/* Row 2: Tier details (left) + Tier cards (right) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center justify-items-center">
                         {/* Tier explanation */}
-                        <div className="max-w-sm md:ml-8">
-                            <Body spacing="comfortable">
-                                {pageCopy.tierBody}
-                            </Body>
-                            <a
-                                href={LINKS.enterTiersFaq}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-headline text-base font-black text-text-highlight hover:underline mb-4 inline-block"
-                            >
-                                {pageCopy.tierHowLink}
-                            </a>
-                            <div className="bg-border-accent/10 border-2 border-border-accent/30 border-r-4 border-b-4 p-4 inline-block text-left">
-                                <span className="font-headline text-xl font-black text-yellow">
+                        <div className="max-w-sm">
+                            <div className="mb-4">
+                                <p className="font-headline text-xs font-black text-text-highlight">
+                                    {pageCopy.tierHowText}
+                                </p>
+                                <a
+                                    href={LINKS.enterTiersFaq}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-headline text-sm font-black hover:underline inline-block mt-1"
+                                    style={{ color: "rgb(var(--indicator-video))" }}
+                                >
+                                    {pageCopy.tierHowLink}
+                                </a>
+                            </div>
+                            <div className="bg-surface-page border-2 border-border-strong border-r-4 border-b-4 p-4 inline-block text-left">
+                                <span className="font-headline text-sm font-black text-text-brand">
                                     {pageCopy.usersTitle}
                                 </span>
                                 <Body
@@ -110,47 +112,59 @@ function HelloPage() {
                                     href={LINKS.byopDocs}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="font-headline text-base font-black text-text-accent hover:underline mt-2 inline-block"
+                                    className="font-headline text-xs font-black text-text-accent hover:underline mt-2 inline-block"
                                 >
                                     {pageCopy.usersPaymentsLink}
                                 </a>
                             </div>
+                            <span className="font-body text-xs text-text-body-tertiary italic mt-3 inline-block">
+                                {pageCopy.tiersBetaNote}
+                            </span>
                         </div>
 
                         {/* Tier ladder: Nectar (top) → Flower → Seed (bottom) */}
-                        <div className="relative flex flex-col gap-4 pl-6 max-w-[300px] md:ml-8">
-                            {/* Gradient progression line */}
-                            <div
-                                className="absolute left-0 top-2 bottom-2 w-[3px]"
-                                style={{
-                                    background: `linear-gradient(to bottom, rgb(var(--border-highlight)) 0%, rgb(var(--border-highlight)) 33%, rgb(var(--border-brand)) 33%, rgb(var(--border-brand)) 66%, rgb(var(--border-main)) 66%, rgb(var(--border-main)) 100%)`,
-                                    imageRendering: "pixelated",
-                                }}
-                            />
+                        <div className="relative flex flex-col gap-4 pr-8 max-w-[300px]">
+                            {/* 8-bit pixel arrow pointing up (right side) — green→pink→honey */}
+                            <svg
+                                className="absolute right-0 top-0 bottom-0 w-4"
+                                viewBox="0 0 5 24"
+                                preserveAspectRatio="none"
+                                style={{ height: "100%", imageRendering: "pixelated" }}
+                                aria-hidden="true"
+                            >
+                                <defs>
+                                    <linearGradient id="arrow-grad" x1="0" y1="1" x2="0" y2="0">
+                                        <stop offset="0%" stopColor="#7eb87e" />
+                                        <stop offset="45%" stopColor="#d4849e" />
+                                        <stop offset="100%" stopColor="#d4a854" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="1" y="0" width="3" height="24" fill="url(#arrow-grad)" />
+                            </svg>
                             {[
                                 {
                                     emoji: pageCopy.tierNectarEmoji,
                                     title: pageCopy.tierNectarTitle,
                                     desc: pageCopy.tierNectarDescription,
                                     grant: pageCopy.tierNectarGrant,
-                                    descBg: "bg-border-highlight/10",
-                                    descBorder: "border-border-highlight/30",
+                                    tint: "#f5e6c8", // warm honey
+                                    borderColor: "#d4a854",
                                 },
                                 {
                                     emoji: pageCopy.tierFlowerEmoji,
                                     title: pageCopy.tierFlowerTitle,
                                     desc: pageCopy.tierFlowerDescription,
                                     grant: pageCopy.tierFlowerGrant,
-                                    descBg: "bg-border-brand/10",
-                                    descBorder: "border-border-brand/30",
+                                    tint: "#f5dce8", // soft pink
+                                    borderColor: "#d4849e",
                                 },
                                 {
                                     emoji: pageCopy.tierSeedEmoji,
                                     title: pageCopy.tierSeedTitle,
                                     desc: pageCopy.tierSeedDescription,
                                     grant: pageCopy.tierSeedGrant,
-                                    descBg: "bg-border-main/10",
-                                    descBorder: "border-border-main/30",
+                                    tint: "#d8ecd8", // soft green
+                                    borderColor: "#7eb87e",
                                 },
                             ].map((tier) => (
                                 <div
@@ -162,16 +176,20 @@ function HelloPage() {
                                         <span className="text-xl">
                                             {tier.emoji}
                                         </span>
-                                        <span className="font-headline text-base font-black text-text-highlight">
+                                        <span className="font-headline text-xs font-black text-text-highlight">
                                             {tier.title}
                                         </span>
-                                        <span className="ml-auto font-headline text-base font-black text-text-body-secondary">
+                                        <span className="ml-auto font-headline text-xs font-black text-text-body-secondary">
                                             {tier.grant}
                                         </span>
                                     </div>
-                                    {/* Description — highlighted callout */}
+                                    {/* Description — emoji-tinted callout */}
                                     <div
-                                        className={`${tier.descBg} border-2 ${tier.descBorder} border-r-4 border-b-4 px-3 py-2`}
+                                        className="border-2 border-r-4 border-b-4 px-3 py-2"
+                                        style={{
+                                            backgroundColor: tier.tint,
+                                            borderColor: tier.borderColor,
+                                        }}
                                     >
                                         <Body
                                             size="sm"
@@ -195,82 +213,76 @@ function HelloPage() {
                         {pageCopy.openTitle}
                     </Heading>
 
-                    {/* What's New */}
-                    <div className="mb-8">
-                        <Badge variant="brand" className="mb-4">
-                            {pageCopy.recentUpdatesTitle}
-                        </Badge>
-                        <div className="space-y-2">
-                            {pageCopy.newsItems.map(
-                                (item: {
-                                    date: string;
-                                    emoji: string;
-                                    title: string;
-                                    description: string;
-                                }) => (
-                                    <div
-                                        key={`${item.date}-${item.title}`}
-                                        className="py-1"
-                                    >
-                                        <p className="font-body text-base text-text-body-secondary leading-relaxed">
-                                            <span className="shrink-0 text-yellow font-mono font-black text-xs mr-2">
+                    <div className="space-y-6">
+                        {/* What's New */}
+                        <div
+                            className="bg-surface-page border-2 border-border-strong border-r-4 border-b-4 p-5"
+                            style={{ boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)" }}
+                        >
+                            <Badge variant="highlight" className="mb-4">
+                                {pageCopy.recentUpdatesTitle}
+                            </Badge>
+                            <div className="space-y-2">
+                                {pageCopy.newsItems.map(
+                                    (item: {
+                                        date: string;
+                                        emoji: string;
+                                        title: string;
+                                        description: string;
+                                    }) => (
+                                        <div
+                                            key={`${item.date}-${item.title}`}
+                                            className="py-1"
+                                        >
+                                            <p className="font-mono font-black text-xs" style={{ color: "rgb(var(--indicator-video))" }}>
                                                 {item.date}
-                                            </span>
-                                            <span className="mr-2">
-                                                {item.emoji}
-                                            </span>
-                                            <span className="font-headline font-black text-text-body-main mr-1">
+                                                <span className="ml-2">{item.emoji}</span>
+                                                <span className="font-headline text-[10px] font-black text-text-body-main ml-1">
+                                                    {item.title}
+                                                </span>
+                                            </p>
+                                            <p className="font-body text-sm text-text-body-secondary leading-relaxed mt-0.5">
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    ),
+                                )}
+                            </div>
+                        </div>
+
+                        {/* What's Next */}
+                        <div
+                            className="bg-surface-page border-2 border-border-strong border-r-4 border-b-4 p-5"
+                            style={{ boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)" }}
+                        >
+                            <Badge variant="highlight" className="mb-4">
+                                {pageCopy.roadmapLabel}
+                            </Badge>
+                            <div className="space-y-2">
+                                {pageCopy.roadmapItems.map(
+                                    (item: {
+                                        emoji: string;
+                                        title: string;
+                                        description: string;
+                                    }) => (
+                                        <div key={item.title} className="py-1">
+                                            <p className="font-headline text-[10px] font-black text-text-body-main">
+                                                <span className="mr-2">{item.emoji}</span>
                                                 {item.title}
-                                            </span>
-                                            {item.description}
-                                        </p>
-                                    </div>
-                                ),
-                            )}
+                                            </p>
+                                            <p className="font-body text-sm text-text-body-secondary leading-relaxed mt-0.5">
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    ),
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* What's Next */}
-                    <div className="mb-6">
-                        <Badge variant="highlight" className="mb-4">
-                            {pageCopy.roadmapLabel}
-                        </Badge>
-                        <div className="space-y-2">
-                            {pageCopy.roadmapItems.map(
-                                (item: {
-                                    emoji: string;
-                                    title: string;
-                                    description: string;
-                                }) => (
-                                    <div key={item.title} className="py-1">
-                                        <p className="font-body text-base text-text-body-secondary leading-relaxed">
-                                            <span className="mr-2">
-                                                {item.emoji}
-                                            </span>
-                                            <span className="font-headline font-black text-text-body-main mr-1">
-                                                {item.title}
-                                            </span>
-                                            {item.description}
-                                        </p>
-                                    </div>
-                                ),
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex justify-center mt-16">
-                        <span className="inline-flex items-start gap-2.5 bg-border-highlight/10 border border-border-highlight/20 rounded-sub-card px-4 py-3">
-                            <span className="text-lg leading-none mt-0.5">
-                                {pageCopy.comingFooterEmoji}
-                            </span>
-                            <Body
-                                size="sm"
-                                spacing="none"
-                                className="text-text-highlight"
-                            >
-                                {pageCopy.comingFooter}
-                            </Body>
-                        </span>
+                    <div className="text-center mt-10 font-headline text-xs leading-loose" style={{ color: "rgb(var(--indicator-image))" }}>
+                        <p>{pageCopy.comingFooterEmoji} <span className="font-black">The platform gives you runway.</span></p>
+                        <p>We're shaping the rest <span className="font-black">together, in the open.</span></p>
                     </div>
                 </div>
 

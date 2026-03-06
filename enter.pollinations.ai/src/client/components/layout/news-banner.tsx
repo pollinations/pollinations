@@ -22,17 +22,11 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-03-03",
-        emoji: "🎵",
-        title: "Suno v5, Flux 2 Dev & Step 3.5 Flash",
+        date: "2026-03-05",
+        emoji: "🏷️",
+        title: "Image Pricing Update",
         description:
-            "AI music generation, next-gen image model and a new fast text model are now live!",
-    },
-    {
-        date: "2026-03-03",
-        emoji: "📋",
-        title: "GPT-5.2 & Seedance Video",
-        description: "These models have moved to the paid category.",
+            "Flux $0.001/img, Z-Image $0.002/img, Klein $0.01/img, Klein-Large $0.015/img.",
     },
 ];
 

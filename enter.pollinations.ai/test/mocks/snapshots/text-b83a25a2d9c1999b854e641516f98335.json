@@ -1,0 +1,54 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "step-3.5-flash",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 404,
+    "statusText": "Not Found",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "301",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:42:31 GMT",
+      "keep-alive": "timeout=5"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Not Found",
+        "message": "Model not found: step-3.5-flash",
+        "requestId": "s4iigb",
+        "requestParameters": {
+          "seed": 42,
+          "model": "step-3.5-flash",
+          "voice": "alloy",
+          "jsonMode": false,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Is Berlin the capital of Germany? Reply yes or no."
+            }
+          ],
+          "referrer": null,
+          "isPrivate": true
+        }
+      }
+    }
+  }
+}

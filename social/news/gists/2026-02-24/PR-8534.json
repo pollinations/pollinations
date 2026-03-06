@@ -1,0 +1,34 @@
+{
+  "pr_number": 8534,
+  "title": "fix: spore weekly grant, microbe zero pollen + UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8534",
+  "merged_at": "2026-02-24T15:59:05Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "Syncing the hive clock",
+    "blurb": "We've updated the pollen refill schedules. Spore tier now refreshes weekly, keeping the ecosystem balanced and buzzing.",
+    "summary": "Implemented a weekly refill cadence for Spore accounts and added a dedicated status for accounts under review.",
+    "impact": "Users will see updated refill timers in the dashboard, ensuring fair resource distribution across the platform.",
+    "keywords": [
+      "pollen",
+      "tiers",
+      "schedule",
+      "ui",
+      "balance"
+    ],
+    "visual_concept": "Polly the bee and the robot managing a 'Pollen Distribution Center'. A calendar or clock is prominent, indicating the new weekly cycle. The mood is industrious and organized.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot and a small robot adjusting a large lime green (#ecf874) clock tower mechanism. A digital display shows a weekly schedule. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic. Chunky retro sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-24/PR-8534.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T16:00:13.188094+00:00"
+}

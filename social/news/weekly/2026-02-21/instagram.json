@@ -1,0 +1,43 @@
+{
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Uses the established 'digital garden' metaphor to make a heavy technical changelog (48 PRs) feel organic and rewarding. The retro RPG UI elements allow for specific information density without breaking the cozy, lo-fi aesthetic.",
+  "visual_style": "Cozy 8-bit pixel art, Stardew Valley aesthetic, lime green (#ecf874) accents, warm pastel gradients, chunky sprites.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of Polly the Bee (yellow/brown stripes, pink blush) hovering in a lush digital garden. She is wearing a tiny farmer's straw hat. In the foreground, a rustic wooden pixel-art signpost reads 'WEEKLY HARVEST'. Two smaller garden markers sticking out of lime green (#ecf874) soil read 'Showcase V2' and 'Polly API'. Soft pastel gradient background of peach and mint. Warm lighting, Stardew Valley vibes. High quality 8-bit aesthetic, detailed foliage.",
+      "description": "Sets the scene for the weekly update as a bountiful harvest of code.",
+      "text_in_image": "WEEKLY HARVEST",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-21/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art workshop interior. The Monitor Robot (chunky body, CRT head) is pointing excitedly at a glowing lime green (#ecf874) terminal screen that reads 'AUTO-POLLY'. Polly the Bee sits on top of the monitor wearing tiny wizard glasses. On the brick wall, a framed pixelated blueprint poster says 'OpenAI Ready'. Warm low-light atmosphere, chunky sprites, retro computing vibes, scattered tools.",
+      "description": "Highlights the technical backend updates (Auto-agent and API compatibility) in a playful workshop setting.",
+      "text_in_image": "AUTO-POLLY",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-21/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art lounge. The round tan Nomnom creature (mochi ball) is happily eating a thick stack of paper logs labeled '48 PRs'. A pixel art arcade cabinet in the background glows with lime green (#ecf874) light and is labeled 'New Apps'. A clipboard hanging on the wall reads 'Build Diary'. Soft lavender and cream lighting. Wholesome, funny, A Short Hike aesthetic.",
+      "description": "Celebrates the volume of work and community contributions with the hungry mascot.",
+      "text_in_image": "48 PRs",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-21/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "48 PRs merged this week. The garden is growing.\n\nWe renovated the App Showcase (it actually looks good now), taught Polly to speak OpenAI, and deployed a self-healing agent to fix our own messy code. Also moved our NPM packages to a proper home and added a visual Build Diary because text logs are boring.\n\nNew community apps include SlidePainter and... BrainrotMaker. You're welcome.\n\nCode is open. Go build something.\n\n#pollinations #opensource #generativeai #pixelart #weeklyupdate #indiedev #buildinpublic #creativecoding",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#generativeai",
+    "#pixelart",
+    "#weeklyupdate",
+    "#indiedev",
+    "#buildinpublic",
+    "#creativecoding"
+  ],
+  "alt_text": "Pixel art carousel. 1: A bee mascot in a garden with signs for 'Weekly Harvest', 'Showcase V2', and 'Polly API'. 2: A robot and bee at a computer terminal showing 'Auto-Polly'. 3: A round creature eating a stack of papers labeled '48 PRs' near an arcade cabinet.",
+  "date": "2026-02-21",
+  "generated_at": "2026-02-22T06:21:53.563202+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

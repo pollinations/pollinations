@@ -62,19 +62,17 @@
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
       "content-length": "327",
-      "content-type": "application/json; charset=utf-8",
-      "date": "Fri, 27 Feb 2026 18:42:16 GMT",
-      "etag": "W/\"147-VbBTZPPx85N5Gwu4kQgIlD7GOEw\"",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:43:08 GMT",
       "keep-alive": "timeout=5",
-      "x-model-used": "polly",
-      "x-powered-by": "Express"
+      "x-model-used": "polly"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_bac4b5edfc9c84e70e35d22d5195185f",
+        "id": "pllns_c8cae74a73c93d976d432481130f00a7",
         "object": "chat.completion",
-        "created": 1772217736,
+        "created": 1772710988,
         "model": "polly",
         "choices": [
           {

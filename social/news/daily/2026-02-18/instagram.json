@@ -1,0 +1,45 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Uses the cozy garden metaphor to explain a new 'diary' feature, then transitions to character-driven humor for technical error handling (Nomnom eating bugs), ending with a collaborative scene for the economic modeling tools. Keeps the vibe warm despite the dry technical subject matter.",
+  "visual_style": "Chunky 8-bit pixel art with soft lighting, lime green (#ecf874) accents, and pastel gradients. Stardew Valley meets a retro computer lab.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of Polly the Bee (yellow/brown stripes, pink blush, blue wings) hovering over a large open pixelated book on a wooden desk. She is writing with a lime green (#ecf874) quill. The book pages show tiny pixel grids representing a 'diary'. Background is a sunny garden shed with soft pastel lighting. Stardew Valley aesthetic. Text in pixel font on the book: 'DEAR DIARY'. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting.",
+      "description": "Polly updating the new Build Diary feature.",
+      "text_in_image": "DEAR DIARY",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-18/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the round tan Nomnom creature with wide happy mouth enthusiastically eating a stack of glitchy red and grey code blocks labeled 'JSON'. A retro server rack nearby glows with soft lime green (#ecf874) status lights. A speech bubble above Nomnom says 'NOMNOM'. Soft lavender and mint gradient background. Lo-fi 8-bit aesthetic, warm lighting, chunky pixels. Nostalgic but beautiful.",
+      "description": "Nomnom consuming the upstream error messages and 429s so the user doesn't have to.",
+      "text_in_image": "NOMNOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-18/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of Polly the Bee and the Monitor Robot standing together looking at a floating holographic dashboard. The dashboard projects a lime green (#ecf874) line graph and simulation data. The Robot's screen eyes look excited. Background is a cozy pixelated lab with hanging plants. Soft pastel gradients. Warm lighting, lo-fi vibes like A Short Hike. Cozy pixel art, 8-bit aesthetic.",
+      "description": "Polly and Robot analyzing the new tier cost simulation tools.",
+      "text_in_image": "SIMULATION",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-18/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "Five PRs merged this week. We added a Build Diary to the community page so you can see the history of what's being made. It's like a guestbook, but for code.\n\nAlso did some plumbing: upstream 429s now map correctly to 502s, and we're actually extracting error messages from JSON now instead of just guessing. Nomnom is pleased.\n\nFinally, added a dashboard to simulate tier costs because math is hard and visualizers are nice.\n\nCheck the repo for the details.\n\n#pollinations #opensource #buildinpublic #pixelart #indiedev #creativecoding #aitools #devlog",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#buildinpublic",
+    "#pixelart",
+    "#indiedev",
+    "#creativecoding",
+    "#aitools",
+    "#devlog",
+    "#generativeart",
+    "#cozyvibes"
+  ],
+  "alt_text": "Carousel of 3 pixel art images. 1: A cute bee writing in a diary in a garden shed. 2: A round creature eating glitchy code blocks. 3: A bee and a robot looking at a lime green holographic chart.",
+  "date": "2026-02-18",
+  "generated_at": "2026-02-19T06:21:56.260376+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

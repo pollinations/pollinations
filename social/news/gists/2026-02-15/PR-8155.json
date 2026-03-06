@@ -1,0 +1,34 @@
+{
+  "pr_number": 8155,
+  "title": "refactor: consolidate social news pipeline into 3-tier architecture",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8155",
+  "merged_at": "2026-02-15T14:54:51Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Streamlining the buzz",
+    "blurb": "We've consolidated our social news pipeline into a unified 3-tier architecture. The hive is more organized than ever.",
+    "summary": "Refactored the social news generation pipeline into a unified 3-tier architecture, replacing disparate platform-specific workflows.",
+    "impact": "Improves maintainability and coordination of automated project updates.",
+    "keywords": [
+      "infrastructure",
+      "automation",
+      "workflow",
+      "refactor",
+      "python"
+    ],
+    "visual_concept": "The bee mascot as an engineer working on a clean, organized pipeline system. Represents the new architecture.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot wearing a tiny hard hat, adjusting a sleek lime green (#ecf874) pipeline. Soft pastel gradient background. Chunky retro sprites, warm lighting. Lo-fi aesthetic like Stardew Valley. Text in pixel font: 'PIPELINE'. Nostalgic and tidy."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-15/PR-8155.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-15T16:42:31.734952+00:00"
+}

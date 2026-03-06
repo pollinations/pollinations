@@ -1,0 +1,33 @@
+{
+  "pr_number": 8657,
+  "title": "Remove myceli apps moved to dedicated repo",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8657",
+  "merged_at": "2026-02-27T15:16:54Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Myceli leaves the nest",
+    "blurb": "The Myceli apps have grown up and moved to their own dedicated repository. Keeping the main hive tidy!",
+    "summary": "Moved Myceli-related applications (website, docs, pitch) to a separate repository to streamline the core codebase.",
+    "impact": "Reduces repository noise and separates the Myceli project lifecycle from the main platform.",
+    "keywords": [
+      "refactor",
+      "cleanup",
+      "repo-structure",
+      "myceli"
+    ],
+    "visual_concept": "The pollinations bee is tidying up the garden, packing specific mushroom-shaped items (representing Myceli) into a nice moving box labeled with a mushroom icon. The scene is cozy and organized.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot packing mushroom-shaped items into a wooden crate in a garden shed. Soft lime green (#ecf874) and pastel background. Warm lighting, organized vibes. 8-bit aesthetic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-27/PR-8657.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-27T15:17:42.232337+00:00"
+}

@@ -1,0 +1,43 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Uses the cozy garden/growth metaphor to visualize technical updates. Image 1 highlights the intelligence upgrade, Image 2 visualizes the ecosystem expansion (new apps), and Image 3 uses the 'Nomnom' character to playfully represent bug fixing/cleanup.",
+  "visual_style": "Chunky 8-bit pixel art with soft lighting, CRT scanlines, and mandatory lime green (#ecf874) accents. Warm, nostalgic Stardew Valley aesthetic.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot (Polly) and the chunky robot with a CRT monitor head. The robot is holding up a glowing lime green (#ecf874) microchip that illuminates the room. The bee is wearing oversized wizard glasses. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'BRAIN UPGRADE'. Cozy pixel art, 8-bit aesthetic, chunky sprites.",
+      "description": "Visualizing the Claude Sonnet 4.6 upgrade and unified brain logic.",
+      "text_in_image": "BRAIN UPGRADE",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-23/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art garden scene. The tiny 8-bit bee mascot is hovering over a planter box where 5 distinct, colorful pixel flowers are blooming (representing new apps). One flower looks like a gavel (legal), another like a math symbol. Lime green (#ecf874) sparkles around the blooms. Soft mint and peach gradient background. Warm lighting, wholesome vibes. Text in pixel font: 'NEW APPS'. Cozy pixel art, 8-bit aesthetic.",
+      "description": "Showcasing the 5 new community apps added to the ecosystem.",
+      "text_in_image": "NEW APPS",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-23/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Chunky pixel art of the round tan Nomnom creature happily eating a stack of glitched digital documents (representing bugs/fixes). The bee mascot watches from a nearby lime green (#ecf874) cushion, looking relaxed. Speech bubble from Nomnom: 'NOMNOM'. Soft pastel background. Large visible pixels, lo-fi 8-bit aesthetic, warm lighting. Cozy pixel art.",
+      "description": "Representing the bug fixes, optimizations, and tool validation cleanup.",
+      "text_in_image": "NOMNOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-23/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "12 PRs merged. The big one: Claude Sonnet 4.6 is live. 🧠\n\nPolly got a brain transplant (unified API + bot process) and is feeling snappier. The showcase garden grew by 5 apps this week—including AutoTutela for legal docs and ExplainMyBigO for devs who forgot their algorithms class.\n\nPlus, stricter tool validation means less hallucinating. We let Nomnom handle the deprecated code.\n\nShip something cool this weekend. link in bio.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#claudeai",
+    "#buildinpublic",
+    "#generativeart"
+  ],
+  "alt_text": "Pixel art carousel: 1. A bee and robot looking at a glowing upgrade chip. 2. A bee watering a garden of 5 new pixel flowers. 3. A round creature eating a stack of bug reports while a bee watches.",
+  "date": "2026-02-23",
+  "generated_at": "2026-02-24T06:21:08.385361+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

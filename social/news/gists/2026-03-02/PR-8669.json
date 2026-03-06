@@ -1,0 +1,28 @@
+{
+  "pr_number": 8669,
+  "title": "Add The Tech Chronicle to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8669",
+  "merged_at": "2026-03-02T01:23:07Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Add The Tech Chronicle to chat",
+    "blurb": "Add The Tech Chronicle to chat",
+    "summary": "Add The Tech Chronicle to chat",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-02T01:23:51.576407+00:00",
+  "_minimal": true
+}

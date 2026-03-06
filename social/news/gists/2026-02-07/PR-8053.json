@@ -1,0 +1,35 @@
+{
+  "pr_number": 8053,
+  "title": "fix: move Portkey gateway to custom domain to fix 524 timeouts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8053",
+  "merged_at": "2026-02-07T14:17:59Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Deep thoughts allowed",
+    "blurb": "We've moved our AI gateway to a custom domain with a longer timeout limit. Now reasoning models have plenty of time to think without getting cut off.",
+    "summary": "Migrated the Portkey gateway to a custom domain to increase the proxy read timeout from 100s to 600s.",
+    "impact": "Eliminates 524 timeout errors for long-running requests like reasoning models and large context prompts.",
+    "keywords": [
+      "reliability",
+      "timeouts",
+      "infrastructure",
+      "llm",
+      "portkey",
+      "text-api"
+    ],
+    "visual_concept": "The bee mascot reading a very long scroll, representing the ability to handle long-running tasks without interruption. The scroll extends far, showing the increased timeout limit.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot patiently reading a very long, unrolling scroll of magical text that stretches across the screen. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents long-running processes. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-07/PR-8053.jpg",
+    "prompt": "Cozy pixel art scene of the bee mascot patiently reading a very long, unrolling scroll of magical text that stretches across the screen. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents long-running processes. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-12T13:59:40.011356+00:00"
+}

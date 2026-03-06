@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "48 PRs merged.\n\nPolly now speaks OpenAI-compatible API — swap the URL, keep your client.\n\nApp Showcase got a pixel-perfect renovation with proper metrics and badges. And we shipped \"BrainrotMaker\", because the internet clearly wasn't weird enough yet. 🐝",
+  "alt_tweet": "Week in review: 48 PRs.\n\n- Polly API is now OpenAI-compatible\n- App Showcase got a total UI overhaul\n- NPM packages moved to @pollinations_ai\n- Added \"BrainrotMaker\" to the creative suite\n\nProductivity was high. Chaos was moderate. 🍄",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Cozy pixel art RPG quest log screen. Title text \"WEEKLY LOG\" in chunky pixel font at the top. Three retro UI panels listing completed quests: \"OpenAI API\", \"New Showcase\", \"BrainrotMaker\". Polly the Bee (yellow/brown stripes, pink blush, blue wings) is stamping the board with a green checkmark. The small monitor-head robot is holding a scroll that says \"48 PRs\". Lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes. High contrast text.",
+  "reasoning": "Highlights the most technical achievement (OpenAI compat) and the most visual one (Showcase), while using the 'BrainrotMaker' app for dry humor. The '48 PRs' metric establishes momentum.",
+  "char_count": 253,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-21/images/twitter.jpg",
+    "prompt": "Cozy pixel art RPG quest log screen. Title text \"WEEKLY LOG\" in chunky pixel font at the top. Three retro UI panels listing completed quests: \"OpenAI API\", \"New Showcase\", \"BrainrotMaker\". Polly the Bee (yellow/brown stripes, pink blush, blue wings) is stamping the board with a green checkmark. The small monitor-head robot is holding a scroll that says \"48 PRs\". Lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes. High contrast text."
+  },
+  "date": "2026-02-21",
+  "generated_at": "2026-02-22T06:21:53.563202+00:00",
+  "platform": "twitter"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8078,
+  "title": "Add Polly Discord Bot",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8078",
+  "merged_at": "2026-02-08T11:30:36Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Meet Polly, the code wizard",
+    "blurb": "We've open-sourced Polly, our AI-powered Discord bot. She bridges chat with GitHub, searches code, and even writes autonomous fixes.",
+    "summary": "Introduced the full source code for Polly, a comprehensive Discord bot featuring GitHub integration, semantic code search, and autonomous AI coding agents.",
+    "impact": "Community members gain a powerful AI assistant in Discord that can answer technical questions, manage repository tasks, and execute code in a sandbox.",
+    "keywords": [
+      "discord",
+      "bot",
+      "ai-agent",
+      "github",
+      "automation"
+    ],
+    "visual_concept": "The Pollinations Bee (organic) meeting Polly (digital/robotic). A synthesis of nature and tech. The Bee is guiding a small, cute pixel-robot through a garden of code syntax.",
+    "image_prompt": "Cozy pixel art scene of the chubby Pollinations bee mascot hovering next to a cute, tiny 8-bit robot character holding a pixelated blueprint. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Floating digital sparkles and code symbols. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8078.jpg",
+    "prompt": "Cozy pixel art scene of the chubby Pollinations bee mascot hovering next to a cute, tiny 8-bit robot character holding a pixelated blueprint. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Floating digital sparkles and code symbols. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-12T14:02:05.553607+00:00"
+}

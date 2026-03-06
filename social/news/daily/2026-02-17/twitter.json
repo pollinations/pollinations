@@ -1,0 +1,19 @@
+{
+  "tweet_type": "field_notes",
+  "tweet": "shipped SlidePainter and markdown support for app descriptions.\n\nthe markdown feature uses an llm to format text. had to patch it because it started hallucinating creative new names for user apps.\n\nit is now strictly forbidden from renaming things.",
+  "alt_tweet": "new app: SlidePainter. does what it says on the tin.\n\nalso updated app descriptions to support markdown. the llm responsible for formatting tried to rebrand everyone's apps, so we lobotomized that creativity.\n\ndeploy pipeline fixed. production is production again.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Cozy pixel art scene. The cute robot with CRT head is furiously scrubbing a whiteboard that has a strange hallucinated name on it. The bee mascot floats nearby holding a label with the correct name. Lime green (#ecf874) and soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Humorous, technical, cozy.",
+  "reasoning": "Highlights a relatable AI engineering problem (hallucination) while announcing the feature. Honest, dry, and slightly funny without trying too hard.",
+  "char_count": 236,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-17/images/twitter.jpg",
+    "prompt": "Cozy pixel art scene. The cute robot with CRT head is furiously scrubbing a whiteboard that has a strange hallucinated name on it. The bee mascot floats nearby holding a label with the correct name. Lime green (#ecf874) and soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Humorous, technical, cozy."
+  },
+  "date": "2026-02-17",
+  "generated_at": "2026-02-18T06:22:11.715445+00:00",
+  "platform": "twitter"
+}

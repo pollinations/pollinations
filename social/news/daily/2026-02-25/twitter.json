@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "shipped a website refresh and a new media upload service. added grok-imagine support and custom voice IDs for elevenlabs.\n\nalso taught the video pipeline to handle rejection (better rate limit fallbacks).\n\n14 PRs merged.",
+  "alt_tweet": "new website coat of paint, finally.\n\nalso shipped persistent media uploads, grok-imagine support, and custom voice IDs.\n\nfixed the video generation logic so it falls back gracefully when APIs get tired. 14 PRs today.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "[Cozy pixel art scene of renovation and storage]. Polly the bee painting a large retro browser window with a lime green (#ecf874) roller. The chunky robot companion is stacking glowing floppy disks (media storage) nearby. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'FRESH PAINT'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "reasoning": "Leads with the visible change (website) then hits the functional value (uploads, new models). 'Handle rejection' adds the dry humor/personification of code required by the persona.",
+  "char_count": 218,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-25/images/twitter.jpg",
+    "prompt": "[Cozy pixel art scene of renovation and storage]. Polly the bee painting a large retro browser window with a lime green (#ecf874) roller. The chunky robot companion is stacking glowing floppy disks (media storage) nearby. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'FRESH PAINT'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "date": "2026-02-25",
+  "generated_at": "2026-02-26T06:21:39.244819+00:00",
+  "platform": "twitter"
+}

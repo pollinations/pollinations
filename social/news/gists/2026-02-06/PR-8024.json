@@ -1,0 +1,34 @@
+{
+  "pr_number": 8024,
+  "title": "fix(kpi): fix churn calculation and optimize Tinybird queries",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8024",
+  "merged_at": "2026-02-06T16:51:53Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sharpening the hive metrics",
+    "blurb": "Optimized our internal KPI dashboard queries for 10x speed and fixed some churn calculations. Data is flowing smoother than honey now.",
+    "summary": "Fixed churn rate calculations and optimized Tinybird queries for the internal KPI dashboard, resulting in significantly faster data retrieval.",
+    "impact": "Internal metrics are now more accurate and load much faster, helping the team track platform health better.",
+    "keywords": [
+      "kpi",
+      "tinybird",
+      "optimization",
+      "metrics",
+      "internal"
+    ],
+    "visual_concept": "A bee analyst working on a retro dashboard/computer screen showing charts. Represents internal metrics and optimization.",
+    "image_prompt": "Cozy pixel art scene of a smart bee analyst adjusting a large retro dashboard with glowing green charts. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text on screen: 'KPI'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-06/PR-8024.jpg",
+    "prompt": "Cozy pixel art scene of a smart bee analyst adjusting a large retro dashboard with glowing green charts. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text on screen: 'KPI'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-12T13:58:55.094278+00:00"
+}

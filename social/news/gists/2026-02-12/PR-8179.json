@@ -1,0 +1,34 @@
+{
+  "pr_number": 8179,
+  "title": "feat: OpenClaw landing page — tabbed UI with shared connect step",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8179",
+  "merged_at": "2026-02-12T11:14:59Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "OpenClaw gets organized",
+    "blurb": "Setting up your favorite crabby agent just got easier. We've tidied up the landing page with tabs and a smoother connection flow.",
+    "summary": "The OpenClaw landing page now features a tabbed interface for installation instructions, separating fresh installs from existing agent setups with a unified connection step.",
+    "impact": "Users will find it easier to install or update OpenClaw thanks to the clearer, segmented instructions and improved readability.",
+    "keywords": [
+      "openclaw",
+      "onboarding",
+      "ui",
+      "ux",
+      "agent"
+    ],
+    "visual_concept": "OpenClaw is represented by a crab mascot. The change is about organization (tabs) and setup. Visual metaphor: The bee and the crab organizing items into neat categories.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a friendly pixel crab (OpenClaw) organizing digital shells into two neat piles on a sandy beach. Soft lime green (#ecf874) and pastel gradient background. A retro monitor shows a clean tabbed interface. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'SETUP'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-12/PR-8179.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a friendly pixel crab (OpenClaw) organizing digital shells into two neat piles on a sandy beach. Soft lime green (#ecf874) and pastel gradient background. A retro monitor shows a clean tabbed interface. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'SETUP'. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-13T10:53:03.320645+00:00"
+}

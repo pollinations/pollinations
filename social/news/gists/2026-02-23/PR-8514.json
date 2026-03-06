@@ -1,0 +1,34 @@
+{
+  "pr_number": 8514,
+  "title": "fix: resolve KPI dashboard Tinybird query timeouts",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8514",
+  "merged_at": "2026-02-23T16:27:19Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tinybird learns to snack",
+    "blurb": "Splitting big queries into bite-sized chunks to keep our analytics dashboard happy and timeout-free.",
+    "summary": "Optimized internal KPI dashboard queries to fetch data week-by-week, resolving timeouts with Tinybird's free tier limits.",
+    "impact": "Internal metrics dashboards now load reliably without hitting query time limits.",
+    "keywords": [
+      "observability",
+      "tinybird",
+      "performance",
+      "internal-tools",
+      "analytics"
+    ],
+    "visual_concept": "The Nomnom creature eating a long tape of data one bite at a time instead of trying to swallow the whole roll. The bee watches with a stopwatch.",
+    "image_prompt": "Cozy pixel art scene of the round Nomnom creature eating a data tape one bite at a time while the bee mascot holds a stopwatch. Lime green (#ecf874) digital background with chart lines. Soft pastel gradients. Chunky pixels, warm lighting, lo-fi aesthetic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-23/PR-8514.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-23T16:36:15.259703+00:00"
+}

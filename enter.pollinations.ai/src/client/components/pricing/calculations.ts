@@ -13,7 +13,11 @@ function formatCount(num: number): string {
     if (num < 1) return "1";
     if (num < 10) return Math.round(num).toString();
     if (num < 100) return (Math.round(num / 5) * 5).toString();
-    if (num < 1000) return (Math.round(num / 50) * 50).toString();
+    if (num < 1000) {
+        const rounded = Math.round(num / 50) * 50;
+        if (rounded >= 1000) return millify(rounded, { precision: 1 });
+        return rounded.toString();
+    }
     return millify(Math.round(num / 100) * 100, { precision: 1 });
 }
 

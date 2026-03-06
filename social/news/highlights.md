@@ -1,3 +1,8 @@
+- **2026-03-05** – **🚀 GPT Image 1.5 Large** We unblocked the Azure endpoints and wired up the new 1.5 large model. Better pixels, fewer timeouts. Hit the [Unified API](https://gen.pollinations.ai) to try it.
+- **2026-03-05** – **✨ Unified Multimodal Chat** The community shipped `pollinations-ui`, a single interface that handles text, images, video, and audio without making you switch tabs.
+- **2026-03-05** – **🧩 Browser Extension** Generate images anywhere on the web using your own Pollen credits. No need to leave the tab you're supposed to be working in.
+- **2026-03-05** – **🎭 SillyTavern Avatars** A new community extension hooks into our image API to instantly generate and assign portraits to your roleplay characters based on their text descriptions.
+- **2026-03-05** – **🛡️ Skills-Sentinel-scan** Added a Dockerized security scanner to the dev tools ecosystem. Because you should probably check if your AI agent is leaking credentials before letting it loose.
 - **2026-03-04** – **🎨 Flux-2-dev gets eyes** You can now pass an `?image=<url>` parameter to the `flux-2-dev` model for image-to-image generation via our [Unified API](https://gen.pollinations.ai). Pixels in, different pixels out.
 - **2026-03-04** – **🔑 Name tags for your apps** Bring Your Own Pollen (BYOP) authorization screens now display your app name and GitHub handle. Users finally know exactly who they are sharing their pollen with.
 - **2026-03-04** – **🚀 Six new apps hit the showcase** The community shipped a massive batch of tools this week, including a prompt-to-code workspace (AiApps), a prompt engineering lab (PromptLab Studio), and a dedicated AI image gallery. The hive is busy.

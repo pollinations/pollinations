@@ -1,29 +1,29 @@
 import type {
-    PollinationsConfig,
-    ImageGenerateOptions,
-    ImageResponse,
-    VideoGenerateOptions,
-    VideoResponse,
-    TextGenerateOptions,
+    AccountBalance,
+    AccountProfile,
+    AudioGenerateOptions,
+    AuthorizeOptions,
     ChatOptions,
     ChatResponse,
     ChatStreamChunk,
-    AudioGenerateOptions,
+    DailyUsageResponse,
+    ImageGenerateOptions,
+    ImageResponse,
+    KeyInfo,
     Message,
     ModelInfo,
+    PollinationsConfig,
     PollinationsErrorDetails,
+    TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
     TranscriptionVerboseResponse,
     UploadOptions,
     UploadResponse,
-    AuthorizeOptions,
-    AccountProfile,
-    AccountBalance,
     UsageOptions,
     UsageResponse,
-    DailyUsageResponse,
-    KeyInfo,
+    VideoGenerateOptions,
+    VideoResponse,
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 
@@ -86,7 +86,7 @@ function getRetryDelay(attempt: number, retryAfterSeconds?: number): number {
     if (retryAfterSeconds !== undefined && retryAfterSeconds > 0) {
         return retryAfterSeconds * 1000;
     }
-    return Math.pow(2, attempt) * 1000;
+    return 2 ** attempt * 1000;
 }
 
 // Parse Retry-After header (can be seconds or HTTP date)
@@ -1483,7 +1483,9 @@ export class Pollinations {
      * usage.forEach(r => console.log(r.date, r.requests, r.cost_usd));
      * ```
      */
-    async accountUsageDaily(options: { format?: "json" | "csv" } = {}): Promise<DailyUsageResponse> {
+    async accountUsageDaily(
+        options: { format?: "json" | "csv" } = {},
+    ): Promise<DailyUsageResponse> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
 

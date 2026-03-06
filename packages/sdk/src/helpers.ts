@@ -522,7 +522,9 @@ export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
 /**
  * Get daily usage summary
  */
-export async function getDailyUsage(options?: { format?: "json" | "csv" }): Promise<DailyUsageResponse> {
+export async function getDailyUsage(options?: {
+    format?: "json" | "csv";
+}): Promise<DailyUsageResponse> {
     return getClient().accountUsageDaily(options);
 }
 

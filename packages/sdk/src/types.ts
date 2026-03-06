@@ -466,10 +466,19 @@ export interface AudioResponse {
 // ============================================================================
 
 /** STT model options */
-export type TranscriptionModel = "whisper-large-v3" | "whisper-1" | "scribe" | string;
+export type TranscriptionModel =
+    | "whisper-large-v3"
+    | "whisper-1"
+    | "scribe"
+    | string;
 
 /** Response format for transcription */
-export type TranscriptionResponseFormat = "json" | "text" | "verbose_json" | "srt" | "vtt";
+export type TranscriptionResponseFormat =
+    | "json"
+    | "text"
+    | "verbose_json"
+    | "srt"
+    | "vtt";
 
 /** Options for speech-to-text transcription */
 export interface TranscribeOptions extends RequestOptions {

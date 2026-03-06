@@ -18,26 +18,9 @@ Upload files and get back a content-addressed URL to use with Pollinations model
 Uploads require a pollinations.ai API key. Get one at [enter.pollinations.ai](https://enter.pollinations.ai).
 
 ```bash
-# Multipart form-data
 curl -X POST https://media.pollinations.ai/upload \
   -H "Authorization: Bearer <your-api-key>" \
   -F "file=@image.jpg"
-
-# Raw binary
-curl -X POST https://media.pollinations.ai/upload \
-  -H "Authorization: Bearer <your-api-key>" \
-  -H "Content-Type: image/jpeg" \
-  --data-binary "@image.jpg"
-
-# Base64 JSON
-curl -X POST https://media.pollinations.ai/upload \
-  -H "Authorization: Bearer <your-api-key>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-    "contentType": "image/png",
-    "name": "image.png"
-  }'
 
 # Returns:
 # {
@@ -56,16 +39,6 @@ curl https://media.pollinations.ai/a3f2b1c4d5e6f7...
 # Returns: original file with correct content-type
 ```
 
-### Delete your own upload
-
-```bash
-curl -X DELETE https://media.pollinations.ai/a3f2b1c4d5e6f7... \
-  -H "Authorization: Bearer <your-api-key>"
-
-# Returns:
-# { "deleted": true, "id": "a3f2b1c4d5e6f7..." }
-```
-
 ### Check if file exists (HEAD request)
 
 ```bash
@@ -81,20 +54,11 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
 
 **Request:**
 - `Content-Type: multipart/form-data` with `file` field
-- Or raw binary with a `Content-Type` header (e.g., `image/jpeg`)
-- Or JSON with `Content-Type: application/json`:
-  ```json
-  {
-    "data": "base64-encoded-file-data",
-    "contentType": "image/jpeg",
-    "name": "image.jpg"
-  }
-  ```
 
 **Response:**
 ```json
 {
-  "id": "sha256-hash-of-content",
+  "id": "sha256-hash-of-content-and-filename",
   "url": "https://media.pollinations.ai/{hash}",
   "contentType": "image/jpeg",
   "size": 123456,
@@ -103,7 +67,7 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
 ```
 
 **Errors:**
-- `400` - No file provided, empty file, or invalid JSON/base64
+- `400` - No file provided or not multipart/form-data
 - `413` - File too large (max 10MB)
 
 ### `GET /:hash`
@@ -122,21 +86,6 @@ Retrieve a media file by its hash.
 
 **Errors:**
 - `400` - Invalid hash format
-- `404` - File not found
-
-### `DELETE /:hash`
-
-Delete a file you uploaded. Only the original uploader can delete their own files.
-
-**Response:**
-```json
-{ "deleted": true, "id": "a3f2b1c4d5e6f7..." }
-```
-
-**Errors:**
-- `400` - Invalid hash format
-- `401` - Missing or invalid API key
-- `403` - Not the original uploader
 - `404` - File not found
 
 ### `HEAD /:hash`
@@ -193,7 +142,7 @@ npm run deploy:production
 
 - **Max file size:** 10MB
 - **Storage:** Cloudflare R2
-- **Default expiry:** 14 days
+- **Default expiry:** 14 days (re-uploading the same file resets the TTL)
 
 ## 🔒 Content Addressing
 
@@ -203,10 +152,10 @@ Files are stored using a truncated SHA-256 hash (16 hex characters = 64 bits) as
 - **Cacheable:** Files are cached for 1 year with `immutable` directive
 - **Collision resistance:** Birthday-paradox collision expected around ~4 billion files
 
-## 📌 Retention & Deletion Policy
+## 📌 Retention Policy
 
-- **Permanent storage:** Files are stored indefinitely. There is no expiration or TTL.
-- **No delete endpoint:** Files cannot be deleted via the API. This is by design — content-addressed storage is append-only.
+- **14-day TTL:** Files expire 14 days after upload. Re-uploading the same file resets the timer.
+- **No delete endpoint:** Content-addressed storage is append-only. Files cannot be deleted via the API.
 - **No user file listing:** There is no endpoint to list or manage your uploaded files.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.
 

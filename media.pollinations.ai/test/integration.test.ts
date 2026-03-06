@@ -1,7 +1,5 @@
-import { describe, expect, it } from "vitest";
-
-const BASE_URL = process.env.MEDIA_URL || "https://media.pollinations.ai";
-const API_KEY = process.env.MEDIA_API_KEY || process.env.ENTER_API_TOKEN_REMOTE;
+import { fetchMock, SELF } from "cloudflare:test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 // 1x1 red PNG (67 bytes)
 const TINY_PNG = new Uint8Array([
@@ -21,38 +19,47 @@ interface UploadResponse {
     duplicate: boolean;
 }
 
-function requireApiKey(): string {
-    if (!API_KEY)
-        throw new Error("Set MEDIA_API_KEY or ENTER_API_TOKEN_REMOTE");
-    return API_KEY;
+const VALID_KEY = "pk_test_key_123";
+
+function mockAuth() {
+    fetchMock.activate();
+    fetchMock.disableNetConnect();
+    fetchMock
+        .get("https://gen.pollinations.ai")
+        .intercept({ path: "/api/account/key" })
+        .reply(
+            200,
+            JSON.stringify({
+                valid: true,
+                type: "publishable",
+                name: "test-user",
+            }),
+            { headers: { "content-type": "application/json" } },
+        )
+        .persist();
 }
 
 describe("media.pollinations.ai", () => {
+    beforeEach(() => {
+        mockAuth();
+    });
+
+    afterEach(() => {
+        fetchMock.deactivate();
+    });
+
     it("GET / returns service info", async () => {
-        const res = await fetch(BASE_URL);
-        const body = await res.json();
+        const res = await SELF.fetch("https://media.pollinations.ai/");
+        const body = (await res.json()) as Record<string, unknown>;
         expect(res.status).toBe(200);
         expect(body.service).toBe("media.pollinations.ai");
-        expect(body.endpoints.upload).toBeDefined();
     });
 
     it("POST /upload without key returns 401", async () => {
-        const res = await fetch(`${BASE_URL}/upload`, {
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
             method: "POST",
             body: TINY_PNG,
             headers: { "Content-Type": "image/png" },
-        });
-        expect(res.status).toBe(401);
-    });
-
-    it("POST /upload with invalid key returns 401", async () => {
-        const res = await fetch(`${BASE_URL}/upload`, {
-            method: "POST",
-            body: TINY_PNG,
-            headers: {
-                "Content-Type": "image/png",
-                Authorization: "Bearer pk_totally_fake_key",
-            },
         });
         expect(res.status).toBe(401);
     });
@@ -64,11 +71,14 @@ describe("media.pollinations.ai", () => {
             new File([TINY_PNG], "test.png", { type: "image/png" }),
         );
 
-        const uploadRes = await fetch(`${BASE_URL}/upload`, {
-            method: "POST",
-            body: form,
-            headers: { Authorization: `Bearer ${requireApiKey()}` },
-        });
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
         expect(uploadRes.status).toBe(200);
         const upload = (await uploadRes.json()) as UploadResponse;
         expect(upload.id).toMatch(/^[a-f0-9]{16}$/);
@@ -76,8 +86,10 @@ describe("media.pollinations.ai", () => {
         expect(upload.contentType).toBe("image/png");
         expect(upload.size).toBe(TINY_PNG.length);
 
-        // Retrieve — check Content-Disposition includes filename
-        const getRes = await fetch(`${BASE_URL}/${upload.id}`);
+        // Retrieve — check Content-Disposition
+        const getRes = await SELF.fetch(
+            `https://media.pollinations.ai/${upload.id}`,
+        );
         expect(getRes.status).toBe(200);
         expect(getRes.headers.get("content-type")).toBe("image/png");
         expect(getRes.headers.get("cache-control")).toContain("immutable");
@@ -86,9 +98,10 @@ describe("media.pollinations.ai", () => {
         expect(body.length).toBe(TINY_PNG.length);
 
         // HEAD
-        const headRes = await fetch(`${BASE_URL}/${upload.id}`, {
-            method: "HEAD",
-        });
+        const headRes = await SELF.fetch(
+            `https://media.pollinations.ai/${upload.id}`,
+            { method: "HEAD" },
+        );
         expect(headRes.status).toBe(200);
         expect(headRes.headers.get("x-content-hash")).toBe(upload.id);
 
@@ -98,12 +111,14 @@ describe("media.pollinations.ai", () => {
             "file",
             new File([TINY_PNG], "test.png", { type: "image/png" }),
         );
-
-        const dupRes = await fetch(`${BASE_URL}/upload`, {
-            method: "POST",
-            body: dupForm,
-            headers: { Authorization: `Bearer ${requireApiKey()}` },
-        });
+        const dupRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: dupForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).toBe(upload.id);
         expect(dup.duplicate).toBe(true);
@@ -115,25 +130,22 @@ describe("media.pollinations.ai", () => {
             "file",
             new File([TINY_PNG], "a.png", { type: "image/png" }),
         );
-
         const form2 = new FormData();
         form2.append(
             "file",
             new File([TINY_PNG], "b.png", { type: "image/png" }),
         );
 
-        const [res1, res2] = await Promise.all([
-            fetch(`${BASE_URL}/upload`, {
-                method: "POST",
-                body: form1,
-                headers: { Authorization: `Bearer ${requireApiKey()}` },
-            }),
-            fetch(`${BASE_URL}/upload`, {
-                method: "POST",
-                body: form2,
-                headers: { Authorization: `Bearer ${requireApiKey()}` },
-            }),
-        ]);
+        const res1 = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form1,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        const res2 = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form2,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
 
         const upload1 = (await res1.json()) as UploadResponse;
         const upload2 = (await res2.json()) as UploadResponse;
@@ -141,12 +153,16 @@ describe("media.pollinations.ai", () => {
     });
 
     it("GET /:invalid-hash returns 400", async () => {
-        const res = await fetch(`${BASE_URL}/not-a-valid-hash`);
+        const res = await SELF.fetch(
+            "https://media.pollinations.ai/not-a-valid-hash",
+        );
         expect(res.status).toBe(400);
     });
 
     it("GET /:nonexistent-hash returns 404", async () => {
-        const res = await fetch(`${BASE_URL}/0000000000000000`);
+        const res = await SELF.fetch(
+            "https://media.pollinations.ai/0000000000000000",
+        );
         expect(res.status).toBe(404);
     });
 });

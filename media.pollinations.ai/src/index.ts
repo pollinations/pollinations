@@ -69,7 +69,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Re-uploading resets the 14-day TTL.",
+            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Re-uploading resets the 14-day TTL.",
         responses: {
             200: {
                 description: "Upload successful",
@@ -119,35 +119,78 @@ api.post(
             return c.json(fileTooLargeError(maxSize), 413);
         }
 
+        let fileBuffer: ArrayBuffer;
+        let contentType: string;
+        let fileName: string | undefined;
+
         const requestContentType = c.req.header("content-type") || "";
 
-        if (!requestContentType.includes("multipart/form-data")) {
-            return c.json(
-                { error: "Use multipart/form-data with a 'file' field." },
-                400,
-            );
-        }
-
         try {
-            const formData = await c.req.formData();
-            const file = formData.get("file") as File | null;
+            if (requestContentType.includes("multipart/form-data")) {
+                const formData = await c.req.formData();
+                const file = formData.get("file") as File | null;
 
-            if (!(file instanceof File)) {
-                return c.json(
-                    {
-                        error: "No file provided. Use 'file' field in form-data.",
-                    },
-                    400,
-                );
+                if (!(file instanceof File)) {
+                    return c.json(
+                        {
+                            error: "No file provided. Use 'file' field in form-data.",
+                        },
+                        400,
+                    );
+                }
+
+                if (file.size > maxSize) {
+                    return c.json(fileTooLargeError(maxSize), 413);
+                }
+
+                fileBuffer = await file.arrayBuffer();
+                contentType = file.type || detectContentType(file.name);
+                fileName = file.name;
+            } else if (requestContentType.includes("application/json")) {
+                const body = await c.req.json<{
+                    data: string;
+                    contentType?: string;
+                    name?: string;
+                }>();
+
+                if (!body.data) {
+                    return c.json(
+                        { error: "Missing 'data' field in JSON body" },
+                        400,
+                    );
+                }
+
+                const base64Data = body.data.includes(",")
+                    ? body.data.split(",")[1]
+                    : body.data;
+                const binaryString = atob(base64Data);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                fileBuffer = bytes.buffer;
+
+                if (fileBuffer.byteLength > maxSize) {
+                    return c.json(fileTooLargeError(maxSize), 413);
+                }
+                if (fileBuffer.byteLength === 0) {
+                    return c.json({ error: "Empty file" }, 400);
+                }
+
+                contentType = body.contentType || "application/octet-stream";
+                fileName = body.name;
+            } else {
+                fileBuffer = await c.req.arrayBuffer();
+
+                if (fileBuffer.byteLength > maxSize) {
+                    return c.json(fileTooLargeError(maxSize), 413);
+                }
+                if (fileBuffer.byteLength === 0) {
+                    return c.json({ error: "Empty file" }, 400);
+                }
+
+                contentType = requestContentType || "application/octet-stream";
             }
-
-            if (file.size > maxSize) {
-                return c.json(fileTooLargeError(maxSize), 413);
-            }
-
-            const fileBuffer = await file.arrayBuffer();
-            const contentType = file.type || detectContentType(file.name);
-            const fileName = file.name;
 
             const hash = await generateHash(fileBuffer, fileName);
 
@@ -241,9 +284,11 @@ api.get(
 
             const originalName = object.customMetadata?.originalName;
             if (originalName) {
+                // RFC 5987: use filename* with UTF-8 encoding to safely handle any characters
+                const sanitized = encodeURIComponent(originalName);
                 headers.set(
                     "Content-Disposition",
-                    `inline; filename="${originalName}"`,
+                    `inline; filename*=UTF-8''${sanitized}`,
                 );
             }
 
@@ -371,10 +416,20 @@ async function generateHash(
     fileName?: string,
 ): Promise<string> {
     const nameBytes = new TextEncoder().encode(fileName || "");
-    const combined = new Uint8Array(buffer.byteLength + nameBytes.length);
+    const separator = new Uint8Array([0x00]); // null byte for domain separation
+    const combined = new Uint8Array(
+        buffer.byteLength + separator.length + nameBytes.length,
+    );
     combined.set(new Uint8Array(buffer), 0);
-    combined.set(nameBytes, buffer.byteLength);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", combined.buffer);
+    combined.set(separator, buffer.byteLength);
+    combined.set(nameBytes, buffer.byteLength + separator.length);
+    const hashBuffer = await crypto.subtle.digest(
+        "SHA-256",
+        combined.buffer.slice(
+            combined.byteOffset,
+            combined.byteOffset + combined.byteLength,
+        ),
+    );
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray
         .map((b) => b.toString(16).padStart(2, "0"))

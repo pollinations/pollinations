@@ -5,6 +5,7 @@ import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
+    createInceptionModelConfig,
     createMyceliGrok4FastConfig,
     createNomNomConfig,
     createOVHcloudMistralConfig,
@@ -188,6 +189,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createPollyConfig({
             model: "polly",
         }),
+
+    // -- Inception Labs (Mercury) ---------------------------------------------
+    "mercury-coder-small": () =>
+        createInceptionModelConfig({ model: "mercury-coder-small" }),
 
     // -- api.airforce ---------------------------------------------------------
     "step-3.5-flash:free": () =>

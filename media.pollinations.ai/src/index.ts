@@ -69,7 +69,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.",
+            "Upload an image, audio, or video file via multipart/form-data. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Re-uploading resets the 14-day TTL.",
         responses: {
             200: {
                 description: "Upload successful",
@@ -119,97 +119,41 @@ api.post(
             return c.json(fileTooLargeError(maxSize), 413);
         }
 
-        let fileBuffer: ArrayBuffer;
-        let contentType: string;
-        let fileName: string | undefined;
-
         const requestContentType = c.req.header("content-type") || "";
 
+        if (!requestContentType.includes("multipart/form-data")) {
+            return c.json(
+                { error: "Use multipart/form-data with a 'file' field." },
+                400,
+            );
+        }
+
         try {
-            if (requestContentType.includes("multipart/form-data")) {
-                const formData = await c.req.formData();
-                const file = formData.get("file") as File | null;
+            const formData = await c.req.formData();
+            const file = formData.get("file") as File | null;
 
-                if (!(file instanceof File)) {
-                    return c.json(
-                        {
-                            error: "No file provided. Use 'file' field in form-data.",
-                        },
-                        400,
-                    );
-                }
-
-                if (file.size > maxSize) {
-                    return c.json(fileTooLargeError(maxSize), 413);
-                }
-
-                fileBuffer = await file.arrayBuffer();
-                contentType = file.type || detectContentType(file.name);
-                fileName = file.name;
-            } else if (requestContentType.includes("application/json")) {
-                const body = await c.req.json<{
-                    data: string;
-                    contentType?: string;
-                    name?: string;
-                }>();
-
-                if (!body.data) {
-                    return c.json(
-                        { error: "Missing 'data' field in JSON body" },
-                        400,
-                    );
-                }
-
-                const base64Data = body.data.includes(",")
-                    ? body.data.split(",")[1]
-                    : body.data;
-                const binaryString = atob(base64Data);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                fileBuffer = bytes.buffer;
-
-                if (fileBuffer.byteLength > maxSize) {
-                    return c.json(fileTooLargeError(maxSize), 413);
-                }
-                if (fileBuffer.byteLength === 0) {
-                    return c.json({ error: "Empty file" }, 400);
-                }
-
-                contentType = body.contentType || "application/octet-stream";
-                fileName = body.name;
-            } else {
-                fileBuffer = await c.req.arrayBuffer();
-
-                if (fileBuffer.byteLength > maxSize) {
-                    return c.json(fileTooLargeError(maxSize), 413);
-                }
-                if (fileBuffer.byteLength === 0) {
-                    return c.json({ error: "Empty file" }, 400);
-                }
-
-                contentType = requestContentType || "application/octet-stream";
+            if (!(file instanceof File)) {
+                return c.json(
+                    {
+                        error: "No file provided. Use 'file' field in form-data.",
+                    },
+                    400,
+                );
             }
 
-            if (!contentType || contentType === "") {
-                contentType = "application/octet-stream";
+            if (file.size > maxSize) {
+                return c.json(fileTooLargeError(maxSize), 413);
             }
 
-            const hash = await generateHash(fileBuffer);
+            const fileBuffer = await file.arrayBuffer();
+            const contentType = file.type || detectContentType(file.name);
+            const fileName = file.name;
+
+            const hash = await generateHash(fileBuffer, fileName);
 
             const existing = await c.env.MEDIA_BUCKET.head(hash);
-            if (existing) {
-                return c.json({
-                    id: hash,
-                    url: mediaUrl(hash),
-                    contentType:
-                        existing.httpMetadata?.contentType || contentType,
-                    size: existing.size,
-                    duplicate: true,
-                });
-            }
 
+            // Always re-PUT to reset the R2 object timestamp (resets lifecycle TTL).
             await c.env.MEDIA_BUCKET.put(hash, fileBuffer, {
                 httpMetadata: {
                     contentType,
@@ -231,6 +175,7 @@ api.post(
                     contentType,
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
+                    duplicate: !!existing,
                 }),
             );
 
@@ -239,7 +184,7 @@ api.post(
                 url: mediaUrl(hash),
                 contentType,
                 size: fileBuffer.byteLength,
-                duplicate: false,
+                duplicate: !!existing,
             });
         } catch (error) {
             console.error("Upload error:", error);
@@ -293,6 +238,14 @@ api.get(
             headers.set("Cache-Control", CACHE_CONTROL);
             headers.set("X-Content-Hash", hash);
             headers.set("X-Content-Size", object.size.toString());
+
+            const originalName = object.customMetadata?.originalName;
+            if (originalName) {
+                headers.set(
+                    "Content-Disposition",
+                    `inline; filename="${originalName}"`,
+                );
+            }
 
             return new Response(object.body, { headers });
         } catch (error) {
@@ -353,115 +306,13 @@ api.on(
     },
 );
 
-const DeleteResponseSchema = z.object({
-    deleted: z.boolean(),
-    id: z.string().describe("16-char hex content hash"),
-});
-
-api.delete(
-    "/:hash",
-    describeRoute({
-        tags: ["media.pollinations.ai"],
-        summary: "Delete media",
-        description:
-            "Delete a file by its content hash. Only the original uploader can delete their own files.",
-        responses: {
-            200: {
-                description: "File deleted",
-                content: {
-                    "application/json": {
-                        schema: resolver(DeleteResponseSchema),
-                    },
-                },
-            },
-            400: {
-                description: "Invalid hash format",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            401: {
-                description: "Missing or invalid API key",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            403: {
-                description: "Not the original uploader",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            404: {
-                description: "File not found",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-        },
-    }),
-    async (c) => {
-        const apiKey = extractApiKey(c.req.raw);
-        if (!apiKey) {
-            return c.json(
-                {
-                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
-                },
-                401,
-            );
-        }
-        const authResult = await verifyApiKey(apiKey);
-        if (!authResult) {
-            return c.json({ error: "Invalid or expired API key" }, 401);
-        }
-
-        const hash = c.req.param("hash");
-
-        if (!HASH_PATTERN.test(hash)) {
-            return c.json({ error: "Invalid hash format" }, 400);
-        }
-
-        try {
-            const object = await c.env.MEDIA_BUCKET.head(hash);
-
-            if (!object) {
-                return c.json({ error: "Not found" }, 404);
-            }
-
-            const uploadedBy = object.customMetadata?.uploadedBy || "";
-            if (uploadedBy !== authResult.name) {
-                return c.json(
-                    { error: "You can only delete files you uploaded" },
-                    403,
-                );
-            }
-
-            await c.env.MEDIA_BUCKET.delete(hash);
-
-            console.log(
-                JSON.stringify({
-                    event: "delete",
-                    hash,
-                    deletedBy: authResult.name || "unknown",
-                    keyType: authResult.type,
-                }),
-            );
-
-            return c.json({ deleted: true, id: hash });
-        } catch (error) {
-            console.error("Delete error:", error);
-            return c.json({ error: "Delete failed" }, 500);
-        }
-    },
-);
-
 const app = new Hono<{ Bindings: Env }>();
 
 app.use(
     "*",
     cors({
         origin: "*",
-        allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
+        allowMethods: ["GET", "POST", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
         exposeHeaders: ["X-Content-Hash", "X-Content-Size"],
     }),
@@ -474,7 +325,6 @@ app.get("/", (c) => {
         endpoints: {
             upload: "POST /upload (requires API key)",
             retrieve: "GET /:hash",
-            delete: "DELETE /:hash (requires API key, owner only)",
             docs: "GET /openapi.json",
         },
         limits: {
@@ -515,8 +365,16 @@ app.get("/openapi.json", async (c, next) => {
 app.route("/", api);
 
 // 16 hex chars = 64 bits -- collision expected around ~4B files (birthday paradox)
-async function generateHash(buffer: ArrayBuffer): Promise<string> {
-    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+// Hash includes filename so the same content with different names gets different URLs.
+async function generateHash(
+    buffer: ArrayBuffer,
+    fileName?: string,
+): Promise<string> {
+    const nameBytes = new TextEncoder().encode(fileName || "");
+    const combined = new Uint8Array(buffer.byteLength + nameBytes.length);
+    combined.set(new Uint8Array(buffer), 0);
+    combined.set(nameBytes, buffer.byteLength);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", combined.buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray
         .map((b) => b.toString(16).padStart(2, "0"))

@@ -27,13 +27,6 @@ function requireApiKey(): string {
     return API_KEY;
 }
 
-function authHeaders(contentType: string): Record<string, string> {
-    return {
-        "Content-Type": contentType,
-        Authorization: `Bearer ${requireApiKey()}`,
-    };
-}
-
 describe("media.pollinations.ai", () => {
     it("GET / returns service info", async () => {
         const res = await fetch(BASE_URL);
@@ -65,10 +58,16 @@ describe("media.pollinations.ai", () => {
     });
 
     it("upload, retrieve, and deduplicate", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "test.png", { type: "image/png" }),
+        );
+
         const uploadRes = await fetch(`${BASE_URL}/upload`, {
             method: "POST",
-            body: TINY_PNG,
-            headers: authHeaders("image/png"),
+            body: form,
+            headers: { Authorization: `Bearer ${requireApiKey()}` },
         });
         expect(uploadRes.status).toBe(200);
         const upload = (await uploadRes.json()) as UploadResponse;
@@ -77,11 +76,12 @@ describe("media.pollinations.ai", () => {
         expect(upload.contentType).toBe("image/png");
         expect(upload.size).toBe(TINY_PNG.length);
 
-        // Retrieve
+        // Retrieve — check Content-Disposition includes filename
         const getRes = await fetch(`${BASE_URL}/${upload.id}`);
         expect(getRes.status).toBe(200);
         expect(getRes.headers.get("content-type")).toBe("image/png");
         expect(getRes.headers.get("cache-control")).toContain("immutable");
+        expect(getRes.headers.get("content-disposition")).toContain("test.png");
         const body = new Uint8Array(await getRes.arrayBuffer());
         expect(body.length).toBe(TINY_PNG.length);
 
@@ -92,15 +92,52 @@ describe("media.pollinations.ai", () => {
         expect(headRes.status).toBe(200);
         expect(headRes.headers.get("x-content-hash")).toBe(upload.id);
 
-        // Duplicate detection
+        // Duplicate re-upload returns same hash
+        const dupForm = new FormData();
+        dupForm.append(
+            "file",
+            new File([TINY_PNG], "test.png", { type: "image/png" }),
+        );
+
         const dupRes = await fetch(`${BASE_URL}/upload`, {
             method: "POST",
-            body: TINY_PNG,
-            headers: authHeaders("image/png"),
+            body: dupForm,
+            headers: { Authorization: `Bearer ${requireApiKey()}` },
         });
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).toBe(upload.id);
         expect(dup.duplicate).toBe(true);
+    });
+
+    it("same content with different filename produces different hash", async () => {
+        const form1 = new FormData();
+        form1.append(
+            "file",
+            new File([TINY_PNG], "a.png", { type: "image/png" }),
+        );
+
+        const form2 = new FormData();
+        form2.append(
+            "file",
+            new File([TINY_PNG], "b.png", { type: "image/png" }),
+        );
+
+        const [res1, res2] = await Promise.all([
+            fetch(`${BASE_URL}/upload`, {
+                method: "POST",
+                body: form1,
+                headers: { Authorization: `Bearer ${requireApiKey()}` },
+            }),
+            fetch(`${BASE_URL}/upload`, {
+                method: "POST",
+                body: form2,
+                headers: { Authorization: `Bearer ${requireApiKey()}` },
+            }),
+        ]);
+
+        const upload1 = (await res1.json()) as UploadResponse;
+        const upload2 = (await res2.json()) as UploadResponse;
+        expect(upload1.id).not.toBe(upload2.id);
     });
 
     it("GET /:invalid-hash returns 400", async () => {
@@ -111,42 +148,5 @@ describe("media.pollinations.ai", () => {
     it("GET /:nonexistent-hash returns 404", async () => {
         const res = await fetch(`${BASE_URL}/0000000000000000`);
         expect(res.status).toBe(404);
-    });
-
-    it("DELETE without key returns 401", async () => {
-        const res = await fetch(`${BASE_URL}/0000000000000000`, {
-            method: "DELETE",
-        });
-        expect(res.status).toBe(401);
-    });
-
-    it("upload, delete, and confirm removal", async () => {
-        const unique = new Uint8Array([
-            ...TINY_PNG,
-            ...crypto.getRandomValues(new Uint8Array(8)),
-        ]);
-
-        const uploadRes = await fetch(`${BASE_URL}/upload`, {
-            method: "POST",
-            body: unique,
-            headers: authHeaders("image/png"),
-        });
-        expect(uploadRes.status).toBe(200);
-        const upload = (await uploadRes.json()) as UploadResponse;
-
-        const deleteRes = await fetch(`${BASE_URL}/${upload.id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${requireApiKey()}` },
-        });
-        expect(deleteRes.status).toBe(200);
-        const deleteBody = (await deleteRes.json()) as {
-            deleted: boolean;
-            id: string;
-        };
-        expect(deleteBody.deleted).toBe(true);
-        expect(deleteBody.id).toBe(upload.id);
-
-        const getRes = await fetch(`${BASE_URL}/${upload.id}`);
-        expect(getRes.status).toBe(404);
     });
 });

@@ -8,6 +8,8 @@ const ENTER_VERIFY_URL = "https://gen.pollinations.ai/api/account/key";
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 10485760; // 10 MB
+const MAX_TTL_DAYS = 365;
+const MIN_TTL_DAYS = 1;
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -45,6 +47,25 @@ function fileTooLargeError(maxSize: number): { error: string } {
     return { error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` };
 }
 
+function computeExpiresAt(ttlDays: number): string {
+    const expires = new Date();
+    expires.setDate(expires.getDate() + ttlDays);
+    return expires.toISOString();
+}
+
+function parseTtl(value: unknown): number | null {
+    if (value === undefined || value === null || value === "") return null;
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < MIN_TTL_DAYS || n > MAX_TTL_DAYS)
+        return null;
+    return Math.ceil(n);
+}
+
+function isExpired(expiresAt: string | undefined): boolean {
+    if (!expiresAt) return false;
+    return new Date(expiresAt).getTime() <= Date.now();
+}
+
 function mediaUrl(hash: string): string {
     return `https://${DOMAIN}/${hash}`;
 }
@@ -55,6 +76,10 @@ const UploadResponseSchema = z.object({
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
     duplicate: z.boolean().describe("true if file already existed"),
+    expiresAt: z
+        .string()
+        .nullable()
+        .describe("ISO 8601 expiration timestamp, or null if no TTL"),
 });
 
 const ErrorSchema = z.object({
@@ -69,7 +94,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.",
+            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash. Optional `ttl` (days, 1-365) sets per-object expiration via query param, form field, or JSON body.",
         responses: {
             200: {
                 description: "Upload successful",
@@ -122,6 +147,21 @@ api.post(
         let fileBuffer: ArrayBuffer;
         let contentType: string;
         let fileName: string | undefined;
+        let ttlDays: number | null = null;
+
+        // TTL from query param (all upload modes)
+        const ttlParam = new URL(c.req.url).searchParams.get("ttl");
+        if (ttlParam !== null) {
+            ttlDays = parseTtl(ttlParam);
+            if (ttlDays === null) {
+                return c.json(
+                    {
+                        error: `Invalid ttl. Must be ${MIN_TTL_DAYS}-${MAX_TTL_DAYS} (days).`,
+                    },
+                    400,
+                );
+            }
+        }
 
         const requestContentType = c.req.header("content-type") || "";
 
@@ -143,6 +183,20 @@ api.post(
                     return c.json(fileTooLargeError(maxSize), 413);
                 }
 
+                // TTL from form field (overrides query param)
+                const formTtl = formData.get("ttl");
+                if (formTtl !== null) {
+                    ttlDays = parseTtl(formTtl);
+                    if (ttlDays === null) {
+                        return c.json(
+                            {
+                                error: `Invalid ttl. Must be ${MIN_TTL_DAYS}-${MAX_TTL_DAYS} (days).`,
+                            },
+                            400,
+                        );
+                    }
+                }
+
                 fileBuffer = await file.arrayBuffer();
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
@@ -151,6 +205,7 @@ api.post(
                     data: string;
                     contentType?: string;
                     name?: string;
+                    ttl?: number;
                 }>();
 
                 if (!body.data) {
@@ -158,6 +213,19 @@ api.post(
                         { error: "Missing 'data' field in JSON body" },
                         400,
                     );
+                }
+
+                // TTL from JSON body (overrides query param)
+                if (body.ttl !== undefined) {
+                    ttlDays = parseTtl(body.ttl);
+                    if (ttlDays === null) {
+                        return c.json(
+                            {
+                                error: `Invalid ttl. Must be ${MIN_TTL_DAYS}-${MAX_TTL_DAYS} (days).`,
+                            },
+                            400,
+                        );
+                    }
                 }
 
                 const base64Data = body.data.includes(",")
@@ -198,8 +266,27 @@ api.post(
 
             const hash = await generateHash(fileBuffer);
 
+            const expiresAt = ttlDays ? computeExpiresAt(ttlDays) : null;
+
             const existing = await c.env.MEDIA_BUCKET.head(hash);
             if (existing) {
+                const existingExpiry =
+                    existing.customMetadata?.expiresAt || null;
+
+                // Re-upload with TTL: update metadata (re-PUT resets R2 timestamp too)
+                if (expiresAt && expiresAt !== existingExpiry) {
+                    const obj = await c.env.MEDIA_BUCKET.get(hash);
+                    if (obj) {
+                        await c.env.MEDIA_BUCKET.put(hash, obj.body, {
+                            httpMetadata: existing.httpMetadata,
+                            customMetadata: {
+                                ...existing.customMetadata,
+                                expiresAt,
+                            },
+                        });
+                    }
+                }
+
                 return c.json({
                     id: hash,
                     url: mediaUrl(hash),
@@ -207,7 +294,18 @@ api.post(
                         existing.httpMetadata?.contentType || contentType,
                     size: existing.size,
                     duplicate: true,
+                    expiresAt: expiresAt || existingExpiry,
                 });
+            }
+
+            const customMetadata: Record<string, string> = {
+                uploadedAt: new Date().toISOString(),
+                originalName: fileName || "",
+                uploadedBy: authResult.name || "",
+                keyType: authResult.type,
+            };
+            if (expiresAt) {
+                customMetadata.expiresAt = expiresAt;
             }
 
             await c.env.MEDIA_BUCKET.put(hash, fileBuffer, {
@@ -215,12 +313,7 @@ api.post(
                     contentType,
                     cacheControl: CACHE_CONTROL,
                 },
-                customMetadata: {
-                    uploadedAt: new Date().toISOString(),
-                    originalName: fileName || "",
-                    uploadedBy: authResult.name || "",
-                    keyType: authResult.type,
-                },
+                customMetadata,
             });
 
             console.log(
@@ -231,6 +324,7 @@ api.post(
                     contentType,
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
+                    ...(expiresAt && { expiresAt }),
                 }),
             );
 
@@ -240,6 +334,7 @@ api.post(
                 contentType,
                 size: fileBuffer.byteLength,
                 duplicate: false,
+                expiresAt,
             });
         } catch (error) {
             console.error("Upload error:", error);
@@ -269,6 +364,12 @@ api.get(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            410: {
+                description: "File expired (TTL elapsed)",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
         },
     }),
     async (c) => {
@@ -285,6 +386,12 @@ api.get(
                 return c.json({ error: "Not found" }, 404);
             }
 
+            if (isExpired(object.customMetadata?.expiresAt)) {
+                // Consume the body to avoid connection leaks
+                await object.body.cancel();
+                return c.json({ error: "Gone — file has expired" }, 410);
+            }
+
             const headers = new Headers();
             headers.set(
                 "Content-Type",
@@ -293,6 +400,9 @@ api.get(
             headers.set("Cache-Control", CACHE_CONTROL);
             headers.set("X-Content-Hash", hash);
             headers.set("X-Content-Size", object.size.toString());
+            if (object.customMetadata?.expiresAt) {
+                headers.set("X-Expires-At", object.customMetadata.expiresAt);
+            }
 
             return new Response(object.body, { headers });
         } catch (error) {
@@ -333,6 +443,10 @@ api.on(
                 return new Response(null, { status: 404 });
             }
 
+            if (isExpired(object.customMetadata?.expiresAt)) {
+                return new Response(null, { status: 410 });
+            }
+
             const headers = new Headers();
             headers.set(
                 "Content-Type",
@@ -344,6 +458,9 @@ api.on(
 
             if (object.customMetadata?.uploadedAt) {
                 headers.set("X-Uploaded-At", object.customMetadata.uploadedAt);
+            }
+            if (object.customMetadata?.expiresAt) {
+                headers.set("X-Expires-At", object.customMetadata.expiresAt);
             }
 
             return new Response(null, { status: 200, headers });
@@ -463,7 +580,7 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["X-Content-Hash", "X-Content-Size"],
+        exposeHeaders: ["X-Content-Hash", "X-Content-Size", "X-Expires-At"],
     }),
 );
 

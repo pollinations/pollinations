@@ -622,7 +622,7 @@ export function PlayGenerator({
 
             {/* Error Display */}
             {error && (
-                <div className="mb-6 p-4 bg-surface-card border border-border-strong rounded-input">
+                <div className="mb-6 p-4 bg-surface-page border border-border-strong rounded-input">
                     <Body size="sm" spacing="none">
                         {error}
                     </Body>
@@ -721,7 +721,7 @@ export function PlayGenerator({
                     </div>
                     <button
                         type="button"
-                        className="absolute top-2 right-2 p-2.5 bg-surface-card hover:bg-button-secondary-bg rounded-input transition-colors"
+                        className="absolute top-2 right-2 p-2.5 bg-input-background hover:bg-button-secondary-bg rounded-input transition-colors border border-border-subtle"
                         onClick={() => {
                             navigator.clipboard.writeText(copyableUrl);
                             setUrlCopied(true);
@@ -805,7 +805,7 @@ export function PlayGenerator({
 
             {/* Key type cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                <div className="bg-surface-card p-4 rounded-sub-card">
+                <div className="bg-surface-page p-4 rounded-sub-card">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="font-mono text-lg font-black text-text-highlight">
                             pk_
@@ -837,13 +837,13 @@ export function PlayGenerator({
                         </li>
                     </ul>
                     <div className="mt-3 border-l-2 border-yellow px-2 py-1">
-                        <Body size="xs" spacing="none" className="text-yellow">
+                        <Body size="xs" spacing="none" className="text-text-brand">
                             {copy.publishableBetaWarning}
                         </Body>
                     </div>
                 </div>
 
-                <div className="bg-surface-card p-4 rounded-sub-card">
+                <div className="bg-surface-page p-4 rounded-sub-card">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="font-mono text-lg font-black text-text-brand">
                             sk_
@@ -887,19 +887,19 @@ export function PlayGenerator({
                 href={LINKS.byopDocs}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block p-6 bg-border-highlight/15 border-2 border-border-highlight/40 border-r-4 border-b-4 rounded-sub-card hover:bg-border-highlight/25 transition-colors"
+                className="block p-6 bg-input-background border-2 border-border-highlight border-r-4 border-b-4 rounded-sub-card hover:brightness-95 transition-colors"
             >
                 <div className="flex items-center gap-4">
                     <span className="text-4xl">🔌</span>
                     <div className="flex-1 min-w-0">
-                        <span className="font-headline text-2xl font-black text-text-highlight block">
+                        <span className="font-headline text-sm font-black text-text-highlight block">
                             {copy.byopLabel}
                         </span>
                         <span className="font-body text-base text-text-body-secondary block mt-1">
                             {copy.byopDescription}
                         </span>
                     </div>
-                    <span className="font-headline text-2xl font-black text-text-highlight shrink-0">
+                    <span className="font-headline text-sm font-black text-text-highlight shrink-0">
                         &rarr;
                     </span>
                 </div>

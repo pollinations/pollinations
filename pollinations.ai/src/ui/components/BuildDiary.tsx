@@ -244,7 +244,7 @@ export function BuildDiary() {
             <div className="self-start inline-flex items-center gap-2">
                 <span
                     onClick={() => go("left")}
-                    className={`font-headline text-lg select-none flex items-center justify-center transition-colors ${
+                    className={`font-headline text-sm select-none flex items-center justify-center transition-colors ${
                         x > 0
                             ? "text-text-body-secondary cursor-pointer"
                             : "text-text-body-main/15 cursor-default"
@@ -253,14 +253,14 @@ export function BuildDiary() {
                     &#x25C0;
                 </span>
                 <span
-                    className={`font-headline inline-flex items-center justify-center py-2 text-2xl font-black uppercase tracking-wider rounded-tag cursor-pointer transition-colors min-w-[220px] ${!onPR ? "bg-button-primary-bg text-text-on-color" : "bg-input-background text-text-body-secondary hover:text-text-body-main"}`}
+                    className={`font-headline inline-flex items-center justify-center py-2 text-sm font-black uppercase tracking-wider rounded-tag cursor-pointer transition-colors min-w-[220px] ${!onPR ? "bg-button-primary-bg text-text-on-color" : "bg-input-background text-text-body-secondary hover:text-text-body-main"}`}
                     onClick={() => setY(0)}
                 >
                     {dateLabel}
                 </span>
                 <span
                     onClick={() => go("right")}
-                    className={`font-headline text-lg select-none flex items-center justify-center transition-colors ${
+                    className={`font-headline text-sm select-none flex items-center justify-center transition-colors ${
                         x < timeline.length - 1
                             ? "text-text-body-secondary cursor-pointer"
                             : "text-text-body-main/15 cursor-default"
@@ -273,7 +273,7 @@ export function BuildDiary() {
             <div className="mb-3.5" />
 
             {/* Title */}
-            <div className="font-headline text-[22px] text-text-body-main leading-tight mb-3 font-bold">
+            <div className="font-headline text-xs text-text-body-main leading-tight mb-3 font-bold">
                 {displayTitle}
             </div>
 

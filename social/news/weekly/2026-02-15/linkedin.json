@@ -1,0 +1,24 @@
+{
+  "post_type": "milestone",
+  "hook": "AI agents just got a whole lot easier to build. We shipped 27 updates this week, but one stands out.",
+  "body": "The gap between 'generating content' and 'taking action' is closing fast.\n\nThis week, we focused on giving developers the tools to cross that bridge. With 27 PRs merged, here is what is new on the platform:\n\n1. ONE-COMMAND AGENTS\nWe integrated OpenClaw to bring autonomous web search and action capabilities directly into the workflow. This is not just chat — it is AI that can do things.\n\n2. VIDEO & AUDIO UPGRADES\nMultimedia generation got a major boost with Grok Image-to-Video and ElevenLabs Scribe v2 integration. We also unified video resolutions, making it easier to chain different models together in a single pipeline.\n\n3. NEW MODEL FLAVORS\nWe added GLM-5 and the Qwen-character model. Whether you need raw reasoning power or specialized roleplay capabilities, the menu just got bigger.\n\n4. BETTER DEVELOPER EXPERIENCE\nWe overhauled the App Showcase UI and merged documentation directly into the Play page. Less context switching means faster building.\n\nVelocity is the only strategy that matters in open source. We are building the most accessible infrastructure for AI creativity, one commit at a time.",
+  "cta": "Check out the new agent capabilities and let us know what you build.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI",
+    "#DevTools",
+    "#ShipIt",
+    "#ArtificialIntelligence"
+  ],
+  "image_prompt": "Cozy pixel art RPG quest board scene. Large headline pixel text on a wooden sign at the top reads 'WEEKLY SHIP'. Below it, a corkboard displays pixelated sticky notes with legible text: 'OpenClaw Agents', 'Grok Video', 'Scribe v2', 'GLM-5'. The cute bee mascot (yellow/brown stripes, pink blush, blue wings) is flying next to the board pinning a new note. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text must be chunky and readable. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "image_text": "WEEKLY SHIP: OpenClaw Agents, Grok Video, Scribe v2, GLM-5",
+  "reasoning": "This post uses the 'Milestone' angle to demonstrate shipping velocity (27 PRs). It leads with 'Agents' as the hook because that is currently the highest-value topic for investors and developers. The RPG quest board visual fits the 'weekly update' theme perfectly while maintaining the cozy brand identity.",
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/linkedin.jpg",
+    "prompt": "Cozy pixel art RPG quest board scene. Large headline pixel text on a wooden sign at the top reads 'WEEKLY SHIP'. Below it, a corkboard displays pixelated sticky notes with legible text: 'OpenClaw Agents', 'Grok Video', 'Scribe v2', 'GLM-5'. The cute bee mascot (yellow/brown stripes, pink blush, blue wings) is flying next to the board pinning a new note. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text must be chunky and readable. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "date": "2026-02-15",
+  "generated_at": "2026-02-16T10:04:13.429831+00:00",
+  "platform": "linkedin",
+  "full_post": "AI agents just got a whole lot easier to build. We shipped 27 updates this week, but one stands out.\n\nThe gap between 'generating content' and 'taking action' is closing fast.\n\nThis week, we focused on giving developers the tools to cross that bridge. With 27 PRs merged, here is what is new on the platform:\n\n1. ONE-COMMAND AGENTS\nWe integrated OpenClaw to bring autonomous web search and action capabilities directly into the workflow. This is not just chat — it is AI that can do things.\n\n2. VIDEO & AUDIO UPGRADES\nMultimedia generation got a major boost with Grok Image-to-Video and ElevenLabs Scribe v2 integration. We also unified video resolutions, making it easier to chain different models together in a single pipeline.\n\n3. NEW MODEL FLAVORS\nWe added GLM-5 and the Qwen-character model. Whether you need raw reasoning power or specialized roleplay capabilities, the menu just got bigger.\n\n4. BETTER DEVELOPER EXPERIENCE\nWe overhauled the App Showcase UI and merged documentation directly into the Play page. Less context switching means faster building.\n\nVelocity is the only strategy that matters in open source. We are building the most accessible infrastructure for AI creativity, one commit at a time.\n\nCheck out the new agent capabilities and let us know what you build.\n\n#OpenSource #AI #DevTools #ShipIt #ArtificialIntelligence"
+}

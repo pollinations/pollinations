@@ -1,0 +1,33 @@
+{
+  "pr_number": 8754,
+  "title": "[PATCH]: Added fallback and heuristic to the PR-UPDATES realtime.",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/8754",
+  "merged_at": "2026-03-02T12:04:42Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Backup brains for the hive",
+    "blurb": "Added model fallbacks to our realtime PR updates pipeline. If one model takes a nap, another steps in to keep the updates flowing.",
+    "summary": "Implemented model fallbacks for PR analysis, image generation, and snippet creation in the realtime social pipeline.",
+    "impact": "Ensures the automated social media updates continue running smoothly even if the primary AI models experience downtime.",
+    "keywords": [
+      "infrastructure",
+      "social-pipeline",
+      "reliability",
+      "fallback"
+    ],
+    "visual_concept": "The PR is about the social pipeline having a backup plan. Visual: The bee mascot (Polly) and the Monitor Robot working together. The robot has a backup battery or a secondary screen ready.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot working at a retro terminal. The robot holds a glowing backup battery while the terminal screen displays lime green (#ecf874) code. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-02/PR-8754.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-02T12:05:31.427537+00:00"
+}

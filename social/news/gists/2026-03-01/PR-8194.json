@@ -1,0 +1,28 @@
+{
+  "pr_number": 8194,
+  "title": "Add Tiny Tales to Learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8194",
+  "merged_at": "2026-03-01T16:49:06Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Add Tiny Tales to Learn",
+    "blurb": "Add Tiny Tales to Learn",
+    "summary": "Add Tiny Tales to Learn",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-01T16:49:55.193714+00:00",
+  "_minimal": true
+}

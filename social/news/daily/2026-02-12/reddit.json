@@ -1,0 +1,9 @@
+{
+  "title": "OpenClaw now supports web search models and tool configuration",
+  "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny pixelated detective hat and holding a magnifying glass, inspecting a glowing holographic globe. Soft lime green (#ecf874) and lavender pastel gradient background. The globe is connected by faint pixel data lines to a retro computer terminal. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font on a retro UI panel: 'WEB SEARCH'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "body": "We just merged support for web search models in OpenClaw. Previously limited to internal context, the agent can now query external sources via the updated tool configuration. This update is aimed at workflows requiring real-time data access rather than just static knowledge bases.\n\nWe also refactored the landing page into a tabbed UI with a shared connection step. The goal was to reduce friction during the initial setup—getting the agent connected and configured shouldn't require jumping between multiple screens. \n\nThe changes are live in the repo now. We're looking for feedback on the tool config structure specifically.",
+  "reasoning": "Focuses strictly on the technical capability unlock (web search) which is high-value for developers building agents. The tone remains objective and solicitous of technical feedback rather than hype.",
+  "date": "2026-02-12",
+  "generated_at": "2026-02-13T10:57:38.492774+00:00",
+  "platform": "reddit"
+}

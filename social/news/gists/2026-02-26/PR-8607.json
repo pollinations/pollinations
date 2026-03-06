@@ -1,0 +1,35 @@
+{
+  "pr_number": 8607,
+  "title": "fix: use audio emoji for STT models on pricing page",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8607",
+  "merged_at": "2026-02-26T19:51:04Z",
+  "labels": [
+    "WEB",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Sounds about right",
+    "blurb": "We were using a movie clapper icon for audio models. A bit dramatic for a transcript, right? Swapped it for a speaker so the pricing page makes sense.",
+    "summary": "Updated the pricing page UI to display the correct speaker emoji for audio and speech-to-text models instead of the video clapper icon.",
+    "impact": "Clearer distinction between video and audio pricing tiers for users browsing model costs.",
+    "keywords": [
+      "pricing",
+      "ui",
+      "audio",
+      "stt",
+      "ux"
+    ],
+    "visual_concept": "Polly the bee correcting a labeling mistake. She is swapping a movie clapperboard for a speaker icon on a pricing board. Represents the UI fix.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing headphones, placing a pixelated speaker icon 🔊 onto a lime green (#ecf874) pricing board. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-26/PR-8607.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-26T19:52:13.799189+00:00"
+}

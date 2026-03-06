@@ -3,7 +3,6 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import ErrorBoundary from "./ui/components/ErrorBoundary";
 import { FontLoader } from "./ui/components/FontLoader";
 import Layout from "./ui/components/Layout";
-import { PresetEditor } from "./ui/components/theme";
 
 function ScrollToTop() {
     const location = useLocation();
@@ -33,7 +32,6 @@ function App() {
     return (
         <ErrorBoundary>
             <FontLoader />
-            <PresetEditor />
             <Suspense fallback={<PageLoader />}>
                 <ScrollToTop />
                 <Routes>

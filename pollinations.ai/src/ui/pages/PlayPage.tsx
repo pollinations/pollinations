@@ -85,7 +85,7 @@ function PlayPage() {
                         variant="iconText"
                         className="inline-flex"
                     >
-                        <span className="font-headline text-sm md:text-base font-black uppercase tracking-wider text-text-body-main">
+                        <span className="font-headline text-xs md:text-xs font-black uppercase tracking-wider text-text-body-main">
                             {pageCopy.pricingLinkText}
                         </span>
                         <ExternalLinkIcon className="w-3 h-3 md:w-4 md:h-4 text-text-brand" />

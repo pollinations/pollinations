@@ -10,9 +10,9 @@ import plugin from "tailwindcss/plugin";
 import { CozyCssVariables as DefaultCssVariables } from "./src/theme/presets/cozy";
 
 const Fonts = {
-    title: "var(--font-title, 'Pixelify Sans')",
-    headline: "var(--font-headline, 'Pixelify Sans')",
-    body: "var(--font-body, 'Outfit')",
+    title: "var(--font-title, 'Press Start 2P')",
+    headline: "var(--font-headline, 'Press Start 2P')",
+    body: "var(--font-body, 'IBM Plex Mono')",
 };
 
 export default {

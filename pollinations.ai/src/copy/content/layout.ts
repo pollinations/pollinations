@@ -19,6 +19,6 @@ export const LAYOUT = {
     privacyLink: "Privacy",
     emailLink: "Email",
     copiedLabel: "Copied!",
-    footerBranding: "pollinations.ai - 2026",
-    footerTagline: "Open source AI innovation from Berlin",
+    footerBranding: "Pollinations.AI © 2026 Myceli AI OÜ",
+    footerTagline: "Open source AI innovation",
 };

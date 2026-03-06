@@ -29,17 +29,17 @@ function PrivacyPage() {
 
                                     // Headings
                                     if (line.startsWith("# ")) {
-                                        return `<h1 class="font-headline text-4xl md:text-5xl font-black text-text-body-main uppercase tracking-widest mb-8 border-l-8 border-border-brand pl-4">${line.slice(
+                                        return `<h1 class="font-headline text-xl md:text-2xl font-black text-text-body-main uppercase tracking-widest mb-8 border-l-8 border-border-brand pl-4">${line.slice(
                                             2,
                                         )}</h1>`;
                                     }
                                     if (line.startsWith("## ")) {
-                                        return `<h2 class="font-headline text-2xl md:text-3xl font-black text-text-body-main uppercase tracking-widest mt-12 mb-6 border-l-4 border-border-strong pl-4">${line.slice(
+                                        return `<h2 class="font-headline text-base md:text-lg font-black text-text-body-main uppercase tracking-widest mt-12 mb-6 border-l-4 border-border-strong pl-4">${line.slice(
                                             3,
                                         )}</h2>`;
                                     }
                                     if (line.startsWith("### ")) {
-                                        return `<h3 class="font-headline text-xl md:text-2xl font-black text-text-body-main uppercase tracking-wider mt-8 mb-4">${line.slice(
+                                        return `<h3 class="font-headline text-sm md:text-base font-black text-text-body-main uppercase tracking-wider mt-8 mb-4">${line.slice(
                                             4,
                                         )}</h3>`;
                                     }

@@ -30,14 +30,17 @@ export const HELLO_PAGE = {
 
     // Flywheel explanation (right column)
     flywheelTitle: "The flywheel",
-    flywheelBody:
-        "The more people use your apps, the more free Pollen you get every day.",
+    flywheelBodyHighlight1: "Free Pollen every day",
+    flywheelBodyMid:
+        " to get you started. The more your app is used, the more you earn — ",
+    flywheelBodyHighlight2: "your community unlocks your compute.",
     tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
     // Tier explanation (left column)
     tierTitle: "Grow your tier",
     tierBody:
         "The more your apps grow, the higher your tier — and the more free daily Pollen you get.",
-    tierHowLink: "❓ Want to know more? Check our FAQ →",
+    tierHowText: "Want to know more?",
+    tierHowLink: "Check our FAQ ↗",
 
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",

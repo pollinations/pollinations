@@ -18,9 +18,26 @@ Upload files and get back a content-addressed URL to use with Pollinations model
 Uploads require a pollinations.ai API key. Get one at [enter.pollinations.ai](https://enter.pollinations.ai).
 
 ```bash
+# Multipart form-data
 curl -X POST https://media.pollinations.ai/upload \
   -H "Authorization: Bearer <your-api-key>" \
   -F "file=@image.jpg"
+
+# Raw binary
+curl -X POST https://media.pollinations.ai/upload \
+  -H "Authorization: Bearer <your-api-key>" \
+  -H "Content-Type: image/jpeg" \
+  --data-binary "@image.jpg"
+
+# Base64 JSON
+curl -X POST https://media.pollinations.ai/upload \
+  -H "Authorization: Bearer <your-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "contentType": "image/png",
+    "name": "image.png"
+  }'
 
 # Returns:
 # {
@@ -54,6 +71,15 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
 
 **Request:**
 - `Content-Type: multipart/form-data` with `file` field
+- Or raw binary with a `Content-Type` header (e.g., `image/jpeg`)
+- Or JSON with `Content-Type: application/json`:
+  ```json
+  {
+    "data": "base64-encoded-file-data",
+    "contentType": "image/jpeg",
+    "name": "image.jpg"
+  }
+  ```
 
 **Response:**
 ```json
@@ -67,7 +93,7 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
 ```
 
 **Errors:**
-- `400` - No file provided or not multipart/form-data
+- `400` - No file provided, empty file, or invalid JSON/base64
 - `413` - File too large (max 10MB)
 
 ### `GET /:hash`

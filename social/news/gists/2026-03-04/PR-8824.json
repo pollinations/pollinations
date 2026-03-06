@@ -1,0 +1,36 @@
+{
+  "pr_number": 8824,
+  "title": "fix: route suno model to generateSunoMusic in GET /audio/:text",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8824",
+  "merged_at": "2026-03-04T21:28:19Z",
+  "labels": [
+    "AUDIO",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Suno sings again",
+    "blurb": "Fixed a little mix-up where asking for Suno music via our GET endpoint gave you spoken text instead. The band is back together and ready to play your prompts.",
+    "summary": "Fixed a routing bug in the GET `/audio/:text` endpoint that caused `model=suno` requests to incorrectly fall back to text-to-speech instead of generating music.",
+    "impact": "Users can now successfully generate Suno music using simple GET requests without it defaulting to spoken audio.",
+    "keywords": [
+      "audio",
+      "suno",
+      "music",
+      "api",
+      "bugfix"
+    ],
+    "visual_concept": "The PR fixes an audio routing issue where music requests were turning into speech. Visual metaphor: Polly the bee fixing a retro audio device (like a boombox or DJ deck) so it plays music again. Musical notes floating in the air to signify the fix.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny retro headphones, happily fixing a chunky 8-bit boombox that is emitting glowing musical notes. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-04T21:29:13.184175+00:00"
+}

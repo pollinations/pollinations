@@ -1,0 +1,30 @@
+{
+  "pr_number": 8450,
+  "title": "feat: show model display names in playground selector",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8450",
+  "merged_at": "2026-03-02T03:24:22Z",
+  "labels": [
+    "API",
+    "WEB",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "feat: show model display names in playground selector",
+    "blurb": "feat: show model display names in playground selector",
+    "summary": "feat: show model display names in playground selector",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-02T03:25:08.707042+00:00",
+  "_minimal": true
+}

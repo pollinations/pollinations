@@ -1,0 +1,40 @@
+{
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Google Summer of Code (GSOC) is a major community event. Using the 'summer garden' and 'planting seeds' metaphor aligns perfectly with our brand identity of growth and nature. It transforms dry administrative updates (Readme/Email fixes) into an exciting invitation for students to join our ecosystem.",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, warm lighting, and Stardew Valley vibes. Highlighting the lime green (#ecf874) brand color in nature elements.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sun hat and holding a pixelated shovel, standing next to a wooden signpost that reads 'GSOC'. The bee is preparing a garden bed with glowing lime green (#ecf874) soil. Background is a soft pastel gradient of peach and mint. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'SUMMER PREP'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Announcing GSOC preparation with a summer gardening theme.",
+      "text_in_image": "SUMMER PREP"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot sitting on a mossy log reading a large, glowing open book titled 'GUIDE'. The pages have lime green (#ecf874) pixel text. The background is a magical forest with soft lavender and cream gradients. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing cute round reading glasses. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'FRESH DOCS'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Highlighting the updated Readme and Contributing guidelines.",
+      "text_in_image": "FRESH DOCS"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot putting a pixelated envelope into a rustic mailbox. A tiny friendly pixel robot is waiting nearby to receive it. The scene is lit by a warm sunset glow with lime green (#ecf874) fireflies floating around. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing a tiny messenger bag. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'CONNECT'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Representing the fixed mentor contact email and community connection.",
+      "text_in_image": "CONNECT"
+    }
+  ],
+  "caption": "Summer is coming early to the Pollinations garden! 🌻✨\n\nWe’re prepping the soil for Google Summer of Code (GSOC) and it’s gonna be a vibe. 🐝💻 We just polished up our Contributing Guidelines and Readme to make them super fresh and easy to follow. Plus, we fixed up our mentor contacts so you can actually reach us! (oops lol).\n\nOpen source is about growth, and we want YOU to come plant some seeds with us. Whether you're a coding wizard or just curious, there's space in our garden.\n\nReady to build cool AI stuff? Check the repo link in bio! 🌱\n\n#pollinations #gsoc #opensource #pixelart #cozyvibes #codinglife #summerofcode #aiart #indiedev #buildinpublic #retrogaming #8bit",
+  "hashtags": [
+    "#pollinations",
+    "#gsoc",
+    "#opensource",
+    "#pixelart",
+    "#cozyvibes",
+    "#codinglife",
+    "#summerofcode",
+    "#aiart",
+    "#indiedev",
+    "#buildinpublic",
+    "#retrogaming",
+    "#8bit"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images. 1) A cute pixel bee in a sun hat gardening next to a GSOC sign with lime green accents. 2) The bee reading a glowing guide book in a forest. 3) The bee mailing a letter to a robot friend at sunset."
+}

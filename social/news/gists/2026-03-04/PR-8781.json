@@ -1,0 +1,34 @@
+{
+  "pr_number": 8781,
+  "title": "Add PromptLab Studio to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8781",
+  "merged_at": "2026-03-04T20:22:34Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Welcome to the Lab",
+    "blurb": "PromptLab Studio just landed in the ecosystem. It's a structured prompt engineering workspace built on top of our API for generating images and text.",
+    "summary": "Added PromptLab Studio, a structured prompt engineering workspace, to the community app showcase.",
+    "impact": "Creators now have a dedicated, structured environment to craft and test prompts for image and text generation.",
+    "keywords": [
+      "community",
+      "app",
+      "prompt-engineering",
+      "showcase",
+      "promptlab"
+    ],
+    "visual_concept": "A cozy digital laboratory. Polly the bee wearing tiny safety goggles, mixing glowing 'prompt' ingredients in beakers that sprout into code-plants. Represents the 'PromptLab' concept.",
+    "image_prompt": "Cozy pixel art scene of a cute bee mascot wearing tiny safety goggles, mixing glowing potions in a cozy digital laboratory where code-plants sprout from glass beakers. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-04/PR-8781.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-04T20:23:28.026886+00:00"
+}

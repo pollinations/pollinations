@@ -1,0 +1,34 @@
+{
+  "pr_number": 7980,
+  "title": "fix(social): use main branch in Buffer image URLs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/7980",
+  "merged_at": "2026-02-05T18:03:17Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Fixing the messenger",
+    "blurb": "Teaching our social bot to look for images in the right place so they don't disappear.",
+    "summary": "Updated the social media pipeline to reference image URLs from the main branch instead of temporary feature branches to prevent 404 errors in Buffer.",
+    "impact": "Ensures automated social media posts don't fail due to missing image links.",
+    "keywords": [
+      "social-pipeline",
+      "buffer",
+      "automation",
+      "bugfix",
+      "infrastructure"
+    ],
+    "visual_concept": "A tiny bee mechanic fixing a broken link in a pipeline. The pipeline represents the flow of images to social media.",
+    "image_prompt": "Cozy pixel art scene of a tiny 8-bit bee mechanic fixing a broken pipe in a digital garden. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting. Text in pixel font: 'LINK FIXED'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-12T13:53:32.332806+00:00"
+}

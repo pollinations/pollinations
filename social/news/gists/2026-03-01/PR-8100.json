@@ -1,0 +1,28 @@
+{
+  "pr_number": 8100,
+  "title": "Add Instaclaw to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8100",
+  "merged_at": "2026-03-01T16:42:55Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Add Instaclaw to Creative",
+    "blurb": "Add Instaclaw to Creative",
+    "summary": "Add Instaclaw to Creative",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-01T16:43:41.121635+00:00",
+  "_minimal": true
+}

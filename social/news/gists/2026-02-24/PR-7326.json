@@ -1,0 +1,34 @@
+{
+  "pr_number": 7326,
+  "title": "Add PantrySage to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7326",
+  "merged_at": "2026-02-24T17:41:22Z",
+  "labels": [
+    "TIER-APP-REVIEW-PR"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "What's for dinner?",
+    "blurb": "PantrySage joins the showcase to turn your random ingredients into actual meals. Finally, a use for that lonely can of beans.",
+    "summary": "PantrySage, an AI-powered meal planning and pantry scanning application, has been added to the Creative showcase.",
+    "impact": "Users can now discover a new tool for generating smart recipes based on ingredients they already own.",
+    "keywords": [
+      "community",
+      "showcase",
+      "app",
+      "food",
+      "ai-chef"
+    ],
+    "visual_concept": "A cozy kitchen scene representing the PantrySage app. The bee mascot acts as a chef, emphasizing the 'smart cooking' aspect.",
+    "image_prompt": "Cozy pixel art kitchen scene where the cute bee mascot wears a tiny white chef's hat and stirs a bubbling pot on a lime green (#ecf874) stove. Shelves are stocked with pixelated jars and ingredients. Warm lighting, steam rising, wholesome cooking vibes like Stardew Valley. Soft pastel gradient background. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-24/PR-7326.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T17:42:04.122316+00:00"
+}

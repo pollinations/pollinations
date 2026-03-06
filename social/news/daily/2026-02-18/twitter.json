@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "added an interactive build diary to the community page. transparency means seeing the messy parts too.\n\nalso remapped upstream 429s to 502s. if the provider is choked, that's a bad gateway, not you spamming. clarity helps.",
+  "alt_tweet": "shipped a tier cost simulation dashboard. trying to model the economics of generous free tiers without breaking the bank.\n\nalso: upstream rate limits (429) now return 502. it's not you, it's them.",
+  "hashtags": [
+    "#OpenSource",
+    "#BuildInPublic"
+  ],
+  "image_prompt": "Cozy pixel art scene. The cute bee mascot and chunky robot analyzing a glowing vertical timeline of code commits on a large retro monitor. Lime green (#ecf874) highlights on the screen. Soft pastel gradient background. Pixel text: 'BUILD LOG'. Warm lighting, energetic composition, Stardew Valley vibes.",
+  "reasoning": "Highlights the visible community feature (diary) and explains a technical change (error codes) in a way that benefits the user (less confusion).",
+  "char_count": 218,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-18/images/twitter.jpg",
+    "prompt": "Cozy pixel art scene. The cute bee mascot and chunky robot analyzing a glowing vertical timeline of code commits on a large retro monitor. Lime green (#ecf874) highlights on the screen. Soft pastel gradient background. Pixel text: 'BUILD LOG'. Warm lighting, energetic composition, Stardew Valley vibes."
+  },
+  "date": "2026-02-18",
+  "generated_at": "2026-02-19T06:21:56.260376+00:00",
+  "platform": "twitter"
+}

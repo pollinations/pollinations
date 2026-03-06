@@ -1,0 +1,28 @@
+{
+  "pr_number": 8702,
+  "title": "fix(text): load dotenv before server module imports",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8702",
+  "merged_at": "2026-03-01T11:30:43Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "fix(text): load dotenv before server module imports",
+    "blurb": "fix(text): load dotenv before server module imports",
+    "summary": "fix(text): load dotenv before server module imports",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-01T11:31:32.061384+00:00",
+  "_minimal": true
+}

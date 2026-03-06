@@ -1,0 +1,43 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Uses the renovation/spring cleaning metaphor to explain the website redesign and infrastructure updates. The sequence moves from the visual 'face lift' to new capabilities (vision/audio) to backend stability (eating bugs).",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft lighting, and mandatory lime green (#ecf874) accents. Stardew Valley meets lo-fi dev diary.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, putting the finishing touches on a wooden sign that says 'HELLO'. She holds a pixelated paintbrush dripping with lime green (#ecf874) paint. A bucket of lime paint sits on the grass. Soft pastel garden background with blooming code-flowers. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'FRESH PAINT'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients.",
+      "description": "Visualizes the website redesign and copy improvements as a physical renovation.",
+      "text_in_image": "FRESH PAINT",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-25/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Chunky pixel art of the cute CRT monitor robot holding a glowing holographic photo (representing the new Grok image model). The robot's screen shows excited eyes. Polly the bee hovers nearby wearing tiny wizard glasses, inspecting a floating audio waveform (ElevenLabs support). Lime green (#ecf874) data sparkles in the air. Soft lavender and cream background. Warm lighting, 8-bit aesthetic. Text in pixel font: 'NEW TOYS'.",
+      "description": "Highlights the new Grok-imagine integration and custom ElevenLabs voice support.",
+      "text_in_image": "NEW TOYS",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-25/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art interior scene. The round tan Nomnom creature is happily eating a stack of papers labeled 'BUGS' and '429 ERRORS'. Polly the bee is relaxing on a lime green (#ecf874) beanbag chair, watching a retro terminal screen that shows a stable green status bar. Warm indoor lighting, cozy carpet, lo-fi chill vibes. Text in pixel font: 'STABLE'. Cozy pixel art, 8-bit aesthetic.",
+      "description": "Represents the bug fixes, rate limit handling, and stability improvements.",
+      "text_in_image": "STABLE",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-25/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "Renovation week. \n\nThe website got a fresh coat of paint—new flow, better copy, clearer tier cards. Under the hood, we added a dedicated media upload service (finally), support for Grok-imagine, and custom ElevenLabs voices.\n\nAlso fed a bunch of bugs to the backend—stabilized the Wan video pipeline and taught the API some better manners regarding rate limits.\n\n14 PRs merged. Go build something weird.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #generativeai",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#webdev",
+    "#generativeai"
+  ],
+  "alt_text": "Pixel art carousel: 1. Polly the bee painting a sign lime green. 2. Robot and Polly examining new holographic tools. 3. Nomnom creature eating bug report papers while Polly relaxes.",
+  "date": "2026-02-25",
+  "generated_at": "2026-02-26T06:21:39.244819+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

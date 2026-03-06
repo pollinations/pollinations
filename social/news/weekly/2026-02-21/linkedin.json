@@ -1,0 +1,23 @@
+{
+  "post_type": "dispatch",
+  "hook": "48 PRs merged this week. The robots are getting smarter, and the apps are getting stranger.",
+  "body": "·˚✿ POLLINATIONS WEEKLY ✿˚·\n    vol.48 — agents & brainrot\n\n→ POLLY API & OPENAI COMPATIBILITY\nPolly now speaks fluent OpenAI. If you have existing tooling, you can point it at our endpoint and it should just work. We did this because learning new API specs is nobody's hobby.\n\n───\n\n→ SHOWCASE RENOVATION\nThe apps page got a facelift. Markdown descriptions, proper metrics, and a new badge system. It looks less like a directory and more like a gallery now.\n\n───\n\n→ AUTO POLLY\nWe shipped a self-healing repo agent. It finds issues and fixes them. Ideally, it puts us out of a job, but for now, it just saves us time.\n\n───\n\n→ NEW IN THE GARDEN\nCommunity submissions included SlidePainter, Nova Defense, and something called BrainrotMaker. We provide the infrastructure; you provide the chaos.\n\n───\n\n→ HOUSEKEEPING\nNPM packages moved to the @pollinations_ai scope. Please update your package.json before it yells at you.",
+  "closing": "Code is open. Roadmap is open. Come build something weird.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI",
+    "#GenerativeAI",
+    "#DevTools"
+  ],
+  "image_prompt": "Pixel art scene of a retro RPG quest log or inventory screen floating in a cozy garden. The menu background is a soft dark purple (#110518) with lime green (#ecf874) borders. Menu items listed in chunky pixel font: 'POLLY API', 'SHOWCASE v2', 'AUTO-FIXER', 'BRAINROT'. The cute bee mascot (Polly) is hovering next to the menu holding a large quill pen, checking off items. Background is a warm cream and pastel gradient with soft scanlines. Cozy 8-bit aesthetic, Stardew Valley vibes.",
+  "image_text": "WEEKLY QUEST LOG",
+  "reasoning": "Uses the 'Dispatch' format to cover multiple disparate updates. The RPG quest log visual theme fits the 'leveling up' of the platform features. Tone is dry and observational, acknowledging the absurdity of an app named 'BrainrotMaker' while highlighting significant technical achievements like OpenAI compatibility.",
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-21/images/linkedin.jpg",
+    "prompt": "Pixel art scene of a retro RPG quest log or inventory screen floating in a cozy garden. The menu background is a soft dark purple (#110518) with lime green (#ecf874) borders. Menu items listed in chunky pixel font: 'POLLY API', 'SHOWCASE v2', 'AUTO-FIXER', 'BRAINROT'. The cute bee mascot (Polly) is hovering next to the menu holding a large quill pen, checking off items. Background is a warm cream and pastel gradient with soft scanlines. Cozy 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "date": "2026-02-21",
+  "generated_at": "2026-02-22T06:21:53.563202+00:00",
+  "platform": "linkedin",
+  "full_post": "48 PRs merged this week. The robots are getting smarter, and the apps are getting stranger.\n\n·˚✿ POLLINATIONS WEEKLY ✿˚·\n    vol.48 — agents & brainrot\n\n→ POLLY API & OPENAI COMPATIBILITY\nPolly now speaks fluent OpenAI. If you have existing tooling, you can point it at our endpoint and it should just work. We did this because learning new API specs is nobody's hobby.\n\n───\n\n→ SHOWCASE RENOVATION\nThe apps page got a facelift. Markdown descriptions, proper metrics, and a new badge system. It looks less like a directory and more like a gallery now.\n\n───\n\n→ AUTO POLLY\nWe shipped a self-healing repo agent. It finds issues and fixes them. Ideally, it puts us out of a job, but for now, it just saves us time.\n\n───\n\n→ NEW IN THE GARDEN\nCommunity submissions included SlidePainter, Nova Defense, and something called BrainrotMaker. We provide the infrastructure; you provide the chaos.\n\n───\n\n→ HOUSEKEEPING\nNPM packages moved to the @pollinations_ai scope. Please update your package.json before it yells at you.\n\n#OpenSource #AI #GenerativeAI #DevTools"
+}

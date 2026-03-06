@@ -1,0 +1,34 @@
+{
+  "pr_number": 8084,
+  "title": "Send Discord announcement as single message with text + image",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8084",
+  "merged_at": "2026-02-08T12:35:56Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Tidying up the hive feed",
+    "blurb": "Our Discord bot just got a little smarter, combining text and images into a single, tidy message.",
+    "summary": "Refactored the Discord notification script to send content and images as a single multipart message.",
+    "impact": "Reduces API calls and ensures announcements appear as a single, cohesive unit in Discord channels.",
+    "keywords": [
+      "discord",
+      "bot",
+      "automation",
+      "python",
+      "api"
+    ],
+    "visual_concept": "The pollinations.ai bee mascot acting as a postman, holding a single neat envelope that contains both a letter and a photo, symbolizing the unified message format. The setting is a cozy pixel art post office.",
+    "image_prompt": "Cozy pixel art scene of a cute bee mascot acting as a postman, holding a single neat envelope containing a photo and a letter. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text 'delivered'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8084.jpg",
+    "prompt": "Cozy pixel art scene of a cute bee mascot acting as a postman, holding a single neat envelope containing a photo and a letter. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text 'delivered'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-12T14:03:13.632130+00:00"
+}

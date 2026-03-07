@@ -15,7 +15,10 @@ const logError = debug("pollinations:airforce:error");
  */
 async function resolveRedirects(url: string): Promise<string> {
     try {
-        const response = await fetch(url, { method: "HEAD", redirect: "follow" });
+        const response = await fetch(url, {
+            method: "HEAD",
+            redirect: "follow",
+        });
         const finalUrl = response.url;
         if (finalUrl !== url) {
             logOps(`Resolved redirect: ${url} → ${finalUrl}`);
@@ -99,10 +102,16 @@ async function fetchFromAirforce(
         `Generating with ${airforceModel}...`,
     );
 
-    const requestBody = await buildRequestBody(prompt, safeParams, airforceModel);
+    const requestBody = await buildRequestBody(
+        prompt,
+        safeParams,
+        airforceModel,
+    );
     logOps("Request body:", JSON.stringify(requestBody));
 
-    const useSse = VIDEO_MODELS.includes(airforceModel) || SSE_IMAGE_MODELS.includes(airforceModel);
+    const useSse =
+        VIDEO_MODELS.includes(airforceModel) ||
+        SSE_IMAGE_MODELS.includes(airforceModel);
     const response = await makeApiRequest(apiKey, requestBody);
 
     if (!response.ok) {
@@ -171,7 +180,10 @@ async function buildRequestBody(
         n: 1,
     };
 
-    if (VIDEO_MODELS.includes(airforceModel) || SSE_IMAGE_MODELS.includes(airforceModel)) {
+    if (
+        VIDEO_MODELS.includes(airforceModel) ||
+        SSE_IMAGE_MODELS.includes(airforceModel)
+    ) {
         requestBody.sse = true;
         requestBody.response_format = "url";
 
@@ -216,11 +228,16 @@ async function buildRequestBody(
 
             // Support image-to-video: pass reference image URLs if provided
             if (safeParams.image && safeParams.image.length > 0) {
-                requestBody.image_urls = await Promise.all(safeParams.image.map(resolveRedirects));
+                requestBody.image_urls = await Promise.all(
+                    safeParams.image.map(resolveRedirects),
+                );
             }
         } else {
             // SSE image models (e.g. flux-2-dev): use aspectRatio as "W:H"
-            const size = closestSupportedSize(safeParams.width, safeParams.height);
+            const size = closestSupportedSize(
+                safeParams.width,
+                safeParams.height,
+            );
             if (size) {
                 requestBody.size = size;
                 requestBody.aspectRatio = size.replace("x", ":");
@@ -232,7 +249,9 @@ async function buildRequestBody(
                 safeParams.image &&
                 safeParams.image.length > 0
             ) {
-                requestBody.image_urls = await Promise.all(safeParams.image.map(resolveRedirects));
+                requestBody.image_urls = await Promise.all(
+                    safeParams.image.map(resolveRedirects),
+                );
             }
         }
     } else {
@@ -246,7 +265,9 @@ async function buildRequestBody(
             safeParams.image &&
             safeParams.image.length > 0
         ) {
-            requestBody.image_urls = await Promise.all(safeParams.image.map(resolveRedirects));
+            requestBody.image_urls = await Promise.all(
+                safeParams.image.map(resolveRedirects),
+            );
         }
     }
 

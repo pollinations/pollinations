@@ -170,19 +170,8 @@ export async function genericOpenAIClient(
                 : originalChoice
         ) as CompletionChoice;
 
-        // Normalize finish_reason to OpenAI format. Providers return native
-        // values (Vertex: STOP/MAX_TOKENS, Anthropic: end_turn/tool_use) when
-        // Portkey strict-openai-compliance is disabled (required for Vertex
-        // thought_signature support).
-        if (formattedChoice.finish_reason) {
-            const normalized: Record<string, string> = {
-                STOP: "stop", MAX_TOKENS: "length", SAFETY: "content_filter",
-                RECITATION: "content_filter", end_turn: "stop", tool_use: "tool_calls",
-                stop_sequence: "stop",
-            };
-            formattedChoice.finish_reason =
-                normalized[formattedChoice.finish_reason] ?? formattedChoice.finish_reason;
-        }
+        // Force finish_reason to "tool_calls" when tool_calls are present.
+        // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
         if (formattedChoice.message?.tool_calls?.length) {
             formattedChoice.finish_reason = "tool_calls";
         }

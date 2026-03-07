@@ -60,7 +60,8 @@ export const HELLO_PAGE = {
 
     // Section — For your users / BYOP
     usersTitle: "Your users pay for themselves",
-    usersBody: "Each user who signs up gets 1.5 free Pollen per week — and spends it in your app. Costs you nothing.",
+    usersBody:
+        "Each user who signs up gets 1.5 free Pollen per week — and spends it in your app. Costs you nothing.",
     usersPaymentsLink: "💳 Set up user payments →",
 
     // Section 8 — We Build in the Open

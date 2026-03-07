@@ -24,9 +24,7 @@ function PixelArrowRight() {
             {/* Shaft */}
             <div className="w-4 md:w-6 h-1 bg-text-secondary" />
             {/* Arrowhead — CSS borders */}
-            <div
-                className="w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[6px] border-l-text-secondary"
-            />
+            <div className="w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[6px] border-l-text-secondary" />
         </div>
     );
 }
@@ -65,7 +63,11 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
             </div>
 
             {/* Return arrow: pixel U-shape + CSS triangle arrowhead */}
-            <div className="relative w-full mt-4" style={{ height: "32px" }} aria-hidden="true">
+            <div
+                className="relative w-full mt-4"
+                style={{ height: "32px" }}
+                aria-hidden="true"
+            >
                 {/* Pixel U-shape bar (no arrowhead) */}
                 <svg
                     className="absolute inset-0 w-full h-full"
@@ -74,9 +76,27 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
                     style={{ imageRendering: "pixelated" }}
                     aria-hidden="true"
                 >
-                    <rect x="370" y="0" width="6" height="16" fill="rgb(var(--muted))" />
-                    <rect x="24" y="12" width="352" height="6" fill="rgb(var(--muted))" />
-                    <rect x="24" y="0" width="6" height="16" fill="rgb(var(--muted))" />
+                    <rect
+                        x="370"
+                        y="0"
+                        width="6"
+                        height="16"
+                        fill="rgb(var(--muted))"
+                    />
+                    <rect
+                        x="24"
+                        y="12"
+                        width="352"
+                        height="6"
+                        fill="rgb(var(--muted))"
+                    />
+                    <rect
+                        x="24"
+                        y="0"
+                        width="6"
+                        height="16"
+                        fill="rgb(var(--muted))"
+                    />
                 </svg>
                 {/* CSS triangle arrowhead pointing up */}
                 <div

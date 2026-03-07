@@ -44,7 +44,11 @@ function Layout() {
                         <div className="flex items-start gap-3">
                             {/* Logo */}
                             <Link to="/" className="flex-shrink-0">
-                                <Logo className="w-20 h-20 object-contain" mainColor="rgb(var(--dark))" shadeColor="rgb(var(--accent-strong))" />
+                                <Logo
+                                    className="w-20 h-20 object-contain"
+                                    mainColor="rgb(var(--dark))"
+                                    shadeColor="rgb(var(--accent-strong))"
+                                />
                             </Link>
                             {/* Nav + Social + Enter — wraps into rows as needed */}
                             <div className="flex-1 flex flex-wrap gap-1 items-center justify-end pt-1">

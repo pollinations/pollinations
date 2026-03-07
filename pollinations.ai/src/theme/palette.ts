@@ -12,13 +12,13 @@ export const PALETTE = {
     // ─────────────────────────────────────────────
     // NEUTRALS — from darkest to lightest
     // ─────────────────────────────────────────────
-    dark: "#110518",        // text, borders, buttons, shadows
-    muted: "#4a3f5c",       // secondary text, active overlays
-    subtle: "#6b5f80",      // tertiary text, captions, placeholders
-    white: "#ffffff",       // inverse text, input backgrounds
-    cream: "#F3EBDE",       // page background, faint borders
-    tan: "#e8e2d8",         // card backgrounds, disabled buttons, light borders
-    border: "#cfc8b8",      // standard borders, dividers, inputs
+    dark: "#110518", // text, borders, buttons, shadows
+    muted: "#4a3f5c", // secondary text, active overlays
+    subtle: "#6b5f80", // tertiary text, captions, placeholders
+    white: "#ffffff", // inverse text, input backgrounds
+    cream: "#F3EBDE", // page background, faint borders
+    tan: "#e8e2d8", // card backgrounds, disabled buttons, light borders
+    border: "#cfc8b8", // standard borders, dividers, inputs
 
     // ─────────────────────────────────────────────
     // FOUR BRAND COLORS — light (pastel) + strong (saturated)
@@ -28,24 +28,24 @@ export const PALETTE = {
     //   tertiary  = mint       (currently: audio indicator)
     //   accent    = lime       (currently: video indicator + CTAs)
     // ─────────────────────────────────────────────
-    primaryLight: "#E9D9EF",    // lavender pastel
-    primaryStrong: "#C9A9E4",   // lavender saturated
-    secondaryLight: "#D8DFF8",  // periwinkle pastel
+    primaryLight: "#E9D9EF", // lavender pastel
+    primaryStrong: "#C9A9E4", // lavender saturated
+    secondaryLight: "#D8DFF8", // periwinkle pastel
     secondaryStrong: "#A4B4DE", // periwinkle saturated
-    tertiaryLight: "#D4F0D7",   // mint pastel
-    tertiaryStrong: "#A8E6A2",  // mint saturated
-    accentStrong: "#E8F372",    // lime saturated
-    accentLight: "#F5FABC",     // lime pastel
+    tertiaryLight: "#D4F0D7", // mint pastel
+    tertiaryStrong: "#A8E6A2", // mint saturated
+    accentStrong: "#E8F372", // lime saturated
+    accentLight: "#F5FABC", // lime pastel
 
     // ─────────────────────────────────────────────
     // TIER COLORS — used exclusively for tiers
     // ─────────────────────────────────────────────
-    seed: "#dcfce7",                // green
-    seedAccent: "#4ade80",          // green accent
-    flower: "#fce7f3",              // pink
-    flowerAccent: "#f472b6",        // pink accent
-    nectar: "#fef3c7",              // amber
-    nectarAccent: "#fbbf24",        // amber accent
+    seed: "#dcfce7", // green
+    seedAccent: "#4ade80", // green accent
+    flower: "#fce7f3", // pink
+    flowerAccent: "#f472b6", // pink accent
+    nectar: "#fef3c7", // amber
+    nectarAccent: "#fbbf24", // amber accent
 } as const;
 
 // Hex → RGB triplet for Tailwind opacity support

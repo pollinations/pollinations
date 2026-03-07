@@ -79,32 +79,29 @@ Title.displayName = "Title";
 // - simple: Clean headings without border or color
 //   → Used for: Nested sections, tertiary headings
 // ============================================
-const headingVariants = cva(
-    "font-headline font-black text-dark uppercase",
-    {
-        variants: {
-            variant: {
-                // Section headings with border-left accent (H2 - major sections)
-                section:
-                    "text-base md:text-lg tracking-widest border-l-4 border-dark pl-4",
-                // Colored headings (H3 - subsections in cards)
-                lime: "text-sm md:text-base tracking-wider text-dark",
-                rose: "text-sm md:text-base tracking-wider text-dark",
-                // Simple headings (no border, no color)
-                simple: "text-base md:text-lg tracking-wider",
-            },
-            spacing: {
-                default: "mb-4", // Standard spacing
-                comfortable: "mb-6", // More breathing room
-                tight: "mb-2", // Compact, close to content
-            },
+const headingVariants = cva("font-headline font-black text-dark uppercase", {
+    variants: {
+        variant: {
+            // Section headings with border-left accent (H2 - major sections)
+            section:
+                "text-base md:text-lg tracking-widest border-l-4 border-dark pl-4",
+            // Colored headings (H3 - subsections in cards)
+            lime: "text-sm md:text-base tracking-wider text-dark",
+            rose: "text-sm md:text-base tracking-wider text-dark",
+            // Simple headings (no border, no color)
+            simple: "text-base md:text-lg tracking-wider",
         },
-        defaultVariants: {
-            variant: "section",
-            spacing: "default",
+        spacing: {
+            default: "mb-4", // Standard spacing
+            comfortable: "mb-6", // More breathing room
+            tight: "mb-2", // Compact, close to content
         },
     },
-);
+    defaultVariants: {
+        variant: "section",
+        spacing: "default",
+    },
+});
 
 interface HeadingProps
     extends React.HTMLAttributes<HTMLHeadingElement>,

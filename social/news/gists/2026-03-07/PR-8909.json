@@ -1,0 +1,34 @@
+{
+  "pr_number": 8909,
+  "title": "fix: normalize finish_reason without Portkey strict compliance",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8909",
+  "merged_at": "2026-03-07T10:06:11Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Unbreaking Gemini's tools",
+    "blurb": "We tweaked how we handle AI finish reasons so Gemini 3 can use tools properly again. Sometimes you have to bend the strict compliance rules to make the magic work!",
+    "summary": "Reverted strict OpenAI compliance in Portkey and implemented custom finish_reason normalization to fix Vertex AI Gemini 3 tool calls.",
+    "impact": "Developers using Gemini 3 will once again receive the correct 'tool_calls' finish reason instead of having their tool signatures stripped.",
+    "keywords": [
+      "bug-fix",
+      "gemini",
+      "tool-calls",
+      "text-api",
+      "portkey"
+    ],
+    "visual_concept": "The PR is about fixing tool calls for Gemini by adjusting how 'finish reasons' are handled and dropping strict compliance. Visual: Polly the bee fixing a broken tool (like a gear) next to a glowing text terminal, with the Nomnom creature eating a 'strict compliance' rulebook.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, using a wrench to fix a glowing lime green (#ecf874) gear inside a retro computer terminal. The round tan nomnom creature sits nearby, happily eating a 'strict rules' manual. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-07T10:06:59.353711+00:00"
+}

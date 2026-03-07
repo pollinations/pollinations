@@ -17,6 +17,14 @@ tb --cloud sql "SELECT ... FROM generation_event ..."
 
 > **Quoting**: Use double quotes for the SQL string. Use single quotes inside SQL. Avoid `!=` with `$'...'` shell quoting (escaping issues) — prefer `NOT IN ('undefined', '')` instead.
 
+> **`tb` CLI caps at 100 rows.** For large result sets, use the HTTP API:
+> ```bash
+> TB_TOKEN=$(python3 -c "import json; print(json.load(open('.tinyb'))['token'])")
+> curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
+>   -H "Authorization: Bearer $TB_TOKEN" \
+>   --data-urlencode "q=SELECT ... FORMAT JSONCompact" | python3 -c "import json,sys; ..."
+> ```
+
 ---
 
 # Composite Abuse Score (0-100)
@@ -75,6 +83,38 @@ WHERE tier = 'microbe' AND err_pct >= 95
 ```
 
 > **Note**: `tb --cloud sql` caps output at 100 rows. For large result sets, use the Tinybird HTTP API with `FORMAT JSONCompact`.
+
+## Spore Tier Abuse Finder
+
+Finds spore users to demote. Returns candidates with IP cluster size for classification.
+
+```sql
+SELECT g.user_id, u.github_username, u.email, u.tier,
+    count() as total_reqs,
+    round(sum(g.total_price), 4) as total_spend,
+    round(countIf(g.response_status >= 400) * 100.0 / count(), 1) as err_pct,
+    countDistinct(g.ip_hash) as distinct_ips,
+    max(coalesce(ips.ip_cluster_size, 0)) as max_ip_cluster
+FROM generation_event g
+LEFT JOIN d1_user u ON g.user_id = u.id
+    AND u.synced_at = (SELECT max(synced_at) FROM d1_user)
+LEFT JOIN (
+    SELECT ip_hash, count(DISTINCT user_id) as ip_cluster_size
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL 7 DAY
+        AND ip_hash NOT IN ('undefined', '')
+        AND user_id NOT IN ('undefined', '')
+    GROUP BY ip_hash
+) ips ON g.ip_hash = ips.ip_hash
+WHERE g.start_time >= now() - INTERVAL 7 DAY
+    AND g.user_id NOT IN ('undefined', '')
+    AND u.tier = 'spore'
+GROUP BY g.user_id, u.github_username, u.email, u.tier
+HAVING total_reqs >= 100 AND err_pct >= 90 AND total_spend <= 1.6
+ORDER BY max_ip_cluster DESC, total_reqs DESC
+```
+
+Then classify programmatically using the demotion signals listed under "Safe to demote" above.
 
 ---
 
@@ -214,10 +254,19 @@ WHERE abuse_score >= 90
 - Score >= 90 + hotmail/outlook random email + zero spend + microbe tier
 - Score >= 70 + IP cluster >= 100 + zero spend
 
+**Safe to demote (spore → microbe):**
+- IP cluster >= 10 + error rate >= 90%
+- Gibberish suffix username (`-boop`, `-a11y`, `-bit`, `-lang`, `-max`, `-sudo`, `-dot`, `-beep`, `-commits`, `-pixel`, `-cmd`, `-stack`, `-ops`, `-dotcom`) + error >= 90%
+- Disposable email (hotmail/outlook/proton/qq/mail.ru/vk.com/anonaddy/anondrop/rambler/gmx/yandex) + error >= 95% + $0 spend
+- 100% error rate + $0 spend (zero successful requests ever)
+- 99%+ error rate + 1000+ requests/week (hammering)
+- Multi-account cluster (same email root, e.g. `reksely`/`notreksely`/`rekselicha`)
+
 **Needs review:**
 - Any account with spend > $2 (could be real customer)
 - Accounts on Cloudflare IPs (`2a06:98c0:*`)
 - Accounts with real-looking Gmail addresses
+- Spore users with 90-95% error rate but some successful spend (may be bad integration, not abuse)
 
 ---
 
@@ -248,13 +297,9 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
   --command "UPDATE user SET banned = 1, ban_reason = 'Bot farm abuse' WHERE id = '<USER_ID>'"
 
 # Batch ban (from a file of user IDs, one per line)
-# Builds batches of 50 IDs per UPDATE for efficiency
-while IFS= read -r ids_batch; do
-  SQL="UPDATE user SET banned = 1, ban_reason = 'Automated: bot farm abuse' WHERE id IN ($ids_batch)"
-  npx wrangler d1 execute production-pollinations-enter-db --remote --command "$SQL"
-done < <(
-  cat user_ids_to_ban.txt | sed "s/^/'/;s/$/'/" | paste -d, $(printf -- '- %.0s' {1..50})
-)
+IDS=$(cat user_ids_to_ban.txt | sed "s/^/'/;s/$/'/" | paste -sd, -)
+npx wrangler d1 execute production-pollinations-enter-db --remote \
+  --command "UPDATE user SET banned = 1, ban_reason = 'Automated: bot farm abuse' WHERE id IN ($IDS)"
 
 # Unban a user (if false positive)
 npx wrangler d1 execute production-pollinations-enter-db --remote \
@@ -264,6 +309,24 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 npx wrangler d1 execute production-pollinations-enter-db --remote \
   --command "UPDATE user SET banned = 1, ban_reason = 'Temporary: rate abuse', ban_expires = $(date -v+7d +%s)000 WHERE id = '<USER_ID>'"
 ```
+
+## Demote Commands (spore → microbe)
+
+Demotion is preferred over banning for spore-tier abuse — it removes their pollen and rate-limits them without a hard block.
+
+```bash
+# Batch demote (from a file of user IDs, one per line)
+IDS=$(cat user_ids_to_demote.txt | sed "s/^/'/;s/$/'/" | paste -sd, -)
+npx wrangler d1 execute production-pollinations-enter-db --remote \
+  --command "UPDATE user SET tier = 'microbe', tier_balance = 0 WHERE id IN ($IDS) AND tier = 'spore'"
+
+# Verify (check a sample)
+IDS=$(head -5 user_ids_to_demote.txt | sed "s/^/'/;s/$/'/" | paste -sd, -)
+npx wrangler d1 execute production-pollinations-enter-db --remote \
+  --command "SELECT id, tier, tier_balance FROM user WHERE id IN ($IDS)"
+```
+
+> **Important**: Always include `AND tier = 'spore'` as a safety guard — prevents accidentally demoting users who were already upgraded.
 
 **D1 database names:**
 - Production: `production-pollinations-enter-db`
@@ -299,9 +362,20 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 
 ---
 
+# Action Log
+
+| Date | Action | Count | Details |
+|------|--------|-------|---------|
+| 2026-03-06 | Banned microbe bot farm | 277 | IP cluster ≥100, 95%+ errors, $0 spend |
+| 2026-03-06 | Demoted spore → microbe | 42 | Same bot farm, spore tier with free allotment |
+| 2026-03-06 | Demoted spore → microbe | 59 | Multi-signal: IP clusters, gibberish suffixes, disposable emails, hammering |
+
+---
+
 # Notes
 
-- **IP coverage is partial** — only ~7% of events have IP data (feature recently deployed)
-- As coverage increases, re-run analysis periodically to catch more
-- The scoring formula may need tuning — the 40-69 bucket currently has too many users because free-tier spend ($1.50) doesn't trigger "zero spend" signal
+- **IP coverage**: Started 2026-03-06, ~19% user coverage initially. Re-run analysis as coverage grows.
+- **d1_user sync lag**: The `d1_user` table in Tinybird syncs periodically (not real-time). After banning/demoting on D1, Tinybird data is stale — verify actions on D1 directly.
+- **Spore "spend" is misleading**: Spore tier gets ~$1.50/week free allotment. Filter with `total_spend <= 1.6` to catch free-only users.
+- **Gibberish suffix usernames**: Bot farms use GitHub usernames with suffixes like `-boop`, `-a11y`, `-max`, `-sudo`, `-cmd`, `-stack`, `-pixel`, `-dot`, `-beep`, `-commits`, `-ops`, `-dotcom`, `-lang`, `-bit`. These are auto-generated.
 - Consider adding: account age signal, GitHub account age, user-agent clustering

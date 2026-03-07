@@ -30,6 +30,68 @@ import type { Env } from "../env.ts";
 const DEFAULT_ELEVENLABS_MODEL = "eleven_v3";
 
 /**
+ * Fix WAV RIFF header so `data` chunk size and overall RIFF size match
+ * the actual PCM payload.  ElevenLabs sometimes returns a placeholder
+ * nframes (0x7FFFFFFF) that causes downstream decoders to misbehave.
+ *
+ * Standard 44-byte PCM WAV header layout:
+ *   0-3   "RIFF"
+ *   4-7   file size − 8   (little-endian u32)
+ *   8-11  "WAVE"
+ *  12-15  "fmt "
+ *  16-19  fmt chunk size (16 for PCM)
+ *  20-35  fmt fields (audio format, channels, sample rate, …)
+ *  36-39  "data"
+ *  40-43  data chunk size  (little-endian u32)
+ *  44+    PCM samples
+ */
+function fixWavHeader(buf: ArrayBuffer): ArrayBuffer {
+    const bytes = new Uint8Array(buf);
+
+    // Only touch files that start with a RIFF/WAVE header
+    if (
+        bytes.length < 44 ||
+        bytes[0] !== 0x52 || // R
+        bytes[1] !== 0x49 || // I
+        bytes[2] !== 0x46 || // F
+        bytes[3] !== 0x46 // F
+    ) {
+        return buf;
+    }
+
+    const view = new DataView(buf);
+
+    // Find the "data" sub-chunk — it's usually at offset 36 but some
+    // encoders insert extra chunks (e.g. LIST/INFO) between fmt and data.
+    let dataChunkOffset = -1;
+    for (let i = 12; i < bytes.length - 8; i++) {
+        if (
+            bytes[i] === 0x64 && // d
+            bytes[i + 1] === 0x61 && // a
+            bytes[i + 2] === 0x74 && // t
+            bytes[i + 3] === 0x61 // a
+        ) {
+            dataChunkOffset = i;
+            break;
+        }
+    }
+    if (dataChunkOffset === -1) return buf;
+
+    const headerSize = dataChunkOffset + 8; // includes "data" + 4-byte size
+    const actualDataSize = bytes.length - headerSize;
+    const currentDataSize = view.getUint32(dataChunkOffset + 4, true);
+
+    if (currentDataSize === actualDataSize) return buf; // already correct
+
+    // Patch data chunk size
+    view.setUint32(dataChunkOffset + 4, actualDataSize, true);
+    // Patch RIFF chunk size (total file size minus the 8 bytes for "RIFF" + size field)
+    view.setUint32(4, bytes.length - 8, true);
+
+    return buf;
+}
+
+/**
  * Parse MP4/M4A container to extract exact duration from the `mvhd` atom.
  * Returns duration in seconds, or null if the atom isn't found.
  *
@@ -210,6 +272,20 @@ export async function generateSpeech(opts: {
     };
 
     log.info("TTS success: {chars} characters", { chars: text.length });
+
+    // ElevenLabs WAV responses may have incorrect RIFF header sizes
+    // (e.g. nframes = 0x7FFFFFFF placeholder). Buffer and fix before
+    // forwarding to avoid breaking downstream WAV consumers.
+    if (responseFormat === "wav") {
+        const audioBuffer = fixWavHeader(await response.arrayBuffer());
+        return new Response(audioBuffer, {
+            status: 200,
+            headers: {
+                "Content-Type": contentType,
+                ...usageHeaders,
+            },
+        });
+    }
 
     return new Response(response.body, {
         status: 200,

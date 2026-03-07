@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../../api.config";
-import { PLAY_PAGE } from "../../../copy/content/play";
+import { PLAY_PAGE, PLAY_PAGE_NO_TRANSLATE } from "../../../copy/content/play";
 import { LINKS } from "../../../copy/content/socialLinks";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
@@ -24,14 +24,18 @@ function ColoredUrl({
     base,
     type,
     prompt,
-    placeholder = "your-prompt-here",
+    placeholder,
     params,
+    apiKeyPlaceholder,
+    apiKeyParam,
 }: {
     base: string;
     type: string;
     prompt: string;
-    placeholder?: string;
+    placeholder: string;
     params: Record<string, string>;
+    apiKeyPlaceholder: string;
+    apiKeyParam: string;
 }) {
     const encodedPrompt = encodeURIComponent(prompt || placeholder);
     return (
@@ -52,9 +56,11 @@ function ColoredUrl({
                         </span>
                     ))}
                     <span className="text-subtle">&</span>
-                    <span className="text-dark">key</span>
+                    <span className="text-dark">{apiKeyParam}</span>
                     <span className="text-subtle">=</span>
-                    <span className="text-dark font-bold">YOUR_API_KEY</span>
+                    <span className="text-dark font-bold">
+                        {apiKeyPlaceholder}
+                    </span>
                 </>
             )}
         </span>
@@ -87,7 +93,7 @@ export function PlayGenerator({
     audioModels,
     apiKey,
 }: PlayGeneratorProps) {
-    const { copy } = usePageCopy(PLAY_PAGE);
+    const { copy } = usePageCopy(PLAY_PAGE, PLAY_PAGE_NO_TRANSLATE);
 
     const [result, setResult] = useState<string | null>(null);
     const [resultType, setResultType] = useState<
@@ -184,17 +190,19 @@ export function PlayGenerator({
     );
 
     const copyableUrl = useMemo(() => {
-        const encodedPrompt = encodeURIComponent(prompt || "your-prompt-here");
+        const encodedPrompt = encodeURIComponent(
+            prompt || copy.urlPlaceholderPrompt,
+        );
         if (isImageModel) {
             const qs = new URLSearchParams(imageParams).toString();
-            return `${API_BASE}/image/${encodedPrompt}?${qs}&key=YOUR_API_KEY`;
+            return `${API_BASE}/image/${encodedPrompt}?${qs}&${copy.urlApiKeyParam}=${copy.urlApiKeyPlaceholder}`;
         }
         if (isAudioModel) {
             const qs = new URLSearchParams(audioParams).toString();
-            return `${API_BASE}/audio/${encodeURIComponent(prompt || "your-text-here")}?${qs}&key=YOUR_API_KEY`;
+            return `${API_BASE}/audio/${encodeURIComponent(prompt || copy.urlPlaceholderText)}?${qs}&${copy.urlApiKeyParam}=${copy.urlApiKeyPlaceholder}`;
         }
         const qs = new URLSearchParams(textParams).toString();
-        return `${API_BASE}/text/${encodedPrompt}?${qs}&key=YOUR_API_KEY`;
+        return `${API_BASE}/text/${encodedPrompt}?${qs}&${copy.urlApiKeyParam}=${copy.urlApiKeyPlaceholder}`;
     }, [
         isImageModel,
         isAudioModel,
@@ -202,6 +210,7 @@ export function PlayGenerator({
         textParams,
         audioParams,
         prompt,
+        copy,
     ]);
 
     const addImageUrl = () => {
@@ -391,7 +400,7 @@ export function PlayGenerator({
                                 <div key={url} className="relative">
                                     <img
                                         src={url}
-                                        alt={`Reference ${index + 1}`}
+                                        alt={`${copy.imageAltReferencePrefix} ${index + 1}`}
                                         className="w-16 h-16 object-cover rounded-input border-2 border-dark"
                                     />
                                     <button
@@ -631,7 +640,7 @@ export function PlayGenerator({
                     {resultType === "image" && (
                         <img
                             src={result}
-                            alt="Generated"
+                            alt={copy.imageAltGenerated}
                             className="w-full h-auto"
                             onLoad={() => setIsLoading(false)}
                         />
@@ -688,22 +697,30 @@ export function PlayGenerator({
                                 base={API_BASE}
                                 type="image"
                                 prompt={prompt}
+                                placeholder={copy.urlPlaceholderPrompt}
                                 params={imageParams}
+                                apiKeyPlaceholder={copy.urlApiKeyPlaceholder}
+                                apiKeyParam={copy.urlApiKeyParam}
                             />
                         ) : isAudioModel ? (
                             <ColoredUrl
                                 base={API_BASE}
                                 type="audio"
                                 prompt={prompt}
-                                placeholder="your-text-here"
+                                placeholder={copy.urlPlaceholderText}
                                 params={audioParams}
+                                apiKeyPlaceholder={copy.urlApiKeyPlaceholder}
+                                apiKeyParam={copy.urlApiKeyParam}
                             />
                         ) : (
                             <ColoredUrl
                                 base={API_BASE}
                                 type="text"
                                 prompt={prompt}
+                                placeholder={copy.urlPlaceholderPrompt}
                                 params={textParams}
+                                apiKeyPlaceholder={copy.urlApiKeyPlaceholder}
+                                apiKeyParam={copy.urlApiKeyParam}
                             />
                         )}
                     </div>
@@ -823,7 +840,11 @@ export function PlayGenerator({
                         </li>
                     </ul>
                     <div className="mt-3 px-2 py-1 bg-accent-strong/30 rounded-sm">
-                        <Body size="xs" spacing="none" className="text-dark font-bold">
+                        <Body
+                            size="xs"
+                            spacing="none"
+                            className="text-dark font-bold"
+                        >
                             {copy.publishableBetaWarning}
                         </Body>
                     </div>
@@ -861,7 +882,11 @@ export function PlayGenerator({
                         </li>
                     </ul>
                     <div className="mt-3 px-2 py-1 bg-accent-strong/30 rounded-sm">
-                        <Body size="xs" spacing="none" className="text-dark font-bold">
+                        <Body
+                            size="xs"
+                            spacing="none"
+                            className="text-dark font-bold"
+                        >
                             {copy.secretWarning}
                         </Body>
                     </div>

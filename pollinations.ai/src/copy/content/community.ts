@@ -78,6 +78,7 @@ export const COMMUNITY_PAGE = {
     overThePastYear: "and get started.",
     commitsLabel: "commits",
     commitLabel: "commit",
+    votesLabel: "votes",
 
     // Section 5 — Build Diary + Supporters
     buildDiaryTitle: "Build diary",

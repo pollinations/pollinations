@@ -231,7 +231,8 @@ export default function CommunityPage() {
                                                 {issue.emoji}
                                             </span>
                                             <span className="font-mono text-xs text-subtle">
-                                                {issue.votes} votes
+                                                {issue.votes}{" "}
+                                                {pageCopy.votesLabel}
                                             </span>
                                         </div>
                                         <p className="font-headline text-xs font-black text-dark">

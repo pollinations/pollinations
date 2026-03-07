@@ -33,6 +33,23 @@ export const APPS_PAGE = {
     pollenDocsLink: "</> Docs",
     buzzLegendDesc: "100+ requests / 24h",
     newLegendDesc: "Recently added",
+
+    // Platform display labels (emoji + name shown on app cards)
+    platformWeb: "🌐 Web",
+    platformAndroid: "📱 Android",
+    platformIos: "🍎 iOS",
+    platformWindows: "🖥️ Windows",
+    platformMacos: "🖥️ macOS",
+    platformDesktop: "💻 Desktop",
+    platformCli: "⌨️ CLI",
+    platformDiscord: "💬 Discord",
+    platformTelegram: "✈️ Telegram",
+    platformWhatsapp: "💬 WhatsApp",
+    platformLibrary: "📦 Library",
+    platformBrowserExt: "🧩 Extension",
+    platformRoblox: "🎮 Roblox",
+    platformWordpress: "📝 WordPress",
+    platformApi: "⚙️ API",
 };
 
 // Badge predicates — reused for both badges on cards and filter logic

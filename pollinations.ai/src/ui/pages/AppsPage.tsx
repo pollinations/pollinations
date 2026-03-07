@@ -34,22 +34,23 @@ function getRepoName(url: string) {
 
 // --- Platform badge ---
 
-const PLATFORM_DISPLAY: Record<string, string> = {
-    web: "🌐 Web",
-    android: "📱 Android",
-    ios: "🍎 iOS",
-    windows: "🖥️ Windows",
-    macos: "🖥️ macOS",
-    desktop: "💻 Desktop",
-    cli: "⌨️ CLI",
-    discord: "💬 Discord",
-    telegram: "✈️ Telegram",
-    whatsapp: "💬 WhatsApp",
-    library: "📦 Library",
-    "browser-ext": "🧩 Extension",
-    roblox: "🎮 Roblox",
-    wordpress: "📝 WordPress",
-    api: "⚙️ API",
+// Map from platform id to copy key in APPS_PAGE
+const PLATFORM_COPY_KEY: Record<string, keyof typeof APPS_PAGE> = {
+    web: "platformWeb",
+    android: "platformAndroid",
+    ios: "platformIos",
+    windows: "platformWindows",
+    macos: "platformMacos",
+    desktop: "platformDesktop",
+    cli: "platformCli",
+    discord: "platformDiscord",
+    telegram: "platformTelegram",
+    whatsapp: "platformWhatsapp",
+    library: "platformLibrary",
+    "browser-ext": "platformBrowserExt",
+    roblox: "platformRoblox",
+    wordpress: "platformWordpress",
+    api: "platformApi",
 };
 
 // --- App Card ---
@@ -215,9 +216,9 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             )}
                         </a>
                     )}
-                    {app.platform && PLATFORM_DISPLAY[app.platform] && (
+                    {app.platform && PLATFORM_COPY_KEY[app.platform] && (
                         <Badge variant="muted" className="ml-auto">
-                            {PLATFORM_DISPLAY[app.platform]}
+                            {copy[PLATFORM_COPY_KEY[app.platform]] as string}
                         </Badge>
                     )}
                 </div>

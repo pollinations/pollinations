@@ -215,14 +215,14 @@ export function BuildDiary() {
 
     // Text panel
     const displayTitle = onPR
-        ? prContent?.title || "..."
-        : entryContent?.title || "...";
+        ? prContent?.title || LAYOUT.loadingEllipsis
+        : entryContent?.title || LAYOUT.loadingEllipsis;
     const displaySummary = prettifiedSummary[0]?.text || rawSummary;
 
     // Date heading label
     const dateLabel =
         entry.type === "week"
-            ? `Week ${entry.weekNum}`
+            ? `${LAYOUT.weekLabel} ${entry.weekNum}`
             : `${entry.dayName} \u00B7 ${entry.dateLabel}`;
 
     const TextPanel = (

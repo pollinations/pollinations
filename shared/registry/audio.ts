@@ -102,7 +102,7 @@ export const AUDIO_SERVICES = {
         alpha: true,
     },
     suno: {
-        aliases: ["suno-v5", "suno-music"],
+        aliases: ["suno-v5", "suno-v4.5", "suno-music"],
         modelId: "suno-v5",
         provider: "airforce",
         cost: [

@@ -20,7 +20,7 @@
         "resolveJsonModule": true,
 
         // Node.js types
-        "types": ["node"],
+        "types": ["@cloudflare/workers-types"],
 
         // Base path for imports
         "baseUrl": "."

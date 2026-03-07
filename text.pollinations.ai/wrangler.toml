@@ -1,0 +1,16 @@
+name = "text-pollinations"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+account_id = "b6ec751c0862027ba269faf7029b2501"
+
+[vars]
+PORTKEY_GATEWAY_URL = "https://portkey.myceli.ai"
+
+# Secrets (set via: wrangler secret put <NAME>):
+# PORTKEY_API_KEY
+# PLN_ENTER_TOKEN
+# GOOGLE_PRIVATE_KEY
+# GOOGLE_PRIVATE_KEY_ID
+# GOOGLE_CLIENT_EMAIL
+# GOOGLE_PROJECT_ID

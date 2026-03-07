@@ -1,12 +1,10 @@
-import crypto from "node:crypto";
 import debug from "debug";
-import dotenv from "dotenv";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { stream } from "hono/streaming";
-import { getIp } from "../shared/extractFromRequest.js";
+import { getClientIp } from "../shared/extractFromRequest.js";
 import { logIp } from "../shared/ipLogger.js";
 import {
     getServiceDefinition,
@@ -21,10 +19,22 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 
-dotenv.config({ path: ".env.local" });
-dotenv.config();
-
 const app = new Hono();
+
+// Sync Cloudflare Worker env bindings to process.env so that modules
+// using process.env (debug, googleCloudAuth, generateTextPortkey) work
+// without refactoring every function signature.
+// NOTE: This writes to a shared global. Safe because all requests within
+// an isolate share the same env bindings, but would need revisiting if
+// per-request env bindings ever differ.
+app.use("*", async (c, next) => {
+    for (const [key, value] of Object.entries(c.env)) {
+        if (typeof value === "string") {
+            process.env[key] = value;
+        }
+    }
+    await next();
+});
 
 const log = debug("pollinations:server");
 const errorLog = debug("pollinations:error");
@@ -42,7 +52,7 @@ app.use(
 );
 
 app.use("*", async (c, next) => {
-    const ip = getIp(c.req.raw);
+    const ip = getClientIp(c.req.raw);
     const model = new URL(c.req.url).searchParams.get("model") || "unknown";
     logIp(ip, "text", `path=${c.req.path} model=${model}`);
     await next();
@@ -61,12 +71,12 @@ app.use("*", async (c, next) => {
     if (token !== expectedToken) {
         authLog(
             "Invalid or missing PLN_ENTER_TOKEN from IP:",
-            getIp(c.req.raw),
+            getClientIp(c.req.raw),
         );
         return c.json({ error: "Unauthorized" }, 401);
     }
 
-    authLog("Valid PLN_ENTER_TOKEN from IP:", getIp(c.req.raw));
+    authLog("Valid PLN_ENTER_TOKEN from IP:", getClientIp(c.req.raw));
     await next();
 });
 
@@ -77,16 +87,6 @@ app.get("/", (c) => {
         "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md",
         301,
     );
-});
-
-app.get("/crossdomain.xml", (c) => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
-<cross-domain-policy>
-  <allow-access-from domain="*" secure="false"/>
-</cross-domain-policy>`;
-    c.header("Content-Type", "application/xml");
-    return c.text(xml);
 });
 
 app.get("/models", (c) => {
@@ -107,7 +107,11 @@ app.get("/models", (c) => {
 // --- Helper functions ---
 
 function generatePollinationsId(): string {
-    const hash = crypto.randomBytes(16).toString("hex");
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    const hash = [...bytes]
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
     return `pllns_${hash}`;
 }
 
@@ -267,7 +271,7 @@ function sendErrorResponse(
     const errorResponse: Record<string, unknown> = {
         error: errorType,
         message: error.message || "An error occurred",
-        requestId: Math.random().toString(36).substring(7),
+        requestId: generatePollinationsId(),
         requestParameters: requestData || {},
     };
     if (errorDetails) errorResponse.details = errorDetails;
@@ -281,7 +285,7 @@ function sendErrorResponse(
         responseStatus,
         error.model || requestData?.model || "unknown",
         authResult.username || "anonymous",
-        getIp(c.req.raw) || "unknown",
+        getClientIp(c.req.raw),
         error.message,
     );
 
@@ -445,7 +449,7 @@ async function handleRequest(
             return await sendAsOpenAIStream(c, completion);
         }
 
-        if (c.req.method === "GET" || c.req.path === "/") {
+        if (c.req.method === "GET") {
             return sendContentResponse(c, completion);
         }
         return sendOpenAIResponse(c, completion);

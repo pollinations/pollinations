@@ -162,28 +162,59 @@ export function getTokenSource(req) {
  */
 
 export function getClientIp(req) {
+    let ip = null;
+
     // Handle Cloudflare Workers Request
     if (req.headers && typeof req.headers.get === "function") {
-        return (
-            req.headers.get("cf-connecting-ip") ||
+        ip =
+            req.headers.get("x-bb-ip") ||
+            req.headers.get("x-nf-client-connection-ip") ||
             req.headers.get("x-real-ip") ||
-            req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-            "unknown"
-        );
-    }
-
-    // Handle Express/Node.js request
-    if (req.headers && typeof req.headers === "object") {
-        return (
-            req.headers["cf-connecting-ip"] ||
+            req.headers.get("x-forwarded-for") ||
+            req.headers.get("cf-connecting-ip") ||
+            null;
+    } else if (req.headers && typeof req.headers === "object") {
+        // Handle Express/Node.js request
+        ip =
+            req.headers["x-bb-ip"] ||
+            req.headers["x-nf-client-connection-ip"] ||
             req.headers["x-real-ip"] ||
-            (req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
+            req.headers["x-forwarded-for"] ||
+            req.headers["cf-connecting-ip"] ||
             req.connection?.remoteAddress ||
-            "unknown"
-        );
+            null;
     }
 
-    return "unknown";
+    if (!ip) return "unknown";
+
+    // Handle x-forwarded-for which can contain multiple IPs
+    const cleanIp = ip.split(",")[0].trim();
+
+    // Privacy masking: truncate last segment
+    if (cleanIp.includes(":")) {
+        // IPv6 - take first 4 segments (network prefix)
+        const segments = cleanIp.split(":");
+        let normalizedSegments = [];
+
+        if (cleanIp.includes("::")) {
+            const parts = cleanIp.split("::");
+            const leftPart = parts[0] ? parts[0].split(":") : [];
+            const rightPart = parts[1] ? parts[1].split(":") : [];
+            const missingSegments = 8 - leftPart.length - rightPart.length;
+            normalizedSegments = [
+                ...leftPart,
+                ...Array(missingSegments).fill("0"),
+                ...rightPart,
+            ];
+        } else {
+            normalizedSegments = segments;
+        }
+
+        return normalizedSegments.slice(0, 4).join(":");
+    } else {
+        // IPv4 - take first 3 segments
+        return cleanIp.split(".").slice(0, 3).join(".");
+    }
 }
 
 /**

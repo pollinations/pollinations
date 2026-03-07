@@ -1,0 +1,34 @@
+{
+  "pr_number": 8864,
+  "title": "feat: log truncated IP subnet to Tinybird",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8864",
+  "merged_at": "2026-03-06T15:50:26Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tracking the swarm, privately",
+    "blurb": "We've upgraded our observability to track truncated IP subnets. It helps us spot botnets and keep the hive healthy while keeping individual user data completely private.",
+    "summary": "Added privacy-preserving IP subnet logging to Tinybird generation events for better botnet detection.",
+    "impact": "Improves our ability to identify and mitigate abusive traffic patterns without storing full user IP addresses.",
+    "keywords": [
+      "observability",
+      "tinybird",
+      "security",
+      "privacy",
+      "infrastructure"
+    ],
+    "visual_concept": "The bee mascot acting as a friendly detective or security guard, looking at a radar or map of swarms (subnets) rather than individual bugs. A small pixel bird (Tinybird reference) helping out.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat, looking at a glowing retro radar screen showing clusters of dots. A small pixelated bird sits on the monitor helping out. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-06/PR-8864.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-06T15:51:20.100775+00:00"
+}

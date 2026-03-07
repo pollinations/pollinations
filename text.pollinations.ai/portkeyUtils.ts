@@ -67,7 +67,7 @@ export async function generatePortkeyHeaders(
     }
 
     const headers: Record<string, string> = {
-        "x-portkey-strict-open-ai-compliance": "true",
+        "x-portkey-strict-open-ai-compliance": "false",
     };
 
     let apiKey: string | undefined;

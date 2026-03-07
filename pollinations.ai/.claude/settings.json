@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git add src/theme/palette.ts src/ui/pages/HelloPage.tsx src/ui/components/Layout.tsx src/ui/components/Logo.tsx src/ui/components/ui/button.tsx src/ui/components/ui/divider.tsx src/ui/components/ui/page-card.tsx src/App.tsx src/copy/content/apps.ts src/copy/content/hello.ts src/main.tsx src/styles.css src/ui/components/BuildDiary.tsx src/ui/components/ErrorBoundary.tsx src/ui/components/FlywheelRing.tsx src/ui/components/ImageGenerator.tsx src/ui/components/NewsSection.tsx src/ui/components/TopContributors.tsx src/ui/components/UserMenu.tsx src/ui/components/play/ModelSelector.tsx src/ui/components/play/PlayGenerator.tsx src/ui/components/ui/badge.tsx src/ui/components/ui/feature-item.tsx src/ui/components/ui/roadmap-item.tsx src/ui/components/ui/sub-card.tsx src/ui/components/ui/typography.tsx src/ui/pages/AppsPage.tsx src/ui/pages/CommunityPage.tsx src/ui/pages/PlayPage.tsx src/ui/pages/PrivacyPage.tsx src/ui/pages/TermsPage.tsx tailwind.config.ts)",
-      "Bash(git commit:*)",
-      "Bash(git push -u origin feat/pollinations-ai-redesign)"
-    ]
-  }
-}

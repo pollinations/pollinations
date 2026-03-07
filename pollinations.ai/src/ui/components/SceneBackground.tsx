@@ -22,14 +22,14 @@ function PollenParticles() {
 export function SceneBackground() {
     return (
         <div className="fixed inset-0 z-0 pointer-events-none">
-            {/* Layer 1: Sky-to-cream gradient */}
+            {/* Layer 1: Subtle fallback gradient */}
             <div className="absolute inset-0 bg-gradient-scene" />
 
-            {/* Layer 2: Ground scene PNG — anchored to bottom */}
-            <div className="absolute inset-0 scene-ground" />
+            {/* Layer 2: Sky scene — top, masked fade */}
+            <div className="scene-sky" />
 
-            {/* Layer 3: Scene depth filter — fades ground into gradient */}
-            <div className="absolute inset-0 scene-depth-filter" />
+            {/* Layer 3: Ground scene — bottom, masked fade */}
+            <div className="scene-ground" />
 
             {/* Layer 4: Floating pollen particles */}
             <PollenParticles />

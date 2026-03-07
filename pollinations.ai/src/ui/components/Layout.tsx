@@ -192,7 +192,7 @@ function Layout() {
                                     to="/terms"
                                     variant="iconText"
                                     size={null}
-                                    className="h-7"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
                                     <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.termsLink}
@@ -203,7 +203,7 @@ function Layout() {
                                     to="/privacy"
                                     variant="iconText"
                                     size={null}
-                                    className="h-7"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
                                     <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.privacyLink}
@@ -223,7 +223,7 @@ function Layout() {
                                     }}
                                     variant="iconText"
                                     size={null}
-                                    className="h-7"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
                                     <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.emailLink}
@@ -276,7 +276,7 @@ function Layout() {
                                     to="/terms"
                                     variant="iconText"
                                     size={null}
-                                    className="h-7"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
                                     <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.termsLink}
@@ -287,7 +287,7 @@ function Layout() {
                                     to="/privacy"
                                     variant="iconText"
                                     size={null}
-                                    className="h-7"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
                                     <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.privacyLink}
@@ -307,7 +307,7 @@ function Layout() {
                                     }}
                                     variant="iconText"
                                     size={null}
-                                    className="h-7"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
                                     <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.emailLink}

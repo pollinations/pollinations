@@ -737,6 +737,7 @@ export function PlayGenerator({
                     rel="noopener noreferrer"
                     variant="primary"
                     size="sm"
+                    className="bg-[rgb(var(--primary-strong))] text-dark hover:bg-[rgb(var(--primary-strong)/0.8)] hover:text-dark"
                 >
                     {copy.getKeyButton}
                     <ExternalLinkIcon className="w-3 h-3" />
@@ -748,6 +749,7 @@ export function PlayGenerator({
                     rel="noopener noreferrer"
                     variant="secondary"
                     size="sm"
+                    className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
                 >
                     {copy.fullApiDocsButton}
                     <ExternalLinkIcon className="w-3 h-3 text-dark" />
@@ -756,7 +758,7 @@ export function PlayGenerator({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="relative"
+                    className="relative bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
                     onClick={() => {
                         navigator.clipboard.writeText(agentPrompt);
                         setAgentPromptCopied(true);
@@ -789,7 +791,7 @@ export function PlayGenerator({
 
             {/* Key type cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                <div className="bg-cream p-4 rounded-sub-card">
+                <div className="bg-secondary-light p-4 rounded-sub-card">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="font-mono text-lg font-black text-dark">
                             pk_
@@ -804,7 +806,7 @@ export function PlayGenerator({
                                 as="span"
                                 size="xs"
                                 spacing="none"
-                                className="text-muted"
+                                className="text-dark font-bold"
                             >
                                 {copy.publishableFeature1}
                             </Body>
@@ -814,20 +816,20 @@ export function PlayGenerator({
                                 as="span"
                                 size="xs"
                                 spacing="none"
-                                className="text-muted"
+                                className="text-dark font-bold"
                             >
                                 {copy.publishableFeature2}
                             </Body>
                         </li>
                     </ul>
-                    <div className="mt-3 border-l-2 border-yellow px-2 py-1">
-                        <Body size="xs" spacing="none" className="text-dark">
+                    <div className="mt-3 px-2 py-1 bg-accent-strong/30 rounded-sm">
+                        <Body size="xs" spacing="none" className="text-dark font-bold">
                             {copy.publishableBetaWarning}
                         </Body>
                     </div>
                 </div>
 
-                <div className="bg-cream p-4 rounded-sub-card">
+                <div className="bg-primary-light p-4 rounded-sub-card">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="font-mono text-lg font-black text-dark">
                             sk_
@@ -842,7 +844,7 @@ export function PlayGenerator({
                                 as="span"
                                 size="xs"
                                 spacing="none"
-                                className="text-muted"
+                                className="text-dark font-bold"
                             >
                                 {copy.secretFeature1}
                             </Body>
@@ -852,14 +854,14 @@ export function PlayGenerator({
                                 as="span"
                                 size="xs"
                                 spacing="none"
-                                className="text-muted"
+                                className="text-dark font-bold"
                             >
                                 {copy.secretFeature2}
                             </Body>
                         </li>
                     </ul>
-                    <div className="mt-3 border-l-2 border-pink px-2 py-1">
-                        <Body size="xs" spacing="none" className="text-pink">
+                    <div className="mt-3 px-2 py-1 bg-accent-strong/30 rounded-sm">
+                        <Body size="xs" spacing="none" className="text-dark font-bold">
                             {copy.secretWarning}
                         </Body>
                     </div>
@@ -871,7 +873,7 @@ export function PlayGenerator({
                 href={LINKS.byopDocs}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block p-6 bg-white border-2 border-dark border-r-4 border-b-4 rounded-sub-card hover:brightness-95 transition-colors"
+                className="block p-6 bg-tertiary-light border-2 border-dark border-r-4 border-b-4 rounded-sub-card hover:brightness-95 transition-colors"
             >
                 <div className="flex items-center gap-4">
                     <span className="text-4xl">🔌</span>

@@ -25,6 +25,9 @@ export const APPS_PAGE = {
     newBadge: "🫧 FRESH",
     newTooltip: "Recently added to the ecosystem",
 
+    // Sort
+    sortLabel: "Sort by",
+
     // Legend
     pollenLegendDesc: "In-app sign in with pollinations.ai",
     pollenDocsLink: "</> Docs",
@@ -42,52 +45,61 @@ export const badges = {
     buzz: (app: App) => app.requests24h >= 100,
 };
 
-// Genre filters — category-based
+// Genre filters — category-based, each with a glow color cycling through palette
 export const GENRE_FILTERS = [
     {
         id: "image",
         label: "🖼️ Image",
         match: (app: App) => app.category === "image",
+        glow: "var(--primary-strong)",
     },
     {
         id: "chat",
         label: "💬 Chat",
         match: (app: App) => app.category === "chat",
+        glow: "var(--secondary-strong)",
     },
     {
         id: "build",
         label: "🛠️ Build",
         match: (app: App) => app.category === "build",
+        glow: "var(--tertiary-strong)",
     },
     {
         id: "writing",
         label: "✍️ Write",
         match: (app: App) => app.category === "writing",
+        glow: "var(--accent-strong)",
     },
     {
         id: "games",
         label: "🎮 Games",
         match: (app: App) => app.category === "games",
+        glow: "var(--primary-strong)",
     },
     {
         id: "learn",
         label: "📚 Learn",
         match: (app: App) => app.category === "learn",
+        glow: "var(--secondary-strong)",
     },
     {
         id: "business",
         label: "💼 Business",
         match: (app: App) => app.category === "business",
+        glow: "var(--tertiary-strong)",
     },
     {
         id: "bots",
         label: "🤖 Bots",
         match: (app: App) => app.category === "bots",
+        glow: "var(--accent-strong)",
     },
     {
         id: "video_audio",
         label: "🎬 Video & Audio",
         match: (app: App) => app.category === "video_audio",
+        glow: "var(--primary-strong)",
     },
 ];
 
@@ -97,19 +109,19 @@ export const BADGE_FILTERS = [
         id: "new",
         label: "🫧 Fresh",
         match: badges.new,
-        glow: "var(--dark)",
+        glow: "var(--tertiary-strong)",
     },
     {
         id: "pollen",
         label: "🏵️ Pollen",
         match: badges.pollen,
-        glow: "var(--dark)",
+        glow: "var(--accent-strong)",
     },
     {
         id: "buzz",
         label: "🐝 Buzz",
         match: badges.buzz,
-        glow: "var(--muted)",
+        glow: "var(--primary-strong)",
     },
 ];
 

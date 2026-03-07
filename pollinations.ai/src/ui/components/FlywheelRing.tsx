@@ -22,9 +22,9 @@ function PixelArrowRight() {
     return (
         <div className="flex items-center shrink-0" aria-hidden="true">
             {/* Shaft */}
-            <div className="w-4 md:w-6 h-1 bg-text-secondary" />
+            <div className="w-4 md:w-6 h-1 bg-muted" />
             {/* Arrowhead — CSS borders */}
-            <div className="w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[6px] border-l-text-secondary" />
+            <div className="w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[6px] border-l-muted" />
         </div>
     );
 }
@@ -41,7 +41,7 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
                         {/* Node */}
                         <div className="flex flex-col items-center gap-2 relative">
                             {node.soon && (
-                                <span className="font-body text-[8px] md:text-[10px] font-bold text-subtle uppercase tracking-wider whitespace-nowrap bg-white border border-tan px-1.5 py-0.5">
+                                <span className="absolute -top-5 md:-top-6 left-1/2 -translate-x-1/2 font-body text-[8px] md:text-[10px] font-bold text-subtle uppercase tracking-wider whitespace-nowrap bg-white border border-tan px-1.5 py-0.5">
                                     {copy.comingSoonBadge}
                                 </span>
                             )}

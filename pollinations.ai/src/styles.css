@@ -152,45 +152,72 @@ html {
 
 /* ═══════════════ SCENE BACKGROUND ═══════════════ */
 
-/* Sky-to-cream gradient base */
+/* Subtle fallback gradient — visible if images fail to load */
 .bg-gradient-scene {
     background: linear-gradient(
         to bottom,
         rgb(var(--secondary-light)) 0%,
-        rgb(var(--primary-light)) 15%,
-        rgb(var(--tertiary-light)) 35%,
-        rgb(var(--cream)) 55%,
-        rgb(var(--cream)) 75%,
+        rgb(var(--cream)) 25%,
         rgb(var(--cream)) 100%
     );
 }
 
+/* ═══════════════ SKY SCENE ═══════════════ */
+
+/* Sky scene — desktop */
+.scene-sky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: clamp(420px, 45vh, 900px);
+    background-image: url('/scene-sky-desktop.webp');
+    background-repeat: no-repeat;
+    background-position: center top;
+    background-size: cover;
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+}
+
+/* Sky scene — mobile */
+@media (max-width: 767px) {
+    .scene-sky {
+        height: clamp(320px, 50vh, 700px);
+        background-image: url('/scene-sky-mobile.webp');
+    }
+}
+
+/* ═══════════════ GROUND SCENE ═══════════════ */
+
 /* Ground scene — desktop */
 .scene-ground {
-    background-image: url('/scene-ground-desktop.png');
-    background-size: 100% auto;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: clamp(420px, 38vh, 900px);
+    background-image: url('/scene-ground-desktop.webp');
+    background-size: cover;
     background-position: center bottom;
     background-repeat: no-repeat;
+    -webkit-mask-image: linear-gradient(to top, black 0%, black 52%, transparent 100%);
+    mask-image: linear-gradient(to top, black 0%, black 52%, transparent 100%);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
 }
 
 /* Ground scene — mobile */
 @media (max-width: 767px) {
     .scene-ground {
-        background-image: url('/scene-ground-mobile.png');
-        background-size: 100% auto;
-        background-position: center bottom;
+        height: clamp(380px, 50vh, 800px);
+        background-image: url('/scene-ground-mobile.webp');
     }
-}
-
-/* Depth filter — fades scene into gradient */
-.scene-depth-filter {
-    background: linear-gradient(
-        to bottom,
-        rgb(var(--cream) / 0.6) 0%,
-        rgb(var(--cream) / 0.3) 40%,
-        rgb(var(--cream) / 0.08) 65%,
-        transparent 80%
-    );
 }
 
 /* ═══════════════ POLLEN PARTICLES ═══════════════ */

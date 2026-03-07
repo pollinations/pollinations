@@ -24,8 +24,7 @@ const iconVariants = cva(
         variants: {
             variant: {
                 brand: "w-7 h-7 bg-white text-dark",
-                highlight:
-                    "w-7 h-7 bg-white text-dark",
+                highlight: "w-7 h-7 bg-white text-dark",
                 muted: "w-7 h-7 bg-white text-muted",
             },
         },

@@ -102,10 +102,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                         />
                                     ),
                                     li: ({ node, ...props }) => (
-                                        <li
-                                            {...props}
-                                            className="text-muted"
-                                        />
+                                        <li {...props} className="text-muted" />
                                     ),
                                     strong: ({ node, ...props }) => (
                                         <strong

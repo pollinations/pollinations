@@ -39,8 +39,7 @@ function Tip({
 
 const chipBase =
     "inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium rounded-tag cursor-pointer transition-colors";
-const chipActive =
-    "bg-dark text-white border border-dark";
+const chipActive = "bg-dark text-white border border-dark";
 const chipInactive =
     "bg-white text-muted border border-cream hover:border-border";
 

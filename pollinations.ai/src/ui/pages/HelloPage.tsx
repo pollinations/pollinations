@@ -74,9 +74,13 @@ function HelloPage() {
                         <FlywheelRing pageCopy={pageCopy} />
                         <div className="max-w-xs">
                             <p className="font-body text-base text-muted leading-relaxed">
-                                <span className="font-bold text-dark">{pageCopy.flywheelBodyHighlight1}</span>
+                                <span className="font-bold text-dark">
+                                    {pageCopy.flywheelBodyHighlight1}
+                                </span>
                                 {pageCopy.flywheelBodyMid}
-                                <span className="font-bold text-dark">{pageCopy.flywheelBodyHighlight2}</span>
+                                <span className="font-bold text-dark">
+                                    {pageCopy.flywheelBodyHighlight2}
+                                </span>
                             </p>
                         </div>
                     </div>
@@ -163,9 +167,7 @@ function HelloPage() {
                                         <span className="font-headline text-xs font-black text-dark">
                                             {tier.title}
                                         </span>
-                                        <span
-                                            className="ml-auto font-headline text-xs text-subtle"
-                                        >
+                                        <span className="ml-auto font-headline text-xs text-subtle">
                                             {tier.grant}
                                         </span>
                                     </div>
@@ -203,7 +205,9 @@ function HelloPage() {
                         {/* What's New */}
                         <div
                             className="bg-tertiary-light border-2 border-dark border-r-4 border-b-4 p-5"
-                            style={{ boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)" }}
+                            style={{
+                                boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)",
+                            }}
                         >
                             <Badge variant="highlight" className="mb-4">
                                 {pageCopy.recentUpdatesTitle}
@@ -221,8 +225,12 @@ function HelloPage() {
                                             className="py-1"
                                         >
                                             <p className="font-mono font-black text-xs text-dark">
-                                                <span className="bg-primary-strong px-1.5 py-0.5">{item.date}</span>
-                                                <span className="ml-2">{item.emoji}</span>
+                                                <span className="bg-primary-strong px-1.5 py-0.5">
+                                                    {item.date}
+                                                </span>
+                                                <span className="ml-2">
+                                                    {item.emoji}
+                                                </span>
                                                 <span className="font-headline text-[10px] font-black text-dark ml-1">
                                                     {item.title}
                                                 </span>
@@ -239,7 +247,9 @@ function HelloPage() {
                         {/* What's Next */}
                         <div
                             className="bg-secondary-light border-2 border-dark border-r-4 border-b-4 p-5"
-                            style={{ boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)" }}
+                            style={{
+                                boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)",
+                            }}
                         >
                             <Badge variant="highlight" className="mb-4">
                                 {pageCopy.roadmapLabel}
@@ -253,7 +263,9 @@ function HelloPage() {
                                     }) => (
                                         <div key={item.title} className="py-1">
                                             <p className="font-headline text-[10px] font-black text-dark">
-                                                <span className="mr-2">{item.emoji}</span>
+                                                <span className="mr-2">
+                                                    {item.emoji}
+                                                </span>
                                                 {item.title}
                                             </p>
                                             <p className="font-body text-sm text-muted leading-relaxed mt-0.5">
@@ -267,8 +279,13 @@ function HelloPage() {
                     </div>
 
                     <p className="text-center mt-10 font-headline text-xs leading-loose text-dark">
-                        {pageCopy.comingFooterEmoji} The platform gives you runway.<br />
-                        We're shaping the rest <span className="font-black">together, in the open.</span>
+                        {pageCopy.comingFooterEmoji} The platform gives you
+                        runway.
+                        <br />
+                        We're shaping the rest{" "}
+                        <span className="font-black">
+                            together, in the open.
+                        </span>
                     </p>
                 </div>
 

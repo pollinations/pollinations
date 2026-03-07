@@ -45,9 +45,7 @@ function ColoredUrl({
                     <span className="text-subtle">?</span>
                     {Object.entries(params).map(([k, v], i) => (
                         <span key={k}>
-                            {i > 0 && (
-                                <span className="text-subtle">&</span>
-                            )}
+                            {i > 0 && <span className="text-subtle">&</span>}
                             <span className="text-dark">{k}</span>
                             <span className="text-subtle">=</span>
                             <span className="text-dark">{v}</span>
@@ -56,9 +54,7 @@ function ColoredUrl({
                     <span className="text-subtle">&</span>
                     <span className="text-dark">key</span>
                     <span className="text-subtle">=</span>
-                    <span className="text-dark font-bold">
-                        YOUR_API_KEY
-                    </span>
+                    <span className="text-dark font-bold">YOUR_API_KEY</span>
                 </>
             )}
         </span>
@@ -631,11 +627,7 @@ export function PlayGenerator({
 
             {/* Result Display */}
             {result && !error && resultType && (
-                <div
-                    className={
-                        resultType === "text" ? "bg-white p-6" : ""
-                    }
-                >
+                <div className={resultType === "text" ? "bg-white p-6" : ""}>
                     {resultType === "image" && (
                         <img
                             src={result}
@@ -683,11 +675,7 @@ export function PlayGenerator({
                 {copy.integrateTitle}
             </Heading>
 
-            <Body
-                size="sm"
-                spacing="default"
-                className="text-muted"
-            >
+            <Body size="sm" spacing="default" className="text-muted">
                 {copy.integrateIntro}
             </Body>
 
@@ -795,11 +783,7 @@ export function PlayGenerator({
                 {copy.authTitle}
             </Heading>
 
-            <Body
-                size="sm"
-                spacing="default"
-                className="text-muted"
-            >
+            <Body size="sm" spacing="default" className="text-muted">
                 {copy.authIntro}
             </Body>
 

@@ -36,27 +36,27 @@ function ColoredUrl({
     const encodedPrompt = encodeURIComponent(prompt || placeholder);
     return (
         <span className="font-mono text-sm break-all">
-            <span className="text-text-caption">
+            <span className="text-subtle">
                 {base}/{type}/
             </span>
-            <span className="text-text-brand font-bold">{encodedPrompt}</span>
+            <span className="text-dark font-bold">{encodedPrompt}</span>
             {Object.keys(params).length > 0 && (
                 <>
-                    <span className="text-text-caption">?</span>
+                    <span className="text-subtle">?</span>
                     {Object.entries(params).map(([k, v], i) => (
                         <span key={k}>
                             {i > 0 && (
-                                <span className="text-text-caption">&</span>
+                                <span className="text-subtle">&</span>
                             )}
-                            <span className="text-text-highlight">{k}</span>
-                            <span className="text-text-caption">=</span>
-                            <span className="text-text-body-main">{v}</span>
+                            <span className="text-dark">{k}</span>
+                            <span className="text-subtle">=</span>
+                            <span className="text-dark">{v}</span>
                         </span>
                     ))}
-                    <span className="text-text-caption">&</span>
-                    <span className="text-text-highlight">key</span>
-                    <span className="text-text-caption">=</span>
-                    <span className="text-text-brand font-bold">
+                    <span className="text-subtle">&</span>
+                    <span className="text-dark">key</span>
+                    <span className="text-subtle">=</span>
+                    <span className="text-dark font-bold">
                         YOUR_API_KEY
                     </span>
                 </>
@@ -383,7 +383,7 @@ export function PlayGenerator({
                             as="span"
                             size="xs"
                             spacing="none"
-                            className="text-text-caption"
+                            className="text-subtle"
                         >
                             {imageUrls.length}
                             {copy.referenceImagesCount}
@@ -396,7 +396,7 @@ export function PlayGenerator({
                                     <img
                                         src={url}
                                         alt={`Reference ${index + 1}`}
-                                        className="w-16 h-16 object-cover rounded-input border-2 border-border-strong"
+                                        className="w-16 h-16 object-cover rounded-input border-2 border-dark"
                                     />
                                     <button
                                         type="button"
@@ -407,7 +407,7 @@ export function PlayGenerator({
                                                 ),
                                             )
                                         }
-                                        className="absolute -top-1 -right-1 w-5 h-5 bg-surface-card border border-border-main rounded-full flex items-center justify-center text-text-body-main hover:bg-button-secondary-bg transition-colors"
+                                        className="absolute -top-1 -right-1 w-5 h-5 bg-tan border border-border rounded-full flex items-center justify-center text-dark hover:bg-white transition-colors"
                                     >
                                         ×
                                     </button>
@@ -429,7 +429,7 @@ export function PlayGenerator({
                         }}
                         onBlur={addImageUrl}
                         placeholder={copy.imageUrlPlaceholder}
-                        className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
+                        className="w-full p-3 bg-white text-dark font-body focus:outline-none focus:bg-white hover:bg-white transition-colors placeholder:text-subtle rounded-input"
                         disabled={imageUrls.length >= 4}
                     />
                 </div>
@@ -455,7 +455,7 @@ export function PlayGenerator({
                                 onChange={(e) =>
                                     setWidth(Number(e.target.value))
                                 }
-                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors rounded-input"
+                                className="w-full p-3 bg-white text-dark font-body focus:outline-none focus:bg-white hover:bg-white transition-colors rounded-input"
                             />
                         </div>
                         <div>
@@ -468,7 +468,7 @@ export function PlayGenerator({
                                 onChange={(e) =>
                                     setHeight(Number(e.target.value))
                                 }
-                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors rounded-input"
+                                className="w-full p-3 bg-white text-dark font-body focus:outline-none focus:bg-white hover:bg-white transition-colors rounded-input"
                             />
                         </div>
                         <div>
@@ -481,7 +481,7 @@ export function PlayGenerator({
                                 >
                                     {copy.seedLabel}
                                 </Label>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/seed:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover/seed:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {copy.seedTooltip}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
                                 </div>
@@ -495,7 +495,7 @@ export function PlayGenerator({
                                     setSeed(Number(e.target.value))
                                 }
                                 placeholder={copy.seedPlaceholder}
-                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
+                                className="w-full p-3 bg-white text-dark font-body focus:outline-none focus:bg-white hover:bg-white transition-colors placeholder:text-subtle rounded-input"
                             />
                         </div>
                         <div>
@@ -508,12 +508,12 @@ export function PlayGenerator({
                                 >
                                     {copy.enhanceLabel}
                                 </Label>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {copy.enhanceTooltip}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
                                 </div>
                             </div>
-                            <label className="relative flex items-center justify-center p-3 bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group rounded-input">
+                            <label className="relative flex items-center justify-center p-3 bg-white hover:bg-white transition-colors cursor-pointer select-none group rounded-input">
                                 <input
                                     id="enhance-prompt"
                                     name="enhance-prompt"
@@ -524,9 +524,9 @@ export function PlayGenerator({
                                     }
                                     className="sr-only peer"
                                 />
-                                <div className="w-6 h-6 border-4 border-border-brand bg-input-background peer-checked:bg-button-secondary-bg transition-colors group-hover:border-border-brand rounded-input" />
+                                <div className="w-6 h-6 border-4 border-dark bg-white peer-checked:bg-white transition-colors group-hover:border-dark rounded-input" />
                                 <svg
-                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-text-body-main opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
+                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-dark opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -613,7 +613,7 @@ export function PlayGenerator({
                     )}
                 </Button>
                 {!prompt && !isLoading && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                         {copy.enterPromptFirst}
                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
                     </div>
@@ -622,7 +622,7 @@ export function PlayGenerator({
 
             {/* Error Display */}
             {error && (
-                <div className="mb-6 p-4 bg-surface-page border border-border-strong rounded-input">
+                <div className="mb-6 p-4 bg-cream border border-dark rounded-input">
                     <Body size="sm" spacing="none">
                         {error}
                     </Body>
@@ -633,7 +633,7 @@ export function PlayGenerator({
             {result && !error && resultType && (
                 <div
                     className={
-                        resultType === "text" ? "bg-input-background p-6" : ""
+                        resultType === "text" ? "bg-white p-6" : ""
                     }
                 >
                     {resultType === "image" && (
@@ -686,7 +686,7 @@ export function PlayGenerator({
             <Body
                 size="sm"
                 spacing="default"
-                className="text-text-body-secondary"
+                className="text-muted"
             >
                 {copy.integrateIntro}
             </Body>
@@ -694,7 +694,7 @@ export function PlayGenerator({
             {/* Live API URL */}
             <div className="mb-6">
                 <div className="relative">
-                    <div className="bg-input-background p-3 pr-16 rounded-input overflow-x-auto">
+                    <div className="bg-white p-3 pr-16 rounded-input overflow-x-auto">
                         {isImageModel ? (
                             <ColoredUrl
                                 base={API_BASE}
@@ -721,7 +721,7 @@ export function PlayGenerator({
                     </div>
                     <button
                         type="button"
-                        className="absolute top-2 right-2 p-2.5 bg-input-background hover:bg-button-secondary-bg rounded-input transition-colors border border-border-subtle"
+                        className="absolute top-2 right-2 p-2.5 bg-white hover:bg-white rounded-input transition-colors border border-tan"
                         onClick={() => {
                             navigator.clipboard.writeText(copyableUrl);
                             setUrlCopied(true);
@@ -730,11 +730,11 @@ export function PlayGenerator({
                         title={copy.copyButton}
                     >
                         {urlCopied ? (
-                            <span className="font-body text-xs font-bold text-text-brand uppercase tracking-wider px-1">
+                            <span className="font-body text-xs font-bold text-dark uppercase tracking-wider px-1">
                                 {copy.copiedLabel}
                             </span>
                         ) : (
-                            <CopyIcon className="w-5 h-5 text-text-body-secondary" />
+                            <CopyIcon className="w-5 h-5 text-muted" />
                         )}
                     </button>
                 </div>
@@ -762,7 +762,7 @@ export function PlayGenerator({
                     size="sm"
                 >
                     {copy.fullApiDocsButton}
-                    <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
+                    <ExternalLinkIcon className="w-3 h-3 text-dark" />
                 </Button>
                 <Button
                     type="button"
@@ -778,7 +778,7 @@ export function PlayGenerator({
                     {copy.agentPromptButton}
                     <CopyIcon className="w-3 h-3" />
                     {agentPromptCopied && (
-                        <span className="absolute -top-5 left-0 font-body text-xs font-bold text-text-brand uppercase tracking-wider">
+                        <span className="absolute -top-5 left-0 font-body text-xs font-bold text-dark uppercase tracking-wider">
                             {copy.copiedLabel}
                         </span>
                     )}
@@ -798,16 +798,16 @@ export function PlayGenerator({
             <Body
                 size="sm"
                 spacing="default"
-                className="text-text-body-secondary"
+                className="text-muted"
             >
                 {copy.authIntro}
             </Body>
 
             {/* Key type cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                <div className="bg-surface-page p-4 rounded-sub-card">
+                <div className="bg-cream p-4 rounded-sub-card">
                     <div className="flex items-center gap-2 mb-2">
-                        <span className="font-mono text-lg font-black text-text-highlight">
+                        <span className="font-mono text-lg font-black text-dark">
                             pk_
                         </span>
                         <Label as="span" spacing="none" display="inline">
@@ -820,7 +820,7 @@ export function PlayGenerator({
                                 as="span"
                                 size="xs"
                                 spacing="none"
-                                className="text-text-body-secondary"
+                                className="text-muted"
                             >
                                 {copy.publishableFeature1}
                             </Body>
@@ -830,22 +830,22 @@ export function PlayGenerator({
                                 as="span"
                                 size="xs"
                                 spacing="none"
-                                className="text-text-body-secondary"
+                                className="text-muted"
                             >
                                 {copy.publishableFeature2}
                             </Body>
                         </li>
                     </ul>
                     <div className="mt-3 border-l-2 border-yellow px-2 py-1">
-                        <Body size="xs" spacing="none" className="text-text-brand">
+                        <Body size="xs" spacing="none" className="text-dark">
                             {copy.publishableBetaWarning}
                         </Body>
                     </div>
                 </div>
 
-                <div className="bg-surface-page p-4 rounded-sub-card">
+                <div className="bg-cream p-4 rounded-sub-card">
                     <div className="flex items-center gap-2 mb-2">
-                        <span className="font-mono text-lg font-black text-text-brand">
+                        <span className="font-mono text-lg font-black text-dark">
                             sk_
                         </span>
                         <Label as="span" spacing="none" display="inline">
@@ -858,7 +858,7 @@ export function PlayGenerator({
                                 as="span"
                                 size="xs"
                                 spacing="none"
-                                className="text-text-body-secondary"
+                                className="text-muted"
                             >
                                 {copy.secretFeature1}
                             </Body>
@@ -868,7 +868,7 @@ export function PlayGenerator({
                                 as="span"
                                 size="xs"
                                 spacing="none"
-                                className="text-text-body-secondary"
+                                className="text-muted"
                             >
                                 {copy.secretFeature2}
                             </Body>
@@ -887,19 +887,19 @@ export function PlayGenerator({
                 href={LINKS.byopDocs}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block p-6 bg-input-background border-2 border-border-highlight border-r-4 border-b-4 rounded-sub-card hover:brightness-95 transition-colors"
+                className="block p-6 bg-white border-2 border-dark border-r-4 border-b-4 rounded-sub-card hover:brightness-95 transition-colors"
             >
                 <div className="flex items-center gap-4">
                     <span className="text-4xl">🔌</span>
                     <div className="flex-1 min-w-0">
-                        <span className="font-headline text-sm font-black text-text-highlight block">
+                        <span className="font-headline text-sm font-black text-dark block">
                             {copy.byopLabel}
                         </span>
-                        <span className="font-body text-base text-text-body-secondary block mt-1">
+                        <span className="font-body text-base text-muted block mt-1">
                             {copy.byopDescription}
                         </span>
                     </div>
-                    <span className="font-headline text-sm font-black text-text-highlight shrink-0">
+                    <span className="font-headline text-sm font-black text-dark shrink-0">
                         &rarr;
                     </span>
                 </div>

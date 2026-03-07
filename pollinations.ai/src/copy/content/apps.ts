@@ -97,19 +97,19 @@ export const BADGE_FILTERS = [
         id: "new",
         label: "🫧 Fresh",
         match: badges.new,
-        glow: "var(--text-brand)",
+        glow: "var(--dark)",
     },
     {
         id: "pollen",
         label: "🏵️ Pollen",
         match: badges.pollen,
-        glow: "var(--text-highlight)",
+        glow: "var(--dark)",
     },
     {
         id: "buzz",
         label: "🐝 Buzz",
         match: badges.buzz,
-        glow: "var(--text-accent)",
+        glow: "var(--muted)",
     },
 ];
 

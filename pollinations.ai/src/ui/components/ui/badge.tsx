@@ -20,13 +20,13 @@ const badgeVariants = cva(
         variants: {
             variant: {
                 highlight:
-                    "bg-input-background text-text-highlight border border-border-highlight shadow-shadow-highlight-sm",
-                brand: "bg-input-background text-text-brand border border-border-brand shadow-shadow-brand-sm",
-                muted: "bg-input-background text-text-body-secondary border border-border-subtle",
+                    "bg-white text-dark border border-dark shadow-highlight-sm",
+                brand: "bg-white text-dark border border-dark shadow-brand-sm",
+                muted: "bg-white text-muted border border-tan",
                 // Per-badge accent colors (theme-responsive)
-                fresh: "bg-badge-fresh/15 text-badge-fresh border border-badge-fresh/50 shadow-[0_0_6px] shadow-badge-fresh/30",
-                pollen: "bg-badge-pollen/15 text-badge-pollen border border-badge-pollen/50 shadow-[0_0_6px] shadow-badge-pollen/30",
-                buzz: "bg-badge-buzz/15 text-badge-buzz border border-badge-buzz/50 shadow-[0_0_6px] shadow-badge-buzz/30",
+                fresh: "bg-dark/15 text-dark border border-dark/50 shadow-[0_0_6px] shadow-dark/30",
+                pollen: "bg-dark/15 text-dark border border-dark/50 shadow-[0_0_6px] shadow-dark/30",
+                buzz: "bg-muted/15 text-muted border border-muted/50 shadow-[0_0_6px] shadow-muted/30",
             },
         },
         defaultVariants: {

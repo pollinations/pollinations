@@ -24,7 +24,7 @@ const PrivacyPage = lazy(() => import("./ui/pages/PrivacyPage"));
 // Loading component
 const PageLoader = () => (
     <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-border-brand"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dark"></div>
     </div>
 );
 

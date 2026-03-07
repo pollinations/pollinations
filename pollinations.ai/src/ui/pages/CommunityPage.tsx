@@ -42,18 +42,18 @@ export default function CommunityPage() {
                 <div className="mb-8">
                     <Body spacing="comfortable">{pageCopy.subtitle}</Body>
                 </div>
-                <p className="font-body text-base text-text-body-tertiary mb-4">
-                    <span className="font-headline text-xs font-black text-text-body-secondary">
+                <p className="font-body text-base text-subtle mb-4">
+                    <span className="font-headline text-xs font-black text-muted">
                         {pageCopy.heroStat1}
                     </span>{" "}
                     {pageCopy.heroStat1Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-xs font-black text-text-body-secondary">
+                    <span className="font-headline text-xs font-black text-muted">
                         {pageCopy.heroStat2}
                     </span>{" "}
                     {pageCopy.heroStat2Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-xs font-black text-text-body-secondary">
+                    <span className="font-headline text-xs font-black text-muted">
                         {pageCopy.heroStat3}
                     </span>{" "}
                     {pageCopy.heroStat3Label}
@@ -96,7 +96,7 @@ export default function CommunityPage() {
                     <Body
                         size="sm"
                         spacing="comfortable"
-                        className="text-text-body-secondary"
+                        className="text-muted"
                     >
                         {pageCopy.contributeNote}
                     </Body>
@@ -138,7 +138,7 @@ export default function CommunityPage() {
                                     size="default"
                                 >
                                     {pageCopy.joinDiscordButton}
-                                    <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                                    <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
                                 </Button>
                                 <Button
                                     as="a"
@@ -149,7 +149,7 @@ export default function CommunityPage() {
                                     size="default"
                                 >
                                     {pageCopy.pollenBetaButton}
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
+                                    <ExternalLinkIcon className="w-3 h-3 text-dark" />
                                 </Button>
                             </div>
                         </SubCard>
@@ -171,7 +171,7 @@ export default function CommunityPage() {
                                 size="default"
                             >
                                 {pageCopy.starContributeButton}
-                                <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
                             </Button>
                         </SubCard>
 
@@ -192,7 +192,7 @@ export default function CommunityPage() {
                                 size="default"
                             >
                                 {pageCopy.submitAppButton}
-                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
+                                <ExternalLinkIcon className="w-3 h-3 text-dark" />
                             </Button>
                         </SubCard>
                     </div>
@@ -212,18 +212,18 @@ export default function CommunityPage() {
                                 href={issue.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block bg-input-background p-4 rounded-sub-card border-l-4 border-border-brand hover:border-border-highlight transition-colors"
+                                className="block bg-white p-4 rounded-sub-card border-l-4 border-dark hover:border-dark transition-colors"
                             >
                                 <div className="flex flex-col gap-2">
                                     <div className="flex items-center justify-between">
                                         <span className="text-2xl">
                                             {issue.emoji}
                                         </span>
-                                        <span className="font-mono text-xs text-text-caption">
+                                        <span className="font-mono text-xs text-subtle">
                                             {issue.votes} votes
                                         </span>
                                     </div>
-                                    <p className="font-headline text-xs font-black text-text-body-main">
+                                    <p className="font-headline text-xs font-black text-dark">
                                         {issue.title}
                                     </p>
                                 </div>
@@ -282,7 +282,7 @@ export default function CommunityPage() {
                                             className="w-full h-full object-contain"
                                         />
                                     </div>
-                                    <p className="font-body text-xs font-bold text-text-body-main leading-tight">
+                                    <p className="font-body text-xs font-bold text-dark leading-tight">
                                         {supporter.name}
                                     </p>
                                 </a>

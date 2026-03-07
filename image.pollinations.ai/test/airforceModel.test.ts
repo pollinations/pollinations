@@ -144,7 +144,7 @@ describe("airforceModel - flux-2-dev size snapping", () => {
         lastFetchBody = {};
     });
 
-    it("snaps landscape dimensions to 1792x1024", async () => {
+    it("snaps landscape dimensions to 1792x1024 with SSE + aspectRatio", async () => {
         const params: ImageParams = {
             ...imageParams,
             width: 1920,
@@ -160,9 +160,12 @@ describe("airforceModel - flux-2-dev size snapping", () => {
         );
 
         expect(lastFetchBody.size).toBe("1792x1024");
+        expect(lastFetchBody.aspectRatio).toBe("1792:1024");
+        expect(lastFetchBody.sse).toBe(true);
+        expect(lastFetchBody.response_format).toBe("url");
     });
 
-    it("snaps portrait dimensions to 1024x1792", async () => {
+    it("snaps portrait dimensions to 1024x1792 with SSE + aspectRatio", async () => {
         const params: ImageParams = {
             ...imageParams,
             width: 768,
@@ -178,9 +181,10 @@ describe("airforceModel - flux-2-dev size snapping", () => {
         );
 
         expect(lastFetchBody.size).toBe("1024x1792");
+        expect(lastFetchBody.aspectRatio).toBe("1024:1792");
     });
 
-    it("snaps square dimensions to 1024x1024", async () => {
+    it("snaps square dimensions to 1024x1024 with SSE + aspectRatio", async () => {
         const params: ImageParams = {
             ...imageParams,
             width: 512,
@@ -196,6 +200,7 @@ describe("airforceModel - flux-2-dev size snapping", () => {
         );
 
         expect(lastFetchBody.size).toBe("1024x1024");
+        expect(lastFetchBody.aspectRatio).toBe("1024:1024");
     });
 
     it("still sends image_urls for image-to-image", async () => {
@@ -215,6 +220,7 @@ describe("airforceModel - flux-2-dev size snapping", () => {
         );
 
         expect(lastFetchBody.size).toBe("1024x1024");
+        expect(lastFetchBody.aspectRatio).toBe("1024:1024");
         expect(lastFetchBody.image_urls).toEqual([
             "https://example.com/input.jpg",
         ]);

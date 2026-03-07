@@ -323,7 +323,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.001, // $0.001 per image
             },
         ],
-        description: "FLUX.2 Dev (api.airforce) - Flux 2 image generation (1024x1024 only)",
+        description: "FLUX.2 Dev (api.airforce) - Flux 2 image generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

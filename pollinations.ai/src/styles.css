@@ -121,17 +121,17 @@ input[type="range"]::-webkit-slider-thumb {
     appearance: none;
     width: 20px;
     height: 20px;
-    background: var(--color-secondary);
+    background: rgb(var(--secondary-strong));
     cursor: pointer;
-    border: 2px solid var(--color-foreground);
+    border: 2px solid rgb(var(--dark));
 }
 
 input[type="range"]::-moz-range-thumb {
     width: 20px;
     height: 20px;
-    background: var(--color-secondary);
+    background: rgb(var(--secondary-strong));
     cursor: pointer;
-    border: 2px solid var(--color-foreground);
+    border: 2px solid rgb(var(--dark));
     border-radius: 0;
 }
 
@@ -144,7 +144,7 @@ input[type="range"]::-moz-range-thumb {
 
 body,
 html {
-    background-color: #f5f0e8;
+    background-color: rgb(var(--cream));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -156,12 +156,12 @@ html {
 .bg-gradient-scene {
     background: linear-gradient(
         to bottom,
-        #dde4f0 0%,
-        #e8e0ee 15%,
-        #f0ebe4 35%,
-        #f5f0e8 55%,
-        #f2eee4 75%,
-        #edeae0 100%
+        rgb(var(--secondary-light)) 0%,
+        rgb(var(--primary-light)) 15%,
+        rgb(var(--tertiary-light)) 35%,
+        rgb(var(--cream)) 55%,
+        rgb(var(--cream)) 75%,
+        rgb(var(--cream)) 100%
     );
 }
 
@@ -186,9 +186,9 @@ html {
 .scene-depth-filter {
     background: linear-gradient(
         to bottom,
-        rgba(245, 240, 232, 0.6) 0%,
-        rgba(245, 240, 232, 0.3) 40%,
-        rgba(245, 240, 232, 0.08) 65%,
+        rgb(var(--cream) / 0.6) 0%,
+        rgb(var(--cream) / 0.3) 40%,
+        rgb(var(--cream) / 0.08) 65%,
         transparent 80%
     );
 }
@@ -201,8 +201,8 @@ html {
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: #ecf874;
-    box-shadow: 0 0 6px rgba(236, 248, 116, 0.6), 0 0 12px rgba(236, 248, 116, 0.3);
+    background: rgb(var(--accent-strong));
+    box-shadow: 0 0 6px rgb(var(--accent-strong) / 0.6), 0 0 12px rgb(var(--accent-strong) / 0.3);
     opacity: 0;
     animation: pollenFloat linear infinite;
 }
@@ -236,8 +236,8 @@ body::after {
         0deg,
         transparent,
         transparent 2px,
-        rgba(17, 5, 24, 0.015) 2px,
-        rgba(17, 5, 24, 0.015) 4px
+        rgb(var(--dark) / 0.015) 2px,
+        rgb(var(--dark) / 0.015) 4px
     );
 }
 
@@ -251,6 +251,6 @@ body::after {
 }
 
 :focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid rgb(var(--dark));
     outline-offset: 2px;
 }

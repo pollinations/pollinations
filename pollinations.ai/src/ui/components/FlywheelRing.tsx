@@ -43,14 +43,14 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
                         {/* Node */}
                         <div className="flex flex-col items-center gap-2 relative">
                             {node.soon && (
-                                <span className="font-body text-[8px] md:text-[10px] font-bold text-text-body-tertiary uppercase tracking-wider whitespace-nowrap bg-input-background border border-border-subtle px-1.5 py-0.5">
+                                <span className="font-body text-[8px] md:text-[10px] font-bold text-subtle uppercase tracking-wider whitespace-nowrap bg-white border border-tan px-1.5 py-0.5">
                                     {copy.comingSoonBadge}
                                 </span>
                             )}
                             <span className="text-[32px] md:text-[40px] leading-none">
                                 {copy[node.emojiKey]}
                             </span>
-                            <span className="font-headline text-[8px] md:text-xs font-black uppercase tracking-wider whitespace-nowrap text-text-highlight">
+                            <span className="font-headline text-[8px] md:text-xs font-black uppercase tracking-wider whitespace-nowrap text-dark">
                                 {copy[node.labelKey]}
                             </span>
                         </div>
@@ -74,9 +74,9 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
                     style={{ imageRendering: "pixelated" }}
                     aria-hidden="true"
                 >
-                    <rect x="370" y="0" width="6" height="16" fill="rgb(var(--text-secondary))" />
-                    <rect x="24" y="12" width="352" height="6" fill="rgb(var(--text-secondary))" />
-                    <rect x="24" y="0" width="6" height="16" fill="rgb(var(--text-secondary))" />
+                    <rect x="370" y="0" width="6" height="16" fill="rgb(var(--muted))" />
+                    <rect x="24" y="12" width="352" height="6" fill="rgb(var(--muted))" />
+                    <rect x="24" y="0" width="6" height="16" fill="rgb(var(--muted))" />
                 </svg>
                 {/* CSS triangle arrowhead pointing up */}
                 <div
@@ -86,7 +86,7 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
                         top: "-12px",
                         borderLeft: "6px solid transparent",
                         borderRight: "6px solid transparent",
-                        borderBottom: "8px solid rgb(var(--text-secondary))",
+                        borderBottom: "8px solid rgb(var(--muted))",
                     }}
                 />
             </div>

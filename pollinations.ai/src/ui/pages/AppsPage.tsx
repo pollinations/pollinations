@@ -62,10 +62,10 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
         : null;
 
     const cardBorder = badges.buzz(app)
-        ? "border border-badge-buzz/40 shadow-[0_0_4px] shadow-badge-buzz/20"
+        ? "border border-muted/40 shadow-[0_0_4px] shadow-muted/20"
         : badges.pollen(app)
-          ? "border border-badge-pollen/40 shadow-[0_0_4px] shadow-badge-pollen/20"
-          : "border border-border-subtle";
+          ? "border border-dark/40 shadow-[0_0_4px] shadow-dark/20"
+          : "border border-tan";
 
     return (
         <div className={`flex flex-col h-full overflow-visible ${cardBorder}`}>
@@ -73,19 +73,19 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                 href={app.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between px-4 py-3 bg-input-background hover:brightness-110 transition-all"
+                className="flex items-center justify-between px-4 py-3 bg-white hover:brightness-110 transition-all"
             >
-                <span className="font-headline text-xs font-black uppercase text-text-body-main">
+                <span className="font-headline text-xs font-black uppercase text-dark">
                     {app.emoji && `${app.emoji} `}
                     {app.name}
                 </span>
-                <ExternalLinkIcon className="w-4 h-4 text-text-body-main opacity-60 flex-shrink-0" />
+                <ExternalLinkIcon className="w-4 h-4 text-dark opacity-60 flex-shrink-0" />
             </a>
 
             <div className="flex flex-col flex-1 px-4 py-3">
                 <div className="flex-1">
                     {app.description && (
-                        <div className="text-sm text-text-body-secondary mb-3 font-body leading-relaxed">
+                        <div className="text-sm text-muted mb-3 font-body leading-relaxed">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
@@ -104,25 +104,25 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     li: ({ node, ...props }) => (
                                         <li
                                             {...props}
-                                            className="text-text-body-secondary"
+                                            className="text-muted"
                                         />
                                     ),
                                     strong: ({ node, ...props }) => (
                                         <strong
                                             {...props}
-                                            className="text-text-body-main font-black"
+                                            className="text-dark font-black"
                                         />
                                     ),
                                     em: ({ node, ...props }) => (
                                         <em
                                             {...props}
-                                            className="text-text-brand not-italic font-medium"
+                                            className="text-dark not-italic font-medium"
                                         />
                                     ),
                                     code: ({ node, ...props }) => (
                                         <code
                                             {...props}
-                                            className="bg-input-background text-text-highlight px-1.5 py-0.5 rounded text-xs font-mono"
+                                            className="bg-white text-dark px-1.5 py-0.5 rounded text-xs font-mono"
                                         />
                                     ),
                                     a: ({ node, ...props }) => (
@@ -130,13 +130,13 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                             {...props}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-text-highlight hover:underline"
+                                            className="text-dark hover:underline"
                                         />
                                     ),
                                     del: ({ node, ...props }) => (
                                         <del
                                             {...props}
-                                            className="text-text-body-secondary/50"
+                                            className="text-muted/50"
                                         />
                                     ),
                                 }}
@@ -155,7 +155,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="pollen">
                                         {copy.pollenBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-tag shadow-lg border border-border opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.pollenTooltip}
                                         <div className="absolute top-full left-4 border-4 border-transparent border-t-input-background" />
                                     </div>
@@ -166,7 +166,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="buzz">
                                         {copy.buzzBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-tag shadow-lg border border-border opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.buzzTooltip}
                                         <div className="absolute top-full left-4 border-4 border-transparent border-t-input-background" />
                                     </div>
@@ -177,7 +177,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="fresh">
                                         {copy.newBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-tag shadow-lg border border-border opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.newTooltip}
                                         <div className="absolute top-full left-4 border-4 border-transparent border-t-input-background" />
                                     </div>
@@ -193,24 +193,24 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             href={`https://github.com/${githubUsername}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main rounded-tag transition-all max-w-[200px]"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition-all max-w-[200px]"
                             title={`View ${app.github} on GitHub`}
                         >
-                            <span className="text-text-body-secondary">
+                            <span className="text-muted">
                                 {copy.authorPrefix}
                             </span>
-                            <span className="truncate text-text-body-main">
+                            <span className="truncate text-dark">
                                 {app.github}
                             </span>
-                            <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
+                            <GithubIcon className="w-3 h-3 text-dark opacity-60 flex-shrink-0" />
                         </a>
                     )}
                     {!repoName && !githubUsername && app.github && (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint rounded-tag max-w-[200px]">
-                            <span className="text-text-body-secondary">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-white border border-cream rounded-tag max-w-[200px]">
+                            <span className="text-muted">
                                 {copy.authorPrefix}
                             </span>
-                            <span className="truncate text-text-body-main">
+                            <span className="truncate text-dark">
                                 {app.github}
                             </span>
                         </div>
@@ -220,17 +220,17 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             href={app.repo}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main rounded-tag transition-all max-w-[200px]"
+                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition-all max-w-[200px]"
                             title={`View ${repoName} on GitHub`}
                         >
                             <span className="inline-flex items-center gap-1.5 w-full">
-                                <span className="truncate flex-1 min-w-0 text-text-body-main">
+                                <span className="truncate flex-1 min-w-0 text-dark">
                                     {repoName}
                                 </span>
-                                <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
+                                <GithubIcon className="w-3 h-3 text-dark opacity-60 flex-shrink-0" />
                             </span>
                             {(app.stars || 0) > 0 && (
-                                <span className="text-text-body-secondary">
+                                <span className="text-muted">
                                     ⭐ {app.stars}
                                 </span>
                             )}
@@ -300,12 +300,12 @@ export default function AppsPage() {
 
                 {/* CTAs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                    <div className="flex items-center gap-4 p-4 bg-input-background rounded-sub-card">
+                    <div className="flex items-center gap-4 p-4 bg-white rounded-sub-card">
                         <div className="flex-1">
-                            <p className="font-headline text-xs font-black text-text-body-main mb-1">
+                            <p className="font-headline text-xs font-black text-dark mb-1">
                                 {pageCopy.submitCtaTitle}
                             </p>
-                            <p className="font-body text-sm text-text-body-secondary">
+                            <p className="font-body text-sm text-muted">
                                 {pageCopy.submitCtaDescription}
                             </p>
                         </div>
@@ -318,15 +318,15 @@ export default function AppsPage() {
                             size="default"
                         >
                             {pageCopy.submitCtaButton}
-                            <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                            <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
                         </Button>
                     </div>
-                    <div className="flex items-center gap-4 p-4 bg-input-background rounded-sub-card">
+                    <div className="flex items-center gap-4 p-4 bg-white rounded-sub-card">
                         <div className="flex-1">
-                            <p className="font-headline text-xs font-black text-text-body-main mb-1">
+                            <p className="font-headline text-xs font-black text-dark mb-1">
                                 {pageCopy.pollenCtaTitle}
                             </p>
-                            <p className="font-body text-sm text-text-body-secondary">
+                            <p className="font-body text-sm text-muted">
                                 {pageCopy.pollenCtaDescription}
                             </p>
                         </div>
@@ -339,7 +339,7 @@ export default function AppsPage() {
                             size="default"
                         >
                             {pageCopy.pollenCtaButton}
-                            <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                            <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
                         </Button>
                     </div>
                 </div>
@@ -372,9 +372,9 @@ export default function AppsPage() {
                 </div>
 
                 {/* Legend */}
-                <div className="flex flex-col items-end gap-0.5 mb-4 text-xs text-text-body-secondary">
+                <div className="flex flex-col items-end gap-0.5 mb-4 text-xs text-muted">
                     <span>
-                        <span className="text-text-body-main font-bold">
+                        <span className="text-dark font-bold">
                             {pageCopy.pollenBadge}
                         </span>{" "}
                         = {pageCopy.pollenLegendDesc}
@@ -383,19 +383,19 @@ export default function AppsPage() {
                             href={LINKS.byopDocs}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-text-highlight hover:underline"
+                            className="text-dark hover:underline"
                         >
                             {pageCopy.pollenDocsLink}
                         </a>
                     </span>
                     <span>
-                        <span className="text-text-body-main font-bold">
+                        <span className="text-dark font-bold">
                             {pageCopy.buzzBadge}
                         </span>{" "}
                         = {pageCopy.buzzLegendDesc}
                     </span>
                     <span>
-                        <span className="text-text-body-main font-bold">
+                        <span className="text-dark font-bold">
                             {pageCopy.newBadge}
                         </span>{" "}
                         = {pageCopy.newLegendDesc}
@@ -415,7 +415,7 @@ export default function AppsPage() {
 
                 {displayApps.length === 0 && (
                     <div className="text-center py-12">
-                        <Body className="text-text-body-main">
+                        <Body className="text-dark">
                             {pageCopy.noAppsMessage}
                         </Body>
                     </div>

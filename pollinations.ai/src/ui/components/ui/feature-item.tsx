@@ -15,7 +15,7 @@ import { cn } from "../../../utils";
 // ============================================
 
 const featureItemVariants = cva(
-    "flex items-start gap-3 font-body text-sm text-text-body-secondary leading-relaxed",
+    "flex items-start gap-3 font-body text-sm text-muted leading-relaxed",
 );
 
 const iconVariants = cva(
@@ -23,10 +23,10 @@ const iconVariants = cva(
     {
         variants: {
             variant: {
-                brand: "w-7 h-7 bg-input-background text-text-brand",
+                brand: "w-7 h-7 bg-white text-dark",
                 highlight:
-                    "w-7 h-7 bg-input-background text-text-highlight",
-                muted: "w-7 h-7 bg-input-background text-text-body-secondary",
+                    "w-7 h-7 bg-white text-dark",
+                muted: "w-7 h-7 bg-white text-muted",
             },
         },
         defaultVariants: {

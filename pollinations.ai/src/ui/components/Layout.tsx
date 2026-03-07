@@ -44,7 +44,7 @@ function Layout() {
                         <div className="flex items-start gap-3">
                             {/* Logo */}
                             <Link to="/" className="flex-shrink-0">
-                                <Logo className="w-20 h-20 object-contain" />
+                                <Logo className="w-20 h-20 object-contain" mainColor="rgb(var(--dark))" shadeColor="rgb(var(--accent-strong))" />
                             </Link>
                             {/* Nav + Social + Enter — wraps into rows as needed */}
                             <div className="flex-1 flex flex-wrap gap-1 items-center justify-end pt-1">
@@ -83,7 +83,7 @@ function Layout() {
                                                 title={label}
                                                 variant="icon"
                                                 size={null}
-                                                className="text-text-body-main"
+                                                className=""
                                             >
                                                 <Icon className="w-full h-full" />
                                             </Button>
@@ -96,7 +96,7 @@ function Layout() {
                                     rel="noopener noreferrer"
                                     variant="iconText"
                                     size={null}
-                                    className="text-text-highlight"
+                                    className="bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
                                     <span className="font-headline text-xs font-black uppercase tracking-wider">
                                         {authCopy.enterButton}
@@ -135,7 +135,7 @@ function Layout() {
                                         title={SOCIAL_LINKS.github.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-7 h-7 text-text-body-main"
+                                        className="w-7 h-7"
                                     >
                                         <SOCIAL_LINKS.github.icon className="w-full h-full" />
                                     </Button>
@@ -147,7 +147,7 @@ function Layout() {
                                         title={SOCIAL_LINKS.discord.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-7 h-7 text-text-body-main"
+                                        className="w-7 h-7"
                                     >
                                         <SOCIAL_LINKS.discord.icon className="w-full h-full" />
                                     </Button>
@@ -172,7 +172,7 @@ function Layout() {
                                                     title={label}
                                                     variant="icon"
                                                     size={null}
-                                                    className="w-7 h-7 text-text-body-main"
+                                                    className="w-7 h-7"
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
@@ -182,7 +182,7 @@ function Layout() {
                             </div>
 
                             {/* 2. Terms, Privacy, Email, Enter */}
-                            <div className="flex items-center justify-center">
+                            <div className="flex items-center justify-center gap-2">
                                 <Button
                                     as={Link}
                                     to="/terms"
@@ -225,7 +225,7 @@ function Layout() {
                                         {layoutCopy.emailLink}
                                     </span>
                                     {emailCopied && (
-                                        <span className="absolute -top-8 left-0 font-body text-xs font-bold text-text-brand uppercase tracking-wider">
+                                        <span className="absolute -top-8 left-0 font-body text-xs font-bold text-dark uppercase tracking-wider">
                                             {layoutCopy.copiedLabel}
                                         </span>
                                     )}
@@ -237,7 +237,7 @@ function Layout() {
                                     rel="noopener noreferrer"
                                     variant="iconText"
                                     size={null}
-                                    className="h-7 text-text-brand"
+                                    className="h-7 bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
                                     <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {isLoggedIn
@@ -257,16 +257,16 @@ function Layout() {
                         <div className="flex items-center justify-between gap-4">
                             {/* Left: Branding Text */}
                             <div className="text-left flex-shrink-0">
-                                <p className="font-headline text-[7px] font-black text-text-body-main uppercase tracking-wider">
+                                <p className="font-headline text-[7px] font-black text-dark uppercase tracking-wider">
                                     {layoutCopy.footerBranding}
                                 </p>
-                                <p className="font-body text-[9px] text-text-body-main">
+                                <p className="font-body text-[9px] text-dark">
                                     {layoutCopy.footerTagline}
                                 </p>
                             </div>
 
                             {/* Center: Links as Buttons */}
-                            <div className="flex items-center flex-shrink-0">
+                            <div className="flex items-center flex-shrink-0 gap-2">
                                 <Button
                                     as={Link}
                                     to="/terms"
@@ -309,7 +309,7 @@ function Layout() {
                                         {layoutCopy.emailLink}
                                     </span>
                                     {emailCopied && (
-                                        <span className="absolute -top-8 left-0 font-body text-xs font-bold text-text-brand uppercase tracking-wider">
+                                        <span className="absolute -top-8 left-0 font-body text-xs font-bold text-dark uppercase tracking-wider">
                                             {layoutCopy.copiedLabel}
                                         </span>
                                     )}
@@ -328,7 +328,7 @@ function Layout() {
                                         title={SOCIAL_LINKS.github.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-7 h-7 text-text-body-main"
+                                        className="w-7 h-7"
                                     >
                                         <SOCIAL_LINKS.github.icon className="w-full h-full" />
                                     </Button>
@@ -341,7 +341,7 @@ function Layout() {
                                         title={SOCIAL_LINKS.discord.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-7 h-7 text-text-body-main"
+                                        className="w-7 h-7"
                                     >
                                         <SOCIAL_LINKS.discord.icon className="w-full h-full" />
                                     </Button>
@@ -366,7 +366,7 @@ function Layout() {
                                                     title={label}
                                                     variant="icon"
                                                     size={null}
-                                                    className="w-7 h-7 text-text-body-main"
+                                                    className="w-7 h-7"
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
@@ -381,7 +381,7 @@ function Layout() {
                                     rel="noopener noreferrer"
                                     variant="iconText"
                                     size={null}
-                                    className="h-7 text-text-brand"
+                                    className="h-7 bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
                                     <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {isLoggedIn

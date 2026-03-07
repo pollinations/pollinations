@@ -30,9 +30,10 @@ function HelloPage() {
                         rel="noopener noreferrer"
                         variant="primary"
                         size="lg"
+                        className="bg-[rgb(var(--primary-strong))] hover:bg-[rgb(var(--primary-strong)/0.8)] text-dark"
                     >
                         {pageCopy.startBuildingButton}
-                        <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
+                        <ExternalLinkIcon className="w-4 h-4" />
                     </Button>
                     <Button
                         as="a"
@@ -41,23 +42,24 @@ function HelloPage() {
                         rel="noopener noreferrer"
                         variant="secondary"
                         size="lg"
+                        className="bg-secondary-strong text-dark"
                     >
                         {pageCopy.joinDiscordButton}
-                        <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
+                        <ExternalLinkIcon className="w-4 h-4 text-dark" />
                     </Button>
                 </div>
-                <p className="font-body text-base text-text-body-tertiary mb-4">
-                    <span className="font-headline text-xs font-black text-text-body-secondary">
+                <p className="font-body text-base text-subtle mb-4">
+                    <span className="font-headline text-xs font-black text-muted">
                         {pageCopy.heroStat1}
                     </span>{" "}
                     {pageCopy.heroStat1Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-xs font-black text-text-body-secondary">
+                    <span className="font-headline text-xs font-black text-muted">
                         {pageCopy.heroStat2}
                     </span>{" "}
                     {pageCopy.heroStat2Label}
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-xs font-black text-text-body-secondary">
+                    <span className="font-headline text-xs font-black text-muted">
                         {pageCopy.heroStat3}
                     </span>{" "}
                     {pageCopy.heroStat3Label}
@@ -71,10 +73,10 @@ function HelloPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center justify-items-center mb-16">
                         <FlywheelRing pageCopy={pageCopy} />
                         <div className="max-w-xs">
-                            <p className="font-body text-base text-text-body-secondary leading-relaxed">
-                                <span className="font-bold text-text-brand">{pageCopy.flywheelBodyHighlight1}</span>
+                            <p className="font-body text-base text-muted leading-relaxed">
+                                <span className="font-bold text-dark">{pageCopy.flywheelBodyHighlight1}</span>
                                 {pageCopy.flywheelBodyMid}
-                                <span className="font-bold text-text-highlight">{pageCopy.flywheelBodyHighlight2}</span>
+                                <span className="font-bold text-dark">{pageCopy.flywheelBodyHighlight2}</span>
                             </p>
                         </div>
                     </div>
@@ -84,27 +86,26 @@ function HelloPage() {
                         {/* Tier explanation */}
                         <div className="max-w-sm">
                             <div className="mb-4">
-                                <p className="font-headline text-xs font-black text-text-highlight">
+                                <p className="font-headline text-xs font-black text-dark">
                                     {pageCopy.tierHowText}
                                 </p>
                                 <a
                                     href={LINKS.enterTiersFaq}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="font-headline text-sm font-black hover:underline inline-block mt-1"
-                                    style={{ color: "rgb(var(--indicator-video))" }}
+                                    className="font-headline text-sm font-black hover:underline inline-block mt-1 text-dark bg-accent-strong px-2 py-0.5"
                                 >
                                     {pageCopy.tierHowLink}
                                 </a>
                             </div>
-                            <div className="bg-surface-page border-2 border-border-strong border-r-4 border-b-4 p-4 inline-block text-left">
-                                <span className="font-headline text-sm font-black text-text-brand">
+                            <div className="bg-primary-light border-2 border-dark border-r-4 border-b-4 p-4 inline-block text-left">
+                                <span className="font-headline text-sm font-black text-dark">
                                     {pageCopy.usersTitle}
                                 </span>
                                 <Body
                                     size="sm"
                                     spacing="tight"
-                                    className="mt-2 text-text-body-secondary"
+                                    className="mt-2 text-muted"
                                 >
                                     {pageCopy.usersBody}
                                 </Body>
@@ -112,59 +113,42 @@ function HelloPage() {
                                     href={LINKS.byopDocs}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="font-headline text-xs font-black text-text-accent hover:underline mt-2 inline-block"
+                                    className="font-headline text-xs font-black text-dark bg-accent-strong px-2 py-0.5 hover:underline mt-2 inline-block"
                                 >
                                     {pageCopy.usersPaymentsLink}
                                 </a>
                             </div>
-                            <span className="font-body text-xs text-text-body-tertiary italic mt-3 inline-block">
+                            <span className="font-body text-xs text-subtle italic mt-3 inline-block">
                                 {pageCopy.tiersBetaNote}
                             </span>
                         </div>
 
                         {/* Tier ladder: Nectar (top) → Flower → Seed (bottom) */}
-                        <div className="relative flex flex-col gap-4 pr-8 max-w-[300px]">
-                            {/* 8-bit pixel arrow pointing up (right side) — green→pink→honey */}
-                            <svg
-                                className="absolute right-0 top-0 bottom-0 w-4"
-                                viewBox="0 0 5 24"
-                                preserveAspectRatio="none"
-                                style={{ height: "100%", imageRendering: "pixelated" }}
-                                aria-hidden="true"
-                            >
-                                <defs>
-                                    <linearGradient id="arrow-grad" x1="0" y1="1" x2="0" y2="0">
-                                        <stop offset="0%" stopColor="#7eb87e" />
-                                        <stop offset="45%" stopColor="#d4849e" />
-                                        <stop offset="100%" stopColor="#d4a854" />
-                                    </linearGradient>
-                                </defs>
-                                <rect x="1" y="0" width="3" height="24" fill="url(#arrow-grad)" />
-                            </svg>
+                        <div className="flex flex-col gap-4 max-w-[340px]">
                             {[
                                 {
                                     emoji: pageCopy.tierNectarEmoji,
                                     title: pageCopy.tierNectarTitle,
                                     desc: pageCopy.tierNectarDescription,
                                     grant: pageCopy.tierNectarGrant,
-                                    tint: "#f5e6c8", // warm honey
-                                    borderColor: "#d4a854",
+                                    tint: "rgb(var(--white))",
+                                    borderColor: "rgb(var(--dark))",
                                 },
                                 {
                                     emoji: pageCopy.tierFlowerEmoji,
                                     title: pageCopy.tierFlowerTitle,
                                     desc: pageCopy.tierFlowerDescription,
                                     grant: pageCopy.tierFlowerGrant,
-                                    tint: "#f5dce8", // soft pink
-                                    borderColor: "#d4849e",
+                                    tint: "rgb(var(--white))",
+                                    borderColor: "rgb(var(--dark))",
                                 },
                                 {
                                     emoji: pageCopy.tierSeedEmoji,
                                     title: pageCopy.tierSeedTitle,
                                     desc: pageCopy.tierSeedDescription,
                                     grant: pageCopy.tierSeedGrant,
-                                    tint: "#d8ecd8", // soft green
-                                    borderColor: "#7eb87e",
+                                    tint: "rgb(var(--white))",
+                                    borderColor: "rgb(var(--dark))",
                                 },
                             ].map((tier) => (
                                 <div
@@ -176,10 +160,12 @@ function HelloPage() {
                                         <span className="text-xl">
                                             {tier.emoji}
                                         </span>
-                                        <span className="font-headline text-xs font-black text-text-highlight">
+                                        <span className="font-headline text-xs font-black text-dark">
                                             {tier.title}
                                         </span>
-                                        <span className="ml-auto font-headline text-xs font-black text-text-body-secondary">
+                                        <span
+                                            className="ml-auto font-headline text-xs text-subtle"
+                                        >
                                             {tier.grant}
                                         </span>
                                     </div>
@@ -194,7 +180,7 @@ function HelloPage() {
                                         <Body
                                             size="sm"
                                             spacing="none"
-                                            className="text-text-body-secondary"
+                                            className="text-muted"
                                         >
                                             {tier.desc}
                                         </Body>
@@ -216,7 +202,7 @@ function HelloPage() {
                     <div className="space-y-6">
                         {/* What's New */}
                         <div
-                            className="bg-surface-page border-2 border-border-strong border-r-4 border-b-4 p-5"
+                            className="bg-tertiary-light border-2 border-dark border-r-4 border-b-4 p-5"
                             style={{ boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)" }}
                         >
                             <Badge variant="highlight" className="mb-4">
@@ -234,14 +220,14 @@ function HelloPage() {
                                             key={`${item.date}-${item.title}`}
                                             className="py-1"
                                         >
-                                            <p className="font-mono font-black text-xs" style={{ color: "rgb(var(--indicator-video))" }}>
-                                                {item.date}
+                                            <p className="font-mono font-black text-xs text-dark">
+                                                <span className="bg-primary-strong px-1.5 py-0.5">{item.date}</span>
                                                 <span className="ml-2">{item.emoji}</span>
-                                                <span className="font-headline text-[10px] font-black text-text-body-main ml-1">
+                                                <span className="font-headline text-[10px] font-black text-dark ml-1">
                                                     {item.title}
                                                 </span>
                                             </p>
-                                            <p className="font-body text-sm text-text-body-secondary leading-relaxed mt-0.5">
+                                            <p className="font-body text-sm text-muted leading-relaxed mt-0.5">
                                                 {item.description}
                                             </p>
                                         </div>
@@ -252,7 +238,7 @@ function HelloPage() {
 
                         {/* What's Next */}
                         <div
-                            className="bg-surface-page border-2 border-border-strong border-r-4 border-b-4 p-5"
+                            className="bg-secondary-light border-2 border-dark border-r-4 border-b-4 p-5"
                             style={{ boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)" }}
                         >
                             <Badge variant="highlight" className="mb-4">
@@ -266,11 +252,11 @@ function HelloPage() {
                                         description: string;
                                     }) => (
                                         <div key={item.title} className="py-1">
-                                            <p className="font-headline text-[10px] font-black text-text-body-main">
+                                            <p className="font-headline text-[10px] font-black text-dark">
                                                 <span className="mr-2">{item.emoji}</span>
                                                 {item.title}
                                             </p>
-                                            <p className="font-body text-sm text-text-body-secondary leading-relaxed mt-0.5">
+                                            <p className="font-body text-sm text-muted leading-relaxed mt-0.5">
                                                 {item.description}
                                             </p>
                                         </div>
@@ -280,10 +266,10 @@ function HelloPage() {
                         </div>
                     </div>
 
-                    <div className="text-center mt-10 font-headline text-xs leading-loose" style={{ color: "rgb(var(--indicator-image))" }}>
-                        <p>{pageCopy.comingFooterEmoji} <span className="font-black">The platform gives you runway.</span></p>
-                        <p>We're shaping the rest <span className="font-black">together, in the open.</span></p>
-                    </div>
+                    <p className="text-center mt-10 font-headline text-xs leading-loose text-dark">
+                        {pageCopy.comingFooterEmoji} The platform gives you runway.<br />
+                        We're shaping the rest <span className="font-black">together, in the open.</span>
+                    </p>
                 </div>
 
                 <Divider />
@@ -302,15 +288,17 @@ function HelloPage() {
                             rel="noopener noreferrer"
                             variant="primary"
                             size="lg"
+                            className="bg-[rgb(var(--primary-strong))] hover:bg-[rgb(var(--primary-strong)/0.8)] text-dark"
                         >
                             {pageCopy.startBuildingButton}
-                            <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
+                            <ExternalLinkIcon className="w-4 h-4" />
                         </Button>
                         <Button
                             as={Link}
                             to="/apps"
                             variant="secondary"
                             size="default"
+                            className="bg-accent-light text-dark"
                         >
                             {pageCopy.browseAppsLink}
                         </Button>
@@ -319,6 +307,7 @@ function HelloPage() {
                             to="/community"
                             variant="secondary"
                             size="default"
+                            className="bg-accent-light text-dark"
                         >
                             {pageCopy.communityLink}
                         </Button>
@@ -329,6 +318,7 @@ function HelloPage() {
                             rel="noopener noreferrer"
                             variant="secondary"
                             size="default"
+                            className="bg-accent-light text-dark"
                         >
                             {pageCopy.readTheDocsButton}
                         </Button>

@@ -1,18 +1,17 @@
 /** @type {import('tailwindcss').Config} */
 /**
  * THEME GUIDE:
- * - To change theme: Edit src/config/colors.js
- * - All colors imported from centralized colors.js
- * - Opacity: Add /90, /80, /50 etc. (e.g., bg-primary/90)
- * - CSS variables available: var(--color-primary), var(--color-background), etc.
+ * - To change colors: Edit src/theme/palette.ts
+ * - CSS variables are defined in palette.ts (15 colors)
+ * - Opacity: Add /90, /80, /50 etc. (e.g., bg-primary-strong/90)
  */
 import plugin from "tailwindcss/plugin";
-import { CozyCssVariables as DefaultCssVariables } from "./src/theme/presets/cozy";
+import { CSS_VARIABLES } from "./src/theme/palette";
 
 const Fonts = {
-    title: "var(--font-title, 'Press Start 2P')",
-    headline: "var(--font-headline, 'Press Start 2P')",
-    body: "var(--font-body, 'IBM Plex Mono')",
+    title: "'Press Start 2P'",
+    headline: "'Press Start 2P'",
+    body: "'IBM Plex Mono'",
 };
 
 export default {
@@ -20,81 +19,36 @@ export default {
     theme: {
         extend: {
             colors: {
-                // Legacy Palette Support (using raw values for now, should migrate to tokens)
-                yellow: "var(--color-yellow, #ecf874)",
-                lime: "var(--color-lime, #bef264)",
-                pink: "var(--color-pink, #ff69b4)",
-                cyan: "var(--color-cyan, #74f8ec)",
+                // Direct palette colors (15 total) — each supports opacity via /50 etc.
+                dark: "rgb(var(--dark) / <alpha-value>)",
+                muted: "rgb(var(--muted) / <alpha-value>)",
+                subtle: "rgb(var(--subtle) / <alpha-value>)",
+                white: "rgb(var(--white) / <alpha-value>)",
+                cream: "rgb(var(--cream) / <alpha-value>)",
+                tan: "rgb(var(--tan) / <alpha-value>)",
+                border: "rgb(var(--border) / <alpha-value>)",
+                "primary-light": "rgb(var(--primary-light) / <alpha-value>)",
+                "primary-strong": "rgb(var(--primary-strong) / <alpha-value>)",
+                "secondary-light":
+                    "rgb(var(--secondary-light) / <alpha-value>)",
+                "secondary-strong":
+                    "rgb(var(--secondary-strong) / <alpha-value>)",
+                "tertiary-light": "rgb(var(--tertiary-light) / <alpha-value>)",
+                "tertiary-strong":
+                    "rgb(var(--tertiary-strong) / <alpha-value>)",
+                "accent-strong": "rgb(var(--accent-strong) / <alpha-value>)",
+                "accent-light": "rgb(var(--accent-light) / <alpha-value>)",
 
-                // Monochrome Scale
-                charcoal: "var(--color-charcoal, #110518)",
-                "gray-dark": "var(--color-grayDark, #4a5557)",
-                gray: "var(--color-gray, #6e7a7c)",
-                "gray-medium": "var(--color-grayMedium, #BFCACC)",
-                "gray-light": "var(--color-grayLight, #c7d4d6)",
-                "gray-ultra-light": "var(--color-grayUltraLight, #dce4e6)",
-
-                // ============================================
-                // SEMANTIC TOKENS
-                // ============================================
-
-                // Typography
-                "text-body-main": "rgb(var(--text-primary))",
-                "text-body-secondary": "rgb(var(--text-secondary))",
-                "text-body-tertiary": "rgb(var(--text-tertiary))",
-                "text-caption": "rgb(var(--text-caption))",
-                "text-on-color": "rgb(var(--text-inverse))",
-                "text-brand": "rgb(var(--text-brand))",
-                "text-highlight": "rgb(var(--text-highlight))",
-                "text-accent": "rgb(var(--text-accent))",
-
-                // Surfaces (with opacity support)
-                "surface-page":
-                    "rgb(var(--surface-page) / var(--opacity-overlay, 1))",
-                "surface-card":
-                    "rgb(var(--surface-card) / var(--opacity-card, 1))",
-                "surface-base":
-                    "rgb(var(--surface-base) / var(--opacity-card, 1))",
-                "input-background": "rgb(var(--input-bg) / 1)",
-                "input-text": "rgb(var(--input-text))",
-
-                // Buttons
-                "button-primary-bg": "rgb(var(--button-primary-bg))",
-                "button-secondary-bg": "rgb(var(--button-secondary-bg))",
-                "button-disabled-bg": "rgb(var(--button-disabled-bg))",
-                "button-hover-overlay": "rgb(var(--button-hover-overlay))",
-                "button-active-overlay": "rgb(var(--button-active-overlay))",
-                "button-focus-ring": "rgb(var(--button-focus-ring))",
-
-                // Indicators
-                "indicator-image": "rgb(var(--indicator-image))",
-                "indicator-text": "rgb(var(--indicator-text))",
-                "indicator-audio": "rgb(var(--indicator-audio))",
-                "indicator-video": "rgb(var(--indicator-video))",
-
-                // Borders
-                "border-brand": "rgb(var(--border-brand))",
-                "border-highlight": "rgb(var(--border-highlight))",
-                "border-accent": "rgb(var(--border-accent))",
-                "border-main": "rgb(var(--border-main))",
-                "border-strong": "rgb(var(--border-strong))",
-                "border-subtle": "rgb(var(--border-subtle))",
-                "border-faint": "rgb(var(--border-faint))",
-
-                // Badge accent colors (theme-responsive via semantic tokens)
-                "badge-fresh": "rgb(var(--text-brand) / <alpha-value>)",
-                "badge-pollen": "rgb(var(--text-highlight) / <alpha-value>)",
-                "badge-buzz": "rgb(var(--text-accent) / <alpha-value>)",
-
-                // Logo
-                "logo-main": "rgb(var(--logo-main))",
-                "logo-shade": "rgb(var(--logo-accent))",
+                // Legacy aliases
+                yellow: "rgb(var(--accent-strong))",
+                lime: "rgb(var(--accent-strong))",
+                charcoal: "rgb(var(--dark))",
+                pink: "#ffd1b3",
             },
             stroke: {
-                // SVG stroke colors using CSS variables
-                pink: "var(--color-pink, #ff69b4)",
-                yellow: "var(--color-yellow, #ecf874)",
-                charcoal: "var(--color-charcoal, #110518)",
+                pink: "#ffd1b3",
+                yellow: "rgb(var(--accent-strong))",
+                charcoal: "rgb(var(--dark))",
             },
             fontFamily: {
                 title: [Fonts.title, "sans-serif"],
@@ -102,52 +56,22 @@ export default {
                 body: [Fonts.body, "sans-serif"],
             },
             boxShadow: {
-                // Shadows use CSS variables for colors
-                "pink-sm": "2px 2px 0px 0px var(--color-pink, #ff69b4)",
-                "pink-3": "3px 3px 0px 0px var(--color-pink, #ff69b4)",
-                "pink-md": "4px 4px 0px 0px var(--color-pink, #ff69b4)",
-                "pink-lg": "6px 6px 0px 0px var(--color-pink, #ff69b4)",
-
-                "charcoal-sm": "2px 2px 0px 0px var(--color-charcoal, #110518)",
-                "charcoal-md": "4px 4px 0px 0px var(--color-charcoal, #110518)",
-                "charcoal-lg": "6px 6px 0px 0px var(--color-charcoal, #110518)",
-                "charcoal-xl":
-                    "12px 12px 0px 0px var(--color-charcoal, #110518)",
-
-                "lime-sm": "2px 2px 0px 0px var(--color-lime, #bef264)",
-                "lime-3": "3px 3px 0px 0px var(--color-lime, #bef264)",
-                "lime-md": "4px 4px 0px 0px var(--color-lime, #bef264)",
-
-                // ============================================
-                // SEMANTIC TOKEN SHADOWS
-                // ============================================
-                // Brand shadows
-                "shadow-brand-sm":
-                    "2px 2px 0px 0px rgb(var(--shadow-brand-sm))",
-                "shadow-brand-md":
-                    "4px 4px 0px 0px rgb(var(--shadow-brand-md))",
-                "shadow-brand-lg":
-                    "6px 6px 0px 0px rgb(var(--shadow-brand-lg))",
-
-                // Dark shadows
-                "shadow-dark-sm": "2px 2px 0px 0px rgb(var(--shadow-dark-sm))",
-                "shadow-dark-md": "4px 4px 0px 0px rgb(var(--shadow-dark-md))",
-                "shadow-dark-lg": "6px 6px 0px 0px rgb(var(--shadow-dark-lg))",
-                "shadow-dark-xl":
-                    "12px 12px 0px 0px rgb(var(--shadow-dark-xl))",
-
-                // Highlight shadows
-                "shadow-highlight-sm":
-                    "2px 2px 0px 0px rgb(var(--shadow-highlight-sm))",
-                "shadow-highlight-md":
-                    "4px 4px 0px 0px rgb(var(--shadow-highlight-md))",
+                "brand-sm": "2px 2px 0px 0px rgb(var(--accent-strong))",
+                "brand-md": "4px 4px 0px 0px rgb(var(--accent-strong))",
+                "brand-lg": "6px 6px 0px 0px rgb(var(--accent-strong))",
+                "dark-sm": "2px 2px 0px 0px rgb(var(--dark))",
+                "dark-md": "4px 4px 0px 0px rgb(var(--dark))",
+                "dark-lg": "6px 6px 0px 0px rgb(var(--dark))",
+                "dark-xl": "12px 12px 0px 0px rgb(var(--dark))",
+                "highlight-sm": "2px 2px 0px 0px rgb(var(--dark))",
+                "highlight-md": "4px 4px 0px 0px rgb(var(--dark))",
             },
             borderRadius: {
-                button: "var(--radius-button)",
-                card: "var(--radius-card)",
-                input: "var(--radius-input)",
-                "sub-card": "var(--radius-subcard)",
-                tag: "var(--radius-tag)",
+                button: "0px",
+                card: "0px",
+                input: "0px",
+                "sub-card": "0px",
+                tag: "0px",
             },
             animation: {
                 "pulse-subtle": "pulse-subtle 1.5s ease-in-out infinite",
@@ -158,12 +82,12 @@ export default {
                     "0%, 100%": {
                         opacity: "1",
                         transform: "scale(1)",
-                        boxShadow: "0 0 0 0 var(--border-highlight)",
+                        boxShadow: "0 0 0 0 rgb(var(--dark))",
                     },
                     "50%": {
                         opacity: "0.9",
                         transform: "scale(1.03)",
-                        boxShadow: "0 0 8px 2px var(--border-highlight)",
+                        boxShadow: "0 0 8px 2px rgb(var(--dark))",
                     },
                 },
                 shimmer: {
@@ -178,25 +102,17 @@ export default {
         },
     },
     plugins: [
-        // Generate CSS custom properties for use in raw CSS
+        // Generate CSS custom properties from palette.ts
         plugin(({ addBase }) => {
             addBase({
                 ":root": {
-                    // CSS variables for Tailwind colors
-                    "--color-yellow": "#ecf874",
-                    "--color-lime": "#ecf874",
                     "--color-pink": "#ffd1b3",
-                    "--color-cyan": "#a8e6cf",
-                    "--color-charcoal": "#110518",
-
-                    // Inject Default Theme Variables
-                    ...DefaultCssVariables,
+                    ...CSS_VARIABLES,
                 },
             });
         }),
         // Pixel-art utility classes
         plugin(({ addUtilities, addBase }) => {
-            // Disable font smoothing on pixel font families for crisp rendering
             addBase({
                 ".font-title, .font-headline": {
                     "-webkit-font-smoothing": "none",

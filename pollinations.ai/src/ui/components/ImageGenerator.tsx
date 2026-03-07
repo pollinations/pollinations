@@ -42,11 +42,11 @@ export function ImageGenerator({
     if (loading) {
         return (
             <div
-                className={`${className} flex items-center justify-center bg-input-background`}
+                className={`${className} flex items-center justify-center bg-white`}
                 style={{ width, height }}
                 {...props}
             >
-                <span className="text-xs text-text-caption">...</span>
+                <span className="text-xs text-subtle">...</span>
             </div>
         );
     }
@@ -54,11 +54,11 @@ export function ImageGenerator({
     if (error || !imageUrl) {
         return (
             <div
-                className={`${className} flex items-center justify-center bg-input-background`}
+                className={`${className} flex items-center justify-center bg-white`}
                 style={{ width, height }}
                 {...props}
             >
-                <span className="text-xs text-text-caption">✗</span>
+                <span className="text-xs text-subtle">✗</span>
             </div>
         );
     }

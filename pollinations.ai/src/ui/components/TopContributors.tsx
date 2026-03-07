@@ -148,14 +148,14 @@ export function TopContributors() {
                             rel="noopener noreferrer"
                             className="group flex flex-col items-center text-center hover:opacity-70 transition-opacity"
                         >
-                            <div className="w-16 h-16 mb-2 overflow-hidden rounded-full border-2 border-border-brand group-hover:border-border-highlight transition-colors">
+                            <div className="w-16 h-16 mb-2 overflow-hidden rounded-full border-2 border-dark group-hover:border-dark transition-colors">
                                 <img
                                     src={contributor.avatar_url}
                                     alt={contributor.login}
                                     className="w-full h-full object-cover"
                                 />
                             </div>
-                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                            <p className="font-headline text-sm font-black text-dark mb-1">
                                 {contributor.login}
                             </p>
                         </a>

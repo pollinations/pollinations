@@ -5,12 +5,12 @@ export const HELLO_PAGE = {
     heroTitle: "The open platform for AI builders.",
     heroBody:
         "One API. 40+ models. Text, image, audio, video  — all on one Pollen balance. Daily compute grants. You bring the idea — we handle the rest.",
-    heroStat1: "500+",
-    heroStat1Label: "live apps",
-    heroStat2: "3M",
-    heroStat2Label: "monthly users",
-    heroStat3: "200",
-    heroStat3Label: "countries",
+    heroStat1: "10K",
+    heroStat1Label: "weekly active devs",
+    heroStat2: "1.5M",
+    heroStat2Label: "requests / day",
+    heroStat3: "500+",
+    heroStat3Label: "live apps",
     startBuildingButton: "Register",
     joinDiscordButton: "Join the Discord",
 
@@ -60,7 +60,7 @@ export const HELLO_PAGE = {
 
     // Section — For your users / BYOP
     usersTitle: "Your users pay for themselves",
-    usersBody: "They spend their own Pollen in your app — costs you nothing.",
+    usersBody: "Each user who signs up gets 1.5 free Pollen per week — and spends it in your app. Costs you nothing.",
     usersPaymentsLink: "💳 Set up user payments →",
 
     // Section 8 — We Build in the Open

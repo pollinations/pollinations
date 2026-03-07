@@ -22,6 +22,10 @@ vi.mock("node-fetch", () => ({}));
 // We also need to mock the progress bar and video/image download
 vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
     if (typeof url === "string" && url.includes("example.com")) {
+        // HEAD requests for redirect resolution — return the same URL
+        if (init?.method === "HEAD") {
+            return { ok: true, url } as Response;
+        }
         // Simulate downloading the result buffer
         return {
             ok: true,

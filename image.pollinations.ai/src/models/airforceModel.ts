@@ -197,16 +197,10 @@ function buildRequestBody(
         if (safeParams.image && safeParams.image.length > 0) {
             requestBody.image_urls = safeParams.image;
         }
-    } else if (
-        airforceModel === "imagen-4" ||
-        airforceModel === "grok-imagine"
-    ) {
+    } else {
+        // api.airforce only supports DALL-E 3 compatible sizes — snap to closest
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
-    } else {
-        if (safeParams.width && safeParams.height) {
-            requestBody.size = `${safeParams.width}x${safeParams.height}`;
-        }
 
         // Support image-to-image for eligible image models
         if (

@@ -109,6 +109,27 @@ Output Format (JSON only):
 
 Return ONLY the JSON object. No markdown fences, no explanation.
 
+## GitHub
+
+- Title: Weekly Update - {date_str}
+- Body: Markdown format. Professional, clear, and scannable.
+- Use # Weekly Update - {date_str} as the main header.
+- Group updates into logical sections (e.g., ## 🚀 Features, ## 🐞 Fixes, ## 🛠️ Improvements).
+- Use bullet points for individual PRs/changes.
+- Include links to PRs or commits if available.
+- Mention contributors where appropriate.
+- Total length: 300-600 words.
+
+Output Format (JSON only):
+{
+    "title": "The Release title (Weekly Update - {date_str})",
+    "body": "The full Markdown body of the release.",
+    "tag_name": "weekly-{date_str}",
+    "reasoning": "Why this summary works for a GitHub Release — be brief"
+}
+
+Return ONLY the JSON object. No markdown fences, no explanation.
+
 ## Realtime
 
 Given a PR's summary, impact, and keywords, write a short message announcing the change.

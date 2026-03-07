@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { AUTH_COPY } from "../../copy/content/auth";
-import { LAYOUT } from "../../copy/content/layout";
+import { LAYOUT, LAYOUT_NO_TRANSLATE } from "../../copy/content/layout";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
 import { usePageCopy } from "../../hooks/usePageCopy";
@@ -26,7 +26,7 @@ function Layout() {
     const [emailCopied, setEmailCopied] = useState(false);
     const { isLoggedIn } = useAuth();
     const { copy: authCopy } = usePageCopy(AUTH_COPY);
-    const { copy: layoutCopy } = usePageCopy(LAYOUT);
+    const { copy: layoutCopy } = usePageCopy(LAYOUT, LAYOUT_NO_TRANSLATE);
 
     return (
         <div className="relative min-h-screen">

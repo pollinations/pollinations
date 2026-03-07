@@ -279,13 +279,7 @@ function HelloPage() {
                     </div>
 
                     <p className="text-center mt-10 font-headline text-xs leading-loose text-dark">
-                        {pageCopy.comingFooterEmoji} The platform gives you
-                        runway.
-                        <br />
-                        We're shaping the rest{" "}
-                        <span className="font-black">
-                            together, in the open.
-                        </span>
+                        {pageCopy.comingFooterEmoji} {pageCopy.comingFooter}
                     </p>
                 </div>
 

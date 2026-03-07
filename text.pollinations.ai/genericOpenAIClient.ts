@@ -170,8 +170,8 @@ export async function genericOpenAIClient(
                 : originalChoice
         ) as CompletionChoice;
 
-        // Some providers (e.g. Vertex AI) return "stop" even when tool_calls
-        // are present. OpenAI spec requires finish_reason "tool_calls" in that case.
+        // Force finish_reason to "tool_calls" when tool_calls are present.
+        // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
         if (formattedChoice.message?.tool_calls?.length) {
             formattedChoice.finish_reason = "tool_calls";
         }

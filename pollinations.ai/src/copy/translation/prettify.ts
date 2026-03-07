@@ -10,6 +10,7 @@ interface CopyItem {
     id: string;
     text: string;
     name?: string;
+    titleEmoji?: string;
 }
 
 const PRETTIFY_PROMPT = `Rewrite each app description in zine-style for a creative AI showcase. Output ONLY numbered entries — no intro, no commentary.
@@ -23,7 +24,6 @@ CRITICAL — preserve facts:
 - Only restyle the description — do not alter what the app is or does
 
 Style guide:
-- One emoji at the start — no emoji spam
 - **Bold** the hook or key feature (1-2 bold phrases max)
 - *Italic* for attitude or vibe words
 - Use \`inline code\` for tech terms, model names, or tools
@@ -31,39 +31,59 @@ Style guide:
 - Aim for 20–30 words — let it breathe across multiple lines
 - Zine energy: raw, direct, no corporate fluff
 - Same meaning, more personality
+- End with ONE emoji — place it at the very end of the description, not the start
+- CRITICAL: each entry has a [title: X] tag — you MUST use a DIFFERENT emoji than X. NEVER repeat the title emoji. For example if [title: 🧩] then do NOT end with 🧩, pick something related but different like 🎯 or 🔀
+- No emoji anywhere else — only at the end
 
 Example format:
-1. 🎨 **Paint with AI** — *your canvas, infinite.*
+1. **Paint with AI** — *your canvas, infinite.*
 - Drop a prompt, get art. \`Flux\` models, real-time preview.
-- Remix, iterate, share.
-2. 🤖 **Chat without limits.**
-Build convos with \`GPT\`, \`Claude\`, and more — *zero config, pure signal.*`;
+- Remix, iterate, share. 🖌️
+2. **Chat without limits.**
+Build convos with \`GPT\`, \`Claude\`, and more — *zero config, pure signal.* 💬`;
 
-async function prettifyDescriptions(
+const BATCH_SIZE = 20;
+
+async function prettifyBatch(
     items: CopyItem[],
     apiKey?: string,
 ): Promise<CopyItem[]> {
     const lines = items
         .map((item, i) => {
-            const prefix = item.name ? `[${item.name}] ` : "";
-            return `${i + 1}. ${prefix}${item.text}`;
+            const namePrefix = item.name ? `[${item.name}] ` : "";
+            const emojiPrefix = item.titleEmoji ? `[title: ${item.titleEmoji}] ` : "";
+            return `${i + 1}. ${emojiPrefix}${namePrefix}${item.text}`;
         })
         .join("\n");
     const prompt = `${PRETTIFY_PROMPT}\n\n${lines}`;
 
-    console.log(`✨ [PRETTIFY] Processing ${items.length} descriptions`);
-
     const response = await generateText(prompt, undefined, undefined, apiKey);
-    const result = parseNumberedEntries(response, items);
-    console.log("✅ [PRETTIFY] Done");
+    return parseNumberedEntries(response, items);
+}
 
-    return result;
+async function prettifyDescriptions(
+    items: CopyItem[],
+    apiKey?: string,
+): Promise<CopyItem[]> {
+    console.log(`✨ [PRETTIFY] Processing ${items.length} descriptions in batches of ${BATCH_SIZE}`);
+
+    const batches: CopyItem[][] = [];
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+        batches.push(items.slice(i, i + BATCH_SIZE));
+    }
+
+    const results = await Promise.all(
+        batches.map((batch) => prettifyBatch(batch, apiKey)),
+    );
+
+    console.log(`✅ [PRETTIFY] Done — ${batches.length} batches`);
+    return results.flat();
 }
 
 const memoizedPrettify = memoizeAsync(
     prettifyDescriptions,
     (items, apiKey) =>
-        `prettify:${apiKey || "default"}:${items.map((i) => i.id).join(",")}`,
+        `prettify:${apiKey || "default"}:${items.length}:${items.map((i) => i.id).join(",")}`,
 );
 
 export async function prettifyCopy(

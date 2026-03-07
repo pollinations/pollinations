@@ -102,7 +102,7 @@ function HelloPage() {
                                     {pageCopy.tierHowLink}
                                 </a>
                             </div>
-                            <div className="bg-primary-light border-2 border-dark border-r-4 border-b-4 p-4 inline-block text-left">
+                            <div className="bg-tertiary-light border-2 border-dark border-r-4 border-b-4 p-4 inline-block text-left">
                                 <span className="font-headline text-sm font-black text-dark">
                                     {pageCopy.usersTitle}
                                 </span>
@@ -204,7 +204,7 @@ function HelloPage() {
                     <div className="space-y-6">
                         {/* What's New */}
                         <div
-                            className="bg-tertiary-light border-2 border-dark border-r-4 border-b-4 p-5"
+                            className="bg-secondary-light border-2 border-dark border-r-4 border-b-4 p-5"
                             style={{
                                 boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)",
                             }}
@@ -246,7 +246,7 @@ function HelloPage() {
 
                         {/* What's Next */}
                         <div
-                            className="bg-secondary-light border-2 border-dark border-r-4 border-b-4 p-5"
+                            className="bg-tertiary-light border-2 border-dark border-r-4 border-b-4 p-5"
                             style={{
                                 boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)",
                             }}

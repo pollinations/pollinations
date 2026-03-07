@@ -38,7 +38,7 @@ export function UserMenu() {
                 variant="primary"
                 size={null}
                 onClick={login}
-                className="px-3 py-1.5 lg:px-5 lg:py-1.5 text-xs"
+                className="px-3 py-1.5 lg:px-5 lg:py-1.5 text-xs bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
             >
                 {copy.loginButton}
             </Button>
@@ -55,7 +55,7 @@ export function UserMenu() {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 font-headline text-xs font-black uppercase tracking-wider text-dark bg-tan border-r-4 border-b-4 border-dark rounded-button transition-all hover:bg-dark hover:text-white hover:shadow-dark-md whitespace-nowrap"
+                className="flex items-center gap-4 px-3 py-1.5 font-headline text-xs font-black tracking-wider text-dark bg-secondary-strong border-r-4 border-b-4 border-dark rounded-button transition-all hover:bg-secondary-strong/80 hover:text-dark hover:shadow-dark-md whitespace-nowrap"
             >
                 {profile?.image && (
                     <img
@@ -66,14 +66,14 @@ export function UserMenu() {
                 )}
                 <span className="max-w-[140px] truncate">{displayName}</span>
                 {balance !== null && (
-                    <span className="text-dark">
+                    <span className="text-accent-strong">
                         {balance.balance.toFixed(1)} {copy.pollenUnit}
                     </span>
                 )}
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 bg-[rgb(var(--cream))] backdrop-blur-md border-r-4 border-b-4 border-dark rounded-button p-4 z-50 shadow-dark-lg">
+                <div className="absolute right-0 top-full mt-2 w-72 bg-secondary-strong/20 backdrop-blur-md border-r-4 border-b-4 border-dark rounded-button p-4 z-50 shadow-dark-lg">
                     {/* Profile */}
                     {profile && (
                         <div className="mb-3">
@@ -157,7 +157,7 @@ export function UserMenu() {
                         rel="noopener noreferrer"
                         variant="primary"
                         size="sm"
-                        className="w-full mb-2"
+                        className="w-full mb-2 bg-[rgb(var(--primary-strong))] text-dark hover:bg-[rgb(var(--primary-strong)/0.8)] hover:text-dark"
                     >
                         {copy.enterLink}
                     </Button>

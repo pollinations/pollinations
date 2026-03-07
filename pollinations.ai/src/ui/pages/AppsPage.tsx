@@ -4,7 +4,6 @@ import { useSearchParams } from "react-router-dom";
 import remarkGfm from "remark-gfm";
 import { COPY_CONSTANTS } from "../../copy/constants";
 import {
-    ALL_FILTERS,
     APPS_PAGE,
     BADGE_FILTERS,
     badges,
@@ -62,27 +61,32 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
         : null;
 
     const cardBorder = badges.buzz(app)
-        ? "border border-muted/40 shadow-[0_0_4px] shadow-muted/20"
+        ? "border-r-2 border-b-2 border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]"
         : badges.pollen(app)
-          ? "border border-dark/40 shadow-[0_0_4px] shadow-dark/20"
-          : "border border-tan";
+          ? "border-r-2 border-b-2 border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]"
+          : "border-r-2 border-b-2 border-tan shadow-[1px_1px_0_rgb(var(--tan)_/_0.3)]";
 
     return (
-        <div className={`flex flex-col h-full overflow-visible ${cardBorder}`}>
+        <div
+            className={`flex flex-col h-full overflow-visible transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${cardBorder}`}
+        >
             <a
                 href={app.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between px-4 py-3 bg-white hover:brightness-110 transition-all"
             >
-                <span className="font-headline text-xs font-black uppercase text-dark">
-                    {app.emoji && `${app.emoji} `}
-                    {app.name}
+                <span className="font-headline text-xs font-black uppercase text-dark flex items-center">
+                    {app.emoji && (
+                        <span className="flex-shrink-0 mr-2 text-base leading-none">
+                            {app.emoji}
+                        </span>
+                    )}
+                    <span>{app.name}</span>
                 </span>
-                <ExternalLinkIcon className="w-4 h-4 text-dark opacity-60 flex-shrink-0" />
             </a>
 
-            <div className="flex flex-col flex-1 px-4 py-3">
+            <div className="flex flex-col flex-1 px-4 py-3 bg-white/60">
                 <div className="flex-1">
                     {app.description && (
                         <div className="text-sm text-muted mb-3 font-body leading-relaxed">
@@ -148,37 +152,15 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                         badges.new(app)) && (
                         <div className="flex flex-wrap items-center gap-1.5 mb-3">
                             {badges.pollen(app) && (
-                                <span className="relative group/byop">
-                                    <Badge variant="pollen">
-                                        {copy.pollenBadge}
-                                    </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-tag shadow-lg border border-border opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
-                                        {copy.pollenTooltip}
-                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-input-background" />
-                                    </div>
-                                </span>
+                                <Badge variant="pollen">
+                                    {copy.pollenBadge}
+                                </Badge>
                             )}
                             {badges.buzz(app) && (
-                                <span className="relative group/buzz">
-                                    <Badge variant="buzz">
-                                        {copy.buzzBadge}
-                                    </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-tag shadow-lg border border-border opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
-                                        {copy.buzzTooltip}
-                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-input-background" />
-                                    </div>
-                                </span>
+                                <Badge variant="buzz">{copy.buzzBadge}</Badge>
                             )}
                             {badges.new(app) && (
-                                <span className="relative group/new">
-                                    <Badge variant="fresh">
-                                        {copy.newBadge}
-                                    </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-tag shadow-lg border border-border opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
-                                        {copy.newTooltip}
-                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-input-background" />
-                                    </div>
-                                </span>
+                                <Badge variant="fresh">{copy.newBadge}</Badge>
                             )}
                         </div>
                     )}
@@ -259,8 +241,12 @@ const sortApps = (a: App, b: App) => {
 
 export default function AppsPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const filter = searchParams.get("filter") || "new";
-    const setFilter = (f: string) => setSearchParams({ filter: f });
+    const filter = searchParams.get("filter") || "image";
+    const sort = searchParams.get("sort") || "new";
+    const setFilter = (f: string) =>
+        setSearchParams({ filter: f, ...(sort ? { sort } : {}) });
+    const setSort = (s: string) =>
+        setSearchParams({ filter, sort: sort === s ? "" : s });
     const { apiKey } = useAuth();
 
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
@@ -275,16 +261,23 @@ export default function AppsPage() {
     );
 
     const filteredApps = useMemo(() => {
-        const f = ALL_FILTERS.find((x) => x.id === filter);
-        if (!f) return [];
-        return allApps.filter(f.match).sort(sortApps);
-    }, [allApps, filter]);
+        const f = GENRE_FILTERS.find((x) => x.id === filter);
+        if (!f) return allApps.slice().sort(sortApps);
+        const filtered = allApps.filter(f.match).sort(sortApps);
+        // If a badge sort is active, float matching apps to top
+        const badgeFn = BADGE_FILTERS.find((x) => x.id === sort);
+        if (!badgeFn) return filtered;
+        const matching = filtered.filter(badgeFn.match);
+        const rest = filtered.filter((a) => !badgeFn.match(a));
+        return [...matching, ...rest];
+    }, [allApps, filter, sort]);
 
     const { prettified } = usePrettify(
         filteredApps,
         "description",
         apiKey,
         "name",
+        "emoji",
     );
 
     const { translated: displayApps } = useTranslate(prettified, "description");
@@ -297,7 +290,7 @@ export default function AppsPage() {
 
                 {/* CTAs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                    <div className="flex items-center gap-4 p-4 bg-white rounded-sub-card">
+                    <div className="flex items-center gap-4 p-4 bg-primary-light rounded-sub-card">
                         <div className="flex-1">
                             <p className="font-headline text-xs font-black text-dark mb-1">
                                 {pageCopy.submitCtaTitle}
@@ -313,12 +306,13 @@ export default function AppsPage() {
                             rel="noopener noreferrer"
                             variant="primary"
                             size="default"
+                            className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
                         >
                             {pageCopy.submitCtaButton}
                             <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
                         </Button>
                     </div>
-                    <div className="flex items-center gap-4 p-4 bg-white rounded-sub-card">
+                    <div className="flex items-center gap-4 p-4 bg-tertiary-light rounded-sub-card">
                         <div className="flex-1">
                             <p className="font-headline text-xs font-black text-dark mb-1">
                                 {pageCopy.pollenCtaTitle}
@@ -334,6 +328,7 @@ export default function AppsPage() {
                             rel="noopener noreferrer"
                             variant="primary"
                             size="default"
+                            className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
                         >
                             {pageCopy.pollenCtaButton}
                             <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
@@ -342,24 +337,32 @@ export default function AppsPage() {
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-wrap gap-2 mb-8">
+                <div className="flex flex-wrap gap-2 mb-4">
                     {translatedGenre.map((f) => (
-                        <Button
-                            key={f.id}
-                            variant="toggle"
-                            data-active={filter === f.id}
-                            onClick={() => setFilter(f.id)}
-                            className="px-4 py-2 text-base"
-                        >
-                            {f.label}
-                        </Button>
-                    ))}
-                    {translatedBadge.map((f) => (
                         <Button
                             key={f.id}
                             variant="toggle-glow"
                             data-active={filter === f.id}
                             onClick={() => setFilter(f.id)}
+                            className="px-4 py-2 text-base"
+                            style={{ "--glow": f.glow } as React.CSSProperties}
+                        >
+                            {f.label}
+                        </Button>
+                    ))}
+                </div>
+
+                {/* Sort */}
+                <div className="flex flex-wrap items-center gap-2 mb-8">
+                    <span className="font-headline text-xs font-black uppercase tracking-wider text-muted">
+                        {pageCopy.sortLabel}
+                    </span>
+                    {translatedBadge.map((f) => (
+                        <Button
+                            key={f.id}
+                            variant="toggle-glow"
+                            data-active={sort === f.id}
+                            onClick={() => setSort(f.id)}
                             className="px-4 py-2 text-base"
                             style={{ "--glow": f.glow } as React.CSSProperties}
                         >

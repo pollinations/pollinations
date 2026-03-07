@@ -68,30 +68,30 @@ export default function CommunityPage() {
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.contributeBody}</Body>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <SubCard size="compact">
+                        <div className="p-4 bg-primary-light rounded-sub-card">
                             <Heading variant="lime" as="h3" spacing="tight">
                                 {pageCopy.contributeCard1Title}
                             </Heading>
                             <Body size="sm" spacing="none">
                                 {pageCopy.contributeCard1Body}
                             </Body>
-                        </SubCard>
-                        <SubCard size="compact">
+                        </div>
+                        <div className="p-4 bg-tertiary-light rounded-sub-card">
                             <Heading variant="lime" as="h3" spacing="tight">
                                 {pageCopy.contributeCard2Title}
                             </Heading>
                             <Body size="sm" spacing="none">
                                 {pageCopy.contributeCard2Body}
                             </Body>
-                        </SubCard>
-                        <SubCard size="compact">
+                        </div>
+                        <div className="p-4 bg-secondary-light rounded-sub-card">
                             <Heading variant="lime" as="h3" spacing="tight">
                                 {pageCopy.contributeCard3Title}
                             </Heading>
                             <Body size="sm" spacing="none">
                                 {pageCopy.contributeCard3Body}
                             </Body>
-                        </SubCard>
+                        </div>
                     </div>
                     <Body
                         size="sm"
@@ -107,6 +107,7 @@ export default function CommunityPage() {
                         rel="noopener noreferrer"
                         variant="secondary"
                         size="default"
+                        className="bg-accent-strong text-dark hover:bg-accent-strong/80 hover:text-dark"
                     >
                         {pageCopy.learnAboutTiersButton}
                     </Button>
@@ -136,6 +137,7 @@ export default function CommunityPage() {
                                     rel="noopener noreferrer"
                                     variant="primary"
                                     size="default"
+                                    className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
                                 >
                                     {pageCopy.joinDiscordButton}
                                     <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
@@ -147,6 +149,7 @@ export default function CommunityPage() {
                                     rel="noopener noreferrer"
                                     variant="secondary"
                                     size="default"
+                                    className="bg-accent-strong text-dark hover:bg-accent-strong/80 hover:text-dark"
                                 >
                                     {pageCopy.pollenBetaButton}
                                     <ExternalLinkIcon className="w-3 h-3 text-dark" />
@@ -169,6 +172,7 @@ export default function CommunityPage() {
                                 rel="noopener noreferrer"
                                 variant="primary"
                                 size="default"
+                                className="bg-tertiary-strong text-dark hover:bg-tertiary-strong/80 hover:text-dark"
                             >
                                 {pageCopy.starContributeButton}
                                 <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
@@ -188,11 +192,12 @@ export default function CommunityPage() {
                                 href={LINKS.githubSubmitApp}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                variant="secondary"
+                                variant="primary"
                                 size="default"
+                                className="bg-primary-strong text-dark hover:bg-primary-strong/80 hover:text-dark"
                             >
                                 {pageCopy.submitAppButton}
-                                <ExternalLinkIcon className="w-3 h-3 text-dark" />
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
                             </Button>
                         </SubCard>
                     </div>
@@ -206,29 +211,36 @@ export default function CommunityPage() {
                         {pageCopy.votingTitle}
                     </Heading>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {translatedVotingIssues.map((issue) => (
-                            <a
-                                key={issue.url}
-                                href={issue.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block bg-white p-4 rounded-sub-card border-l-4 border-dark hover:border-dark transition-colors"
-                            >
-                                <div className="flex flex-col gap-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-2xl">
-                                            {issue.emoji}
-                                        </span>
-                                        <span className="font-mono text-xs text-subtle">
-                                            {issue.votes} votes
-                                        </span>
+                        {translatedVotingIssues.map((issue, i) => {
+                            const colors = [
+                                "border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
+                                "border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
+                                "border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                            ];
+                            return (
+                                <a
+                                    key={issue.url}
+                                    href={issue.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`block bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i]} transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
+                                >
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-2xl">
+                                                {issue.emoji}
+                                            </span>
+                                            <span className="font-mono text-xs text-subtle">
+                                                {issue.votes} votes
+                                            </span>
+                                        </div>
+                                        <p className="font-headline text-xs font-black text-dark">
+                                            {issue.title}
+                                        </p>
                                     </div>
-                                    <p className="font-headline text-xs font-black text-dark">
-                                        {issue.title}
-                                    </p>
-                                </div>
-                            </a>
-                        ))}
+                                </a>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -257,16 +269,23 @@ export default function CommunityPage() {
                         {translatedSupporters.map((supporter, index) => {
                             const originalSupporter =
                                 COMMUNITY_PAGE.supportersList[index];
+                            const borderColors = [
+                                "border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)_/_0.3)]",
+                                "border-secondary-strong shadow-[2px_2px_0_rgb(var(--secondary-strong)_/_0.3)]",
+                                "border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                                "border-accent-strong shadow-[2px_2px_0_rgb(var(--accent-strong)_/_0.3)]",
+                            ];
                             return (
-                                <a
+                                <div
                                     key={supporter.name}
-                                    href={supporter.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="group flex flex-col items-center text-center hover:opacity-70 transition-opacity"
-                                    title={supporter.name}
+                                    className="flex flex-col items-center text-center"
                                 >
-                                    <div className="w-16 h-16 mb-2 overflow-hidden">
+                                    <a
+                                        href={supporter.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`block w-16 h-16 overflow-hidden bg-white/60 rounded-sub-card border-r-2 border-b-2 ${borderColors[index % borderColors.length]} transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none mb-2`}
+                                    >
                                         <ImageGenerator
                                             key={`${supporter.name}-logo`}
                                             prompt={`${COPY_CONSTANTS.supporterLogoPrompt} ${originalSupporter.name}. ${originalSupporter.description}`}
@@ -279,13 +298,13 @@ export default function CommunityPage() {
                                                 COPY_CONSTANTS.supporterLogoModel
                                             }
                                             alt={supporter.name}
-                                            className="w-full h-full object-contain"
+                                            className="w-full h-full object-cover"
                                         />
-                                    </div>
-                                    <p className="font-body text-xs font-bold text-dark leading-tight">
+                                    </a>
+                                    <p className="font-body text-[10px] font-bold text-dark leading-tight">
                                         {supporter.name}
                                     </p>
-                                </a>
+                                </div>
                             );
                         })}
                     </div>

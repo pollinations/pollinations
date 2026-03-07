@@ -88,13 +88,13 @@ export const PLAY_PAGE = {
     authIntro:
         "API keys authenticate your requests. Create multiple keys for different apps and track usage separately.",
     publishableLabel: "Publishable",
-    publishableFeature1: "Client-side demos & prototypes",
-    publishableFeature2: "Rate limited: 1 pollen per IP per hour",
+    publishableFeature1: "🧪 Client-side demos & prototypes",
+    publishableFeature2: "⏱️ Rate limited: 1 pollen per IP per hour",
     publishableBetaWarning:
         "Beta — Turnstile protection coming soon. Not recommended for production yet.",
     secretLabel: "Secret",
-    secretFeature1: "Server-side only",
-    secretFeature2: "No rate limits",
+    secretFeature1: "🔒 Server-side only",
+    secretFeature2: "🚀 No rate limits",
     secretWarning:
         "Never expose in client-side code, git repos, or public URLs",
     byopLabel: "Bring Your Own Pollen",

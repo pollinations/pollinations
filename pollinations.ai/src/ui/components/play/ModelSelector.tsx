@@ -39,31 +39,19 @@ export const ModelSelector = memo(function ModelSelector({
                     <div className="font-headline text-dark uppercase text-sm tracking-wider font-black">
                         {copy.modelsLabel}
                     </div>
-                    <div className="flex items-center gap-3 text-sm font-headline uppercase tracking-wider font-black">
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-primary-light" />
-                            <span className="text-subtle">
-                                {copy.imageLabel}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-secondary-light" />
-                            <span className="text-subtle">
-                                {copy.textLabel}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-tertiary-light" />
-                            <span className="text-subtle">
-                                {copy.audioLabel}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-accent-strong" />
-                            <span className="text-subtle">
-                                {copy.videoLabel}
-                            </span>
-                        </div>
+                    <div className="flex items-center gap-2 text-xs font-headline uppercase tracking-wider font-black">
+                        <span className="px-2 py-0.5 bg-primary-strong/50 border border-primary-strong text-dark rounded-sm">
+                            {copy.imageLabel}
+                        </span>
+                        <span className="px-2 py-0.5 bg-secondary-strong/50 border border-secondary-strong text-dark rounded-sm">
+                            {copy.textLabel}
+                        </span>
+                        <span className="px-2 py-0.5 bg-tertiary-strong/50 border border-tertiary-strong text-dark rounded-sm">
+                            {copy.audioLabel}
+                        </span>
+                        <span className="px-2 py-0.5 bg-accent-strong/50 border border-accent-strong text-dark rounded-sm">
+                            {copy.videoLabel}
+                        </span>
                     </div>
                 </div>
             )}
@@ -93,12 +81,12 @@ export const ModelSelector = memo(function ModelSelector({
                     const isAllowed = allowedSet.has(m.id);
 
                     const borderColor = hasVideoOutput
-                        ? "rgb(var(--accent-strong))"
+                        ? isActive ? "rgb(var(--accent-strong))" : "rgb(var(--accent-light))"
                         : hasAudioOutput || isAudio
-                          ? "rgb(var(--tertiary-light))"
+                          ? isActive ? "rgb(var(--tertiary-strong))" : "rgb(var(--tertiary-light))"
                           : isImage
-                            ? "rgb(var(--primary-light))"
-                            : "rgb(var(--secondary-light))";
+                            ? isActive ? "rgb(var(--primary-strong))" : "rgb(var(--primary-light))"
+                            : isActive ? "rgb(var(--secondary-strong))" : "rgb(var(--secondary-light))";
 
                     return (
                         <div key={m.id} className="relative group">

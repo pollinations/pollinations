@@ -31,7 +31,7 @@ function createVertexGeminiConfig(
         "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": region,
         "vertex-model-id": modelId,
-        "strict-openai-compliance": "true",
+        "strict-openai-compliance": "false",
     });
 }
 

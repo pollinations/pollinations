@@ -9,6 +9,24 @@ import type { VideoGenerationResult } from "./veoVideoModel.ts";
 const logOps = debug("pollinations:airforce:ops");
 const logError = debug("pollinations:airforce:error");
 
+/**
+ * Resolve redirects on a URL by following them with a HEAD request.
+ * Returns the final URL after all redirects.
+ */
+async function resolveRedirects(url: string): Promise<string> {
+    try {
+        const response = await fetch(url, { method: "HEAD", redirect: "follow" });
+        const finalUrl = response.url;
+        if (finalUrl !== url) {
+            logOps(`Resolved redirect: ${url} → ${finalUrl}`);
+        }
+        return finalUrl;
+    } catch {
+        logError(`Failed to resolve redirect for ${url}, using original`);
+        return url;
+    }
+}
+
 const AIRFORCE_API_URL = "https://api.airforce/v1/images/generations";
 
 const VIDEO_MODELS = ["grok-imagine-video"];
@@ -81,7 +99,7 @@ async function fetchFromAirforce(
         `Generating with ${airforceModel}...`,
     );
 
-    const requestBody = buildRequestBody(prompt, safeParams, airforceModel);
+    const requestBody = await buildRequestBody(prompt, safeParams, airforceModel);
     logOps("Request body:", JSON.stringify(requestBody));
 
     const useSse = VIDEO_MODELS.includes(airforceModel) || SSE_IMAGE_MODELS.includes(airforceModel);
@@ -142,11 +160,11 @@ export async function callAirforceImageAPI(
     };
 }
 
-function buildRequestBody(
+async function buildRequestBody(
     prompt: string,
     safeParams: ImageParams,
     airforceModel: string,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
     const requestBody: Record<string, unknown> = {
         model: airforceModel,
         prompt,
@@ -198,7 +216,7 @@ function buildRequestBody(
 
             // Support image-to-video: pass reference image URLs if provided
             if (safeParams.image && safeParams.image.length > 0) {
-                requestBody.image_urls = safeParams.image;
+                requestBody.image_urls = await Promise.all(safeParams.image.map(resolveRedirects));
             }
         } else {
             // SSE image models (e.g. flux-2-dev): use aspectRatio as "W:H"
@@ -214,7 +232,7 @@ function buildRequestBody(
                 safeParams.image &&
                 safeParams.image.length > 0
             ) {
-                requestBody.image_urls = safeParams.image;
+                requestBody.image_urls = await Promise.all(safeParams.image.map(resolveRedirects));
             }
         }
     } else {
@@ -228,7 +246,7 @@ function buildRequestBody(
             safeParams.image &&
             safeParams.image.length > 0
         ) {
-            requestBody.image_urls = safeParams.image;
+            requestBody.image_urls = await Promise.all(safeParams.image.map(resolveRedirects));
         }
     }
 

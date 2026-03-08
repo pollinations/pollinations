@@ -57,7 +57,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             // Fallback UI
             return (
                 <div className="min-h-screen flex items-center justify-center px-4 bg-cream">
-                    <div className="max-w-2xl w-full bg-cream border-r-4 border-b-4 border-dark shadow-dark-lg p-6 md:p-8">
+                    <div className="max-w-2xl w-full bg-primary-light border-r-4 border-b-4 border-dark shadow-dark-lg p-6 md:p-8">
                         <h1 className="font-title text-3xl md:text-4xl font-black text-dark mb-6">
                             {ERROR_BOUNDARY.title}
                         </h1>

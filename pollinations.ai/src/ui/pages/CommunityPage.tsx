@@ -69,7 +69,11 @@ export default function CommunityPage() {
                     <Body spacing="comfortable">{pageCopy.contributeBody}</Body>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div className="p-4 bg-primary-light rounded-sub-card">
-                            <Heading variant="lime" as="h3" spacing="tight">
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
+                            >
                                 {pageCopy.contributeCard1Title}
                             </Heading>
                             <Body size="sm" spacing="none">
@@ -77,7 +81,11 @@ export default function CommunityPage() {
                             </Body>
                         </div>
                         <div className="p-4 bg-tertiary-light rounded-sub-card">
-                            <Heading variant="lime" as="h3" spacing="tight">
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
+                            >
                                 {pageCopy.contributeCard2Title}
                             </Heading>
                             <Body size="sm" spacing="none">
@@ -85,7 +93,11 @@ export default function CommunityPage() {
                             </Body>
                         </div>
                         <div className="p-4 bg-secondary-light rounded-sub-card">
-                            <Heading variant="lime" as="h3" spacing="tight">
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
+                            >
                                 {pageCopy.contributeCard3Title}
                             </Heading>
                             <Body size="sm" spacing="none">
@@ -123,7 +135,11 @@ export default function CommunityPage() {
                     <div className="space-y-4">
                         {/* Discord */}
                         <SubCard>
-                            <Heading variant="lime" as="h3" spacing="tight">
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
+                            >
                                 {pageCopy.discordTitle}
                             </Heading>
                             <Body size="sm" spacing="comfortable">
@@ -159,7 +175,11 @@ export default function CommunityPage() {
 
                         {/* GitHub */}
                         <SubCard>
-                            <Heading variant="rose" as="h3" spacing="tight">
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
+                            >
                                 {pageCopy.githubTitle}
                             </Heading>
                             <Body size="sm" spacing="comfortable">
@@ -181,7 +201,11 @@ export default function CommunityPage() {
 
                         {/* Submit App */}
                         <SubCard>
-                            <Heading variant="rose" as="h3" spacing="tight">
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
+                            >
                                 {pageCopy.submitAppTitle}
                             </Heading>
                             <Body size="sm" spacing="comfortable">

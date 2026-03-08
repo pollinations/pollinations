@@ -14,10 +14,10 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "headline": "Suno sings again",
-    "blurb": "Fixed a little mix-up where asking for Suno music via our GET endpoint gave you spoken text instead. The band is back together and ready to play your prompts.",
-    "summary": "Fixed a routing bug in the GET `/audio/:text` endpoint that caused `model=suno` requests to incorrectly fall back to text-to-speech instead of generating music.",
-    "impact": "Users can now successfully generate Suno music using simple GET requests without it defaulting to spoken audio.",
+    "headline": "Suno finds its voice",
+    "blurb": "Fixed a little hiccup where asking for Suno music gave you spoken text instead. The GET endpoint is back to dropping beats instead of reading scripts!",
+    "summary": "Fixed a routing bug in the GET /audio/:text endpoint that caused model=suno requests to incorrectly fall back to text-to-speech instead of generating music.",
+    "impact": "Users can once again generate Suno music directly via simple GET requests without it turning into spoken audio.",
     "keywords": [
       "audio",
       "suno",
@@ -25,12 +25,12 @@
       "api",
       "bugfix"
     ],
-    "visual_concept": "The PR fixes an audio routing issue where music requests were turning into speech. Visual metaphor: Polly the bee fixing a retro audio device (like a boombox or DJ deck) so it plays music again. Musical notes floating in the air to signify the fix.",
-    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny retro headphones, happily fixing a chunky 8-bit boombox that is emitting glowing musical notes. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+    "visual_concept": "The pollinations bee mascot wearing tiny DJ headphones, fixing a tangled audio cable connecting to a retro boombox. The monitor robot companion is dancing to the music.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, plugging a lime green (#ecf874) audio cable into a retro boombox. A chunky pixel robot with a monitor head dances nearby with musical notes floating in the air. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
   },
   "image": {
     "url": null,
     "prompt": null
   },
-  "generated_at": "2026-03-04T21:29:13.184175+00:00"
+  "generated_at": "2026-03-08T18:10:54.652984+00:00"
 }

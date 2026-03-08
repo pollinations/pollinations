@@ -17,6 +17,7 @@ import { usePrettify } from "../../hooks/usePrettify";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { GithubIcon } from "../assets/SocialIcons";
+import { BackToTop } from "../components/ui/back-to-top";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
@@ -284,144 +285,161 @@ export default function AppsPage() {
     const { translated: displayApps } = useTranslate(prettified, "description");
 
     return (
-        <PageContainer>
-            <PageCard isTranslating={isTranslating}>
-                <Title>{pageCopy.title}</Title>
-                <Body spacing="comfortable">{pageCopy.subtitle}</Body>
+        <>
+            <PageContainer>
+                <PageCard isTranslating={isTranslating}>
+                    <Title>{pageCopy.title}</Title>
+                    <Body spacing="comfortable">{pageCopy.subtitle}</Body>
 
-                {/* CTAs */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                    <div className="flex items-center gap-4 p-4 bg-primary-light rounded-sub-card">
-                        <div className="flex-1">
-                            <p className="font-headline text-xs font-black text-dark mb-1">
-                                {pageCopy.submitCtaTitle}
-                            </p>
-                            <p className="font-body text-sm text-muted">
-                                {pageCopy.submitCtaDescription}
-                            </p>
+                    {/* CTAs */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                        <div className="flex items-center gap-4 p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                            <div className="flex-1">
+                                <p className="font-headline text-xs font-black text-dark mb-1">
+                                    {pageCopy.submitCtaTitle}
+                                </p>
+                                <p className="font-body text-sm text-muted">
+                                    {pageCopy.submitCtaDescription}
+                                </p>
+                            </div>
+                            <Button
+                                as="a"
+                                href={LINKS.githubSubmitApp}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                            >
+                                {pageCopy.submitCtaButton}
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                            </Button>
                         </div>
-                        <Button
-                            as="a"
-                            href={LINKS.githubSubmitApp}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="primary"
-                            size="default"
-                            className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
-                        >
-                            {pageCopy.submitCtaButton}
-                            <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
-                        </Button>
-                    </div>
-                    <div className="flex items-center gap-4 p-4 bg-tertiary-light rounded-sub-card">
-                        <div className="flex-1">
-                            <p className="font-headline text-xs font-black text-dark mb-1">
-                                {pageCopy.pollenCtaTitle}
-                            </p>
-                            <p className="font-body text-sm text-muted">
-                                {pageCopy.pollenCtaDescription}
-                            </p>
+                        <div className="flex items-center gap-4 p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                            <div className="flex-1">
+                                <p className="font-headline text-xs font-black text-dark mb-1">
+                                    {pageCopy.pollenCtaTitle}
+                                </p>
+                                <p className="font-body text-sm text-muted">
+                                    {pageCopy.pollenCtaDescription}
+                                </p>
+                            </div>
+                            <Button
+                                as="a"
+                                href={LINKS.byopDocs}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                            >
+                                {pageCopy.pollenCtaButton}
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                            </Button>
                         </div>
-                        <Button
-                            as="a"
-                            href={LINKS.byopDocs}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="primary"
-                            size="default"
-                            className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
-                        >
-                            {pageCopy.pollenCtaButton}
-                            <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
-                        </Button>
                     </div>
-                </div>
 
-                {/* Filters */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {translatedGenre.map((f) => (
-                        <Button
-                            key={f.id}
-                            variant="toggle-glow"
-                            data-active={filter === f.id}
-                            onClick={() => setFilter(f.id)}
-                            className="px-4 py-2 text-base"
-                            style={{ "--glow": f.glow } as React.CSSProperties}
-                        >
-                            {f.label}
-                        </Button>
-                    ))}
-                </div>
-
-                {/* Sort */}
-                <div className="flex flex-wrap items-center gap-2 mb-8">
-                    <span className="font-headline text-xs font-black uppercase tracking-wider text-muted">
-                        {pageCopy.sortLabel}
-                    </span>
-                    {translatedBadge.map((f) => (
-                        <Button
-                            key={f.id}
-                            variant="toggle-glow"
-                            data-active={sort === f.id}
-                            onClick={() => setSort(f.id)}
-                            className="px-4 py-2 text-base"
-                            style={{ "--glow": f.glow } as React.CSSProperties}
-                        >
-                            {f.label}
-                        </Button>
-                    ))}
-                </div>
-
-                {/* Legend */}
-                <div className="flex flex-col items-end gap-0.5 mb-4 text-xs text-muted">
-                    <span>
-                        <span className="text-dark font-bold">
-                            {pageCopy.pollenBadge}
-                        </span>{" "}
-                        = {pageCopy.pollenLegendDesc}
-                        {" · "}
-                        <a
-                            href={LINKS.byopDocs}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-dark hover:underline"
-                        >
-                            {pageCopy.pollenDocsLink}
-                        </a>
-                    </span>
-                    <span>
-                        <span className="text-dark font-bold">
-                            {pageCopy.buzzBadge}
-                        </span>{" "}
-                        = {pageCopy.buzzLegendDesc}
-                    </span>
-                    <span>
-                        <span className="text-dark font-bold">
-                            {pageCopy.newBadge}
-                        </span>{" "}
-                        = {pageCopy.newLegendDesc}
-                    </span>
-                </div>
-
-                {/* App Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                    {displayApps.map((app, i) => (
-                        <AppCard
-                            key={`${app.name}-${i}`}
-                            app={app}
-                            copy={pageCopy}
-                        />
-                    ))}
-                </div>
-
-                {displayApps.length === 0 && (
-                    <div className="text-center py-12">
-                        <Body className="text-dark">
-                            {pageCopy.noAppsMessage}
-                        </Body>
+                    {/* Filters */}
+                    <div id="filters" className="flex flex-wrap gap-2 mb-4">
+                        {translatedGenre.map((f) => (
+                            <Button
+                                key={f.id}
+                                variant="toggle-glow"
+                                data-active={filter === f.id}
+                                onClick={() => setFilter(f.id)}
+                                className="px-4 py-2 text-base"
+                                style={
+                                    { "--glow": f.glow } as React.CSSProperties
+                                }
+                            >
+                                {f.label}
+                            </Button>
+                        ))}
                     </div>
-                )}
-            </PageCard>
-        </PageContainer>
+
+                    {/* Sort + Legend */}
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-8">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-headline text-xs font-black uppercase tracking-wider text-muted">
+                                {pageCopy.sortLabel}
+                            </span>
+                            {translatedBadge.map((f) => (
+                                <Button
+                                    key={f.id}
+                                    variant="toggle-glow"
+                                    size={null}
+                                    data-active={sort === f.id}
+                                    onClick={() => setSort(f.id)}
+                                    className="rounded-full px-3 py-1 text-xs"
+                                    style={
+                                        {
+                                            "--glow": f.glow,
+                                        } as React.CSSProperties
+                                    }
+                                >
+                                    {f.label}
+                                </Button>
+                            ))}
+                        </div>
+                        <div className="flex flex-col items-start md:items-end gap-0.5 text-xs text-muted">
+                            <span className="inline-flex items-center gap-1 flex-wrap md:flex-nowrap">
+                                <span className="text-dark font-bold">
+                                    {pageCopy.pollenBadge}
+                                </span>
+                                {" = "}
+                                {pageCopy.pollenLegendDesc}
+                                {" · "}
+                                <a
+                                    href={LINKS.byopDocs}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-headline font-black text-dark bg-accent-strong px-1.5 py-0.5 hover:underline inline-flex items-center gap-0.5"
+                                >
+                                    {pageCopy.pollenDocsLink}
+                                    <ExternalLinkIcon
+                                        className="w-2.5 h-2.5"
+                                        strokeWidth="4"
+                                    />
+                                </a>
+                            </span>
+                            <span>
+                                <span className="text-dark font-bold">
+                                    {pageCopy.buzzBadge}
+                                </span>
+                                {" = "}
+                                {pageCopy.buzzLegendDesc}
+                            </span>
+                            <span>
+                                <span className="text-dark font-bold">
+                                    {pageCopy.newBadge}
+                                </span>
+                                {" = "}
+                                {pageCopy.newLegendDesc}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* App Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                        {displayApps.map((app, i) => (
+                            <AppCard
+                                key={`${app.name}-${i}`}
+                                app={app}
+                                copy={pageCopy}
+                            />
+                        ))}
+                    </div>
+
+                    {displayApps.length === 0 && (
+                        <div className="text-center py-12">
+                            <Body className="text-dark">
+                                {pageCopy.noAppsMessage}
+                            </Body>
+                        </div>
+                    )}
+                </PageCard>
+            </PageContainer>
+            <BackToTop targetId="filters" hideWhenId="filters" />
+        </>
     );
 }

@@ -40,7 +40,23 @@ export default function CommunityPage() {
                 {/* Section 1 — Hero */}
                 <Title>{pageCopy.title}</Title>
                 <div className="mb-8">
-                    <Body spacing="comfortable">{pageCopy.subtitle}</Body>
+                    <p className="font-body text-base text-muted leading-relaxed">
+                        pollinations.ai is{" "}
+                        <strong className="text-dark">open source</strong> 🌍 —
+                        the code, the roadmap, the conversations.{" "}
+                        <strong className="text-dark">
+                            Contributors shape the platform directly.
+                        </strong>{" "}
+                        Your PR can{" "}
+                        <strong className="text-dark">
+                            land in production tomorrow
+                        </strong>
+                        , and starting Q2,{" "}
+                        <strong className="text-dark">
+                            every contribution earns you Pollen
+                        </strong>{" "}
+                        🏵️.
+                    </p>
                 </div>
                 <p className="font-body text-base text-subtle mb-4">
                     <span className="font-headline text-xs font-black text-muted">
@@ -68,7 +84,7 @@ export default function CommunityPage() {
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.contributeBody}</Body>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div className="p-4 bg-primary-light rounded-sub-card">
+                        <div className="p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
                             <Heading
                                 variant="subsection"
                                 as="h3"
@@ -80,7 +96,7 @@ export default function CommunityPage() {
                                 {pageCopy.contributeCard1Body}
                             </Body>
                         </div>
-                        <div className="p-4 bg-tertiary-light rounded-sub-card">
+                        <div className="p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
                             <Heading
                                 variant="subsection"
                                 as="h3"
@@ -92,7 +108,7 @@ export default function CommunityPage() {
                                 {pageCopy.contributeCard2Body}
                             </Body>
                         </div>
-                        <div className="p-4 bg-secondary-light rounded-sub-card">
+                        <div className="p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
                             <Heading
                                 variant="subsection"
                                 as="h3"
@@ -112,17 +128,15 @@ export default function CommunityPage() {
                     >
                         {pageCopy.contributeNote}
                     </Body>
-                    <Button
-                        as="a"
+                    <a
                         href={LINKS.enterTiersFaq}
                         target="_blank"
                         rel="noopener noreferrer"
-                        variant="secondary"
-                        size="default"
-                        className="bg-accent-strong text-dark hover:bg-accent-strong/80 hover:text-dark"
+                        className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
                     >
                         {pageCopy.learnAboutTiersButton}
-                    </Button>
+                        <ExternalLinkIcon className="w-3 h-3" strokeWidth="4" />
+                    </a>
                 </div>
 
                 <Divider />
@@ -132,8 +146,8 @@ export default function CommunityPage() {
                     <Heading variant="section" spacing="comfortable">
                         {pageCopy.jumpInTitle}
                     </Heading>
-                    <div className="space-y-4">
-                        {/* Discord */}
+                    <div className="flex flex-col gap-4">
+                        {/* Discord — full width */}
                         <SubCard>
                             <Heading
                                 variant="subsection"
@@ -173,57 +187,58 @@ export default function CommunityPage() {
                             </div>
                         </SubCard>
 
-                        {/* GitHub */}
-                        <SubCard>
-                            <Heading
-                                variant="subsection"
-                                as="h3"
-                                spacing="tight"
-                            >
-                                {pageCopy.githubTitle}
-                            </Heading>
-                            <Body size="sm" spacing="comfortable">
-                                {pageCopy.githubSubtitle}
-                            </Body>
-                            <Button
-                                as="a"
-                                href={SOCIAL_LINKS.github.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="primary"
-                                size="default"
-                                className="bg-tertiary-strong text-dark hover:bg-tertiary-strong/80 hover:text-dark"
-                            >
-                                {pageCopy.starContributeButton}
-                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
-                            </Button>
-                        </SubCard>
+                        {/* GitHub + Submit App — 2 columns on desktop */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SubCard>
+                                <Heading
+                                    variant="subsection"
+                                    as="h3"
+                                    spacing="tight"
+                                >
+                                    {pageCopy.githubTitle}
+                                </Heading>
+                                <Body size="sm" spacing="comfortable">
+                                    {pageCopy.githubSubtitle}
+                                </Body>
+                                <Button
+                                    as="a"
+                                    href={SOCIAL_LINKS.github.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="primary"
+                                    size="default"
+                                    className="bg-tertiary-strong text-dark hover:bg-tertiary-strong/80 hover:text-dark"
+                                >
+                                    {pageCopy.starContributeButton}
+                                    <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                                </Button>
+                            </SubCard>
 
-                        {/* Submit App */}
-                        <SubCard>
-                            <Heading
-                                variant="subsection"
-                                as="h3"
-                                spacing="tight"
-                            >
-                                {pageCopy.submitAppTitle}
-                            </Heading>
-                            <Body size="sm" spacing="comfortable">
-                                {pageCopy.submitAppSubtitle}
-                            </Body>
-                            <Button
-                                as="a"
-                                href={LINKS.githubSubmitApp}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="primary"
-                                size="default"
-                                className="bg-primary-strong text-dark hover:bg-primary-strong/80 hover:text-dark"
-                            >
-                                {pageCopy.submitAppButton}
-                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
-                            </Button>
-                        </SubCard>
+                            <SubCard>
+                                <Heading
+                                    variant="subsection"
+                                    as="h3"
+                                    spacing="tight"
+                                >
+                                    {pageCopy.submitAppTitle}
+                                </Heading>
+                                <Body size="sm" spacing="comfortable">
+                                    {pageCopy.submitAppSubtitle}
+                                </Body>
+                                <Button
+                                    as="a"
+                                    href={LINKS.githubSubmitApp}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="primary"
+                                    size="default"
+                                    className="bg-primary-strong text-dark hover:bg-primary-strong/80 hover:text-dark"
+                                >
+                                    {pageCopy.submitAppButton}
+                                    <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                                </Button>
+                            </SubCard>
+                        </div>
                     </div>
                 </div>
 

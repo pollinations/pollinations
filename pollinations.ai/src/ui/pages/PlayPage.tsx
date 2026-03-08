@@ -16,7 +16,7 @@ import { Body, Title } from "../components/ui/typography";
 function PlayPage() {
     const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
-    const { apiKey } = useAuth();
+    const { apiKey, isLoggedIn } = useAuth();
     const {
         imageModels,
         textModels,
@@ -25,6 +25,7 @@ function PlayPage() {
         allowedImageModelIds,
         allowedTextModelIds,
         allowedAudioModelIds,
+        isLoading: isLoadingModels,
     } = useModelList(apiKey);
 
     // Get translated copy
@@ -108,6 +109,8 @@ function PlayPage() {
                     allowedImageModelIds={allowedImageModelIds}
                     allowedTextModelIds={allowedTextModelIds}
                     allowedAudioModelIds={allowedAudioModelIds}
+                    isLoading={isLoadingModels}
+                    isLoggedIn={isLoggedIn}
                 />
 
                 <div className="flex flex-col gap-4">

@@ -27,8 +27,8 @@
     "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny newsboy cap, reading a glowing digital newspaper with the chunky monitor robot. The robot's screen displays tiny chat bubbles and code. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-02/PR-8669.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny newsboy cap, reading a glowing digital newspaper with the chunky monitor robot. The robot's screen displays tiny chat bubbles and code. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "generated_at": "2026-03-08T18:04:22.045725+00:00"
 }

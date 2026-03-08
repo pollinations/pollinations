@@ -38,21 +38,6 @@ export const HELLO_PAGE = {
     ],
     freeDailyComputeTitle: "Free daily compute",
 
-    // Loop diagram
-    loopBuild: "build",
-    loopShip: "ship",
-    loopGrow: "grow",
-    loopEarn: "share",
-    loopBuildEmoji: "🔨",
-    loopShipEmoji: "🚀",
-    loopGrowEmoji: "📈",
-    loopEarnEmoji: "✨",
-    flywheelCenter: "Your Apps",
-    comingSoonBadge: "coming soon",
-
-    // Flywheel explanation
-    flywheelBodyLine1: "Free compute every day to get started.",
-    flywheelBodyLine2: "As your app gets used, you get more compute.",
     tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
     computeTiersTitle: "Compute tiers",
     tierHowText: "Want to know more?",

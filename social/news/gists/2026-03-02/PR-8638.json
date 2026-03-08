@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add Mharomo.systems to video_audio",
-    "blurb": "Add Mharomo.systems to video_audio",
-    "summary": "Add Mharomo.systems to video_audio",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Mharomo joins the hive",
+    "blurb": "Mharomo.systems just landed in our community showcase! It's a slick new app for generating images, music, videos, and voice content all from simple prompts.",
+    "summary": "Added Mharomo.systems to the community app showcase, highlighting its ability to generate images, music, video, and voice from simple prompts.",
+    "impact": "The community can now discover a new all-in-one multimedia generation tool built on Pollinations infrastructure.",
+    "keywords": [
+      "community",
+      "showcase",
+      "video",
+      "audio",
+      "multimedia"
+    ],
+    "visual_concept": "A cozy pixel art scene of Polly the bee enjoying a multimedia setup. Since Mharomo.systems handles images, music, videos, and voice, Polly could be wearing headphones and watching a retro TV or monitor displaying a colorful landscape, surrounded by musical notes and film strips.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, sitting in front of a retro TV monitor showing a colorful landscape. Small pixelated musical notes and film strips float in the air around her. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": null,
     "prompt": null
   },
-  "generated_at": "2026-03-02T01:28:41.306542+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T18:00:38.895642+00:00"
 }

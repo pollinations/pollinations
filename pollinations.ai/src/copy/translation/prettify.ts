@@ -51,7 +51,9 @@ async function prettifyBatch(
     const lines = items
         .map((item, i) => {
             const namePrefix = item.name ? `[${item.name}] ` : "";
-            const emojiPrefix = item.titleEmoji ? `[title: ${item.titleEmoji}] ` : "";
+            const emojiPrefix = item.titleEmoji
+                ? `[title: ${item.titleEmoji}] `
+                : "";
             return `${i + 1}. ${emojiPrefix}${namePrefix}${item.text}`;
         })
         .join("\n");
@@ -65,7 +67,9 @@ async function prettifyDescriptions(
     items: CopyItem[],
     apiKey?: string,
 ): Promise<CopyItem[]> {
-    console.log(`✨ [PRETTIFY] Processing ${items.length} descriptions in batches of ${BATCH_SIZE}`);
+    console.log(
+        `✨ [PRETTIFY] Processing ${items.length} descriptions in batches of ${BATCH_SIZE}`,
+    );
 
     const batches: CopyItem[][] = [];
     for (let i = 0; i < items.length; i += BATCH_SIZE) {

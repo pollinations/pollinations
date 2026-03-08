@@ -36,34 +36,22 @@ export const ModelSelector = memo(function ModelSelector({
         <div className="mb-6">
             {showLegend && (
                 <div className="flex items-center gap-4 mb-3">
-                    <div className="font-headline text-text-body-main uppercase text-sm tracking-wider font-black">
+                    <div className="font-headline text-dark uppercase text-sm tracking-wider font-black">
                         {copy.modelsLabel}
                     </div>
-                    <div className="flex items-center gap-3 text-sm font-headline uppercase tracking-wider font-black">
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-indicator-image" />
-                            <span className="text-text-caption">
-                                {copy.imageLabel}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-indicator-text" />
-                            <span className="text-text-caption">
-                                {copy.textLabel}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-indicator-audio" />
-                            <span className="text-text-caption">
-                                {copy.audioLabel}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-indicator-video" />
-                            <span className="text-text-caption">
-                                {copy.videoLabel}
-                            </span>
-                        </div>
+                    <div className="flex items-center gap-2 text-xs font-headline uppercase tracking-wider font-black">
+                        <span className="px-2 py-0.5 bg-primary-strong/50 border border-primary-strong text-dark rounded-sm">
+                            {copy.imageLabel}
+                        </span>
+                        <span className="px-2 py-0.5 bg-secondary-strong/50 border border-secondary-strong text-dark rounded-sm">
+                            {copy.textLabel}
+                        </span>
+                        <span className="px-2 py-0.5 bg-tertiary-strong/50 border border-tertiary-strong text-dark rounded-sm">
+                            {copy.audioLabel}
+                        </span>
+                        <span className="px-2 py-0.5 bg-accent-strong/50 border border-accent-strong text-dark rounded-sm">
+                            {copy.videoLabel}
+                        </span>
                     </div>
                 </div>
             )}
@@ -93,12 +81,12 @@ export const ModelSelector = memo(function ModelSelector({
                     const isAllowed = allowedSet.has(m.id);
 
                     const borderColor = hasVideoOutput
-                        ? "rgb(var(--indicator-video))"
+                        ? isActive ? "rgb(var(--accent-strong))" : "rgb(var(--accent-light))"
                         : hasAudioOutput || isAudio
-                          ? "rgb(var(--indicator-audio))"
+                          ? isActive ? "rgb(var(--tertiary-strong))" : "rgb(var(--tertiary-light))"
                           : isImage
-                            ? "rgb(var(--indicator-image))"
-                            : "rgb(var(--indicator-text))";
+                            ? isActive ? "rgb(var(--primary-strong))" : "rgb(var(--primary-light))"
+                            : isActive ? "rgb(var(--secondary-strong))" : "rgb(var(--secondary-light))";
 
                     return (
                         <div key={m.id} className="relative group">
@@ -126,7 +114,7 @@ export const ModelSelector = memo(function ModelSelector({
                                 )}
                             </Button>
                             {!isAllowed && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-input-background text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {copy.gatedModelTooltip}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
                                 </div>

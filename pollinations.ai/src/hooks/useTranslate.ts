@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { processCopy } from "../copy/translation/process";
 import { getBrowserLanguage } from "../utils";
 

@@ -27,8 +27,8 @@
     "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny blacksmith apron, peeling a freshly printed, glowing pixel sticker off a small anvil. A chunky retro robot companion with a monitor head stands nearby, holding up a smartphone displaying colorful chat bubbles. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-01/PR-8632.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny blacksmith apron, peeling a freshly printed, glowing pixel sticker off a small anvil. A chunky retro robot companion with a monitor head stands nearby, holding up a smartphone displaying colorful chat bubbles. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "generated_at": "2026-03-08T17:36:52.003845+00:00"
 }

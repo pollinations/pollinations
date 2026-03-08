@@ -30,13 +30,21 @@ export function ImageGenerator({
     useEffect(() => {
         if (!prompt) return;
 
+        let objectUrl: string | null = null;
         setLoading(true);
         setError(null);
 
         generateImage(prompt, { width, height, seed, model })
-            .then(setImageUrl)
+            .then((url) => {
+                objectUrl = url;
+                setImageUrl(url);
+            })
             .catch(setError)
             .finally(() => setLoading(false));
+
+        return () => {
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
     }, [prompt, width, height, seed, model]);
 
     if (loading) {

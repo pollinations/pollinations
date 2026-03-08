@@ -1,0 +1,34 @@
+{
+  "pr_number": 8902,
+  "title": "pollinations.ai redesign: scene background, palette system, and color updates",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8902",
+  "merged_at": "2026-03-08T22:38:06Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh coat of pixels",
+    "blurb": "We've completely revamped the website with a cozy new pixel art background, a fresh color palette, and floating pollen particles. The hive has never looked better!",
+    "summary": "A major frontend overhaul that replaces the old theming engine with a centralized color palette and introduces a dynamic pixel art background.",
+    "impact": "Visitors will notice a much cozier, cohesive interface with beautiful retro pixel art scenery and clearer visual hierarchy across all pages.",
+    "keywords": [
+      "redesign",
+      "ui",
+      "frontend",
+      "pixel-art",
+      "theme"
+    ],
+    "visual_concept": "Polly the bee acting as a painter, actively painting the new pixel art background (sky and ground) with a palette of the new tier colors, representing the UI redesign and new color system.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a wooden palette and painting a beautiful gradient sky with floating pollen particles. A chunky retro monitor nearby displays a colorful new UI. Soft lime green (#ecf874) and pastel gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley. Text in pixel font: 'NEW LOOK'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-08T22:39:09.222592+00:00"
+}

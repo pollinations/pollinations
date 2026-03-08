@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add SmartInfiniteYield to games",
-    "blurb": "Add SmartInfiniteYield to games",
-    "summary": "Add SmartInfiniteYield to games",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Roblox admins get a brain upgrade",
+    "blurb": "Memorizing admin commands is so 2010. SmartInfiniteYield brings Pollinations AI to Roblox, letting you boss your game around using plain English.",
+    "summary": "Added SmartInfiniteYield to the community apps showcase, introducing a Roblox admin script wrapper powered by Pollinations AI for natural language commands.",
+    "impact": "Roblox developers can now execute complex admin actions just by typing what they want in plain text.",
+    "keywords": [
+      "roblox",
+      "gaming",
+      "community-app",
+      "natural-language",
+      "admin-script"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny admin visor, interacting with chunky, retro 3D game blocks (representing Roblox). She's typing on a glowing terminal that translates her speech into game actions. The Monitor Robot is cheering her on.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny admin visor, arranging chunky retro 3D game blocks. A glowing terminal nearby displays lime green (#ecf874) code. The chunky Monitor Robot stands nearby, its screen showing a happy face. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
   },
   "image": {
     "url": null,
     "prompt": null
   },
-  "generated_at": "2026-03-02T02:21:04.294822+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T18:08:46.263622+00:00"
 }

@@ -10,9 +10,8 @@ import {
   Wand2,
 } from "lucide-react";
 
-const CLOUDINARY_CLOUD_NAME = "pollinations";
-const CLOUDINARY_UPLOAD_PRESET = "pollinations-image";
-const CLOUDINARY_API_KEY = "939386723511927";
+const POLLINATIONS_API_KEY =
+  "plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A";
 
 const MAKEUP_STYLES = [
   {
@@ -59,12 +58,14 @@ function App() {
   const [useCustom, setUseCustom] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const fileInputRef = useRef(null);
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
       setUploadedFile(file);
+      setErrorMessage("");
       const reader = new FileReader();
       reader.onload = (e) => {
         setUploadedImage(e.target?.result);
@@ -76,19 +77,25 @@ function App() {
     }
   };
 
-  const uploadToCloudinary = async (file) => {
+  const uploadToPollinations = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    formData.append("api_key", CLOUDINARY_API_KEY);
 
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-      { method: "POST", body: formData }
-    );
+    const response = await fetch("https://media.pollinations.ai/upload", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${POLLINATIONS_API_KEY}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to upload image");
+    }
 
     const data = await response.json();
-    return data.secure_url;
+    return data.url;
   };
 
   const applyMakeup = async () => {
@@ -96,6 +103,7 @@ function App() {
 
     setIsLoading(true);
     setImageLoaded(false);
+    setErrorMessage("");
     try {
       const prompt = useCustom
         ? customPrompt
@@ -103,9 +111,9 @@ function App() {
 
       const encodedPrompt = encodeURIComponent(prompt);
 
-      const cloudinaryUrl = await uploadToCloudinary(uploadedFile);
+      const pollinationsUrl = await uploadToPollinations(uploadedFile);
 
-      const encodedImageURL = encodeURIComponent(cloudinaryUrl);
+      const encodedImageURL = encodeURIComponent(pollinationsUrl);
 
       const randomSeed = Math.floor(Math.random() * 1000000);
 
@@ -123,6 +131,7 @@ function App() {
       img.src = apiUrl;
     } catch (error) {
       console.error("Error applying makeup:", error);
+      setErrorMessage(error.message || "Something went wrong. Please try again.");
       setIsLoading(false);
     }
   };
@@ -155,6 +164,7 @@ function App() {
     setSliderValue(50);
     setImageLoaded(false);
     setUploadedFile(null);
+    setErrorMessage("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -292,14 +302,23 @@ function App() {
           <div className="grid lg:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 rounded-xl flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-cyan-400" />
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 rounded-xl flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">
+                      Choose Your Style
+                    </h3>
                   </div>
-                  <h3 className="text-xl font-bold text-white">
-                    Choose Your Style
-                  </h3>
                 </div>
+
+                {errorMessage && (
+                  <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm flex items-start gap-3 animate-shake">
+                    <div className="mt-0.5">⚠️</div>
+                    <p>{errorMessage}</p>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3 mb-6">
                   <button
@@ -538,6 +557,16 @@ function App() {
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
+        }
+
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+
+        .animate-shake {
+          animation: shake 0.2s ease-in-out 0s 2;
         }
       `}</style>
     </div>

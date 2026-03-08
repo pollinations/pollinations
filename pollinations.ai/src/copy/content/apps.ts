@@ -29,7 +29,7 @@ export const APPS_PAGE = {
     sortLabel: "Sort by",
 
     // Legend
-    pollenLegendDesc: "In-app sign in with pollinations.ai",
+    pollenLegendDesc: "In-app user sign in",
     pollenDocsLink: "</> Docs",
     buzzLegendDesc: "100+ requests / 24h",
     newLegendDesc: "Recently added",

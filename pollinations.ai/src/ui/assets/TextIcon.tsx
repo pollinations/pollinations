@@ -2,11 +2,12 @@
 export function TextIcon({ className = "w-4 h-4", stroke = "currentColor" }) {
     return (
         <svg
+            role="img"
+            aria-label="Text"
             className={className}
             fill="none"
             strokeWidth="1.5"
             viewBox="0 0 24 24"
-            aria-label="Text"
         >
             <rect x="3" y="3" width="18" height="18" rx="2" stroke={stroke} />
             <path

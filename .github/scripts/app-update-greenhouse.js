@@ -35,6 +35,44 @@ const CATEGORIES = [
 
 // ── Parse ───────────────────────────────────────────────────────────────────
 
+// Known platform values from AGENTS.md — used to detect per-row schema
+const PLATFORMS = new Set([
+    "web",
+    "android",
+    "ios",
+    "windows",
+    "macos",
+    "desktop",
+    "cli",
+    "discord",
+    "telegram",
+    "whatsapp",
+    "library",
+    "browser-ext",
+    "roblox",
+    "wordpress",
+    "api",
+]);
+
+function parseCols(line) {
+    const cols = line.split("|").map((c) => c.trim());
+    cols.shift();
+    cols.pop();
+    return cols;
+}
+
+// Detect whether a row has the Platform column at index 6.
+// Rows with Platform have it at cols[6] (a known platform value)
+// and GitHub_Username at cols[7] (starts with @).
+// Some rows under old headers were inserted with Platform despite
+// the header not listing it, so we detect per-row.
+function hasPlatformCol(cols) {
+    const val6 = (cols[6] || "").toLowerCase();
+    // Check for comma-separated platforms too (e.g. "telegram,whatsapp")
+    const platforms = val6.split(",").map((s) => s.trim());
+    return platforms.every((p) => PLATFORMS.has(p)) && val6 !== "";
+}
+
 function parseApps() {
     const content = fs.readFileSync(APPS_FILE, "utf8");
     const lines = content.split("\n");
@@ -44,15 +82,26 @@ function parseApps() {
         process.exit(1);
     }
 
-    const rows = lines.slice(headerIdx + 2).filter((l) => l.startsWith("|"));
+    const rows = lines.slice(headerIdx + 1).filter((l) => l.startsWith("|"));
     return rows
         .map((row) => {
-            const cols = row.split("|").map((c) => c.trim());
-            cols.shift();
-            cols.pop();
-            if (cols.length < 15) return null;
+            // Skip header and separator rows
+            if (row.startsWith("| Emoji") || row.startsWith("| ---"))
+                return null;
 
-            const starsCol = cols[9];
+            const cols = parseCols(row);
+            if (cols.length < 10) return null;
+
+            // Determine column offset: if Platform column is present, shift by 1
+            const off = hasPlatformCol(cols) ? 1 : 0;
+            const gi = 6 + off;
+            const ri = 8 + off;
+            const si = 9 + off;
+            const ai = 14 + off;
+            const bi = 15 + off;
+            const rqi = 16 + off;
+
+            const starsCol = cols[si] || "";
             let stars = 0;
             const m = starsCol.match(/⭐([\d.]+)(k)?/);
             if (m) {
@@ -66,13 +115,14 @@ function parseApps() {
                 name: cols[1],
                 url: cols[2],
                 description: cols[3],
-                category: cols[5].toLowerCase(),
-                github: cols[6],
-                repo: cols[8],
+                category: (cols[5] || "").toLowerCase(),
+                github: cols[gi],
+                repo: cols[ri],
                 stars,
-                approvedDate: cols[14] || "",
-                byop: cols.length > 15 && cols[15] === "true",
-                requests24h: cols.length > 16 ? parseInt(cols[16], 10) || 0 : 0,
+                approvedDate: cols[ai] || "",
+                byop: cols.length > bi && cols[bi] === "true",
+                requests24h:
+                    cols.length > rqi ? parseInt(cols[rqi], 10) || 0 : 0,
             };
         })
         .filter(Boolean);

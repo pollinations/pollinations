@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add StickerForge to image",
-    "blurb": "Add StickerForge to image",
-    "summary": "Add StickerForge to image",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Fresh off the forge",
+    "blurb": "StickerForge has officially joined the community showcase. Turn your wildest text prompts into custom stickers for Telegram and WhatsApp without breaking a sweat.",
+    "summary": "Added StickerForge to the community apps directory, a new tool for generating custom AI stickers from text or images.",
+    "impact": "Creators can now easily discover StickerForge to build personalized sticker packs for their favorite messaging apps.",
+    "keywords": [
+      "community",
+      "app-showcase",
+      "stickers",
+      "image-generation",
+      "messaging"
+    ],
+    "visual_concept": "The PR is about 'StickerForge', an app for creating chat stickers. Visuals should combine a 'forge' or crafting element with stickers and chat apps. Polly the bee acting as a crafter, peeling a fresh sticker off a cute anvil, while the Monitor Robot holds a phone showing chat bubbles.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny blacksmith apron, peeling a freshly printed, glowing pixel sticker off a small anvil. A chunky retro robot companion with a monitor head stands nearby, holding up a smartphone displaying colorful chat bubbles. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
     "url": null,
     "prompt": null
   },
-  "generated_at": "2026-03-01T17:30:52.032340+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:36:52.003845+00:00"
 }

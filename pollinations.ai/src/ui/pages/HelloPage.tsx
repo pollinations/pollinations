@@ -130,7 +130,7 @@ function HelloPage() {
                                 )}
                             </div>
                             {/* Flywheel diagram */}
-                            <div className="w-fit border-2 border-primary-strong border-r-4 border-b-4 p-3 bg-dark flex flex-row items-center gap-0 mb-6">
+                            <div className="border-2 border-primary-strong border-r-4 border-b-4 p-3 bg-dark flex flex-row items-center justify-between mb-6">
                                 {[
                                     {
                                         emoji: pageCopy.loopBuildEmoji,
@@ -158,17 +158,17 @@ function HelloPage() {
                                         className="flex flex-row items-center"
                                     >
                                         <div className="flex flex-col items-center">
-                                            <span className="text-4xl mb-1">
+                                            <span className="text-2xl md:text-4xl mb-1">
                                                 {step.emoji}
                                             </span>
                                             <span
-                                                className={`font-headline text-sm font-black uppercase tracking-wide ${step.color}`}
+                                                className={`font-headline text-[10px] md:text-sm font-black uppercase tracking-wide ${step.color}`}
                                             >
                                                 {step.label}
                                             </span>
                                         </div>
                                         {i < 3 && (
-                                            <span className="text-white font-mono text-xl font-black px-3 self-end mb-0.5">
+                                            <span className="text-white font-mono text-sm md:text-xl font-black px-1.5 md:px-3 self-end mb-0.5">
                                                 →
                                             </span>
                                         )}

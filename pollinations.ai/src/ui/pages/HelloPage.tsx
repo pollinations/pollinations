@@ -130,7 +130,7 @@ function HelloPage() {
                                 )}
                             </div>
                             {/* Flywheel diagram */}
-                            <div className="border-2 border-primary-strong border-r-4 border-b-4 p-3 bg-dark flex flex-row items-center justify-between mb-6">
+                            <div className="border-2 border-secondary-strong border-r-4 border-b-4 p-3 bg-dark flex flex-row items-center justify-between mb-6">
                                 {[
                                     {
                                         emoji: pageCopy.loopBuildEmoji,
@@ -245,7 +245,7 @@ function HelloPage() {
 
                 {/* Section 3 — Users pay */}
                 <div className="flex flex-col gap-6 mb-12">
-                    <div className="border-2 border-dark border-r-4 border-b-4 p-5 bg-tertiary-light md:max-w-[75%]">
+                    <div className="border-2 border-dark border-r-4 border-b-4 p-5 bg-primary-light md:max-w-[75%]">
                         <Heading variant="subsection" spacing="comfortable">
                             {pageCopy.usersTitle}
                         </Heading>

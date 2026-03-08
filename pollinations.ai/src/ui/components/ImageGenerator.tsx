@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DEFAULTS } from "../../api.config";
+import { useAuth } from "../../hooks/useAuth";
 import { generateImage } from "../../services/pollinationsAPI";
 
 interface ImageGeneratorProps
@@ -23,6 +24,7 @@ export function ImageGenerator({
     className = "",
     ...props
 }: ImageGeneratorProps) {
+    const { apiKey } = useAuth();
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -34,7 +36,7 @@ export function ImageGenerator({
         setLoading(true);
         setError(null);
 
-        generateImage(prompt, { width, height, seed, model })
+        generateImage(prompt, { width, height, seed, model, apiKey })
             .then((url) => {
                 objectUrl = url;
                 setImageUrl(url);
@@ -45,7 +47,7 @@ export function ImageGenerator({
         return () => {
             if (objectUrl) URL.revokeObjectURL(objectUrl);
         };
-    }, [prompt, width, height, seed, model]);
+    }, [prompt, width, height, seed, model, apiKey]);
 
     if (loading) {
         return (

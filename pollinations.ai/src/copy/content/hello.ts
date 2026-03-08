@@ -2,9 +2,9 @@
 
 export const HELLO_PAGE = {
     // Section 1 — Hero
-    heroTitle: "The open platform for AI builders.",
+    heroTitle: "Build an AI app.",
     heroBody:
-        "One API. 40+ models. Text, image, audio, video  — all on one Pollen balance. Daily compute grants. You bring the idea — we handle the rest.",
+        "We handle the models, compute, and payments. One API for text, image, audio, and video. Free daily compute to get started. When your app is ready, payments are built in.",
     heroStat1: "10K",
     heroStat1Label: "weekly active devs",
     heroStat2: "1.5M",
@@ -16,6 +16,29 @@ export const HELLO_PAGE = {
 
     readTheDocsButton: "Read the Docs",
 
+    // How it works section
+    howItWorksTitle: "How it works",
+    howItWorksBuildDesc: "Use one API across models.",
+    howItWorksShipDesc: "Start free with daily compute.",
+    howItWorksGetPaidDesc: "Users pay inside your app.",
+
+    // Start free section
+    startFreeTitle: "Start free",
+    startFreeLines: [
+        { pre: "🔌 Use ", bold: "one API", post: " across models" },
+        { pre: "🚫 ", bold: "No card", post: " required" },
+        { pre: "🏢 No company needed", bold: "", post: "" },
+        { pre: "🌱 ", bold: "Free daily compute", post: " to build and ship" },
+        { pre: "💳 Users pay ", bold: "inside your apps", post: "" },
+        {
+            pre: "📈 As your app grows, you ",
+            bold: "unlock more compute",
+            post: "",
+        },
+        { pre: "⚡ Just ", bold: "sign up", post: " and go" },
+    ],
+    freeDailyComputeTitle: "Free daily compute",
+
     // Loop diagram
     loopBuild: "build",
     loopShip: "ship",
@@ -24,23 +47,17 @@ export const HELLO_PAGE = {
     loopBuildEmoji: "🔨",
     loopShipEmoji: "🚀",
     loopGrowEmoji: "📈",
-    loopEarnEmoji: "💰",
+    loopEarnEmoji: "✨",
     flywheelCenter: "Your Apps",
     comingSoonBadge: "coming soon",
 
-    // Flywheel explanation (right column)
-    flywheelTitle: "The flywheel",
-    flywheelBodyHighlight1: "Free Pollen every day",
-    flywheelBodyMid:
-        " to get you started. The more your app is used, the more you earn — ",
-    flywheelBodyHighlight2: "your community unlocks your compute.",
+    // Flywheel explanation
+    flywheelBodyLine1: "Free compute every day to get started.",
+    flywheelBodyLine2: "As your app gets used, you unlock more compute.",
     tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
-    // Tier explanation (left column)
-    tierTitle: "Grow your tier",
-    tierBody:
-        "The more your apps grow, the higher your tier — and the more free daily Pollen you get.",
+    computeTiersTitle: "Compute tiers",
     tierHowText: "Want to know more?",
-    tierHowLink: "Check our FAQ ↗",
+    tierHowLink: "Check our FAQ",
 
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
@@ -59,10 +76,10 @@ export const HELLO_PAGE = {
     tierNectarPoints: "",
 
     // Section — For your users / BYOP
-    usersTitle: "Your users pay for themselves",
+    usersTitle: "Users pay inside your app",
     usersBody:
-        "Each user who signs up gets 1.5 free Pollen per week — and spends it in your app. Costs you nothing.",
-    usersPaymentsLink: "💳 Set up user payments →",
+        "Each user who signs in gets free weekly compute to try apps — and can pay inside yours when they want more. No Stripe setup. No card required to start.",
+    usersPaymentsLink: "💳 Set up user payments",
 
     // Section 8 — We Build in the Open
     openTitle: "We build in the open",
@@ -130,13 +147,12 @@ export const HELLO_PAGE = {
         },
     ],
     comingFooterEmoji: "🌱",
-    comingFooter:
-        "The platform gives you runway. We're shaping the rest together, in the open.",
+    comingFooterLine1: "The platform gives you runway.",
+    comingFooterLine2: "We're shaping the rest together, in the open.",
 
     // Section 9 — CTA
     ctaTitle: "Get started",
-    ctaBody:
-        "One API. Open source. The code, the roadmap, the conversations — all in the open.",
+    ctaBody: "One API. Open source. Built in the open.",
     browseAppsLink: "Browse Apps",
     communityLink: "Community",
 };

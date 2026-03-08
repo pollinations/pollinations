@@ -57,27 +57,8 @@ Title.displayName = "Title";
 // ============================================
 // HEADING COMPONENT (H2/H3)
 // ============================================
-// Section headings - organizes content into sections
-// Used for: Major sections, subsections, card titles
-//
-// Variant examples:
-// - section: Main content sections with rose border-left accent
-//   → HelloPage: "Pollen: One Simple Credit", "Fuel Your Vision", etc.
-//   → PlayPage: "Authentication", "Integrate"
-//   → Used for: Major page sections (H2)
-//
-// - lime: Subsection headings with lime color
-//   → HelloPage: "Simple & Fast: Buy What You Need" (inside cards)
-//   → CommunityPage: "Discord" card title
-//   → Used for: Feature cards, positive/action items (H3)
-//
-// - rose: Subsection headings with rose color
-//   → HelloPage: "Our Investment in You: The Sponsorship Program"
-//   → CommunityPage: "GitHub" card title
-//   → Used for: Feature cards, highlight items (H3)
-//
-// - simple: Clean headings without border or color
-//   → Used for: Nested sections, tertiary headings
+// - section: Major page sections (H2) — left border accent
+// - subsection: Card titles, nested sections (H3) — smaller, no border
 // ============================================
 const headingVariants = cva("font-headline font-black text-dark uppercase", {
     variants: {
@@ -85,11 +66,8 @@ const headingVariants = cva("font-headline font-black text-dark uppercase", {
             // Section headings with border-left accent (H2 - major sections)
             section:
                 "text-base md:text-lg tracking-widest border-l-4 border-dark pl-4",
-            // Colored headings (H3 - subsections in cards)
-            lime: "text-sm md:text-base tracking-wider text-dark",
-            rose: "text-sm md:text-base tracking-wider text-dark",
-            // Simple headings (no border, no color)
-            simple: "text-base md:text-lg tracking-wider",
+            // Subsection headings (H3 - card titles, nested sections)
+            subsection: "text-sm md:text-base tracking-wider text-dark",
         },
         spacing: {
             default: "mb-4", // Standard spacing

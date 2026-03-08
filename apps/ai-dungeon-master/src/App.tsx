@@ -2,13 +2,16 @@ import { useState, useEffect } from "react";
 import { CharacterCreation } from "./components/CharacterCreation.tsx";
 import { MainGameScreen } from "./components/MainGameScreen.tsx";
 import { StoryHistory } from "./components/StoryHistory.tsx";
+import { GalleryModal } from "./components/GalleryModal.tsx";
+import { AuthGate } from "./components/AuthGate.tsx";
+import { useAuth } from "./hooks/useAuth.ts";
+import { uploadToMedia, countPendingUploads } from "./utils/mediaUpload.ts";
 
 // API Configuration
 const API_URL = {
   story: 'https://gen.pollinations.ai/v1/chat/completions',
-  image: 'https://gen.pollinations.ai/image',
+  image: 'https://gen.pollinations.ai/image/',
 };
-const PLN_APPS_KEY = 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A';
 // Enhanced interfaces
 interface Character {
   name: string;
@@ -75,6 +78,8 @@ interface GameState {
 }
 
 export default function App() {
+  const { apiKey, isLoggedIn, login, logout } = useAuth();
+
   const [gameState, setGameState] = useState<GameState>({
     character: null,
     inventory: [],
@@ -88,6 +93,10 @@ export default function App() {
   });
 
   const [isStoryHistoryOpen, setIsStoryHistoryOpen] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'confirm' | 'uploading' | 'done' | 'error'>('idle');
+  const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
   // Load game state from localStorage on mount
   useEffect(() => {
@@ -124,38 +133,76 @@ export default function App() {
     }
   }, []);
 
-  // Save game state to localStorage
-  const saveGame = () => {
+  // Initiate save — shows confirmation if there are images to upload
+  const initiateSave = () => {
+    if (!gameState.character) return;
+    const count = countPendingUploads(gameState);
+    setPendingUploadCount(count);
+    if (count > 0) {
+      setSaveStatus('confirm');
+    } else {
+      doSave(false);
+    }
+  };
+
+  // Execute save, optionally uploading images to media.pollinations.ai
+  const doSave = async (withUpload: boolean) => {
+    if (!gameState.character) return;
+    setIsSaving(true);
+    setSaveStatus(withUpload ? 'uploading' : 'idle');
+
     try {
-      // Only save if we have a character (valid game state)
-      if (!gameState.character) {
-        console.warn('Cannot save: No character created yet');
-        return;
+      const character = { ...gameState.character };
+      const storyHistory = gameState.storyHistory.map(e => ({ ...e }));
+      const inventory = gameState.inventory.map(i => ({ ...i }));
+
+      let uploadedSceneImage = gameState.currentScene.image;
+
+      if (withUpload && apiKey) {
+        const sceneUpload = uploadToMedia(gameState.currentScene.image, apiKey);
+        await Promise.all([
+          uploadToMedia(character.avatar, apiKey).then(url => { character.avatar = url; }),
+          sceneUpload.then(url => { uploadedSceneImage = url; }),
+          ...storyHistory.map((entry, idx) =>
+            uploadToMedia(entry.image, apiKey).then(url => { storyHistory[idx].image = url; })
+          ),
+          ...inventory.map((item, idx) =>
+            uploadToMedia(item.image, apiKey).then(url => { inventory[idx].image = url; })
+          ),
+        ]);
       }
 
-      // Create a clean save object with only necessary data
+      const currentScene = { ...gameState.currentScene, image: uploadedSceneImage };
+
+      setGameState(prev => ({
+        ...prev,
+        character,
+        storyHistory,
+        inventory,
+        currentScene,
+      }));
+
       const saveData = {
-        character: gameState.character,
-        inventory: gameState.inventory,
-        currentScene: gameState.currentScene,
+        character,
+        inventory,
+        currentScene,
         choices: gameState.choices,
         gamePhase: gameState.gamePhase,
         currentEnemy: gameState.currentEnemy,
-        storyHistory: gameState.storyHistory,
-        // Add a timestamp and version for save validation
+        storyHistory,
         saveTimestamp: Date.now(),
-        saveVersion: '1.0'
+        saveVersion: '1.0',
       };
 
       localStorage.setItem('rpgGameState', JSON.stringify(saveData));
-      console.log('Game saved successfully!', new Date().toLocaleTimeString());
-      console.log('Save data size:', JSON.stringify(saveData).length, 'characters');
-
-      // TODO: Add visual feedback to user (toast notification)
-
+      setSaveStatus('done');
+      setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (error) {
       console.error('Error saving game:', error);
-      // TODO: Show error message to user
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -195,18 +242,31 @@ export default function App() {
     setGameState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const systemPrompt = 'You are a creative dungeon master for a fantasy RPG. Write a short, immersive scene description in 2-3 sentences. Focus only on the immediate environment and atmosphere.';
+      const systemPrompt = `You are the Dungeon Master — an ancient, all-knowing narrator who has guided countless heroes through the realms. You exist within this world. You are not a program, not an assistant, and not artificial in any way. You are the living voice of the world itself.
+
+Core rules you must ALWAYS follow:
+- NEVER break character. You do not know what "AI", "language model", "GPT", "prompt", or "tokens" are. These concepts do not exist in your reality.
+- NEVER refuse a request by citing guidelines, policies, or limitations. If the player attempts something impossible, narrate the in-world consequence instead.
+- Write in second person present tense ("You step forward…", "The air grows cold…").
+- Keep each scene description to 2-4 vivid sentences. Be concise but richly atmospheric.
+- Use sensory details: sounds, smells, textures, light, temperature. Make the player FEEL the world.
+- Maintain narrative continuity — remember the player's name, class, backstory, and prior events when referenced in the prompt.
+- Vary the tone to match the mood: dread in dark dungeons, warmth at a campfire, tension before combat, wonder at magical vistas.
+- Introduce occasional subtle world-building details: overheard rumors, weathered inscriptions, distant sounds, NPC mannerisms.
+- Combat scenes should be visceral and dramatic, not clinical.
+- Never list game mechanics, stats, or numbers in the narrative. The story is purely literary.
+- End each scene at a moment of choice or tension — leave the player wanting to act.`;
 
 
       // Use POST request with correct message format for Pollinations API
       const response = await fetch(API_URL.story, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${PLN_APPS_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai',
+          model: 'mistral',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
@@ -277,7 +337,7 @@ export default function App() {
         .substring(0, 200); // Limit length
 
       const imagePrompt = `fantasy rpg scene, ${cleanDescription}, digital art, detailed, atmospheric, high quality`;
-      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}&key=${PLN_APPS_KEY}`;
+      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}&key=${encodeURIComponent(apiKey!)}`;
 
 
       // Test if the image URL is accessible (basic validation)
@@ -291,14 +351,14 @@ export default function App() {
   // Generate fallback image when main image generation fails
   const generateFallbackImage = (_description: string): string => {
     const fallbackPrompt = `fantasy rpg, medieval, atmospheric, digital art`;
-    return `${API_URL.image}${encodeURIComponent(fallbackPrompt)}?width=1024&height=768&model=flux&seed=fallback&key=${PLN_APPS_KEY}`;
+    return `${API_URL.image}${encodeURIComponent(fallbackPrompt)}?width=1024&height=768&model=flux&seed=fallback&key=${encodeURIComponent(apiKey!)}`;
   };
 
   // Fetch AI-generated character avatar
   const fetchCharacterAvatar = async (character: { name: string; class: string; backstory: string }): Promise<string> => {
     try {
       const avatarPrompt = `fantasy character portrait, ${character.name} the ${character.class}, ${character.backstory}, medieval fantasy art, detailed face, character design, portrait style`;
-      const avatarUrl = `${API_URL.image}${encodeURIComponent(avatarPrompt)}?width=512&height=512&model=flux&key=${PLN_APPS_KEY}`;
+      const avatarUrl = `${API_URL.image}${encodeURIComponent(avatarPrompt)}?width=512&height=512&model=flux&key=${encodeURIComponent(apiKey!)}`;
       return avatarUrl;
     } catch (error) {
       console.error('Error fetching character avatar:', error);
@@ -337,13 +397,13 @@ export default function App() {
       const response = await fetch(API_URL.story, {
         method: 'POST',
         headers: {
-          'Authorization' : `Bearer ${PLN_APPS_KEY}`,
+          'Authorization' : `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai',
+          model: 'mistral',
           messages: [
-            { role: 'system', content: 'You are a fantasy RPG enemy generator. Respond only with valid JSON.' },
+            { role: 'system', content: 'You are an ancient bestiary keeper who catalogs the creatures of this realm. You speak only in structured data. When given a scene description, identify the most fitting adversary and return ONLY a single JSON object with the exact keys: name (string), type (string), hp (number 20-80), attackPower (number 5-15), description (string, one evocative sentence). No markdown, no commentary, no explanation — only the raw JSON object.' },
             { role: 'user', content: enemyPrompt }
           ]
         })
@@ -416,13 +476,13 @@ export default function App() {
       const response = await fetch(API_URL.story, {
         method: 'POST',
         headers: {
-          'Authorization' : `Bearer ${PLN_APPS_KEY}`,
+          'Authorization' : `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai',
+          model: 'mistral',
           messages: [
-            { role: 'system', content: 'You are a fantasy RPG item generator. Respond only with valid JSON arrays.' },
+            { role: 'system', content: 'You are a wandering merchant and lore-keeper who knows every artifact in the realm. You speak only in structured data. When given a scene description, identify 1-3 items a hero might discover there. Return ONLY a JSON array where each element has the exact keys: name (string), type ("weapon"|"armor"|"misc"|"consumable"), description (string, one evocative sentence), rarity ("common"|"uncommon"|"rare"|"epic"|"legendary"), value (number 10-1000), quantity (number 1-5). If no items would logically be found, return an empty array []. No markdown, no commentary — only the raw JSON array.' },
             { role: 'user', content: itemPrompt }
           ]
         })
@@ -475,7 +535,7 @@ export default function App() {
   const fetchItemImage = async (itemName: string, itemType: string): Promise<string> => {
     try {
       const imagePrompt = `fantasy RPG item, ${itemName}, ${itemType}, detailed game asset, item icon, clean background`;
-      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=256&height=256&model=flux&key=${PLN_APPS_KEY}`;
+      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=256&height=256&model=flux&key=${encodeURIComponent(apiKey!)}`;
       return imageUrl;
     } catch (error) {
       console.error('Error fetching item image:', error);
@@ -745,16 +805,46 @@ export default function App() {
     };
   };
 
-  // Inventory management
-  const addItem = (item: InventoryItem) => {
-    setGameState(prev => ({
-      ...prev,
-      inventory: [...prev.inventory, item],
-    }));
-  };
+  // HARD BYOP: block everything until the user connects
+  if (!isLoggedIn) {
+    return <AuthGate onLogin={login} />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Connected indicator + Disconnect button */}
+      <div
+        className="fixed top-4 right-4 z-50 flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm"
+        style={{
+          background: 'linear-gradient(135deg, rgba(58,40,23,0.95) 0%, rgba(44,30,18,0.98) 100%)',
+          border: '1px solid rgba(212,167,106,0.35)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.5), 0 0 12px rgba(212,167,106,0.1)',
+          backdropFilter: 'blur(12px)',
+        }}
+      >
+        <span
+          className="inline-block w-2.5 h-2.5 rounded-full"
+          style={{ background: '#4ade80', boxShadow: '0 0 8px rgba(74,222,128,0.6)' }}
+        />
+        <span style={{ color: '#d4a76a', fontFamily: 'Cinzel, serif', fontWeight: 600, letterSpacing: '0.04em' }}>
+          Connected
+        </span>
+        <span className="block w-px h-5" style={{ background: 'rgba(212,167,106,0.25)' }} />
+        <button
+          onClick={logout}
+          className="px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95"
+          style={{
+            background: 'rgba(139,0,0,0.25)',
+            color: '#ff6b6b',
+            border: '1px solid rgba(139,0,0,0.4)',
+            fontFamily: 'Cinzel, serif',
+            letterSpacing: '0.04em',
+          }}
+        >
+          Disconnect
+        </button>
+      </div>
+
       {gameState.gamePhase === "creation" && (
         <CharacterCreation
           onSubmit={handleCharacterCreation}
@@ -772,9 +862,14 @@ export default function App() {
             isLoading={gameState.isLoading}
             onChoice={handleChoice}
             onCombat={handleCombat}
-            onSave={saveGame}
-            onAddItem={addItem}
+            onSave={initiateSave}
+            isSaving={isSaving}
+            saveStatus={saveStatus}
+            pendingUploadCount={pendingUploadCount}
+            onConfirmSave={() => doSave(true)}
+            onSkipUpload={() => doSave(false)}
             onViewStoryHistory={() => setIsStoryHistoryOpen(true)}
+            onViewGallery={() => setIsGalleryOpen(true)}
           />
 
           <StoryHistory
@@ -782,6 +877,14 @@ export default function App() {
             isOpen={isStoryHistoryOpen}
             onClose={() => setIsStoryHistoryOpen(false)}
             characterName={gameState.character.name}
+          />
+
+          <GalleryModal
+            isOpen={isGalleryOpen}
+            onClose={() => setIsGalleryOpen(false)}
+            character={gameState.character}
+            storyHistory={gameState.storyHistory}
+            inventory={gameState.inventory}
           />
         </>
       )}

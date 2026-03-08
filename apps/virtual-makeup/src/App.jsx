@@ -63,7 +63,7 @@ function App() {
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
+    if (file?.type.startsWith("image/")) {
       setUploadedFile(file);
       setErrorMessage("");
       const reader = new FileReader();
@@ -202,6 +202,7 @@ function App() {
             </div>
             {uploadedImage && (
               <button
+                type="button"
                 onClick={resetApp}
                 className="flex items-center gap-2 px-5 py-2.5 text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-white/20"
               >
@@ -284,9 +285,9 @@ function App() {
                   title: "Save Results",
                   desc: "Download your transformed photos",
                 },
-              ].map((feature, idx) => (
+              ].map((feature) => (
                 <div
-                  key={idx}
+                  key={feature.title}
                   className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-white/20 transition-all flex flex-col items-center text-center"
                 >
                   <feature.icon className="w-8 h-8 text-cyan-400 mb-3" />
@@ -322,6 +323,7 @@ function App() {
 
                 <div className="flex items-center gap-3 mb-6">
                   <button
+                    type="button"
                     onClick={() => setUseCustom(false)}
                     className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
                       !useCustom
@@ -332,6 +334,7 @@ function App() {
                     Preset Styles
                   </button>
                   <button
+                    type="button"
                     onClick={() => setUseCustom(true)}
                     className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
                       useCustom
@@ -347,6 +350,7 @@ function App() {
                   <div className="grid grid-cols-2 gap-4">
                     {MAKEUP_STYLES.map((style) => (
                       <button
+                        type="button"
                         key={style.id}
                         onClick={() => setSelectedStyle(style.id)}
                         className={`relative p-6 rounded-2xl border-2 transition-all duration-300 group overflow-hidden ${
@@ -385,6 +389,7 @@ function App() {
                 )}
 
                 <button
+                  type="button"
                   onClick={applyMakeup}
                   disabled={isLoading || (useCustom && !customPrompt.trim())}
                   className="w-full mt-6 py-4 bg-gradient-to-r from-cyan-500 via-emerald-500 to-orange-500 text-white rounded-2xl font-bold shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 group"
@@ -436,6 +441,7 @@ function App() {
                     </div>
 
                     <button
+                      type="button"
                       onClick={downloadImage}
                       className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl font-bold hover:shadow-lg hover:shadow-orange-500/25 transition-all flex items-center justify-center gap-3 group"
                     >
@@ -444,6 +450,7 @@ function App() {
                     </button>
 
                     <button
+                      type="button"
                       onClick={applyMakeup}
                       className="w-full py-3 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 rounded-2xl font-semibold transition-all border border-white/10 hover:border-white/20 flex items-center justify-center gap-2"
                     >

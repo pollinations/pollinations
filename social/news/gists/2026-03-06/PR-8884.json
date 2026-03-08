@@ -10,26 +10,26 @@
     ".DOCS"
   ],
   "gist": {
-    "category": "infrastructure",
+    "category": "docs",
     "user_facing": false,
     "publish_tier": "none",
     "importance": "minor",
-    "headline": "Daily News Sync",
-    "blurb": "Polly's been busy organizing the latest community highlights and news for the front page.",
-    "summary": "Automated sync of the latest news and community apps to the README and social pipeline.",
-    "impact": "Keeps the repository's landing page and social feeds up to date with recent activity.",
+    "headline": "Daily README Sync",
+    "blurb": "Automated daily update of the README and social news pipeline.",
+    "summary": "Automated bot update to sync the latest news and recent apps to the README and social pipeline.",
+    "impact": "Keeps the repository's front page up to date with the latest community highlights.",
     "keywords": [
       "readme",
       "news",
-      "automation",
-      "social"
+      "automated",
+      "bot"
     ],
-    "visual_concept": "Polly the bee organizing a stack of daily newspapers or pinning a news bulletin to a board.",
-    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing a stack of tiny newspapers on a wooden desk. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "A robot and bee updating a giant billboard or newspaper.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a monitor head and the bee mascot updating a large wooden bulletin board. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": null,
     "prompt": null
   },
-  "generated_at": "2026-03-06T07:22:41.713897+00:00"
+  "generated_at": "2026-03-08T18:14:39.284227+00:00"
 }

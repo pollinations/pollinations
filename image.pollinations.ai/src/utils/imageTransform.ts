@@ -71,7 +71,7 @@ export async function transformImage(
     });
   }
 
-  const response = await pipeline.output({ format, quality }).response();
+  const response = (await pipeline.output({ format, quality })).response();
 
   const arrayBuffer = await response.arrayBuffer();
   return Buffer.from(arrayBuffer);

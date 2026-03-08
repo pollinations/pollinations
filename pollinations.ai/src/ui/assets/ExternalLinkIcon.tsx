@@ -4,12 +4,17 @@
 export function ExternalLinkIcon({
     className = "w-3.5 h-3.5",
     stroke = "currentColor",
+    strokeWidth = "2.5",
+}: {
+    className?: string;
+    stroke?: string;
+    strokeWidth?: string;
 }) {
     return (
         <svg
             className={className}
             fill="none"
-            strokeWidth="2.5"
+            strokeWidth={strokeWidth}
             viewBox="0 0 12 12"
             aria-labelledby="externalLinkIconTitle"
         >

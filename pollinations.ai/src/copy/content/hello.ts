@@ -4,7 +4,7 @@ export const HELLO_PAGE = {
     // Section 1 — Hero
     heroTitle: "Build an AI app.",
     heroBody:
-        "We handle the models, compute, and payments. One API for text, image, audio, and video. Free daily compute to get started. When your app is ready, payments are built in.",
+        "One API for text, image, audio, and video. We handle the models and infrastructure. Free to start, scales with you.",
     heroStat1: "10K",
     heroStat1Label: "weekly active devs",
     heroStat2: "1.5M",
@@ -20,19 +20,18 @@ export const HELLO_PAGE = {
     howItWorksTitle: "How it works",
     howItWorksBuildDesc: "Use one API across models.",
     howItWorksShipDesc: "Start free with daily compute.",
-    howItWorksGetPaidDesc: "Users pay inside your app.",
+    howItWorksGetPaidDesc: "Your users get their own compute.",
 
     // Start free section
     startFreeTitle: "Start free",
     startFreeLines: [
         { pre: "🔌 Use ", bold: "one API", post: " across models" },
-        { pre: "🚫 ", bold: "No card", post: " required" },
+        { pre: "🚀 ", bold: "No setup", post: " required" },
         { pre: "🏢 No company needed", bold: "", post: "" },
         { pre: "🌱 ", bold: "Free daily compute", post: " to build and ship" },
-        { pre: "💳 Users pay ", bold: "inside your apps", post: "" },
         {
             pre: "📈 As your app grows, you ",
-            bold: "unlock more compute",
+            bold: "get more compute",
             post: "",
         },
         { pre: "⚡ Just ", bold: "sign up", post: " and go" },
@@ -43,7 +42,7 @@ export const HELLO_PAGE = {
     loopBuild: "build",
     loopShip: "ship",
     loopGrow: "grow",
-    loopEarn: "earn",
+    loopEarn: "share",
     loopBuildEmoji: "🔨",
     loopShipEmoji: "🚀",
     loopGrowEmoji: "📈",
@@ -53,7 +52,7 @@ export const HELLO_PAGE = {
 
     // Flywheel explanation
     flywheelBodyLine1: "Free compute every day to get started.",
-    flywheelBodyLine2: "As your app gets used, you unlock more compute.",
+    flywheelBodyLine2: "As your app gets used, you get more compute.",
     tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
     computeTiersTitle: "Compute tiers",
     tierHowText: "Want to know more?",
@@ -76,10 +75,10 @@ export const HELLO_PAGE = {
     tierNectarPoints: "",
 
     // Section — For your users / BYOP
-    usersTitle: "Users pay inside your app",
+    usersTitle: "For your users",
     usersBody:
-        "Each user who signs in gets free weekly compute to try apps — and can pay inside yours when they want more. No Stripe setup. No card required to start.",
-    usersPaymentsLink: "💳 Set up user payments",
+        "Each user who signs in gets free weekly compute to try your app. When they need more, it just works — no Stripe setup on your end.",
+    usersPaymentsLink: "🔌 Set up for your app",
 
     // Section 8 — We Build in the Open
     openTitle: "We build in the open",
@@ -136,9 +135,9 @@ export const HELLO_PAGE = {
                 "Ship your app on our infra. No deploy setup, no separate hosting bill.",
         },
         {
-            emoji: "💸",
-            title: "Creator Revenue Share",
-            description: "Earn from Pollen spent in your app.",
+            emoji: "🌻",
+            title: "Creator Rewards",
+            description: "Get recognized for what people build with your app.",
         },
         {
             emoji: "🗺️",

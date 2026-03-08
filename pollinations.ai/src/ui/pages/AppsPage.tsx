@@ -12,6 +12,7 @@ import {
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
 import { useAuth } from "../../hooks/useAuth";
+import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { usePrettify } from "../../hooks/usePrettify";
 import { useTranslate } from "../../hooks/useTranslate";
@@ -259,6 +260,7 @@ export default function AppsPage() {
 
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
     const { copy: pageCopy, isTranslating } = usePageCopy(APPS_PAGE);
+    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
     const { translated: translatedGenre } = useTranslate(
         GENRE_FILTERS,
         "label",
@@ -295,7 +297,11 @@ export default function AppsPage() {
             <PageContainer>
                 <PageCard isTranslating={isTranslating}>
                     <Title>{pageCopy.title}</Title>
-                    <Body spacing="comfortable">{pageCopy.subtitle}</Body>
+                    <Body spacing="comfortable">
+                        {pageCopy.subtitlePrefix}
+                        <strong>{pageCopy.subtitleBold}</strong>
+                        {pageCopy.subtitleSuffix}
+                    </Body>
 
                     {/* CTAs */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
@@ -353,7 +359,7 @@ export default function AppsPage() {
                                 variant="toggle-glow"
                                 data-active={filter === f.id}
                                 onClick={() => setFilter(f.id)}
-                                className="px-4 py-2 text-base"
+                                className="px-2 py-1 text-sm md:px-4 md:py-2 md:text-base"
                                 style={
                                     { "--glow": f.glow } as React.CSSProperties
                                 }

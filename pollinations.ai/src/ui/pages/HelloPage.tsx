@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Badge } from "../components/ui/badge";
@@ -12,6 +13,7 @@ import { Body, Heading, Title } from "../components/ui/typography";
 
 function HelloPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(HELLO_PAGE);
+    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const tiers = [
         {
@@ -40,7 +42,11 @@ function HelloPage() {
                 {/* Section 1 — Hero */}
                 <Title>{pageCopy.heroTitle}</Title>
                 <div className="mb-8">
-                    <Body spacing="comfortable">{pageCopy.heroBody}</Body>
+                    <Body spacing="comfortable">
+                        {pageCopy.heroBodyPrefix}{" "}
+                        <strong>{pageCopy.heroBodyBold}</strong>
+                        {pageCopy.heroBodySuffix}
+                    </Body>
                 </div>
                 <div className="flex flex-wrap gap-3 mb-8">
                     <Button

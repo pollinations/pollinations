@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
+import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { UserMenu } from "../components/UserMenu";
-import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
@@ -29,6 +29,7 @@ function PlayPage() {
 
     // Get translated copy
     const { copy: pageCopy, isTranslating } = usePageCopy(PLAY_PAGE);
+    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const allModels = useMemo(() => {
         const typeOrder: Record<string, number> = {
@@ -84,20 +85,20 @@ function PlayPage() {
                 </div>
 
                 <div className="mb-6">
-                    <Body className="mb-3">{pageCopy.createDescription}</Body>
-                    <Button
-                        as="a"
+                    <Body className="mb-3">
+                        {pageCopy.createDescriptionPrefix}{" "}
+                        <strong>{pageCopy.createDescriptionBold}</strong>
+                        {pageCopy.createDescriptionSuffix}
+                    </Body>
+                    <a
                         href={LINKS.enter}
                         target="_blank"
                         rel="noopener noreferrer"
-                        variant="iconText"
-                        className="inline-flex bg-[rgb(var(--primary-strong))] text-dark hover:bg-[rgb(var(--primary-strong)/0.8)] hover:text-dark"
+                        className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
                     >
-                        <span className="font-headline text-xs md:text-xs font-black uppercase tracking-wider text-dark">
-                            {pageCopy.pricingLinkText}
-                        </span>
-                        <ExternalLinkIcon className="w-3 h-3 md:w-4 md:h-4 text-dark" />
-                    </Button>
+                        {pageCopy.pricingLinkText}
+                        <ExternalLinkIcon className="w-3 h-3" strokeWidth="4" />
+                    </a>
                 </div>
 
                 <ModelSelector

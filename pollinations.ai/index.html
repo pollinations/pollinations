@@ -47,14 +47,21 @@
     <meta name="twitter:image" content="https://pollinations.ai/og-image.webp" />
     <meta name="twitter:image:alt" content="pollinations.ai logo" />
     
-    <!-- Fonts -->
+    <!-- Fonts (display=swap prevents FOIT) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;700&display=swap" />
+
     <title>pollinations.ai</title>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="font-family:sans-serif;padding:2rem;text-align:center">
+        <h1>pollinations.ai</h1>
+        <p>This app requires JavaScript. Please enable it in your browser settings.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,10 +1,15 @@
 // CommunityPage content configuration
 
 export const COMMUNITY_PAGE = {
+    pageTitle: "Community",
+    pageDescription: "Contribute to pollinations.ai — open source, open roadmap, open community",
     // Section 1 — Hero
     title: "Contribute",
-    subtitle:
-        "pollinations.ai is open source — the code, the roadmap, the conversations. Contributors shape the platform directly. Your PR can land in production tomorrow, and starting Q2, every contribution earns you Pollen.",
+    subtitlePrefix:
+        "🌸 pollinations.ai is open source — the code, the roadmap, the conversations.",
+    subtitleBold: "Contributors shape the platform directly.",
+    subtitleSuffix:
+        " Your PR can land in production tomorrow, and starting Q2, every contribution earns you Pollen. 🌿",
     heroStat1: "17K+",
     heroStat1Label: "Discord members",
     heroStat2: "4K+",

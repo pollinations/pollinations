@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { TERMS_PAGE } from "../../copy/content/legal";
+import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 
 function TermsPage() {
+    useDocumentMeta(TERMS_PAGE.pageTitle, TERMS_PAGE.pageDescription);
     const [content, setContent] = useState("");
 
     useEffect(() => {

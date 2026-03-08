@@ -2,9 +2,12 @@
 import type { App } from "../../hooks/useApps";
 
 export const APPS_PAGE = {
+    pageTitle: "Apps",
+    pageDescription: "Explore 500+ apps built by the community using the pollinations.ai API",
     title: "Ecosystem",
-    subtitle:
-        "Paradise-built apps, tools, and experiments—pollinations.ai-powered. Browse, try, ship.",
+    subtitlePrefix: "🌿 Paradise-built apps, tools, and experiments—",
+    subtitleBold: "pollinations.ai-powered.",
+    subtitleSuffix: " Browse, try, ship. 🚀",
     noAppsMessage: "No apps found in this category yet.",
     authorPrefix: "by",
 

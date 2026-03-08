@@ -1,0 +1,13 @@
+diff --git a/node_modules/piexif-ts/dist/piexif.js b/node_modules/piexif-ts/dist/piexif.js
+index c3d251b..d1f1908 100644
+--- a/node_modules/piexif-ts/dist/piexif.js
++++ b/node_modules/piexif-ts/dist/piexif.js
+@@ -1728,7 +1728,7 @@
+       }
+       return unpacked;
+   };
+-  const _isBrowser = new Function('try {return this===window;}catch(e){ return false;}')();
++  const _isBrowser = false;
+   const atob = _isBrowser
+       ? window.atob
+       : (input) => {

@@ -10,7 +10,7 @@ type ServerEntry = {
 };
 
 const SERVER_TIMEOUT = 45000; // 45 seconds
-const VALID_TYPES: ServerType[] = ["flux", "translate", "zimage"];
+const VALID_TYPES = new Set<string>(["flux", "translate", "zimage"]);
 
 // Module-level KV binding reference, set once per request via middleware.
 // Using any to avoid requiring @cloudflare/workers-types for a single interface.
@@ -38,7 +38,7 @@ export const registerServer = async (
     url: string,
     type: ServerType = "flux",
 ): Promise<void> => {
-    if (!VALID_TYPES.includes(type)) {
+    if (!VALID_TYPES.has(type)) {
         logServer(`Unknown server type "${type}", defaulting to "flux"`);
         type = "flux";
     }
@@ -92,12 +92,16 @@ export const getNextTranslationServerUrl = () => getNextServerUrl("translate");
 /**
  * Returns the count of active servers for a type (rough load indicator).
  */
-export const countJobs = async (type: ServerType = "flux"): Promise<number> => {
+export async function countActiveServers(
+    type: ServerType = "flux",
+): Promise<number> {
     const active = await getActiveServers(type);
     return active.length;
-};
+}
 
-export const countFluxJobs = () => countJobs("flux");
+export function countFluxJobs(): Promise<number> {
+    return countActiveServers("flux");
+}
 
 /**
  * Fetch from a random active server, retry on 500 errors.

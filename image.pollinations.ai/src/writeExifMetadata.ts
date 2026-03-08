@@ -12,11 +12,11 @@ interface SafeParams {
  * Writes EXIF metadata to a JPEG buffer using piexif-ts (pure JS, Workers-compatible).
  * Matches the original sharp-based implementation: sets Make and UserComment.
  */
-export const writeExifMetadata = async (
+export function writeExifMetadata(
     buffer: Buffer,
-    safeParams: SafeParams | any,
-    maturity: any,
-): Promise<Buffer> => {
+    safeParams: SafeParams,
+    maturity: Record<string, unknown>,
+): Buffer {
     const startTime = Date.now();
 
     try {
@@ -55,4 +55,4 @@ export const writeExifMetadata = async (
         logPerf(`EXIF writing failed (${Date.now() - startTime}ms): ${err}`);
         return buffer;
     }
-};
+}

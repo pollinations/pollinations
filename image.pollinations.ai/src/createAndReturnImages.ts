@@ -6,7 +6,7 @@ import {
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
 import { callAirforceImageAPI } from "./models/airforceModel.ts";
-import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import { callAzureFluxKontext } from "./models/azureFluxKontextModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callSeedream5API,
@@ -22,9 +22,9 @@ import {
     type ContentSafetyFlags,
 } from "./utils/azureContentSafety.ts";
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
-import { getImagesBinding, resizeForGptImage } from "./utils/imageTransform.js";
+import { getImagesBinding, resizeForGptImage } from "./utils/imageTransform.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
-import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
+import { callVertexAIGemini } from "./vertexAIImageGenerator.ts";
 
 // Loggers
 const logError = debug("pollinations:error");
@@ -587,9 +587,15 @@ const callAzureGPTImageWithEndpoint = async (
 
                     // Resize input image for GPT Image API (~2.36MP max)
                     try {
-                        buffer = await resizeForGptImage(getImagesBinding(), buffer);
+                        buffer = await resizeForGptImage(
+                            getImagesBinding(),
+                            buffer,
+                        );
                     } catch (resizeErr) {
-                        logError(`Image ${i + 1} resize failed, using original:`, resizeErr);
+                        logError(
+                            `Image ${i + 1} resize failed, using original:`,
+                            resizeErr,
+                        );
                     }
 
                     // Only check safety after we've successfully fetched the image

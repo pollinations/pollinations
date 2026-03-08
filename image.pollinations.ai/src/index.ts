@@ -21,7 +21,11 @@ import {
 import { type ImageParams, ImageParamsSchema } from "./params.js";
 import { ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.js";
-import { convertToJpeg, setImagesBinding } from "./utils/imageTransform.js";
+import {
+    convertToJpeg,
+    getImagesBinding,
+    setImagesBinding,
+} from "./utils/imageTransform.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 import { writeExifMetadata } from "./writeExifMetadata.js";
 
@@ -190,6 +194,44 @@ function relativeTiming(timingInfo: TimingStep[]) {
     }));
 }
 
+function detectImageFormat(buf: Buffer): {
+    contentType: string;
+    ext: string;
+} {
+    if (
+        buf[0] === 0x89 &&
+        buf[1] === 0x50 &&
+        buf[2] === 0x4e &&
+        buf[3] === 0x47
+    ) {
+        return { contentType: "image/png", ext: "png" };
+    }
+    if (
+        buf[8] === 0x57 &&
+        buf[9] === 0x45 &&
+        buf[10] === 0x42 &&
+        buf[11] === 0x50
+    ) {
+        return { contentType: "image/webp", ext: "webp" };
+    }
+    return { contentType: "image/jpeg", ext: "jpg" };
+}
+
+function httpStatusLabel(statusCode: number): string {
+    switch (statusCode) {
+        case 400:
+            return "Bad Request";
+        case 401:
+            return "Unauthorized";
+        case 403:
+            return "Forbidden";
+        case 429:
+            return "Too Many Requests";
+        default:
+            return "Internal Server Error";
+    }
+}
+
 // --- Core image/video generation handler ---
 
 app.get("/prompt/*", async (c) => {
@@ -287,7 +329,7 @@ app.get("/prompt/*", async (c) => {
             step: "Start generating job",
             timestamp: Date.now(),
         });
-        const { prompt, wasPimped, wasTransformedForBadDomain } =
+        const { prompt, wasTransformedForBadDomain } =
             await normalizeAndTranslatePrompt(
                 originalPrompt,
                 {
@@ -334,16 +376,13 @@ app.get("/prompt/*", async (c) => {
         let finalBuffer = buffer;
         if (!safeParams.transparent) {
             try {
-                finalBuffer = await convertToJpeg(
-                    (c.env as any).IMAGES,
-                    buffer,
-                );
+                finalBuffer = await convertToJpeg(getImagesBinding(), buffer);
                 timingInfo.push({
                     step: "JPEG conversion",
                     timestamp: Date.now(),
                 });
                 // Write EXIF metadata (model name, parameters) into JPEG
-                finalBuffer = await writeExifMetadata(
+                finalBuffer = writeExifMetadata(
                     finalBuffer,
                     safeParams,
                     maturity,
@@ -362,22 +401,7 @@ app.get("/prompt/*", async (c) => {
         }
 
         // Detect image format from magic bytes
-        const isPng =
-            finalBuffer[0] === 0x89 &&
-            finalBuffer[1] === 0x50 &&
-            finalBuffer[2] === 0x4e &&
-            finalBuffer[3] === 0x47;
-        const isWebp =
-            finalBuffer[8] === 0x57 &&
-            finalBuffer[9] === 0x45 &&
-            finalBuffer[10] === 0x42 &&
-            finalBuffer[11] === 0x50;
-        const contentType = isPng
-            ? "image/png"
-            : isWebp
-              ? "image/webp"
-              : "image/jpeg";
-        const ext = isPng ? "png" : isWebp ? "webp" : "jpg";
+        const { contentType, ext } = detectImageFormat(finalBuffer);
 
         // Response headers
         c.header("Content-Type", contentType);
@@ -408,16 +432,7 @@ app.get("/prompt/*", async (c) => {
         logError("Error generating image:", error);
 
         const statusCode = error.status || 500;
-        const errorType =
-            statusCode === 400
-                ? "Bad Request"
-                : statusCode === 401
-                  ? "Unauthorized"
-                  : statusCode === 403
-                    ? "Forbidden"
-                    : statusCode === 429
-                      ? "Too Many Requests"
-                      : "Internal Server Error";
+        const errorType = httpStatusLabel(statusCode);
 
         return c.json(
             {

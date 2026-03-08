@@ -9,15 +9,4 @@ export class ProgressManager {
     setProcessing(_id: string) {}
 }
 
-export const createProgressTracker = () => {
-    const progress = new ProgressManager();
-    return {
-        startRequest: (_requestId: string) => {
-            return progress;
-        },
-    };
-};
-
-export type ProgressTracker = ReturnType<typeof createProgressTracker>;
-
 export default ProgressManager;

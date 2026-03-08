@@ -14,6 +14,8 @@ interface ModelSelectorProps {
     allowedImageModelIds: Set<string>;
     allowedTextModelIds: Set<string>;
     allowedAudioModelIds: Set<string>;
+    isLoading?: boolean;
+    isLoggedIn?: boolean;
 }
 
 const CATEGORY_GLOW: Record<ModelCategory, string> = {
@@ -63,6 +65,8 @@ export const ModelSelector = memo(function ModelSelector({
     allowedImageModelIds,
     allowedTextModelIds,
     allowedAudioModelIds,
+    isLoading = false,
+    isLoggedIn = false,
 }: ModelSelectorProps) {
     const { copy } = usePageCopy(PLAY_PAGE);
     const [activeCategory, setActiveCategory] =
@@ -103,56 +107,67 @@ export const ModelSelector = memo(function ModelSelector({
                 </div>
             )}
             <div className="flex flex-wrap gap-2">
-                {filteredModels.map((m) => {
-                    const modelType = getModelCategory(m);
-                    const isActive = selectedModel === m.id;
-                    const isPaidOnly = m.paid_only;
-                    const isImage = m.type === "image";
-                    const isAudio = m.type === "audio";
-                    const allowedSet = isImage
-                        ? allowedImageModelIds
-                        : isAudio
-                          ? allowedAudioModelIds
-                          : allowedTextModelIds;
-                    const isAllowed = allowedSet.has(m.id);
-                    const borderColor = isActive
-                        ? COLOR_VARS[modelType].strong
-                        : COLOR_VARS[modelType].light;
+                {isLoading
+                    ? ["s1", "s2", "s3", "s4"].map((k) => (
+                          <div
+                              key={k}
+                              className="h-8 w-20 rounded animate-pulse bg-border opacity-40"
+                          />
+                      ))
+                    : filteredModels.map((m) => {
+                          const modelType = getModelCategory(m);
+                          const isActive = selectedModel === m.id;
+                          const isPaidOnly = m.paid_only;
+                          const isImage = m.type === "image";
+                          const isAudio = m.type === "audio";
+                          const allowedSet = isImage
+                              ? allowedImageModelIds
+                              : isAudio
+                                ? allowedAudioModelIds
+                                : allowedTextModelIds;
+                          const isAllowed = allowedSet.has(m.id);
+                          const borderColor = isActive
+                              ? COLOR_VARS[modelType].strong
+                              : COLOR_VARS[modelType].light;
 
-                    return (
-                        <div key={m.id} className="relative group">
-                            <Button
-                                type="button"
-                                onClick={() => isAllowed && onSelectModel(m.id)}
-                                variant="model"
-                                size={null}
-                                data-active={isActive}
-                                data-type={modelType}
-                                disabled={!isAllowed}
-                                title={m.description || m.id}
-                                className={`border-2 ${
-                                    !isAllowed
-                                        ? "opacity-40 cursor-not-allowed grayscale"
-                                        : ""
-                                }`}
-                                style={{ borderColor }}
-                            >
-                                {m.description?.split(" - ")[0] || m.name}
-                                {isPaidOnly && (
-                                    <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">
-                                        💎
-                                    </span>
-                                )}
-                            </Button>
-                            {!isAllowed && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    {copy.gatedModelTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                          return (
+                              <div key={m.id} className="relative group">
+                                  <Button
+                                      type="button"
+                                      onClick={() =>
+                                          isAllowed && onSelectModel(m.id)
+                                      }
+                                      variant="model"
+                                      size={null}
+                                      data-active={isActive}
+                                      data-type={modelType}
+                                      disabled={!isAllowed}
+                                      title={m.description || m.id}
+                                      className={`border-2 ${
+                                          !isAllowed
+                                              ? "opacity-40 cursor-not-allowed grayscale"
+                                              : ""
+                                      }`}
+                                      style={{ borderColor }}
+                                  >
+                                      {m.description?.split(" - ")[0] || m.name}
+                                      {isPaidOnly && (
+                                          <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">
+                                              💎
+                                          </span>
+                                      )}
+                                  </Button>
+                                  {!isAllowed && (
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                          {isLoggedIn
+                                              ? copy.gatedModelTooltipLoggedIn
+                                              : copy.gatedModelTooltip}
+                                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
+                                      </div>
+                                  )}
+                              </div>
+                          );
+                      })}
             </div>
         </div>
     );

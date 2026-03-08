@@ -12,7 +12,8 @@ export const PLAY_PAGE_NO_TRANSLATE = new Set([
 
 export const PLAY_PAGE = {
     pageTitle: "Play",
-    pageDescription: "Generate images and text with AI — try models live in the playground",
+    pageDescription:
+        "Generate images and text with AI — try models live in the playground",
     // Page titles and navigation
     createTitle: "Create",
     createDescriptionPrefix: "🧪 Try any model.",
@@ -83,6 +84,8 @@ export const PLAY_PAGE = {
     // Gated model tooltip
     gatedModelTooltip:
         "Login to unlock · Get API keys at enter.pollinations.ai",
+    gatedModelTooltipLoggedIn:
+        "Top up your pollen balance to unlock this model · enter.pollinations.ai",
 
     // Error messages
     somethingWentWrong: "Something went wrong",

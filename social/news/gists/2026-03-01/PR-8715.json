@@ -8,21 +8,26 @@
     "DEV-DOCS"
   ],
   "gist": {
-    "category": "infrastructure",
+    "category": "docs",
     "user_facing": false,
     "publish_tier": "discord_only",
     "importance": "minor",
-    "headline": "fix: resolve conflict markers in APPS.md and README.md",
-    "blurb": "fix: resolve conflict markers in APPS.md and README.md",
-    "summary": "fix: resolve conflict markers in APPS.md and README.md",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Sweeping up the git dust",
+    "blurb": "Cleaned up some rogue git conflict markers that snuck into our documentation. The timeline is secure once again.",
+    "summary": "Resolved git conflict markers in APPS.md and README.md to restore proper table formatting and missing entries.",
+    "impact": "Documentation renders correctly again without confusing git artifacts.",
+    "keywords": [
+      "docs",
+      "cleanup",
+      "git",
+      "markdown"
+    ],
+    "visual_concept": "The Nomnom creature eating messy git conflict markers while Polly the bee sweeps up the documentation.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating jagged git conflict markers off a glowing retro terminal screen. The cute bee mascot hovers nearby holding a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
   },
   "image": {
     "url": null,
     "prompt": null
   },
-  "generated_at": "2026-03-01T17:23:11.769808+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:46:18.566872+00:00"
 }

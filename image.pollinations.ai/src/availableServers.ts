@@ -1,217 +1,159 @@
 import debug from "debug";
-import PQueue from "p-queue";
 
 const logServer = debug("pollinations:server");
 
-type Server = {
+type ServerType = "flux" | "translate" | "zimage";
+
+type ServerEntry = {
     url: string;
-    queue: PQueue;
-    startTime: number;
     lastHeartbeat: number;
-    totalRequests: number;
-    errors: number;
-};
-
-type ServerMap = typeof SERVERS;
-type ServerType = keyof ServerMap;
-
-// Server storage by type
-const SERVERS = {
-    flux: [] as Server[],
-    translate: [] as Server[],
-    zimage: [] as Server[],
 };
 
 const SERVER_TIMEOUT = 45000; // 45 seconds
+const VALID_TYPES: ServerType[] = ["flux", "translate", "zimage"];
 
-const concurrency = 2;
+// Module-level KV binding reference, set once per request via middleware.
+// Using any to avoid requiring @cloudflare/workers-types for a single interface.
+let _kvBinding: any = null;
+
+export function setServerRegistryBinding(binding: any): void {
+    _kvBinding = binding;
+}
+
+function getKV(): any {
+    if (!_kvBinding) {
+        throw new Error("SERVER_REGISTRY KV binding not available");
+    }
+    return _kvBinding;
+}
+
+function kvKey(type: ServerType): string {
+    return `servers:${type}`;
+}
 
 /**
- * Returns the total load (pending + queued jobs) for a specific type
- * Only counts active servers (with recent heartbeats)
- * @param {ServerType} type - The type of service (default: 'flux')
- * @returns {number} Total load across all active servers (pending + queued)
+ * Register a server or update its heartbeat in KV.
  */
-export const countJobs = (type: ServerType = "flux"): number => {
-    const servers = SERVERS[type] || [];
-    const activeServers = filterActiveServers(servers);
-    return activeServers.reduce((total, server) => {
-        return total + server.queue.size + server.queue.pending;
-    }, 0);
-};
-
-// Wrapper for backward compatibility
-export const countFluxJobs = () => countJobs("flux");
-
-/**
- * Registers a new server or updates its last heartbeat time.
- * @param {string} url - The URL of the server.
- * @param {string} type - The type of service (default: 'flux')
- */
-export const registerServer = (url: string, type: ServerType = "flux") => {
-    // Only allow predefined types, fall back to 'flux' for unknown types
-    if (!Object.hasOwn(SERVERS, type)) {
-        logServer(
-            `Warning: Unknown server type "${type}", defaulting to "flux"`,
-        );
+export const registerServer = async (
+    url: string,
+    type: ServerType = "flux",
+): Promise<void> => {
+    if (!VALID_TYPES.includes(type)) {
+        logServer(`Unknown server type "${type}", defaulting to "flux"`);
         type = "flux";
     }
 
-    const servers = SERVERS[type];
-    const existingServer = servers.find((server) => server.url === url);
+    const kv = getKV();
+    const raw = await kv.get(kvKey(type));
+    const servers: ServerEntry[] = raw ? JSON.parse(raw) : [];
 
-    if (existingServer) {
-        existingServer.lastHeartbeat = Date.now();
+    const existing = servers.find((s) => s.url === url);
+    if (existing) {
+        existing.lastHeartbeat = Date.now();
         logServer(`Updated heartbeat for ${type} server ${url}`);
     } else {
-        const newServer = {
-            url,
-            queue: new PQueue({ concurrency }),
-            lastHeartbeat: Date.now(),
-            startTime: Date.now(),
-            totalRequests: 0,
-            errors: 0,
-        };
-        servers.push(newServer);
+        servers.push({ url, lastHeartbeat: Date.now() });
         logServer(`Registered new ${type} server ${url}`);
     }
+
+    // Write back with 60s TTL (slightly longer than heartbeat timeout).
+    // Even if TTL expires, servers re-register within 45s anyway.
+    await kv.put(kvKey(type), JSON.stringify(servers), { expirationTtl: 60 });
 };
 
 /**
- * Returns the next available server URL for a specific type
- * @param {ServerType} type - The type of service (default: 'flux')
- * @returns {Promise<string>} - The next server URL
+ * Get all active servers of a given type (heartbeat within timeout).
+ */
+async function getActiveServers(type: ServerType): Promise<ServerEntry[]> {
+    const kv = getKV();
+    const raw = await kv.get(kvKey(type));
+    if (!raw) return [];
+
+    const servers: ServerEntry[] = JSON.parse(raw);
+    const now = Date.now();
+    return servers.filter((s) => now - s.lastHeartbeat < SERVER_TIMEOUT);
+}
+
+/**
+ * Pick a random active server URL for the given type.
  */
 export const getNextServerUrl = async (
     type: ServerType = "flux",
 ): Promise<string> => {
-    const servers = SERVERS[type] || [];
-    const activeServers = filterActiveServers(servers);
-    if (activeServers.length === 0) {
+    const active = await getActiveServers(type);
+    if (active.length === 0) {
         throw new Error(`No active ${type} servers available`);
     }
-
-    // Find servers with minimum queue size
-    const minQueueSize = Math.min(
-        ...activeServers.map(
-            (server) => server.queue.size + server.queue.pending,
-        ),
-    );
-
-    const candidateServers = activeServers.filter(
-        (server) => server.queue.size + server.queue.pending === minQueueSize,
-    );
-
-    // Randomly select one of the servers with minimum queue size
-    const selectedServer =
-        candidateServers[Math.floor(Math.random() * candidateServers.length)];
-    return selectedServer.url;
+    return active[Math.floor(Math.random() * active.length)].url;
 };
 
 export const getNextTranslationServerUrl = () => getNextServerUrl("translate");
 
 /**
- * Filters out inactive servers based on the SERVER_TIMEOUT.
- * @param {Server[]} servers - The list of servers.
- * @returns {Server[]} - The filtered list of active servers.
+ * Returns the count of active servers for a type (rough load indicator).
  */
-export const filterActiveServers = (servers: Server[]): Server[] => {
-    const now = Date.now();
-    return servers.filter(
-        (server) => now - server.lastHeartbeat < SERVER_TIMEOUT,
-    );
+export const countJobs = async (type: ServerType = "flux"): Promise<number> => {
+    const active = await getActiveServers(type);
+    return active.length;
 };
 
+export const countFluxJobs = () => countJobs("flux");
+
 /**
- * Fetches data from the least busy server of a specific type
- * @param {ServerType} type - The type of service (default: 'flux')
- * @param {RequestInit} options - The fetch init options
- * @returns {Promise<Response>} - The fetch response
+ * Fetch from a random active server, retry on 500 errors.
  */
 export const fetchFromLeastBusyServer = async (
     type: ServerType = "flux",
     options: RequestInit,
 ): Promise<Response> => {
-    const maxRetries = 3; // Try up to 3 different servers
+    const maxRetries = 3;
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         const serverUrl = await getNextServerUrl(type);
-        const server = SERVERS[type].find((s) => s.url === serverUrl);
-
-        if (!server) {
-            throw new Error(`Server ${serverUrl} not found for type ${type}`);
-        }
 
         try {
-            return await server.queue.add(
-                async () => {
-                    server.totalRequests++;
-                    try {
-                        const response = await fetch(
-                            `${serverUrl}/generate`,
-                            options,
-                        );
-                        if (!response.ok) {
-                            server.errors++;
+            const response = await fetch(`${serverUrl}/generate`, options);
 
-                            // Capture detailed error information
-                            let errorBody = "";
-                            try {
-                                errorBody = await response.text();
-                            } catch (_e) {
-                                errorBody =
-                                    "Could not read error response body";
-                            }
+            if (!response.ok) {
+                let errorBody = "";
+                try {
+                    errorBody = await response.text();
+                } catch {
+                    errorBody = "Could not read error response body";
+                }
 
-                            console.error(
-                                `[${type}] Server ${serverUrl} returned ${response.status}:`,
-                                {
-                                    status: response.status,
-                                    statusText: response.statusText,
-                                    headers: Object.fromEntries(
-                                        response.headers.entries(),
-                                    ),
-                                    body: errorBody.substring(0, 500), // Limit to first 500 chars
-                                },
-                            );
+                console.error(
+                    `[${type}] Server ${serverUrl} returned ${response.status}:`,
+                    {
+                        status: response.status,
+                        statusText: response.statusText,
+                        body: errorBody.substring(0, 500),
+                    },
+                );
 
-                            throw new Error(
-                                `HTTP error! status: ${response.status}, body: ${errorBody.substring(0, 200)}`,
-                            );
-                        }
-                        return response;
-                    } catch (error) {
-                        server.errors++;
-                        throw error;
-                    }
-                },
-                {
-                    // throw on timeout instead of quitely resolving to void
-                    // please check if this causes any issues @voodoohop
-                    throwOnTimeout: true,
-                },
-            );
+                throw new Error(
+                    `HTTP error! status: ${response.status}, body: ${errorBody.substring(0, 200)}`,
+                );
+            }
+
+            return response;
         } catch (error) {
             lastError = error as Error;
 
-            // Only retry on 500 errors
-            if (error.message?.includes("status: 500")) {
+            if ((error as Error).message?.includes("status: 500")) {
                 console.error(
-                    `[${type}] Attempt ${attempt + 1}/${maxRetries} failed with 500 error, trying different server...`,
+                    `[${type}] Attempt ${attempt + 1}/${maxRetries} failed with 500, trying another server...`,
                 );
                 continue;
             }
 
-            // For non-500 errors, throw immediately
             throw error;
         }
     }
 
-    // If we exhausted all retries, throw the last error
     throw lastError || new Error("All server attempts failed");
 };
 
-// Wrapper for backward compatibility
 export const fetchFromLeastBusyFluxServer = (options: RequestInit) =>
     fetchFromLeastBusyServer("flux", options);

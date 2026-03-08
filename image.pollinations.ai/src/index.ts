@@ -1,7 +1,11 @@
 import debug from "debug";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { countFluxJobs, registerServer } from "./availableServers.js";
+import {
+    countFluxJobs,
+    registerServer,
+    setServerRegistryBinding,
+} from "./availableServers.js";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -32,10 +36,13 @@ const app = new Hono();
 
 // --- Middleware ---
 
-app.use("*", cors({
-    origin: "*",
-    exposeHeaders: ["Content-Length"],
-}));
+app.use(
+    "*",
+    cors({
+        origin: "*",
+        exposeHeaders: ["Content-Length"],
+    }),
+);
 
 // Sync Cloudflare Worker env bindings to process.env.
 // NOTE: This is safe because all bindings are identical across concurrent requests
@@ -47,10 +54,13 @@ app.use("*", async (c, next) => {
             process.env[key] = value;
         }
     }
-    // Store the IMAGES binding (object, can't go through process.env)
+    // Store object bindings (can't go through process.env)
     const env = c.env as Record<string, unknown>;
     if (env.IMAGES) {
         setImagesBinding(env.IMAGES);
+    }
+    if (env.SERVER_REGISTRY) {
+        setServerRegistryBinding(env.SERVER_REGISTRY);
     }
     await next();
 });
@@ -151,7 +161,7 @@ app.post("/register", async (c) => {
     try {
         const body = await c.req.json();
         if (body.url) {
-            registerServer(body.url, body.type || "flux");
+            await registerServer(body.url, body.type || "flux");
             return c.json({
                 success: true,
                 message: "Server registered successfully",
@@ -297,7 +307,7 @@ app.get("/prompt/*", async (c) => {
             await createAndReturnImageCached(
                 prompt,
                 safeParams,
-                countFluxJobs(),
+                await countFluxJobs(),
                 originalPrompt,
                 progress,
                 requestId,
@@ -324,13 +334,29 @@ app.get("/prompt/*", async (c) => {
         let finalBuffer = buffer;
         if (!safeParams.transparent) {
             try {
-                finalBuffer = await convertToJpeg((c.env as any).IMAGES, buffer);
-                timingInfo.push({ step: "JPEG conversion", timestamp: Date.now() });
+                finalBuffer = await convertToJpeg(
+                    (c.env as any).IMAGES,
+                    buffer,
+                );
+                timingInfo.push({
+                    step: "JPEG conversion",
+                    timestamp: Date.now(),
+                });
                 // Write EXIF metadata (model name, parameters) into JPEG
-                finalBuffer = await writeExifMetadata(finalBuffer, safeParams, maturity);
-                timingInfo.push({ step: "EXIF metadata", timestamp: Date.now() });
+                finalBuffer = await writeExifMetadata(
+                    finalBuffer,
+                    safeParams,
+                    maturity,
+                );
+                timingInfo.push({
+                    step: "EXIF metadata",
+                    timestamp: Date.now(),
+                });
             } catch (err) {
-                logError("JPEG conversion/EXIF failed, using original buffer:", err);
+                logError(
+                    "JPEG conversion/EXIF failed, using original buffer:",
+                    err,
+                );
                 finalBuffer = buffer;
             }
         }

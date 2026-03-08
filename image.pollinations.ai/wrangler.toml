@@ -7,6 +7,10 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 [images]
 binding = "IMAGES"
 
+[[kv_namespaces]]
+binding = "SERVER_REGISTRY"
+id = "00187b02418d4839baa0e9c0af8dbbb0"
+
 [vars]
 # Non-secret config vars can go here
 

@@ -40,23 +40,7 @@ export default function CommunityPage() {
                 {/* Section 1 — Hero */}
                 <Title>{pageCopy.title}</Title>
                 <div className="mb-8">
-                    <p className="font-body text-base text-muted leading-relaxed">
-                        pollinations.ai is{" "}
-                        <strong className="text-dark">open source</strong> 🌍 —
-                        the code, the roadmap, the conversations.{" "}
-                        <strong className="text-dark">
-                            Contributors shape the platform directly.
-                        </strong>{" "}
-                        Your PR can{" "}
-                        <strong className="text-dark">
-                            land in production tomorrow
-                        </strong>
-                        , and starting Q2,{" "}
-                        <strong className="text-dark">
-                            every contribution earns you Pollen
-                        </strong>{" "}
-                        🏵️.
-                    </p>
+                    <Body spacing="none">{pageCopy.subtitle}</Body>
                 </div>
                 <p className="font-body text-base text-subtle mb-4">
                     <span className="font-headline text-xs font-black text-muted">

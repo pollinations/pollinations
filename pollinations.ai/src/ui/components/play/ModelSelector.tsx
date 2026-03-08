@@ -1,8 +1,10 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 import { Button } from "../ui/button";
+
+type ModelCategory = "image" | "text" | "audio" | "video";
 
 interface ModelSelectorProps {
     models: Model[];
@@ -14,10 +16,43 @@ interface ModelSelectorProps {
     allowedAudioModelIds: Set<string>;
 }
 
+const CATEGORY_GLOW: Record<ModelCategory, string> = {
+    image: "var(--primary-strong)",
+    text: "var(--secondary-strong)",
+    audio: "var(--tertiary-strong)",
+    video: "var(--accent-strong)",
+};
+
+const COLOR_VARS: Record<ModelCategory, { strong: string; light: string }> = {
+    image: {
+        strong: "rgb(var(--primary-strong))",
+        light: "rgb(var(--primary-light))",
+    },
+    text: {
+        strong: "rgb(var(--secondary-strong))",
+        light: "rgb(var(--secondary-light))",
+    },
+    audio: {
+        strong: "rgb(var(--tertiary-strong))",
+        light: "rgb(var(--tertiary-light))",
+    },
+    video: {
+        strong: "rgb(var(--accent-strong))",
+        light: "rgb(var(--accent-light))",
+    },
+};
+
+function getModelCategory(m: Model): ModelCategory {
+    if (m.hasVideoOutput) return "video";
+    if (m.hasAudioOutput || m.type === "audio") return "audio";
+    if (m.type === "image") return "image";
+    return "text";
+}
+
 /**
  * ModelSelector Component
  * Unified model selection UI used in both Create and Watch views
- * Shows image/text/audio models with color indicators
+ * Shows image/text/audio/video models with color-coded filter tabs
  * Memoized to prevent unnecessary re-renders
  */
 export const ModelSelector = memo(function ModelSelector({
@@ -29,72 +64,60 @@ export const ModelSelector = memo(function ModelSelector({
     allowedTextModelIds,
     allowedAudioModelIds,
 }: ModelSelectorProps) {
-    // Get translated copy
     const { copy } = usePageCopy(PLAY_PAGE);
+    const [activeCategory, setActiveCategory] =
+        useState<ModelCategory>("image");
+
+    const categories: { key: ModelCategory; label: string }[] = [
+        { key: "image", label: copy.imageLabel },
+        { key: "text", label: copy.textLabel },
+        { key: "audio", label: copy.audioLabel },
+        { key: "video", label: copy.videoLabel },
+    ];
+
+    const filteredModels = models.filter(
+        (m) => getModelCategory(m) === activeCategory,
+    );
 
     return (
         <div className="mb-6">
             {showLegend && (
-                <div className="flex items-center gap-4 mb-3">
-                    <div className="font-headline text-dark uppercase text-sm tracking-wider font-black">
-                        {copy.modelsLabel}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-headline uppercase tracking-wider font-black">
-                        <span className="px-2 py-0.5 bg-primary-strong/50 border border-primary-strong text-dark rounded-sm">
-                            {copy.imageLabel}
-                        </span>
-                        <span className="px-2 py-0.5 bg-secondary-strong/50 border border-secondary-strong text-dark rounded-sm">
-                            {copy.textLabel}
-                        </span>
-                        <span className="px-2 py-0.5 bg-tertiary-strong/50 border border-tertiary-strong text-dark rounded-sm">
-                            {copy.audioLabel}
-                        </span>
-                        <span className="px-2 py-0.5 bg-accent-strong/50 border border-accent-strong text-dark rounded-sm">
-                            {copy.videoLabel}
-                        </span>
-                    </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                    {categories.map(({ key, label }) => (
+                        <Button
+                            key={key}
+                            type="button"
+                            variant="toggle-glow"
+                            data-active={activeCategory === key}
+                            onClick={() => setActiveCategory(key)}
+                            className="px-2 py-1 text-sm md:px-4 md:py-2 md:text-base"
+                            style={
+                                {
+                                    "--glow": CATEGORY_GLOW[key],
+                                } as React.CSSProperties
+                            }
+                        >
+                            {label}
+                        </Button>
+                    ))}
                 </div>
             )}
             <div className="flex flex-wrap gap-2">
-                {models.map((m) => {
-                    const hasVideoOutput = m.hasVideoOutput;
-                    const hasAudioOutput = m.hasAudioOutput;
-                    const isImage = m.type === "image";
-                    const isPaidOnly = m.paid_only;
-
-                    const isAudio = m.type === "audio";
-
-                    // Priority: video > audio (by output or type) > image > text
-                    const modelType = hasVideoOutput
-                        ? "video"
-                        : hasAudioOutput || isAudio
-                          ? "audio"
-                          : isImage
-                            ? "image"
-                            : "text";
+                {filteredModels.map((m) => {
+                    const modelType = getModelCategory(m);
                     const isActive = selectedModel === m.id;
+                    const isPaidOnly = m.paid_only;
+                    const isImage = m.type === "image";
+                    const isAudio = m.type === "audio";
                     const allowedSet = isImage
                         ? allowedImageModelIds
                         : isAudio
                           ? allowedAudioModelIds
                           : allowedTextModelIds;
                     const isAllowed = allowedSet.has(m.id);
-
-                    const borderColor = hasVideoOutput
-                        ? isActive
-                            ? "rgb(var(--accent-strong))"
-                            : "rgb(var(--accent-light))"
-                        : hasAudioOutput || isAudio
-                          ? isActive
-                              ? "rgb(var(--tertiary-strong))"
-                              : "rgb(var(--tertiary-light))"
-                          : isImage
-                            ? isActive
-                                ? "rgb(var(--primary-strong))"
-                                : "rgb(var(--primary-light))"
-                            : isActive
-                              ? "rgb(var(--secondary-strong))"
-                              : "rgb(var(--secondary-light))";
+                    const borderColor = isActive
+                        ? COLOR_VARS[modelType].strong
+                        : COLOR_VARS[modelType].light;
 
                     return (
                         <div key={m.id} className="relative group">

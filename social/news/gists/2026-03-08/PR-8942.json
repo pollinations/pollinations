@@ -1,0 +1,34 @@
+{
+  "pr_number": 8942,
+  "title": "docs: update vast.ai and Sana server docs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8942",
+  "merged_at": "2026-03-08T12:19:28Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Server Cartography",
+    "blurb": "Updated our internal maps to reflect the latest server deployments, including the new Sana instances and legacy architecture.",
+    "summary": "Updated internal documentation for Vast.ai and Sana server deployments to reflect current architecture and decommissioned instances.",
+    "impact": "Maintainers now have an accurate reference for the current image generation infrastructure and legacy SSH tunnel setups.",
+    "keywords": [
+      "docs",
+      "infrastructure",
+      "sana",
+      "vast.ai",
+      "servers"
+    ],
+    "visual_concept": "The PR is about updating documentation/maps of servers. The bee (Polly) acting as a cartographer or librarian, organizing server maps or blueprints. A cozy server room or library setting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at a glowing blueprint map of servers. A chunky retro computer monitor in the background displays lime green (#ecf874) network diagrams. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-08T12:20:20.517450+00:00"
+}

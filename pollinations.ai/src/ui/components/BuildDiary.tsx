@@ -54,6 +54,10 @@ export function BuildDiary() {
     const [entryContent, setEntryContent] = useState<EntryContent | null>(null);
     const [prContent, setPrContent] = useState<PRContent | null>(null);
     const [imgError, setImgError] = useState(false);
+    // Smooth text transition state
+    const [textVisible, setTextVisible] = useState(true);
+    const [shownTitle, setShownTitle] = useState("");
+    const [shownSummary, setShownSummary] = useState("");
 
     // Responsive check
     useEffect(() => {
@@ -109,7 +113,6 @@ export function BuildDiary() {
     useEffect(() => {
         if (!autoCycling || maxY === 0) return;
         const interval = setInterval(() => {
-            // Cycle: 0 (overview) → 1 → 2 → ... → maxY → 0
             setY((prev) => (prev + 1) % (maxY + 1));
         }, 5000);
         return () => clearInterval(interval);
@@ -170,6 +173,23 @@ export function BuildDiary() {
         "name",
     );
 
+    const displayTitle = onPR
+        ? prContent?.title || LAYOUT.loadingEllipsis
+        : entryContent?.title || LAYOUT.loadingEllipsis;
+    const displaySummary = prettifiedSummary[0]?.text || rawSummary;
+
+    // Smooth text transition: fade out → swap content → fade in
+    useEffect(() => {
+        if (!displayTitle && !displaySummary) return;
+        setTextVisible(false);
+        const t = setTimeout(() => {
+            setShownTitle(displayTitle);
+            setShownSummary(displaySummary);
+            setTextVisible(true);
+        }, 180);
+        return () => clearTimeout(t);
+    }, [displayTitle, displaySummary]);
+
     // Loading state
     if (loading) {
         return (
@@ -198,7 +218,7 @@ export function BuildDiary() {
         ? `PR #${entry.prNumbers[y - 1]}`
         : `${entry.dayName} ${entry.dateLabel}`;
 
-    // Image area — crossfade between overview and PR images
+    // Image area — crossfade: new image fades in on top, old stays underneath
     const ImageBox = (
         <div className="w-full aspect-square bg-white shrink-0 relative overflow-hidden">
             {currentImageUrl && !imgError && (
@@ -207,23 +227,14 @@ export function BuildDiary() {
                     src={currentImageUrl}
                     alt={imageAlt}
                     onError={() => setImgError(true)}
-                    className="absolute inset-0 w-full h-full object-cover animate-[fade-in_0.8s_ease-in-out]"
+                    className="absolute inset-0 w-full h-full object-cover animate-[fade-in_0.7s_ease-in-out]"
                 />
             )}
         </div>
     );
 
-    // Text panel
-    const displayTitle = onPR
-        ? prContent?.title || LAYOUT.loadingEllipsis
-        : entryContent?.title || LAYOUT.loadingEllipsis;
-    const displaySummary = prettifiedSummary[0]?.text || rawSummary;
-
-    // Date heading label
-    const dateLabel =
-        entry.type === "week"
-            ? `${LAYOUT.weekLabel} ${entry.weekNum}`
-            : `${entry.dayName} \u00B7 ${entry.dateLabel}`;
+    // Date heading label — same format for both day and week entries
+    const dateLabel = `${entry.dayName} \u00B7 ${entry.dateLabel}`;
 
     const TextPanel = (
         <div
@@ -284,14 +295,14 @@ export function BuildDiary() {
 
             <div className="mb-3.5" />
 
-            {/* Title + Summary + metadata — fade on change */}
+            {/* Title + Summary + metadata — smooth fade transition */}
             <div
-                key={`content-${x}-${y}`}
-                className="animate-[fade-in_0.5s_ease-in-out]"
+                className="transition-opacity duration-200 ease-in-out"
+                style={{ opacity: textVisible ? 1 : 0 }}
             >
                 {/* Title */}
                 <div className="font-headline text-xs text-dark leading-tight mb-3 font-bold">
-                    {displayTitle}
+                    {shownTitle || displayTitle}
                 </div>
 
                 {/* Summary */}
@@ -331,7 +342,7 @@ export function BuildDiary() {
                             ),
                         }}
                     >
-                        {displaySummary}
+                        {shownSummary || rawSummary}
                     </ReactMarkdown>
                 </div>
 

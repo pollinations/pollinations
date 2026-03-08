@@ -40,6 +40,7 @@ export async function generateImage(
         height?: number;
         seed?: number;
         model?: string;
+        apiKey?: string;
     } = {},
 ): Promise<string> {
     const {
@@ -47,19 +48,19 @@ export async function generateImage(
         height = DEFAULTS.IMAGE_HEIGHT,
         seed = DEFAULTS.SEED,
         model = DEFAULTS.IMAGE_MODEL,
+        apiKey = API_KEY,
     } = options;
 
     const baseUrl = `${API.IMAGE_GENERATION}/${encodeURIComponent(prompt)}`;
-    const params = new URLSearchParams({
-        model: model || "",
-        width: width?.toString() || "",
-        height: height?.toString() || "",
-        seed: seed?.toString() || "",
-    });
+    const params = new URLSearchParams();
+    if (model) params.set("model", model);
+    if (width) params.set("width", width.toString());
+    if (height) params.set("height", height.toString());
+    if (seed != null) params.set("seed", seed.toString());
     const url = `${baseUrl}?${params.toString()}`;
 
     const response = await fetchWithRetry(url, {
-        headers: { Authorization: `Bearer ${API_KEY}` },
+        headers: { Authorization: `Bearer ${apiKey}` },
     });
 
     const blob = await response.blob();

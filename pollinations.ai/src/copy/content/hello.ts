@@ -1,10 +1,13 @@
 // HelloPage content configuration
 
 export const HELLO_PAGE = {
+    pageTitle: "Home",
+    pageDescription: "Build AI apps with easy APIs, daily grants, and community support",
     // Section 1 — Hero
     heroTitle: "Build an AI app.",
-    heroBody:
-        "One API for text, image, audio, and video. We handle the models and infrastructure. Free to start, scales with you.",
+    heroBodyPrefix: "⚡ One API for text, image, audio, and video.",
+    heroBodyBold: "We handle the models and infrastructure.",
+    heroBodySuffix: " Free to start, scales with you. 🌱",
     heroStat1: "10K",
     heroStat1Label: "weekly active devs",
     heroStat2: "1.5M",

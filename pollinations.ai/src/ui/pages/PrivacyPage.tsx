@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { PRIVACY_PAGE } from "../../copy/content/legal";
+import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 
 function PrivacyPage() {
+    useDocumentMeta(PRIVACY_PAGE.pageTitle, PRIVACY_PAGE.pageDescription);
     const [content, setContent] = useState("");
 
     useEffect(() => {

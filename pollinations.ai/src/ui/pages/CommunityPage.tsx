@@ -1,6 +1,7 @@
 import { COPY_CONSTANTS } from "../../copy/constants";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -23,6 +24,7 @@ interface VotingIssue {
 
 export default function CommunityPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(COMMUNITY_PAGE);
+    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const { translated: translatedVotingIssues } = useTranslate(
         COMMUNITY_PAGE.votingIssues as VotingIssue[],
@@ -40,7 +42,11 @@ export default function CommunityPage() {
                 {/* Section 1 — Hero */}
                 <Title>{pageCopy.title}</Title>
                 <div className="mb-8">
-                    <Body spacing="none">{pageCopy.subtitle}</Body>
+                    <Body spacing="none">
+                        {pageCopy.subtitlePrefix}{" "}
+                        <strong>{pageCopy.subtitleBold}</strong>
+                        {pageCopy.subtitleSuffix}
+                    </Body>
                 </div>
                 <p className="font-body text-base text-subtle mb-4">
                     <span className="font-headline text-xs font-black text-muted">

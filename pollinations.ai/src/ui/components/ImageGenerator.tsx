@@ -79,6 +79,7 @@ export function ImageGenerator({
             alt={alt}
             width={width}
             height={height}
+            loading="lazy"
             className={className}
             {...props}
         />

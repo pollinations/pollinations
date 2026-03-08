@@ -794,7 +794,7 @@ export function PlayGenerator({
 
             {/* Authentication */}
             <Heading
-                variant="simple"
+                variant="subsection"
                 as="h3"
                 spacing="default"
                 className="text-lg"

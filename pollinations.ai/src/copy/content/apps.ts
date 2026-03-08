@@ -25,6 +25,9 @@ export const APPS_PAGE = {
     newBadge: "🫧 FRESH",
     newTooltip: "Recently added to the ecosystem",
 
+    // GitHub link tooltip (use {name} as placeholder, replaced at render time)
+    viewOnGithub: "View {name} on GitHub",
+
     // Sort
     sortLabel: "Sort by",
 

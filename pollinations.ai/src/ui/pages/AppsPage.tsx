@@ -175,7 +175,10 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition-all max-w-[200px]"
-                            title={`View ${app.github} on GitHub`}
+                            title={copy.viewOnGithub.replace(
+                                "{name}",
+                                app.github,
+                            )}
                         >
                             <span className="text-muted">
                                 {copy.authorPrefix}
@@ -202,7 +205,10 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition-all max-w-[200px]"
-                            title={`View ${repoName} on GitHub`}
+                            title={copy.viewOnGithub.replace(
+                                "{name}",
+                                repoName,
+                            )}
                         >
                             <span className="inline-flex items-center gap-1.5 w-full">
                                 <span className="truncate flex-1 min-w-0 text-dark">

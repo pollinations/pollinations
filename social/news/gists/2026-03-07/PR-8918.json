@@ -1,0 +1,36 @@
+{
+  "pr_number": 8918,
+  "title": "fix: snap flux-2-dev dimensions to supported api.airforce sizes",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8918",
+  "merged_at": "2026-03-07T17:32:43Z",
+  "labels": [
+    "IMAGE",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Getting Flux into shape",
+    "blurb": "Fixed a bug where flux-2-dev was stubbornly only generating square images. Now it correctly snaps to beautiful landscapes and portraits!",
+    "summary": "Fixed an issue where the flux-2-dev image model ignored width and height parameters by snapping requested dimensions to the closest supported aspect ratio.",
+    "impact": "Users generating images with flux-2-dev will now correctly receive landscape and portrait aspect ratios instead of always getting 1024x1024 squares.",
+    "keywords": [
+      "flux-2-dev",
+      "image-generation",
+      "aspect-ratio",
+      "bug-fix",
+      "api"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot adjusting the size of a picture frame or canvas from a square to a rectangle, representing the fix for aspect ratios.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, stretching a square canvas into a wide landscape rectangle. A chunky pixel robot with a CRT monitor head stands nearby holding a wooden ruler. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-07/PR-8918.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-07T17:33:52.655786+00:00"
+}

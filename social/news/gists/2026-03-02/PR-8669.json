@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add The Tech Chronicle to chat",
-    "blurb": "Add The Tech Chronicle to chat",
-    "summary": "Add The Tech Chronicle to chat",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Extra, extra! The Tech Chronicle",
+    "blurb": "The Tech Chronicle just landed in our community showcase! It's a cozy digital hub featuring forums, chats, and a space to run your own mini-apps.",
+    "summary": "Added The Tech Chronicle to the community app directory, introducing a new hub with integrated forums, chat, and mini-app hosting.",
+    "impact": "The community can now explore and interact with The Tech Chronicle, discovering a new space to chat, share, and run custom mini-apps.",
+    "keywords": [
+      "community",
+      "app-showcase",
+      "chat",
+      "forum",
+      "mini-apps"
+    ],
+    "visual_concept": "A digital newspaper or tech journal theme. Polly the bee wearing a tiny newsboy cap, reading a glowing pixelated newspaper or tablet with the Monitor Robot. The paper has code and chat bubbles on it.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny newsboy cap, reading a glowing digital newspaper with the chunky monitor robot. The robot's screen displays tiny chat bubbles and code. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
     "url": null,
     "prompt": null
   },
-  "generated_at": "2026-03-02T01:23:51.576407+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T18:04:22.045725+00:00"
 }

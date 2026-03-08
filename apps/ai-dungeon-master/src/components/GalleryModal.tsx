@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { ScrollArea } from "./ui/scroll-area";
 import { X } from "lucide-react";
 
-const MEDIA_PREFIX = "https://media.pollinations.ai";
+const MEDIA_HOST = "media.pollinations.ai";
 
 interface Character {
     name: string;
@@ -43,7 +43,11 @@ const RARITY_COLORS: Record<string, string> = {
 };
 
 function isUploaded(url: string): boolean {
-    return !!url && url.startsWith(MEDIA_PREFIX);
+    try {
+        return !!url && new URL(url).hostname === MEDIA_HOST;
+    } catch {
+        return false;
+    }
 }
 
 function Placeholder() {

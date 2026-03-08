@@ -156,9 +156,13 @@ export default function App() {
       const storyHistory = gameState.storyHistory.map(e => ({ ...e }));
       const inventory = gameState.inventory.map(i => ({ ...i }));
 
+      let uploadedSceneImage = gameState.currentScene.image;
+
       if (withUpload && apiKey) {
+        const sceneUpload = uploadToMedia(gameState.currentScene.image, apiKey);
         await Promise.all([
           uploadToMedia(character.avatar, apiKey).then(url => { character.avatar = url; }),
+          sceneUpload.then(url => { uploadedSceneImage = url; }),
           ...storyHistory.map((entry, idx) =>
             uploadToMedia(entry.image, apiKey).then(url => { storyHistory[idx].image = url; })
           ),
@@ -168,17 +172,20 @@ export default function App() {
         ]);
       }
 
+      const currentScene = { ...gameState.currentScene, image: uploadedSceneImage };
+
       setGameState(prev => ({
         ...prev,
         character,
         storyHistory,
         inventory,
+        currentScene,
       }));
 
       const saveData = {
         character,
         inventory,
-        currentScene: gameState.currentScene,
+        currentScene,
         choices: gameState.choices,
         gamePhase: gameState.gamePhase,
         currentEnemy: gameState.currentEnemy,

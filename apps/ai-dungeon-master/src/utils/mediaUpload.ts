@@ -1,8 +1,13 @@
 const MEDIA_URL = "https://media.pollinations.ai";
+const MEDIA_HOST = "media.pollinations.ai";
 
 /** Check if a URL is already uploaded to media.pollinations.ai */
 function isMediaUrl(url: string): boolean {
-  return url.startsWith(MEDIA_URL);
+  try {
+    return new URL(url).hostname === MEDIA_HOST;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -45,12 +50,17 @@ export async function uploadToMedia(
  */
 export function countPendingUploads(gameState: {
   character: { avatar: string } | null;
+  currentScene: { image: string };
   storyHistory: { image: string }[];
   inventory: { image: string }[];
 }): number {
   let count = 0;
 
   if (gameState.character?.avatar && !isMediaUrl(gameState.character.avatar)) {
+    count++;
+  }
+
+  if (gameState.currentScene?.image && !isMediaUrl(gameState.currentScene.image)) {
     count++;
   }
 

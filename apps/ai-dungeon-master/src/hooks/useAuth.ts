@@ -4,6 +4,14 @@ const STORAGE_KEY = "pollinations_api_key";
 const ENTER_URL = "https://enter.pollinations.ai";
 const APP_KEY = "pk_eEwhBUcGgIODbazu";
 
+// Use sessionStorage to avoid persisting credentials beyond the browser session.
+// Fallback helper keeps read/write in one place.
+const credentialStore = {
+  get: () => sessionStorage.getItem(STORAGE_KEY),
+  set: (v: string) => sessionStorage.setItem(STORAGE_KEY, v),
+  remove: () => sessionStorage.removeItem(STORAGE_KEY),
+};
+
 /** Validates Pollinations API key format */
 const isValidApiKey = (token: string): boolean =>
   typeof token === "string" && /^(sk_|plln_pk_|pk_)/.test(token);
@@ -15,7 +23,7 @@ const isValidApiKey = (token: string): boolean =>
 export function useAuth() {
   const [apiKey, setApiKey] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem(STORAGE_KEY);
+    return credentialStore.get();
   });
 
   // On mount: parse #api_key=... from URL fragment (redirect callback)
@@ -30,7 +38,7 @@ export function useAuth() {
       const key = params.get("api_key");
 
       if (key && isValidApiKey(key)) {
-        localStorage.setItem(STORAGE_KEY, key);
+        credentialStore.set(key);
         setApiKey(key);
         // Clean the fragment from the URL
         window.history.replaceState(
@@ -55,7 +63,7 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    credentialStore.remove();
     setApiKey(null);
   }, []);
 

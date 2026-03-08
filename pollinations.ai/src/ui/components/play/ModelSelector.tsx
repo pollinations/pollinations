@@ -81,12 +81,20 @@ export const ModelSelector = memo(function ModelSelector({
                     const isAllowed = allowedSet.has(m.id);
 
                     const borderColor = hasVideoOutput
-                        ? isActive ? "rgb(var(--accent-strong))" : "rgb(var(--accent-light))"
+                        ? isActive
+                            ? "rgb(var(--accent-strong))"
+                            : "rgb(var(--accent-light))"
                         : hasAudioOutput || isAudio
-                          ? isActive ? "rgb(var(--tertiary-strong))" : "rgb(var(--tertiary-light))"
+                          ? isActive
+                              ? "rgb(var(--tertiary-strong))"
+                              : "rgb(var(--tertiary-light))"
                           : isImage
-                            ? isActive ? "rgb(var(--primary-strong))" : "rgb(var(--primary-light))"
-                            : isActive ? "rgb(var(--secondary-strong))" : "rgb(var(--secondary-light))";
+                            ? isActive
+                                ? "rgb(var(--primary-strong))"
+                                : "rgb(var(--primary-light))"
+                            : isActive
+                              ? "rgb(var(--secondary-strong))"
+                              : "rgb(var(--secondary-light))";
 
                     return (
                         <div key={m.id} className="relative group">

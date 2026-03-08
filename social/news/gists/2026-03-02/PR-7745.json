@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add baiye-ai.com to Learn",
-    "blurb": "Add baiye-ai.com to Learn",
-    "summary": "Add baiye-ai.com to Learn",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Notes from the cloud",
+    "blurb": "Baiye AI just landed in our community showcase! It's a slick cloud note-taking app that weaves AI writing and image generation right into your Markdown.",
+    "summary": "Added baiye-ai.com, a cloud-based AI note-taking application featuring Markdown support and integrated AI generation, to the community showcase.",
+    "impact": "Users can now discover Baiye AI in our apps directory and see how it leverages Pollinations for seamless AI writing and image creation.",
+    "keywords": [
+      "community",
+      "app-showcase",
+      "markdown",
+      "note-taking",
+      "baiye-ai"
+    ],
+    "visual_concept": "The PR is about a cloud-based note-taking app that uses Markdown. Visuals should include a notebook, floating cloud elements, Markdown symbols, and the Pollinations bee writing or organizing notes.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, writing in a glowing digital notebook with floating cloud elements and Markdown symbols around it. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": null,
     "prompt": null
   },
-  "generated_at": "2026-03-02T00:51:36.869475+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:52:50.764992+00:00"
 }

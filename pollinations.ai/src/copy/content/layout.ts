@@ -18,6 +18,7 @@ export const LAYOUT = {
     enterButton: "Enter",
     changeThemeTooltip: "Change theme",
     contactEmail: "hello@pollinations.ai",
+    backToTop: "↑ Top",
     loadingBuildDiary: "Loading build diary...",
     loadingEllipsis: "...",
     weekLabel: "Week",

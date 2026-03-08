@@ -38,7 +38,7 @@ export function UserMenu() {
                 variant="primary"
                 size={null}
                 onClick={login}
-                className="px-3 py-1.5 lg:px-5 lg:py-1.5 text-xs bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                className="self-start px-3 py-1.5 lg:px-5 lg:py-1.5 text-xs bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
             >
                 {copy.loginButton}
             </Button>

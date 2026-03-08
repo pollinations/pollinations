@@ -1,0 +1,283 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Pollinations nature theme — vibrant forest greens */
+:root {
+  --radius: 0.75rem;
+
+  /* Rich forest green background */
+  --background: #0f2414;
+  --foreground: rgba(220, 240, 220, 0.95);
+
+  /* Card — green-tinted glass */
+  --card: rgba(25, 70, 35, 0.35);
+  --card-foreground: rgba(220, 240, 220, 0.95);
+
+  /* Popover — deep leaf */
+  --popover: rgba(16, 45, 22, 0.97);
+  --popover-foreground: rgba(220, 240, 220, 0.95);
+
+  /* Lime primary */
+  --primary: #a3e635;
+  --primary-foreground: #0f2414;
+
+  /* Green glass surfaces */
+  --secondary: rgba(70, 140, 70, 0.16);
+  --secondary-foreground: rgba(200, 230, 200, 0.9);
+
+  --muted: rgba(70, 140, 70, 0.14);
+  --muted-foreground: rgba(190, 220, 190, 0.65);
+
+  /* Sage accent */
+  --accent: rgba(110, 190, 90, 0.18);
+  --accent-foreground: rgba(170, 240, 110, 0.95);
+
+  --destructive: #f87171;
+  --destructive-foreground: rgba(220, 240, 220, 0.95);
+
+  /* Brighter lime-green borders */
+  --border: rgba(130, 210, 80, 0.2);
+  --input: rgba(130, 210, 80, 0.2);
+  --ring: rgba(163, 230, 53, 0.4);
+
+  /* Charts */
+  --chart-1: #a3e635;
+  --chart-2: #86efac;
+  --chart-3: #fbbf24;
+  --chart-4: #c4b5fd;
+  --chart-5: #818cf8;
+
+  /* Sidebar — brighter forest */
+  --sidebar: rgba(25, 60, 30, 0.5);
+  --sidebar-foreground: rgba(190, 220, 190, 0.75);
+  --sidebar-primary: #a3e635;
+  --sidebar-primary-foreground: #0f2414;
+  --sidebar-accent: rgba(110, 190, 90, 0.2);
+  --sidebar-accent-foreground: rgba(170, 240, 110, 0.95);
+  --sidebar-border: rgba(130, 210, 80, 0.15);
+  --sidebar-ring: rgba(163, 230, 53, 0.4);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  button,
+  [role="button"],
+  [data-slot="button"] {
+    cursor: pointer;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+/* ─── Sidebar cursor & hover ────────────────────────────────────── */
+[data-sidebar="menu-button"] {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+[data-sidebar="menu-button"]:hover {
+  background: rgba(130, 210, 60, 0.2);
+  backdrop-filter: blur(12px);
+}
+[data-sidebar="menu-button"][data-active="true"] {
+  background: rgba(110, 190, 90, 0.22);
+  backdrop-filter: blur(12px);
+}
+
+/* ─── Glass cards — green glassmorphism ─────────────────────────── */
+[data-slot="card"] {
+  background: rgba(25, 70, 35, 0.35);
+  backdrop-filter: blur(16px);
+  border-color: rgba(130, 210, 80, 0.18);
+  transition: all 0.3s ease;
+}
+[data-slot="card"]:hover {
+  background: rgba(30, 80, 40, 0.4);
+  border-color: rgba(140, 220, 80, 0.28);
+  box-shadow: 0 8px 32px rgba(0, 30, 0, 0.3);
+}
+
+/* ─── Form inputs — green glass ─────────────────────────────────── */
+textarea,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+select,
+[data-slot="select-trigger"],
+[data-slot="sidebar-input"] {
+  background: rgba(35, 80, 40, 0.35) !important;
+  border-color: rgba(130, 210, 80, 0.22) !important;
+  color: rgba(220, 240, 220, 0.95) !important;
+  transition: all 0.2s ease;
+}
+textarea:focus,
+input:focus,
+select:focus,
+[data-slot="select-trigger"]:focus {
+  border-color: rgba(160, 230, 70, 0.4) !important;
+  box-shadow: 0 0 0 2px rgba(160, 230, 70, 0.12), 0 0 20px rgba(110, 190, 90, 0.1);
+  background: rgba(40, 90, 45, 0.4) !important;
+}
+textarea::placeholder,
+input::placeholder {
+  color: rgba(180, 210, 180, 0.45);
+}
+
+/* ─── Select dropdown content — green glass ─────────────────────── */
+[data-slot="select-content"] {
+  background: rgba(16, 45, 22, 0.97) !important;
+  backdrop-filter: blur(20px);
+  border-color: rgba(140, 220, 70, 0.25) !important;
+}
+[data-slot="select-item"]:focus,
+[data-slot="select-item"][data-highlighted] {
+  background: rgba(110, 190, 90, 0.2) !important;
+}
+
+/* ─── Dialog — green glass ──────────────────────────────────────── */
+[data-slot="dialog-content"] {
+  background: rgba(18, 50, 25, 0.97) !important;
+  backdrop-filter: blur(20px);
+  border-color: rgba(140, 220, 70, 0.25) !important;
+}
+
+/* ─── Command palette — green glass ─────────────────────────────── */
+[cmdk-root] {
+  background: transparent !important;
+}
+[cmdk-input] {
+  background: rgba(35, 80, 40, 0.35) !important;
+  border-color: rgba(140, 220, 70, 0.25) !important;
+  color: rgba(220, 240, 220, 0.95) !important;
+}
+[cmdk-item][data-selected="true"],
+[cmdk-item]:hover {
+  background: rgba(110, 190, 90, 0.2) !important;
+}
+
+/* ─── Primary button glow ────────────────────────────────────────── */
+[data-slot="button"][data-variant="default"] {
+  box-shadow: 0 0 16px rgba(163, 230, 53, 0.2), 0 0 40px rgba(100, 180, 80, 0.08);
+  transition: all 0.2s ease;
+}
+[data-slot="button"][data-variant="default"]:hover {
+  box-shadow: 0 0 24px rgba(163, 230, 53, 0.3), 0 0 60px rgba(100, 180, 80, 0.15);
+  transform: translateY(-1px);
+}
+
+/* ─── Ghost / outline buttons ────────────────────────────────────── */
+[data-slot="button"][data-variant="ghost"],
+[data-slot="button"][data-variant="outline"] {
+  transition: all 0.2s ease;
+}
+[data-slot="button"][data-variant="ghost"]:hover,
+[data-slot="button"][data-variant="outline"]:hover {
+  background: rgba(130, 210, 60, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+/* ─── Content area — subtle forest glow ──────────────────────────── */
+[data-slot="sidebar-inset"] > div > div {
+  background: rgba(22, 55, 28, 0.3);
+  border: 1px solid rgba(90, 170, 90, 0.12);
+}
+
+/* ─── Header border soften ───────────────────────────────────────── */
+header {
+  border-color: rgba(90, 170, 90, 0.15) !important;
+}
+
+/* ─── Accordion — nature theme ───────────────────────────────────── */
+[data-slot="accordion-item"] {
+  border-color: rgba(140, 220, 70, 0.2);
+}
+
+/* ─── Labels and form labels ─────────────────────────────────────── */
+[data-slot="label"],
+[data-slot="form-item-label"] {
+  color: rgba(170, 230, 120, 0.8);
+}
+
+/* ─── Alert inside model selector ────────────────────────────────── */
+[data-slot="select-trigger"] [data-slot="alert"] {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────── */
+@layer utilities {
+  .scrollbar-hide,
+  .scrollbar-hide *,
+  [data-slot="sidebar-inset"] [role="log"],
+  [role="log"] {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+  .scrollbar-hide::-webkit-scrollbar,
+  .scrollbar-hide *::-webkit-scrollbar,
+  [data-slot="sidebar-inset"] [role="log"]::-webkit-scrollbar,
+  [role="log"]::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  .logo-lime-tint {
+    filter: invert(1) sepia(1) saturate(5) hue-rotate(40deg) brightness(0.85);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #a3e635 0%, #86efac 50%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}

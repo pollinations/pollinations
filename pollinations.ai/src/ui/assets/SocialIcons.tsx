@@ -4,6 +4,8 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {}
 
 export const DiscordIcon: React.FC<IconProps> = (props) => (
     <svg
+        role="img"
+        aria-label="Discord"
         viewBox="0 0 24 24"
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
@@ -16,6 +18,8 @@ export const DiscordIcon: React.FC<IconProps> = (props) => (
 
 export const GithubIcon: React.FC<IconProps> = (props) => (
     <svg
+        role="img"
+        aria-label="GitHub"
         viewBox="0 0 98 96"
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
@@ -28,6 +32,8 @@ export const GithubIcon: React.FC<IconProps> = (props) => (
 
 export const InstagramIcon: React.FC<IconProps> = (props) => (
     <svg
+        role="img"
+        aria-label="Instagram"
         viewBox="0 0 24 24"
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
@@ -40,6 +46,8 @@ export const InstagramIcon: React.FC<IconProps> = (props) => (
 
 export const LinkedinIcon: React.FC<IconProps> = (props) => (
     <svg
+        role="img"
+        aria-label="LinkedIn"
         viewBox="0 0 24 24"
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
@@ -52,6 +60,8 @@ export const LinkedinIcon: React.FC<IconProps> = (props) => (
 
 export const TiktokIcon: React.FC<IconProps> = (props) => (
     <svg
+        role="img"
+        aria-label="TikTok"
         viewBox="0 0 24 24"
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
@@ -64,6 +74,8 @@ export const TiktokIcon: React.FC<IconProps> = (props) => (
 
 export const XIcon: React.FC<IconProps> = (props) => (
     <svg
+        role="img"
+        aria-label="X"
         viewBox="0 0 1200 1227"
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
@@ -76,6 +88,8 @@ export const XIcon: React.FC<IconProps> = (props) => (
 
 export const YoutubeIcon: React.FC<IconProps> = (props) => (
     <svg
+        role="img"
+        aria-label="YouTube"
         viewBox="0 0 24 24"
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
@@ -88,6 +102,8 @@ export const YoutubeIcon: React.FC<IconProps> = (props) => (
 
 export const RedditIcon: React.FC<IconProps> = (props) => (
     <svg
+        role="img"
+        aria-label="Reddit"
         viewBox="0 0 24 24"
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"

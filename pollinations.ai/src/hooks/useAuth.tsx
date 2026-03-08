@@ -129,7 +129,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const data = await response.json();
                 setBalance({ balance: data.balance });
             } catch (err) {
-                console.debug("[useAuth] Balance fetch failed:", err instanceof Error ? err.message : err);
+                console.debug(
+                    "[useAuth] Balance fetch failed:",
+                    err instanceof Error ? err.message : err,
+                );
                 setBalance(null);
             }
         };

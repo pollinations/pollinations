@@ -2,7 +2,8 @@
 
 export const HELLO_PAGE = {
     pageTitle: "Home",
-    pageDescription: "Build AI apps with easy APIs, daily grants, and community support",
+    pageDescription:
+        "Build AI apps with easy APIs, daily grants, and community support",
     // Section 1 — Hero
     heroTitle: "Build an AI app.",
     heroBodyPrefix: "⚡ One API for text, image, audio, and video.",

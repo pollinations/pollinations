@@ -2,7 +2,8 @@
 
 export const COMMUNITY_PAGE = {
     pageTitle: "Community",
-    pageDescription: "Contribute to pollinations.ai — open source, open roadmap, open community",
+    pageDescription:
+        "Contribute to pollinations.ai — open source, open roadmap, open community",
     // Section 1 — Hero
     title: "Contribute",
     subtitlePrefix:

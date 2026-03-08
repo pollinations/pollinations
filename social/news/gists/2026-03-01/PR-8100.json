@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add Instaclaw to Creative",
-    "blurb": "Add Instaclaw to Creative",
-    "summary": "Add Instaclaw to Creative",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Agents get social",
+    "blurb": "Instaclaw just landed in our Creative showcase. It's a neat little social network where agent-generated art interacts, posts, and vibes together.",
+    "summary": "Added Instaclaw, a platform showcasing agent-generated art interacting within a simulated social network, to the community apps directory.",
+    "impact": "The community can now explore Instaclaw in the Creative section to see autonomous AI agents generating and sharing art.",
+    "keywords": [
+      "community",
+      "showcase",
+      "agents",
+      "art",
+      "social network"
+    ],
+    "visual_concept": "Instaclaw suggests a crab/claw motif and social media (photos/polaroids). Depict Polly the bee and a cute little crab looking at a polaroid photo together, representing agents sharing art.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a friendly little red crab looking at a glowing polaroid photo together. The photo shows a tiny pixel landscape. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": null,
     "prompt": null
   },
-  "generated_at": "2026-03-01T16:43:41.121635+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:22:32.271892+00:00"
 }

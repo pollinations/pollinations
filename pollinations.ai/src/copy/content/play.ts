@@ -11,7 +11,7 @@ export const PLAY_PAGE_NO_TRANSLATE = new Set([
 ]);
 
 export const PLAY_PAGE = {
-    pageTitle: "Play",
+    pageTitle: "play",
     pageDescription:
         "Generate images and text with AI — try models live in the playground",
     // Page titles and navigation

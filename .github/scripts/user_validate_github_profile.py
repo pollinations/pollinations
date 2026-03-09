@@ -18,7 +18,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 
 from tqdm import tqdm
@@ -254,51 +254,25 @@ def validate_users(usernames: list[str]) -> list[dict]:
 
     # Use 3 concurrent workers to stay well under API limits
     with ThreadPoolExecutor(max_workers=3) as executor:
-        futures = {}
-        pending_batches = list(enumerate(batches))
-        active = 0
+        futures = {
+            executor.submit(fetch_batch, batch): i for i, batch in enumerate(batches)
+        }
 
-        while pending_batches or futures:
-            # Submit new batches up to max_workers
-            while pending_batches and active < 3:
-                batch_num, batch = pending_batches.pop(0)
-                future = executor.submit(fetch_batch, batch)
-                futures[future] = batch_num
-                active += 1
+        for future in as_completed(futures):
+            batch_results, rate_remaining = future.result()
+            results.extend(batch_results)
+            approved_count += sum(1 for r in batch_results if r["approved"])
+            approval_rate = 100 * approved_count / len(results)
+            progress_bar.set_postfix(
+                seed=f"{approval_rate:.0f}%", quota=rate_remaining or "?"
+            )
+            progress_bar.update(1)
 
-            # Wait for at least one to complete
-            done = set()
-            for future in futures:
-                if future.done():
-                    done.add(future)
-
-            if not done:
-                # Wait a bit for futures to complete
-                time.sleep(0.1)
-                continue
-
-            for future in done:
-                batch_results, rate_remaining = future.result()
-                results.extend(batch_results)
-                approved_count += sum(1 for r in batch_results if r["approved"])
-                approval_rate = 100 * approved_count / len(results)
-                progress_bar.set_postfix(
-                    seed=f"{approval_rate:.0f}%", quota=rate_remaining or "?"
-                )
-                progress_bar.update(1)
-                del futures[future]
-                active -= 1
-
-                # Adaptive rate limiting: go fast when quota is healthy
-                if rate_remaining is not None:
-                    if rate_remaining > 100:
-                        pass  # No sleep needed
-                    elif rate_remaining > 50:
-                        time.sleep(1)
-                    else:
-                        time.sleep(2)
-                else:
-                    time.sleep(2)  # Conservative fallback
+            # Adaptive rate limiting: go fast when quota is healthy
+            if rate_remaining is not None and rate_remaining <= 100:
+                time.sleep(1 if rate_remaining > 50 else 2)
+            elif rate_remaining is None:
+                time.sleep(2)  # Conservative fallback
 
     progress_bar.close()
     return results

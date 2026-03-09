@@ -24,6 +24,7 @@ Environment variables:
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -128,17 +129,23 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
 
 def batch_upgrade_users(
     usernames: list[str], env: str = "production"
-) -> tuple[int, int]:
-    """Upgrade users to seed tier in batch SQL. Returns (upgraded, skipped)."""
+) -> tuple[int, int, bool]:
+    """Upgrade users to seed tier in batch SQL. Returns (upgraded, skipped, failed)."""
     BATCH_SQL_SIZE = 500
     total_upgraded = 0
     total_skipped = 0
 
+    failed = False
+
     for i in range(0, len(usernames), BATCH_SQL_SIZE):
         batch = usernames[i : i + BATCH_SQL_SIZE]
-        # Escape single quotes in usernames for SQL safety
-        escaped = [u.replace("'", "''") for u in batch]
-        username_list = ", ".join(f"'{u}'" for u in escaped)
+        # Sanitize: GitHub usernames are [a-zA-Z0-9-] only
+        safe_batch = [u for u in batch if re.match(r"^[a-zA-Z0-9-]+$", u)]
+        if len(safe_batch) != len(batch):
+            print(f"   ⚠️  Skipped {len(batch) - len(safe_batch)} invalid usernames")
+        if not safe_batch:
+            continue
+        username_list = ", ".join(f"'{u}'" for u in safe_batch)
 
         # Count users that will be skipped (already at higher tier)
         count_query = f"""
@@ -152,19 +159,27 @@ def batch_upgrade_users(
         total_skipped += skipped
 
         # Batch update - only upgrade spore/microbe users
+        # tier_balance = 3.0 matches seed tier pollen (source: enter.pollinations.ai/src/tier-config.ts)
         update_query = f"""
             UPDATE user SET tier = 'seed', tier_balance = 3.0
             WHERE github_username IN ({username_list})
             AND (tier IN ('spore', 'microbe') OR tier IS NULL)
         """
-        run_d1_query(update_query, env)
-        total_upgraded += len(batch) - skipped
+        result = run_d1_query(update_query, env)
+
+        # run_d1_query returns [] on failure — detect batch failures
+        if result is not None:
+            total_upgraded += len(safe_batch) - skipped
+        else:
+            failed = True
+            print(f"   ❌ Batch {i // BATCH_SQL_SIZE + 1} failed")
+            continue
 
         print(
-            f"   Batch {i // BATCH_SQL_SIZE + 1}: {len(batch) - skipped} upgraded, {skipped} skipped (higher tier)"
+            f"   Batch {i // BATCH_SQL_SIZE + 1}: {len(safe_batch) - skipped} upgraded, {skipped} skipped (higher tier)"
         )
 
-    return total_upgraded, total_skipped
+    return total_upgraded, total_skipped, failed
 
 
 def main():
@@ -286,13 +301,15 @@ def main():
         return 0
 
     print(f"\n⬆️  Upgrading {len(approved)} users via batch SQL...")
-    upgraded, skipped = batch_upgrade_users(approved, args.env)
+    upgraded, skipped, had_failures = batch_upgrade_users(approved, args.env)
 
     print("\n📊 Results:")
     print(f"   ✅ Upgraded: {upgraded}")
     print(f"   ⏭️  Skipped (higher tier): {skipped}")
+    if had_failures:
+        print("   ❌ Some batches failed — check logs above")
 
-    return 0
+    return 1 if had_failures else 0
 
 
 if __name__ == "__main__":

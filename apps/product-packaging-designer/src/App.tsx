@@ -74,9 +74,7 @@ const packagingTypes: PackagingType[] = [
   { id: "can", label: "Can", icon: Package, prompt: "can packaging" },
 ];
 const POLLINATIONS_API = "https://image.pollinations.ai/prompt";
-const CLOUDINARY_CLOUD_NAME = "pollinations"; // Your cloud name
-const CLOUDINARY_UPLOAD_PRESET = "pollinations-image"; // Your unsigned preset
-const CLOUDINARY_API_KEY = "939386723511927"; // Cloudinary public API key
+const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_DISPLAY_SIZE = 10 * 1024 * 1024;
@@ -221,29 +219,28 @@ function App() {
       setFile(null);
     }
   };
-  const uploadToCloudinary = async (file: File): Promise<string> => {
+  const uploadToPollinationsMedia = async (file: File): Promise<string> => {
     const validation = validateFile(file, MAX_FILE_SIZE);
     if (!validation.isValid) {
       throw new Error(validation.error || "File validation failed");
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-    if (CLOUDINARY_API_KEY) {
-      formData.append("api_key", CLOUDINARY_API_KEY);
+    if (!apiKey) {
+      throw new Error("No API key available for media upload");
     }
 
+    const formData = new FormData();
+    formData.append("file", file);
+
     try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-          signal: AbortSignal.timeout(UPLOAD_TIMEOUT),
-        }
-      );
+      const response = await fetch(POLLINATIONS_MEDIA_API, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: formData,
+        signal: AbortSignal.timeout(UPLOAD_TIMEOUT),
+      });
 
       if (!response.ok) {
         let errorMessage = "Upload failed";
@@ -259,15 +256,16 @@ function App() {
       }
 
       const data = await response.json();
-      if (!data.secure_url) {
+      if (!data.url && !data.secure_url && !data.media_url) {
         throw new Error(
-          "Invalid response from Cloudinary - no secure URL received"
+          "Invalid response from Pollinations media service - no URL received"
         );
       }
 
-      return data.secure_url;
+      const mediaUrl = data.url || data.secure_url || data.media_url;
+      return mediaUrl;
     } catch (error) {
-      console.error("Cloudinary upload failed:", error);
+      console.error("Pollinations media upload failed:", error);
 
       if (error instanceof Error) {
         if (error.name === "TimeoutError") {
@@ -314,15 +312,16 @@ function App() {
     setImageLoaded(false);
 
     try {
+      
       let uploadedUrl: string = "";
 
       if (file) {
         try {
-          uploadedUrl = await uploadToCloudinary(file);
-        } catch (cloudinaryError) {
+          uploadedUrl = await uploadToPollinationsMedia(file);
+        } catch (pollinationsError) {
           console.warn(
-            "Cloudinary upload failed, using local image:",
-            cloudinaryError
+            "Pollinations media upload failed, using base64 image:",
+            pollinationsError
           );
           uploadedUrl = uploadedImage || "";
         }

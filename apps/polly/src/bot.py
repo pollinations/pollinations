@@ -4,12 +4,12 @@ import asyncio
 import base64
 import io
 import logging
-import re
 
 import aiohttp
 import discord
 from discord.ext import commands, tasks
 
+from ._re import re
 from .config import config
 from .constants import POLLINATIONS_API_BASE
 from .context import ConversationSession, session_manager
@@ -210,22 +210,27 @@ def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> li
 
 
 def suppress_url_embeds(text: str) -> str:
-    """Wrap all URLs in angle brackets to suppress Discord embed previews.
+    """Wrap bare URLs in angle brackets to suppress Discord embed previews.
 
-    Handles:
-    - Bare URLs: https://example.com -> <https://example.com>
-    - Markdown links: [text](url) -> [text](<url>)
-    - Already wrapped: <url> stays as <url>
+    Skips URLs inside code blocks (```) and inline code (`).
+    Does NOT wrap URLs inside markdown links [text](url).
     """
-    # Fix markdown links: [text](url) -> [text](<url>)
-    # Don't double-wrap if already has angle brackets
-    text = re.sub(r"\[([^\]]+)\]\((https?://[^<\)]+)(?<!>)\)", r"[\1](<\2>)", text)
+    # Split text into code and non-code segments
+    # Match fenced code blocks (```...```) and inline code (`...`)
+    code_pattern = re.compile(r"(```[\s\S]*?```|`[^`\n]+`)")
+    segments = code_pattern.split(text)
 
-    # Wrap bare URLs (not already in angle brackets, not in markdown links)
-    # Match URLs that aren't preceded by ]( or <
-    text = re.sub(r"(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])", r"<\1>", text)
+    for i, segment in enumerate(segments):
+        # Skip code segments (odd indices from split)
+        if code_pattern.match(segment):
+            continue
+        # Wrap bare URLs not already in angle brackets or markdown links
+        segment = re.sub(
+            r"(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])", r"<\1>", segment
+        )
+        segments[i] = segment
 
-    return text
+    return "".join(segments)
 
 
 def extract_media_urls(
@@ -522,25 +527,17 @@ class PollyBot(commands.Bot):
 
         # Start API server if enabled
         if config.api_enabled:
-            import uvicorn
+            from granian.server.embed import Server as GranianServer
 
             from .api.polly_api import create_api_app
 
             api_app = create_api_app(pollinations_client, config)
-            uvi_config = uvicorn.Config(
-                api_app,
-                host="127.0.0.1",
+            self._api_server = GranianServer(
+                target=api_app,
+                address="127.0.0.1",
                 port=config.api_port,
-                log_level="warning",
-                loop="none",  # Use bot's existing event loop
-                http="httptools",  # C-based HTTP parser (2-4x faster)
-                ws="none",  # No WebSocket needed
-                access_log=False,
-                server_header=False,
-                date_header=False,
-                limit_concurrency=50,
+                interface="asgi",
             )
-            self._api_server = uvicorn.Server(uvi_config)
             task = asyncio.create_task(self._api_server.serve())
             task.add_done_callback(
                 lambda t: (
@@ -560,15 +557,15 @@ class PollyBot(commands.Bot):
             ):
                 pass
             logger.info("Pre-warmed connection to gen.pollinations.ai")
-        except Exception:
-            pass  # Non-critical
+        except Exception as e:
+            logger.debug(f"Pre-warm failed (non-critical): {e}")
 
         logger.info("Bot setup complete")
 
     async def close(self):
         """Clean up resources when bot shuts down."""
         if self._api_server:
-            self._api_server.should_exit = True
+            self._api_server.stop()
             logger.info("Polly API stopped")
         self.cleanup_sessions.cancel()
         if config.doc_embeddings_enabled:
@@ -882,8 +879,6 @@ async def handle_dm_message(message: discord.Message):
     - unsubscribe all
     - list subscriptions / my subscriptions
     """
-    import re
-
     from .services.github import TOOL_HANDLERS
 
     text = message.content.strip().lower()
@@ -1384,5 +1379,5 @@ async def archive_thread(channel: discord.Thread | discord.TextChannel):
     if isinstance(channel, discord.Thread):
         try:
             await channel.edit(archived=True)
-        except discord.HTTPException:
-            pass
+        except discord.HTTPException as e:
+            logger.warning(f"Failed to archive thread {channel.id}: {e}")

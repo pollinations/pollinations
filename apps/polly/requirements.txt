@@ -1,4 +1,5 @@
 absl-py==2.4.0
+ada-url>=1.15.0
 aiofiles==25.1.0
 aiohappyeyeballs==2.6.1
 aiohttp==3.13.3
@@ -10,6 +11,7 @@ attrs==25.4.0
 backoff==2.2.1
 bcrypt==5.0.0
 beautifulsoup4==4.14.3
+cachebox>=4.0.0
 certifi==2026.1.4
 chardet==5.2.0
 charset-normalizer==3.4.4
@@ -25,6 +27,7 @@ fastapi==0.128.0
 filelock==3.20.3
 frozenlist==1.8.0
 fsspec==2026.1.0
+granian>=1.7.0
 greenlet==3.3.1
 h11==0.16.0
 httpcore==1.0.9
@@ -43,6 +46,7 @@ lxml==5.4.0
 MarkupSafe==3.0.3
 multidict==6.7.1
 openai==2.16.0
+orjson>=3.10.0
 packaging==26.0
 pillow==12.1.0
 posthog==5.4.0
@@ -70,9 +74,10 @@ tiktoken==0.12.0
 tqdm==4.67.2
 typing_extensions==4.15.0
 urllib3==2.6.3
-uvicorn==0.40.0
+uuid-utils>=0.9.0
 uvloop==0.22.1
 watchfiles==1.1.1
 websockets==16.0
+xxhash>=3.5.0
 yarl==1.22.0
 zipp==3.23.0

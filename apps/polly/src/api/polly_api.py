@@ -1,6 +1,5 @@
 import logging
 import time
-import uuid
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
@@ -8,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from .._uuid import uuid4_hex
 from ..services.pollinations import UpstreamAuthError, _auth_override
 
 logger = logging.getLogger(__name__)
@@ -194,7 +194,7 @@ def create_api_app(pollinations_client, config):
 
             return JSONResponse(
                 content={
-                    "id": f"chatcmpl-{uuid.uuid4().hex[:24]}",
+                    "id": f"chatcmpl-{uuid4_hex()[:24]}",
                     "object": "chat.completion",
                     "created": int(time.time()),
                     "model": "polly",

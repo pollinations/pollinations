@@ -21,11 +21,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://pollinations.ai/docs</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://pollinations.ai/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>

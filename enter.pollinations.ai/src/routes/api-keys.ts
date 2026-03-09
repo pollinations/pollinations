@@ -125,14 +125,21 @@ const UpdateApiKeySchema = z.object({
         .describe("Expiration date for the key. null = no expiry"),
 });
 
-/**
- * Schema for updating metadata on an API key.
- */
+/** Matches http(s), chrome-extension, and moz-extension URLs */
+const appUrlPattern =
+    /^(https?:\/\/.+|chrome-extension:\/\/[a-z]{32}|moz-extension:\/\/[0-9a-f-]{36})$/;
+
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
     keyType: z.string().optional(),
     plaintextKey: z.string().optional(),
-    appUrl: z.string().url().optional(),
+    appUrl: z
+        .string()
+        .regex(
+            appUrlPattern,
+            "Invalid URL — use https://, chrome-extension://, or moz-extension://",
+        )
+        .optional(),
 });
 
 /**

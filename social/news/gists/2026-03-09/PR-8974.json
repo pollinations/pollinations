@@ -1,0 +1,34 @@
+{
+  "pr_number": 8974,
+  "title": "feat: rebrand logos, regenerate PWA assets, add SEO meta hooks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8974",
+  "merged_at": "2026-03-09T12:47:39Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh coat of paint",
+    "blurb": "We just rolled out a shiny new branding update across the hive. Expect crisper logos, updated icons, and some under-the-hood SEO magic to help the world find us.",
+    "summary": "Updated platform branding with new logos, regenerated PWA assets, and added dynamic SEO meta hooks across the frontend.",
+    "impact": "You'll notice sharper icons and better link previews when sharing pollinations.ai, plus improved search engine visibility.",
+    "keywords": [
+      "branding",
+      "seo",
+      "pwa",
+      "assets",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee acting as an artist/painter updating the visual identity, while the Monitor Robot represents search/SEO by inspecting the new assets with a magnifying glass.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully painting a giant glowing lime green (#ecf874) pixelated logo on a canvas. The chunky monitor robot stands nearby holding a magnifying glass, looking at the fresh paint. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-09T12:48:37.219526+00:00"
+}

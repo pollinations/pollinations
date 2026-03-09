@@ -145,7 +145,7 @@ function App() {
             setTheme(savedTheme);
         }
 
-        // Check for API key in URL fragment (from redirect)
+
         const fragmentParams = new URLSearchParams(
             window.location.hash.slice(1),
         );

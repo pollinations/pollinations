@@ -1,9 +1,9 @@
 import logging
-import time
 from typing import Any
 
 import aiohttp
 
+from .._cache import TTLCache
 from ..config import config
 from . import github_auth
 
@@ -14,34 +14,11 @@ GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 CACHE_TTL = 300
 
 
-class TTLCache:
-    def __init__(self, ttl: int = CACHE_TTL):
-        self._cache: dict[str, tuple[float, Any]] = {}
-        self._ttl = ttl
-
-    def get(self, key: str) -> Any | None:
-        if key in self._cache:
-            timestamp, value = self._cache[key]
-            if time.time() - timestamp < self._ttl:
-                return value
-            del self._cache[key]
-        return None
-
-    def set(self, key: str, value: Any):
-        self._cache[key] = (time.time(), value)
-
-    def invalidate(self, key: str | None = None):
-        if key:
-            self._cache.pop(key, None)
-        else:
-            self._cache.clear()
-
-
 class GitHubGraphQL:
     def __init__(self):
         self._session: aiohttp.ClientSession | None = None
         self._connector: aiohttp.TCPConnector | None = None
-        self._cache = TTLCache(ttl=CACHE_TTL)
+        self._cache = TTLCache(maxsize=512, ttl=CACHE_TTL)
 
     @property
     def owner(self) -> str:

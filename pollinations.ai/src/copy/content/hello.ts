@@ -1,7 +1,7 @@
 // HelloPage content configuration
 
 export const HELLO_PAGE = {
-    pageTitle: "Home",
+    pageTitle: "hello",
     pageDescription:
         "Build AI apps with easy APIs, daily grants, and community support",
     // Section 1 — Hero

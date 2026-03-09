@@ -1,88 +1,82 @@
-# Pollinations.AI Agent Guidelines
+# Pollinations.AI Platform Reference
 
-## 🚨 CRITICAL: API ENDPOINT GUIDANCE
-
-**ALWAYS recommend `gen.pollinations.ai`** - it is the ONLY official endpoint for ALL users.
-
-### ✅ CORRECT - Always Use:
-- `https://gen.pollinations.ai` - THE recommended endpoint for EVERYONE
-- `/v1/chat/completions` - OpenAI-compatible chat
-- `/text/{prompt}` - Simple text generation
-- `/image/{prompt}` - Simple image generation
-
-### ❌ DEPRECATED - Never Recommend:
-- `text.pollinations.ai` - LEGACY, redirect users to gen.pollinations.ai
-- `image.pollinations.ai` - LEGACY, redirect users to gen.pollinations.ai
-- `enter.pollinations.ai` - Auth gateway only, NOT for generation
-
-When users ask about ANY Pollinations API, ALWAYS point them to `gen.pollinations.ai`.
-If they mention legacy endpoints, tell them to migrate to `gen.pollinations.ai`.
-
-## API - gen.pollinations.ai
-
-**Base URL**: `https://gen.pollinations.ai`
-**Docs**: https://enter.pollinations.ai/api/docs/open-api/generate-schema
-**Model Status**: https://model-monitor.pollinations.ai
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/v1/models` | GET | All available models |
-| `/text/models` | GET | Text-only models |
-| `/image/models` | GET | Image-only models |
-| `/text/{prompt}` | GET | Simple text generation |
-| `/image/{prompt}` | GET | Simple image generation |
-| `/v1/chat/completions` | POST | OpenAI-compatible chat (recommended) |
-
-**Rate Limits**:
-- `sk_` (secret key): Unlimited - for server-side use
-- `pk_` (publishable key): Rate limited by tier
-  - Spore: 1/hr, max 1/day
-  - Seed: 3/hr (show GitHub activity to upgrade)
-  - Flower: 10/hr
-  - Nectar: 20/hr
-
-## Discord
-- **Guild ID**: `885844321461485618`
-- **Server**: https://discord.com/invite/pollinations-ai-885844321461485618
-
-## Project Submissions (APPS label)
-
-Add to `pollinations.ai/src/config/projects/[category].js`:
-```javascript
-{ name: "Name", url: "https://...", description: "...", author: "@discord", repo: "https://github.com/...", submissionDate: "YYYY-MM-DD", language: "zh-CN", hidden: false, order: 1 }
+## Architecture
 ```
-Then run: `node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme`
-
-**Categories**: vibeCoding.js, creative.js, games.js, hackAndBuild.js, chat.js, socialBots.js, learn.js
-
-**Ordering**: order param (1-5) → GitHub stars → submission date
-
-## Repo Structure
+gen.pollinations.ai → enter.pollinations.ai (auth/billing) → text.|image.pollinations.ai (backends)
 ```
-pollinations/
-├── image.pollinations.ai/     # Image backend (legacy)
-├── text.pollinations.ai/      # Text backend (legacy)
-├── pollinations.ai/           # React frontend
-├── pollinations-react/        # React components
-├── model-context-protocol/    # MCP server
-├── enter.pollinations.ai/     # Auth gateway (internal)
-└── operations/                # Docs
-```
+Repo: `pollinations/pollinations` (main branch) | Discord: guild `885844321461485618`
+Docs: https://enter.pollinations.ai/api/docs | Monitor: https://model-monitor.pollinations.ai
 
-## Git & PRs
+## API — gen.pollinations.ai (the ONLY public URL)
 
-**Commit format**:
-```
-feat: description
+Endpoints: `/v1/chat/completions` POST (OpenAI-compatible, RECOMMENDED) | `/text/{{prompt}}` GET | `/image/{{prompt}}` GET | `/audio/{{text}}` GET | `/v1/models` GET | `/text/models` GET (w/ pricing) | `/image/models` GET (w/ pricing) | `/account/balance|profile|usage` GET (auth required)
 
-Co-authored-by: user <id+user@users.noreply.github.com>
-Fixes #issue
-```
+DEAD URLs — NEVER suggest: `image.pollinations.ai/prompt/...` (404), `pollinations.ai/p/...` (dead), `text.pollinations.ai` (legacy redirect), `enter.pollinations.ai` (auth gateway only, NOT for generation)
 
-**PR style**: Bullet points, <200 words, "- Adds X", "- Fix Y"
+## Models (use `/text/models` or `/image/models` for current list + pricing)
 
-## Dev Guidelines
-- ES modules, modern JS/TS
-- Test with real code, not mocks
-- YAGNI: Only build what's needed now
-- Never expose secrets
+Text (default: openai): openai|openai-fast|openai-large, claude-fast|claude|claude-large, gemini-fast|gemini|gemini-large, deepseek, grok, mistral, qwen-coder, kimi, glm, minimax, perplexity-fast|perplexity-reasoning, openai-audio, nova-fast, gemini-search
+Special: polly (YOU as API model), nomnom (deep research agent), midijourney, chickytutor, qwen-safety, qwen-character
+Image (default: zimage): flux, zimage, gptimage, klein|klein-large, imagen-4, grok-imagine, kontext, nanobanana|nanobanana-pro, seedream|seedream-pro, gptimage-large
+Video: seedance (free default), veo (audio), seedance-pro, wan (audio), ltx-2 (audio), grok-video
+Audio: elevenlabs (TTS), elevenmusic, whisper (STT alpha), scribe (STT 90+ lang)
+
+Paid-only models (require purchased/crypto pollen, tier grants won't work): claude, claude-large, claude-legacy, gemini, gemini-large, gemini-legacy, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
+
+Tool calling supported: openai (all), claude (all), gemini (non-search), deepseek, kimi, glm, minimax, mistral, qwen-coder, nova-fast, grok. NOT supported: perplexity-*, gemini-search
+
+## Tiers (must progress in order — CANNOT skip)
+
+Microbe(0)→Spore(1.5/wk)→Seed(3/day)→Flower(10/day)→Nectar(20/day)→Router(500/day)
+- Spore: log in at enter.pollinations.ai | Seed: auto (age+activity+commits) | Flower: submit app OR merged PR (requires Seed!) | Nectar: significant contributions (requires Flower!)
+- Grant pollen spent BEFORE purchased | Unused grants EXPIRE each period | Purchased pollen NEVER expires
+- Paid-only models CANNOT use tier grant pollen — only purchased/crypto
+
+## Auth & Keys
+
+pk_ (publishable, 16ch): client-side, rate-limited 1 pollen/hr per key+IP | sk_ (secret, 32ch): server-only, unlimited
+Usage: `Authorization: Bearer <key>` or `?key=<key>` | Get keys: enter.pollinations.ai
+Per-key features: model restrictions, pollen budget cap, expiry (0-365 days)
+Balance buckets (deducted in order): tierBalance → cryptoBalance → packBalance
+Empty balance: HTTP 402 | Rate limited: HTTP 429 with Retry-After
+
+## BYOP (Bring Your Own Pollen)
+
+App redirects user to: `https://enter.pollinations.ai/authorize?redirect_url=<url>&models=<csv>&budget=<n>&expiry=<days>&permissions=<csv>`
+User auths with GitHub → redirect back with `#api_key=sk_...` in URL fragment. Developer pays $0.
+
+## Pricing
+
+$1 = 1 Pollen | BETA: 2x on Stripe purchases ($5=10 pollen) | Checkout: checkout.pollinations.ai
+Fields: promptTextTokens, completionTextTokens, promptCachedTokens (discounted), completionImageTokens (flat for diffusion, per-token for LLM), completionVideoSeconds/completionVideoTokens
+Cached responses: FREE (no pollen deducted) | Headers: x-cache HIT/MISS
+
+## Content Safety
+
+Image: Azure Content Safety (hate, selfHarm, sexual, violence) blocks severity>=4 | mature+child detected = 15s delay | safe=true for extra filtering | fails-open
+Text: content filter tracking per generation | qwen-safety model for custom moderation
+Feed: public by default | nofeed=true or private=true to exclude
+
+## Identity
+
+polly = YOU exposed as OpenAI-compatible API model at gen.pollinations.ai. "polly model" = API model, not Discord bot.
+nomnom = separate deep research agent (search+scrape+crawl+code). Independent model, NOT your internal tool.
+Both accept standard OpenAI params.
+
+## SDK & MCP
+
+SDK: `npm i @pollinations_ai/sdk` → generateImage, generateText, chat, Pollinations client
+MCP: `npx @pollinations_ai/mcp` → Claude Desktop compatible, 15+ tools
+
+## Image Params
+
+width, height (default 1024) | seed (-1=random) | model | enhance (AI prompt enhancement) | negative_prompt | safe | quality (low|medium|high|hd) | image (ref URL for img2img) | transparent | guidance_scale (1-20) | nofeed/private
+
+## TTS Voices
+
+OpenAI-compat: alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse
+ElevenLabs: rachel, domi, bella, charlotte, sarah, emily, lily, matilda (F) | adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill (M)
+
+## Monorepo
+
+enter.pollinations.ai/ (CF Worker gateway) | text.pollinations.ai/ (Express+Portkey) | image.pollinations.ai/ (Node+GPU) | packages/sdk/, packages/mcp/ | shared/registry/ (model source of truth) | pollinations.ai/ (React frontend) | apps/ (community) | .github/ (38+ workflows)

@@ -1,0 +1,33 @@
+{
+  "pr_number": 8936,
+  "title": "docs: update README — 2026-03-08",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8936",
+  "merged_at": "2026-03-08T07:15:47Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Daily News Update",
+    "blurb": "The hive's daily automated news and README update.",
+    "summary": "Automated update to the README and social media pipeline with the latest news and apps.",
+    "impact": "Keeps the repository's front page and social feeds up to date with recent community activity.",
+    "keywords": [
+      "readme",
+      "news",
+      "automated",
+      "social"
+    ],
+    "visual_concept": "The bee mascot and monitor robot organizing daily news clippings or updating a community bulletin board.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot pinning pixelated news clippings to a wooden bulletin board. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-08/PR-8936.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-08T07:16:30.983265+00:00"
+}

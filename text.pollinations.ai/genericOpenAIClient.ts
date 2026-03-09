@@ -170,6 +170,12 @@ export async function genericOpenAIClient(
                 : originalChoice
         ) as CompletionChoice;
 
+        // Force finish_reason to "tool_calls" when tool_calls are present.
+        // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
+        if (formattedChoice.message?.tool_calls?.length) {
+            formattedChoice.finish_reason = "tool_calls";
+        }
+
         return {
             ...data,
             id: data.id || `genericopenai-${requestId}`,

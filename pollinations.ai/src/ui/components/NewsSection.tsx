@@ -53,17 +53,17 @@ export function NewsSection({
                             className="flex items-center gap-3 py-1"
                         >
                             {item.date && (
-                                <span className="shrink-0 bg-button-primary-bg text-text-on-color px-2 py-0.5 font-mono font-black text-xs rounded-tag">
+                                <span className="shrink-0 bg-dark text-white px-2 py-0.5 font-mono font-black text-xs rounded-tag">
                                     {item.date}
                                 </span>
                             )}
-                            <div className="font-body text-sm text-text-body-secondary leading-relaxed">
+                            <div className="font-body text-sm text-muted leading-relaxed">
                                 <ReactMarkdown
                                     components={{
                                         a: ({ node, ...props }) => (
                                             <a
                                                 {...props}
-                                                className="text-text-brand hover:underline font-bold"
+                                                className="text-dark hover:underline font-bold"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             />
@@ -86,7 +86,7 @@ export function NewsSection({
                                             return isInline ? (
                                                 <code
                                                     {...props}
-                                                    className="bg-input-background px-1 py-0.5 font-mono text-xs"
+                                                    className="bg-white px-1 py-0.5 font-mono text-xs"
                                                 >
                                                     {children}
                                                 </code>

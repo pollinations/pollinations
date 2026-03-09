@@ -1,10 +1,11 @@
 import hashlib
 import hmac
-import json
 import logging
 
 from aiohttp import web
 
+from .._json import dumps as _json_dumps
+from .._json import loads as _json_loads
 from ..config import config
 
 logger = logging.getLogger(__name__)
@@ -71,8 +72,8 @@ class GitHubWebhookServer:
 
         # Parse JSON
         try:
-            data = json.loads(payload)
-        except json.JSONDecodeError:
+            data = _json_loads(payload)
+        except ValueError:
             return web.json_response({"error": "Invalid JSON"}, status=400)
 
         # Check repo whitelist
@@ -404,7 +405,7 @@ Review comment:
 Respond to the reviewer's feedback.{admin_note}"""
 
         else:
-            return f"[GitHub Mention]\n{json.dumps(context, indent=2)}{admin_note}"
+            return f"[GitHub Mention]\n{_json_dumps(context, indent=2)}{admin_note}"
 
     async def _post_github_response(self, context: dict, response: str):
         """Post response back to GitHub using shared session."""

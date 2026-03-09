@@ -1,10 +1,25 @@
 // PlayPage content configuration
 
+// Keys that should never be translated (code-adjacent placeholders, API labels)
+export const PLAY_PAGE_NO_TRANSLATE = new Set([
+    "urlPlaceholderPrompt", // URL placeholder shown in code — must stay in English
+    "urlPlaceholderText", // URL placeholder shown in code — must stay in English
+    "urlApiKeyPlaceholder", // API key placeholder in code example
+    "urlApiKeyParam", // URL param name "key"
+    "imageAltGenerated", // generic alt text for generated image
+    "imageAltReferencePrefix", // "Reference " prefix in alt text
+]);
+
 export const PLAY_PAGE = {
+    pageTitle: "play",
+    pageDescription:
+        "Generate images and text with AI — try models live in the playground",
     // Page titles and navigation
     createTitle: "Create",
-    createDescription:
-        "Try any model. This is a fun demo playground—not our main product, just a place to explore and experiment.",
+    createDescriptionPrefix: "🧪 Try any model.",
+    createDescriptionBold: "This is a fun demo playground",
+    createDescriptionSuffix:
+        "—not our main product, just a place to explore and experiment. 🎨",
     pricingLinkText: "See pricing",
 
     // PlayGenerator UI labels
@@ -69,6 +84,8 @@ export const PLAY_PAGE = {
     // Gated model tooltip
     gatedModelTooltip:
         "Login to unlock · Get API keys at enter.pollinations.ai",
+    gatedModelTooltipLoggedIn:
+        "Top up your pollen balance to unlock this model · enter.pollinations.ai",
 
     // Error messages
     somethingWentWrong: "Something went wrong",
@@ -88,13 +105,13 @@ export const PLAY_PAGE = {
     authIntro:
         "API keys authenticate your requests. Create multiple keys for different apps and track usage separately.",
     publishableLabel: "Publishable",
-    publishableFeature1: "Client-side demos & prototypes",
-    publishableFeature2: "Rate limited: 1 pollen per IP per hour",
+    publishableFeature1: "🧪 Client-side demos & prototypes",
+    publishableFeature2: "⏱️ Rate limited: 1 pollen per IP per hour",
     publishableBetaWarning:
         "Beta — Turnstile protection coming soon. Not recommended for production yet.",
     secretLabel: "Secret",
-    secretFeature1: "Server-side only",
-    secretFeature2: "No rate limits",
+    secretFeature1: "🔒 Server-side only",
+    secretFeature2: "🚀 No rate limits",
     secretWarning:
         "Never expose in client-side code, git repos, or public URLs",
     byopLabel: "Bring Your Own Pollen",
@@ -102,4 +119,14 @@ export const PLAY_PAGE = {
         "Building an app? Let users pay for their own AI usage — you pay $0.",
     getKeyButton: "Get Your Key",
     byopButton: "Learn more",
+
+    // URL display — not translated (code examples)
+    urlPlaceholderPrompt: "your-prompt-here",
+    urlPlaceholderText: "your-text-here",
+    urlApiKeyPlaceholder: "YOUR_API_KEY",
+    urlApiKeyParam: "key",
+
+    // Alt text
+    imageAltGenerated: "Generated",
+    imageAltReferencePrefix: "Reference",
 };

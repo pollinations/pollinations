@@ -8,21 +8,27 @@
     "DEV-DOCS"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
+    "category": "community",
+    "user_facing": true,
     "publish_tier": "discord_only",
     "importance": "minor",
-    "headline": "fix: remove L.O.V.E entry and fix DecoyNet URLs",
-    "blurb": "fix: remove L.O.V.E entry and fix DecoyNet URLs",
-    "summary": "fix: remove L.O.V.E entry and fix DecoyNet URLs",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Pruning the garden",
+    "blurb": "We did some light weeding in the app showcase, fixing up DecoyNet's links to keep the community garden tidy and easy to navigate.",
+    "summary": "Cleaned up the community app showcase by fixing broken URLs for DecoyNet and removing an invalid entry.",
+    "impact": "Users exploring the app showcase will now be directed to the correct repository and live app for DecoyNet.",
+    "keywords": [
+      "showcase",
+      "apps",
+      "readme",
+      "cleanup",
+      "decoynet"
+    ],
+    "visual_concept": "Polly the bee doing some light gardening/weeding around a community notice board or signpost. Removing a withered leaf and adjusting a sign pointing to 'DecoyNet'.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's hat, adjusting a wooden signpost that points to different digital gardens. She is carefully pruning a small withered leaf from the sign. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-01/PR-8717.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's hat, adjusting a wooden signpost that points to different digital gardens. She is carefully pruning a small withered leaf from the sign. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-03-01T18:47:57.085277+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:47:23.408193+00:00"
 }

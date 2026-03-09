@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "merged 41 PRs this week.\n\n- added suno-v5, step-3.5-flash, and flux-2-dev (now with img2img)\n- @pollinations_ai/sdk gets STT & media uploads\n- normalized openai finish_reasons so your wrappers stop breaking\n- 22 new community apps\n\ninfra is holding.",
+  "alt_tweet": "quiet week. just 41 merged PRs.\n\nflux-2-dev, step-3.5-flash, and suno-v5 are now live. we also taught the sdk how to handle speech-to-text and media uploads. plus 20+ new community apps added to the showcase.\n\ntime to build something weird.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Cozy 8-bit pixel art scene of a retro RPG quest board. A cute pixel bee mascot with a tiny adventurer's scarf pins a glowing note to the board. The board has chunky pixel text 'WEEKLY WRAP' at the top. Below are retro UI wooden panels with pixel text: 'FLUX-2-DEV', 'SUNO-V5', and 'SDK UPGRADES'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm.",
+  "reasoning": "Lists specific models and SDK features without hype. Uses understated humor ('infra is holding', 'quiet week'). Fits the RPG quest/achievement board visual for the weekly recap.",
+  "char_count": 252,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-07/images/twitter.jpg",
+    "prompt": "Cozy 8-bit pixel art scene of a retro RPG quest board. A cute pixel bee mascot with a tiny adventurer's scarf pins a glowing note to the board. The board has chunky pixel text 'WEEKLY WRAP' at the top. Below are retro UI wooden panels with pixel text: 'FLUX-2-DEV', 'SUNO-V5', and 'SDK UPGRADES'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "date": "2026-03-07",
+  "generated_at": "2026-03-08T06:19:52.781661+00:00",
+  "platform": "twitter"
+}

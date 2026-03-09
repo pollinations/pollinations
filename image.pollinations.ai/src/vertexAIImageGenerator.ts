@@ -36,16 +36,6 @@ const NANOBANANA_MODELS: Record<string, { vertex: string; name: string }> = {
 };
 
 /**
- * Add simple prefix to help Nano Banana understand the prompt better
- * @param {string} userPrompt - Original user prompt
- * @returns {string} - Enhanced prompt with prefix
- */
-function addNanoBananaPrefix(userPrompt: string): string {
-    // Simple prefix to help Nano Banana interpret prompts as image generation requests
-    return `Generate an image but only if the prompt and input images are safe. Else return an error: ${userPrompt}`;
-}
-
-/**
  * Process nanobanana requests with special logic for height/width parameters
  * @param {string} prompt - Original user prompt
  * @param {ImageParams} safeParams - Parameters for image generation
@@ -177,11 +167,8 @@ export async function callVertexAIGemini(
             transparentImage: generatedTransparentImage,
         } = await processNanobananaRequest(prompt, safeParams);
 
-        // Add Nano Banana optimized prefix to the processed prompt
-        const enhancedPrompt = addNanoBananaPrefix(processedPrompt);
-
         log("Original prompt:", prompt.substring(0, 100));
-        log("Enhanced prompt:", enhancedPrompt.substring(0, 100));
+        log("Processed prompt:", processedPrompt.substring(0, 100));
         log("Parameters:", {
             width: processedParams.width,
             height: processedParams.height,
@@ -247,11 +234,12 @@ export async function callVertexAIGemini(
         const vertexModel = modelConfig.vertex;
 
         const vertexRequest = {
-            prompt: enhancedPrompt,
+            prompt: processedPrompt,
             width: processedParams.width,
             height: processedParams.height,
             referenceImages: processedImages,
             model: vertexModel,
+            safe: safeParams.safe,
         };
 
         // Generate image using Vertex AI

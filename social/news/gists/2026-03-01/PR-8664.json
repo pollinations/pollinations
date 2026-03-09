@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add Marid V2.0 Legal Intelligence System to bots",
-    "blurb": "Add Marid V2.0 Legal Intelligence System to bots",
-    "summary": "Add Marid V2.0 Legal Intelligence System to bots",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "The hive passes the bar",
+    "blurb": "Marid V2.0 just landed in our bot directory. It's a multi-agent legal intelligence system with a rigorous 'Honor Constraint Framework'—which means it takes the law much more seriously than we take ourselves.",
+    "summary": "Added the Marid V2.0 Legal Intelligence System, a LangGraph-driven multi-agent legal assistant, to the community bot showcase.",
+    "impact": "Users can now discover and interact with a specialized, high-fidelity legal AI agent directly from the Pollinations directory.",
+    "keywords": [
+      "community",
+      "bot",
+      "legal",
+      "agents",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee acting as a judge or lawyer. Key symbols: gavel, law books, scales of justice. The bee should be interacting with a robot or reading a legal tome in a cozy library setting.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny white judge's wig and holding a small wooden gavel, standing next to a stack of thick law books. A chunky robot with a CRT monitor head sits nearby, its screen showing a glowing scales of justice icon. Soft lime green (#ecf874) and warm lavender gradient background. Chunky retro sprites, warm lighting, lo-fi library vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-01/PR-8664.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny white judge's wig and holding a small wooden gavel, standing next to a stack of thick law books. A chunky robot with a CRT monitor head sits nearby, its screen showing a glowing scales of justice icon. Soft lime green (#ecf874) and warm lavender gradient background. Chunky retro sprites, warm lighting, lo-fi library vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-03-01T17:41:24.379473+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:39:07.573705+00:00"
 }

@@ -32,13 +32,17 @@ const SeedTooltipContent = () => (
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">Public repos</td>
+                    <td className="py-1 text-gray-600">
+                        Public repos (with code)
+                    </td>
                     <td className="py-1 text-right text-gray-800">
                         0.5pt each (max 1)
                     </td>
                 </tr>
                 <tr>
-                    <td className="py-1 text-gray-600">GitHub stars</td>
+                    <td className="py-1 text-gray-600">
+                        Stars (on repos with code)
+                    </td>
                     <td className="py-1 text-right text-gray-800">
                         0.1pt each (max 5)
                     </td>

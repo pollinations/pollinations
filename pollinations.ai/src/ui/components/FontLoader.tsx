@@ -1,12 +1,11 @@
 import { useEffect } from "react";
 import WebFont from "webfontloader";
-import { getGoogleFontFamilies } from "../../theme/style/font-catalog";
 
 export function FontLoader() {
     useEffect(() => {
         WebFont.load({
             google: {
-                families: getGoogleFontFamilies(),
+                families: ["Press Start 2P:400", "IBM Plex Mono:400,500,700"],
             },
             active: () => {
                 console.log("Fonts loaded successfully");

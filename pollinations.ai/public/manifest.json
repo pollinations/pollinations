@@ -2,7 +2,7 @@
   "name": "pollinations.ai",
   "short_name": "pollinations.ai",
   "description": "Build AI apps with easy APIs, daily grants, and community support",
-  "theme_color": "#ff6b35",
+  "theme_color": "#E8F372",
   "background_color": "#110518",
   "display": "standalone",
   "start_url": "/",
@@ -10,13 +10,13 @@
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

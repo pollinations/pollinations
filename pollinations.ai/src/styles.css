@@ -87,14 +87,8 @@ select {
 
 /* Fade in animation for new images */
 @keyframes fade-in {
-    from {
-        opacity: 0;
-        transform: translateX(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .animate-fade-in {
@@ -121,17 +115,17 @@ input[type="range"]::-webkit-slider-thumb {
     appearance: none;
     width: 20px;
     height: 20px;
-    background: var(--color-secondary);
+    background: rgb(var(--secondary-strong));
     cursor: pointer;
-    border: 2px solid var(--color-foreground);
+    border: 2px solid rgb(var(--dark));
 }
 
 input[type="range"]::-moz-range-thumb {
     width: 20px;
     height: 20px;
-    background: var(--color-secondary);
+    background: rgb(var(--secondary-strong));
     cursor: pointer;
-    border: 2px solid var(--color-foreground);
+    border: 2px solid rgb(var(--dark));
     border-radius: 0;
 }
 
@@ -144,10 +138,128 @@ input[type="range"]::-moz-range-thumb {
 
 body,
 html {
-    /* background-color: var(--surface-base);  <-- Removed to allow transparency */
+    background-color: rgb(var(--cream));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+}
+
+/* ═══════════════ SCENE BACKGROUND ═══════════════ */
+
+/* Subtle fallback gradient — visible if images fail to load */
+.bg-gradient-scene {
+    background: linear-gradient(
+        to bottom,
+        rgb(var(--secondary-light)) 0%,
+        rgb(var(--cream)) 25%,
+        rgb(var(--cream)) 100%
+    );
+}
+
+/* ═══════════════ SKY SCENE ═══════════════ */
+
+/* Sky scene — desktop */
+.scene-sky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: clamp(420px, 45vh, 900px);
+    background-image: url('/scene-sky-desktop.webp');
+    background-repeat: no-repeat;
+    background-position: center top;
+    background-size: cover;
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+}
+
+/* Sky scene — mobile */
+@media (max-width: 767px) {
+    .scene-sky {
+        height: clamp(320px, 50vh, 700px);
+        background-image: url('/scene-sky-mobile.webp');
+    }
+}
+
+/* ═══════════════ GROUND SCENE ═══════════════ */
+
+/* Ground scene — desktop */
+.scene-ground {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: clamp(420px, 38vh, 900px);
+    background-image: url('/scene-ground-desktop.webp');
+    background-size: cover;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    -webkit-mask-image: linear-gradient(to top, black 0%, black 52%, transparent 100%);
+    mask-image: linear-gradient(to top, black 0%, black 52%, transparent 100%);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+}
+
+/* Ground scene — mobile */
+@media (max-width: 767px) {
+    .scene-ground {
+        height: clamp(380px, 50vh, 800px);
+        background-image: url('/scene-ground-mobile.webp');
+    }
+}
+
+/* ═══════════════ POLLEN PARTICLES ═══════════════ */
+
+.pollen-particle {
+    position: absolute;
+    bottom: 10%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgb(var(--accent-strong));
+    box-shadow: 0 0 6px rgb(var(--accent-strong) / 0.6), 0 0 12px rgb(var(--accent-strong) / 0.3);
+    opacity: 0;
+    animation: pollenFloat linear infinite;
+}
+
+.pollen-blue {
+    width: 3px;
+    height: 3px;
+    background: rgba(200, 220, 255, 0.8);
+    box-shadow: 0 0 4px rgba(200, 220, 255, 0.5);
+}
+
+@keyframes pollenFloat {
+    0% { opacity: 0; transform: translateY(0) translateX(0) scale(0); }
+    8% { opacity: 0.7; transform: translateY(-5vh) translateX(4px) scale(1); }
+    25% { opacity: 0.5; transform: translateY(-20vh) translateX(-6px) scale(0.9); }
+    50% { opacity: 0.4; transform: translateY(-45vh) translateX(8px) scale(0.8); }
+    75% { opacity: 0.3; transform: translateY(-65vh) translateX(-4px) scale(0.7); }
+    100% { opacity: 0; transform: translateY(-85vh) translateX(2px) scale(0); }
+}
+
+/* ═══════════════ CRT OVERLAY ═══════════════ */
+
+/* Subtle CRT scanline texture */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgb(var(--dark) / 0.015) 2px,
+        rgb(var(--dark) / 0.015) 4px
+    );
 }
 
 #root {
@@ -160,6 +272,6 @@ html {
 }
 
 :focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid rgb(var(--dark));
     outline-offset: 2px;
 }

@@ -28,7 +28,7 @@ export const APP_CONFIGS = {
         themeColor: "#E8F372",
         backgroundColor: "#110518",
         iconBackground: "transparent",
-        iconColor: "#E8F372",  // accent strong — lime
+        iconColor: "#E8F372", // accent strong — lime
         seo: {
             title: "pollinations.ai",
             description:
@@ -36,7 +36,6 @@ export const APP_CONFIGS = {
             url: "https://pollinations.ai",
         },
     },
-
 };
 
 /**

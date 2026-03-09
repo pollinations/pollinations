@@ -1,0 +1,34 @@
+{
+  "pr_number": 8899,
+  "title": "feat: add abuse-detection skill",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8899",
+  "merged_at": "2026-03-09T22:33:40Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive's new bouncer",
+    "blurb": "We've taught our AI tools how to spot and sweep away bot farms automatically. That means faster generations and more resources for the real artists and tinkerers in our community!",
+    "summary": "Introduced an automated abuse-detection skill for Claude Code to identify and filter out bot farm traffic.",
+    "impact": "By efficiently managing automated spam, we're ensuring the platform remains fast, reliable, and generously available for genuine creators.",
+    "keywords": [
+      "infrastructure",
+      "security",
+      "reliability",
+      "claude-code",
+      "bot-prevention"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly gardener or bouncer protecting the servers. The Nomnom creature is helping out by eating the 'bad' requests (spam/errors) to keep the system clean.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security badge, gently sweeping away small pixelated robotic bugs from a glowing lime green (#ecf874) server rack in a lush digital garden. The round tan Nomnom creature happily eats a stack of paper labeled 'SPAM'. Soft pastel lavender and peach gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-09T22:34:47.325317+00:00"
+}

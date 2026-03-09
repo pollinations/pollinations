@@ -1,30 +1,6 @@
-"""Fast regex: regex (C PCRE2) → stdlib re fallback."""
+"""Fast regex via regex (C PCRE2)."""
 
-try:
-    import regex as re
-except ImportError:
-    import re  # type: ignore[no-redef]
+import regex as re
 
-# Re-export everything consumers need
-compile = re.compile
-sub = re.sub
-findall = re.findall
-finditer = re.finditer
-search = re.search
-match = re.match
-IGNORECASE = re.IGNORECASE
-MULTILINE = re.MULTILINE
-DOTALL = re.DOTALL
-
-__all__ = [
-    "re",
-    "compile",
-    "sub",
-    "findall",
-    "finditer",
-    "search",
-    "match",
-    "IGNORECASE",
-    "MULTILINE",
-    "DOTALL",
-]
+# Re-export the module — consumers do `from ._re import re`
+__all__ = ["re"]

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { React, useState, useEffect } from "react";
 import {
   Upload,
   Sparkles,
@@ -115,6 +115,9 @@ const validateFile = (
 
   return { isValid: true };
 };
+const APP_KEY = "pk_pollinations_packaging_designer"; // Your publishable key
+const POLLINATIONS_AUTH_URL = "https://enter.pollinations.ai/authorize";
+
 function App() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string>("minimalist");
@@ -126,13 +129,43 @@ function App() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   const [file, setFile] = useState<File | null>(null);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
+    // Load theme
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     if (savedTheme) {
       setTheme(savedTheme);
     }
+
+    // Check for API key in URL fragment (from redirect)
+    const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
+    const keyFromUrl = fragmentParams.get("api_key");
+
+    if (keyFromUrl) {
+      localStorage.setItem("pollinations_api_key", keyFromUrl);
+      setApiKey(keyFromUrl);
+      setIsAuthenticated(true);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      // Check localStorage for saved key
+      const savedKey = localStorage.getItem("pollinations_api_key");
+      if (savedKey) {
+        setApiKey(savedKey);
+        setIsAuthenticated(true);
+      }
+    }
   }, []);
+
+  const handleAuthenticate = () => {
+    const params = new URLSearchParams({
+      redirect_url: window.location.href,
+      app_key: APP_KEY,
+    });
+    window.location.href = `${POLLINATIONS_AUTH_URL}?${params}`;
+  };
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -141,6 +174,13 @@ function App() {
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Check authentication first
+    if (!isAuthenticated || !apiKey) {
+      alert("Please authenticate with Pollinations to upload images.");
+      handleAuthenticate();
+      return;
+    }
+
     const uploadedFile = event.target.files?.[0];
 
     if (!uploadedFile) {
@@ -248,6 +288,13 @@ function App() {
   };
 
   const generatePackaging = async () => {
+    // Check authentication
+    if (!isAuthenticated || !apiKey) {
+      alert("Please authenticate with Pollinations first.");
+      handleAuthenticate();
+      return;
+    }
+
     if (!uploadedImage && !file) {
       alert("Please upload an image first!");
       return;
@@ -467,28 +514,54 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
               Transform products into professional packaging mockups
             </p>
           </div>
-          <button
-            onClick={toggleTheme}
-            className={`group px-6 py-3 rounded-2xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl ${
-              isDark
-                ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:scale-105"
-                : "bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:scale-105"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {isDark ? (
-                <>
-                  <Sun className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-                  <span>Light Mode</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-5 h-5 group-hover:-rotate-12 transition-transform duration-300" />
-                  <span>Dark Mode</span>
-                </>
-              )}
-            </div>
-          </button>
+          <div className="flex gap-3">
+            {!isAuthenticated && (
+              <button
+                onClick={handleAuthenticate}
+                className={`group px-6 py-3 rounded-2xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl ${
+                  isDark
+                    ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white hover:scale-105"
+                    : "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:scale-105"
+                }`}
+              >
+                <span>Authenticate</span>
+              </button>
+            )}
+            {isAuthenticated && (
+              <div
+                className={`px-6 py-3 rounded-2xl font-medium flex items-center gap-2 ${
+                  isDark
+                    ? "bg-teal-500/20 text-teal-300 border border-teal-500/50"
+                    : "bg-teal-50 text-teal-700 border border-teal-200"
+                }`}
+              >
+                <span className="text-lg">✓</span>
+                <span>Authenticated</span>
+              </div>
+            )}
+            <button
+              onClick={toggleTheme}
+              className={`group px-6 py-3 rounded-2xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl ${
+                isDark
+                  ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:scale-105"
+                  : "bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:scale-105"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {isDark ? (
+                  <>
+                    <Sun className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                    <span>Light Mode</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-5 h-5 group-hover:-rotate-12 transition-transform duration-300" />
+                    <span>Dark Mode</span>
+                  </>
+                )}
+              </div>
+            </button>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">

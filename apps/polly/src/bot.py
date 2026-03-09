@@ -225,9 +225,7 @@ def suppress_url_embeds(text: str) -> str:
         if code_pattern.match(segment):
             continue
         # Wrap bare URLs not already in angle brackets or markdown links
-        segment = re.sub(
-            r"(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])", r"<\1>", segment
-        )
+        segment = re.sub(r"(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])", r"<\1>", segment)
         segments[i] = segment
 
     return "".join(segments)

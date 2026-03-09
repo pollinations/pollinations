@@ -20,10 +20,15 @@ export function useDocumentMeta(title: string, description?: string) {
         }
 
         // Update canonical to current page path (no query params)
-        const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+        const canonical = document.querySelector<HTMLLinkElement>(
+            'link[rel="canonical"]',
+        );
         const prevHref = canonical?.getAttribute("href") ?? null;
         if (canonical) {
-            canonical.setAttribute("href", `https://pollinations.ai${window.location.pathname}`);
+            canonical.setAttribute(
+                "href",
+                `https://pollinations.ai${window.location.pathname}`,
+            );
         }
 
         return () => {

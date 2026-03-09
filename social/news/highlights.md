@@ -1,3 +1,4 @@
+- **2026-03-09** – **⏱️ Hourly Pollen Refills** Starting March 11, tier pollen refills hourly. Spore: 0.01p/hr, Seed: 0.125p/hr, Flower: 0.4p/hr, Nectar: 0.8p/hr. Need more? Pollen packs at [enter.pollinations.ai](https://enter.pollinations.ai).
 - **2026-03-08** – **🎨 Fresh coat of pixels** The [main website](https://hello.pollinations.ai) has a new look. We replaced the old theming engine with a cohesive color palette and dynamic retro pixel art backgrounds. Much cozier.
 - **2026-03-06** – **📦 SDK Upgrades: Audio & BYOP** The hive has ears. You can now run Whisper Speech-to-Text, handle media uploads, and let users spend their own Pollen credits directly through the SDK.
 - **2026-03-06** – **🧠 Step-3.5-Flash Available** `step-3.5-flash` is now wired up and ready for chat completions via the [Unified API](https://gen.pollinations.ai).

@@ -1,7 +1,7 @@
 // CommunityPage content configuration
 
 export const COMMUNITY_PAGE = {
-    pageTitle: "Community",
+    pageTitle: "community",
     pageDescription:
         "Contribute to pollinations.ai — open source, open roadmap, open community",
     // Section 1 — Hero

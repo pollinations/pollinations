@@ -12,7 +12,7 @@ export const Header: FC<HeaderProps> = ({ children }) => {
                     <img
                         src="/logo_text_black.svg"
                         alt="pollinations.ai"
-                        className="h-12 w-full sm:w-auto object-contain object-center sm:object-left invert"
+                        className="h-12 w-full sm:w-auto object-contain object-center sm:object-left"
                     />
                     <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 text-xs">
                         <a

@@ -145,7 +145,6 @@ function App() {
             setTheme(savedTheme);
         }
 
-
         const fragmentParams = new URLSearchParams(
             window.location.hash.slice(1),
         );

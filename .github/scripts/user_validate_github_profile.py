@@ -89,9 +89,7 @@ def detect_fraud(all_nodes: list[dict], total_count: int) -> list[str]:
     # 2. Star uniformity: if 5+ starred repos share the same star count at > 60%
     #    Exclude star count of 1 (too common naturally for small legit projects)
     starred_counts = [
-        node["stargazerCount"]
-        for node in all_nodes
-        if node.get("stargazerCount", 0) > 1
+        node["stargazerCount"] for node in all_nodes if node["stargazerCount"] > 1
     ]
     if len(starred_counts) >= 5:
         counter = Counter(starred_counts)
@@ -114,7 +112,7 @@ def detect_fraud(all_nodes: list[dict], total_count: int) -> list[str]:
     return flags
 
 
-def score_user(data: dict | None, username: str, verbose: bool = False) -> dict:
+def score_user(data: dict | None, username: str) -> dict:
     """Calculate score for a single user. Returns dict with username, approved, reason."""
     if not data:
         return {

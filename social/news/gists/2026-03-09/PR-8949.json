@@ -1,0 +1,36 @@
+{
+  "pr_number": 8949,
+  "title": "fix: respect safe=false for nanobanana, replace prompt prefix with safetySettings",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8949",
+  "merged_at": "2026-03-09T16:03:54Z",
+  "labels": [
+    "IMAGE",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Taking the training wheels off nanobanana",
+    "blurb": "We fixed a bug that was being a little too overprotective with nanobanana image generation. Now, when you ask for safe=false, you actually get it—plus better image quality without those clunky prompt injections.",
+    "summary": "Fixed an issue where the safe=false parameter was ignored for nanobanana models, and replaced context-heavy prompt injections with native Vertex AI safety settings.",
+    "impact": "Users will experience fewer false-positive content blocks on creative prompts and improved overall image quality when using the nanobanana model.",
+    "keywords": [
+      "image generation",
+      "nanobanana",
+      "bug fix",
+      "api",
+      "safety settings"
+    ],
+    "visual_concept": "The PR is about removing overprotective barriers from the 'nanobanana' model. Polly the bee flipping a 'SAFE: FALSE' switch, allowing a glowing pixel-art banana to radiate creative energy without restrictions.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot flipping a chunky retro switch labeled 'SAFE: FALSE' on a glowing terminal. Next to the terminal, a glowing pixel-art banana radiates colorful, creative energy, breaking free from a small glass dome. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-09T16:04:59.053787+00:00"
+}

@@ -31,17 +31,31 @@ MAX_BATCHES = None  # Set to a number to limit batches for testing
 # Scoring config: each metric has a multiplier and max points
 # NOTE: If you update these values, also update enter.pollinations.ai/src/client/components/balance/tier-explanation.tsx
 SCORING = [
-    {"field": "age_days", "multiplier": 0.5/30, "max": 6.0},  # 0.5pt/month, max 6 (12 months)
-    {"field": "commits",  "multiplier": 0.1,    "max": 2.0},  # 0.1pt each, max 2
-    {"field": "repos",    "multiplier": 0.5,    "max": 1.0},  # 0.5pt each, max 1 (quality repos only)
-    {"field": "stars",    "multiplier": 0.1,    "max": 5.0},  # 0.1pt each, max 5 (quality repos only)
+    {
+        "field": "age_days",
+        "multiplier": 0.5 / 30,
+        "max": 6.0,
+    },  # 0.5pt/month, max 6 (12 months)
+    {"field": "commits", "multiplier": 0.1, "max": 2.0},  # 0.1pt each, max 2
+    {
+        "field": "repos",
+        "multiplier": 0.5,
+        "max": 1.0,
+    },  # 0.5pt each, max 1 (quality repos only)
+    {
+        "field": "stars",
+        "multiplier": 0.1,
+        "max": 5.0,
+    },  # 0.1pt each, max 5 (quality repos only)
 ]
 THRESHOLD = 8.0
 
 
 def build_query(usernames: list[str]) -> str:
     """Build GraphQL query for multiple users."""
-    from_date = (datetime.now(timezone.utc) - timedelta(days=90)).strftime("%Y-%m-%dT00:00:00Z")
+    from_date = (datetime.now(timezone.utc) - timedelta(days=90)).strftime(
+        "%Y-%m-%dT00:00:00Z"
+    )
     fragments = []
     for i, username in enumerate(usernames):
         safe_username = username.replace("\\", "\\\\").replace('"', '\\"')
@@ -74,7 +88,11 @@ def detect_fraud(all_nodes: list[dict], total_count: int) -> list[str]:
 
     # 2. Star uniformity: if 5+ starred repos share the same star count at > 60%
     #    Exclude star count of 1 (too common naturally for small legit projects)
-    starred_counts = [node["stargazerCount"] for node in all_nodes if node.get("stargazerCount", 0) > 1]
+    starred_counts = [
+        node["stargazerCount"]
+        for node in all_nodes
+        if node.get("stargazerCount", 0) > 1
+    ]
     if len(starred_counts) >= 5:
         counter = Counter(starred_counts)
         _, most_common_freq = counter.most_common(1)[0]
@@ -93,7 +111,12 @@ def detect_fraud(all_nodes: list[dict], total_count: int) -> list[str]:
 def score_user(data: dict | None, username: str, verbose: bool = False) -> dict:
     """Calculate score for a single user. Returns dict with username, approved, reason."""
     if not data:
-        return {"username": username, "approved": False, "reason": "User not found", "details": None}
+        return {
+            "username": username,
+            "approved": False,
+            "reason": "User not found",
+            "details": None,
+        }
 
     created = datetime.fromisoformat(data["createdAt"].replace("Z", "+00:00"))
     age_days = (datetime.now(timezone.utc) - created).days
@@ -151,7 +174,7 @@ def score_user(data: dict | None, username: str, verbose: bool = False) -> dict:
         "username": username,
         "approved": approved,
         "reason": reason,
-        "details": details
+        "details": details,
     }
 
 
@@ -210,14 +233,14 @@ def validate_users(usernames: list[str]) -> list[dict]:
         range(0, len(usernames), BATCH_SIZE),
         desc="Validating",
         unit="batch",
-        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}] {postfix}"
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}] {postfix}",
     )
 
     for batch_num, start_index in enumerate(progress_bar):
         if MAX_BATCHES and batch_num >= MAX_BATCHES:
             break
 
-        batch = usernames[start_index:start_index + BATCH_SIZE]
+        batch = usernames[start_index : start_index + BATCH_SIZE]
         batch_results = fetch_batch(batch)
         results.extend(batch_results)
 

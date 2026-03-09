@@ -142,14 +142,14 @@ function App() {
     const keyFromUrl = fragmentParams.get("api_key");
 
     if (keyFromUrl) {
-      localStorage.setItem("pollinations_api_key", keyFromUrl);
+      sessionStorage.setItem("pollinations_api_key", keyFromUrl);
       setApiKey(keyFromUrl);
       setIsAuthenticated(true);
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } else {
-      // Check localStorage for saved key
-      const savedKey = localStorage.getItem("pollinations_api_key");
+      // Check sessionStorage for saved key
+      const savedKey = sessionStorage.getItem("pollinations_api_key");
       if (savedKey) {
         setApiKey(savedKey);
         setIsAuthenticated(true);

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 /**
- * Sets document title and meta description for the current page.
+ * Sets document title, meta description, and canonical URL for the current page.
  * Resets to defaults on unmount.
  */
 export function useDocumentMeta(title: string, description?: string) {
@@ -19,10 +19,20 @@ export function useDocumentMeta(title: string, description?: string) {
             }
         }
 
+        // Update canonical to current page path (no query params)
+        const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+        const prevHref = canonical?.getAttribute("href") ?? null;
+        if (canonical) {
+            canonical.setAttribute("href", `https://pollinations.ai${window.location.pathname}`);
+        }
+
         return () => {
             document.title = prev;
             if (metaDesc && prevContent !== null) {
                 metaDesc.setAttribute("content", prevContent);
+            }
+            if (canonical && prevHref !== null) {
+                canonical.setAttribute("href", prevHref);
             }
         };
     }, [title, description]);

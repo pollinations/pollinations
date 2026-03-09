@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
-    "importance": "minor",
-    "headline": "Add AnimePollen to Creative",
-    "blurb": "Add AnimePollen to Creative",
-    "summary": "Add AnimePollen to Creative",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive goes anime",
+    "blurb": "AnimePollen has officially joined the creative showcase. Turn your text prompts into instant anime illustrations, no drawing skills required.",
+    "summary": "Added AnimePollen, a free AI anime art generator, to the community app showcase.",
+    "impact": "Users can now discover and use AnimePollen directly from the creative directory to generate anime-style illustrations.",
+    "keywords": [
+      "anime",
+      "art",
+      "generator",
+      "community",
+      "showcase"
+    ],
+    "visual_concept": "The PR is about an anime art generator. Visuals: The Pollinations bee (Polly) interacting with anime tropes (cherry blossoms, magical girl bow) while generating art on a retro monitor.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny magical girl bow, looking at a retro computer monitor displaying a pixelated anime landscape. The monitor glows with soft lime green (#ecf874). Soft pastel pink and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-01/PR-8157.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny magical girl bow, looking at a retro computer monitor displaying a pixelated anime landscape. The monitor glows with soft lime green (#ecf874). Soft pastel pink and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-03-01T17:36:08.556250+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:23:37.495597+00:00"
 }

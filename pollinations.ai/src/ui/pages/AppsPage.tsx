@@ -26,7 +26,10 @@ import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
 function getGitHubUsername(s: string) {
-    return s ? s.replace(/^@/, "") : null;
+    // GitHub usernames in APPS.md are prefixed with @
+    // Bare strings without @ (e.g. "telegram", "web") are platform values, not usernames
+    if (!s || !s.startsWith("@")) return null;
+    return s.replace(/^@/, "");
 }
 
 function getRepoName(url: string) {
@@ -433,12 +436,8 @@ export default function AppsPage() {
 
                     {/* App Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                        {displayApps.map((app, i) => (
-                            <AppCard
-                                key={`${app.name}-${i}`}
-                                app={app}
-                                copy={pageCopy}
-                            />
+                        {displayApps.map((app) => (
+                            <AppCard key={app.name} app={app} copy={pageCopy} />
                         ))}
                     </div>
 

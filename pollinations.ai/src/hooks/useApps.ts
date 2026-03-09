@@ -31,24 +31,41 @@ interface UseAppsReturn {
 }
 
 /**
- * Parse apps from markdown table
+ * Known platform values used to detect shifted columns in rows
+ * where a Platform column exists but the header doesn't declare it.
  */
-function parseAppsMarkdown(markdown: string): App[] {
-    const lines = markdown.split("\n");
+const KNOWN_PLATFORMS = new Set([
+    "web",
+    "android",
+    "ios",
+    "windows",
+    "macos",
+    "desktop",
+    "cli",
+    "discord",
+    "telegram",
+    "whatsapp",
+    "library",
+    "browser-ext",
+    "roblox",
+    "wordpress",
+    "api",
+]);
+
+/**
+ * Parse a single table section (header + separator + data rows).
+ * Returns parsed apps for that section.
+ */
+function parseTableSection(headerLine: string, dataRows: string[]): App[] {
     const apps: App[] = [];
 
-    const headerIdx = lines.findIndex((l) => l.startsWith("| Emoji"));
-    if (headerIdx === -1) return apps;
-
-    // Parse header to get column positions — works with both old and new APPS.md formats
-    const headerCols = lines[headerIdx].split("|").map((c) => c.trim());
+    const headerCols = headerLine.split("|").map((c) => c.trim());
     headerCols.shift();
     headerCols.pop();
     const ci = (name: string) => headerCols.indexOf(name);
 
-    const dataRows = lines
-        .slice(headerIdx + 2)
-        .filter((l) => l.startsWith("|"));
+    const hasPlatformCol = ci("Platform") >= 0;
+    const githubColIdx = ci("GitHub_Username");
 
     for (const row of dataRows) {
         const cols = row.split("|").map((c) => c.trim());
@@ -57,32 +74,45 @@ function parseAppsMarkdown(markdown: string): App[] {
 
         if (cols.length < 15) continue;
 
-        const name = cols[ci("Name")];
-        let url = cols[ci("Web_URL")];
-        const description = cols[ci("Description")];
-        const language = cols[ci("Language")];
-        const category = (cols[ci("Category")] || "").toLowerCase();
-        const platform = cols[ci("Platform")] || "";
-        const github = cols[ci("GitHub_Username")];
-        const githubId = cols[ci("GitHub_UserID")];
-        const repo = cols[ci("Github_Repository_URL")];
-        const starsCol = cols[ci("Github_Repository_Stars")];
-        const discord = cols[ci("Discord_Username")];
-        const other = cols[ci("Other")];
-        const date = cols[ci("Submitted_Date")];
-        const approvedDate = cols[ci("Approved_Date")] || "";
-        const byopIdx = ci("BYOP");
-        const byop =
-            byopIdx >= 0 && cols.length > byopIdx
-                ? cols[byopIdx] === "true"
-                : false;
-        const req24hIdx = ci("Requests_24h");
-        const requests24h =
-            req24hIdx >= 0 && cols.length > req24hIdx
-                ? parseInt(cols[req24hIdx], 10) || 0
-                : 0;
+        // Detect rows with an extra Platform column when the header doesn't have one.
+        // If the value at the GitHub_Username position is a known platform value
+        // (not starting with @), the row has an extra column shifted in.
+        let platform = "";
+        let offset = 0;
+        if (
+            !hasPlatformCol &&
+            githubColIdx >= 0 &&
+            KNOWN_PLATFORMS.has(cols[githubColIdx]?.toLowerCase())
+        ) {
+            platform = cols[githubColIdx].toLowerCase();
+            offset = 1;
+        } else if (hasPlatformCol) {
+            platform = (cols[ci("Platform")] || "").toLowerCase();
+        }
 
-        // If no web URL but there's a repo, use repo as URL (fallback for repo-only apps)
+        const col = (name: string) => {
+            const idx = ci(name);
+            if (idx < 0) return "";
+            // Apply offset for columns after the injected Platform column
+            return cols[idx + (idx >= githubColIdx ? offset : 0)] || "";
+        };
+
+        const name = col("Name");
+        let url = col("Web_URL");
+        const description = col("Description");
+        const language = col("Language");
+        const category = col("Category").toLowerCase();
+        const github = col("GitHub_Username");
+        const githubId = col("GitHub_UserID");
+        const repo = col("Github_Repository_URL");
+        const starsCol = col("Github_Repository_Stars");
+        const discord = col("Discord_Username");
+        const other = col("Other");
+        const date = col("Submitted_Date");
+        const approvedDate = col("Approved_Date");
+        const byop = col("BYOP") === "true";
+        const requests24h = parseInt(col("Requests_24h"), 10) || 0;
+
         if (!url && repo) {
             url = repo;
         }
@@ -117,6 +147,44 @@ function parseAppsMarkdown(markdown: string): App[] {
     }
 
     return apps;
+}
+
+/**
+ * Parse apps from markdown table.
+ * Handles multiple table sections (different headers) and deduplicates by name.
+ */
+function parseAppsMarkdown(markdown: string): App[] {
+    const lines = markdown.split("\n");
+
+    // Find all header rows — APPS.md may contain multiple table sections
+    const headerIndices: number[] = [];
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith("| Emoji")) {
+            headerIndices.push(i);
+        }
+    }
+    if (headerIndices.length === 0) return [];
+
+    const allApps: App[] = [];
+
+    for (let h = 0; h < headerIndices.length; h++) {
+        const headerIdx = headerIndices[h];
+        const nextHeaderIdx = headerIndices[h + 1] ?? lines.length;
+        const dataRows = lines
+            .slice(headerIdx + 2, nextHeaderIdx)
+            .filter((l) => l.startsWith("|") && !l.startsWith("| ---"));
+
+        allApps.push(...parseTableSection(lines[headerIdx], dataRows));
+    }
+
+    // Deduplicate by name — keep first occurrence (newest, since APPS.md is newest-first)
+    const seen = new Set<string>();
+    return allApps.filter((app) => {
+        const key = app.name.toLowerCase().trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }
 
 /**

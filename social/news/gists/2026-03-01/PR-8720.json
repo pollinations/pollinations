@@ -8,21 +8,27 @@
     "DEV-FEATURE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
-    "importance": "minor",
-    "headline": "Add ComfyUI-Pollinations-BYOP to build",
-    "blurb": "Add ComfyUI-Pollinations-BYOP to build",
-    "summary": "Add ComfyUI-Pollinations-BYOP to build",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "ComfyUI joins the hive",
+    "blurb": "We've officially added the ComfyUI-Pollinations-BYOP integration to our ecosystem! Now you can plug our image, video, text, and audio generation directly into your ComfyUI workflows.",
+    "summary": "Added a new ComfyUI integration featuring four dedicated nodes for image, video, text, and audio generation with native API key management.",
+    "impact": "Creators can now seamlessly weave Pollinations.ai's multi-modal generation capabilities directly into their custom ComfyUI node workflows.",
+    "keywords": [
+      "comfyui",
+      "integration",
+      "byop",
+      "nodes",
+      "workflow"
+    ],
+    "visual_concept": "ComfyUI is known for its node-based graph interface. The visual should feature Polly the bee flying around connecting colorful wires between chunky pixel-art nodes or boxes, representing the new ComfyUI integration.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot happily connecting glowing pastel wires between chunky retro computer nodes in a cozy garden workshop. A cute chunky robot with a CRT monitor head watches excitedly. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-01/PR-8720.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot happily connecting glowing pastel wires between chunky retro computer nodes in a cozy garden workshop. A cute chunky robot with a CRT monitor head watches excitedly. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
-  "generated_at": "2026-03-01T18:57:39.288567+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:48:37.466962+00:00"
 }

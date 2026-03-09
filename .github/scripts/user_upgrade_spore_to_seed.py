@@ -19,7 +19,6 @@ Environment variables:
     GITHUB_TOKEN           - Required for GitHub API
     CLOUDFLARE_API_TOKEN   - Required for wrangler D1 access
     CLOUDFLARE_ACCOUNT_ID  - Required for wrangler D1 access
-    POLAR_ACCESS_TOKEN     - Required for Polar subscription updates
 """
 
 import argparse
@@ -27,13 +26,9 @@ import json
 import os
 import subprocess
 import sys
-import time
 from datetime import datetime, timezone
 
 from user_validate_github_profile import validate_users
-
-# Polar rate limit: 100 requests/minute, so ~0.6s delay minimum
-POLAR_DELAY_SECONDS = 1.0
 
 # Max users to process per run (stay well under 1000 point/hour GitHub API limit)
 # With repos(first:10), each batch of 50 costs ~6 points, so 166 batches = 8,300 users
@@ -131,54 +126,45 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
     return new_users, slice_users, total_old
 
 
-def upgrade_user(username: str, env: str = "production") -> bool:
-    """Upgrade a single user to seed tier via tsx script."""
-    cmd = [
-        "npx",
-        "tsx",
-        "scripts/tier-update-user.ts",
-        "update-tier",
-        "--githubUsername",
-        username,
-        "--tier",
-        "seed",
-        "--env",
-        env,
-    ]
+def batch_upgrade_users(
+    usernames: list[str], env: str = "production"
+) -> tuple[int, int]:
+    """Upgrade users to seed tier in batch SQL. Returns (upgraded, skipped)."""
+    BATCH_SQL_SIZE = 500
+    total_upgraded = 0
+    total_skipped = 0
 
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            cwd=os.path.join(os.path.dirname(__file__), "../../enter.pollinations.ai"),
-            timeout=120,
+    for i in range(0, len(usernames), BATCH_SQL_SIZE):
+        batch = usernames[i : i + BATCH_SQL_SIZE]
+        # Escape single quotes in usernames for SQL safety
+        escaped = [u.replace("'", "''") for u in batch]
+        username_list = ", ".join(f"'{u}'" for u in escaped)
+
+        # Count users that will be skipped (already at higher tier)
+        count_query = f"""
+            SELECT COUNT(*) as count FROM user
+            WHERE github_username IN ({username_list})
+            AND tier NOT IN ('spore', 'microbe')
+            AND tier IS NOT NULL
+        """
+        skip_results = run_d1_query(count_query, env)
+        skipped = skip_results[0]["count"] if skip_results else 0
+        total_skipped += skipped
+
+        # Batch update - only upgrade spore/microbe users
+        update_query = f"""
+            UPDATE user SET tier = 'seed', tier_balance = 3.0
+            WHERE github_username IN ({username_list})
+            AND (tier IN ('spore', 'microbe') OR tier IS NULL)
+        """
+        run_d1_query(update_query, env)
+        total_upgraded += len(batch) - skipped
+
+        print(
+            f"   Batch {i // BATCH_SQL_SIZE + 1}: {len(batch) - skipped} upgraded, {skipped} skipped (higher tier)"
         )
 
-        # Check for skip (user already at higher tier)
-        if "SKIP_UPGRADE=true" in result.stdout:
-            print(f"   ⏭️  {username}: already at higher tier")
-            return True
-
-        if result.returncode == 0:
-            print(f"   ✅ {username}: upgraded to seed")
-            if result.stdout.strip():
-                for line in result.stdout.strip().split("\n"):
-                    print(f"      {line}")
-            return True
-
-        print(f"   ❌ {username}: failed")
-        if result.stdout.strip():
-            for line in result.stdout.strip().split("\n"):
-                print(f"      {line}")
-        if result.stderr.strip():
-            for line in result.stderr.strip().split("\n"):
-                print(f"      {line}", file=sys.stderr)
-        return False
-
-    except subprocess.TimeoutExpired:
-        print(f"   ❌ {username}: upgrade timed out", file=sys.stderr)
-        return False
+    return total_upgraded, total_skipped
 
 
 def main():
@@ -299,24 +285,14 @@ def main():
             print(f"   ... and {len(approved) - 20} more")
         return 0
 
-    print(f"\n⬆️  Upgrading {len(approved)} users...")
-    success = 0
-    failed = 0
-
-    for i, username in enumerate(approved):
-        if upgrade_user(username, args.env):
-            success += 1
-        else:
-            failed += 1
-        # Rate limit for Polar API
-        if i < len(approved) - 1:
-            time.sleep(POLAR_DELAY_SECONDS)
+    print(f"\n⬆️  Upgrading {len(approved)} users via batch SQL...")
+    upgraded, skipped = batch_upgrade_users(approved, args.env)
 
     print("\n📊 Results:")
-    print(f"   ✅ Upgraded: {success}")
-    print(f"   ❌ Failed: {failed}")
+    print(f"   ✅ Upgraded: {upgraded}")
+    print(f"   ⏭️  Skipped (higher tier): {skipped}")
 
-    return 0 if failed == 0 else 1
+    return 0
 
 
 if __name__ == "__main__":

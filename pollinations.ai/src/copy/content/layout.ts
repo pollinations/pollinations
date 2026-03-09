@@ -8,11 +8,11 @@ export const LAYOUT_NO_TRANSLATE = new Set([
 
 export const LAYOUT = {
     // Navigation tabs
-    navHello: "Hello",
-    navPlay: "Play",
-    navDocs: "Docs",
-    navApps: "Apps",
-    navCommunity: "Community",
+    navHello: "hello",
+    navPlay: "play",
+    navDocs: "docs",
+    navApps: "apps",
+    navCommunity: "community",
 
     // Header
     enterButton: "Enter",

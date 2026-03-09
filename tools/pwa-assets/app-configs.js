@@ -8,10 +8,11 @@ export const APP_CONFIGS = {
         name: "enter.pollinations.ai",
         outputDir: "enter.pollinations.ai/public",
         sourceSvg: "../../assets/logo.svg",
-        ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#5b2dd8",
+        ogSourceSvg: "../../assets/logo-text-black.svg",
+        themeColor: "#D1FAE4",
         backgroundColor: "#110518",
         iconBackground: "transparent",
+        iconColor: "#D1FAE4",
         seo: {
             title: "pollinations.ai - beta",
             description: "Developer console for APIs, pollen grants, and usage",
@@ -23,10 +24,11 @@ export const APP_CONFIGS = {
         name: "pollinations.ai",
         outputDir: "pollinations.ai/public",
         sourceSvg: "../../assets/logo.svg",
-        ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#ff6b35",
+        ogSourceSvg: "../../assets/logo-text-white.svg",
+        themeColor: "#E8F372",
         backgroundColor: "#110518",
         iconBackground: "transparent",
+        iconColor: "#E8F372", // accent strong — lime
         seo: {
             title: "pollinations.ai",
             description:
@@ -34,57 +36,4 @@ export const APP_CONFIGS = {
             url: "https://pollinations.ai",
         },
     },
-
-    chat: {
-        name: "chat.pollinations.ai",
-        outputDir: "apps/chat/public",
-        sourceSvg: "../../assets/logo.svg",
-        ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#e7faec",
-        backgroundColor: "#110518",
-        iconBackground: "transparent",
-        seo: {
-            title: "chat.pollinations.ai",
-            description:
-                "AI chat interface powered by pollinations.ai - Multi-model conversations with open source AI",
-            url: "https://chat.pollinations.ai",
-        },
-    },
-
-    gsoc: {
-        name: "gsoc.pollinations.ai",
-        outputDir: "apps/gsoc/public",
-        sourceSvg: "../../assets/logo.svg",
-        ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#a3e635",
-        backgroundColor: "#a3e635",
-        iconBackground: "transparent",
-        seo: {
-            title: "GSoC 2026 × pollinations.ai",
-            description:
-                "Join Google Summer of Code 2026 with pollinations.ai! Work on cutting-edge open-source AI projects and build the future of generative AI.",
-            url: "https://gsoc.pollinations.ai",
-        },
-    },
 };
-
-/**
- * Helper to resolve background color
- * Supports: 'transparent', hex colors, or {r, g, b, alpha} objects
- */
-export function resolveBackground(bgConfig) {
-    if (bgConfig === "transparent") {
-        return { r: 0, g: 0, b: 0, alpha: 0 };
-    }
-
-    if (typeof bgConfig === "string" && bgConfig.startsWith("#")) {
-        // Convert hex to RGB
-        const hex = bgConfig.replace("#", "");
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-        return { r, g, b, alpha: 1 };
-    }
-
-    return bgConfig;
-}

@@ -27,20 +27,20 @@ Style guide:
 - **Bold** the hook or key feature (1-2 bold phrases max)
 - *Italic* for attitude or vibe words
 - Use \`inline code\` for tech terms, model names, or tools
-- Use markdown line breaks and short bullet lists to spread across 2-4 lines
-- Aim for 20–30 words — let it breathe across multiple lines
+- ALWAYS use 2-3 short bullet points (- ) to spread the description across multiple lines
+- Aim for 20–30 words total — let it breathe
 - Zine energy: raw, direct, no corporate fluff
 - Same meaning, more personality
-- End with ONE emoji — place it at the very end of the description, not the start
-- CRITICAL: each entry has a [title: X] tag — you MUST use a DIFFERENT emoji than X. NEVER repeat the title emoji. For example if [title: 🧩] then do NOT end with 🧩, pick something related but different like 🎯 or 🔀
-- No emoji anywhere else — only at the end
+- End with ONE emoji on the last bullet — at the very end, not the start
+- No emoji anywhere else — only at the end of the last bullet
 
 Example format:
 1. **Paint with AI** — *your canvas, infinite.*
 - Drop a prompt, get art. \`Flux\` models, real-time preview.
 - Remix, iterate, share. 🖌️
 2. **Chat without limits.**
-Build convos with \`GPT\`, \`Claude\`, and more — *zero config, pure signal.* 💬`;
+- Build convos with \`GPT\`, \`Claude\`, and more.
+- *Zero config, pure signal.* 💬`;
 
 const BATCH_SIZE = 20;
 
@@ -113,7 +113,7 @@ function parseNumberedEntries(
                 if (current.length > 0) {
                     entries.push(current.join("\n"));
                 }
-                current = [line.replace(/^\d+\.\s*/, "").trim()];
+                current = [line.replace(/^\d+\.\s*/, "").replace(/^\[title:\s*[^\]]*\]\s*/, "").trim()];
             } else if (current.length > 0) {
                 current.push(line);
             }

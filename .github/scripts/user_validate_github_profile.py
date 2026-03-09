@@ -100,10 +100,16 @@ def detect_fraud(all_nodes: list[dict], total_count: int) -> list[str]:
             flags.append("star_uniformity")
 
     # 3. Empty repo dominance: >= 5 fetched repos, > 80% empty, totalCount > 20
+    quality_count = sum(1 for node in all_nodes if node.get("diskUsage", 0) > 0)
     if len(all_nodes) >= 5:
-        empty_count = sum(1 for node in all_nodes if node.get("diskUsage", 0) == 0)
+        empty_count = len(all_nodes) - quality_count
         if empty_count / len(all_nodes) > 0.8 and total_count > 20:
             flags.append("empty_repo_dominance")
+
+    # 4. Repo quality gap: many total repos but almost none with code
+    #    Catches gaming even when empty repos don't appear in top-by-stars
+    if total_count > 20 and quality_count < 3:
+        flags.append("repo_quality_gap")
 
     return flags
 

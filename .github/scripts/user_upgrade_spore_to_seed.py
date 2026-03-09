@@ -36,7 +36,7 @@ from user_validate_github_profile import validate_users
 MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
 
 
-def run_d1_query(query: str, env: str = "production") -> list[dict]:
+def run_d1_query(query: str, env: str = "production") -> list[dict] | None:
     """Run a D1 query and return results."""
     cmd = [
         "npx",
@@ -63,17 +63,17 @@ def run_d1_query(query: str, env: str = "production") -> list[dict]:
 
         if result.returncode != 0:
             print(f"❌ D1 query failed: {result.stderr}", file=sys.stderr)
-            return []
+            return None
 
         data = json.loads(result.stdout)
         return data[0].get("results", [])
 
     except subprocess.TimeoutExpired:
         print("❌ D1 query timed out", file=sys.stderr)
-        return []
+        return None
     except (json.JSONDecodeError, KeyError, IndexError) as e:
         print(f"❌ Failed to parse D1 response: {e}", file=sys.stderr)
-        return []
+        return None
 
 
 def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], int]:
@@ -97,7 +97,7 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
         AND created_at > {yesterday}
     """
     new_results = run_d1_query(new_query, env)
-    new_users = [r["github_username"] for r in new_results]
+    new_users = [r["github_username"] for r in new_results] if new_results else []
 
     # Count total older users
     count_query = f"""
@@ -122,7 +122,7 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
         LIMIT {slice_size} OFFSET {offset}
     """
     slice_results = run_d1_query(slice_query, env)
-    slice_users = [r["github_username"] for r in slice_results]
+    slice_users = [r["github_username"] for r in slice_results] if slice_results else []
 
     return new_users, slice_users, total_old
 
@@ -167,7 +167,7 @@ def batch_upgrade_users(
         """
         result = run_d1_query(update_query, env)
 
-        # run_d1_query returns [] on failure — detect batch failures
+        # run_d1_query returns None on failure
         if result is not None:
             total_upgraded += len(safe_batch) - skipped
         else:

@@ -24,7 +24,7 @@ export const APP_CONFIGS = {
         name: "pollinations.ai",
         outputDir: "pollinations.ai/public",
         sourceSvg: "../../assets/logo.svg",
-        ogSourceSvg: "../../assets/logo-text.svg",
+        ogSourceSvg: "../../assets/logo-text-white.svg",
         themeColor: "#E8F372",
         backgroundColor: "#110518",
         iconBackground: "transparent",

@@ -20,8 +20,17 @@
       "Bash(mkdir:*)",
       "Bash(vitest:*)",
       "Bash(tsc:*)",
-      "Bash(sops:*)"
+      "Bash(sops:*)",
+      "Bash(cp /Users/comsom/Github/pollinations/pollinations.ai/public/og-image.webp /Users/comsom/Github/pollinations/assets/og-image.webp)",
+      "Bash(cp /Users/comsom/Github/pollinations/assets/og-image.webp /Users/comsom/Github/pollinations/enter.pollinations.ai/public/og-image.webp)",
+      "Bash(identify /Users/comsom/Github/pollinations/pollinations.ai/public/og-image.webp)",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/comsom/Github/pollinations/pollinations.ai/public/og-image.webp)",
+      "Bash(sips -s format png /Users/comsom/Github/pollinations/pollinations.ai/public/og-image.webp --out /Users/comsom/Github/pollinations/pollinations.ai/public/og-image.png)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "/tmp",
+      "/Users/comsom/Github/pollinations/pollinations.ai/public"
+    ]
   }
 }

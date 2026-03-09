@@ -8,7 +8,7 @@ Strategy (stateless, day-based slicing):
     1. Always check users created in the last 24 hours (new users)
     2. For older users, use LIMIT/OFFSET with day-of-week slicing
        This ensures all users are checked once per week without tracking state.
-    3. Reduced API cost by fetching only 5 repos per user (was 100)
+    3. Fetches 10 repos per user for quality filtering and fraud detection
 
 Usage:
     python user_upgrade_spore_to_seed.py              # Full run
@@ -36,7 +36,7 @@ from user_validate_github_profile import validate_users
 POLAR_DELAY_SECONDS = 1.0
 
 # Max users to process per run (stay well under 1000 point/hour GitHub API limit)
-# With repos(first:5), each batch of 50 costs ~3 points, so 266 batches = 13,300 users
+# With repos(first:10), each batch of 50 costs ~6 points, so 166 batches = 8,300 users
 MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
 
 
@@ -224,7 +224,10 @@ def main():
     approved = [r["username"] for r in results if r["approved"]]
     rejected = [r for r in results if not r["approved"]]
 
+    fraud_rejected = [r for r in results if (r.get("details") or {}).get("fraud_flags")]
     print(f"\n📊 Total: {len(approved)} approved, {len(rejected)} rejected")
+    if fraud_rejected:
+        print(f"   🚨 Fraud-flagged: {len(fraud_rejected)}")
 
     if rejected:
         print("\n   Rejected users:")
@@ -242,7 +245,11 @@ def main():
             d = r.get("details")
             if d:
                 status = "✅" if r["approved"] else "❌"
-                print(f"   {r['username']:<25} {d['age_days']:>4}d={d['age_pts']:.1f}pt  {d['repos']:>3}={d['repos_pts']:.1f}pt    {d['commits']:>4}={d['commits_pts']:.1f}pt   {d['stars']:>4}={d['stars_pts']:.1f}pt   {status}{d['total']:.1f}")
+                fraud = " 🚨FRAUD" if d.get("fraud_flags") else ""
+                print(f"   {r['username']:<25} {d['age_days']:>4}d={d['age_pts']:.1f}pt  {d['repos']:>3}={d['repos_pts']:.1f}pt    {d['commits']:>4}={d['commits_pts']:.1f}pt   {d['stars']:>4}={d['stars_pts']:.1f}pt   {status}{d['total']:.1f}{fraud}")
+                if d.get("fraud_flags"):
+                    for flag in d["fraud_flags"]:
+                        print(f"      🚨 {flag}")
             else:
                 print(f"   {r['username']:<25} (not found)")
 

@@ -8,21 +8,26 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add DDCET.Trainer to Learn",
-    "blurb": "Add DDCET.Trainer to Learn",
-    "summary": "Add DDCET.Trainer to Learn",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Hitting the digital books",
+    "blurb": "Someone built an interactive exam prep app for DDCET diploma students. Because studying is slightly less painful when the MCQs are served up fresh by AI.",
+    "summary": "Added DDCET.Trainer, an interactive multiple-choice exam prep app for diploma students, to the community showcase.",
+    "impact": "Users can now discover and use this community-built educational tool to prepare for their DDCET exams.",
+    "keywords": [
+      "community",
+      "app",
+      "education",
+      "exam-prep"
+    ],
+    "visual_concept": "Education/studying theme. The pollinations bee mascot (Polly) wearing tiny reading glasses, looking at a retro computer screen showing 'A, B, C' options. A cozy study desk with books and a lime green lamp.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, studying at a wooden desk. A retro computer monitor glows softly, displaying multiple choice options 'A B C'. A stack of pixelated books and a lime green (#ecf874) desk lamp illuminate the scene. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-02/PR-7757.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, studying at a wooden desk. A retro computer monitor glows softly, displaying multiple choice options 'A B C'. A stack of pixelated books and a lime green (#ecf874) desk lamp illuminate the scene. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
   },
-  "generated_at": "2026-03-02T00:49:25.902035+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:54:06.686566+00:00"
 }

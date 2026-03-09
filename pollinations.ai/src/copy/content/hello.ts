@@ -1,43 +1,51 @@
 // HelloPage content configuration
 
 export const HELLO_PAGE = {
+    pageTitle: "Home",
+    pageDescription:
+        "Build AI apps with easy APIs, daily grants, and community support",
     // Section 1 — Hero
-    heroTitle: "The open platform for AI builders.",
-    heroBody:
-        "One API. 40+ models. Text, image, audio, video  — all on one Pollen balance. Daily compute grants. You bring the idea — we handle the rest.",
-    heroStat1: "500+",
-    heroStat1Label: "live apps",
-    heroStat2: "3M",
-    heroStat2Label: "monthly users",
-    heroStat3: "200",
-    heroStat3Label: "countries",
+    heroTitle: "Build an AI app.",
+    heroBodyPrefix: "⚡ One API for text, image, audio, and video.",
+    heroBodyBold: "We handle the models and infrastructure.",
+    heroBodySuffix: " Free to start, scales with you. 🌱",
+    heroStat1: "10K",
+    heroStat1Label: "weekly active devs",
+    heroStat2: "1.5M",
+    heroStat2Label: "requests / day",
+    heroStat3: "500+",
+    heroStat3Label: "live apps",
     startBuildingButton: "Register",
     joinDiscordButton: "Join the Discord",
 
     readTheDocsButton: "Read the Docs",
 
-    // Loop diagram
-    loopBuild: "build",
-    loopShip: "ship",
-    loopGrow: "grow",
-    loopEarn: "earn",
-    loopBuildEmoji: "🔨",
-    loopShipEmoji: "🚀",
-    loopGrowEmoji: "📈",
-    loopEarnEmoji: "💰",
-    flywheelCenter: "Your Apps",
-    comingSoonBadge: "coming soon",
+    // How it works section
+    howItWorksTitle: "How it works",
+    howItWorksBuildDesc: "Use one API across models.",
+    howItWorksShipDesc: "Start free with daily compute.",
+    howItWorksGetPaidDesc: "Your users get their own compute.",
 
-    // Flywheel explanation (right column)
-    flywheelTitle: "The flywheel",
-    flywheelBody:
-        "The more people use your apps, the more free Pollen you get every day.",
+    // Start free section
+    startFreeTitle: "Start free",
+    startFreeLines: [
+        { pre: "🔌 Use ", bold: "one API", post: " across models" },
+        { pre: "🚀 ", bold: "No setup", post: " required" },
+        { pre: "🏢 No company needed", bold: "", post: "" },
+        { pre: "🌱 ", bold: "Free daily compute", post: " to build and ship" },
+        {
+            pre: "📈 As your app grows, you ",
+            bold: "get more compute",
+            post: "",
+        },
+        { pre: "⚡ Just ", bold: "sign up", post: " and go" },
+    ],
+    freeDailyComputeTitle: "Free daily compute",
+
     tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
-    // Tier explanation (left column)
-    tierTitle: "Grow your tier",
-    tierBody:
-        "The more your apps grow, the higher your tier — and the more free daily Pollen you get.",
-    tierHowLink: "❓ Want to know more? Check our FAQ →",
+    computeTiersTitle: "Compute tiers",
+    tierHowText: "Want to know more?",
+    tierHowLink: "Check our FAQ",
 
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
@@ -56,9 +64,10 @@ export const HELLO_PAGE = {
     tierNectarPoints: "",
 
     // Section — For your users / BYOP
-    usersTitle: "Your users pay for themselves",
-    usersBody: "They spend their own Pollen in your app — costs you nothing.",
-    usersPaymentsLink: "💳 Set up user payments →",
+    usersTitle: "For your users",
+    usersBody:
+        "Each user who signs in gets free weekly compute to try your app. When they need more, it just works — no Stripe setup on your end.",
+    usersPaymentsLink: "🔌 Set up for your app",
 
     // Section 8 — We Build in the Open
     openTitle: "We build in the open",
@@ -115,9 +124,9 @@ export const HELLO_PAGE = {
                 "Ship your app on our infra. No deploy setup, no separate hosting bill.",
         },
         {
-            emoji: "💸",
-            title: "Creator Revenue Share",
-            description: "Earn from Pollen spent in your app.",
+            emoji: "🌻",
+            title: "Creator Rewards",
+            description: "Get recognized for what people build with your app.",
         },
         {
             emoji: "🗺️",
@@ -126,13 +135,12 @@ export const HELLO_PAGE = {
         },
     ],
     comingFooterEmoji: "🌱",
-    comingFooter:
-        "The platform gives you runway. We're shaping the rest together, in the open.",
+    comingFooterLine1: "The platform gives you runway.",
+    comingFooterLine2: "We're shaping the rest together, in the open.",
 
     // Section 9 — CTA
     ctaTitle: "Get started",
-    ctaBody:
-        "One API. Open source. The code, the roadmap, the conversations — all in the open.",
+    ctaBody: "One API. Open source. Built in the open.",
     browseAppsLink: "Browse Apps",
     communityLink: "Community",
 };

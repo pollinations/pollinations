@@ -14,6 +14,7 @@ export function usePrettify<T, K extends keyof T>(
     field: K,
     apiKey?: string,
     nameField?: keyof T,
+    emojiField?: keyof T,
 ): { prettified: T[]; isPrettifying: boolean } {
     const [prettified, setPrettified] = useState<T[]>(items);
     const [isPrettifying, setIsPrettifying] = useState(false);
@@ -36,6 +37,7 @@ export function usePrettify<T, K extends keyof T>(
             id: `item-${i}`,
             text: String(item[field] ?? ""),
             name: nameField ? String(item[nameField] ?? "") : undefined,
+            titleEmoji: emojiField ? String(item[emojiField] ?? "") : undefined,
         }));
 
         prettifyCopy(copyItems, apiKey)
@@ -46,7 +48,10 @@ export function usePrettify<T, K extends keyof T>(
                 }));
                 setPrettified(result);
             })
-            .catch(() => setPrettified(items))
+            .catch((err) => {
+                console.error("❌ [PRETTIFY] Hook error:", err);
+                setPrettified(items);
+            })
             .finally(() => setIsPrettifying(false));
     }, [itemsKey, field, apiKey]);
 

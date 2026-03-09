@@ -58,7 +58,10 @@ async function generateFaviconPng(svgBuffer, size, outputPath, color) {
     console.log(`  Generating ${size}x${size} → ${outputPath}`);
     const input = color ? tintSvg(svgBuffer, color) : svgBuffer;
     await sharp(input)
-        .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .resize(size, size, {
+            fit: "contain",
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
         .png()
         .toFile(outputPath);
 }
@@ -70,7 +73,10 @@ async function generateFaviconIco(svgBuffer, outputPath, color) {
     console.log(`  Generating favicon.ico → ${outputPath}`);
     const input = color ? tintSvg(svgBuffer, color) : svgBuffer;
     await sharp(input)
-        .resize(32, 32, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .resize(32, 32, {
+            fit: "contain",
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
         .png()
         .toFile(outputPath);
 }
@@ -86,27 +92,24 @@ async function generatePaddedIcon(svgBuffer, size, outputPath, color) {
 
     // Render logo at 65% size
     const logo = await sharp(input)
-        .resize(logoSize, logoSize, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .resize(logoSize, logoSize, {
+            fit: "contain",
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
         .png()
         .toBuffer();
 
     // Place on transparent canvas with padding
     await sharp({
-        create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+        create: {
+            width: size,
+            height: size,
+            channels: 4,
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+        },
     })
         .composite([{ input: logo, top: padding, left: padding }])
         .png()
-        .toFile(outputPath);
-}
-
-/**
- * Generate watermark logo with transparency preserved (for image.pollinations.ai)
- */
-async function generateWatermarkLogo(svgBuffer, outputPath, width, height) {
-    console.log(`  Generating watermark ${width}x${height} → ${outputPath}`);
-    await sharp(svgBuffer)
-        .resize(width, height, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-        .png({ compressionLevel: 9 })
         .toFile(outputPath);
 }
 
@@ -123,37 +126,46 @@ async function generateAssetsForApp(appKey, appConfig) {
 
         mkdirSync(outputDir, { recursive: true });
 
-        // Handle image service watermark generation (special case)
-        if (appKey === "image" && appConfig.watermark?.enabled) {
-            console.log("\n🏷️  Watermark Logo:");
-            await generateWatermarkLogo(
-                svgBuffer,
-                join(outputDir, "logo.png"),
-                appConfig.watermark.width,
-                appConfig.watermark.height,
-            );
-            console.log(`\n✅ Done generating watermark for ${appConfig.name}`);
-            return;
-        }
-
         // Favicons — 100% fill, transparent bg
         console.log("\n🎨 Favicons:");
         for (const size of ICON_SIZES.favicons) {
-            await generateFaviconPng(svgBuffer, size, join(outputDir, `favicon-${size}x${size}.png`), color);
+            await generateFaviconPng(
+                svgBuffer,
+                size,
+                join(outputDir, `favicon-${size}x${size}.png`),
+                color,
+            );
         }
-        await generateFaviconIco(svgBuffer, join(outputDir, "favicon.ico"), color);
+        await generateFaviconIco(
+            svgBuffer,
+            join(outputDir, "favicon.ico"),
+            color,
+        );
 
         // PWA icons — 65% with padding, transparent bg
         console.log("\n📱 PWA Icons:");
         for (const size of ICON_SIZES.pwa) {
-            await generatePaddedIcon(svgBuffer, size, join(outputDir, `icon-${size}.png`), color);
+            await generatePaddedIcon(
+                svgBuffer,
+                size,
+                join(outputDir, `icon-${size}.png`),
+                color,
+            );
         }
 
         // Apple touch icons — 65% with padding, transparent bg
         console.log("\n🍎 Apple Icons:");
         for (const size of ICON_SIZES.apple) {
-            const filename = size === 180 ? "apple-touch-icon.png" : `apple-touch-icon-${size}x${size}.png`;
-            await generatePaddedIcon(svgBuffer, size, join(outputDir, filename), color);
+            const filename =
+                size === 180
+                    ? "apple-touch-icon.png"
+                    : `apple-touch-icon-${size}x${size}.png`;
+            await generatePaddedIcon(
+                svgBuffer,
+                size,
+                join(outputDir, filename),
+                color,
+            );
         }
 
         // Copy source SVGs for direct use
@@ -177,7 +189,10 @@ async function generateAssetsForApp(appKey, appConfig) {
                 .replace(/fill="#fff"/g, 'fill="currentColor"')
                 .replace(/fill:#fff/g, "fill:currentColor");
 
-            const logoTextContent = readFileSync(join(__dirname, appConfig.ogSourceSvg), "utf8")
+            const logoTextContent = readFileSync(
+                join(__dirname, appConfig.ogSourceSvg),
+                "utf8",
+            )
                 .replace(/fill="#fff"/g, 'fill="currentColor"')
                 .replace(/fill:#fff/g, "fill:currentColor");
 
@@ -187,7 +202,10 @@ async function generateAssetsForApp(appKey, appConfig) {
 
         console.log(`\n✅ Done generating assets for ${appConfig.name}`);
     } catch (error) {
-        console.error(`\n❌ Error generating assets for ${appConfig.name}:`, error.message);
+        console.error(
+            `\n❌ Error generating assets for ${appConfig.name}:`,
+            error.message,
+        );
         throw error;
     }
 }

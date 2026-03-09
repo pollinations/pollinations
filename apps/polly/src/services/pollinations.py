@@ -427,7 +427,7 @@ class PollinationsClient:
                 func_name = func_name.split(":")[-1]
             try:
                 args = _json_loads(tool_call["function"]["arguments"])
-            except (ValueError, TypeError):
+            except ValueError:
                 args = {}
 
             # Check cache first - only for safe read operations

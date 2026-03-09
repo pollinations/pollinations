@@ -122,7 +122,7 @@ async def scrape_url(
                     from .._json import loads as _json_loads
 
                     response["extracted"] = _json_loads(result.extracted_content)
-                except (ValueError, TypeError):
+                except ValueError:
                     response["extracted"] = result.extracted_content
 
             if include_links and result.links:
@@ -359,7 +359,7 @@ async def parse_file_content(
 
             response["parsed"] = _json_loads(content)
             response["content"] = None
-        except (ValueError, TypeError) as e:
+        except ValueError as e:
             response["parse_error"] = str(e)
 
     elif file_type == "yaml":

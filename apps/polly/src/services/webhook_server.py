@@ -73,7 +73,7 @@ class GitHubWebhookServer:
         # Parse JSON
         try:
             data = _json_loads(payload)
-        except (ValueError, TypeError):
+        except ValueError:
             return web.json_response({"error": "Invalid JSON"}, status=400)
 
         # Check repo whitelist

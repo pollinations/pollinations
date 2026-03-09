@@ -194,4 +194,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAirforceModelConfig({ model: "step-3.5-flash:free" }),
     "qwen-character": () =>
         createAirforceModelConfig({ model: "qwen-character" }),
+    "claude-sonnet-4.6": () =>
+        createAirforceModelConfig({ model: "claude-sonnet-4.6" }),
 };

@@ -100,15 +100,41 @@ Use one of the examples below to generate your first AI output in seconds.
 ### Image Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/image/a%20beautiful%20sunset' -o image.jpg
+curl 'https://gen.pollinations.ai/image/a%20cozy%20coffee%20shop%20on%20a%20rainy%20day%20with%20warm%20lighting' -o image.jpg
 ```
 
 Or visit [pollinations.ai](https://pollinations.ai) for an interactive experience.
 
+**More image prompt ideas:**
+
+```bash
+# Pixel art style
+curl 'https://gen.pollinations.ai/image/pixel%20art%20of%20a%20cat%20astronaut%20floating%20in%20space' -o astronaut_cat.jpg
+
+# Fantasy illustration
+curl 'https://gen.pollinations.ai/image/a%20dragon%20reading%20a%20book%20in%20a%20cozy%20library%2C%20fantasy%20illustration' -o dragon.jpg
+
+# Logo design
+curl 'https://gen.pollinations.ai/image/minimalist%20logo%20of%20a%20mountain%20with%20a%20sunrise' -o logo.jpg
+```
+
 ### Text Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/text/Hello%20world'
+curl 'https://gen.pollinations.ai/text/Explain%20how%20photosynthesis%20works%20in%20simple%20terms'
+```
+
+**More text prompt ideas:**
+
+```bash
+# Creative writing
+curl 'https://gen.pollinations.ai/text/Write%20a%20short%20bedtime%20story%20about%20a%20brave%20little%20fox'
+
+# Coding help
+curl 'https://gen.pollinations.ai/text/Write%20a%20Python%20function%20that%20checks%20if%20a%20number%20is%20prime'
+
+# Translation
+curl 'https://gen.pollinations.ai/text/Translate%20hello%20world%20into%20Japanese%2C%20Spanish%2C%20and%20French'
 ```
 
 ### Audio Generation
@@ -116,7 +142,7 @@ curl 'https://gen.pollinations.ai/text/Hello%20world'
 **Simple GET endpoint:**
 
 ```bash
-curl 'https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=nova&key=YOUR_API_KEY' -o speech.mp3
+curl 'https://gen.pollinations.ai/audio/Welcome%20to%20my%20podcast%20about%20the%20future%20of%20AI?voice=nova&key=YOUR_API_KEY' -o speech.mp3
 ```
 
 **OpenAI TTS compatible:**
@@ -241,19 +267,25 @@ Python code to download the generated image:
             file.write(response.content)
         print('Image downloaded!')
 
-    download_image("a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes")
+    # Try different prompts:
+    download_image("a_cozy_coffee_shop_on_a_rainy_day_watercolor_style")
+    download_image("friendly_robot_waving_hello_in_a_field_of_sunflowers")
+    download_image("pixel_art_cat_astronaut_floating_in_space")
 
 ### Text Generation
 
 To generate text:
 
     https://gen.pollinations.ai/text/What%20is%20artificial%20intelligence?
+    https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding
+    https://gen.pollinations.ai/text/List%205%20creative%20names%20for%20a%20pet%20hamster
 
 ### Audio Generation
 
 Generate speech from text:
 
     https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=alloy&key=YOUR_API_KEY
+    https://gen.pollinations.ai/audio/The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog?voice=nova&key=YOUR_API_KEY
 
 Or use the OpenAI TTS-compatible endpoint:
 

@@ -14,7 +14,7 @@ Get your API key at <https://enter.pollinations.ai>
 ### Image Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/image/a%20cat?model=flux' \
+curl 'https://gen.pollinations.ai/image/a%20futuristic%20cityscape%20at%20sunset%20with%20flying%20cars?model=flux' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 
@@ -24,7 +24,7 @@ curl 'https://gen.pollinations.ai/image/a%20cat?model=flux' \
 curl 'https://gen.pollinations.ai/v1/chat/completions' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}'
+  -d '{"model": "openai", "messages": [{"role": "user", "content": "Explain how photosynthesis works in simple terms"}]}'
 ```
 
 ### Vision (Image Input)
@@ -41,7 +41,7 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 ### Simple Text Endpoint
 
 ```bash
-curl 'https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY'
+curl 'https://gen.pollinations.ai/text/What%20are%20three%20fun%20facts%20about%20honey%20bees?key=YOUR_API_KEY'
 ```
 
 ### Streaming
@@ -50,9 +50,47 @@ curl 'https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY'
 curl 'https://gen.pollinations.ai/v1/chat/completions' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": "Write a poem"}], "stream": true}' \
+  -d '{"model": "openai", "messages": [{"role": "user", "content": "Write a short poem about a robot learning to paint"}], "stream": true}' \
   --no-buffer
 ```
+
+### Beginner Prompt Examples
+
+New to AI prompts? Here are some examples to get you started.
+
+**Image prompts** — be descriptive for better results:
+
+```
+a cozy coffee shop on a rainy day, warm lighting, watercolor style
+a friendly robot waving hello in a field of sunflowers
+pixel art of a cat astronaut floating in space
+a dragon reading a book in a library, fantasy illustration
+minimalist logo of a mountain with a sunrise
+```
+
+**Text prompts** — ask questions, give instructions, or start a conversation:
+
+```
+Explain quantum computing like I'm 10 years old
+Write a short bedtime story about a brave little fox
+List 5 creative names for a pet hamster
+Translate "Good morning, how are you?" into Japanese, Spanish, and French
+Write a Python function that checks if a string is a palindrome
+```
+
+**Audio prompts** — any text works for text-to-speech:
+
+```
+Welcome to my podcast! Today we're talking about the future of AI.
+The quick brown fox jumps over the lazy dog.
+```
+
+**Tips for writing good prompts:**
+
+- **Be specific**: "a red sports car on a mountain road at golden hour" works better than "car"
+- **Include style**: add "watercolor", "pixel art", "photorealistic", "cartoon" to image prompts
+- **Set the scene**: describe lighting, mood, setting for richer images
+- **For text**: tell the AI what role to play, e.g. "You are a helpful cooking assistant"
 
 ### Model Discovery
 

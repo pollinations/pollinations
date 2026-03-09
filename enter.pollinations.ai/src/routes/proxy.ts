@@ -229,6 +229,10 @@ export const proxyRoutes = new Hono<Env>()
         "/audio/models",
         auth({ allowApiKey: true, allowSessionCookie: false }),
     )
+    .use(
+        "/video/models",
+        auth({ allowApiKey: true, allowSessionCookie: false }),
+    )
     .get(
         "/v1/models",
         describeRoute({
@@ -377,6 +381,50 @@ export const proxyRoutes = new Hono<Env>()
                 paidBalance,
             );
             return c.json(models);
+        },
+    )
+    .get(
+        "/video/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List Video Models",
+            description:
+                "Returns available video generation models with pricing, capabilities, and metadata. These are a subset of the image service models where `outputModalities` includes `video`. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.any()).meta({
+                                    description:
+                                        "List of video models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        async (c) => {
+            try {
+                const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+                const paidBalance = hasPaidBalance(c);
+                const models = filterModelsByPermissions(
+                    getImageModelsInfo().filter((m) =>
+                        m.output_modalities?.includes("video"),
+                    ),
+                    allowedModels,
+                    paidBalance,
+                );
+                return c.json(models);
+            } catch (error) {
+                throw new HTTPException(500, {
+                    message: "Failed to load video models",
+                    cause: error,
+                });
+            }
         },
     )
     // Auth required for all endpoints below (API key only - no session cookies)

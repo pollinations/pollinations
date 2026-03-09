@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add TeleChars AI to writing",
-    "blurb": "Add TeleChars AI to writing",
-    "summary": "Add TeleChars AI to writing",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "TeleChars AI joins the library",
+    "blurb": "A new community app has sprouted! TeleChars AI is now available in the showcase for inline text editing and character attribute revisions.",
+    "summary": "Added TeleChars AI to the community apps showcase, providing a new tool for inline text editing and character development.",
+    "impact": "Writers and creators can now discover and use TeleChars AI to seamlessly edit text and refine character details.",
+    "keywords": [
+      "community",
+      "app",
+      "writing",
+      "telechars",
+      "characters"
+    ],
+    "visual_concept": "TeleChars AI focuses on writing and character attributes. Visuals: A cozy library or writing desk. The pollinations bee (Polly) wearing tiny reading glasses, looking at a glowing manuscript or a character sheet. Lime green accents on the desk lamp or glowing text.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, hovering over a wooden writing desk with a glowing manuscript. A chunky retro monitor displays character stats in bright lime green (#ecf874). Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-01/PR-8666.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, hovering over a wooden writing desk with a glowing manuscript. A chunky retro monitor displays character stats in bright lime green (#ecf874). Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
-  "generated_at": "2026-03-01T18:54:40.771702+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:40:09.576272+00:00"
 }

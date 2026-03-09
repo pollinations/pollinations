@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
-    "importance": "minor",
-    "headline": "Add wwwsim to Dev_Tools",
-    "blurb": "Add wwwsim to Dev_Tools",
-    "summary": "Add wwwsim to Dev_Tools",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Spinning new webs",
+    "blurb": "The community just shipped wwwsim, a new dev tool that lets you spin up entire websites using models like Gemini and Claude. Building the web just got a whole lot cozier.",
+    "summary": "Added wwwsim, a new community-built AI website creator, to the Dev Tools showcase.",
+    "impact": "Users can now discover and use wwwsim to generate website designs, layouts, and code using multiple top-tier AI models.",
+    "keywords": [
+      "community",
+      "app",
+      "dev-tools",
+      "website-builder",
+      "wwwsim"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot collaborating on building a tiny website. The robot displays a wireframe on its screen, and Polly holds a tiny blueprint. Represents web development and AI collaboration.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot building a tiny glowing website structure together. The robot's screen displays a colorful wireframe layout, while the bee holds a tiny pixelated blueprint. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-01/PR-8319.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot building a tiny glowing website structure together. The robot's screen displays a colorful wireframe layout, while the bee holds a tiny pixelated blueprint. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
   },
-  "generated_at": "2026-03-01T17:43:59.352130+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T17:28:04.153104+00:00"
 }

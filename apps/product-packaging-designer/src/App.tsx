@@ -148,7 +148,7 @@ function App() {
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } else {
-      // Check sessionStorage for saved key
+      // Check sessionStorage for saved key secure now
       const savedKey = sessionStorage.getItem("pollinations_api_key");
       if (savedKey) {
         setApiKey(savedKey);

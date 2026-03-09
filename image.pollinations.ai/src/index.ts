@@ -544,6 +544,12 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    if (pathname === "/robots.txt") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("User-agent: *\nDisallow: /\n");
+        return;
+    }
+
     if (pathname === "/crossdomain.xml") {
         res.writeHead(200, { "Content-Type": "application/xml" });
         res.end(`<?xml version="1.0" encoding="UTF-8"?>

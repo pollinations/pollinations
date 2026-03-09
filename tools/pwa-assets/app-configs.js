@@ -9,9 +9,10 @@ export const APP_CONFIGS = {
         outputDir: "enter.pollinations.ai/public",
         sourceSvg: "../../assets/logo.svg",
         ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#5b2dd8",
+        themeColor: "#D1FAE4",
         backgroundColor: "#110518",
         iconBackground: "transparent",
+        iconColor: "#D1FAE4",
         seo: {
             title: "pollinations.ai - beta",
             description: "Developer console for APIs, pollen grants, and usage",
@@ -24,9 +25,10 @@ export const APP_CONFIGS = {
         outputDir: "pollinations.ai/public",
         sourceSvg: "../../assets/logo.svg",
         ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#ff6b35",
+        themeColor: "#E8F372",
         backgroundColor: "#110518",
         iconBackground: "transparent",
+        iconColor: "#E8F372",  // accent strong — lime
         seo: {
             title: "pollinations.ai",
             description:
@@ -35,37 +37,6 @@ export const APP_CONFIGS = {
         },
     },
 
-    chat: {
-        name: "chat.pollinations.ai",
-        outputDir: "apps/chat/public",
-        sourceSvg: "../../assets/logo.svg",
-        ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#e7faec",
-        backgroundColor: "#110518",
-        iconBackground: "transparent",
-        seo: {
-            title: "chat.pollinations.ai",
-            description:
-                "AI chat interface powered by pollinations.ai - Multi-model conversations with open source AI",
-            url: "https://chat.pollinations.ai",
-        },
-    },
-
-    gsoc: {
-        name: "gsoc.pollinations.ai",
-        outputDir: "apps/gsoc/public",
-        sourceSvg: "../../assets/logo.svg",
-        ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#a3e635",
-        backgroundColor: "#a3e635",
-        iconBackground: "transparent",
-        seo: {
-            title: "GSoC 2026 × pollinations.ai",
-            description:
-                "Join Google Summer of Code 2026 with pollinations.ai! Work on cutting-edge open-source AI projects and build the future of generative AI.",
-            url: "https://gsoc.pollinations.ai",
-        },
-    },
 };
 
 /**

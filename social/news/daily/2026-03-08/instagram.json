@@ -1,0 +1,46 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Translating a UI redesign and color palette update into a literal 'painting and redecorating' narrative. Using the characters to interact with colors and UI elements makes frontend updates feel tactile and warm.",
+  "visual_style": "Cozy 8-bit pixel art, soft pastel gradients, Stardew Valley aesthetic, warm ambient lighting, chunky sprites.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body, dark brown stripes, black antennae, oval eyes, pink blush, a happy smile, and translucent wings, wearing a tiny painter's beret. She is painting a digital canvas with a tiny brush, splashing bright colors. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'NEW PALETTE'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Polly the bee painting the new UI colors",
+      "text_in_image": "NEW PALETTE",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-08/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny wizard glasses, hovering next to a cute chunky pixel robot with a CRT monitor head. The robot is holding a glowing color palette with swatches of mint, peach, and cream. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and warm cream gradient background. The robot has stubby arms and excited square pixel eyes. Warm lighting, lo-fi vibes like A Short Hike. Text in pixel font: 'COLORS!'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Monitor robot discovering the new color system",
+      "text_in_image": "COLORS!",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-08/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, watching a round tan mochi-ball creature. The creature has tiny dot eyes and a wide happy mouth, enthusiastically eating old gray UI blocks. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and peach gradient background. The bee has her signature pink blush and translucent wings. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'NOMNOM'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Nomnom eating the deprecated drab UI code",
+      "text_in_image": "NOMNOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-08/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "Pushed a fresh coat of pixelated paint this week.\n\nPR #8902 is merged, bringing a new palette system, updated scene backgrounds, and better color handling across the board. The old gray blocks have been consumed by the void (and Nomnom). Everything feels a bit warmer and softer now, like someone finally turned on the ambient lighting in the codebase.\n\nCome look at the new colors on the site.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#webdesign",
+    "#frontend",
+    "#buildinpublic",
+    "#colorpalette",
+    "#uiux"
+  ],
+  "alt_text": "A carousel of three cozy pixel art images showing Polly the bee, a monitor robot, and a round creature interacting with new color palettes, paintbrushes, and UI elements in a warm lime green and pastel environment.",
+  "date": "2026-03-08",
+  "generated_at": "2026-03-09T06:21:52.145499+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

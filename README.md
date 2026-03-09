@@ -44,6 +44,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-03-08** – **🎨 Fresh coat of pixels** The [main website](https://hello.pollinations.ai) has a new look. We replaced the old theming engine with a cohesive color palette and dynamic retro pixel art backgrounds. Much cozier.
 - **2026-03-06** – **📦 SDK Upgrades: Audio & BYOP** The hive has ears. You can now run Whisper Speech-to-Text, handle media uploads, and let users spend their own Pollen credits directly through the SDK.
 - **2026-03-06** – **🧠 Step-3.5-Flash Available** `step-3.5-flash` is now wired up and ready for chat completions via the [Unified API](https://gen.pollinations.ai).
 - **2026-03-06** – **💾 Media Storage Upgrades** Name tags for your files. Media downloads now preserve your original filenames, and re-uploading an existing file automatically resets its 14-day expiration timer.
@@ -53,7 +54,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-03-05** – **🎭 SillyTavern Avatars** A new community extension hooks into our image API to instantly generate and assign portraits to your roleplay characters based on their text descriptions.
 - **2026-03-05** – **🛡️ Skills-Sentinel-scan** Added a Dockerized security scanner to the dev tools ecosystem. Because you should probably check if your AI agent is leaking credentials before letting it loose.
 - **2026-03-04** – **🎨 Flux-2-dev gets eyes** You can now pass an `?image=<url>` parameter to the `flux-2-dev` model for image-to-image generation via our [Unified API](https://gen.pollinations.ai). Pixels in, different pixels out.
-- **2026-03-04** – **🔑 Name tags for your apps** Bring Your Own Pollen (BYOP) authorization screens now display your app name and GitHub handle. Users finally know exactly who they are sharing their pollen with.
 ---
 
 ## 🌱 Introduction

@@ -3,6 +3,7 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { stripAudioFromMp4 } from "../utils/stripAudio.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
@@ -438,13 +439,25 @@ export async function callAirforceVideoAPI(
                 );
             }
 
-            const buffer = await fetchFromAirforce(
+            let buffer = await fetchFromAirforce(
                 prompt,
                 safeParams,
                 progress,
                 requestId,
                 airforceModel,
             );
+
+            // grok-video always returns audio from upstream API.
+            // Strip it when the user hasn't explicitly requested audio.
+            if (!safeParams.audio) {
+                progress.updateBar(
+                    requestId,
+                    92,
+                    "Processing",
+                    "Stripping audio track...",
+                );
+                buffer = await stripAudioFromMp4(buffer);
+            }
 
             const durationSeconds = safeParams.duration || 5;
 

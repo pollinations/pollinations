@@ -22,6 +22,7 @@ export interface VertexAIImageRequest {
     referenceImages?: VertexAIImageData[];
     model?: string; // Model ID: gemini-2.5-flash-image-preview (default) or gemini-3-pro-image-preview
     imageSize?: string; // "1K", "2K", "4K" - only supported by gemini-3-pro-image-preview
+    safe?: boolean; // When true, use stricter safety settings; when false, use BLOCK_ONLY_HIGH
 }
 
 export interface VertexAIPart {
@@ -154,6 +155,31 @@ export async function generateImageWithVertexAI(
         if (aspectRatio) imageConfig.aspectRatio = aspectRatio;
         if (imageSize) imageConfig.imageSize = imageSize;
 
+        // Configure safety settings based on the safe flag
+        // BLOCK_ONLY_HIGH reduces false positives on creative prompts
+        // BLOCK_MEDIUM_AND_ABOVE is stricter for safe=true
+        const safetyThreshold = request.safe
+            ? "BLOCK_MEDIUM_AND_ABOVE"
+            : "BLOCK_ONLY_HIGH";
+        const safetySettings = [
+            {
+                category: "HARM_CATEGORY_HATE_SPEECH",
+                threshold: safetyThreshold,
+            },
+            {
+                category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                threshold: safetyThreshold,
+            },
+            {
+                category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                threshold: safetyThreshold,
+            },
+            {
+                category: "HARM_CATEGORY_HARASSMENT",
+                threshold: safetyThreshold,
+            },
+        ];
+
         // Build the request body in Vertex AI format
         const requestBody: {
             contents: Array<{
@@ -167,6 +193,10 @@ export async function generateImageWithVertexAI(
                 max_output_tokens: number;
                 imageConfig?: { aspectRatio?: string; imageSize?: string };
             };
+            safetySettings: Array<{
+                category: string;
+                threshold: string;
+            }>;
         } = {
             contents: [
                 {
@@ -185,6 +215,7 @@ export async function generateImageWithVertexAI(
                 max_output_tokens: 2048,
                 ...(Object.keys(imageConfig).length > 0 && { imageConfig }),
             },
+            safetySettings,
         };
 
         log(

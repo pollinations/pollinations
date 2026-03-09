@@ -992,13 +992,15 @@ const generateImage = async (
             );
 
             try {
-                await requireSafePrompt(
-                    prompt,
-                    safeParams,
-                    userInfo,
-                    progress,
-                    requestId,
-                );
+                if (safeParams.safe) {
+                    await requireSafePrompt(
+                        prompt,
+                        safeParams,
+                        userInfo,
+                        progress,
+                        requestId,
+                    );
+                }
 
                 const modelDisplayName =
                     safeParams.model === "nanobanana-pro"

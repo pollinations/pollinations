@@ -113,7 +113,12 @@ function parseNumberedEntries(
                 if (current.length > 0) {
                     entries.push(current.join("\n"));
                 }
-                current = [line.replace(/^\d+\.\s*/, "").replace(/^\[title:\s*[^\]]*\]\s*/, "").trim()];
+                current = [
+                    line
+                        .replace(/^\d+\.\s*/, "")
+                        .replace(/^\[title:\s*[^\]]*\]\s*/, "")
+                        .trim(),
+                ];
             } else if (current.length > 0) {
                 current.push(line);
             }

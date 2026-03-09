@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add BhaskarMath to learn",
-    "blurb": "Add BhaskarMath to learn",
-    "summary": "Add BhaskarMath to learn",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Crunching the numbers",
+    "blurb": "BhaskarMath just landed in the community showcase. Whether you're wrestling with algebra or conquering calculus, this new app brings step-by-step math solutions straight to the hive.",
+    "summary": "Added BhaskarMath to the community apps showcase, introducing a new educational tool for math lessons and practice problems.",
+    "impact": "Learners can now discover BhaskarMath in our ecosystem to get step-by-step help with algebra, calculus, and geometry.",
+    "keywords": [
+      "community",
+      "app",
+      "education",
+      "math",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee as a math professor with tiny glasses, teaching math to the Nomnom creature. A chalkboard or retro monitor showing calculus symbols. Represents the addition of the BhaskarMath educational app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny professor glasses, pointing at a retro chalkboard filled with math equations. The round tan nomnom creature sits nearby, happily eating a pixelated pi symbol. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-02/PR-8660.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny professor glasses, pointing at a retro chalkboard filled with math equations. The round tan nomnom creature sits nearby, happily eating a pixelated pi symbol. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-03-02T00:53:35.458984+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T18:02:54.527573+00:00"
 }

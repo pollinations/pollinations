@@ -8,21 +8,27 @@
     "TIER-APP-COMPLETE"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "Add Pollinations-ai-STUDIO to image",
-    "blurb": "Add Pollinations-ai-STUDIO to image",
-    "summary": "Add Pollinations-ai-STUDIO to image",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Welcome to the Studio",
+    "blurb": "The community garden keeps growing! Pollinations-ai-STUDIO just landed in the showcase, bringing a fresh interface for tweaking image generation parameters and exploring API endpoints.",
+    "summary": "Added Pollinations-ai-STUDIO to the community apps directory, providing users with a new interface for image generation and API integration.",
+    "impact": "Creators have a new dedicated studio app to experiment with image generation parameters and test API endpoints.",
+    "keywords": [
+      "community",
+      "app",
+      "studio",
+      "image-generation",
+      "showcase"
+    ],
+    "visual_concept": "The bee mascot (Polly) in a cozy art studio setting, acting as a creator/artist. She wears a tiny painter's beret and works at a retro computer terminal that looks like an easel, generating images.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret working at a retro computer terminal that looks like an artist's easel. The screen glows with a lime green (#ecf874) image generation interface. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-02/PR-8672.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret working at a retro computer terminal that looks like an artist's easel. The screen glows with a lime green (#ecf874) image generation interface. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-03-02T01:21:31.959989+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-08T18:05:33.499662+00:00"
 }

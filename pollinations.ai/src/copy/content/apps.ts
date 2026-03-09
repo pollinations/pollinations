@@ -2,7 +2,7 @@
 import type { App } from "../../hooks/useApps";
 
 export const APPS_PAGE = {
-    pageTitle: "Apps",
+    pageTitle: "apps",
     pageDescription:
         "Explore 500+ apps built by the community using the pollinations.ai API",
     title: "Ecosystem",

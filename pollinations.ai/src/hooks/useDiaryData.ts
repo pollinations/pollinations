@@ -473,8 +473,12 @@ export function useDiaryData() {
                     dna = cleanHookForDNA(linkedin.hook);
                     if (linkedin.body) {
                         const cleanedBody = cleanSocialText(linkedin.body);
-                        summary = cleanedBody.slice(0, 600).trim();
                         title = extractTitle(linkedin.body);
+                        // Strip the title sentence from the start of summary to avoid duplication
+                        const afterTitle = cleanedBody.startsWith(title)
+                            ? cleanedBody.slice(title.length).trim()
+                            : cleanedBody;
+                        summary = afterTitle.slice(0, 600).trim();
                     }
                     if (!title) title = extractTitle(linkedin.hook);
                 }
@@ -490,7 +494,11 @@ export function useDiaryData() {
                 );
                 if (twitter) {
                     title = extractTitle(twitter.tweet);
-                    summary = cleanSocialText(twitter.tweet);
+                    const cleanedTweet = cleanSocialText(twitter.tweet);
+                    const afterTitle = cleanedTweet.startsWith(title)
+                        ? cleanedTweet.slice(title.length).trim()
+                        : cleanedTweet;
+                    summary = afterTitle;
                 }
             }
 

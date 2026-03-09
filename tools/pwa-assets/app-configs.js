@@ -8,7 +8,7 @@ export const APP_CONFIGS = {
         name: "enter.pollinations.ai",
         outputDir: "enter.pollinations.ai/public",
         sourceSvg: "../../assets/logo.svg",
-        ogSourceSvg: "../../assets/logo-text.svg",
+        ogSourceSvg: "../../assets/logo-text-black.svg",
         themeColor: "#D1FAE4",
         backgroundColor: "#110518",
         iconBackground: "transparent",

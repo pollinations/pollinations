@@ -1,8 +1,9 @@
 import asyncio
 import logging
-import re
 from typing import Any
-from urllib.parse import urlparse
+
+from .._re import re
+from .._url import parse_url
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ async def scrape_url(
     session_id: str | None = None,
 ) -> dict:
     try:
-        parsed = urlparse(url)
+        parsed = parse_url(url)
         if not parsed.scheme or not parsed.netloc:
             return {
                 "success": False,
@@ -118,10 +119,10 @@ async def scrape_url(
 
             if result.extracted_content:
                 try:
-                    import json
+                    from .._json import loads as _json_loads
 
-                    response["extracted"] = json.loads(result.extracted_content)
-                except (json.JSONDecodeError, TypeError):
+                    response["extracted"] = _json_loads(result.extracted_content)
+                except (ValueError, TypeError):
                     response["extracted"] = result.extracted_content
 
             if include_links and result.links:
@@ -354,11 +355,11 @@ async def parse_file_content(
 
     if file_type == "json":
         try:
-            import json
+            from .._json import loads as _json_loads
 
-            response["parsed"] = json.loads(content)
+            response["parsed"] = _json_loads(content)
             response["content"] = None
-        except json.JSONDecodeError as e:
+        except (ValueError, TypeError) as e:
             response["parse_error"] = str(e)
 
     elif file_type == "yaml":

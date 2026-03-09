@@ -1,0 +1,33 @@
+{
+  "pr_number": 8973,
+  "title": "fix: remove duplicate title in community diary",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8973",
+  "merged_at": "2026-03-09T12:01:38Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Echo echo no more",
+    "blurb": "We fixed a little hiccup where diary entries were repeating their titles. Now you can read the community updates without the echo.",
+    "summary": "Fixed an issue in the community diary where entry titles were being duplicated at the start of the summary text.",
+    "impact": "Diary entries on the website now display cleanly without repeating the headline.",
+    "keywords": [
+      "frontend",
+      "diary",
+      "bugfix",
+      "ui"
+    ],
+    "visual_concept": "The PR is about fixing duplicate text in a diary. Visual symbols: a diary/journal, text, and the Nomnom creature eating the duplicate words. The bee mascot is writing or reading.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating duplicate pixelated text from a large open diary book, while the cute bee mascot wearing tiny reading glasses watches amused. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-09T12:02:30.074294+00:00"
+}

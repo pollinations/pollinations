@@ -34,6 +34,10 @@ export type TinybirdEvent = {
     selectedMeterSlug?: string;
     balances?: Record<string, number>;
 
+    // Network
+    ipSubnet?: string;
+    ipHash?: string;
+
     // Referrer
     referrerUrl?: string;
     referrerDomain?: string;

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8104,
+  "title": "fix: preserve aspect ratio in klein-9b dimension clamping",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8104",
+  "merged_at": "2026-02-08T23:46:04Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Breaking out of the box",
+    "blurb": "Klein-9b has learned that not everything needs to be a perfect square. Widescreen dreams are now a reality.",
+    "summary": "Updated the dimension clamping logic for the Klein-9b model to scale based on total pixel count rather than individual dimensions.",
+    "impact": "Users can now generate non-square images (portrait, landscape) with Klein-9b while maintaining the correct aspect ratio.",
+    "keywords": [
+      "image generation",
+      "klein-9b",
+      "aspect ratio",
+      "bug fix",
+      "scaling"
+    ],
+    "visual_concept": "A visual metaphor for changing aspect ratios: the bee mascot stretching a rigid square frame into a wide cinematic rectangle.",
+    "image_prompt": "Cozy pixel art scene of a cute 8-bit bee stretching a glowing digital picture frame from a square into a wide rectangle. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. The frame shows a beautiful landscape. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8104.jpg",
+    "prompt": "Cozy pixel art scene of a cute 8-bit bee stretching a glowing digital picture frame from a square into a wide rectangle. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. The frame shows a beautiful landscape. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-12T14:06:10.714518+00:00"
+}

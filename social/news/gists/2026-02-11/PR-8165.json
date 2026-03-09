@@ -1,0 +1,34 @@
+{
+  "pr_number": 8165,
+  "title": "feat: OpenClaw integration — landing page, setup script, docs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8165",
+  "merged_at": "2026-02-11T17:17:19Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "OpenClaw meets Pollinations",
+    "blurb": "We've rolled out the red carpet for OpenClaw users! A new landing page and setup script make it effortless to power your agents with our hive of models.",
+    "summary": "Introduces a dedicated landing page and setup script to easily configure Pollinations as the primary model provider for OpenClaw agents.",
+    "impact": "OpenClaw users can now instantly access models like Kimi, Gemini, and Claude via Pollinations with a single command.",
+    "keywords": [
+      "OpenClaw",
+      "agents",
+      "integration",
+      "hackathon",
+      "models"
+    ],
+    "visual_concept": "A collaboration scene featuring the Pollinations Bee and a cute pixel art Crab (representing OpenClaw). They are working together in a cozy digital garden, connecting a glowing lime green cable or sharing a data scroll.",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot and a cute 8-bit crab character connecting a glowing lime green (#ecf874) data cable. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. The crab looks happy. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-11/PR-8165.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee mascot and a cute 8-bit crab character connecting a glowing lime green (#ecf874) data cable. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. The crab looks happy. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-12T14:09:54.496775+00:00"
+}

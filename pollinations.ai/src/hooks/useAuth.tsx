@@ -7,6 +7,7 @@ import {
     useState,
 } from "react";
 import { DEFAULT_API_KEY } from "../api.config";
+import { fetchWithRetry } from "../utils/fetchWithRetry";
 
 const STORAGE_KEY = "pollinations_api_key";
 const ENTER_URL = "https://enter.pollinations.ai";
@@ -81,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const fetchProfile = async () => {
             setIsLoadingProfile(true);
             try {
-                const response = await fetch(
+                const response = await fetchWithRetry(
                     `${ACCOUNT_API_BASE}/account/profile`,
                     {
                         headers: {
@@ -89,32 +90,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         },
                     },
                 );
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setProfile({
-                        name: data.name,
-                        email: data.email,
-                        githubUsername: data.githubUsername,
-                        image: data.image ?? null,
-                        tier: data.tier ?? null,
-                    });
-                } else if (response.status === 401) {
-                    // Invalid/expired key - clear it
+                const data = await response.json();
+                setProfile({
+                    name: data.name,
+                    email: data.email,
+                    githubUsername: data.githubUsername,
+                    image: data.image ?? null,
+                    tier: data.tier ?? null,
+                });
+            } catch (err) {
+                const message = err instanceof Error ? err.message : "";
+                if (message.startsWith("HTTP 401")) {
                     console.warn("[useAuth] API key invalid or expired");
                     localStorage.removeItem(STORAGE_KEY);
                     setUserApiKey(null);
-                    setProfile(null);
                 } else {
-                    // 403 = no permission, log for debugging
-                    console.debug(
-                        "[useAuth] Profile fetch failed:",
-                        response.status,
-                    );
-                    setProfile(null);
+                    console.debug("[useAuth] Profile fetch failed:", message);
                 }
-            } catch (err) {
-                console.warn("[useAuth] Profile fetch error:", err);
                 setProfile(null);
             } finally {
                 setIsLoadingProfile(false);
@@ -126,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fetch balance (separate permission, gracefully fails)
         const fetchBalance = async () => {
             try {
-                const response = await fetch(
+                const response = await fetchWithRetry(
                     `${ACCOUNT_API_BASE}/account/balance`,
                     {
                         headers: {
@@ -134,21 +126,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         },
                     },
                 );
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setBalance({
-                        balance: data.balance,
-                    });
-                } else {
-                    console.debug(
-                        "[useAuth] Balance fetch failed:",
-                        response.status,
-                    );
-                    setBalance(null);
-                }
+                const data = await response.json();
+                setBalance({ balance: data.balance });
             } catch (err) {
-                console.warn("[useAuth] Balance fetch error:", err);
+                console.debug(
+                    "[useAuth] Balance fetch failed:",
+                    err instanceof Error ? err.message : err,
+                );
                 setBalance(null);
             }
         };

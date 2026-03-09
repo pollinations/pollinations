@@ -1,0 +1,34 @@
+{
+  "pr_number": 7745,
+  "title": "Add baiye-ai.com to Learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7745",
+  "merged_at": "2026-03-02T00:50:48Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Notes from the cloud",
+    "blurb": "Baiye AI just landed in our community showcase! It's a slick cloud note-taking app that weaves AI writing and image generation right into your Markdown.",
+    "summary": "Added baiye-ai.com, a cloud-based AI note-taking application featuring Markdown support and integrated AI generation, to the community showcase.",
+    "impact": "Users can now discover Baiye AI in our apps directory and see how it leverages Pollinations for seamless AI writing and image creation.",
+    "keywords": [
+      "community",
+      "app-showcase",
+      "markdown",
+      "note-taking",
+      "baiye-ai"
+    ],
+    "visual_concept": "The PR is about a cloud-based note-taking app that uses Markdown. Visuals should include a notebook, floating cloud elements, Markdown symbols, and the Pollinations bee writing or organizing notes.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, writing in a glowing digital notebook with floating cloud elements and Markdown symbols around it. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-02/PR-7745.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, writing in a glowing digital notebook with floating cloud elements and Markdown symbols around it. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-08T17:52:50.764992+00:00"
+}

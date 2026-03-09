@@ -1,0 +1,34 @@
+{
+  "pr_number": 8286,
+  "title": "Add GeoCitAIes.com to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8286",
+  "merged_at": "2026-03-01T16:52:06Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Surfing the retro web 🏄",
+    "blurb": "Dust off your dial-up modem! GeoCitAIes is now live in the Creative showcase, letting you generate beautifully chaotic 1990s-style personal homepages on demand.",
+    "summary": "Added GeoCitAIes.com to the community showcase, a new app that generates retro 1990s-style personal homepages using AI personas.",
+    "impact": "Users can now explore and generate nostalgic, 90s-themed web pages powered by pollinations.ai.",
+    "keywords": [
+      "community",
+      "app",
+      "retro",
+      "generation",
+      "showcase"
+    ],
+    "visual_concept": "A nostalgic 1990s internet theme. The Monitor Robot displaying a retro webpage with classic 90s elements, while Polly the bee wears 90s pixel shades and types on a chunky retro keyboard.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing retro 90s pixel sunglasses, typing on a chunky beige keyboard next to a cute robot with a CRT monitor head. The robot's screen glows with a nostalgic 1990s-style webpage. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-01/PR-8286.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing retro 90s pixel sunglasses, typing on a chunky beige keyboard next to a cute robot with a CRT monitor head. The robot's screen glows with a nostalgic 1990s-style webpage. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-08T17:27:02.462864+00:00"
+}

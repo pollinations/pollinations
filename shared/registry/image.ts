@@ -168,12 +168,11 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        provider: "io.net",
+        provider: "vast.ai",
         cost: [
-            // Flux Schnell (nunchaku-quantized) on io.net RTX 4090 cluster
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
+                completionImageTokens: 0.001,
             },
         ],
         description: "Flux Schnell - Fast high-quality image generation",
@@ -183,13 +182,11 @@ export const IMAGE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
-        provider: "io.net",
+        provider: "vast.ai",
         cost: [
-            // Z-Image-Turbo (6B params, 9 steps) with SPAN 2x upscaling
-            // IO.net cluster (10x RTX 4090), ~1s for 768x768, ~2s for 1536x1536
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
+                completionImageTokens: 0.002,
             },
         ],
         description: "Z-Image Turbo - Fast 6B Flux with 2x upscaling",
@@ -275,11 +272,9 @@ export const IMAGE_SERVICES = {
         modelId: "klein",
         provider: "modal",
         cost: [
-            // Flux Klein on Modal L40S GPU
-            // L40S: $0.000542/sec × 15s avg (including cold starts) = $0.008/image
             {
                 date: new Date("2026-01-21").getTime(), // Launch date
-                completionImageTokens: 0.008, // ~$0.008 per image (L40S @ 15s avg)
+                completionImageTokens: 0.01,
             },
         ],
         description:
@@ -292,10 +287,9 @@ export const IMAGE_SERVICES = {
         modelId: "klein-large",
         provider: "modal",
         cost: [
-            // Flux Klein 9B on Modal L40S GPU (~$0.012/image with cold starts)
             {
                 date: new Date("2026-01-21").getTime(),
-                completionImageTokens: 0.012,
+                completionImageTokens: 0.015,
             },
         ],
         description:
@@ -330,7 +324,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "FLUX.2 Dev (api.airforce) - Flux 2 image generation",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "grok-imagine": {

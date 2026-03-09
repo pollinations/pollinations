@@ -1,0 +1,34 @@
+{
+  "pr_number": 8587,
+  "title": "Add Guided Extreme Emotional Mental States to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8587",
+  "merged_at": "2026-03-01T17:03:08Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Roll for emotional damage",
+    "blurb": "Someone built an LLM-powered game master that generates narrative, UI, and psychological profiles on the fly. We added it to the showcase. Good luck in there.",
+    "summary": "Added 'Guided Extreme Emotional Mental States' to the community app showcase, a game that uses an LLM as a dynamic game master.",
+    "impact": "Players can explore seven different game modes where the narrative and UI are generated turn-by-turn.",
+    "keywords": [
+      "community",
+      "app",
+      "game",
+      "llm",
+      "narrative"
+    ],
+    "visual_concept": "The PR introduces an LLM-based game master app. Visuals should represent tabletop gaming or text-adventure gaming. Polly the bee playing a game with the Monitor Robot acting as the Game Master.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, rolling a 20-sided die on a wooden table. Across the table, a chunky pixel robot with a CRT monitor head acts as the game master, its screen glowing lime green (#ecf874) with retro text. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-01/PR-8587.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, rolling a 20-sided die on a wooden table. Across the table, a chunky pixel robot with a CRT monitor head acts as the game master, its screen glowing lime green (#ecf874) with retro text. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-08T17:35:44.390912+00:00"
+}

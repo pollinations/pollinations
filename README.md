@@ -1,5 +1,8 @@
 <div align="center">
-  <img src="assets/logo-text.svg" alt="pollinations.ai" width="100%"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg" />
+    <img src="assets/logo-text-black.svg" alt="pollinations.ai" width="100%" />
+  </picture>
   
   <p><strong>Open-source AI for people who make things.</strong></p>
 
@@ -17,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🎮 SmartInfiniteYield](https://github.com/BokX1/InfiniteYieldWithAI) | Roblox admin script wrapper using Pollinations AI to translate natural language into executable commands with chat mode for game-specific advice. | [@BokX1](https://github.com/BokX1) |
-| [🤖 Techno Bot](https://technobot.xyz/) | AI-powered Discord entertainment bot with word games, voice interactions, and community features across 40,000+ servers. | [@ernbaltaci](https://github.com/ernbaltaci) |
-| [🎭 Aeona AI Roleplay & Companion](https://play.google.com/store/apps/details?id=com.artifexstudios.aeonaapp) | AI roleplay companion for imaginative, meaningful conversations. | [@webdem2](https://github.com/webdem2) |
-| [🤖 AI homework solver](https://github.com/The-Lazybone/ONLUYEN-HOMEWORK-AUTO-SOLVER) | Browser-based automation tool that solves MCQ, short answers, true/false, and blanks. | [@The-Lazybone](https://github.com/The-Lazybone) |
-| [🎛️ Mharomo.systems](https://mharomo.systems) | Generate AI images, music, videos, and voice content from simple prompts. | [@Mharomoincpass](https://github.com/Mharomoincpass) |
-| [🤖 amerli chat app](https://amerli.ir/) | Persian-language conversational AI and messaging with a responsive mobile-first PWA for the Persian-speaking community. | [@JustinStar-py](https://github.com/JustinStar-py) |
-| [📰 The Tech Chronicle](https://www.justnansuri.com/) | Hosts Forum, Chat, Pool, and Mini Apps within The Tech Chronicle, allowing users to create and run their own applications inside the web app. | [@nansuri](https://github.com/nansuri) |
-| [🎨 Pollinations-ai-STUDIO](https://pollinations-ai-studio.pages.dev/) | API endpoints, authentication, and image-generation parameters for developer integration. | [@rikunarita](https://github.com/rikunarita) |
-| [📚 Cryonex](https://www.cryonex.app/app) | All-in-one study assistant replacing tabs to save students money. | [@BlazeGlitchz2](https://github.com/BlazeGlitchz2) |
-| [🧮 BhaskarMath](https://bhaskarmath.github.io/BhaskarMath/) | Math lessons, practice problems, and step-by-step solutions across algebra, calculus, and geometry for study and exam preparation. | [@miguelsaldanha1213-byte](https://github.com/miguelsaldanha1213-byte) |
+| [📚 NovelCraft AI](https://mrlearner1606.github.io/novelcraftai/) | Write novels in your browser using NovelCraft AI; it runs entirely on your device with no account, no installation, and no server. | [@mrlearner1606](https://github.com/mrlearner1606) |
+| [🎬 Generador y Editor de Imgenes y Videos con Pollina](https://juanrivera126.github.io/Generador-y-Editor-de-Im-genes-y-Videos-con-Pollinations/) | Genera y edita imágenes y videos con modelos y plantillas. Generador y Editor de Imgenes y Videos con Pollina exporta en PNG, JPG y MP4, ajusta resolución, recorta clips y aplica filtros. | [@Juanrivera126](https://github.com/Juanrivera126) |
+| [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [123081329](https://github.com/123081329) |
+| 🛡️ Skills-Sentinel-scan | Scan using Skills-Sentinel-scan, a Dockerized security scanner that detects malicious patterns, supply chain risks, and permission overreach in AI skills and agents and exposes a web UI. | [176244378](https://github.com/176244378) |
+| [📱 M Assistant](https://routinehub.co/shortcut/18709/) | AI companion for Apple devices with conversational AI, image generation, and task automation. | [178960782](https://github.com/178960782) |
+| [⚖️ AutoTutela](https://angelromero.co/autotutela) | AI legal assistant that drafts Acciones de Tutela for Colombian citizens. | [128564349](https://github.com/128564349) |
+| [🔍 ExplainMyBigO](https://explain-my-bigo.vercel.app/) | AI tool that estimates Big-O time and space complexity of your algorithms instantly. | [69321575](https://github.com/69321575) |
+| [🎬 AI Clip Master](https://ai-clip-master-4f3tdvgjr3zcg3hmj8phy7.streamlit.app/) | AI-powered modular video processing tool for content creators. | [124109443](https://github.com/124109443) |
+| [💬 Cortex Chat](https://cortexchat.vercel.app/) | AI chat platform powered by Pollinations for creative, efficient assistance. | [159653318](https://github.com/159653318) |
+| [🎬 AI video generator](https://www.tomdacat.com/ai-video-generator/) | Generate videos using the free seedance model on pollinations.ai with AI video generator. | [204561696](https://github.com/204561696) |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
@@ -44,16 +47,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-02-27** – **🎨 Seedream 5.0** New `seedream5` model added for image generation. It's lighter, newer, and available on the [Unified API](https://gen.pollinations.ai).
-- **2026-02-27** – **🚀 Gemini 3.1 Arrives** Upgraded `gemini-large` to 3.1 Pro and added `nanobanana-2` (Gemini 3.1 Flash) for high-speed image generation.
-- **2026-02-26** – **📚 Docs Overhaul** Restructured [API Docs](https://enter.pollinations.ai/api/docs) with copy-pasteable code samples in multiple languages. Less reading, more building.
-- **2026-02-26** – **🏷️ Ecosystem Sorting** Added platform badges to the app registry. Filter the 500+ apps by Web, Discord, CLI, or Mobile.
-- **2026-02-25** – **🚀 Media Uploads** New `media.pollinations.ai` service. Upload up to 10MB, get a hash, keep your app's assets persistent.
-- **2026-02-25** – **🎨 Grok-Imagine** Added `grok-imagine` (alpha). xAI's latest visual model is now available for generation.
-- **2026-02-25** – **🎵 Custom Voices** Audio API now accepts custom ElevenLabs voice IDs. Bring your own clones instead of just using presets.
-- **2026-02-25** – **✨ Website Refresh** Complete redesign with a new "flywheel" narrative and clearer [contributor tiers](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).
-- **2026-02-24** – **⚡ Claude Direct & Caching** Migrated Claude models directly to Anthropic. Prompt caching is now live, making repeated context faster and cheaper. [API Docs](https://enter.pollinations.ai/api/docs)
-- **2026-02-24** – **📦 NPM Package Rename** Packages are now `ompc` and `mcp`. Less typing, plus `claude-fast` is the new default model. [View on NPM](https://www.npmjs.com/package/@pollinations_ai/model-context-protocol)
+- **2026-03-08** – **🎨 Fresh coat of pixels** The [main website](https://hello.pollinations.ai) has a new look. We replaced the old theming engine with a cohesive color palette and dynamic retro pixel art backgrounds. Much cozier.
+- **2026-03-06** – **📦 SDK Upgrades: Audio & BYOP** The hive has ears. You can now run Whisper Speech-to-Text, handle media uploads, and let users spend their own Pollen credits directly through the SDK.
+- **2026-03-06** – **🧠 Step-3.5-Flash Available** `step-3.5-flash` is now wired up and ready for chat completions via the [Unified API](https://gen.pollinations.ai).
+- **2026-03-06** – **💾 Media Storage Upgrades** Name tags for your files. Media downloads now preserve your original filenames, and re-uploading an existing file automatically resets its 14-day expiration timer.
+- **2026-03-05** – **🚀 GPT Image 1.5 Large** We unblocked the Azure endpoints and wired up the new 1.5 large model. Better pixels, fewer timeouts. Hit the [Unified API](https://gen.pollinations.ai) to try it.
+- **2026-03-05** – **✨ Unified Multimodal Chat** The community shipped `pollinations-ui`, a single interface that handles text, images, video, and audio without making you switch tabs.
+- **2026-03-05** – **🧩 Browser Extension** Generate images anywhere on the web using your own Pollen credits. No need to leave the tab you're supposed to be working in.
+- **2026-03-05** – **🎭 SillyTavern Avatars** A new community extension hooks into our image API to instantly generate and assign portraits to your roleplay characters based on their text descriptions.
+- **2026-03-05** – **🛡️ Skills-Sentinel-scan** Added a Dockerized security scanner to the dev tools ecosystem. Because you should probably check if your AI agent is leaking credentials before letting it loose.
+- **2026-03-04** – **🎨 Flux-2-dev gets eyes** You can now pass an `?image=<url>` parameter to the `flux-2-dev` model for image-to-image generation via our [Unified API](https://gen.pollinations.ai). Pixels in, different pixels out.
 ---
 
 ## 🌱 Introduction

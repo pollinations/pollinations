@@ -1245,6 +1245,21 @@
               {
                 "matcher": {
                   "id": "byName",
+                  "options": "vast.ai"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#00D4AA",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
                   "options": "modal"
                 },
                 "properties": [

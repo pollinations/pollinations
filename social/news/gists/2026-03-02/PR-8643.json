@@ -1,0 +1,34 @@
+{
+  "pr_number": 8643,
+  "title": "Add amerli chat app to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8643",
+  "merged_at": "2026-03-02T01:25:14Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Amerli joins the hive",
+    "blurb": "Amerli Chat just landed in the community showcase. It's a mobile-first, Persian-language conversational AI built on our infrastructure, proving once again that the hive is global.",
+    "summary": "Added Amerli Chat, a responsive Persian-language conversational AI PWA, to the community apps directory.",
+    "impact": "Expands the ecosystem with a dedicated mobile-first chat interface tailored for the Persian-speaking community.",
+    "keywords": [
+      "community",
+      "app",
+      "chat",
+      "persian",
+      "pwa"
+    ],
+    "visual_concept": "Pollinations bee mascot (Polly) sitting on a cozy, intricate pixel-art Persian rug, looking at a glowing mobile phone screen. The phone represents the mobile-first PWA, and the rug represents the Persian language/culture connection.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot sitting on a beautiful pixelated Persian rug, looking happily at a glowing mobile phone displaying a chat interface. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-02/PR-8643.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot sitting on a beautiful pixelated Persian rug, looking happily at a glowing mobile phone displaying a chat interface. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-08T18:01:42.706808+00:00"
+}

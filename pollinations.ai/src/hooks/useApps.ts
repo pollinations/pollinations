@@ -116,7 +116,14 @@ function parseAppsMarkdown(markdown: string): App[] {
         });
     }
 
-    return apps;
+    // Deduplicate by name, keeping the first occurrence (newest-first order)
+    const seen = new Set<string>();
+    return apps.filter((app) => {
+        const key = app.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }
 
 /**

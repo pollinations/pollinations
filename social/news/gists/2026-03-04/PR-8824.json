@@ -1,0 +1,36 @@
+{
+  "pr_number": 8824,
+  "title": "fix: route suno model to generateSunoMusic in GET /audio/:text",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8824",
+  "merged_at": "2026-03-04T21:28:19Z",
+  "labels": [
+    "AUDIO",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Suno finds its voice",
+    "blurb": "Fixed a little hiccup where asking for Suno music gave you spoken text instead. The GET endpoint is back to dropping beats instead of reading scripts!",
+    "summary": "Fixed a routing bug in the GET /audio/:text endpoint that caused model=suno requests to incorrectly fall back to text-to-speech instead of generating music.",
+    "impact": "Users can once again generate Suno music directly via simple GET requests without it turning into spoken audio.",
+    "keywords": [
+      "audio",
+      "suno",
+      "music",
+      "api",
+      "bugfix"
+    ],
+    "visual_concept": "The pollinations bee mascot wearing tiny DJ headphones, fixing a tangled audio cable connecting to a retro boombox. The monitor robot companion is dancing to the music.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, plugging a lime green (#ecf874) audio cable into a retro boombox. A chunky pixel robot with a monitor head dances nearby with musical notes floating in the air. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-04/PR-8824.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, plugging a lime green (#ecf874) audio cable into a retro boombox. A chunky pixel robot with a monitor head dances nearby with musical notes floating in the air. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-03-08T18:10:54.652984+00:00"
+}

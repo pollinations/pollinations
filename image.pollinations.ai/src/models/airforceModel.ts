@@ -9,9 +9,36 @@ import type { VideoGenerationResult } from "./veoVideoModel.ts";
 const logOps = debug("pollinations:airforce:ops");
 const logError = debug("pollinations:airforce:error");
 
+/**
+ * Resolve redirects on a URL by following them with a HEAD request.
+ * Returns the final URL after all redirects.
+ */
+async function resolveRedirects(url: string): Promise<string> {
+    try {
+        const response = await fetch(url, {
+            method: "HEAD",
+            redirect: "follow",
+        });
+        const finalUrl = response.url;
+        if (finalUrl !== url) {
+            logOps(`Resolved redirect: ${url} → ${finalUrl}`);
+        }
+        return finalUrl;
+    } catch {
+        logError(`Failed to resolve redirect for ${url}, using original`);
+        return url;
+    }
+}
+
 const AIRFORCE_API_URL = "https://api.airforce/v1/images/generations";
 
 const VIDEO_MODELS = ["grok-imagine-video"];
+
+// Image models that require SSE mode + aspectRatio (like video models)
+const SSE_IMAGE_MODELS = ["flux-2-dev"];
+
+// Image models that support image-to-image via image_urls parameter
+const IMAGE_MODELS_WITH_IMAGE_INPUT = ["flux-2-dev"];
 
 // api.airforce only supports these exact sizes (OpenAI DALL-E 3 compatible)
 const SUPPORTED_SIZES: Array<{ width: number; height: number }> = [
@@ -75,17 +102,23 @@ async function fetchFromAirforce(
         `Generating with ${airforceModel}...`,
     );
 
-    const requestBody = buildRequestBody(prompt, safeParams, airforceModel);
+    const requestBody = await buildRequestBody(
+        prompt,
+        safeParams,
+        airforceModel,
+    );
     logOps("Request body:", JSON.stringify(requestBody));
 
-    const isVideo = VIDEO_MODELS.includes(airforceModel);
+    const useSse =
+        VIDEO_MODELS.includes(airforceModel) ||
+        SSE_IMAGE_MODELS.includes(airforceModel);
     const response = await makeApiRequest(apiKey, requestBody);
 
     if (!response.ok) {
         await handleApiError(response, airforceModel);
     }
 
-    const resultBuffer = isVideo
+    const resultBuffer = useSse
         ? await processSseResponse(response, airforceModel, progress, requestId)
         : await processApiResponse(
               response,
@@ -136,72 +169,106 @@ export async function callAirforceImageAPI(
     };
 }
 
-function buildRequestBody(
+async function buildRequestBody(
     prompt: string,
     safeParams: ImageParams,
     airforceModel: string,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
     const requestBody: Record<string, unknown> = {
         model: airforceModel,
         prompt,
         n: 1,
     };
 
-    if (VIDEO_MODELS.includes(airforceModel)) {
+    if (
+        VIDEO_MODELS.includes(airforceModel) ||
+        SSE_IMAGE_MODELS.includes(airforceModel)
+    ) {
         requestBody.sse = true;
         requestBody.response_format = "url";
 
-        // Calculate resolution and aspect ratio for video models
-        const { aspectRatio, resolution } = calculateVideoResolution({
-            width: safeParams.width,
-            height: safeParams.height,
-            aspectRatio: safeParams.aspectRatio,
-            defaultResolution: "720P",
-        });
+        if (VIDEO_MODELS.includes(airforceModel)) {
+            // Calculate resolution and aspect ratio for video models
+            const { aspectRatio, resolution } = calculateVideoResolution({
+                width: safeParams.width,
+                height: safeParams.height,
+                aspectRatio: safeParams.aspectRatio,
+                defaultResolution: "720P",
+            });
 
-        // grok-imagine-video at airforce does not support 16:9 or 9:16, so we need to convert to 3:2 or 2:3 which is closest to these values
-        if (airforceModel === "grok-imagine-video") {
-            const airforceAspectRatio =
-                aspectRatio === "16:9"
-                    ? "3:2"
-                    : aspectRatio === "9:16"
-                      ? "2:3"
-                      : aspectRatio;
-            requestBody.aspectRatio = airforceAspectRatio;
+            // grok-imagine-video at airforce does not support 16:9 or 9:16, so we need to convert to 3:2 or 2:3 which is closest to these values
+            if (airforceModel === "grok-imagine-video") {
+                const airforceAspectRatio =
+                    aspectRatio === "16:9"
+                        ? "3:2"
+                        : aspectRatio === "9:16"
+                          ? "2:3"
+                          : aspectRatio;
+                requestBody.aspectRatio = airforceAspectRatio;
+            }
+
+            // Map resolution to size parameter (grok-video uses WxH format)
+            const sizeMap: Record<string, Record<string, string>> = {
+                "16:9": {
+                    "480P": "854x480",
+                    "720P": "1280x720",
+                    "1080P": "1920x1080",
+                },
+                "9:16": {
+                    "480P": "480x854",
+                    "720P": "720x1280",
+                    "1080P": "1080x1920",
+                },
+            };
+
+            const size = sizeMap[aspectRatio]?.[resolution];
+            if (size) {
+                requestBody.size = size;
+            }
+
+            // Support image-to-video: pass reference image URLs if provided
+            if (safeParams.image && safeParams.image.length > 0) {
+                requestBody.image_urls = await Promise.all(
+                    safeParams.image.map(resolveRedirects),
+                );
+            }
+        } else {
+            // SSE image models (e.g. flux-2-dev): use aspectRatio as "W:H"
+            const size = closestSupportedSize(
+                safeParams.width,
+                safeParams.height,
+            );
+            if (size) {
+                requestBody.size = size;
+                requestBody.aspectRatio = size.replace("x", ":");
+            }
+
+            // Support image-to-image
+            if (
+                IMAGE_MODELS_WITH_IMAGE_INPUT.includes(airforceModel) &&
+                safeParams.image &&
+                safeParams.image.length > 0
+            ) {
+                requestBody.image_urls = await Promise.all(
+                    safeParams.image.map(resolveRedirects),
+                );
+            }
         }
-
-        // Map resolution to size parameter (grok-video uses WxH format)
-        const sizeMap: Record<string, Record<string, string>> = {
-            "16:9": {
-                "480P": "854x480",
-                "720P": "1280x720",
-                "1080P": "1920x1080",
-            },
-            "9:16": {
-                "480P": "480x854",
-                "720P": "720x1280",
-                "1080P": "1080x1920",
-            },
-        };
-
-        const size = sizeMap[aspectRatio]?.[resolution];
-        if (size) {
-            requestBody.size = size;
-        }
-
-        // Support image-to-video: pass reference image URLs if provided
-        // airforce expects "image_urls" as an array of URLs
-        if (safeParams.image && safeParams.image.length > 0) {
-            requestBody.image_urls = safeParams.image;
-        }
-    } else if (
-        airforceModel === "imagen-4" ||
-        airforceModel === "grok-imagine"
-    ) {
+    } else {
+        // api.airforce only supports DALL-E 3 compatible sizes — snap to closest
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
-    } else if (safeParams.width && safeParams.height) {
-        requestBody.size = `${safeParams.width}x${safeParams.height}`;
+
+        // Support image-to-image for eligible image models
+        if (
+            IMAGE_MODELS_WITH_IMAGE_INPUT.includes(airforceModel) &&
+            safeParams.image &&
+            safeParams.image.length > 0
+        ) {
+            requestBody.image_urls = await Promise.all(
+                safeParams.image.map(resolveRedirects),
+            );
+        }
     }
 
     return requestBody;

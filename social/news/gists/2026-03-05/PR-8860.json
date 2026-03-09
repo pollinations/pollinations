@@ -1,0 +1,33 @@
+{
+  "pr_number": 8860,
+  "title": "fix: fix 25 failing enter.pollinations.ai tests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8860",
+  "merged_at": "2026-03-05T13:43:09Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Green checkmarks restored",
+    "blurb": "Cleaned up our test suite by fixing 25 failing tests, updating snapshots, and adjusting tier refill logic.",
+    "summary": "Fixed 25 failing integration tests in the API gateway by updating mock snapshots and correcting test logic for paid models and tier refills.",
+    "impact": "Ensures our continuous integration pipeline remains reliable and accurately reflects current API behavior.",
+    "keywords": [
+      "tests",
+      "ci",
+      "bugfix",
+      "snapshots"
+    ],
+    "visual_concept": "The pollinations bee mascot sweeping up broken test tubes or fixing a glowing green checkmark. Nomnom creature eating bad test snapshots.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor hat, sweeping up broken digital test tubes. A round tan mochi-ball creature happily eats bad code snapshots. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-05/PR-8860.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-05T13:44:12.932406+00:00"
+}

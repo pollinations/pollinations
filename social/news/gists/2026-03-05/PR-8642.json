@@ -1,0 +1,34 @@
+{
+  "pr_number": 8642,
+  "title": "Add ALL in One AI Tools to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8642",
+  "merged_at": "2026-03-05T04:29:11Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The Swiss Army knife of AI",
+    "blurb": "Someone built a multi-tool for content and workflows. ALL in One AI Tools just landed in the community greenhouse.",
+    "summary": "Added 'ALL in One AI Tools' to the community apps showcase under the business category.",
+    "impact": "The community can now discover a new comprehensive suite for content creation and workflow automation built on Pollinations.",
+    "keywords": [
+      "community",
+      "apps",
+      "business",
+      "tools",
+      "automation"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny toolbelt, organizing a multi-tool box or a glowing Swiss Army knife inside a cozy greenhouse. Represents the 'All in One' business tools.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny toolbelt, happily organizing a glowing multi-tool box filled with gears and documents inside a cozy wooden greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-05/PR-8642.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-05T04:30:00.284409+00:00"
+}

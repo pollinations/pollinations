@@ -35,6 +35,24 @@ const CATEGORIES = [
 
 // ── Parse ───────────────────────────────────────────────────────────────────
 
+const PLATFORMS = new Set([
+    "web",
+    "android",
+    "ios",
+    "windows",
+    "macos",
+    "desktop",
+    "cli",
+    "discord",
+    "telegram",
+    "whatsapp",
+    "library",
+    "browser-ext",
+    "roblox",
+    "wordpress",
+    "api",
+]);
+
 function parseApps() {
     const content = fs.readFileSync(APPS_FILE, "utf8");
     const lines = content.split("\n");
@@ -52,9 +70,14 @@ function parseApps() {
             cols.pop();
             if (cols.length < 15) return null;
 
-            const starsCol = cols[9];
+            // Some rows include a Platform value at col 6 (shifting GitHub columns right by 1).
+            // Detect this by checking if col 6 is a known platform value.
+            const hasPlatform = PLATFORMS.has(cols[6]?.toLowerCase());
+            const offset = hasPlatform ? 1 : 0;
+
+            const starsCol = cols[9 + offset];
             let stars = 0;
-            const m = starsCol.match(/⭐([\d.]+)(k)?/);
+            const m = starsCol?.match(/⭐([\d.]+)(k)?/);
             if (m) {
                 stars = parseFloat(m[1]);
                 if (m[2] === "k") stars *= 1000;
@@ -67,12 +90,15 @@ function parseApps() {
                 url: cols[2],
                 description: cols[3],
                 category: cols[5].toLowerCase(),
-                github: cols[6],
-                repo: cols[8],
+                github: cols[6 + offset],
+                repo: cols[8 + offset],
                 stars,
-                approvedDate: cols[14] || "",
-                byop: cols.length > 15 && cols[15] === "true",
-                requests24h: cols.length > 16 ? parseInt(cols[16], 10) || 0 : 0,
+                approvedDate: cols[14 + offset] || "",
+                byop: cols.length > 15 + offset && cols[15 + offset] === "true",
+                requests24h:
+                    cols.length > 16 + offset
+                        ? parseInt(cols[16 + offset], 10) || 0
+                        : 0,
             };
         })
         .filter(Boolean);

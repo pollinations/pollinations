@@ -25,18 +25,37 @@ if (headerIdx === -1) {
 const dataRows = lines.slice(headerIdx + 2).filter((l) => l.startsWith("|"));
 const last10 = dataRows.slice(0, 10);
 
+// Known platform values that may appear at col 6 in some rows
+const PLATFORMS = new Set([
+    "web",
+    "android",
+    "ios",
+    "windows",
+    "macos",
+    "desktop",
+    "cli",
+    "discord",
+    "telegram",
+    "whatsapp",
+    "library",
+    "browser-ext",
+    "roblox",
+    "wordpress",
+    "api",
+]);
+
 // Create simplified table for README (Name, Description, Author only)
 const simplifiedRows = last10.map((row) => {
     const cols = row.split("|").map((c) => c.trim());
-    // Remove first and last empty strings from split (matches parseApps.ts pattern)
     cols.shift();
     cols.pop();
-    // cols: [emoji, name, web_url, desc, language, category, platform, github, github_id, repo, stars, discord, other, submitted_date, issue_url, approved_date, byop, requests_24h, health]
     const emoji = cols[0];
     const name = cols[1];
     const url = cols[2];
     const desc = cols[3];
-    const github = cols[7];
+    // Some rows include a Platform value at col 6 (shifting GitHub columns right by 1).
+    const hasPlatform = PLATFORMS.has(cols[6]?.toLowerCase());
+    const github = cols[hasPlatform ? 7 : 6];
     const nameCell = url ? `[${emoji} ${name}](${url})` : `${emoji} ${name}`;
     const authorCell = github
         ? `[${github}](https://github.com/${github.replace("@", "")})`

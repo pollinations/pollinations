@@ -31,7 +31,17 @@
         "stdio",
         "openai-compatible"
     ],
-    "author": "pollinations.ai",
+    "author": "pollinations.ai <hello@pollinations.ai>",
+    "contributors": [
+        {
+        "name": "Circuit-Overtime",
+        "email": "ayushman@myceli.ai"
+        },
+        {
+        "name": "ElliotEtag",
+        "email": "elliot@myceli.ai"
+        }
+    ],
     "license": "MIT",
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.25.1",

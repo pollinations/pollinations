@@ -1,0 +1,44 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Translating technical backend work (Rust rewrites, bot hardening, deduplication) into cozy visual metaphors. A V2 upgrade becomes reading a glowing book, deduplication becomes Nomnom eating duplicate files, and new frontend assets/unfiltered generation becomes painting a fresh canvas. This keeps the feed feeling like a warm visual diary rather than a dry changelog.",
+  "visual_style": "Cozy 8-bit pixel art aesthetic. Lo-fi Stardew Valley vibes with chunky sprites, soft pastel gradients, prominent lime green (#ecf874) elements, and warm, inviting lighting.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing tiny wizard glasses and reading a glowing book that radiates warm energy. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'V2'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Polly getting her V2 upgrade, looking smarter and faster.",
+      "text_in_image": "V2"
+    },
+    {
+      "prompt": "Cozy pixel art scene of a round tan mochi-ball creature with tiny dot eyes and wide happy mouth enthusiastically eating a stack of duplicate papers and bot masks. Speech bubble: 'NOMNOM' in pixel font. The cute pixel art bee mascot with yellow body, brown stripes, pink blush, and tiny wings watches amused, wearing a tiny janitor hat and holding a small broom. Lime green (#ecf874) and peach soft gradient background. Large visible pixels, lo-fi 8-bit aesthetic, warm lighting. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes.",
+      "description": "Nomnom eating duplicate apps and bot data while Polly sweeps up.",
+      "text_in_image": "NOMNOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-09/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Chunky pixel art of a cute robot with a CRT monitor head holding a fresh, colorful canvas. The robot has stubby arms and excited square pixel eyes. The cute pixel art bee mascot with yellow body, brown stripes, pink blush, and tiny wings hovers nearby wearing a tiny painter's beret, holding a paintbrush. Lime green (#ecf874) and mint gradient background. Speech bubble in pixel font from the robot: 'ART!'. Large visible pixels, lo-fi 8-bit aesthetic, Stardew Valley vibes, warm lighting. Cozy pixel art, soft pastel gradients, retro gaming vibes.",
+      "description": "Robot and Polly painting fresh logos and enjoying unfiltered creativity.",
+      "text_in_image": "ART!",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-09/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "Shipped a few things this week to keep the garden tidy.\n\nPolly got a V2 upgrade — rewritten internals in Rust, zero sycophancy, and noticeably faster. We also spent some time sweeping the floors: hardened the infrastructure against bots trying to game the tier system, and cleared out duplicate apps from the showcase.\n\nOh, and nanobanana now properly respects the safe=false flag, because sometimes you just need the raw output. Fresh logos and PWA assets are live too. Code is in the repo.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#rustlang",
+    "#buildinpublic",
+    "#retroaesthetic",
+    "#cozygaming"
+  ],
+  "alt_text": "A carousel of three pixel art images. First: Polly the bee wearing wizard glasses reading a glowing book. Second: The round Nomnom creature eating duplicate papers while Polly holds a broom. Third: A CRT monitor robot holding a canvas while Polly wears a painter's beret. All feature lime green and pastel backgrounds.",
+  "date": "2026-03-09",
+  "generated_at": "2026-03-10T06:14:28.126870+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

@@ -1,12 +1,13 @@
 """Configuration loading from config.json and .env (secrets only)."""
 
-import json
 import logging
 import os
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+from ._json import load_file as _json_load_file
 
 load_dotenv()
 
@@ -24,8 +25,7 @@ def load_config_json() -> dict:
         return {}
 
     try:
-        with open(config_path) as f:
-            return json.load(f)
+        return _json_load_file(str(config_path))
     except Exception as e:
         logger.error(f"Failed to load config.json: {e}")
         return {}

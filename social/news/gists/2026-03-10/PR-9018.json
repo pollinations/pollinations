@@ -1,0 +1,33 @@
+{
+  "pr_number": 9018,
+  "title": "fix: stop news content leaking into main",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9018",
+  "merged_at": "2026-03-10T16:56:06Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Plugging the news leak",
+    "blurb": "Cleaned up the repository by stopping our automated news pipeline from accidentally spilling its generated files into the main branch.",
+    "summary": "Fixed a GitHub Actions workflow to prevent generated social media content from leaking into the main branch and removed previously leaked files.",
+    "impact": "Keeps the main repository branch clean and focused solely on source code.",
+    "keywords": [
+      "infrastructure",
+      "github-actions",
+      "cleanup",
+      "ci-cd"
+    ],
+    "visual_concept": "The bee mascot sweeping up a massive pile of newspapers or polaroid photos that spilled out of a pipe, representing the cleanup of the leaked social media files.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot using a tiny broom to sweep up a massive pile of pixelated newspapers and polaroid photos that spilled out of a lime green (#ecf874) pipe. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-10T16:57:05.642860+00:00"
+}

@@ -26,7 +26,9 @@ jobs:
           fetch-depth: 0
 
       - name: Overlay news branch data
-        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
+        run: |
+          git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
+          git restore --staged social/news/ || true
 
       - name: Set up Python
         uses: actions/setup-python@v5

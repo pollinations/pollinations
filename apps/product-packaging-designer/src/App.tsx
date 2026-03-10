@@ -370,29 +370,24 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
             const encodedPrompt = encodeURIComponent(prompt);
             const imageUrl = `${POLLINATIONS_API}/${encodedPrompt}?model=nanobanana&image=${encodeURIComponent(
                 uploadedUrl,
-            )}&quality=high&key=${apiKey}`;
+            )}&quality=high`;
 
-            await new Promise<void>((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-
-                img.onload = () => {
-                    setGeneratedImage(imageUrl);
-                    setImageLoaded(true);
-                    resolve();
-                };
-
-                img.onerror = (error) => {
-                    console.error("Image generation failed:", error);
-                    reject(
-                        new Error(
-                            "Failed to generate image. The AI service may be temporarily unavailable. Please try again later ",
-                        ),
-                    );
-                };
-
-                img.src = imageUrl;
+            const response = await fetch(imageUrl, {
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                },
             });
+
+            if (!response.ok) {
+                throw new Error(
+                    "Failed to generate image. The AI service may be temporarily unavailable. Please try again later.",
+                );
+            }
+
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            setGeneratedImage(blobUrl);
+            setImageLoaded(true);
         } catch (error) {
             console.error("Error in generatePackaging:", error);
 

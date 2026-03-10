@@ -1,7 +1,9 @@
+import ReactMarkdown from "react-markdown";
 import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { useHighlights } from "../../hooks/useHighlights";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Badge } from "../components/ui/badge";
@@ -13,6 +15,7 @@ import { Body, Heading, Title } from "../components/ui/typography";
 
 function HelloPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(HELLO_PAGE);
+    const { highlights } = useHighlights();
     useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const tiers = [
@@ -247,34 +250,46 @@ function HelloPage() {
                                 {pageCopy.recentUpdatesTitle}
                             </Badge>
                             <div className="space-y-2">
-                                {pageCopy.newsItems.map(
-                                    (item: {
-                                        date: string;
-                                        emoji: string;
-                                        title: string;
-                                        description: string;
-                                    }) => (
-                                        <div
-                                            key={`${item.date}-${item.title}`}
-                                            className="py-1"
-                                        >
-                                            <p className="font-mono font-black text-xs text-dark">
-                                                <span className="bg-primary-strong px-1.5 py-0.5">
-                                                    {item.date}
-                                                </span>
-                                                <span className="ml-2">
-                                                    {item.emoji}
-                                                </span>
-                                                <span className="font-headline text-[10px] font-black text-dark ml-1">
-                                                    {item.title}
-                                                </span>
-                                            </p>
-                                            <p className="font-body text-sm text-muted leading-relaxed mt-0.5">
+                                {highlights.map((item) => (
+                                    <div
+                                        key={`${item.date}-${item.title}`}
+                                        className="py-1"
+                                    >
+                                        <p className="font-mono font-black text-xs text-dark">
+                                            <span className="bg-primary-strong px-1.5 py-0.5">
+                                                {item.date}
+                                            </span>
+                                            <span className="ml-2">
+                                                {item.emoji}
+                                            </span>
+                                            <span className="font-headline text-[10px] font-black text-dark ml-1">
+                                                {item.title}
+                                            </span>
+                                        </p>
+                                        <div className="font-body text-sm text-muted leading-relaxed mt-0.5">
+                                            <ReactMarkdown
+                                                components={{
+                                                    a: ({ node, ...props }) => (
+                                                        <a
+                                                            {...props}
+                                                            className="text-dark hover:underline font-bold"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        />
+                                                    ),
+                                                    p: ({ node, ...props }) => (
+                                                        <span
+                                                            {...props}
+                                                            className="inline"
+                                                        />
+                                                    ),
+                                                }}
+                                            >
                                                 {item.description}
-                                            </p>
+                                            </ReactMarkdown>
                                         </div>
-                                    ),
-                                )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -309,6 +324,9 @@ function HelloPage() {
                                     ),
                                 )}
                             </div>
+                            <p className="font-body text-xs text-subtle italic mt-4 pt-3 border-t border-border-subtle">
+                                🌱 Plans change. We build in the open and figure it out as we go.
+                            </p>
                         </div>
                     </div>
 

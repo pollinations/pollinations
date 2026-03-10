@@ -17,21 +17,23 @@ export function AuthGate({ onLogin }: AuthGateProps) {
         >
             {/* Decorative ambient particles */}
             <div className="absolute inset-0 pointer-events-none" aria-hidden>
-                {[...Array(20)].map((_, i) => (
-                    <span
-                        key={i}
-                        className="absolute rounded-full opacity-20"
-                        style={{
-                            width: `${2 + Math.random() * 4}px`,
-                            height: `${2 + Math.random() * 4}px`,
-                            background: "#d4a76a",
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
-                            animationDelay: `${Math.random() * 3}s`,
-                        }}
-                    />
-                ))}
+                {Array.from({ length: 20 }, (_, i) => `particle-${i}`).map(
+                    (id) => (
+                        <span
+                            key={id}
+                            className="absolute rounded-full opacity-20"
+                            style={{
+                                width: `${2 + Math.random() * 4}px`,
+                                height: `${2 + Math.random() * 4}px`,
+                                background: "#d4a76a",
+                                left: `${Math.random() * 100}%`,
+                                top: `${Math.random() * 100}%`,
+                                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+                                animationDelay: `${Math.random() * 3}s`,
+                            }}
+                        />
+                    ),
+                )}
             </div>
 
             {/* Glow ring behind card */}

@@ -1,9 +1,9 @@
 import logging
-import re
 from dataclasses import dataclass
 
 import aiohttp
 
+from .._re import re
 from ..config import config
 from . import github_auth
 from .github_graphql import github_graphql
@@ -1350,7 +1350,7 @@ class GitHubPRManager:
             review_text = await pollinations_client.generate_text(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
-                model="gemini-large",  # 1M context for large PR diffs
+                model=config.pollinations_model,
                 temperature=0.3,
             )
 

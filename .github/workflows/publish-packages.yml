@@ -1,0 +1,54 @@
+name: Publish Packages
+
+on:
+  push:
+    tags:
+      - 'sdk-v*'
+      - 'mcp-v*'
+      - 'ompc-v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Determine package from tag
+        id: pkg
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          if [[ "$TAG" == sdk-v* ]]; then
+            echo "dir=packages/sdk" >> "$GITHUB_OUTPUT"
+            echo "name=sdk" >> "$GITHUB_OUTPUT"
+          elif [[ "$TAG" == mcp-v* ]]; then
+            echo "dir=packages/mcp" >> "$GITHUB_OUTPUT"
+            echo "name=mcp" >> "$GITHUB_OUTPUT"
+          elif [[ "$TAG" == ompc-v* ]]; then
+            echo "dir=packages/ompc" >> "$GITHUB_OUTPUT"
+            echo "name=ompc" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies
+        working-directory: ${{ steps.pkg.outputs.dir }}
+        run: npm install
+
+      - name: Publish to npm
+        working-directory: ${{ steps.pkg.outputs.dir }}
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to GitHub Packages
+        working-directory: ${{ steps.pkg.outputs.dir }}
+        run: |
+          echo "@pollinations_ai:registry=https://npm.pkg.github.com" > .npmrc
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

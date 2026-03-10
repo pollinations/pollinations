@@ -72,45 +72,14 @@ export const HELLO_PAGE = {
     // Section 8 — We Build in the Open
     openTitle: "We build in the open",
     recentUpdatesTitle: "What's New",
-    newsItems: [
-        {
-            date: "2026-02-18",
-            emoji: "📅",
-            title: "Build Diary",
-            description:
-                "The Community page now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls.",
-        },
-        {
-            date: "2026-02-18",
-            emoji: "🐛",
-            title: "Readable Errors",
-            description:
-                "The API now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail.",
-        },
-        {
-            date: "2026-02-18",
-            emoji: "🌱",
-            title: "Seed Tier Logic",
-            description:
-                "GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January.",
-        },
-        {
-            date: "2026-02-17",
-            emoji: "📊",
-            title: "SlidePainter",
-            description:
-                "Generate illustrated slide decks and export to PDF with this new community app.",
-        },
-        {
-            date: "2026-02-17",
-            emoji: "👾",
-            title: "Pixel Art & Markdown",
-            description:
-                "A cozy new retro theme is available, plus app descriptions are now auto-formatted via the Text API.",
-        },
-    ],
     roadmapLabel: "What's Next",
     roadmapItems: [
+        {
+            emoji: "🧮",
+            title: "Scoring System",
+            description:
+                "Tiers will be based on a transparent score — GitHub activity, API usage, apps shipped, and community contributions.",
+        },
         {
             emoji: "🔑",
             title: "Pollinations Login",

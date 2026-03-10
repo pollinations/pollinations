@@ -46,6 +46,35 @@ a:hover {
     color: var(--color-accent);
 }
 
+/* === Auth Button === */
+
+.auth-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: white;
+    background: var(--gradient-1);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 10;
+}
+
+.auth-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 97, 216, 0.3);
+}
+
+.auth-btn-logout {
+    background: var(--gradient-2);
+    color: #1a1a1a;
+}
+
 /* === Header === */
 
 header {

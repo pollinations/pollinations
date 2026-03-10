@@ -1,11 +1,16 @@
 // CatGPT Meme Generator — UI, state, and DOM logic
 
 import {
+    clearApiKey,
     createImageGenerationPrompt,
     EXAMPLES_MAP,
+    extractApiKeyFromFragment,
     fetchImageWithAuth,
     generateImageURL,
+    getAuthorizeUrl,
     handleImageUpload,
+    isLoggedIn,
+    storeApiKey,
 } from "./ai.js";
 
 // ── UI Constants ────────────────────────────────────────────────────────────
@@ -612,12 +617,54 @@ async function shareMeme() {
 let konamiCode = [];
 
 function initializeApp() {
+    handleAuthRedirect();
+    updateAuthUI();
     loadUserMemes();
     loadExamples();
     loadRandomCatFact();
     handleURLPrompt();
     setupEventListeners();
     addFloatingEmojis();
+}
+
+// ── BYOP Auth ──────────────────────────────────────────────────────────────
+
+function handleAuthRedirect() {
+    const key = extractApiKeyFromFragment();
+    if (key) {
+        storeApiKey(key);
+        // Clean URL fragment
+        window.history.replaceState(
+            {},
+            "",
+            window.location.pathname + window.location.search,
+        );
+        showNotification(
+            "Logged in! Using your Pollen balance now.",
+            "success",
+        );
+    }
+}
+
+function updateAuthUI() {
+    const authBtn = document.getElementById("authBtn");
+    if (!authBtn) return;
+
+    if (isLoggedIn()) {
+        authBtn.textContent = "Logout";
+        authBtn.className = "auth-btn auth-btn-logout";
+        authBtn.onclick = () => {
+            clearApiKey();
+            updateAuthUI();
+            showNotification("Logged out. Using free tier now.", "info");
+        };
+    } else {
+        authBtn.textContent = "Login (BYOP)";
+        authBtn.className = "auth-btn";
+        authBtn.onclick = () => {
+            window.location.href = getAuthorizeUrl();
+        };
+    }
 }
 
 function setupEventListeners() {

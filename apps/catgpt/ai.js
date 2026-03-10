@@ -1,14 +1,68 @@
-// ai.js — API config, prompt generation, image fetching, and Cloudinary upload
+// ai.js — API config, prompt generation, image fetching, and media upload
 
 export const API_CONFIG = {
     POLLINATIONS_API: "https://gen.pollinations.ai/image",
     ORIGINAL_CATGPT_IMAGE:
         "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png",
-    CLOUDINARY_CLOUD_NAME: "pollinations",
-    CLOUDINARY_UPLOAD_PRESET: "pollinations-image",
-    CLOUDINARY_API_KEY: "939386723511927",
-    POLLINATIONS_API_KEY: "pk_w3kAO902fOeFYiNm",
+    MEDIA_UPLOAD_URL: "https://media.pollinations.ai/upload",
+    ENTER_URL: "https://enter.pollinations.ai",
+    DEFAULT_API_KEY: "pk_w3kAO902fOeFYiNm",
 };
+
+// ── BYOP Auth ─────────────────────────────────────────────────────────────
+
+const AUTH_STORAGE_KEY = "pollinations_api_key";
+
+export function getStoredApiKey() {
+    try {
+        return localStorage.getItem(AUTH_STORAGE_KEY);
+    } catch {
+        return null;
+    }
+}
+
+export function storeApiKey(key) {
+    localStorage.setItem(AUTH_STORAGE_KEY, key);
+}
+
+export function clearApiKey() {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+}
+
+export function getActiveApiKey() {
+    return getStoredApiKey() || API_CONFIG.DEFAULT_API_KEY;
+}
+
+export function isLoggedIn() {
+    return !!getStoredApiKey();
+}
+
+/**
+ * Check URL fragment for API key returned from enter.pollinations.ai/authorize
+ * Returns the key if found, null otherwise.
+ */
+export function extractApiKeyFromFragment() {
+    const hash = window.location.hash.substring(1);
+    if (!hash) return null;
+
+    try {
+        const params = new URLSearchParams(hash);
+        const key = params.get("api_key");
+        if (key && /^(sk_|plln_pk_|pk_)/.test(key)) {
+            return key;
+        }
+    } catch {
+        // ignore parse errors
+    }
+    return null;
+}
+
+export function getAuthorizeUrl() {
+    const currentUrl = window.location.href.split("#")[0];
+    return `${API_CONFIG.ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}`;
+}
+
+// ── Prompt & Style ────────────────────────────────────────────────────────
 
 const CATGPT_STYLE =
     'Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, black bob hair, brick/burgundy sweater (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, "CATGPT" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.';
@@ -82,8 +136,9 @@ export function generateImageURL(prompt, imageUrl = null) {
 // ── Image Fetching ──────────────────────────────────────────────────────────
 
 export async function fetchImageWithAuth(imageUrl) {
+    const apiKey = getActiveApiKey();
     const response = await fetch(imageUrl, {
-        headers: { Authorization: `Bearer ${API_CONFIG.POLLINATIONS_API_KEY}` },
+        headers: { Authorization: `Bearer ${apiKey}` },
     });
 
     if (!response.ok) {
@@ -100,28 +155,26 @@ export async function fetchImageWithAuth(imageUrl) {
     return URL.createObjectURL(blob);
 }
 
-// ── Cloudinary Upload ───────────────────────────────────────────────────────
+// ── Media Upload (replaces Cloudinary) ────────────────────────────────────
 
-async function uploadToCloudinary(file) {
+async function uploadToMedia(file) {
+    const apiKey = getActiveApiKey();
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", API_CONFIG.CLOUDINARY_UPLOAD_PRESET);
-    formData.append("api_key", API_CONFIG.CLOUDINARY_API_KEY);
 
-    const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${API_CONFIG.CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: "POST", body: formData },
-    );
+    const response = await fetch(API_CONFIG.MEDIA_UPLOAD_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: formData,
+    });
 
     if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Cloudinary error:", errorData);
-        throw new Error(
-            `Upload failed: ${errorData.error?.message || "Unknown error"}`,
-        );
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Media upload error:", errorData);
+        throw new Error(`Upload failed: ${errorData.error || "Unknown error"}`);
     }
 
-    return (await response.json()).secure_url;
+    return (await response.json()).url;
 }
 
 export async function handleImageUpload(file, showNotification) {
@@ -138,9 +191,9 @@ export async function handleImageUpload(file, showNotification) {
 
     try {
         showNotification("Uploading image...", "info");
-        return await uploadToCloudinary(file);
+        return await uploadToMedia(file);
     } catch (error) {
-        console.error("Cloudinary upload failed:", error);
+        console.error("Media upload failed:", error);
         showNotification(
             "Cloud upload failed. Trying local method...",
             "warning",

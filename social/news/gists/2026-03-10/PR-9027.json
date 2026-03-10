@@ -1,0 +1,33 @@
+{
+  "pr_number": 9027,
+  "title": "rotate pollinations.ai website publishable key",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9027",
+  "merged_at": "2026-03-10T23:38:32Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "New keys to the garden",
+    "blurb": "We've rotated the frontend API keys for the main website to keep the hive secure and running smoothly.",
+    "summary": "Rotated the publishable API key used by the main pollinations.ai frontend.",
+    "impact": "Ensures continued secure access between the frontend and backend services without any disruption to users.",
+    "keywords": [
+      "security",
+      "api-key",
+      "infrastructure",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee holding a shiny new pixelated key next to a retro terminal, representing the API key rotation.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a shiny golden pixelated key next to a retro computer terminal. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-10T23:41:30.736455+00:00"
+}

@@ -639,4 +639,24 @@ export const TEXT_SERVICES = {
         isSpecialized: true,
         alpha: true,
     },
+    "claude-airforce": {
+        aliases: [],
+        modelId: "claude-sonnet-4.6",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-03-09").getTime(),
+                promptTextTokens: perMillion(0.01), // via api.airforce
+                completionTextTokens: perMillion(0.01),
+            },
+        ],
+        description:
+            "Claude Sonnet 4.6 (api.airforce) - Anthropic's balanced model via community provider",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 200000,
+        isSpecialized: false,
+        alpha: true,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

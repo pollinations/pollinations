@@ -1,6 +1,6 @@
 {
   "name": "@pollinations_ai/ompc",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Pre-configured OpenCode + oh-my-opencode with Pollinations AI models",
   "type": "module",
   "bin": {
@@ -35,6 +35,10 @@
     "type": "git",
     "url": "https://github.com/pollinations/pollinations.git",
     "directory": "packages/ompc"
+  },
+  "funding": {
+  "type": "github",
+  "url": "https://github.com/sponsors/pollinations"
   },
   "homepage": "https://pollinations.ai",
   "publishConfig": {

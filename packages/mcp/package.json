@@ -54,6 +54,10 @@
     "publishConfig": {
         "access": "public"
     },
+    "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/pollinations"
+    },
     "devDependencies": {
         "@types/node": "^22.14.1",
         "typescript": "^5.8.3",

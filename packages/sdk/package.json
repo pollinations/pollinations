@@ -76,6 +76,10 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "funding": {
+  "type": "github",
+  "url": "https://github.com/sponsors/pollinations"
+  },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "tsup": "^8.0.0",

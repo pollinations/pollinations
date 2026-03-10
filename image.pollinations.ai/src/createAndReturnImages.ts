@@ -1139,6 +1139,7 @@ const generateImage = async (
         case "flux-2-dev":
         case "imagen-4":
         case "grok-imagine":
+        case "dirtberry":
             return await callAirforceImageAPI(
                 prompt,
                 safeParams,

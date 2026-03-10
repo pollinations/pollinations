@@ -1,0 +1,33 @@
+{
+  "pr_number": 8969,
+  "title": "fix: remove duplicate apps from APPS.md",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8969",
+  "merged_at": "2026-03-09T09:33:00Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pruning the app garden",
+    "blurb": "Turns out our bots were a little too enthusiastic and cloned the entire app showcase a few times. We've pruned the duplicates, added some safety nets, and polished up the formatting.",
+    "summary": "Cleaned up the community apps showcase by removing over 1,600 duplicate entries caused by a bot glitch and implemented frontend deduplication.",
+    "impact": "The apps showcase is back to its accurate size, loading cleanly without duplicate entries or formatting artifacts.",
+    "keywords": [
+      "apps",
+      "showcase",
+      "bugfix",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee wearing a gardener's hat, pruning a giant overgrown pixel-art plant (representing the apps list) with tiny clippers. The Nomnom creature is happily eating the discarded duplicate leaves/code snippets.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's hat, carefully pruning an overgrown code-plant with tiny clippers. Nearby, the round tan Nomnom creature happily eats the discarded duplicate leaves. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-09/PR-8969.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-03-09T09:34:01.960742+00:00"
+}

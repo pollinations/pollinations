@@ -177,6 +177,12 @@ function App() {
         window.location.href = `${POLLINATIONS_AUTH_URL}?${params}`;
     };
 
+    const handleLogout = () => {
+        sessionStorage.removeItem("pollinations_api_key");
+        setApiKey(null);
+        setIsAuthenticated(false);
+    };
+
     const toggleTheme = () => {
         const newTheme = theme === "light" ? "dark" : "light";
         setTheme(newTheme);
@@ -329,15 +335,7 @@ function App() {
             let uploadedUrl: string = "";
 
             if (file) {
-                try {
-                    uploadedUrl = await uploadToPollinationsMedia(file);
-                } catch (pollinationsError) {
-                    console.warn(
-                        "Pollinations media upload failed, using base64 image:",
-                        pollinationsError,
-                    );
-                    uploadedUrl = uploadedImage || "";
-                }
+                uploadedUrl = await uploadToPollinationsMedia(file);
             } else {
                 uploadedUrl = uploadedImage || "";
             }
@@ -540,15 +538,28 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
                             </button>
                         )}
                         {isAuthenticated && (
-                            <div
-                                className={`px-6 py-3 rounded-2xl font-medium flex items-center gap-2 ${
-                                    isDark
-                                        ? "bg-teal-500/20 text-teal-300 border border-teal-500/50"
-                                        : "bg-teal-50 text-teal-700 border border-teal-200"
-                                }`}
-                            >
-                                <span className="text-lg">✓</span>
-                                <span>Authenticated</span>
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className={`px-6 py-3 rounded-2xl font-medium flex items-center gap-2 ${
+                                        isDark
+                                            ? "bg-teal-500/20 text-teal-300 border border-teal-500/50"
+                                            : "bg-teal-50 text-teal-700 border border-teal-200"
+                                    }`}
+                                >
+                                    <span className="text-lg">✓</span>
+                                    <span>Authenticated</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleLogout}
+                                    className={`px-4 py-3 rounded-2xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 ${
+                                        isDark
+                                            ? "bg-gradient-to-r from-red-400 to-rose-500 text-white"
+                                            : "bg-gradient-to-r from-red-500 to-rose-600 text-white"
+                                    }`}
+                                >
+                                    Disconnect
+                                </button>
                             </div>
                         )}
                         <button

@@ -1,0 +1,17 @@
+# Test files
+*.test.js
+test-*.js
+
+# Development files
+.env
+.env.*
+node_modules/
+.git/
+.github/
+.gitignore
+.vscode/
+.npmrc
+
+# Logs
+*.log
+npm-debug.log*

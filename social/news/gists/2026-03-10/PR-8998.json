@@ -1,0 +1,35 @@
+{
+  "pr_number": 8998,
+  "title": "feat: add dirtberry and claude-airforce models via api.airforce",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8998",
+  "merged_at": "2026-03-10T11:55:16Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh berries and new brains",
+    "blurb": "We just wired up the dirtberry image model and a community-provided Claude Sonnet 4.6 to the API. Quick realistic pixels and top-tier text generation, ready for your prompts.",
+    "summary": "Added the dirtberry image model and claude-airforce text model via the api.airforce community provider.",
+    "impact": "Developers can now generate quick realistic images with the 'dirtberry' model and access Claude Sonnet 4.6 via the 'claude-airforce' text model endpoint.",
+    "keywords": [
+      "models",
+      "api",
+      "claude",
+      "dirtberry",
+      "image-generation",
+      "text-generation"
+    ],
+    "visual_concept": "The PR adds 'dirtberry' (berry/nature) and 'claude-airforce' (aviation). Visual: The pollinations bee wearing a tiny aviator hat, holding a glowing pixelated berry. A retro terminal nearby shows text. Cozy, warm, nature meets tech.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny aviator goggles, happily holding a glowing pixelated berry next to a retro computer terminal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-10T11:56:08.483396+00:00"
+}

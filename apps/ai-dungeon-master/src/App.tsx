@@ -12,6 +12,8 @@ const API_URL = {
   story: 'https://gen.pollinations.ai/v1/chat/completions',
   image: 'https://gen.pollinations.ai/image/',
 };
+const APP_KEY = 'pk_pollinations_ai_dungeon_master';
+const POLLINATIONS_AUTH_URL = 'https://enter.pollinations.ai/authorize';
 // Enhanced interfaces
 interface Character {
   name: string;
@@ -78,7 +80,8 @@ interface GameState {
 }
 
 export default function App() {
-  const { apiKey, isLoggedIn, login, logout } = useAuth();
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [gameState, setGameState] = useState<GameState>({
     character: null,
@@ -93,10 +96,39 @@ export default function App() {
   });
 
   const [isStoryHistoryOpen, setIsStoryHistoryOpen] = useState(false);
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'confirm' | 'uploading' | 'done' | 'error'>('idle');
-  const [pendingUploadCount, setPendingUploadCount] = useState(0);
+
+  // BYOP auth: check for API key in URL fragment or sessionStorage
+  useEffect(() => {
+    const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
+    const keyFromUrl = fragmentParams.get("api_key");
+
+    if (keyFromUrl) {
+      sessionStorage.setItem("pollinations_api_key", keyFromUrl);
+      setApiKey(keyFromUrl);
+      setIsAuthenticated(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      const savedKey = sessionStorage.getItem("pollinations_api_key");
+      if (savedKey) {
+        setApiKey(savedKey);
+        setIsAuthenticated(true);
+      }
+    }
+  }, []);
+
+  const handleAuthenticate = () => {
+    const params = new URLSearchParams({
+      redirect_url: window.location.href,
+      app_key: APP_KEY,
+    });
+    window.location.href = `${POLLINATIONS_AUTH_URL}?${params}`;
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("pollinations_api_key");
+    setApiKey(null);
+    setIsAuthenticated(false);
+  };
 
   // Load game state from localStorage on mount
   useEffect(() => {
@@ -259,6 +291,8 @@ Core rules you must ALWAYS follow:
 
 
       // Use POST request with correct message format for Pollinations API
+      if (!apiKey) throw new Error('Not authenticated');
+
       const response = await fetch(API_URL.story, {
         method: 'POST',
         headers: {
@@ -336,11 +370,11 @@ Core rules you must ALWAYS follow:
         .trim()
         .substring(0, 200); // Limit length
 
+      if (!apiKey) return generateFallbackImage('mysterious fantasy scene');
+
       const imagePrompt = `fantasy rpg scene, ${cleanDescription}, digital art, detailed, atmospheric, high quality`;
-      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}&key=${encodeURIComponent(apiKey!)}`;
+      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}&key=${apiKey}`;
 
-
-      // Test if the image URL is accessible (basic validation)
       return imageUrl;
     } catch (error) {
       console.error('Error fetching image:', error);
@@ -351,14 +385,15 @@ Core rules you must ALWAYS follow:
   // Generate fallback image when main image generation fails
   const generateFallbackImage = (_description: string): string => {
     const fallbackPrompt = `fantasy rpg, medieval, atmospheric, digital art`;
-    return `${API_URL.image}${encodeURIComponent(fallbackPrompt)}?width=1024&height=768&model=flux&seed=fallback&key=${encodeURIComponent(apiKey!)}`;
+    return `${API_URL.image}${encodeURIComponent(fallbackPrompt)}?width=1024&height=768&model=flux&seed=fallback${apiKey ? `&key=${apiKey}` : ''}`;
   };
 
   // Fetch AI-generated character avatar
   const fetchCharacterAvatar = async (character: { name: string; class: string; backstory: string }): Promise<string> => {
     try {
       const avatarPrompt = `fantasy character portrait, ${character.name} the ${character.class}, ${character.backstory}, medieval fantasy art, detailed face, character design, portrait style`;
-      const avatarUrl = `${API_URL.image}${encodeURIComponent(avatarPrompt)}?width=512&height=512&model=flux&key=${encodeURIComponent(apiKey!)}`;
+      if (!apiKey) return '';
+      const avatarUrl = `${API_URL.image}${encodeURIComponent(avatarPrompt)}?width=512&height=512&model=flux&key=${apiKey}`;
       return avatarUrl;
     } catch (error) {
       console.error('Error fetching character avatar:', error);
@@ -394,10 +429,12 @@ Core rules you must ALWAYS follow:
         "description": "brief description"
       }`;
 
+      if (!apiKey) return null;
+
       const response = await fetch(API_URL.story, {
         method: 'POST',
         headers: {
-          'Authorization' : `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -473,10 +510,12 @@ Core rules you must ALWAYS follow:
       
       If no items should be found, return an empty array: []`;
 
+      if (!apiKey) return [];
+
       const response = await fetch(API_URL.story, {
         method: 'POST',
         headers: {
-          'Authorization' : `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -535,7 +574,8 @@ Core rules you must ALWAYS follow:
   const fetchItemImage = async (itemName: string, itemType: string): Promise<string> => {
     try {
       const imagePrompt = `fantasy RPG item, ${itemName}, ${itemType}, detailed game asset, item icon, clean background`;
-      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=256&height=256&model=flux&key=${encodeURIComponent(apiKey!)}`;
+      if (!apiKey) return '';
+      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=256&height=256&model=flux&key=${apiKey}`;
       return imageUrl;
     } catch (error) {
       console.error('Error fetching item image:', error);
@@ -805,41 +845,38 @@ Core rules you must ALWAYS follow:
     };
   };
 
-  // HARD BYOP: block everything until the user connects
-  if (!isLoggedIn) {
-    return <AuthGate onLogin={login} />;
+  // Inventory management
+  const addItem = (item: InventoryItem) => {
+    setGameState(prev => ({
+      ...prev,
+      inventory: [...prev.inventory, item],
+    }));
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="text-center space-y-6 max-w-md mx-auto p-8">
+          <h1 className="text-4xl font-bold text-[#d4a76a]">AI Dungeon Master</h1>
+          <p className="text-[#c4b69c]">Login with your Pollinations account to start your adventure.</p>
+          <button
+            onClick={handleAuthenticate}
+            className="px-8 py-3 bg-[#d4a76a] hover:bg-[#e4b77a] text-[#2a1a0e] font-bold rounded-lg transition-all"
+          >
+            Login to Play
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Connected indicator + Disconnect button */}
-      <div
-        className="fixed top-4 right-4 z-50 flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm"
-        style={{
-          background: 'linear-gradient(135deg, rgba(58,40,23,0.95) 0%, rgba(44,30,18,0.98) 100%)',
-          border: '1px solid rgba(212,167,106,0.35)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.5), 0 0 12px rgba(212,167,106,0.1)',
-          backdropFilter: 'blur(12px)',
-        }}
-      >
-        <span
-          className="inline-block w-2.5 h-2.5 rounded-full"
-          style={{ background: '#4ade80', boxShadow: '0 0 8px rgba(74,222,128,0.6)' }}
-        />
-        <span style={{ color: '#d4a76a', fontFamily: 'Cinzel, serif', fontWeight: 600, letterSpacing: '0.04em' }}>
-          Connected
-        </span>
-        <span className="block w-px h-5" style={{ background: 'rgba(212,167,106,0.25)' }} />
+      <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+        <span className="text-sm text-[#8a7a6a]">Authenticated</span>
         <button
-          onClick={logout}
-          className="px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95"
-          style={{
-            background: 'rgba(139,0,0,0.25)',
-            color: '#ff6b6b',
-            border: '1px solid rgba(139,0,0,0.4)',
-            fontFamily: 'Cinzel, serif',
-            letterSpacing: '0.04em',
-          }}
+          onClick={handleLogout}
+          className="px-3 py-1 text-sm text-[#c4b69c] hover:text-white bg-[#4a3422] hover:bg-[#5a4332] border border-[#d4a76a] rounded-lg transition-all"
         >
           Disconnect
         </button>

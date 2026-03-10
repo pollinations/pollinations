@@ -1,0 +1,37 @@
+{
+  "pr_number": 8971,
+  "title": "[FEAT] Add pollinations BYOP and media upload service for `apps/product-packaging-designer` ",
+  "author": "CSE-Anwesha",
+  "url": "https://github.com/pollinations/pollinations/pull/8971",
+  "merged_at": "2026-03-10T15:24:49Z",
+  "labels": [
+    "API",
+    "WEB",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bring Your Own Pollen",
+    "blurb": "The Product Packaging Designer app just got a major upgrade! You can now log in with Pollinations, bring your own Pollen (BYOP), and upload media directly through our native service.",
+    "summary": "The Product Packaging Designer community app has been updated to support Pollinations SSO, Bring Your Own Pollen (BYOP) authorization, and native media uploads.",
+    "impact": "Users can now seamlessly log in with their Pollinations account and use their own Pollen balance to generate packaging designs, with all media uploads handled natively.",
+    "keywords": [
+      "community",
+      "apps",
+      "BYOP",
+      "SSO",
+      "media-upload",
+      "packaging-designer"
+    ],
+    "visual_concept": "The PR is about a 'product packaging designer' app integrating Pollinations SSO and media uploads. Visuals: The bee (Polly) helping design a cute pixel-art box or package, representing the packaging designer app and the new native integration.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, happily designing a cardboard box on a retro computer monitor. The screen glows with a lime green (#ecf874) 3D packaging design. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-10T15:25:52.058730+00:00"
+}

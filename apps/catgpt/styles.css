@@ -204,6 +204,72 @@ header {
     margin-top: 0.3rem;
 }
 
+/* === Auth === */
+
+.auth-container {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.auth-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #f0fff4;
+    border: 2px solid #05ffa1;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.auth-label {
+    font-size: 0.9rem;
+    color: #2d3748;
+}
+
+.auth-key {
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.auth-btn-primary {
+    width: 100%;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    background: var(--color-secondary);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.auth-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(5, 255, 161, 0.3);
+}
+
+.auth-btn-secondary {
+    background: #ff61d8;
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.auth-btn-secondary:hover {
+    background: #e050c0;
+}
+
 .thumbnail-container {
     position: relative;
     width: 100%;

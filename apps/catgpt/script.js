@@ -6,7 +6,14 @@ import {
     fetchImageWithAuth,
     generateImageURL,
     handleImageUpload,
+    setApiKey,
 } from "./ai.js";
+
+// ── Auth Constants ──────────────────────────────────────────────────────────
+
+const AUTH_STORAGE_KEY = "pollinations_api_key";
+const APP_KEY = "pk_eyz4NPtQK6MgQDLR";
+const AUTHORIZE_URL = "https://enter.pollinations.ai/authorize";
 
 // ── UI Constants ────────────────────────────────────────────────────────────
 
@@ -151,6 +158,7 @@ const dom = {
     imageThumbnailContainer: document.getElementById("imageThumbnailContainer"),
     imageThumbnail: document.getElementById("imageThumbnail"),
     removeImageBtn: document.getElementById("removeImageBtn"),
+    authContainer: document.getElementById("authContainer"),
 };
 
 const BUTTON_DEFAULT_HTML =
@@ -208,6 +216,84 @@ function getSavedMemes() {
         return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     } catch {
         return [];
+    }
+}
+
+// ── Auth Logic ──────────────────────────────────────────────────────────────
+
+let isLoggedIn = false;
+
+function checkAuth() {
+    // 1. Check URL hash for api_key
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+        const hashParams = new URLSearchParams(hash);
+        const apiKey = hashParams.get("api_key");
+        if (apiKey) {
+            localStorage.setItem(AUTH_STORAGE_KEY, apiKey);
+            // Clean URL fragment
+            window.history.replaceState(
+                {},
+                "",
+                window.location.pathname + window.location.search,
+            );
+        }
+    }
+
+    // 2. Check localStorage
+    const storedKey = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (storedKey) {
+        isLoggedIn = true;
+        setApiKey(storedKey);
+        updateAuthUI(storedKey);
+    } else {
+        isLoggedIn = false;
+        setApiKey(null);
+        updateAuthUI(null);
+    }
+}
+
+function login() {
+    const currentUrl = window.location.href.split("#")[0];
+    const params = new URLSearchParams({
+        redirect_url: currentUrl,
+        app_key: APP_KEY,
+        models: "gptimage",
+    });
+    window.location.href = `${AUTHORIZE_URL}?${params.toString()}`;
+}
+
+function logout() {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    isLoggedIn = false;
+    setApiKey(null);
+    updateAuthUI(null);
+    showNotification("Disconnected from Pollinations. 😿", "info");
+}
+
+function updateAuthUI(apiKey) {
+    if (!dom.authContainer) return;
+
+    dom.authContainer.innerHTML = "";
+
+    if (apiKey) {
+        const truncatedKey = `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`;
+        const authInfo = document.createElement("div");
+        authInfo.className = "auth-info";
+        authInfo.innerHTML = `
+            <span class="auth-label">🌸 Your Pollen:</span>
+            <span class="auth-key">${truncatedKey}</span>
+            <button id="logoutBtn" class="auth-btn-secondary">Disconnect</button>
+        `;
+        dom.authContainer.appendChild(authInfo);
+        document.getElementById("logoutBtn").addEventListener("click", logout);
+    } else {
+        const loginBtn = document.createElement("button");
+        loginBtn.id = "loginBtn";
+        loginBtn.className = "auth-btn-primary";
+        loginBtn.innerHTML = "Connect with Pollinations 🌸";
+        dom.authContainer.appendChild(loginBtn);
+        loginBtn.addEventListener("click", login);
     }
 }
 
@@ -520,6 +606,12 @@ function startRetryCountdown() {
 // ── Generator ───────────────────────────────────────────────────────────────
 
 async function generateMeme() {
+    if (!isLoggedIn) {
+        showNotification("Please connect with Pollinations to generate memes! 🌸", "warning");
+        login();
+        return;
+    }
+
     const userQuestion = dom.userInput.value.trim();
 
     if (!userQuestion) {
@@ -612,6 +704,7 @@ async function shareMeme() {
 let konamiCode = [];
 
 function initializeApp() {
+    checkAuth();
     loadUserMemes();
     loadExamples();
     loadRandomCatFact();
@@ -626,6 +719,12 @@ function setupEventListeners() {
     dom.shareBtn.addEventListener("click", shareMeme);
 
     dom.imageUpload.addEventListener("change", async (e) => {
+        if (!isLoggedIn) {
+            showNotification("Please connect with Pollinations to upload images! 🌸", "warning");
+            login();
+            return;
+        }
+
         const file = e.target.files[0];
         if (file) {
             const url = await handleImageUpload(file, showNotification);
@@ -664,7 +763,10 @@ function handleURLPrompt() {
 
     if (prompt) {
         dom.userInput.value = prompt;
-        setTimeout(generateMeme, 500);
+        // Only auto-generate if logged in
+        if (isLoggedIn) {
+            setTimeout(generateMeme, 500);
+        }
     }
 }
 

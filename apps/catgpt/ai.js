@@ -1,14 +1,22 @@
-// ai.js — API config, prompt generation, image fetching, and Cloudinary upload
+// ai.js — API config, prompt generation, image fetching, and Pollinations Media Service upload
 
 export const API_CONFIG = {
     POLLINATIONS_API: "https://gen.pollinations.ai/image",
     ORIGINAL_CATGPT_IMAGE:
         "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png",
-    CLOUDINARY_CLOUD_NAME: "pollinations",
-    CLOUDINARY_UPLOAD_PRESET: "pollinations-image",
-    CLOUDINARY_API_KEY: "939386723511927",
-    POLLINATIONS_API_KEY: "pk_w3kAO902fOeFYiNm",
+    POLLINATIONS_MEDIA_UPLOAD: "https://media.pollinations.ai/upload",
+    DEFAULT_API_KEY: "pk_w3kAO902fOeFYiNm",
 };
+
+let currentApiKey = API_CONFIG.DEFAULT_API_KEY;
+
+export function setApiKey(key) {
+    currentApiKey = key || API_CONFIG.DEFAULT_API_KEY;
+}
+
+export function getApiKey() {
+    return currentApiKey;
+}
 
 const CATGPT_STYLE =
     'Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, black bob hair, brick/burgundy sweater (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, "CATGPT" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.';
@@ -83,7 +91,7 @@ export function generateImageURL(prompt, imageUrl = null) {
 
 export async function fetchImageWithAuth(imageUrl) {
     const response = await fetch(imageUrl, {
-        headers: { Authorization: `Bearer ${API_CONFIG.POLLINATIONS_API_KEY}` },
+        headers: { Authorization: `Bearer ${currentApiKey}` },
     });
 
     if (!response.ok) {
@@ -100,72 +108,53 @@ export async function fetchImageWithAuth(imageUrl) {
     return URL.createObjectURL(blob);
 }
 
-// ── Cloudinary Upload ───────────────────────────────────────────────────────
+// ── Pollinations Media Service Upload ───────────────────────────────────────
 
-async function uploadToCloudinary(file) {
+async function uploadToPollinationsMedia(file) {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", API_CONFIG.CLOUDINARY_UPLOAD_PRESET);
-    formData.append("api_key", API_CONFIG.CLOUDINARY_API_KEY);
 
-    const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${API_CONFIG.CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: "POST", body: formData },
-    );
+    const response = await fetch(API_CONFIG.POLLINATIONS_MEDIA_UPLOAD, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${currentApiKey}`,
+        },
+        body: formData,
+    });
 
     if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Cloudinary error:", errorData);
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Pollinations Media Service error:", errorData);
         throw new Error(
-            `Upload failed: ${errorData.error?.message || "Unknown error"}`,
+            `Upload failed: ${errorData.error || response.statusText}`,
         );
     }
 
-    return (await response.json()).secure_url;
+    const result = await response.json();
+    return result.url;
 }
 
 export async function handleImageUpload(file, showNotification) {
     if (!file) return null;
 
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024; // Pollinations Media Service supports up to 10MB
     if (file.size > maxSize) {
         showNotification(
-            "Image too large! Please use an image under 5MB.",
+            "Image too large! Please use an image under 10MB.",
             "error",
         );
         return null;
     }
 
     try {
-        showNotification("Uploading image...", "info");
-        return await uploadToCloudinary(file);
+        showNotification("Uploading image to Pollinations Media Service...", "info");
+        return await uploadToPollinationsMedia(file);
     } catch (error) {
-        console.error("Cloudinary upload failed:", error);
+        console.error("Pollinations Media Service upload failed:", error);
         showNotification(
-            "Cloud upload failed. Trying local method...",
-            "warning",
+            "Upload failed. Please try again.",
+            "error",
         );
-        try {
-            const dataUri = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-            if (dataUri.length > 500000) {
-                showNotification(
-                    "Image may be too large for reliable use. Results might vary.",
-                    "warning",
-                );
-            }
-            return dataUri;
-        } catch (fallbackError) {
-            showNotification(
-                "Could not process image. Please try a smaller image.",
-                "error",
-            );
-            console.error("Base64 fallback failed:", fallbackError);
-            return null;
-        }
+        return null;
     }
 }

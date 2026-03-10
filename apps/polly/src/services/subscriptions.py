@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -7,6 +6,8 @@ from pathlib import Path
 import aiosqlite
 import discord
 
+from .._json import dumps as _json_dumps
+from .._json import loads as _json_loads
 from ..config import config
 
 logger = logging.getLogger(__name__)
@@ -91,7 +92,7 @@ class SubscriptionManager:
         try:
             state = initial_state.get("state", "open") if initial_state else "open"
             comment_count = initial_state.get("comments_count", 0) if initial_state else 0
-            labels = json.dumps(initial_state.get("labels", [])) if initial_state else "[]"
+            labels = _json_dumps(initial_state.get("labels", [])) if initial_state else "[]"
 
             await self._db.execute(
                 """
@@ -207,7 +208,7 @@ class SubscriptionManager:
                 SET last_state = ?, last_comment_count = ?, last_labels = ?, last_notified_at = ?
                 WHERE issue_number = ?
             """,
-                (state, comment_count, json.dumps(labels), datetime.utcnow().isoformat(), issue_number),
+                (state, comment_count, _json_dumps(labels), datetime.utcnow().isoformat(), issue_number),
             )
             await self._db.commit()
         except Exception as e:
@@ -399,7 +400,7 @@ class IssueNotifier:
                     )
 
             # Check for label changes
-            last_labels = json.loads(sub.get("last_labels", "[]"))
+            last_labels = _json_loads(sub.get("last_labels", "[]"))
             if set(current_labels) != set(last_labels):
                 added = set(current_labels) - set(last_labels)
                 removed = set(last_labels) - set(current_labels)

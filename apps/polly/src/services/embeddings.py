@@ -1,13 +1,13 @@
 import asyncio
-import hashlib
 import logging
 import os
 import subprocess
-import time
 from pathlib import Path
 
 import tiktoken
 
+from .._cache import TTLCache
+from .._hash import content_hash
 from .embeddings_utils import validate_and_get_openai_client
 
 logger = logging.getLogger(__name__)
@@ -215,7 +215,7 @@ def _is_definition_start(line: str) -> bool:
 
 
 def _file_hash(content: str) -> str:
-    return hashlib.md5(content.encode()).hexdigest()
+    return content_hash(content)
 
 
 async def clone_or_pull_repo(repo: str) -> bool:
@@ -480,33 +480,14 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
 
 
 # TTL cache for search results (avoids redundant OpenAI API calls)
-_search_cache: dict[str, tuple[float, list[dict]]] = {}
-_SEARCH_CACHE_TTL = 300  # 5 minutes
-_SEARCH_CACHE_MAX = 256
-
-
-def _cache_get(key: str) -> list[dict] | None:
-    if key in _search_cache:
-        ts, val = _search_cache[key]
-        if time.time() - ts < _SEARCH_CACHE_TTL:
-            return val
-        del _search_cache[key]
-    return None
-
-
-def _cache_set(key: str, val: list[dict]):
-    # Evict oldest if full
-    if len(_search_cache) >= _SEARCH_CACHE_MAX:
-        oldest = min(_search_cache, key=lambda k: _search_cache[k][0])
-        del _search_cache[oldest]
-    _search_cache[key] = (time.time(), val)
+_search_cache = TTLCache(maxsize=256, ttl=300)
 
 
 async def search_code(query: str, top_k: int = 5) -> list[dict]:
     await wait_for_initialization()
 
     cache_key = f"{query}:{top_k}"
-    cached = _cache_get(cache_key)
+    cached = _search_cache.get(cache_key)
     if cached is not None:
         return cached
 
@@ -542,7 +523,7 @@ async def search_code(query: str, top_k: int = 5) -> list[dict]:
             }
         )
 
-    _cache_set(cache_key, formatted)
+    _search_cache.set(cache_key, formatted)
     return formatted
 
 

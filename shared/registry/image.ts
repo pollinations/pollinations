@@ -342,6 +342,22 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "dirtberry": {
+        aliases: [],
+        modelId: "dirtberry",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-03-09").getTime(),
+                completionImageTokens: 0.001, // ~free via api.airforce
+            },
+        ],
+        description:
+            "Dirtberry (api.airforce) - Quick realistic image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "grok-video": {
         aliases: ["grok-imagine-video"],
         modelId: "grok-video",

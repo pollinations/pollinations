@@ -78,7 +78,7 @@ const packagingTypes: PackagingType[] = [
     { id: "bag", label: "Bag", icon: ShoppingBag, prompt: "bag packaging" },
     { id: "can", label: "Can", icon: Package, prompt: "can packaging" },
 ];
-const POLLINATIONS_API = "https://image.pollinations.ai/prompt";
+const POLLINATIONS_API = "https://gen.pollinations.ai/image";
 const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -211,7 +211,6 @@ function App() {
             reader.onloadend = () => {
                 const result = reader.result as string;
                 setUploadedImage(result);
-                localStorage.setItem("lastUploadedImage", result);
             };
 
             reader.onerror = () => {
@@ -373,7 +372,7 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
             const encodedPrompt = encodeURIComponent(prompt);
             const imageUrl = `${POLLINATIONS_API}/${encodedPrompt}?model=nanobanana&image=${encodeURIComponent(
                 uploadedUrl,
-            )}&referrer=pollinations.github.io&quality=high`;
+            )}&referrer=pollinations.github.io&quality=high&key=${apiKey}`;
 
             await new Promise<void>((resolve, reject) => {
                 const img = new Image();
@@ -381,8 +380,6 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
 
                 img.onload = () => {
                     setGeneratedImage(imageUrl);
-                    localStorage.setItem("lastGeneratedImage", imageUrl);
-                    localStorage.setItem("lastPrompt", prompt);
                     setImageLoaded(true);
                     resolve();
                 };

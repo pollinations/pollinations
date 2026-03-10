@@ -1,0 +1,34 @@
+{
+  "pr_number": 9021,
+  "title": "feat(polly): private extensions loader + safer deploy",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/9021",
+  "merged_at": "2026-03-10T18:14:38Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly's secret stash",
+    "blurb": "Polly the bot just got a new hidden compartment! We've added a safe way to load private, VPS-only extensions without tangling up the open-source codebase.",
+    "summary": "Implemented a generic plugin loader for Polly and updated deployment scripts to safely preserve private, VPS-only extensions.",
+    "impact": "Maintainers can now deploy the bot safely without rsync accidentally deleting local data or closed-source plugins.",
+    "keywords": [
+      "polly",
+      "bot",
+      "plugins",
+      "deployment",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee mascot organizing a secret, glowing drawer or inserting a hidden cartridge into a retro server, representing the private extension loader.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat, carefully sliding a glowing purple cartridge into a chunky retro server. A small code-plant sprouts nearby from a lime green (#ecf874) pot. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-10T18:23:13.551041+00:00"
+}

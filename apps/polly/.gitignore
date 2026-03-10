@@ -65,5 +65,8 @@ dist/
 build/
 *.egg-info/
 
+# Private extensions (VPS-only, closed source)
+src/extensions/
+
 # Dev tracking docs
 TRACKING.md

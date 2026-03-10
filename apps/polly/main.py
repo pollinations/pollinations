@@ -17,6 +17,12 @@ def main():
     except ImportError:
         pass
 
+    # Load private extensions (VPS-only, not in git)
+    try:
+        import src.extensions  # noqa: F401
+    except ImportError:
+        pass
+
     setup_logging(level=logging.INFO)
     logger = logging.getLogger(__name__)
 

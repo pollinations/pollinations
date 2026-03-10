@@ -1,0 +1,34 @@
+{
+  "pr_number": 9017,
+  "title": "[FEAT] Attach the BYOP and media-service with `apps/ai-dungeon-master`",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/9017",
+  "merged_at": "2026-03-10T18:30:26Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Roll for authentication",
+    "blurb": "The AI Dungeon Master app just leveled up. We've swapped out Cloudinary for our native media service and wired up BYOP authentication, making your campaigns smoother and fully integrated.",
+    "summary": "The AI Dungeon Master community app now integrates BYOP (Bring Your Own Pollen) for reverse SSO authentication and replaces Cloudinary with the native Pollinations media service.",
+    "impact": "Players get a seamless login experience using their Pollen credits and a fully integrated media gallery for their tabletop RPG campaigns.",
+    "keywords": [
+      "ai-dungeon-master",
+      "byop",
+      "auth",
+      "media-service",
+      "rpg"
+    ],
+    "visual_concept": "Tabletop RPG theme. Polly the bee acting as a Dungeon Master, wearing a wizard hat behind a DM screen. The monitor robot is a player, holding up a fantasy landscape image (representing the new media service). D20 dice on the table.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, sitting behind a wooden Dungeon Master screen rolling a glowing 20-sided die. A chunky pixel robot with a CRT monitor head sits opposite her, excitedly holding up a generated fantasy landscape picture. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-10T18:31:23.093215+00:00"
+}

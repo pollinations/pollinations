@@ -124,6 +124,12 @@ export function GalleryModal({
                                                         character.avatar,
                                                     )
                                                 }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter")
+                                                        setLightboxUrl(
+                                                            character.avatar,
+                                                        );
+                                                }}
                                             />
                                             <div>
                                                 <p className="text-[#f5e6d3] font-semibold">
@@ -167,6 +173,15 @@ export function GalleryModal({
                                                                 entry.image,
                                                             )
                                                         }
+                                                        onKeyDown={(e) => {
+                                                            if (
+                                                                e.key ===
+                                                                "Enter"
+                                                            )
+                                                                setLightboxUrl(
+                                                                    entry.image,
+                                                                );
+                                                        }}
                                                     />
                                                     <div className="mt-1.5 px-0.5">
                                                         {entry.characterChoice && (
@@ -249,6 +264,15 @@ export function GalleryModal({
                                                                 item.image,
                                                             )
                                                         }
+                                                        onKeyDown={(e) => {
+                                                            if (
+                                                                e.key ===
+                                                                "Enter"
+                                                            )
+                                                                setLightboxUrl(
+                                                                    item.image,
+                                                                );
+                                                        }}
                                                     />
                                                     <p className="text-xs mt-1 truncate text-[#f5e6d3]">
                                                         {item.name}
@@ -278,10 +302,16 @@ export function GalleryModal({
             {/* Lightbox overlay */}
             {lightboxUrl && (
                 <div
+                    role="dialog"
                     className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-4 cursor-pointer"
                     onClick={() => setLightboxUrl(null)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Escape" || e.key === "Enter")
+                            setLightboxUrl(null);
+                    }}
                 >
                     <button
+                        type="button"
                         className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors cursor-pointer"
                         onClick={() => setLightboxUrl(null)}
                     >
@@ -292,6 +322,7 @@ export function GalleryModal({
                         alt="Full size"
                         className="max-w-full max-h-[90vh] object-contain rounded-lg"
                         onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
                     />
                 </div>
             )}

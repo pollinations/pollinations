@@ -266,8 +266,9 @@ export default function App() {
 
     // Make debug function available globally for testing
     if (typeof window !== "undefined") {
-        (window as any).checkSaveData = checkSaveData;
-        (window as any).clearSaveData = () => {
+        (window as unknown as Record<string, unknown>).checkSaveData =
+            checkSaveData;
+        (window as unknown as Record<string, unknown>).clearSaveData = () => {
             localStorage.removeItem("rpgGameState");
             console.log("Save data cleared");
         };

@@ -20,7 +20,12 @@ function parseLine(line: string): Highlight | null {
     );
     if (!match) return null;
     const [, date, emoji, title, description] = match;
-    return { date, emoji: emoji.trim(), title: title.trim(), description: description.trim() };
+    return {
+        date,
+        emoji: emoji.trim(),
+        title: title.trim(),
+        description: description.trim(),
+    };
 }
 
 export function useHighlights() {

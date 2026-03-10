@@ -325,7 +325,8 @@ function HelloPage() {
                                 )}
                             </div>
                             <p className="font-body text-xs text-subtle italic mt-4 pt-3 border-t border-border-subtle">
-                                🌱 Plans change. We build in the open and figure it out as we go.
+                                🌱 Plans change. We build in the open and figure
+                                it out as we go.
                             </p>
                         </div>
                     </div>

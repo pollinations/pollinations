@@ -370,7 +370,7 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
             const encodedPrompt = encodeURIComponent(prompt);
             const imageUrl = `${POLLINATIONS_API}/${encodedPrompt}?model=nanobanana&image=${encodeURIComponent(
                 uploadedUrl,
-            )}&referrer=pollinations.github.io&quality=high&key=${apiKey}`;
+            )}&quality=high&key=${apiKey}`;
 
             await new Promise<void>((resolve, reject) => {
                 const img = new Image();

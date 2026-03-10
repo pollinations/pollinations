@@ -813,14 +813,6 @@ Core rules you must ALWAYS follow:
     };
   };
 
-  // Inventory management
-  const addItem = (item: InventoryItem) => {
-    setGameState(prev => ({
-      ...prev,
-      inventory: [...prev.inventory, item],
-    }));
-  };
-
   if (!isLoggedIn) {
     return <AuthGate onLogin={login} />;
   }

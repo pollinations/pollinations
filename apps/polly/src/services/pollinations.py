@@ -1,22 +1,13 @@
 import asyncio
-import json
 import logging
 import random
 import time
 from collections.abc import Callable
 from contextvars import ContextVar
-from typing import Any
 
-try:
-    import orjson
-
-    def _json_dumps(obj, **kwargs):
-        return orjson.dumps(obj).decode()
-except ImportError:
-
-    def _json_dumps(obj, **kwargs):
-        return json.dumps(obj, ensure_ascii=False, **kwargs)
-
+from .._cache import TTLCache
+from .._json import dumps as _json_dumps
+from .._json import loads as _json_loads
 
 MAX_RETRIES = 3
 RETRY_DELAY = 5
@@ -51,34 +42,11 @@ from ..constants import (
 logger = logging.getLogger(__name__)
 
 
-class ResponseCache:
-    def __init__(self, ttl: int = 60):
-        self._cache: dict[str, tuple[float, Any]] = {}
-        self._ttl = ttl
-
-    def get(self, key: str) -> Any | None:
-        if key in self._cache:
-            timestamp, value = self._cache[key]
-            if time.time() - timestamp < self._ttl:
-                return value
-            del self._cache[key]
-        return None
-
-    def set(self, key: str, value: Any):
-        self._cache[key] = (time.time(), value)
-
-    def clear_expired(self):
-        now = time.time()
-        expired = [k for k, (t, _) in self._cache.items() if now - t >= self._ttl]
-        for k in expired:
-            del self._cache[k]
-
-
 class PollinationsClient:
     def __init__(self):
         self._session: aiohttp.ClientSession | None = None
         self._connector: aiohttp.TCPConnector | None = None
-        self._cache = ResponseCache(ttl=60)  # 60 second cache
+        self._cache = TTLCache(maxsize=256, ttl=60)
         self._tool_handlers: dict[str, Callable] = {}
 
     async def get_session(self) -> aiohttp.ClientSession:
@@ -458,8 +426,8 @@ class PollinationsClient:
             if ":" in func_name:
                 func_name = func_name.split(":")[-1]
             try:
-                args = json.loads(tool_call["function"]["arguments"])
-            except json.JSONDecodeError:
+                args = _json_loads(tool_call["function"]["arguments"])
+            except ValueError:
                 args = {}
 
             # Check cache first - only for safe read operations

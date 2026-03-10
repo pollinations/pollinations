@@ -63,7 +63,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pollinations/pollinations",
+    "url": "https://github.com/pollinations/pollinations.git",
     "directory": "packages/sdk"
   },
   "homepage": "https://pollinations.ai",

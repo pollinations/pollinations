@@ -36,6 +36,10 @@
     "url": "https://github.com/pollinations/pollinations.git",
     "directory": "packages/ompc"
   },
+  "funding": {
+  "type": "github",
+  "url": "https://github.com/sponsors/pollinations"
+  },
   "homepage": "https://pollinations.ai",
   "publishConfig": {
     "access": "public"

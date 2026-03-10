@@ -2,16 +2,20 @@ import {
     Camera,
     Download,
     Image as ImageIcon,
+    LogIn,
+    LogOut,
     RefreshCw,
     Sparkles,
     Upload,
     Wand2,
     Zap,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const POLLINATIONS_API_KEY =
-    "plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A";
+const APP_KEY = "pk_pollinations_virtual_makeup";
+const POLLINATIONS_AUTH_URL = "https://enter.pollinations.ai/authorize";
+const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_IMAGE_API = "https://gen.pollinations.ai/image";
 
 const MAKEUP_STYLES = [
     {
@@ -55,7 +59,41 @@ function App() {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [uploadedFile, setUploadedFile] = useState(null);
     const [errorMessage, setErrorMessage] = useState("");
+    const [apiKey, setApiKey] = useState(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
+        const keyFromUrl = fragmentParams.get("api_key");
+
+        if (keyFromUrl) {
+            sessionStorage.setItem("pollinations_api_key", keyFromUrl);
+            setApiKey(keyFromUrl);
+            setIsAuthenticated(true);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            const savedKey = sessionStorage.getItem("pollinations_api_key");
+            if (savedKey) {
+                setApiKey(savedKey);
+                setIsAuthenticated(true);
+            }
+        }
+    }, []);
+
+    const handleAuthenticate = () => {
+        const params = new URLSearchParams({
+            redirect_url: window.location.href,
+            app_key: APP_KEY,
+        });
+        window.location.href = `${POLLINATIONS_AUTH_URL}?${params}`;
+    };
+
+    const handleLogout = () => {
+        sessionStorage.removeItem("pollinations_api_key");
+        setApiKey(null);
+        setIsAuthenticated(false);
+    };
 
     const handleImageUpload = (event) => {
         const file = event.target.files?.[0];
@@ -77,12 +115,13 @@ function App() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("https://media.pollinations.ai/upload", {
+        const response = await fetch(POLLINATIONS_MEDIA_API, {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${POLLINATIONS_API_KEY}`,
+                Authorization: `Bearer ${apiKey}`,
             },
             body: formData,
+            signal: AbortSignal.timeout(30000),
         });
 
         if (!response.ok) {
@@ -91,11 +130,11 @@ function App() {
         }
 
         const data = await response.json();
-        return data.url;
+        return data.url || data.secure_url || data.media_url;
     };
 
     const applyMakeup = async () => {
-        if (!uploadedImage || !uploadedFile) return;
+        if (!uploadedImage || !uploadedFile || !apiKey) return;
 
         setIsLoading(true);
         setImageLoaded(false);
@@ -114,18 +153,23 @@ function App() {
 
             const randomSeed = Math.floor(Math.random() * 1000000);
 
-            const apiUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=nanobanana&image=${encodedImageURL}&referrer=virtualmakeuptryon&width=1024&height=1024&nologo=true&enhance=true&seed=${randomSeed}`;
+            const apiUrl = `${POLLINATIONS_IMAGE_API}/prompt/${encodedPrompt}?model=nanobanana&image=${encodedImageURL}&referrer=virtualmakeuptryon&width=1024&height=1024&nologo=true&enhance=true&seed=${randomSeed}`;
 
-            const img = new Image();
-            img.onload = () => {
-                setMakeupImage(apiUrl);
-                setImageLoaded(true);
-                setIsLoading(false);
-            };
-            img.onerror = () => {
-                setIsLoading(false);
-            };
-            img.src = apiUrl;
+            const response = await fetch(apiUrl, {
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to generate makeup image");
+            }
+
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            setMakeupImage(blobUrl);
+            setImageLoaded(true);
+            setIsLoading(false);
         } catch (error) {
             console.error("Error applying makeup:", error);
             setErrorMessage(
@@ -199,18 +243,46 @@ function App() {
                                 </p>
                             </div>
                         </div>
-                        {uploadedImage && (
-                            <button
-                                type="button"
-                                onClick={resetApp}
-                                className="flex items-center gap-2 px-5 py-2.5 text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-white/20"
-                            >
-                                <RefreshCw className="w-4 h-4" />
-                                <span className="hidden sm:inline font-medium">
-                                    New Photo
-                                </span>
-                            </button>
-                        )}
+                        <div className="flex items-center gap-3">
+                            {isAuthenticated ? (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-emerald-400 font-medium">
+                                        Authenticated
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={handleLogout}
+                                        className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-white/20"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        <span className="hidden sm:inline font-medium">
+                                            Disconnect
+                                        </span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleAuthenticate}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-emerald-500 text-white rounded-xl font-semibold shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/40 transition-all"
+                                >
+                                    <LogIn className="w-4 h-4" />
+                                    <span className="font-medium">Login</span>
+                                </button>
+                            )}
+                            {uploadedImage && (
+                                <button
+                                    type="button"
+                                    onClick={resetApp}
+                                    className="flex items-center gap-2 px-5 py-2.5 text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-white/20"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                    <span className="hidden sm:inline font-medium">
+                                        New Photo
+                                    </span>
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </header>
@@ -405,10 +477,10 @@ function App() {
 
                                 <button
                                     type="button"
-                                    onClick={applyMakeup}
+                                    onClick={isAuthenticated ? applyMakeup : handleAuthenticate}
                                     disabled={
                                         isLoading ||
-                                        (useCustom && !customPrompt.trim())
+                                        (isAuthenticated && useCustom && !customPrompt.trim())
                                     }
                                     className="w-full mt-6 py-4 bg-gradient-to-r from-cyan-500 via-emerald-500 to-orange-500 text-white rounded-2xl font-bold shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 group"
                                 >
@@ -417,6 +489,13 @@ function App() {
                                             <RefreshCw className="w-6 h-6 animate-spin" />
                                             <span className="text-lg">
                                                 Transforming...
+                                            </span>
+                                        </>
+                                    ) : !isAuthenticated ? (
+                                        <>
+                                            <LogIn className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                                            <span className="text-lg">
+                                                Login to Apply Makeup
                                             </span>
                                         </>
                                     ) : (

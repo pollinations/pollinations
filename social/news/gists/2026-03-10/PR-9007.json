@@ -1,0 +1,34 @@
+{
+  "pr_number": 9007,
+  "title": "feat: load What's New dynamically from news branch",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9007",
+  "merged_at": "2026-03-10T10:45:24Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh news, straight from the hive",
+    "blurb": "The 'What's New' section on our homepage now updates dynamically! No more waiting for a site deployment to see the latest buzz, plus clickable links and a shiny new roadmap scoring system.",
+    "summary": "The frontend now dynamically fetches the latest news highlights directly from the repository, eliminating the need for manual hardcoded updates.",
+    "impact": "Users will see real-time updates in the 'What's New' section with fully clickable markdown links, alongside a newly scored 'What's Next' roadmap.",
+    "keywords": [
+      "frontend",
+      "news",
+      "roadmap",
+      "dynamic-content",
+      "ui"
+    ],
+    "visual_concept": "The PR is about dynamic news delivery and updating a display. Characters: Polly the bee and the Monitor Robot. Polly could be handing a fresh newspaper or a glowing data scroll to the Monitor Robot, whose screen displays a news feed or roadmap.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny newsboy cap, handing a glowing digital newspaper to a chunky Monitor Robot. The robot's CRT screen displays a neat, colorful news feed. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-10T10:46:18.182467+00:00"
+}

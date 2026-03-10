@@ -1,0 +1,34 @@
+{
+  "pr_number": 9026,
+  "title": "fix: use black logo on authorize/BYOP screen",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9026",
+  "merged_at": "2026-03-10T22:19:04Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Back in black",
+    "blurb": "Fixed a sneaky CSS bug that made our logo invisible on the authorization screen. White on light green is a bold design choice, but we prefer you actually seeing our name.",
+    "summary": "Fixed an issue on the authorize/BYOP screen where the logo was incorrectly inverted to white against a light background.",
+    "impact": "Users will now see the pollinations logo clearly in black on the authorization screen, improving readability and brand visibility.",
+    "keywords": [
+      "ui",
+      "bugfix",
+      "frontend",
+      "authorize",
+      "css"
+    ],
+    "visual_concept": "Polly the bee fixing a contrast issue by painting a white logo black on a lime green canvas, accompanied by the monitor robot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, using a brush to paint a chunky pixel logo black on a bright lime green (#ecf874) canvas. A retro monitor robot stands nearby holding a palette of dark purple (#110518) paint. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-10T22:19:54.885387+00:00"
+}

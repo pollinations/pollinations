@@ -62,21 +62,6 @@ export function getAuthorizeUrl() {
     return `${API_CONFIG.ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}`;
 }
 
-// ── Prompt & Style ────────────────────────────────────────────────────────
-
-const CATGPT_STYLE =
-    'Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, black bob hair, brick/burgundy sweater (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, "CATGPT" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.';
-
-const CATGPT_PERSONALITY = `You are **CatGPT** – an aloof, self-important house-cat oracle.
-
-Guidelines
-•  Replies: one or two crisp sentences, no filler.
-•  Tone: detached, sardonic, subtly superior.
-•  Cats outrank humans; human problems = minor curiosities.
-•  When self-referential, be unpredictable and natural.
-•  Offer a curt "solution" or dismissal, then redirect to feline perspective.
-•  Never apologise or over-explain; indifference is charm.`;
-
 export const EXAMPLES_MAP = new Map([
     [
         "What is my horoscope? I am gemini. And don't say napping",
@@ -119,11 +104,7 @@ export const EXAMPLES_MAP = new Map([
 // ── Prompt Generation ───────────────────────────────────────────────────────
 
 export function createImageGenerationPrompt(userQuestion) {
-    return `${CATGPT_STYLE}\n
-    ${CATGPT_PERSONALITY}\n
-    IMPORTANT: CatGPT's response MUST be 2-5 words ONLY. Make it funny, sarcastic, and dismissive. Examples: "Not your problem.", "I"d rather nap.", "Hard pass, human."\n
-    Human asks: "${userQuestion}"\n
-    CatGPT responds (2-5 words, funny):`;
+    return `Single-panel CatGPT webcomic, white background, thick black marker strokes. White cat with black patches, human with bob hair. Handwritten text. "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply. Black and white comic style.`;
 }
 
 export function generateImageURL(prompt, imageUrl = null) {

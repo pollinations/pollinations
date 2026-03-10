@@ -102,6 +102,26 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "qwen": {
+        aliases: ["qwen3.5", "qwen3.5-35b-a3b", "qwen-moe"],
+        modelId: "accounts/fireworks/models/qwen3p5-35b-a3b",
+        provider: "fireworks",
+        cost: [
+            {
+                date: new Date("2026-03-10").getTime(),
+                promptTextTokens: perMillion(0.3),
+                completionTextTokens: perMillion(1.2),
+            },
+        ],
+        description:
+            "Qwen3.5 35B-A3B - Efficient MoE Outperforming Larger Models",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 131072,
+        isSpecialized: false,
+    },
     "mistral": {
         aliases: [
             "mistral-small",

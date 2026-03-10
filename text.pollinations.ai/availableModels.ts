@@ -36,6 +36,10 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
+        name: "qwen",
+        config: portkeyConfig["accounts/fireworks/models/qwen3p5-35b-a3b"],
+    },
+    {
         name: "mistral",
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
     },

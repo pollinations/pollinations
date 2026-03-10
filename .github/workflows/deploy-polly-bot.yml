@@ -41,12 +41,13 @@ jobs:
             set -e
 
             echo "Syncing source to /root/polly..."
-            rsync -av --delete \
+            rsync -av \
               --exclude '.env' \
               --exclude 'data/' \
               --exclude 'venv/' \
               --exclude '.git/' \
               --exclude '*.pem' \
+              --exclude 'src/extensions/' \
               /tmp/polly-deploy/ /root/polly/
 
             echo "Installing dependencies..."

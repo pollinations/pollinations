@@ -1,0 +1,34 @@
+{
+  "pr_number": 9022,
+  "title": "[FEAT] Added the .npmrc for the NPM Packages to be connected with mono-repo",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/9022",
+  "merged_at": "2026-03-10T18:53:10Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Packing up the pollen",
+    "blurb": "We've updated our package configurations to streamline publishing to GitHub Packages. Better attribution, funding links, and mono-repo harmony!",
+    "summary": "Added .npmrc files and updated package.json metadata across the mcp, ompc, and sdk packages to configure publishing to GitHub Packages.",
+    "impact": "This standardizes our package publishing pipeline and ensures proper contributor attribution and funding links.",
+    "keywords": [
+      "npm",
+      "packages",
+      "monorepo",
+      "github-packages",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee organizing small pixelated boxes (packages) in a cozy warehouse or garden shed setting. The boxes represent the npm packages being prepped for the registry.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny worker's apron, neatly stacking small pixelated cardboard boxes in a warm garden shed. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-10T18:54:04.440535+00:00"
+}

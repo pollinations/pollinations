@@ -13,9 +13,9 @@ export function SceneArea({ imageUrl }: SceneAreaProps) {
     useEffect(() => {
         setImageLoaded(false);
         setImageError(false);
-    }, [imageUrl]);
+    }, []);
 
-    const displayImageUrl = imageError ? "" : (imageUrl || "");
+    const displayImageUrl = imageError ? "" : imageUrl || "";
 
     return (
         <motion.div
@@ -29,13 +29,13 @@ export function SceneArea({ imageUrl }: SceneAreaProps) {
                 <img
                     src={imageUrl}
                     alt=""
-                    style={{ display: 'none' }}
+                    style={{ display: "none" }}
                     onLoad={() => {
                         setImageLoaded(true);
                         setImageError(false);
                     }}
                     onError={() => {
-                        console.warn('Scene image failed to load:', imageUrl);
+                        console.warn("Scene image failed to load:", imageUrl);
                         setImageError(true);
                         setImageLoaded(true);
                     }}
@@ -44,7 +44,11 @@ export function SceneArea({ imageUrl }: SceneAreaProps) {
 
             <div
                 className="h-72 md:h-[28rem] bg-cover bg-center relative transition-all duration-700"
-                style={{ backgroundImage: displayImageUrl ? `url(${displayImageUrl})` : undefined }}
+                style={{
+                    backgroundImage: displayImageUrl
+                        ? `url(${displayImageUrl})`
+                        : undefined,
+                }}
             >
                 {/* Loading indicator */}
                 {!imageLoaded && (
@@ -59,7 +63,9 @@ export function SceneArea({ imageUrl }: SceneAreaProps) {
                 {/* Error state */}
                 {imageError && imageLoaded && (
                     <div className="absolute inset-0 bg-[#2c1e12] flex items-center justify-center">
-                        <p className="text-[#b8a389] text-sm italic">The scene shimmers but refuses to materialize...</p>
+                        <p className="text-[#b8a389] text-sm italic">
+                            The scene shimmers but refuses to materialize...
+                        </p>
                     </div>
                 )}
 

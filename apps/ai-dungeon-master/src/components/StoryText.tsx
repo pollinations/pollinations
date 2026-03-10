@@ -22,7 +22,9 @@ export function StoryText({ text, isLoading = false }: StoryTextProps) {
             <ScrollArea className="h-56 md:h-64 w-full rounded border border-[#5a4332] bg-[#2c1e12]/50 p-4">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-full">
-                        <div className="text-[#b8a389] italic">The tale unfolds...</div>
+                        <div className="text-[#b8a389] italic">
+                            The tale unfolds...
+                        </div>
                     </div>
                 ) : (
                     <motion.div

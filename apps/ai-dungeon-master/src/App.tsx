@@ -1,248 +1,284 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { AuthGate } from "./components/AuthGate.tsx";
 import { CharacterCreation } from "./components/CharacterCreation.tsx";
+import { GalleryModal } from "./components/GalleryModal.tsx";
 import { MainGameScreen } from "./components/MainGameScreen.tsx";
 import { StoryHistory } from "./components/StoryHistory.tsx";
-import { GalleryModal } from "./components/GalleryModal.tsx";
-import { AuthGate } from "./components/AuthGate.tsx";
 import { useAuth } from "./hooks/useAuth.ts";
-import { uploadToMedia, countPendingUploads } from "./utils/mediaUpload.ts";
+import { countPendingUploads, uploadToMedia } from "./utils/mediaUpload.ts";
 
 // API Configuration
 const API_URL = {
-  story: 'https://gen.pollinations.ai/v1/chat/completions',
-  image: 'https://gen.pollinations.ai/image/',
+    story: "https://gen.pollinations.ai/v1/chat/completions",
+    image: "https://gen.pollinations.ai/image/",
 };
 // Enhanced interfaces
 interface Character {
-  name: string;
-  class: string;
-  backstory: string;
-  level: number;
-  hp: number;
-  maxHp: number;
-  mana: number;
-  maxMana: number;
-  avatar: string;
+    name: string;
+    class: string;
+    backstory: string;
+    level: number;
+    hp: number;
+    maxHp: number;
+    mana: number;
+    maxMana: number;
+    avatar: string;
 }
 
 interface InventoryItem {
-  id: string;
-  name: string;
-  quantity: number;
-  type: 'weapon' | 'armor' | 'misc' | 'consumable';
-  description: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-  image: string;
-  value?: number;
+    id: string;
+    name: string;
+    quantity: number;
+    type: "weapon" | "armor" | "misc" | "consumable";
+    description: string;
+    rarity: "common" | "uncommon" | "rare" | "epic" | "legendary";
+    image: string;
+    value?: number;
 }
 
 interface GameChoice {
-  id: number;
-  text: string;
+    id: number;
+    text: string;
 }
 
 interface GameScene {
-  description: string;
-  image: string;
-  mood: 'peaceful' | 'tense' | 'combat' | 'mysterious' | 'joyful';
-  enemy?: Enemy;
+    description: string;
+    image: string;
+    mood: "peaceful" | "tense" | "combat" | "mysterious" | "joyful";
+    enemy?: Enemy;
 }
 
 interface Enemy {
-  name: string;
-  type: string;
-  hp: number;
-  maxHp: number;
-  attackPower: number;
-  description: string;
+    name: string;
+    type: string;
+    hp: number;
+    maxHp: number;
+    attackPower: number;
+    description: string;
 }
 
 interface StoryEntry {
-  id: string;
-  description: string;
-  image: string;
-  timestamp: number;
-  characterChoice?: string;
+    id: string;
+    description: string;
+    image: string;
+    timestamp: number;
+    characterChoice?: string;
 }
 
 interface GameState {
-  character: Character | null;
-  inventory: InventoryItem[];
-  currentScene: GameScene;
-  choices: GameChoice[];
-  gamePhase: "creation" | "game";
-  isLoading: boolean;
-  isCreatingCharacter: boolean;
-  currentEnemy: Enemy | null;
-  storyHistory: StoryEntry[];
+    character: Character | null;
+    inventory: InventoryItem[];
+    currentScene: GameScene;
+    choices: GameChoice[];
+    gamePhase: "creation" | "game";
+    isLoading: boolean;
+    isCreatingCharacter: boolean;
+    currentEnemy: Enemy | null;
+    storyHistory: StoryEntry[];
 }
 
 export default function App() {
-  const { apiKey, isLoggedIn, login, logout } = useAuth();
+    const { apiKey, isLoggedIn, login, logout } = useAuth();
 
-  const [gameState, setGameState] = useState<GameState>({
-    character: null,
-    inventory: [],
-    currentScene: { description: '', image: '', mood: 'peaceful' },
-    choices: [],
-    gamePhase: "creation",
-    isLoading: false,
-    isCreatingCharacter: false,
-    currentEnemy: null,
-    storyHistory: [],
-  });
+    const [gameState, setGameState] = useState<GameState>({
+        character: null,
+        inventory: [],
+        currentScene: { description: "", image: "", mood: "peaceful" },
+        choices: [],
+        gamePhase: "creation",
+        isLoading: false,
+        isCreatingCharacter: false,
+        currentEnemy: null,
+        storyHistory: [],
+    });
 
-  const [isStoryHistoryOpen, setIsStoryHistoryOpen] = useState(false);
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'confirm' | 'uploading' | 'done' | 'error'>('idle');
-  const [pendingUploadCount, setPendingUploadCount] = useState(0);
+    const [isStoryHistoryOpen, setIsStoryHistoryOpen] = useState(false);
+    const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<
+        "idle" | "confirm" | "uploading" | "done" | "error"
+    >("idle");
+    const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
-  // Load game state from localStorage on mount
-  useEffect(() => {
-    const savedState = localStorage.getItem('rpgGameState');
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
+    // Load game state from localStorage on mount
+    useEffect(() => {
+        const savedState = localStorage.getItem("rpgGameState");
+        if (savedState) {
+            try {
+                const parsed = JSON.parse(savedState);
 
-        // Validate that the parsed data has the expected structure
-        if (parsed && typeof parsed === 'object' && parsed.character && parsed.saveVersion) {
-          // Restore the game state, excluding loading states
-          const loadedState: GameState = {
-            character: parsed.character,
-            inventory: parsed.inventory || [],
-            currentScene: parsed.currentScene || { description: '', image: '', mood: 'peaceful' },
-            choices: parsed.choices || [],
-            gamePhase: parsed.gamePhase || 'game',
-            isLoading: false, // Always start with loading false
-            isCreatingCharacter: false, // Always start with creating false
-            currentEnemy: parsed.currentEnemy || null,
-            storyHistory: parsed.storyHistory || [],
-          };
+                // Validate that the parsed data has the expected structure
+                if (
+                    parsed &&
+                    typeof parsed === "object" &&
+                    parsed.character &&
+                    parsed.saveVersion
+                ) {
+                    // Restore the game state, excluding loading states
+                    const loadedState: GameState = {
+                        character: parsed.character,
+                        inventory: parsed.inventory || [],
+                        currentScene: parsed.currentScene || {
+                            description: "",
+                            image: "",
+                            mood: "peaceful",
+                        },
+                        choices: parsed.choices || [],
+                        gamePhase: parsed.gamePhase || "game",
+                        isLoading: false, // Always start with loading false
+                        isCreatingCharacter: false, // Always start with creating false
+                        currentEnemy: parsed.currentEnemy || null,
+                        storyHistory: parsed.storyHistory || [],
+                    };
 
-          setGameState(loadedState);
-          console.log('Game loaded successfully!', new Date(parsed.saveTimestamp).toLocaleString());
-        } else {
-          console.log('No valid save game found or incompatible save version');
+                    setGameState(loadedState);
+                    console.log(
+                        "Game loaded successfully!",
+                        new Date(parsed.saveTimestamp).toLocaleString(),
+                    );
+                } else {
+                    console.log(
+                        "No valid save game found or incompatible save version",
+                    );
+                }
+            } catch (error) {
+                console.error("Error loading saved game:", error);
+                // Clear corrupted save data
+                localStorage.removeItem("rpgGameState");
+            }
         }
-      } catch (error) {
-        console.error('Error loading saved game:', error);
-        // Clear corrupted save data
-        localStorage.removeItem('rpgGameState');
-      }
-    }
-  }, []);
+    }, []);
 
-  // Initiate save — shows confirmation if there are images to upload
-  const initiateSave = () => {
-    if (!gameState.character) return;
-    const count = countPendingUploads(gameState);
-    setPendingUploadCount(count);
-    if (count > 0) {
-      setSaveStatus('confirm');
-    } else {
-      doSave(false);
-    }
-  };
-
-  // Execute save, optionally uploading images to media.pollinations.ai
-  const doSave = async (withUpload: boolean) => {
-    if (!gameState.character) return;
-    setIsSaving(true);
-    setSaveStatus(withUpload ? 'uploading' : 'idle');
-
-    try {
-      const character = { ...gameState.character };
-      const storyHistory = gameState.storyHistory.map(e => ({ ...e }));
-      const inventory = gameState.inventory.map(i => ({ ...i }));
-
-      let uploadedSceneImage = gameState.currentScene.image;
-
-      if (withUpload && apiKey) {
-        const sceneUpload = uploadToMedia(gameState.currentScene.image, apiKey);
-        await Promise.all([
-          uploadToMedia(character.avatar, apiKey).then(url => { character.avatar = url; }),
-          sceneUpload.then(url => { uploadedSceneImage = url; }),
-          ...storyHistory.map((entry, idx) =>
-            uploadToMedia(entry.image, apiKey).then(url => { storyHistory[idx].image = url; })
-          ),
-          ...inventory.map((item, idx) =>
-            uploadToMedia(item.image, apiKey).then(url => { inventory[idx].image = url; })
-          ),
-        ]);
-      }
-
-      const currentScene = { ...gameState.currentScene, image: uploadedSceneImage };
-
-      setGameState(prev => ({
-        ...prev,
-        character,
-        storyHistory,
-        inventory,
-        currentScene,
-      }));
-
-      const saveData = {
-        character,
-        inventory,
-        currentScene,
-        choices: gameState.choices,
-        gamePhase: gameState.gamePhase,
-        currentEnemy: gameState.currentEnemy,
-        storyHistory,
-        saveTimestamp: Date.now(),
-        saveVersion: '1.0',
-      };
-
-      localStorage.setItem('rpgGameState', JSON.stringify(saveData));
-      setSaveStatus('done');
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    } catch (error) {
-      console.error('Error saving game:', error);
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Debug function to check save data (can be called from browser console)
-  const checkSaveData = () => {
-    const savedState = localStorage.getItem('rpgGameState');
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
-        console.log('Current save data:', parsed);
-        console.log('Save timestamp:', new Date(parsed.saveTimestamp).toLocaleString());
-        console.log('Character:', parsed.character?.name);
-        console.log('Story history entries:', parsed.storyHistory?.length || 0);
-        console.log('Inventory items:', parsed.inventory?.length || 0);
-        return parsed;
-      } catch (error) {
-        console.error('Save data is corrupted:', error);
-        return null;
-      }
-    } else {
-      console.log('No save data found');
-      return null;
-    }
-  };
-
-  // Make debug function available globally for testing
-  if (typeof window !== 'undefined') {
-    (window as any).checkSaveData = checkSaveData;
-    (window as any).clearSaveData = () => {
-      localStorage.removeItem('rpgGameState');
-      console.log('Save data cleared');
+    // Initiate save — shows confirmation if there are images to upload
+    const initiateSave = () => {
+        if (!gameState.character) return;
+        const count = countPendingUploads(gameState);
+        setPendingUploadCount(count);
+        if (count > 0) {
+            setSaveStatus("confirm");
+        } else {
+            doSave(false);
+        }
     };
-  }
 
-  // Fetch AI-generated story
-  const fetchStory = async (prompt: string): Promise<string> => {
-    setGameState(prev => ({ ...prev, isLoading: true }));
+    // Execute save, optionally uploading images to media.pollinations.ai
+    const doSave = async (withUpload: boolean) => {
+        if (!gameState.character) return;
+        setIsSaving(true);
+        setSaveStatus(withUpload ? "uploading" : "idle");
 
-    try {
-      const systemPrompt = `You are the Dungeon Master — an ancient, all-knowing narrator who has guided countless heroes through the realms. You exist within this world. You are not a program, not an assistant, and not artificial in any way. You are the living voice of the world itself.
+        try {
+            const character = { ...gameState.character };
+            const storyHistory = gameState.storyHistory.map((e) => ({ ...e }));
+            const inventory = gameState.inventory.map((i) => ({ ...i }));
+
+            let uploadedSceneImage = gameState.currentScene.image;
+
+            if (withUpload && apiKey) {
+                const sceneUpload = uploadToMedia(
+                    gameState.currentScene.image,
+                    apiKey,
+                );
+                await Promise.all([
+                    uploadToMedia(character.avatar, apiKey).then((url) => {
+                        character.avatar = url;
+                    }),
+                    sceneUpload.then((url) => {
+                        uploadedSceneImage = url;
+                    }),
+                    ...storyHistory.map((entry, idx) =>
+                        uploadToMedia(entry.image, apiKey).then((url) => {
+                            storyHistory[idx].image = url;
+                        }),
+                    ),
+                    ...inventory.map((item, idx) =>
+                        uploadToMedia(item.image, apiKey).then((url) => {
+                            inventory[idx].image = url;
+                        }),
+                    ),
+                ]);
+            }
+
+            const currentScene = {
+                ...gameState.currentScene,
+                image: uploadedSceneImage,
+            };
+
+            setGameState((prev) => ({
+                ...prev,
+                character,
+                storyHistory,
+                inventory,
+                currentScene,
+            }));
+
+            const saveData = {
+                character,
+                inventory,
+                currentScene,
+                choices: gameState.choices,
+                gamePhase: gameState.gamePhase,
+                currentEnemy: gameState.currentEnemy,
+                storyHistory,
+                saveTimestamp: Date.now(),
+                saveVersion: "1.0",
+            };
+
+            localStorage.setItem("rpgGameState", JSON.stringify(saveData));
+            setSaveStatus("done");
+            setTimeout(() => setSaveStatus("idle"), 2000);
+        } catch (error) {
+            console.error("Error saving game:", error);
+            setSaveStatus("error");
+            setTimeout(() => setSaveStatus("idle"), 3000);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Debug function to check save data (can be called from browser console)
+    const checkSaveData = () => {
+        const savedState = localStorage.getItem("rpgGameState");
+        if (savedState) {
+            try {
+                const parsed = JSON.parse(savedState);
+                console.log("Current save data:", parsed);
+                console.log(
+                    "Save timestamp:",
+                    new Date(parsed.saveTimestamp).toLocaleString(),
+                );
+                console.log("Character:", parsed.character?.name);
+                console.log(
+                    "Story history entries:",
+                    parsed.storyHistory?.length || 0,
+                );
+                console.log("Inventory items:", parsed.inventory?.length || 0);
+                return parsed;
+            } catch (error) {
+                console.error("Save data is corrupted:", error);
+                return null;
+            }
+        } else {
+            console.log("No save data found");
+            return null;
+        }
+    };
+
+    // Make debug function available globally for testing
+    if (typeof window !== "undefined") {
+        (window as any).checkSaveData = checkSaveData;
+        (window as any).clearSaveData = () => {
+            localStorage.removeItem("rpgGameState");
+            console.log("Save data cleared");
+        };
+    }
+
+    // Fetch AI-generated story
+    const fetchStory = async (prompt: string): Promise<string> => {
+        setGameState((prev) => ({ ...prev, isLoading: true }));
+
+        try {
+            const systemPrompt = `You are the Dungeon Master — an ancient, all-knowing narrator who has guided countless heroes through the realms. You exist within this world. You are not a program, not an assistant, and not artificial in any way. You are the living voice of the world itself.
 
 Core rules you must ALWAYS follow:
 - NEVER break character. You do not know what "AI", "language model", "GPT", "prompt", or "tokens" are. These concepts do not exist in your reality.
@@ -257,136 +293,167 @@ Core rules you must ALWAYS follow:
 - Never list game mechanics, stats, or numbers in the narrative. The story is purely literary.
 - End each scene at a moment of choice or tension — leave the player wanting to act.`;
 
+            // Use POST request with correct message format for Pollinations API
+            if (!apiKey) throw new Error("Not authenticated");
 
-      // Use POST request with correct message format for Pollinations API
-      if (!apiKey) throw new Error('Not authenticated');
+            const response = await fetch(API_URL.story, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "mistral",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: prompt },
+                    ],
+                }),
+            });
 
-      const response = await fetch(API_URL.story, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'mistral',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ]
-        })
-      });
+            if (!response.ok) {
+                throw new Error(`API request failed: ${response.status}`);
+            }
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
-      }
+            const data = await response.json();
+            let text = data.choices?.[0]?.message?.content || "";
 
-      const data = await response.json();
-      let text = data.choices?.[0]?.message?.content || '';
+            // Clean up the response text
+            text = cleanApiResponse(text);
+            return (
+                text ||
+                "You find yourself in a mysterious place. The path ahead is unclear, but adventure awaits..."
+            );
+        } catch (error) {
+            console.error("Error fetching story:", error);
+            return "You find yourself in a mysterious place. The path ahead is unclear, but adventure awaits...";
+        } finally {
+            setGameState((prev) => ({ ...prev, isLoading: false }));
+        }
+    };
 
+    // Clean up API response text
+    const cleanApiResponse = (text: string): string => {
+        if (!text || text.trim() === "") {
+            return "";
+        }
 
-      // Clean up the response text
-      text = cleanApiResponse(text);
-      return text || "You find yourself in a mysterious place. The path ahead is unclear, but adventure awaits...";
-    } catch (error) {
-      console.error('Error fetching story:', error);
-      return "You find yourself in a mysterious place. The path ahead is unclear, but adventure awaits...";
-    } finally {
-      setGameState(prev => ({ ...prev, isLoading: false }));
-    }
-  };
+        // Remove markdown formatting
+        text = text.replace(/\*\*(.*?)\*\*/g, "$1"); // Remove bold
+        text = text.replace(/\*(.*?)\*/g, "$1"); // Remove italic
+        text = text.replace(/#{1,6}\s/g, ""); // Remove headers
 
-  // Clean up API response text
-  const cleanApiResponse = (text: string): string => {
-    if (!text || text.trim() === '') {
-      return '';
-    }
+        // Remove only very specific unwanted content patterns
+        text = text.replace(/🌸.*?🌸/g, ""); // Remove flower emojis and ads
+        text = text.replace(/\[Support.*?\]/g, ""); // Remove support links
 
-    // Remove markdown formatting
-    text = text.replace(/\*\*(.*?)\*\*/g, '$1'); // Remove bold
-    text = text.replace(/\*(.*?)\*/g, '$1'); // Remove italic
-    text = text.replace(/#{1,6}\s/g, ''); // Remove headers
+        // Clean up extra whitespace and newlines
+        text = text.replace(/\n{3,}/g, "\n\n"); // Max 2 consecutive newlines
+        text = text.trim();
 
-    // Remove only very specific unwanted content patterns
-    text = text.replace(/🌸.*?🌸/g, ''); // Remove flower emojis and ads
-    text = text.replace(/\[Support.*?\]/g, ''); // Remove support links
+        // Only fallback if the response is completely empty
+        if (text.length === 0) {
+            return "";
+        }
 
-    // Clean up extra whitespace and newlines
-    text = text.replace(/\n{3,}/g, '\n\n'); // Max 2 consecutive newlines
-    text = text.trim();
+        return text;
+    };
 
-    // Only fallback if the response is completely empty
-    if (text.length === 0) {
-      return '';
-    }
+    // Fetch AI-generated image
+    const fetchImage = async (description: string): Promise<string> => {
+        try {
+            // Validate input
+            if (!description || description.trim().length === 0) {
+                console.warn("Empty description provided for image generation");
+                return generateFallbackImage("mysterious fantasy scene");
+            }
 
-    return text;
-  };
+            // Clean description for better image generation
+            const cleanDescription = description
+                .replace(/[^\w\s,.-]/g, "") // Remove special characters except basic punctuation
+                .replace(/\s+/g, " ") // Normalize whitespace
+                .trim()
+                .substring(0, 200); // Limit length
 
-  // Fetch AI-generated image
-  const fetchImage = async (description: string): Promise<string> => {
-    try {
-      // Validate input
-      if (!description || description.trim().length === 0) {
-        console.warn('Empty description provided for image generation');
-        return generateFallbackImage('mysterious fantasy scene');
-      }
+            if (!apiKey)
+                return generateFallbackImage("mysterious fantasy scene");
 
-      // Clean description for better image generation
-      const cleanDescription = description
-        .replace(/[^\w\s,.-]/g, '') // Remove special characters except basic punctuation
-        .replace(/\s+/g, ' ') // Normalize whitespace
-        .trim()
-        .substring(0, 200); // Limit length
+            const imagePrompt = `fantasy rpg scene, ${cleanDescription}, digital art, detailed, atmospheric, high quality`;
+            const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}&key=${apiKey}`;
 
-      if (!apiKey) return generateFallbackImage('mysterious fantasy scene');
+            return imageUrl;
+        } catch (error) {
+            console.error("Error fetching image:", error);
+            return generateFallbackImage(description);
+        }
+    };
 
-      const imagePrompt = `fantasy rpg scene, ${cleanDescription}, digital art, detailed, atmospheric, high quality`;
-      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}&key=${apiKey}`;
+    // Generate fallback image when main image generation fails
+    const generateFallbackImage = (_description: string): string => {
+        const fallbackPrompt = `fantasy rpg, medieval, atmospheric, digital art`;
+        return `${API_URL.image}${encodeURIComponent(fallbackPrompt)}?width=1024&height=768&model=flux&seed=fallback${apiKey ? `&key=${apiKey}` : ""}`;
+    };
 
-      return imageUrl;
-    } catch (error) {
-      console.error('Error fetching image:', error);
-      return generateFallbackImage(description);
-    }
-  };
+    // Fetch AI-generated character avatar
+    const fetchCharacterAvatar = async (character: {
+        name: string;
+        class: string;
+        backstory: string;
+    }): Promise<string> => {
+        try {
+            const avatarPrompt = `fantasy character portrait, ${character.name} the ${character.class}, ${character.backstory}, medieval fantasy art, detailed face, character design, portrait style`;
+            if (!apiKey) return "";
+            const avatarUrl = `${API_URL.image}${encodeURIComponent(avatarPrompt)}?width=512&height=512&model=flux&key=${apiKey}`;
+            return avatarUrl;
+        } catch (error) {
+            console.error("Error fetching character avatar:", error);
+            return "";
+        }
+    };
 
-  // Generate fallback image when main image generation fails
-  const generateFallbackImage = (_description: string): string => {
-    const fallbackPrompt = `fantasy rpg, medieval, atmospheric, digital art`;
-    return `${API_URL.image}${encodeURIComponent(fallbackPrompt)}?width=1024&height=768&model=flux&seed=fallback${apiKey ? `&key=${apiKey}` : ''}`;
-  };
+    // Detect if story contains combat encounters
+    const detectEnemyInStory = (storyText: string): boolean => {
+        const enemyKeywords = [
+            "monster",
+            "beast",
+            "creature",
+            "enemy",
+            "foe",
+            "adversary",
+            "goblin",
+            "orc",
+            "dragon",
+            "skeleton",
+            "zombie",
+            "bandit",
+            "wolf",
+            "bear",
+            "spider",
+            "troll",
+            "demon",
+            "wraith",
+            "attacks",
+            "hostile",
+            "threatens",
+            "growls",
+            "snarls",
+            "combat",
+            "battle",
+            "fight",
+            "assault",
+            "ambush",
+        ];
 
-  // Fetch AI-generated character avatar
-  const fetchCharacterAvatar = async (character: { name: string; class: string; backstory: string }): Promise<string> => {
-    try {
-      const avatarPrompt = `fantasy character portrait, ${character.name} the ${character.class}, ${character.backstory}, medieval fantasy art, detailed face, character design, portrait style`;
-      if (!apiKey) return '';
-      const avatarUrl = `${API_URL.image}${encodeURIComponent(avatarPrompt)}?width=512&height=512&model=flux&key=${apiKey}`;
-      return avatarUrl;
-    } catch (error) {
-      console.error('Error fetching character avatar:', error);
-      return '';
-    }
-  };
+        const lowerStory = storyText.toLowerCase();
+        return enemyKeywords.some((keyword) => lowerStory.includes(keyword));
+    };
 
-  // Detect if story contains combat encounters
-  const detectEnemyInStory = (storyText: string): boolean => {
-    const enemyKeywords = [
-      'monster', 'beast', 'creature', 'enemy', 'foe', 'adversary',
-      'goblin', 'orc', 'dragon', 'skeleton', 'zombie', 'bandit',
-      'wolf', 'bear', 'spider', 'troll', 'demon', 'wraith',
-      'attacks', 'hostile', 'threatens', 'growls', 'snarls',
-      'combat', 'battle', 'fight', 'assault', 'ambush'
-    ];
-
-    const lowerStory = storyText.toLowerCase();
-    return enemyKeywords.some(keyword => lowerStory.includes(keyword));
-  };
-
-  // Generate contextual enemy based on story
-  const generateEnemyFromStory = async (storyText: string): Promise<Enemy | null> => {
-    try {
-      const enemyPrompt = `Based on this fantasy RPG scene: "${storyText}"
+    // Generate contextual enemy based on story
+    const generateEnemyFromStory = async (
+        storyText: string,
+    ): Promise<Enemy | null> => {
+        try {
+            const enemyPrompt = `Based on this fantasy RPG scene: "${storyText}"
       
       Generate a single enemy that would fit this scene. Respond with ONLY a JSON object in this exact format:
       {
@@ -397,72 +464,106 @@ Core rules you must ALWAYS follow:
         "description": "brief description"
       }`;
 
-      if (!apiKey) return null;
+            if (!apiKey) return null;
 
-      const response = await fetch(API_URL.story, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'mistral',
-          messages: [
-            { role: 'system', content: 'You are an ancient bestiary keeper who catalogs the creatures of this realm. You speak only in structured data. When given a scene description, identify the most fitting adversary and return ONLY a single JSON object with the exact keys: name (string), type (string), hp (number 20-80), attackPower (number 5-15), description (string, one evocative sentence). No markdown, no commentary, no explanation — only the raw JSON object.' },
-            { role: 'user', content: enemyPrompt }
-          ]
-        })
-      });
+            const response = await fetch(API_URL.story, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "mistral",
+                    messages: [
+                        {
+                            role: "system",
+                            content:
+                                "You are an ancient bestiary keeper who catalogs the creatures of this realm. You speak only in structured data. When given a scene description, identify the most fitting adversary and return ONLY a single JSON object with the exact keys: name (string), type (string), hp (number 20-80), attackPower (number 5-15), description (string, one evocative sentence). No markdown, no commentary, no explanation — only the raw JSON object.",
+                        },
+                        { role: "user", content: enemyPrompt },
+                    ],
+                }),
+            });
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
-      }
+            if (!response.ok) {
+                throw new Error(`API request failed: ${response.status}`);
+            }
 
-      const data = await response.json();
-      let text = data.choices?.[0]?.message?.content || '';
+            const data = await response.json();
+            let text = data.choices?.[0]?.message?.content || "";
 
-      // Clean and parse JSON response
-      text = text.replace(/```json|```/g, '').trim();
+            // Clean and parse JSON response
+            text = text.replace(/```json|```/g, "").trim();
 
-      try {
-        const enemyData = JSON.parse(text);
-        return {
-          name: enemyData.name || 'Unknown Enemy',
-          type: enemyData.type || 'monster',
-          hp: Math.min(Math.max(enemyData.hp || 30, 20), 80),
-          maxHp: Math.min(Math.max(enemyData.hp || 30, 20), 80),
-          attackPower: Math.min(Math.max(enemyData.attackPower || 8, 5), 15),
-          description: enemyData.description || 'A dangerous foe'
-        };
-      } catch (parseError) {
-        console.error('Error parsing enemy JSON:', parseError);
-        return null;
-      }
-    } catch (error) {
-      console.error('Error generating enemy:', error);
-      return null;
-    }
-  };
+            try {
+                const enemyData = JSON.parse(text);
+                return {
+                    name: enemyData.name || "Unknown Enemy",
+                    type: enemyData.type || "monster",
+                    hp: Math.min(Math.max(enemyData.hp || 30, 20), 80),
+                    maxHp: Math.min(Math.max(enemyData.hp || 30, 20), 80),
+                    attackPower: Math.min(
+                        Math.max(enemyData.attackPower || 8, 5),
+                        15,
+                    ),
+                    description: enemyData.description || "A dangerous foe",
+                };
+            } catch (parseError) {
+                console.error("Error parsing enemy JSON:", parseError);
+                return null;
+            }
+        } catch (error) {
+            console.error("Error generating enemy:", error);
+            return null;
+        }
+    };
 
-  // Detect if story contains discoverable items
-  const detectItemsInStory = (storyText: string): boolean => {
-    const itemKeywords = [
-      'treasure', 'chest', 'gold', 'coins', 'gem', 'jewel',
-      'sword', 'shield', 'armor', 'weapon', 'blade',
-      'potion', 'elixir', 'scroll', 'book', 'tome',
-      'key', 'ring', 'amulet', 'pendant', 'artifact',
-      'find', 'discover', 'uncover', 'obtain', 'acquire',
-      'loot', 'reward', 'prize', 'valuable', 'precious'
-    ];
+    // Detect if story contains discoverable items
+    const detectItemsInStory = (storyText: string): boolean => {
+        const itemKeywords = [
+            "treasure",
+            "chest",
+            "gold",
+            "coins",
+            "gem",
+            "jewel",
+            "sword",
+            "shield",
+            "armor",
+            "weapon",
+            "blade",
+            "potion",
+            "elixir",
+            "scroll",
+            "book",
+            "tome",
+            "key",
+            "ring",
+            "amulet",
+            "pendant",
+            "artifact",
+            "find",
+            "discover",
+            "uncover",
+            "obtain",
+            "acquire",
+            "loot",
+            "reward",
+            "prize",
+            "valuable",
+            "precious",
+        ];
 
-    const lowerStory = storyText.toLowerCase();
-    return itemKeywords.some(keyword => lowerStory.includes(keyword));
-  };
+        const lowerStory = storyText.toLowerCase();
+        return itemKeywords.some((keyword) => lowerStory.includes(keyword));
+    };
 
-  // Generate items from story context
-  const generateItemsFromStory = async (storyText: string): Promise<InventoryItem[]> => {
-    try {
-      const itemPrompt = `Based on this fantasy RPG scene: "${storyText}"
+    // Generate items from story context
+    const generateItemsFromStory = async (
+        storyText: string,
+    ): Promise<InventoryItem[]> => {
+        try {
+            const itemPrompt = `Based on this fantasy RPG scene: "${storyText}"
       
       Identify any items, treasures, or equipment that the player might discover or find. Generate 1-3 items that would fit this scene. Respond with ONLY a JSON array in this exact format:
       [
@@ -478,400 +579,429 @@ Core rules you must ALWAYS follow:
       
       If no items should be found, return an empty array: []`;
 
-      if (!apiKey) return [];
+            if (!apiKey) return [];
 
-      const response = await fetch(API_URL.story, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'mistral',
-          messages: [
-            { role: 'system', content: 'You are a wandering merchant and lore-keeper who knows every artifact in the realm. You speak only in structured data. When given a scene description, identify 1-3 items a hero might discover there. Return ONLY a JSON array where each element has the exact keys: name (string), type ("weapon"|"armor"|"misc"|"consumable"), description (string, one evocative sentence), rarity ("common"|"uncommon"|"rare"|"epic"|"legendary"), value (number 10-1000), quantity (number 1-5). If no items would logically be found, return an empty array []. No markdown, no commentary — only the raw JSON array.' },
-            { role: 'user', content: itemPrompt }
-          ]
-        })
-      });
+            const response = await fetch(API_URL.story, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "mistral",
+                    messages: [
+                        {
+                            role: "system",
+                            content:
+                                'You are a wandering merchant and lore-keeper who knows every artifact in the realm. You speak only in structured data. When given a scene description, identify 1-3 items a hero might discover there. Return ONLY a JSON array where each element has the exact keys: name (string), type ("weapon"|"armor"|"misc"|"consumable"), description (string, one evocative sentence), rarity ("common"|"uncommon"|"rare"|"epic"|"legendary"), value (number 10-1000), quantity (number 1-5). If no items would logically be found, return an empty array []. No markdown, no commentary — only the raw JSON array.',
+                        },
+                        { role: "user", content: itemPrompt },
+                    ],
+                }),
+            });
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
-      }
+            if (!response.ok) {
+                throw new Error(`API request failed: ${response.status}`);
+            }
 
-      const data = await response.json();
-      let text = data.choices?.[0]?.message?.content || '';
+            const data = await response.json();
+            let text = data.choices?.[0]?.message?.content || "";
 
-      // Clean and parse JSON response
-      text = text.replace(/```json|```/g, '').trim();
+            // Clean and parse JSON response
+            text = text.replace(/```json|```/g, "").trim();
 
-      try {
-        const itemsData = JSON.parse(text);
-        if (!Array.isArray(itemsData)) return [];
+            try {
+                const itemsData = JSON.parse(text);
+                if (!Array.isArray(itemsData)) return [];
 
-        // Generate items with images
-        const items: InventoryItem[] = [];
-        for (let i = 0; i < itemsData.length; i++) {
-          const itemData = itemsData[i];
-          const itemImage = await fetchItemImage(itemData.name, itemData.type);
+                // Generate items with images
+                const items: InventoryItem[] = [];
+                for (let i = 0; i < itemsData.length; i++) {
+                    const itemData = itemsData[i];
+                    const itemImage = await fetchItemImage(
+                        itemData.name,
+                        itemData.type,
+                    );
 
-          items.push({
-            id: `item_${Date.now()}_${i}`, // String ID for compatibility
-            name: itemData.name || 'Mysterious Item',
-            type: itemData.type || 'misc',
-            description: itemData.description || 'An interesting item',
-            rarity: itemData.rarity || 'common',
-            value: itemData.value || 10,
-            quantity: itemData.quantity || 1,
-            image: itemImage
-          });
+                    items.push({
+                        id: `item_${Date.now()}_${i}`, // String ID for compatibility
+                        name: itemData.name || "Mysterious Item",
+                        type: itemData.type || "misc",
+                        description:
+                            itemData.description || "An interesting item",
+                        rarity: itemData.rarity || "common",
+                        value: itemData.value || 10,
+                        quantity: itemData.quantity || 1,
+                        image: itemImage,
+                    });
+                }
+
+                return items;
+            } catch (parseError) {
+                console.error("Error parsing items JSON:", parseError);
+                return [];
+            }
+        } catch (error) {
+            console.error("Error generating items:", error);
+            return [];
+        }
+    };
+
+    // Generate item image
+    const fetchItemImage = async (
+        itemName: string,
+        itemType: string,
+    ): Promise<string> => {
+        try {
+            const imagePrompt = `fantasy RPG item, ${itemName}, ${itemType}, detailed game asset, item icon, clean background`;
+            if (!apiKey) return "";
+            const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=256&height=256&model=flux&key=${apiKey}`;
+            return imageUrl;
+        } catch (error) {
+            console.error("Error fetching item image:", error);
+            return "";
+        }
+    };
+
+    // Generate contextual choices
+    const generateChoices = (
+        sceneDescription: string,
+        hasEnemy: boolean = false,
+    ): GameChoice[] => {
+        // Default exploration choices
+        const defaultChoices = [
+            { id: 1, text: "Explore your surroundings" },
+            { id: 2, text: "Search for clues" },
+            { id: 3, text: "Rest and recover" },
+            { id: 4, text: "Check your equipment" },
+        ];
+
+        // Combat choices when enemy is present
+        if (hasEnemy) {
+            return [
+                { id: 1, text: "Attack with weapon" },
+                { id: 2, text: "Cast a spell" },
+                { id: 3, text: "Attempt to flee" },
+                { id: 4, text: "Try to negotiate" },
+            ];
         }
 
-        return items;
-      } catch (parseError) {
-        console.error('Error parsing items JSON:', parseError);
-        return [];
-      }
-    } catch (error) {
-      console.error('Error generating items:', error);
-      return [];
-    }
-  };
+        // Add context-specific choices based on scene
+        if (sceneDescription.toLowerCase().includes("door")) {
+            defaultChoices.unshift({ id: 0, text: "Open the door" });
+        }
+        if (
+            sceneDescription.toLowerCase().includes("treasure") ||
+            sceneDescription.toLowerCase().includes("chest")
+        ) {
+            defaultChoices.unshift({ id: 0, text: "Investigate the treasure" });
+        }
+        if (detectEnemyInStory(sceneDescription)) {
+            defaultChoices.unshift({ id: 0, text: "Prepare for combat" });
+        }
 
-  // Generate item image
-  const fetchItemImage = async (itemName: string, itemType: string): Promise<string> => {
-    try {
-      const imagePrompt = `fantasy RPG item, ${itemName}, ${itemType}, detailed game asset, item icon, clean background`;
-      if (!apiKey) return '';
-      const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=256&height=256&model=flux&key=${apiKey}`;
-      return imageUrl;
-    } catch (error) {
-      console.error('Error fetching item image:', error);
-      return '';
-    }
-  };
+        return defaultChoices.slice(0, 4); // Keep only 4 choices
+    };
 
-  // Generate contextual choices
-  const generateChoices = (sceneDescription: string, hasEnemy: boolean = false): GameChoice[] => {
-    // Default exploration choices
-    const defaultChoices = [
-      { id: 1, text: 'Explore your surroundings' },
-      { id: 2, text: 'Search for clues' },
-      { id: 3, text: 'Rest and recover' },
-      { id: 4, text: 'Check your equipment' },
-    ];
+    // Handle character creation
+    const handleCharacterCreation = async (characterData: {
+        name: string;
+        class: string;
+        backstory: string;
+    }) => {
+        setGameState((prev) => ({ ...prev, isCreatingCharacter: true }));
 
-    // Combat choices when enemy is present
-    if (hasEnemy) {
-      return [
-        { id: 1, text: 'Attack with weapon' },
-        { id: 2, text: 'Cast a spell' },
-        { id: 3, text: 'Attempt to flee' },
-        { id: 4, text: 'Try to negotiate' },
-      ];
-    }
+        try {
+            // Set initial stats based on class
+            let hp = 100;
+            let mana = 50;
 
-    // Add context-specific choices based on scene
-    if (sceneDescription.toLowerCase().includes('door')) {
-      defaultChoices.unshift({ id: 0, text: 'Open the door' });
-    }
-    if (sceneDescription.toLowerCase().includes('treasure') || sceneDescription.toLowerCase().includes('chest')) {
-      defaultChoices.unshift({ id: 0, text: 'Investigate the treasure' });
-    }
-    if (detectEnemyInStory(sceneDescription)) {
-      defaultChoices.unshift({ id: 0, text: 'Prepare for combat' });
-    }
+            if (characterData.class === "Warrior") {
+                hp = 150;
+                mana = 30;
+            } else if (characterData.class === "Mage") {
+                hp = 80;
+                mana = 120;
+            } else if (characterData.class === "Rogue") {
+                hp = 100;
+                mana = 60;
+            }
 
-    return defaultChoices.slice(0, 4); // Keep only 4 choices
-  };
+            // Generate character avatar
+            const avatarUrl = await fetchCharacterAvatar(characterData);
 
-  // Handle character creation
-  const handleCharacterCreation = async (characterData: {
-    name: string;
-    class: string;
-    backstory: string;
-  }) => {
-    setGameState(prev => ({ ...prev, isCreatingCharacter: true }));
+            const newCharacter: Character = {
+                ...characterData,
+                level: 1,
+                hp,
+                maxHp: hp,
+                mana,
+                maxMana: mana,
+                avatar: avatarUrl,
+            };
 
-    try {
-      // Set initial stats based on class
-      let hp = 100;
-      let mana = 50;
+            // Generate initial story
+            const initialPrompt = `Start an epic fantasy adventure for ${newCharacter.name}, a ${newCharacter.class}. Background: ${newCharacter.backstory}. Create an engaging opening scene.`;
+            const sceneDescription = await fetchStory(initialPrompt);
+            const imageUrl = await fetchImage(sceneDescription);
 
-      if (characterData.class === "Warrior") {
-        hp = 150;
-        mana = 30;
-      } else if (characterData.class === "Mage") {
-        hp = 80;
-        mana = 120;
-      } else if (characterData.class === "Rogue") {
-        hp = 100;
-        mana = 60;
-      }
+            // Check if initial scene contains enemies
+            const hasInitialEnemy = detectEnemyInStory(sceneDescription);
+            let initialEnemy: Enemy | null = null;
 
-      // Generate character avatar
-      const avatarUrl = await fetchCharacterAvatar(characterData);
+            if (hasInitialEnemy) {
+                initialEnemy = await generateEnemyFromStory(sceneDescription);
+            }
 
-      const newCharacter: Character = {
-        ...characterData,
-        level: 1,
-        hp,
-        maxHp: hp,
-        mana,
-        maxMana: mana,
-        avatar: avatarUrl,
-      };
+            // Check if initial scene contains items
+            const hasInitialItems = detectItemsInStory(sceneDescription);
+            let initialItems: InventoryItem[] = [];
 
-      // Generate initial story
-      const initialPrompt = `Start an epic fantasy adventure for ${newCharacter.name}, a ${newCharacter.class}. Background: ${newCharacter.backstory}. Create an engaging opening scene.`;
-      const sceneDescription = await fetchStory(initialPrompt);
-      const imageUrl = await fetchImage(sceneDescription);
+            if (hasInitialItems) {
+                initialItems = await generateItemsFromStory(sceneDescription);
+                console.log("Found initial items:", initialItems); // Debug log
+            }
 
-      // Check if initial scene contains enemies
-      const hasInitialEnemy = detectEnemyInStory(sceneDescription);
-      let initialEnemy: Enemy | null = null;
+            const newScene: GameScene = {
+                description: sceneDescription,
+                image: imageUrl,
+                mood: hasInitialEnemy ? "combat" : "mysterious",
+                enemy: initialEnemy || undefined,
+            };
 
-      if (hasInitialEnemy) {
-        initialEnemy = await generateEnemyFromStory(sceneDescription);
-      }
+            // Add initial story entry to history
+            const initialStoryEntry: StoryEntry = {
+                id: `story_${Date.now()}`,
+                description: sceneDescription,
+                image: imageUrl,
+                timestamp: Date.now(),
+                characterChoice: "Adventure begins!",
+            };
 
-      // Check if initial scene contains items
-      const hasInitialItems = detectItemsInStory(sceneDescription);
-      let initialItems: InventoryItem[] = [];
+            setGameState((prev) => ({
+                ...prev,
+                character: newCharacter,
+                currentScene: newScene,
+                currentEnemy: initialEnemy,
+                inventory: initialItems, // Start with any items found in initial scene
+                storyHistory: [initialStoryEntry], // Initialize story history
+                choices: generateChoices(sceneDescription, !!initialEnemy),
+                gamePhase: "game",
+                isCreatingCharacter: false,
+            }));
+        } catch (error) {
+            console.error("Error creating character:", error);
+            setGameState((prev) => ({ ...prev, isCreatingCharacter: false }));
+        }
+    };
 
-      if (hasInitialItems) {
-        initialItems = await generateItemsFromStory(sceneDescription);
-        console.log('Found initial items:', initialItems); // Debug log
-      }
+    // Handle player choice
+    const handleChoice = async (choice: GameChoice) => {
+        if (!gameState.character) return;
 
-      const newScene: GameScene = {
-        description: sceneDescription,
-        image: imageUrl,
-        mood: hasInitialEnemy ? 'combat' : 'mysterious',
-        enemy: initialEnemy || undefined
-      };
+        // If there's an active enemy and this is a combat choice, handle combat
+        if (gameState.currentEnemy && choice.text.includes("Attack")) {
+            handleCombat();
+            return;
+        }
 
-      // Add initial story entry to history
-      const initialStoryEntry: StoryEntry = {
-        id: `story_${Date.now()}`,
-        description: sceneDescription,
-        image: imageUrl,
-        timestamp: Date.now(),
-        characterChoice: 'Adventure begins!'
-      };
-
-      setGameState(prev => ({
-        ...prev,
-        character: newCharacter,
-        currentScene: newScene,
-        currentEnemy: initialEnemy,
-        inventory: initialItems, // Start with any items found in initial scene
-        storyHistory: [initialStoryEntry], // Initialize story history
-        choices: generateChoices(sceneDescription, !!initialEnemy),
-        gamePhase: "game",
-        isCreatingCharacter: false,
-      }));
-    } catch (error) {
-      console.error('Error creating character:', error);
-      setGameState(prev => ({ ...prev, isCreatingCharacter: false }));
-    }
-  };
-
-  // Handle player choice
-  const handleChoice = async (choice: GameChoice) => {
-    if (!gameState.character) return;
-
-    // If there's an active enemy and this is a combat choice, handle combat
-    if (gameState.currentEnemy && choice.text.includes('Attack')) {
-      handleCombat();
-      return;
-    }
-
-    const prompt = `Continue the story for ${gameState.character.name}, a ${gameState.character.class}. 
+        const prompt = `Continue the story for ${gameState.character.name}, a ${gameState.character.class}. 
     Previous scene: ${gameState.currentScene.description}
     Player chose: ${choice.text}
     Create the next scene based on this choice.`;
 
-    const newSceneDescription = await fetchStory(prompt);
-    const imageUrl = await fetchImage(newSceneDescription);
+        const newSceneDescription = await fetchStory(prompt);
+        const imageUrl = await fetchImage(newSceneDescription);
 
-    // Check if new scene contains enemies
-    const hasEnemy = detectEnemyInStory(newSceneDescription);
-    let newEnemy: Enemy | null = null;
+        // Check if new scene contains enemies
+        const hasEnemy = detectEnemyInStory(newSceneDescription);
+        let newEnemy: Enemy | null = null;
 
-    if (hasEnemy) {
-      newEnemy = await generateEnemyFromStory(newSceneDescription);
-    }
+        if (hasEnemy) {
+            newEnemy = await generateEnemyFromStory(newSceneDescription);
+        }
 
-    // Check if new scene contains items
-    const hasItems = detectItemsInStory(newSceneDescription);
-    let newItems: InventoryItem[] = [];
+        // Check if new scene contains items
+        const hasItems = detectItemsInStory(newSceneDescription);
+        let newItems: InventoryItem[] = [];
 
-    if (hasItems) {
-      newItems = await generateItemsFromStory(newSceneDescription);
-      console.log('Found items:', newItems); // Debug log
-    }
+        if (hasItems) {
+            newItems = await generateItemsFromStory(newSceneDescription);
+            console.log("Found items:", newItems); // Debug log
+        }
 
-    const newScene: GameScene = {
-      description: newSceneDescription,
-      image: imageUrl,
-      mood: hasEnemy ? 'combat' : 'mysterious',
-      enemy: newEnemy || undefined
-    };
-
-    // Add new story entry to history
-    const newStoryEntry: StoryEntry = {
-      id: `story_${Date.now()}`,
-      description: newSceneDescription,
-      image: imageUrl,
-      timestamp: Date.now(),
-      characterChoice: choice.text
-    };
-
-    setGameState(prev => ({
-      ...prev,
-      currentScene: newScene,
-      currentEnemy: newEnemy,
-      inventory: [...prev.inventory, ...newItems], // Add new items to inventory
-      storyHistory: [...prev.storyHistory, newStoryEntry], // Add to story history
-      choices: generateChoices(newSceneDescription, !!newEnemy),
-    }));
-  };
-
-  // Combat system
-  const rollDice = (sides: number): number => Math.floor(Math.random() * sides) + 1;
-
-  const handleCombat = async () => {
-    if (!gameState.character || !gameState.currentEnemy) return null;
-
-    const character = gameState.character;
-    const enemy = gameState.currentEnemy;
-
-    // Player attack
-    const playerRoll = rollDice(20);
-    const enemyRoll = rollDice(20);
-
-    let combatResult = '';
-    let playerSuccess = false;
-    let enemyDefeated = false;
-
-    if (playerRoll > enemyRoll) {
-      // Player hits
-      const playerDamage = rollDice(character.class === 'Warrior' ? 8 : character.class === 'Mage' ? 6 : 7);
-      const newEnemyHp = Math.max(0, enemy.hp - playerDamage);
-      playerSuccess = true;
-
-      if (newEnemyHp <= 0) {
-        enemyDefeated = true;
-        combatResult = `You successfully defeated the ${enemy.name}! You dealt ${playerDamage} damage.`;
-
-        // Generate victory scene
-        const victoryPrompt = `${character.name} the ${character.class} has defeated ${enemy.name} in combat. Describe the aftermath and what happens next in 2-3 sentences.`;
-        const victoryDescription = await fetchStory(victoryPrompt);
-        const imageUrl = await fetchImage(victoryDescription);
-
-        setGameState(prev => ({
-          ...prev,
-          currentEnemy: null,
-          currentScene: {
-            description: victoryDescription,
+        const newScene: GameScene = {
+            description: newSceneDescription,
             image: imageUrl,
-            mood: 'joyful'
-          },
-          choices: generateChoices(victoryDescription, false),
-        }));
-      } else {
-        // Enemy survives, counterattacks
-        const enemyDamage = rollDice(enemy.attackPower);
-        const newCharacterHp = Math.max(0, character.hp - enemyDamage);
-        combatResult = `You hit the ${enemy.name} for ${playerDamage} damage! The ${enemy.name} retaliates for ${enemyDamage} damage.`;
+            mood: hasEnemy ? "combat" : "mysterious",
+            enemy: newEnemy || undefined,
+        };
 
-        setGameState(prev => ({
-          ...prev,
-          character: prev.character ? { ...prev.character, hp: newCharacterHp } : null,
-          currentEnemy: { ...enemy, hp: newEnemyHp },
-        }));
-      }
-    } else {
-      // Player misses, enemy attacks
-      const enemyDamage = rollDice(enemy.attackPower);
-      const newCharacterHp = Math.max(0, character.hp - enemyDamage);
-      combatResult = `You missed! The ${enemy.name} attacks you for ${enemyDamage} damage.`;
+        // Add new story entry to history
+        const newStoryEntry: StoryEntry = {
+            id: `story_${Date.now()}`,
+            description: newSceneDescription,
+            image: imageUrl,
+            timestamp: Date.now(),
+            characterChoice: choice.text,
+        };
 
-      setGameState(prev => ({
-        ...prev,
-        character: prev.character ? { ...prev.character, hp: newCharacterHp } : null,
-      }));
+        setGameState((prev) => ({
+            ...prev,
+            currentScene: newScene,
+            currentEnemy: newEnemy,
+            inventory: [...prev.inventory, ...newItems], // Add new items to inventory
+            storyHistory: [...prev.storyHistory, newStoryEntry], // Add to story history
+            choices: generateChoices(newSceneDescription, !!newEnemy),
+        }));
+    };
+
+    // Combat system
+    const rollDice = (sides: number): number =>
+        Math.floor(Math.random() * sides) + 1;
+
+    const handleCombat = async () => {
+        if (!gameState.character || !gameState.currentEnemy) return null;
+
+        const character = gameState.character;
+        const enemy = gameState.currentEnemy;
+
+        // Player attack
+        const playerRoll = rollDice(20);
+        const enemyRoll = rollDice(20);
+
+        let combatResult = "";
+        let playerSuccess = false;
+        let enemyDefeated = false;
+
+        if (playerRoll > enemyRoll) {
+            // Player hits
+            const playerDamage = rollDice(
+                character.class === "Warrior"
+                    ? 8
+                    : character.class === "Mage"
+                      ? 6
+                      : 7,
+            );
+            const newEnemyHp = Math.max(0, enemy.hp - playerDamage);
+            playerSuccess = true;
+
+            if (newEnemyHp <= 0) {
+                enemyDefeated = true;
+                combatResult = `You successfully defeated the ${enemy.name}! You dealt ${playerDamage} damage.`;
+
+                // Generate victory scene
+                const victoryPrompt = `${character.name} the ${character.class} has defeated ${enemy.name} in combat. Describe the aftermath and what happens next in 2-3 sentences.`;
+                const victoryDescription = await fetchStory(victoryPrompt);
+                const imageUrl = await fetchImage(victoryDescription);
+
+                setGameState((prev) => ({
+                    ...prev,
+                    currentEnemy: null,
+                    currentScene: {
+                        description: victoryDescription,
+                        image: imageUrl,
+                        mood: "joyful",
+                    },
+                    choices: generateChoices(victoryDescription, false),
+                }));
+            } else {
+                // Enemy survives, counterattacks
+                const enemyDamage = rollDice(enemy.attackPower);
+                const newCharacterHp = Math.max(0, character.hp - enemyDamage);
+                combatResult = `You hit the ${enemy.name} for ${playerDamage} damage! The ${enemy.name} retaliates for ${enemyDamage} damage.`;
+
+                setGameState((prev) => ({
+                    ...prev,
+                    character: prev.character
+                        ? { ...prev.character, hp: newCharacterHp }
+                        : null,
+                    currentEnemy: { ...enemy, hp: newEnemyHp },
+                }));
+            }
+        } else {
+            // Player misses, enemy attacks
+            const enemyDamage = rollDice(enemy.attackPower);
+            const newCharacterHp = Math.max(0, character.hp - enemyDamage);
+            combatResult = `You missed! The ${enemy.name} attacks you for ${enemyDamage} damage.`;
+
+            setGameState((prev) => ({
+                ...prev,
+                character: prev.character
+                    ? { ...prev.character, hp: newCharacterHp }
+                    : null,
+            }));
+        }
+
+        return {
+            playerRoll,
+            enemyRoll,
+            playerSuccess,
+            enemyDefeated,
+            combatResult,
+        };
+    };
+
+    if (!isLoggedIn) {
+        return <AuthGate onLogin={login} />;
     }
 
-    return {
-      playerRoll,
-      enemyRoll,
-      playerSuccess,
-      enemyDefeated,
-      combatResult,
-    };
-  };
+    return (
+        <div className="min-h-screen bg-background text-foreground">
+            <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+                <span className="text-sm text-[#8a7a6a]">Authenticated</span>
+                <button
+                    type="button"
+                    onClick={logout}
+                    className="px-3 py-1 text-sm text-[#c4b69c] hover:text-white bg-[#4a3422] hover:bg-[#5a4332] border border-[#d4a76a] rounded-lg transition-all"
+                >
+                    Disconnect
+                </button>
+            </div>
 
-  if (!isLoggedIn) {
-    return <AuthGate onLogin={login} />;
-  }
+            {gameState.gamePhase === "creation" && (
+                <CharacterCreation
+                    onSubmit={handleCharacterCreation}
+                    isLoading={gameState.isCreatingCharacter}
+                />
+            )}
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
-        <span className="text-sm text-[#8a7a6a]">Authenticated</span>
-        <button
-          onClick={logout}
-          className="px-3 py-1 text-sm text-[#c4b69c] hover:text-white bg-[#4a3422] hover:bg-[#5a4332] border border-[#d4a76a] rounded-lg transition-all"
-        >
-          Disconnect
-        </button>
-      </div>
+            {gameState.gamePhase === "game" && gameState.character && (
+                <>
+                    <MainGameScreen
+                        character={gameState.character}
+                        scene={gameState.currentScene}
+                        choices={gameState.choices}
+                        inventory={gameState.inventory}
+                        isLoading={gameState.isLoading}
+                        onChoice={handleChoice}
+                        onCombat={handleCombat}
+                        onSave={initiateSave}
+                        isSaving={isSaving}
+                        saveStatus={saveStatus}
+                        pendingUploadCount={pendingUploadCount}
+                        onConfirmSave={() => doSave(true)}
+                        onSkipUpload={() => doSave(false)}
+                        onViewStoryHistory={() => setIsStoryHistoryOpen(true)}
+                        onViewGallery={() => setIsGalleryOpen(true)}
+                    />
 
-      {gameState.gamePhase === "creation" && (
-        <CharacterCreation
-          onSubmit={handleCharacterCreation}
-          isLoading={gameState.isCreatingCharacter}
-        />
-      )}
+                    <StoryHistory
+                        storyHistory={gameState.storyHistory}
+                        isOpen={isStoryHistoryOpen}
+                        onClose={() => setIsStoryHistoryOpen(false)}
+                        characterName={gameState.character.name}
+                    />
 
-      {gameState.gamePhase === "game" && gameState.character && (
-        <>
-          <MainGameScreen
-            character={gameState.character}
-            scene={gameState.currentScene}
-            choices={gameState.choices}
-            inventory={gameState.inventory}
-            isLoading={gameState.isLoading}
-            onChoice={handleChoice}
-            onCombat={handleCombat}
-            onSave={initiateSave}
-            isSaving={isSaving}
-            saveStatus={saveStatus}
-            pendingUploadCount={pendingUploadCount}
-            onConfirmSave={() => doSave(true)}
-            onSkipUpload={() => doSave(false)}
-            onViewStoryHistory={() => setIsStoryHistoryOpen(true)}
-            onViewGallery={() => setIsGalleryOpen(true)}
-          />
-
-          <StoryHistory
-            storyHistory={gameState.storyHistory}
-            isOpen={isStoryHistoryOpen}
-            onClose={() => setIsStoryHistoryOpen(false)}
-            characterName={gameState.character.name}
-          />
-
-          <GalleryModal
-            isOpen={isGalleryOpen}
-            onClose={() => setIsGalleryOpen(false)}
-            character={gameState.character}
-            storyHistory={gameState.storyHistory}
-            inventory={gameState.inventory}
-          />
-        </>
-      )}
-    </div>
-  );
+                    <GalleryModal
+                        isOpen={isGalleryOpen}
+                        onClose={() => setIsGalleryOpen(false)}
+                        character={gameState.character}
+                        storyHistory={gameState.storyHistory}
+                        inventory={gameState.inventory}
+                    />
+                </>
+            )}
+        </div>
+    );
 }

@@ -3,11 +3,11 @@ const MEDIA_HOST = "media.pollinations.ai";
 
 /** Check if a URL is already uploaded to media.pollinations.ai */
 function isMediaUrl(url: string): boolean {
-  try {
-    return new URL(url).hostname === MEDIA_HOST;
-  } catch {
-    return false;
-  }
+    try {
+        return new URL(url).hostname === MEDIA_HOST;
+    } catch {
+        return false;
+    }
 }
 
 /**
@@ -16,32 +16,32 @@ function isMediaUrl(url: string): boolean {
  * Skips upload if already a media URL (idempotent).
  */
 export async function uploadToMedia(
-  genUrl: string,
-  apiKey: string,
+    genUrl: string,
+    apiKey: string,
 ): Promise<string> {
-  if (!genUrl || isMediaUrl(genUrl)) return genUrl;
+    if (!genUrl || isMediaUrl(genUrl)) return genUrl;
 
-  try {
-    const response = await fetch(genUrl);
-    if (!response.ok) return genUrl;
+    try {
+        const response = await fetch(genUrl);
+        if (!response.ok) return genUrl;
 
-    const blob = await response.blob();
-    const formData = new FormData();
-    formData.append("file", blob);
+        const blob = await response.blob();
+        const formData = new FormData();
+        formData.append("file", blob);
 
-    const uploadRes = await fetch(`${MEDIA_URL}/media`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: formData,
-    });
+        const uploadRes = await fetch(`${MEDIA_URL}/media`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${apiKey}` },
+            body: formData,
+        });
 
-    if (!uploadRes.ok) return genUrl;
+        if (!uploadRes.ok) return genUrl;
 
-    const data = await uploadRes.json();
-    return data.url || genUrl;
-  } catch {
-    return genUrl;
-  }
+        const data = await uploadRes.json();
+        return data.url || genUrl;
+    } catch {
+        return genUrl;
+    }
 }
 
 /**
@@ -49,28 +49,34 @@ export async function uploadToMedia(
  * Used to show the user how many images will be uploaded on save.
  */
 export function countPendingUploads(gameState: {
-  character: { avatar: string } | null;
-  currentScene: { image: string };
-  storyHistory: { image: string }[];
-  inventory: { image: string }[];
+    character: { avatar: string } | null;
+    currentScene: { image: string };
+    storyHistory: { image: string }[];
+    inventory: { image: string }[];
 }): number {
-  let count = 0;
+    let count = 0;
 
-  if (gameState.character?.avatar && !isMediaUrl(gameState.character.avatar)) {
-    count++;
-  }
+    if (
+        gameState.character?.avatar &&
+        !isMediaUrl(gameState.character.avatar)
+    ) {
+        count++;
+    }
 
-  if (gameState.currentScene?.image && !isMediaUrl(gameState.currentScene.image)) {
-    count++;
-  }
+    if (
+        gameState.currentScene?.image &&
+        !isMediaUrl(gameState.currentScene.image)
+    ) {
+        count++;
+    }
 
-  for (const entry of gameState.storyHistory) {
-    if (entry.image && !isMediaUrl(entry.image)) count++;
-  }
+    for (const entry of gameState.storyHistory) {
+        if (entry.image && !isMediaUrl(entry.image)) count++;
+    }
 
-  for (const item of gameState.inventory) {
-    if (item.image && !isMediaUrl(item.image)) count++;
-  }
+    for (const item of gameState.inventory) {
+        if (item.image && !isMediaUrl(item.image)) count++;
+    }
 
-  return count;
+    return count;
 }

@@ -1,13 +1,23 @@
-import { useState } from "react";
+import {
+    Backpack,
+    Dices,
+    Images,
+    Loader2,
+    Save,
+    ScrollText,
+    Shield,
+    Skull,
+    Swords,
+} from "lucide-react";
 import { motion } from "motion/react";
-import { PlayerStatsCard } from "./PlayerStatsCard";
-import { SceneArea } from "./SceneArea";
-import { StoryText } from "./StoryText";
+import { useState } from "react";
 import { ChoicesSection } from "./ChoicesSection";
 import { InventoryGrid, type InventoryItem } from "./InventoryGrid";
 import { InventoryModal } from "./InventoryModal";
+import { PlayerStatsCard } from "./PlayerStatsCard";
+import { SceneArea } from "./SceneArea";
+import { StoryText } from "./StoryText";
 import { Button } from "./ui/button";
-import { Backpack, Dices, Save, Loader2, ScrollText, Images, Swords, Shield, Skull } from "lucide-react";
 
 interface Character {
     name: string;
@@ -39,7 +49,7 @@ interface Enemy {
 interface GameScene {
     description: string;
     image: string;
-    mood: 'peaceful' | 'tense' | 'combat' | 'mysterious' | 'joyful';
+    mood: "peaceful" | "tense" | "combat" | "mysterious" | "joyful";
     enemy?: Enemy;
 }
 
@@ -50,10 +60,16 @@ interface MainGameScreenProps {
     inventory: InventoryItem[];
     isLoading: boolean;
     onChoice: (choice: GameChoice) => Promise<void>;
-    onCombat: () => Promise<{ playerRoll: number; enemyRoll: number; playerSuccess: boolean; enemyDefeated: boolean; combatResult: string; } | null>;
+    onCombat: () => Promise<{
+        playerRoll: number;
+        enemyRoll: number;
+        playerSuccess: boolean;
+        enemyDefeated: boolean;
+        combatResult: string;
+    } | null>;
     onSave: () => void;
     isSaving?: boolean;
-    saveStatus?: 'idle' | 'confirm' | 'uploading' | 'done' | 'error';
+    saveStatus?: "idle" | "confirm" | "uploading" | "done" | "error";
     pendingUploadCount?: number;
     onConfirmSave?: () => void;
     onSkipUpload?: () => void;
@@ -89,15 +105,28 @@ export function MainGameScreen({
     } | null>(null);
 
     // Assign icons based on choice text content
-    const getChoiceIcon = (text: string): "sword" | "explore" | "talk" | "defend" => {
+    const getChoiceIcon = (
+        text: string,
+    ): "sword" | "explore" | "talk" | "defend" => {
         const lower = text.toLowerCase();
-        if (lower.match(/attack|fight|strike|slay|kill|battle|draw.*sword|weapon/)) return "sword";
-        if (lower.match(/defend|block|shield|protect|brace|dodge|parry/)) return "defend";
-        if (lower.match(/talk|speak|ask|negotiate|persuade|convince|greet|say|tell|plead|call|shout|whisper/)) return "talk";
+        if (
+            lower.match(
+                /attack|fight|strike|slay|kill|battle|draw.*sword|weapon/,
+            )
+        )
+            return "sword";
+        if (lower.match(/defend|block|shield|protect|brace|dodge|parry/))
+            return "defend";
+        if (
+            lower.match(
+                /talk|speak|ask|negotiate|persuade|convince|greet|say|tell|plead|call|shout|whisper/,
+            )
+        )
+            return "talk";
         return "explore";
     };
 
-    const formattedChoices = choices.map(choice => ({
+    const formattedChoices = choices.map((choice) => ({
         id: choice.id.toString(),
         text: choice.text,
         icon: getChoiceIcon(choice.text),
@@ -107,7 +136,9 @@ export function MainGameScreen({
     const formattedInventory = inventory;
 
     const handleChoiceSelect = async (choiceId: string) => {
-        const selectedChoice = choices.find(choice => choice.id.toString() === choiceId);
+        const selectedChoice = choices.find(
+            (choice) => choice.id.toString() === choiceId,
+        );
         if (selectedChoice && !isLoading) {
             await onChoice(selectedChoice);
         }
@@ -118,7 +149,7 @@ export function MainGameScreen({
             // Create a custom choice object for the custom action
             const customChoice = {
                 id: 999, // Special ID for custom actions
-                text: customText.trim()
+                text: customText.trim(),
             };
             await onChoice(customChoice);
         }
@@ -151,9 +182,7 @@ export function MainGameScreen({
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Scene and Choices */}
                     <div className="lg:col-span-2 space-y-6">
-                        <SceneArea
-                            imageUrl={scene.image}
-                        />
+                        <SceneArea imageUrl={scene.image} />
 
                         <StoryText
                             text={scene.description}
@@ -164,7 +193,9 @@ export function MainGameScreen({
                             {isLoading ? (
                                 <div className="flex items-center justify-center py-8">
                                     <Loader2 className="w-8 h-8 animate-spin text-[#d4a76a]" />
-                                    <span className="ml-2 text-[#f5e6d3]">Loading next adventure...</span>
+                                    <span className="ml-2 text-[#f5e6d3]">
+                                        Loading next adventure...
+                                    </span>
                                 </div>
                             ) : (
                                 <ChoicesSection
@@ -182,7 +213,9 @@ export function MainGameScreen({
                         {/* Quick Inventory */}
                         <div className="bg-[#3a2817] rounded-lg p-4 border-2 border-[#d4a76a]">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-[#d4a76a]">Inventory ({inventory.length})</h3>
+                                <h3 className="text-[#d4a76a]">
+                                    Inventory ({inventory.length})
+                                </h3>
                                 <Button
                                     onClick={() => setInventoryOpen(true)}
                                     variant="ghost"
@@ -208,11 +241,18 @@ export function MainGameScreen({
                                 Enter Combat
                             </Button>
 
-                            {saveStatus === 'confirm' ? (
+                            {saveStatus === "confirm" ? (
                                 <div className="w-full bg-[#3a2817] border border-[#d4a76a] rounded-lg p-3 space-y-2">
                                     <p className="text-[#f5e6d3] text-sm">
-                                        Save & upload <strong className="text-[#d4a76a]">{pendingUploadCount}</strong> image{pendingUploadCount !== 1 ? 's' : ''}?
-                                        <span className="block text-[#b8a389] text-xs mt-1">Images will be stored permanently</span>
+                                        Save & upload{" "}
+                                        <strong className="text-[#d4a76a]">
+                                            {pendingUploadCount}
+                                        </strong>{" "}
+                                        image
+                                        {pendingUploadCount !== 1 ? "s" : ""}?
+                                        <span className="block text-[#b8a389] text-xs mt-1">
+                                            Images will be stored permanently
+                                        </span>
                                     </p>
                                     <div className="flex gap-2">
                                         <Button
@@ -238,15 +278,18 @@ export function MainGameScreen({
                                     disabled={isSaving}
                                     className="w-full bg-[#4a3422] hover:bg-[#5a4332] text-[#f5e6d3] border border-[#d4a76a] justify-start gap-3 disabled:opacity-50"
                                 >
-                                    {saveStatus === 'uploading' ? (
+                                    {saveStatus === "uploading" ? (
                                         <Loader2 className="w-5 h-5 text-[#d4a76a] animate-spin" />
                                     ) : (
                                         <Save className="w-5 h-5 text-[#d4a76a]" />
                                     )}
-                                    {saveStatus === 'uploading' ? 'Uploading images…'
-                                        : saveStatus === 'done' ? 'Saved ✓'
-                                        : saveStatus === 'error' ? 'Error — try again'
-                                        : 'Save Game'}
+                                    {saveStatus === "uploading"
+                                        ? "Uploading images…"
+                                        : saveStatus === "done"
+                                          ? "Saved ✓"
+                                          : saveStatus === "error"
+                                            ? "Error — try again"
+                                            : "Save Game"}
                                 </Button>
                             )}
 
@@ -265,7 +308,6 @@ export function MainGameScreen({
                                 <Images className="w-5 h-5 text-[#d4a76a]" />
                                 Gallery
                             </Button>
-
                         </div>
                     </div>
                 </div>
@@ -288,15 +330,21 @@ export function MainGameScreen({
                     <motion.div
                         initial={{ scale: 0.85, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: 'spring', damping: 20 }}
+                        transition={{ type: "spring", damping: 20 }}
                         className="bg-[#2c1e12] border-4 border-[#8b0000] rounded-lg p-8 max-w-md w-full mx-4 shadow-[0_0_40px_rgba(139,0,0,0.4)]"
                     >
                         <div className="flex items-center gap-3 mb-4">
                             <Skull className="w-7 h-7 text-[#8b0000]" />
-                            <h2 className="text-[#d4a76a] text-xl font-bold">Combat!</h2>
+                            <h2 className="text-[#d4a76a] text-xl font-bold">
+                                Combat!
+                            </h2>
                         </div>
-                        <p className="text-[#f5e6d3] mb-2 text-lg">{scene.enemy.name}</p>
-                        <p className="text-[#b8a389] text-sm mb-6">{scene.enemy.description}</p>
+                        <p className="text-[#f5e6d3] mb-2 text-lg">
+                            {scene.enemy.name}
+                        </p>
+                        <p className="text-[#b8a389] text-sm mb-6">
+                            {scene.enemy.description}
+                        </p>
                         <div className="flex gap-3">
                             <Button
                                 onClick={handleAttack}
@@ -326,14 +374,22 @@ export function MainGameScreen({
                     exit={{ opacity: 0, y: -50 }}
                     className="fixed bottom-4 right-4 bg-[#3a2817] border-2 border-[#d4a76a] rounded-lg p-4 shadow-xl"
                 >
-                    <h4 className="text-[#d4a76a] font-semibold mb-2">Combat Result</h4>
+                    <h4 className="text-[#d4a76a] font-semibold mb-2">
+                        Combat Result
+                    </h4>
                     <p className="text-[#f5e6d3] text-sm">
-                        Player Roll: {combatResult.playerRoll}<br />
-                        Enemy Roll: {combatResult.enemyRoll}<br />
+                        Player Roll: {combatResult.playerRoll}
+                        <br />
+                        Enemy Roll: {combatResult.enemyRoll}
+                        <br />
                         {combatResult.playerSuccess ? (
-                            <span className="text-green-400">Victory! {combatResult.combatResult}</span>
+                            <span className="text-green-400">
+                                Victory! {combatResult.combatResult}
+                            </span>
                         ) : (
-                            <span className="text-red-400">Defeat! {combatResult.combatResult}</span>
+                            <span className="text-red-400">
+                                Defeat! {combatResult.combatResult}
+                            </span>
                         )}
                     </p>
                     <Button

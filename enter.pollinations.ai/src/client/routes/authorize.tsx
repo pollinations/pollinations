@@ -238,7 +238,7 @@ function AuthorizeComponent() {
                         <img
                             src="/logo_text_black.svg"
                             alt="pollinations.ai"
-                            className="h-8 object-contain invert"
+                            className="h-8 object-contain"
                         />
                     </div>
 
@@ -321,7 +321,7 @@ function AuthorizeComponent() {
                         <img
                             src="/logo_text_black.svg"
                             alt="pollinations.ai"
-                            className="h-8 object-contain invert"
+                            className="h-8 object-contain"
                         />
                     </div>
                     <p className="text-sm text-green-800 mt-1">

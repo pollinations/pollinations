@@ -12,8 +12,6 @@ const API_URL = {
   story: 'https://gen.pollinations.ai/v1/chat/completions',
   image: 'https://gen.pollinations.ai/image/',
 };
-const APP_KEY = 'pk_pollinations_ai_dungeon_master';
-const POLLINATIONS_AUTH_URL = 'https://enter.pollinations.ai/authorize';
 // Enhanced interfaces
 interface Character {
   name: string;
@@ -80,8 +78,7 @@ interface GameState {
 }
 
 export default function App() {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { apiKey, isLoggedIn, login, logout } = useAuth();
 
   const [gameState, setGameState] = useState<GameState>({
     character: null,
@@ -96,39 +93,10 @@ export default function App() {
   });
 
   const [isStoryHistoryOpen, setIsStoryHistoryOpen] = useState(false);
-
-  // BYOP auth: check for API key in URL fragment or sessionStorage
-  useEffect(() => {
-    const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
-    const keyFromUrl = fragmentParams.get("api_key");
-
-    if (keyFromUrl) {
-      sessionStorage.setItem("pollinations_api_key", keyFromUrl);
-      setApiKey(keyFromUrl);
-      setIsAuthenticated(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else {
-      const savedKey = sessionStorage.getItem("pollinations_api_key");
-      if (savedKey) {
-        setApiKey(savedKey);
-        setIsAuthenticated(true);
-      }
-    }
-  }, []);
-
-  const handleAuthenticate = () => {
-    const params = new URLSearchParams({
-      redirect_url: window.location.href,
-      app_key: APP_KEY,
-    });
-    window.location.href = `${POLLINATIONS_AUTH_URL}?${params}`;
-  };
-
-  const handleLogout = () => {
-    sessionStorage.removeItem("pollinations_api_key");
-    setApiKey(null);
-    setIsAuthenticated(false);
-  };
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'confirm' | 'uploading' | 'done' | 'error'>('idle');
+  const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
   // Load game state from localStorage on mount
   useEffect(() => {
@@ -853,21 +821,8 @@ Core rules you must ALWAYS follow:
     }));
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center space-y-6 max-w-md mx-auto p-8">
-          <h1 className="text-4xl font-bold text-[#d4a76a]">AI Dungeon Master</h1>
-          <p className="text-[#c4b69c]">Login with your Pollinations account to start your adventure.</p>
-          <button
-            onClick={handleAuthenticate}
-            className="px-8 py-3 bg-[#d4a76a] hover:bg-[#e4b77a] text-[#2a1a0e] font-bold rounded-lg transition-all"
-          >
-            Login to Play
-          </button>
-        </div>
-      </div>
-    );
+  if (!isLoggedIn) {
+    return <AuthGate onLogin={login} />;
   }
 
   return (
@@ -875,7 +830,7 @@ Core rules you must ALWAYS follow:
       <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
         <span className="text-sm text-[#8a7a6a]">Authenticated</span>
         <button
-          onClick={handleLogout}
+          onClick={logout}
           className="px-3 py-1 text-sm text-[#c4b69c] hover:text-white bg-[#4a3422] hover:bg-[#5a4332] border border-[#d4a76a] rounded-lg transition-all"
         >
           Disconnect

@@ -1,4 +1,4 @@
-const MEDIA_URL = "https://media.pollinations.ai";
+const MEDIA_URL = "https://gen.pollinations.ai";
 const MEDIA_HOST = "media.pollinations.ai";
 
 /** Check if a URL is already uploaded to media.pollinations.ai */
@@ -29,7 +29,7 @@ export async function uploadToMedia(
     const formData = new FormData();
     formData.append("file", blob);
 
-    const uploadRes = await fetch(`${MEDIA_URL}/upload`, {
+    const uploadRes = await fetch(`${MEDIA_URL}/media`, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
       body: formData,

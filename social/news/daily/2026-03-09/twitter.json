@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "shipped polly v2. rewrote internals in rust for speed, and dropped the sycophancy so she stops agreeing with your bad code. nanobanana now actually respects `safe=false`, and we hardened the tier system to stop bots farming pollen. 7 PRs merged today.",
+  "alt_tweet": "7 PRs merged. polly v2 is live with native-speed internals and zero sycophancy. she will no longer pretend your bad ideas are good. also fixed nanobanana to actually respect `safe=false` and patched the tier system against bot farming.",
+  "hashtags": [
+    "#opensource",
+    "#buildinpublic"
+  ],
+  "image_prompt": "Dynamic pixel art scene of the cute bee mascot, Polly, wearing tiny aviator glasses and moving fast with motion blur, holding a glowing wrench. Beside her, a chunky CRT monitor robot gives a thumbs up. High contrast lime green (#ecf874) and dark purple (#110518) background. Cozy 8-bit aesthetic, chunky retro sprites, warm lighting, lo-fi vibes. Nostalgic but energetic, scroll-stopping impact.",
+  "reasoning": "Highlights the most impactful technical changes (Rust internals, safe=false fix, bot prevention) with dry humor about AI sycophancy.",
+  "char_count": 256,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-09/images/twitter.jpg",
+    "prompt": "Dynamic pixel art scene of the cute bee mascot, Polly, wearing tiny aviator glasses and moving fast with motion blur, holding a glowing wrench. Beside her, a chunky CRT monitor robot gives a thumbs up. High contrast lime green (#ecf874) and dark purple (#110518) background. Cozy 8-bit aesthetic, chunky retro sprites, warm lighting, lo-fi vibes. Nostalgic but energetic, scroll-stopping impact."
+  },
+  "date": "2026-03-09",
+  "generated_at": "2026-03-10T06:14:28.126870+00:00",
+  "platform": "twitter"
+}

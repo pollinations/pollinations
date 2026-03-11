@@ -998,7 +998,7 @@ export const generateChatTitle = async (userMessage, assistantReply) => {
                         : {}),
                 },
                 body: JSON.stringify({
-                    model: "nova-micro",
+                    model: "step-3.5-flash",
                     messages: [
                         {
                             role: "user",

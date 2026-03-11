@@ -87,6 +87,10 @@ a:hover {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 1.1rem;
     font-weight: 700;
+    color: var(--color-cream);
+}
+
+.auth-highlight {
     color: var(--color-accent);
 }
 

@@ -385,7 +385,7 @@ function sanitizeImageUrl(url) {
     }
 }
 
-function createMemeCard(prompt, index, imageUrl, isUserMeme = false) {
+function createMemeCard(prompt, index, imageUrl) {
     const safeUrl = sanitizeImageUrl(imageUrl);
     if (!safeUrl) {
         console.warn(`Invalid or missing URL for: "${prompt}"`);
@@ -396,15 +396,6 @@ function createMemeCard(prompt, index, imageUrl, isUserMeme = false) {
     card.className = "example-card";
     card.style.animationDelay = `${index * 0.1}s`;
 
-    if (isUserMeme) {
-        card.style.border = "2px solid var(--color-accent)";
-        card.style.boxShadow = "0 0 10px rgba(255, 105, 180, 0.3)";
-
-        const badge = document.createElement("div");
-        badge.textContent = "✨ Your Meme";
-        badge.className = "user-meme-badge";
-        card.appendChild(badge);
-    }
 
     const img = document.createElement("img");
     img.src = safeUrl;

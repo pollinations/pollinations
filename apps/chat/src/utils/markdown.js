@@ -9,7 +9,9 @@ const escapeHtml = (value) =>
   String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 marked.setOptions({
   gfm: true,
@@ -169,14 +171,6 @@ export const formatMessage = (content) => {
     html = renderMath(html);
     
     
-    
-    // Append HTML preview data
-    if (previews.length > 0) {
-      previews.forEach(preview => {
-        html += "<div class='html-preview-tool' data-preview='" + escapeHtml(JSON.stringify(preview)) + "'></div>";
-      });
-    }
-
     
     // Append HTML preview data
     if (previews.length > 0) {

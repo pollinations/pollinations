@@ -17,7 +17,7 @@ const MemoizedMessageContent = memo(({ content }) => {
         const foundPreviews = [];
         previewDivs.forEach((div) => {
           try {
-            const previewData = JSON.parse(decodeURIComponent(div.dataset.preview));
+            const previewData = JSON.parse(div.dataset.preview);
             foundPreviews.push(previewData);
             div.style.display = 'none'; // hide marker
           } catch(e) {}
@@ -73,7 +73,7 @@ const MemoizedMessageContent = memo(({ content }) => {
           <iframe 
             srcDoc={preview.html}
             className="canvas-preview-iframe"
-            sandbox="allow-scripts allow-forms allow-same-origin allow-modals"
+            sandbox="allow-scripts allow-forms allow-modals"
             title={preview.title}
           />
         </div>

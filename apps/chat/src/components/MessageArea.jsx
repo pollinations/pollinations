@@ -135,18 +135,20 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
 
   if (messages.length === 0 && !isGenerating) {
     return (
-      <main className="messages-area messages-area-empty">
-        <div className="welcome-screen">
-          <h1 className="welcome-text" key={welcomeMessage}>{welcomeMessage}</h1>
-        </div>
-      <MediaLightbox isOpen={lightboxData.isOpen} src={lightboxData.src} type={lightboxData.type} onClose={() => setLightboxData({ isOpen: false, src: null, type: 'image' })} />
-    <MediaLightbox isOpen={lightboxData.isOpen} src={lightboxData.src} type={lightboxData.type} onClose={() => setLightboxData({ isOpen: false, src: null, type: 'image' })} />
-    </main>
+      <>
+        <main className="messages-area messages-area-empty">
+          <div className="welcome-screen">
+            <h1 className="welcome-text" key={welcomeMessage}>{welcomeMessage}</h1>
+          </div>
+        </main>
+        <MediaLightbox isOpen={lightboxData.isOpen} src={lightboxData.src} type={lightboxData.type} onClose={() => setLightboxData({ isOpen: false, src: null, type: 'image' })} />
+      </>
     );
   }
 
   return (
-    <main className="messages-area" ref={scrollContainerRef} onScroll={handleScroll}>
+    <>
+      <main className="messages-area" ref={scrollContainerRef} onScroll={handleScroll}>
       <div className="messages-container">
         {messages.map((message) => {
           const { cleanedContent, reasoningBlocks, pendingReasoning } = parseThinkTags(message.content || '', message.isStreaming);
@@ -395,6 +397,8 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
         <div ref={messagesEndRef} />
       </div>
     </main>
+    <MediaLightbox isOpen={lightboxData.isOpen} src={lightboxData.src} type={lightboxData.type} onClose={() => setLightboxData({ isOpen: false, src: null, type: 'image' })} />
+    </>
   );
 };
 

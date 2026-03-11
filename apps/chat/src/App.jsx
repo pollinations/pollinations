@@ -720,6 +720,8 @@ function App() {
                     messages={activeMessages}
                     isGenerating={isGenerating}
                     onRegenerate={handleRegenerateMessage}
+                    profile={profile}
+                    chats={chats}
                 />
 
                 <ChatInput

@@ -185,6 +185,14 @@ export const useChat = () => {
         );
     };
 
+    const updateChatTitle = (chatId, title) => {
+        setChats((prev) =>
+            prev.map((chat) =>
+                chat.id === chatId ? { ...chat, title } : chat,
+            ),
+        );
+    };
+
     const clearAllChats = () => {
         const newChat = createNewChat();
         setChats([newChat]);
@@ -206,6 +214,7 @@ export const useChat = () => {
         getActiveChat,
         addMessage,
         updateMessage,
+        updateChatTitle,
         removeLastMessage,
         removeMessagesAfter,
         clearAllChats,

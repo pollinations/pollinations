@@ -977,3 +977,46 @@ export const fetchAccountProfile = async (apiToken) => {
         return null;
     }
 };
+
+/**
+ * Generate a short chat title from the first exchange using nova-micro.
+ * @param {string} userMessage - The first user message
+ * @param {string} assistantReply - The first assistant reply (may be partial)
+ * @returns {Promise<string|null>}
+ */
+export const generateChatTitle = async (userMessage, assistantReply) => {
+    try {
+        const snippet = assistantReply.slice(0, 300);
+        const response = await fetch(
+            "https://gen.pollinations.ai/v1/chat/completions",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(currentApiToken
+                        ? { Authorization: `Bearer ${currentApiToken}` }
+                        : {}),
+                },
+                body: JSON.stringify({
+                    model: "nova-micro",
+                    messages: [
+                        {
+                            role: "user",
+                            content: `Create a short, specific chat title (3-6 words, no quotes) for this conversation:\nUser: ${userMessage.slice(0, 200)}\nAssistant: ${snippet}`,
+                        },
+                    ],
+                    max_tokens: 20,
+                    temperature: 0.4,
+                }),
+            },
+        );
+        if (!response.ok) return null;
+        const data = await response.json();
+        const raw = data.choices?.[0]?.message?.content?.trim() || null;
+        if (!raw) return null;
+        // Strip surrounding quotes if model added them
+        return raw.replace(/^["']|["']$/g, "").trim();
+    } catch {
+        return null;
+    }
+};

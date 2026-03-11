@@ -11,6 +11,7 @@ import TutorialModal from "./components/TutorialModal";
 import { useAuth } from "./hooks/useAuth";
 import { useChat } from "./hooks/useChat";
 import {
+    generateChatTitle,
     generateImage,
     generateVideo,
     initializeModels,
@@ -37,6 +38,7 @@ function App() {
         getActiveChat,
         addMessage,
         updateMessage,
+        updateChatTitle,
         removeMessagesAfter,
         clearAllChats,
     } = useChat();
@@ -406,6 +408,23 @@ function App() {
                             isStreaming: false,
                         });
                         setIsGenerating(false);
+                        // Generate AI title after the first assistant reply
+                        const chatAtComplete = chats.find(
+                            (c) => c.id === activeChatId,
+                        );
+                        const isFirstExchange =
+                            chatAtComplete &&
+                            chatAtComplete.messages.filter(
+                                (m) => m.role === "user",
+                            ).length === 1;
+                        if (isFirstExchange) {
+                            generateChatTitle(messageContent, fullContent).then(
+                                (title) => {
+                                    if (title)
+                                        updateChatTitle(activeChatId, title);
+                                },
+                            );
+                        }
                     },
                     // onError
                     (error) => {
@@ -455,8 +474,11 @@ function App() {
             isGenerating,
             addMessage,
             updateMessage,
+            updateChatTitle,
+            activeChatId,
+            chats,
             selectedModel,
-            sessionSettings, // Set generating state
+            sessionSettings,
             setIsGenerating,
         ],
     );

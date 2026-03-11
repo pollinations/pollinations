@@ -498,9 +498,10 @@ header {
 }
 
 .action-btn {
-    padding: 0.8rem 1.5rem;
+    padding: 0.5rem 1.5rem;
     font-size: 0.85rem;
-    font-family: inherit;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
     color: #110518;
     background: var(--color-primary);
     border-right: 4px solid rgba(255, 255, 255, 0.5);
@@ -696,12 +697,9 @@ footer a {
         padding: 1.5rem;
     }
 
-    .action-buttons {
-        flex-direction: column;
-    }
-
     .action-btn {
-        width: 100%;
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
     }
 
     .emoji-title {

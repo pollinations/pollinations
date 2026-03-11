@@ -181,9 +181,17 @@ function resetButton() {
     }
 }
 
+function scrollToGenerator() {
+    requestAnimationFrame(() => {
+        const section = document.querySelector(".generator-section");
+        const top = section.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top, behavior: "smooth" });
+    });
+}
+
 function showResult() {
     dom.resultSection.classList.remove("hidden");
-    dom.resultSection.scrollIntoView({ behavior: "smooth", block: "center" });
+    scrollToGenerator();
 }
 
 function showImageThumbnail() {
@@ -338,7 +346,8 @@ function createMemeCard(prompt, index, imageUrl) {
 
     card.addEventListener("click", () => {
         dom.userInput.value = prompt;
-        dom.userInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        updateGenerateButtonState();
+        scrollToGenerator();
         dom.userInput.focus();
         dom.userInput.style.animation = "pulse 0.5s";
         setTimeout(() => {
@@ -484,10 +493,9 @@ async function shareMeme() {
         showNotification("Generate a meme first! 🎨", "warning");
         return;
     }
-    const currentURL = window.location.href;
     try {
-        await navigator.clipboard.writeText(currentURL);
-        showNotification("Link copied to clipboard! 📋", "success");
+        await navigator.clipboard.writeText(window.location.href);
+        showNotification("Link copied! Recipients will see the meme auto-generate 📋", "success");
     } catch (error) {
         console.error("Error copying to clipboard:", error);
         showNotification(

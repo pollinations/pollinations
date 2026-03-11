@@ -359,6 +359,27 @@ const containsChartRequest = (messages = []) => {
     );
 };
 
+const containsCodeRequest = (messages = []) => {
+    if (!Array.isArray(messages) || messages.length === 0) return false;
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || lastMessage.role !== "user") return false;
+    const content =
+        typeof lastMessage.content === "string" ? lastMessage.content : "";
+    return content.startsWith("/code ") || content === "/code";
+};
+
+// Strip /code prefix from messages before sending to API
+const stripCodePrefix = (messages = []) => {
+    if (!Array.isArray(messages) || messages.length === 0) return messages;
+    return messages.map((msg, idx) => {
+        if (idx === messages.length - 1 && msg.role === "user" && typeof msg.content === "string") {
+            const stripped = msg.content.replace(/^\/code\s*/, "");
+            return { ...msg, content: stripped };
+        }
+        return msg;
+    });
+};
+
 export const sendMessage = async (
     messages,
     onChunk,
@@ -377,6 +398,8 @@ export const sendMessage = async (
     const finalTemperature = isClaude ? 1 : temperature;
 
     const chartRequested = containsChartRequest(messages);
+    const codeRequested = containsCodeRequest(messages);
+    const effectiveMessages = codeRequested ? stripCodePrefix(messages) : messages;
 
             const tools = [
         {
@@ -448,7 +471,7 @@ export const sendMessage = async (
         abortController = new AbortController();
 
         const formattedMessages = formatMessagesForAPI(
-            messages,
+            effectiveMessages,
             selectedModelId,
         );
 
@@ -463,6 +486,8 @@ export const sendMessage = async (
             tools,
             tool_choice: chartRequested
                 ? { type: "function", function: { name: "create_chart" } }
+                : codeRequested
+                ? { type: "function", function: { name: "preview_html_app" } }
                 : "auto",
             stream: true,
         };

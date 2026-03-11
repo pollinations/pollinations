@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import CanvasCodeGenerator from "./components/CanvasCodeGenerator";
 import ChatInput from "./components/ChatInput";
 import ConfirmModal from "./components/ConfirmModal";
 import GenerationOptionsModal from "./components/GenerationOptionsModal";
@@ -68,10 +69,11 @@ function App() {
         isDangerous: false,
     });
     const [mode, setMode] = useState("chat");
+    const [showCanvasGenerator, setShowCanvasGenerator] = useState(false);
     const [sessionSettings, setSessionSettings] = useState({
         systemPrompt:
             "You are a helpful AI assistant who speaks concisely and helpfully.",
-        maxTokens: 2000,
+        maxTokens: 8000,
         temperature: 0.7,
         topP: 1,
     });
@@ -108,21 +110,9 @@ function App() {
         }
     }, []);
 
-    // Update API token when user logs in/out
+    // Update API token when user logs in/out, then re-fetch models with new key
     useEffect(() => {
         setApiToken(apiKey);
-    }, [apiKey]);
-
-    const handleCloseTutorial = useCallback(() => {
-        setIsTutorialOpen(false);
-        localStorage.setItem("hasSeenTutorial", "true");
-    }, []);
-
-    // Debug mode changes
-    useEffect(() => {}, []);
-
-    // Initialize models on mount
-    useEffect(() => {
         const init = async () => {
             const { textModels, imageModels, videoModels } =
                 await initializeModels();
@@ -132,7 +122,15 @@ function App() {
             setModelsLoaded(true);
         };
         init();
+    }, [apiKey]);
+
+    const handleCloseTutorial = useCallback(() => {
+        setIsTutorialOpen(false);
+        localStorage.setItem("hasSeenTutorial", "true");
     }, []);
+
+    // Debug mode changes
+    useEffect(() => {}, []);
 
     useEffect(() => {
         const savedModel = getSelectedModel();
@@ -742,6 +740,7 @@ function App() {
                     onImageModelChange={handleImageModelChange}
                     onVideoModelChange={handleVideoModelChange}
                     onOpenGenerationOptions={handleOpenGenerationOptions}
+                    onOpenCanvas={() => setShowCanvasGenerator(true)}
                 />
             </div>
 
@@ -781,6 +780,15 @@ function App() {
                 mode={generationOptionsMode}
                 onGenerate={handleGenerationOptionsApply}
             />
+
+            {showCanvasGenerator && (
+                <CanvasCodeGenerator
+                    onCodeGenerated={() => {
+                        setShowCanvasGenerator(false);
+                    }}
+                    onClose={() => setShowCanvasGenerator(false)}
+                />
+            )}
         </div>
     );
 }

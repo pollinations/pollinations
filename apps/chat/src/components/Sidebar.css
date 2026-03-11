@@ -508,8 +508,8 @@ body.light .sidebar-footer {
 
 /* BYOP Auth Section */
 .sidebar-auth-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -517,61 +517,168 @@ body.light .sidebar-auth-section {
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.sidebar-auth-info {
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.5rem;
+/* Auth card – base (logged out) */
+.sidebar-auth-card {
+  border-radius: 14px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+body.light .sidebar-auth-card {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Auth card – active (logged in) */
+.sidebar-auth-card--active {
+  background: rgba(74, 222, 128, 0.07);
+  border-color: rgba(74, 222, 128, 0.25);
+}
+
+body.light .sidebar-auth-card--active {
   background: rgba(74, 222, 128, 0.1);
-  border: 1px solid rgba(74, 222, 128, 0.2);
-  border-radius: 12px;
+  border-color: rgba(74, 222, 128, 0.35);
 }
 
-body.light .sidebar-auth-info {
-  background: rgba(74, 222, 128, 0.15);
-  border-color: rgba(74, 222, 128, 0.3);
+/* Card header row */
+.sidebar-auth-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.sidebar-auth-label {
+.sidebar-auth-card-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.sidebar-auth-card-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Description */
+.sidebar-auth-card-desc {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Sign-in button */
+.sidebar-btn-signin {
+  background: linear-gradient(135deg, rgba(198, 87, 146, 0.2), rgba(95, 255, 164, 0.15));
+  border-color: rgba(198, 87, 146, 0.35);
+  color: var(--text-primary);
+  justify-content: center;
+  font-weight: 600;
+  gap: 0.5rem;
+}
+
+.sidebar-btn-signin:hover {
+  background: linear-gradient(135deg, rgba(198, 87, 146, 0.35), rgba(95, 255, 164, 0.25));
+  border-color: rgba(198, 87, 146, 0.55);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+body.light .sidebar-btn-signin {
+  border-color: rgba(198, 87, 146, 0.4);
+}
+
+/* Avatar row when logged in */
+.sidebar-auth-card-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.sidebar-auth-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(74, 222, 128, 0.2);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #4ade80;
+}
+
+.sidebar-auth-avatar svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sidebar-auth-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-auth-status {
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(74, 222, 128, 0.9);
-  margin-bottom: 0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.sidebar-auth-balance {
-  font-size: 0.875rem;
-  font-weight: 700;
   color: #4ade80;
-  margin-left: 0.5rem;
-}
-
-.sidebar-auth-balance-loading {
-  font-size: 0.875rem;
-  color: rgba(74, 222, 128, 0.5);
-  margin-left: 0.5rem;
+  margin-bottom: 0.125rem;
 }
 
 .sidebar-auth-key {
   font-family: 'Courier New', monospace;
-  font-size: 0.75rem;
-  color: var(--text-primary);
-  font-weight: 500;
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.sidebar-btn-primary {
-  background: rgba(74, 222, 128, 0.15);
-  border-color: rgba(74, 222, 128, 0.3);
+/* Balance row */
+.sidebar-auth-balance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.18);
+  border-radius: 8px;
+}
+
+.sidebar-auth-balance-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(74, 222, 128, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-auth-balance-value {
+  font-size: 0.875rem;
+  font-weight: 700;
   color: #4ade80;
 }
 
-.sidebar-btn-primary:hover {
-  background: rgba(74, 222, 128, 0.25);
-  border-color: rgba(74, 222, 128, 0.5);
-  color: #22c55e;
+.sidebar-auth-balance-loading {
+  font-size: 0.75rem;
+  color: rgba(74, 222, 128, 0.5);
+}
+
+/* Smaller disconnect button */
+.sidebar-btn-sm {
+  height: 36px;
+  font-size: 0.75rem;
+  padding: 0 0.75rem;
+  justify-content: center;
 }
 
 .sidebar-btn-secondary {
@@ -588,4 +695,19 @@ body.light .sidebar-auth-info {
 body.light .sidebar-btn-secondary:hover {
   background: rgba(239, 68, 68, 0.15);
   border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Narrow sidebar auth button */
+.sidebar-auth-narrow-btn {
+  color: var(--text-secondary);
+}
+
+.sidebar-auth-narrow-btn--active {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.sidebar-auth-narrow-btn--active:hover {
+  background: rgba(74, 222, 128, 0.15);
+  color: #22c55e;
 }

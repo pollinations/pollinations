@@ -1,0 +1,45 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "A 3-image carousel perfectly maps to the three major update themes (models/news, BYOP in apps, UI polish). Rotating the characters keeps the visual narrative engaging while maintaining the cozy, open-source dev-diary vibe.",
+  "visual_style": "Cozy 8-bit pixel art aesthetic with Stardew Valley and A Short Hike vibes. Soft pastel gradients, warm lighting, and prominent lime green (#ecf874) accents. Chunky sprites and emotionally warm, nostalgic atmosphere.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of the round tan mochi-ball Nomnom creature happily eating a pile of pixelated dirtberries and data logs. The cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings hovers nearby wearing a tiny newsboy cap, reading a sprouting paper scroll. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic.",
+      "description": "Nomnom eating Dirtberry models while Polly reads the dynamic news feed.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-10/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head sitting at a wooden tavern table acting as a Dungeon Master. The monitor screen glows with a lime green (#ecf874) D20 dice. The cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings hovers nearby wearing tiny wizard glasses, holding a miniature magic wand. Soft lime green (#ecf874) and peach pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like A Short Hike. Cozy pixel art, 8-bit aesthetic.",
+      "description": "Robot and Polly playing tabletop RPG, representing BYOP in AI Dungeon Master.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-10/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wearing a tiny painter's beret. She is painting a crisp black logo onto a glowing retro computer terminal. Literal code-plants sprout from lime green (#ecf874) flower pots around the desk. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley vibes. Cozy pixel art, 8-bit aesthetic, nostalgic but beautiful.",
+      "description": "Polly solo, fixing the black logo on the authorize screen amidst code-plants.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-10/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "5 PRs merged this week. BYOP is taking root in community apps—you can now plug it straight into the AI Dungeon Master and Product Packaging Designer. We also wired up Dirtberry and Claude Sonnet 4.6 to the roster, and made the 'What's New' feed load dynamically so you actually know what we're shipping in real-time. Oh, and the auth logo is black now instead of invisible. Go build something weird.\n\nrepo and docs at the link in bio.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#buildinpublic",
+    "#webdev",
+    "#llm",
+    "#rpg"
+  ],
+  "alt_text": "A carousel of three cozy pixel art images. 1: A round creature eating pixel berries while a bee reads a scroll. 2: A robot with a monitor head showing a D20 dice, playing a tabletop game with the bee. 3: The bee wearing a beret, painting a logo on a retro terminal surrounded by code-plants.",
+  "date": "2026-03-10",
+  "generated_at": "2026-03-11T06:20:15.692471+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

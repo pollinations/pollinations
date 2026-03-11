@@ -1,0 +1,13 @@
+{
+  "title": "Added BYOP to community apps, new Claude models, and dynamic changelogs",
+  "image_prompt": "Cozy 8-bit pixel art scene of a retro terminal glowing lime green (#ecf874) showing clean code blocks. The cute pixel bee mascot wearing a tiny toolbelt hovers nearby, plugging a small cable into the terminal. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in chunky pixel font on the screen: 'UPDATE'. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "body": "We merged 5 PRs today for pollinations.ai. Mostly focused on expanding BYOP across the community apps and adding a few new models to the roster.\n\nFirst, BYOP and the media upload service are now wired up to a couple of our heavier community apps: the product packaging designer (#8971) and the AI dungeon master (#9017). If you're building on the infrastructure, you can check the PRs to see how the auth and media handling is implemented. While we were at it, we fixed a contrast bug on the BYOP authorize screen so the logo is actually visible now (#9026).\n\nOn the model front, we added dirtberry and claude-airforce (Claude Sonnet 4.6) via api.airforce (#8998). They are available now through the standard text/chat endpoint.\n\nFinally, we changed how the changelog works. The \"What's New\" section now loads dynamically directly from the news branch (#9007). It saves us from doing manual static updates just to post release notes, so the roadmap and changelogs will actually stay current.\n\nCode and docs are open as always at https://github.com/pollinations/pollinations. Let us know if the new models behave as expected or if you hit any snags with the media upload service.",
+  "reasoning": "Title is purely descriptive. Body gets straight to the technical changes, references specific PRs for developers to inspect, and explains the practical reason for the changelog update. No hype, just facts and repo links.",
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-10/images/reddit.jpg",
+    "prompt": "Cozy 8-bit pixel art scene of a retro terminal glowing lime green (#ecf874) showing clean code blocks. The cute pixel bee mascot wearing a tiny toolbelt hovers nearby, plugging a small cable into the terminal. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in chunky pixel font on the screen: 'UPDATE'. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "date": "2026-03-10",
+  "generated_at": "2026-03-11T06:20:15.692471+00:00",
+  "platform": "reddit"
+}

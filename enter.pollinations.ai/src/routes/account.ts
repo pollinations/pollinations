@@ -11,13 +11,12 @@ import {
 import type { ApiKeyType } from "@/db/schema/event.ts";
 import { tierNames } from "@/tier-config.ts";
 
-// Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
+// Calculate next tier refill time (top of next hour UTC) - cron runs hourly
 function getNextRefillAt(): string {
     const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-    tomorrow.setUTCHours(0, 0, 0, 0);
-    return tomorrow.toISOString();
+    const nextHour = new Date(now);
+    nextHour.setUTCHours(nextHour.getUTCHours() + 1, 0, 0, 0);
+    return nextHour.toISOString();
 }
 
 import type { Env } from "../env.ts";
@@ -94,7 +93,7 @@ const profileResponseSchema = z.object({
     nextResetAt: z.iso
         .datetime()
         .nullable()
-        .describe("Next daily pollen reset timestamp (ISO 8601)"),
+        .describe("Next hourly pollen refill timestamp (ISO 8601)"),
 });
 
 const balanceResponseSchema = z.object({
@@ -211,7 +210,7 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
-            // Next reset is always midnight UTC (cron runs daily)
+            // Next reset is always top of next hour UTC (cron runs hourly)
             const nextResetAt = getNextRefillAt();
 
             return c.json({

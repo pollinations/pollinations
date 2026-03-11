@@ -1,5 +1,10 @@
 import type { FC } from "react";
-import { getTierColor, getTierEmoji, type TierStatus } from "@/tier-config.ts";
+import {
+    getTierColor,
+    getTierEmoji,
+    getTierMaxBalance,
+    type TierStatus,
+} from "@/tier-config.ts";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -68,12 +73,12 @@ const TierScreen: FC<{
     tier: TierStatus;
     active_tier_name: string;
     pollen: number;
-    cadence: "daily" | "weekly";
-}> = ({ tier, active_tier_name, pollen, cadence }) => {
+    cadence: "hourly";
+}> = ({ tier, active_tier_name, pollen }) => {
     const tierEmoji = getTierEmoji(tier);
     const panelColor = getPanelColor(tier);
     const cardColor = panelColor;
-    const isWeekly = cadence === "weekly";
+    const maxBalance = tier !== "none" ? getTierMaxBalance(tier) : 0;
 
     return (
         <Panel color={panelColor}>
@@ -87,14 +92,13 @@ const TierScreen: FC<{
                         size="lg"
                         className="font-semibold"
                     >
-                        {pollen} pollen/{isWeekly ? "week" : "day"}
+                        {pollen} pollen/day
                     </Badge>
                 </div>
 
                 <p className="text-sm text-gray-500">
-                    {isWeekly
-                        ? "Refreshes every Monday at 00:00 UTC. Unused pollen does not carry over."
-                        : "Refills daily at 00:00 UTC. Unused pollen does not carry over."}
+                    Refills hourly (up to {maxBalance} pollen max). Unused
+                    pollen accumulates between refills.
                 </p>
 
                 <p className="text-sm">
@@ -124,7 +128,7 @@ type TierPanelProps = {
         tier: TierStatus;
         displayName: string;
         pollen?: number;
-        cadence?: "daily" | "weekly";
+        cadence?: "hourly";
     };
 };
 
@@ -140,7 +144,7 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
             tier={tier}
             active_tier_name={active.displayName}
             pollen={pollen ?? 0}
-            cadence={cadence ?? "daily"}
+            cadence={cadence ?? "hourly"}
         />
     );
 };

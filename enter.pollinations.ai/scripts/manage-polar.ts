@@ -282,7 +282,7 @@ async function createPollenTierBenefit(
     });
     return await polar.benefits.create({
         type: "meter_credit",
-        description: `${formattedAmount} pollen/day`,
+        description: `${formattedAmount} pollen (hourly refill)`,
         properties: {
             meterId,
             units: pollenGrantAmount,

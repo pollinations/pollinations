@@ -1,10 +1,52 @@
 export const TIERS = {
-    microbe: { pollen: 0, emoji: "🦠", color: "gray", cadence: "weekly" },
-    spore: { pollen: 1.5, emoji: "🍄", color: "blue", cadence: "weekly" },
-    seed: { pollen: 3, emoji: "🌱", color: "green", cadence: "daily" },
-    flower: { pollen: 10, emoji: "🌸", color: "pink", cadence: "daily" },
-    nectar: { pollen: 20, emoji: "🍯", color: "amber", cadence: "daily" },
-    router: { pollen: 500, emoji: "🐝", color: "red", cadence: "daily" },
+    microbe: {
+        pollen: 0,
+        pollenPerHour: 0,
+        maxBalance: 0,
+        emoji: "🦠",
+        color: "gray",
+        cadence: "hourly",
+    },
+    spore: {
+        pollen: 1.5,
+        pollenPerHour: 0.009,
+        maxBalance: 1.5,
+        emoji: "🍄",
+        color: "blue",
+        cadence: "hourly",
+    },
+    seed: {
+        pollen: 3,
+        pollenPerHour: 0.125,
+        maxBalance: 3,
+        emoji: "🌱",
+        color: "green",
+        cadence: "hourly",
+    },
+    flower: {
+        pollen: 10,
+        pollenPerHour: 0.417,
+        maxBalance: 10,
+        emoji: "🌸",
+        color: "pink",
+        cadence: "hourly",
+    },
+    nectar: {
+        pollen: 20,
+        pollenPerHour: 0.833,
+        maxBalance: 20,
+        emoji: "🍯",
+        color: "amber",
+        cadence: "hourly",
+    },
+    router: {
+        pollen: 500,
+        pollenPerHour: 20.833,
+        maxBalance: 500,
+        emoji: "🐝",
+        color: "red",
+        cadence: "hourly",
+    },
 } as const;
 
 export type TierName = keyof typeof TIERS;
@@ -16,6 +58,14 @@ export const DEFAULT_TIER: TierName = "spore";
 
 export const TIER_POLLEN = Object.fromEntries(
     Object.entries(TIERS).map(([tier, config]) => [tier, config.pollen]),
+) as Record<TierName, number>;
+
+export const TIER_POLLEN_PER_HOUR = Object.fromEntries(
+    Object.entries(TIERS).map(([tier, config]) => [tier, config.pollenPerHour]),
+) as Record<TierName, number>;
+
+export const TIER_MAX_BALANCE = Object.fromEntries(
+    Object.entries(TIERS).map(([tier, config]) => [tier, config.maxBalance]),
 ) as Record<TierName, number>;
 
 export const TIER_EMOJIS = Object.fromEntries(
@@ -50,10 +100,26 @@ export function getTierColor(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].color : TIERS[DEFAULT_TIER].color;
 }
 
-export function getTierCadence(tier: TierName): "daily" | "weekly";
-export function getTierCadence(tier: string): "daily" | "weekly";
-export function getTierCadence(tier: string): "daily" | "weekly" {
+export function getTierCadence(tier: TierName): "hourly";
+export function getTierCadence(tier: string): "hourly";
+export function getTierCadence(tier: string): "hourly" {
     return isValidTier(tier)
         ? TIERS[tier].cadence
         : TIERS[DEFAULT_TIER].cadence;
+}
+
+export function getTierPollenPerHour(tier: TierName): number;
+export function getTierPollenPerHour(tier: string): number;
+export function getTierPollenPerHour(tier: string): number {
+    return isValidTier(tier)
+        ? TIERS[tier].pollenPerHour
+        : TIERS[DEFAULT_TIER].pollenPerHour;
+}
+
+export function getTierMaxBalance(tier: TierName): number;
+export function getTierMaxBalance(tier: string): number;
+export function getTierMaxBalance(tier: string): number {
+    return isValidTier(tier)
+        ? TIERS[tier].maxBalance
+        : TIERS[DEFAULT_TIER].maxBalance;
 }

@@ -4,7 +4,13 @@ import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import worker from "@/index.ts";
-import { getTierPollen, TIER_POLLEN, tierNames } from "@/tier-config.ts";
+import {
+    getTierPollen,
+    TIER_MAX_BALANCE,
+    TIER_POLLEN,
+    TIER_POLLEN_PER_HOUR,
+    tierNames,
+} from "@/tier-config.ts";
 import {
     atomicDeductPaidBalance,
     atomicDeductUserBalance,
@@ -29,12 +35,12 @@ async function triggerTierRefill() {
 }
 
 describe("Tier Balance Management", () => {
-    describe("Daily Cron Refill", () => {
-        test("should refill tier balance for all users based on their tier", async () => {
+    describe("Hourly Cron Refill", () => {
+        test("should increment tier balance for all users capped at maxBalance", async () => {
             const db = drizzle(env.DB);
             const executionContext = createExecutionContext();
 
-            // Setup: Create test users with different tiers and depleted balances
+            // Setup: Create test users with different tiers and partially depleted balances
             const testUsers = [
                 { id: "user-spore", tier: "spore", tierBalance: 0.5 },
                 { id: "user-seed", tier: "seed", tierBalance: 1.0 },
@@ -67,10 +73,10 @@ describe("Tier Balance Management", () => {
                     });
             }
 
-            // Execute the scheduled handler
+            // Execute the hourly refill
             await triggerTierRefill();
 
-            // Verify: Check that all users have their tier balance refilled
+            // Verify: Each user's balance should be incremented by pollenPerHour, capped at maxBalance
             const users = await db
                 .select({
                     id: userTable.id,
@@ -86,33 +92,19 @@ describe("Tier Balance Management", () => {
                     )})`,
                 );
 
-            const isMonday = new Date().getUTCDay() === 1;
-
-            // Daily tiers always get refilled
-            expect(users.find((u) => u.id === "user-seed")?.tierBalance).toBe(
-                TIER_POLLEN.seed,
-            );
-            expect(users.find((u) => u.id === "user-flower")?.tierBalance).toBe(
-                TIER_POLLEN.flower,
-            );
-            expect(users.find((u) => u.id === "user-nectar")?.tierBalance).toBe(
-                TIER_POLLEN.nectar,
-            );
-            expect(users.find((u) => u.id === "user-router")?.tierBalance).toBe(
-                TIER_POLLEN.router,
-            );
-
-            // Spore: weekly refill (Monday only)
-            const sporeUser = users.find((u) => u.id === "user-spore");
-            if (isMonday) {
-                expect(sporeUser?.tierBalance).toBe(TIER_POLLEN.spore);
-            } else {
-                // Not refilled on non-Monday — keeps pre-test balance
-                expect(sporeUser?.tierBalance).toBe(0.5);
+            // All tiers get hourly increment capped at maxBalance
+            for (const testUser of testUsers) {
+                const user = users.find((u) => u.id === testUser.id);
+                const tier = testUser.tier as keyof typeof TIER_POLLEN_PER_HOUR;
+                const expected = Math.min(
+                    testUser.tierBalance + TIER_POLLEN_PER_HOUR[tier],
+                    TIER_MAX_BALANCE[tier],
+                );
+                expect(user?.tierBalance).toBeCloseTo(expected, 3);
             }
 
-            // Daily-refill users should have lastTierGrant updated
-            for (const user of users.filter((u) => u.id !== "user-spore")) {
+            // All users should have lastTierGrant updated
+            for (const user of users) {
                 expect(user.lastTierGrant).toBeDefined();
                 expect(user.lastTierGrant).toBeGreaterThan(Date.now() - 60000);
             }
@@ -149,7 +141,7 @@ describe("Tier Balance Management", () => {
             // Execute the scheduled handler
             await triggerTierRefill();
 
-            // Check that only tier balance was updated
+            // Check that only tier balance was updated (incremented by pollenPerHour)
             const user = await db
                 .select({
                     tierBalance: userTable.tierBalance,
@@ -160,7 +152,10 @@ describe("Tier Balance Management", () => {
                 .where(sql`${userTable.id} = 'user-multi-balance'`)
                 .limit(1);
 
-            expect(user[0]?.tierBalance).toBe(TIER_POLLEN.flower);
+            expect(user[0]?.tierBalance).toBeCloseTo(
+                2 + TIER_POLLEN_PER_HOUR.flower,
+                3,
+            );
             expect(user[0]?.packBalance).toBe(50); // Unchanged
             expect(user[0]?.cryptoBalance).toBe(25); // Unchanged
         });

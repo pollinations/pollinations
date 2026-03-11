@@ -2223,3 +2223,72 @@ body.dark .error-details {
   resize: both;
   overflow: auto;
 }
+
+/* ── Message Edit UI ── */
+.message-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.message-edit-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.15));
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #111);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.message-edit-textarea:focus {
+  border-color: var(--accent, #7c3aed);
+}
+
+.message-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.message-edit-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.message-edit-btn:hover {
+  opacity: 0.85;
+}
+
+.message-edit-btn--save {
+  background: var(--accent, #7c3aed);
+  color: #fff;
+}
+
+.message-edit-btn--cancel {
+  background: var(--color-border, rgba(0, 0, 0, 0.08));
+  color: var(--color-text, #333);
+}
+
+body.dark .message-edit-textarea {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #eee;
+}
+
+body.dark .message-edit-btn--cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ccc;
+}

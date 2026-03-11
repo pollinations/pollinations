@@ -40,6 +40,7 @@ function App() {
         updateMessage,
         updateChatTitle,
         removeMessagesAfter,
+        editMessage,
         clearAllChats,
     } = useChat();
 
@@ -223,29 +224,28 @@ function App() {
     const _handleExportChat = () => {
         const activeChat = getActiveChat();
         if (!activeChat || !activeChat.messages.length) {
-            alert("No messages to export");
+            if (window?.showToast)
+                window.showToast("No messages to export", "info");
             return;
         }
 
-        // Create export data
-        const exportData = {
-            title: activeChat.title,
-            timestamp: new Date().toISOString(),
-            messages: activeChat.messages.map((msg) => ({
-                role: msg.role,
-                content: msg.content,
-                timestamp: msg.timestamp,
-            })),
-        };
+        // Build markdown export
+        const lines = [`# ${activeChat.title || "Chat Export"}\n`];
+        for (const msg of activeChat.messages) {
+            const label = msg.role === "user" ? "**You**" : "**Assistant**";
+            lines.push(`${label}\n\n${msg.content || ""}\n\n---\n`);
+        }
 
-        // Download as JSON
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-            type: "application/json",
+        const blob = new Blob([lines.join("\n")], {
+            type: "text/markdown",
         });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `chat-export-${Date.now()}.json`;
+        const safeTitle = (activeChat.title || "chat")
+            .replace(/[^a-z0-9]+/gi, "-")
+            .toLowerCase();
+        a.download = `${safeTitle}.md`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -623,6 +623,93 @@ function App() {
         ],
     );
 
+    const handleEditMessage = useCallback(
+        async (messageId, newContent) => {
+            if (isGenerating || !newContent.trim()) return;
+
+            // Edit the message and truncate everything after it
+            const updatedChat = editMessage(messageId, newContent.trim());
+            if (!updatedChat) return;
+
+            setIsGenerating(true);
+
+            const assistantMessageId =
+                Date.now().toString(36) + Math.random().toString(36).substr(2);
+            addMessage("assistant", "", assistantMessageId, {
+                isStreaming: true,
+            });
+
+            const runtimeMessages = sessionSettings.systemPrompt?.trim()
+                ? [
+                      {
+                          role: "system",
+                          content: sessionSettings.systemPrompt.trim(),
+                      },
+                      ...updatedChat.messages,
+                  ]
+                : updatedChat.messages;
+
+            try {
+                await sendMessage(
+                    runtimeMessages,
+                    (_chunk, fullContent, fullReasoning) => {
+                        updateMessage(assistantMessageId, {
+                            content: fullContent,
+                            reasoning: fullReasoning,
+                            isStreaming: true,
+                        });
+                    },
+                    (fullContent, fullReasoning) => {
+                        updateMessage(assistantMessageId, {
+                            content: fullContent,
+                            reasoning: fullReasoning,
+                            isStreaming: false,
+                        });
+                        setIsGenerating(false);
+                    },
+                    (error) => {
+                        if (error.message === "User aborted") {
+                            updateMessage(assistantMessageId, {
+                                content: "**Message stopped by user**",
+                                isStreaming: false,
+                            });
+                        } else {
+                            updateMessage(assistantMessageId, {
+                                content: "An error occurred",
+                                isStreaming: false,
+                                isError: true,
+                            });
+                        }
+                        setIsGenerating(false);
+                    },
+                    selectedModel,
+                    {
+                        maxTokens: sessionSettings.maxTokens,
+                        temperature: sessionSettings.temperature,
+                        topP: sessionSettings.topP,
+                    },
+                );
+            } catch (error) {
+                console.error("Edit regeneration error:", error);
+                updateMessage(assistantMessageId, {
+                    content: "An error occurred",
+                    isStreaming: false,
+                    isError: true,
+                });
+                setIsGenerating(false);
+            }
+        },
+        [
+            isGenerating,
+            editMessage,
+            addMessage,
+            updateMessage,
+            selectedModel,
+            sessionSettings,
+            setIsGenerating,
+        ],
+    );
+
     const handleRegenerateMessage = async () => {
         const activeChat = getActiveChat();
         if (!activeChat || isGenerating) return;
@@ -723,6 +810,7 @@ function App() {
                 onDeleteChat={deleteChat}
                 onThemeToggle={handleThemeToggle}
                 onOpenSettings={() => setIsSettingsPanelOpen(true)}
+                onExportChat={_handleExportChat}
                 isLoggedIn={isLoggedIn}
                 apiKey={apiKey}
                 pollenBalance={pollenBalance}
@@ -739,6 +827,7 @@ function App() {
                     messages={activeMessages}
                     isGenerating={isGenerating}
                     onRegenerate={handleRegenerateMessage}
+                    onEditMessage={handleEditMessage}
                     profile={profile}
                     chats={chats}
                 />

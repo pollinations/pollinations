@@ -490,7 +490,7 @@ export const sendMessage = async (
             function: {
                 name: "search_web",
                 description:
-                    "Provide the user with a web search link for looking up real-time information.",
+                    "Search the web for real-time information and return the results to the user.",
                 parameters: {
                     type: "object",
                     properties: {
@@ -708,7 +708,7 @@ export const sendMessage = async (
                         const args = call.arguments;
                         const seed = Math.floor(Math.random() * 2147483647);
                         const url =
-                            "https://image.pollinations.ai/prompt/" +
+                            "https://gen.pollinations.ai/image/" +
                             encodeURIComponent(args.prompt) +
                             "?seed=" +
                             seed +
@@ -725,11 +725,54 @@ export const sendMessage = async (
                 } else if (call.name === "search_web") {
                     try {
                         const args = call.arguments;
-                        const qs = encodeURIComponent(args.query);
-                        finalContent +=
-                            "\n\n__SEARCH__" + qs + "__SEARCH__\n\n";
+                        const query = args.query;
+                        // Use a web-search model to get real results
+                        const searchResponse = await fetch(
+                            "https://gen.pollinations.ai/v1/chat/completions",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${currentApiToken}`,
+                                },
+                                body: JSON.stringify({
+                                    model: "searchgpt",
+                                    messages: [
+                                        {
+                                            role: "user",
+                                            content: query,
+                                        },
+                                    ],
+                                    max_tokens: 1024,
+                                }),
+                            },
+                        );
+                        if (searchResponse.ok) {
+                            const searchData = await searchResponse.json();
+                            const searchResult =
+                                searchData.choices?.[0]?.message?.content || "";
+                            if (searchResult) {
+                                finalContent +=
+                                    "\n\n**Web Search: " +
+                                    query +
+                                    "**\n\n" +
+                                    searchResult +
+                                    "\n\n";
+                            }
+                        } else {
+                            // Fallback to search link
+                            const qs = encodeURIComponent(query);
+                            finalContent +=
+                                "\n\n__SEARCH__" + qs + "__SEARCH__\n\n";
+                        }
                     } catch (e) {
                         console.error(e);
+                        // Fallback to search link
+                        try {
+                            const qs = encodeURIComponent(call.arguments.query);
+                            finalContent +=
+                                "\n\n__SEARCH__" + qs + "__SEARCH__\n\n";
+                        } catch (_) {}
                     }
                 } else if (call.name === "preview_html_app") {
                     try {
@@ -746,7 +789,7 @@ export const sendMessage = async (
                     try {
                         const args = call.arguments;
                         const url =
-                            "https://image.pollinations.ai/prompt/" +
+                            "https://gen.pollinations.ai/image/" +
                             encodeURIComponent(args.prompt);
                         finalContent += "\n\n__VIDEO__" + url + "__VIDEO__\n\n";
                     } catch (e) {

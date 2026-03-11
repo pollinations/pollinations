@@ -30,6 +30,9 @@ const ChatInput = ({
     const [selectedAttachment, setSelectedAttachment] = useState(null);
     const [modelSearchTerm, setModelSearchTerm] = useState("");
     const [isDragging, setIsDragging] = useState(false);
+    const [showCommandPalette, setShowCommandPalette] = useState(false);
+    const [commandPaletteIndex, setCommandPaletteIndex] = useState(0);
+    const commandPaletteRef = useRef(null);
     const inputRef = useRef(null);
     const attachMenuRef = useRef(null);
     const modelDropdownRef = useRef(null);
@@ -41,6 +44,53 @@ const ChatInput = ({
     const isImagineMode = inputValue.includes("/imagine");
     const isCanvasMode = inputValue.includes("/code");
     const isVideoMode = inputValue.includes("/video");
+
+    const SLASH_COMMANDS = [
+        {
+            command: "/imagine",
+            label: "Image",
+            description: "Generate an image from a text prompt",
+            icon: "🖼️",
+        },
+        {
+            command: "/video",
+            label: "Video",
+            description: "Generate a video from a text prompt",
+            icon: "🎬",
+        },
+        {
+            command: "/code",
+            label: "Canvas",
+            description: "Generate an interactive HTML app",
+            icon: "💻",
+        },
+    ];
+
+    // Show command palette when user types "/" at the start
+    const filteredCommands = showCommandPalette
+        ? SLASH_COMMANDS.filter((cmd) =>
+              cmd.command.startsWith(inputValue.toLowerCase()),
+          )
+        : [];
+
+    useEffect(() => {
+        if (
+            inputValue.startsWith("/") &&
+            !inputValue.includes(" ") &&
+            inputValue.length <= 8
+        ) {
+            setShowCommandPalette(true);
+            setCommandPaletteIndex(0);
+        } else {
+            setShowCommandPalette(false);
+        }
+    }, [inputValue]);
+
+    const selectCommand = (command) => {
+        setInputValue(command + " ");
+        setShowCommandPalette(false);
+        inputRef.current?.focus();
+    };
 
     // Determine active model based on mode
     const getActiveModelId = () => {
@@ -192,6 +242,37 @@ const ChatInput = ({
     };
 
     const handleKeyDown = (event) => {
+        // Handle command palette navigation
+        if (showCommandPalette && filteredCommands.length > 0) {
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                setCommandPaletteIndex((prev) =>
+                    prev < filteredCommands.length - 1 ? prev + 1 : 0,
+                );
+                return;
+            }
+            if (event.key === "ArrowUp") {
+                event.preventDefault();
+                setCommandPaletteIndex((prev) =>
+                    prev > 0 ? prev - 1 : filteredCommands.length - 1,
+                );
+                return;
+            }
+            if (
+                event.key === "Tab" ||
+                (event.key === "Enter" && !event.shiftKey)
+            ) {
+                event.preventDefault();
+                selectCommand(filteredCommands[commandPaletteIndex].command);
+                return;
+            }
+            if (event.key === "Escape") {
+                event.preventDefault();
+                setShowCommandPalette(false);
+                return;
+            }
+        }
+
         if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
             handleSend();
@@ -446,6 +527,37 @@ const ChatInput = ({
                 )}
 
                 <div className="chat-input-wrapper-modern">
+                    {/* Slash Command Palette */}
+                    {showCommandPalette && filteredCommands.length > 0 && (
+                        <div
+                            className="command-palette"
+                            ref={commandPaletteRef}
+                        >
+                            {filteredCommands.map((cmd, index) => (
+                                <button
+                                    key={cmd.command}
+                                    type="button"
+                                    className={`command-palette-item ${index === commandPaletteIndex ? "active" : ""}`}
+                                    onClick={() => selectCommand(cmd.command)}
+                                    onMouseEnter={() =>
+                                        setCommandPaletteIndex(index)
+                                    }
+                                >
+                                    <span className="command-palette-icon">
+                                        {cmd.icon}
+                                    </span>
+                                    <div className="command-palette-text">
+                                        <span className="command-palette-cmd">
+                                            {cmd.command}
+                                        </span>
+                                        <span className="command-palette-desc">
+                                            {cmd.description}
+                                        </span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     <div className="chatbar-top">
                         {(isImagineMode || isCanvasMode || isVideoMode) && (
                             <div className="chatbar-tags">

@@ -185,6 +185,31 @@ export const useChat = () => {
         );
     };
 
+    const editMessage = (messageId, newContent) => {
+        let editedChat = null;
+        setChats((prev) =>
+            prev.map((chat) => {
+                if (chat.id === activeChatId) {
+                    const msgIndex = chat.messages.findIndex(
+                        (m) => m.id === messageId,
+                    );
+                    if (msgIndex === -1) return chat;
+                    // Update the message content and remove all messages after it
+                    const updatedMessages = chat.messages
+                        .slice(0, msgIndex)
+                        .concat({
+                            ...chat.messages[msgIndex],
+                            content: newContent,
+                        });
+                    editedChat = { ...chat, messages: updatedMessages };
+                    return editedChat;
+                }
+                return chat;
+            }),
+        );
+        return editedChat;
+    };
+
     const updateChatTitle = (chatId, title) => {
         setChats((prev) =>
             prev.map((chat) =>
@@ -217,6 +242,7 @@ export const useChat = () => {
         updateChatTitle,
         removeLastMessage,
         removeMessagesAfter,
+        editMessage,
         clearAllChats,
     };
 };

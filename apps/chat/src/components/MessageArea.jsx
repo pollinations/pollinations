@@ -10,12 +10,15 @@ const MessageArea = ({
     isGenerating,
     isUserTyping,
     onRegenerate,
+    onEditMessage,
     profile,
     chats = [],
 }) => {
     const messagesEndRef = useRef(null);
     const [welcomeMessage, setWelcomeMessage] = useState("");
     const [expandedErrors, setExpandedErrors] = useState({});
+    const [editingMessageId, setEditingMessageId] = useState(null);
+    const [editingContent, setEditingContent] = useState("");
     const [lightboxData, setLightboxData] = useState({
         isOpen: false,
         src: null,
@@ -671,9 +674,123 @@ const MessageArea = ({
                                             )}
                                         </>
                                     ) : (
-                                        <div className="message-content">
-                                            {message.content ?? ""}
-                                        </div>
+                                        <>
+                                            {editingMessageId === message.id ? (
+                                                <div className="message-edit-container">
+                                                    <textarea
+                                                        className="message-edit-textarea"
+                                                        value={editingContent}
+                                                        onChange={(e) =>
+                                                            setEditingContent(
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        onKeyDown={(e) => {
+                                                            if (
+                                                                e.key ===
+                                                                    "Enter" &&
+                                                                !e.shiftKey
+                                                            ) {
+                                                                e.preventDefault();
+                                                                if (
+                                                                    editingContent.trim() &&
+                                                                    onEditMessage
+                                                                ) {
+                                                                    onEditMessage(
+                                                                        message.id,
+                                                                        editingContent,
+                                                                    );
+                                                                    setEditingMessageId(
+                                                                        null,
+                                                                    );
+                                                                }
+                                                            }
+                                                            if (
+                                                                e.key ===
+                                                                "Escape"
+                                                            ) {
+                                                                setEditingMessageId(
+                                                                    null,
+                                                                );
+                                                            }
+                                                        }}
+                                                        autoFocus // eslint-disable-line jsx-a11y/no-autofocus
+                                                        rows={3}
+                                                    />
+                                                    <div className="message-edit-actions">
+                                                        <button
+                                                            type="button"
+                                                            className="message-edit-btn message-edit-btn--save"
+                                                            onClick={() => {
+                                                                if (
+                                                                    editingContent.trim() &&
+                                                                    onEditMessage
+                                                                ) {
+                                                                    onEditMessage(
+                                                                        message.id,
+                                                                        editingContent,
+                                                                    );
+                                                                    setEditingMessageId(
+                                                                        null,
+                                                                    );
+                                                                }
+                                                            }}
+                                                        >
+                                                            Save & Resend
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="message-edit-btn message-edit-btn--cancel"
+                                                            onClick={() =>
+                                                                setEditingMessageId(
+                                                                    null,
+                                                                )
+                                                            }
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="message-content">
+                                                    {message.content ?? ""}
+                                                </div>
+                                            )}
+                                            {/* Edit button for user messages */}
+                                            {!isGenerating &&
+                                                editingMessageId !==
+                                                    message.id && (
+                                                    <div className="message-actions">
+                                                        <button
+                                                            type="button"
+                                                            className="message-action-btn"
+                                                            onClick={() => {
+                                                                setEditingMessageId(
+                                                                    message.id,
+                                                                );
+                                                                setEditingContent(
+                                                                    message.content ||
+                                                                        "",
+                                                                );
+                                                            }}
+                                                            title="Edit message"
+                                                        >
+                                                            <svg
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                            >
+                                                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                            </svg>
+                                                            <span className="action-label">
+                                                                Edit
+                                                            </span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                        </>
                                     )}
 
                                     {/* Action buttons for assistant messages */}

@@ -562,7 +562,7 @@ const CanvasCodeGenerator = ({
                                 <iframe
                                     ref={iframeRef}
                                     className="ccg-preview-iframe"
-                                    sandbox="allow-scripts allow-forms allow-modals"
+                                    sandbox="allow-scripts allow-forms"
                                     title="Code Preview"
                                     srcDoc={
                                         generatedCode ||

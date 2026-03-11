@@ -1,8 +1,9 @@
 /* Component-specific styles for ChatInput */
 .chat-input-container {
     background: transparent !important;
-    padding: 0 1rem 1.25rem 1rem;
+    padding: 1rem 1rem 2rem 1rem; /* More breathing room around the base */
     position: relative;
+    z-index: 10; /* Keep over messages padding */
 }
 
 .drop-overlay {
@@ -70,26 +71,20 @@ body.light .drop-box svg {
     flex-direction: column;
     gap: 0.5rem;
     padding: 0.85rem 1rem;
-    background: linear-gradient(
-        135deg,
-        rgba(15, 51, 30, 0.85),
-        rgba(12, 32, 22, 0.9)
-    );
-    border: 1px solid rgba(124, 165, 142, 0.35);
-    border-radius: 18px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 28px;
     transition: all var(--transition-fast);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
-    min-height: 180px;
+    box-shadow: var(--glass-shadow);
+    min-height: 120px;
 }
 
 body.light .chat-input-wrapper-modern {
-    background: linear-gradient(
-        135deg,
-        rgba(244, 249, 246, 0.95),
-        rgba(240, 247, 242, 0.95)
-    );
-    border: 1px solid rgba(124, 165, 142, 0.25);
-    box-shadow: 0 12px 32px rgba(15, 51, 30, 0.08);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
 }
 
 .chat-input-wrapper-modern:focus-within {

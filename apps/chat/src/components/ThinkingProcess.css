@@ -1,24 +1,34 @@
 .thinking-process {
-  margin-bottom: 1rem;
-  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border-radius: 16px;
   overflow: hidden;
   font-family: var(--font-sans);
   font-size: 0.9rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .thinking-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.25rem 0;
+  padding: 0.75rem 1rem;
   cursor: pointer;
   user-select: none;
   color: var(--text-secondary);
-  transition: color 0.2s;
+  transition: all 0.2s ease;
+  background: var(--bg-primary);
+  border-bottom: 1px solid transparent;
 }
 
 .thinking-header:hover {
   color: var(--text-primary);
+  background: var(--sidebar-item-hover);
+}
+
+.thinking-process.open .thinking-header {
+  border-bottom-color: var(--border-light);
 }
 
 .thinking-icon-wrapper {
@@ -75,8 +85,8 @@
 }
 
 .thinking-body {
-  padding-left: 28px; /* Align with text start (icon width + gap) */
-  margin-top: 0.25rem;
+  padding: 1rem 1rem 1rem 1.5rem; 
+  margin-top: 0;
   animation: slideDown 0.2s ease-out;
 }
 
@@ -85,8 +95,8 @@
   white-space: pre-wrap;
   line-height: 1.5;
   font-size: 0.85rem;
-  padding-left: 0.5rem;
-  border-left: 2px solid var(--border-light);
+  padding-left: 1rem;
+  border-left: 2px solid var(--accent-gradient);
 }
 
 @keyframes pulse {

@@ -30,8 +30,10 @@ body.light .sidebar-overlay {
 .sidebar {
   width: 72px;
   height: 100vh;
-  background: var(--bg-primary);
-  border-right: none;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -44,18 +46,12 @@ body.light .sidebar-overlay {
 
 .sidebar.expanded {
   width: 320px;
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--glass-shadow);
   z-index: 101;
 }
 
-body.dark .sidebar {
-  background: #000;
-  border-right: none;
-}
-
-body.light .sidebar {
-  background: #fff;
-  border-right: none;
+body.dark .sidebar, body.light .sidebar {
+  background: var(--glass-bg);
 }
 
 body.light .sidebar.expanded {

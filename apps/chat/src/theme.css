@@ -29,6 +29,12 @@
     --accent-gradient: linear-gradient(135deg, #c65792, #5fffa4);
     --accent-hover: linear-gradient(135deg, #d166a0, #aefecf);
 
+    /* Glassmorphism settings */
+    --glass-bg: rgba(255, 255, 255, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-blur: blur(16px);
+    --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+
     /* Message colors */
     --msg-user-bg: #77e4d7;
     --msg-assistant-bg: #f8f9fa;
@@ -77,6 +83,12 @@ body.dark {
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+    /* Dark mode glassmorphism */
+    --glass-bg: rgba(10, 10, 10, 0.5);
+    --glass-border: rgba(212, 251, 228, 0.1);
+    --glass-blur: blur(16px);
+    --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 
     --msg-user-bg: linear-gradient(135deg, var(--c5), var(--c3));
     --msg-assistant-bg: #0a0a0a;

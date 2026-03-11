@@ -39,19 +39,6 @@ const KONAMI_SEQUENCE = [
 ];
 
 const ANIMATION_CONFIG = {
-    LOADING_CATS: [
-        "🐱",
-        "😺",
-        "😸",
-        "😹",
-        "😻",
-        "🙀",
-        "😿",
-        "😾",
-        "🐈",
-        "🐈‍⬛",
-    ],
-    RETRY_CATS: ["😾", "😿", "🙄", "😤", "😑", "😒", "😔", "🐱‍👤", "😸", "😼"],
     FLOATING_EMOJIS: ["🐱", "💭", "✨", "🌟", "😸", "🐾", "💜", "🎨"],
     CELEBRATION_EMOJIS: ["🎉", "✨", "🌟", "💫", "🎊"],
     CELEBRATION_COLORS: ["#ff61d8", "#05ffa1", "#ffcc00"],
@@ -139,7 +126,6 @@ function getRandomItem(arr) {
 const dom = {
     userInput: document.getElementById("userInput"),
     generateBtn: document.getElementById("generateBtn"),
-    loadingIndicator: document.getElementById("loadingIndicator"),
     generateError: document.getElementById("generateError"),
     resultSection: document.getElementById("resultSection"),
     generatedMeme: document.getElementById("generatedMeme"),
@@ -155,36 +141,44 @@ const dom = {
 };
 
 let currentGenerationAbort = null;
-let retryCountdownInterval = null;
+
+function setButtonMessage(msg) {
+    dom.generateBtn.textContent = "";
+    const textNode = document.createTextNode(`${msg} — `);
+    const cancelSpan = document.createElement("span");
+    cancelSpan.textContent = "Cancel?";
+    cancelSpan.style.color = "#ff6b6b";
+    dom.generateBtn.appendChild(textNode);
+    dom.generateBtn.appendChild(cancelSpan);
+}
 
 function setButtonLoading() {
     dom.generateBtn.classList.add("generating");
-    dom.generateBtn.textContent = "Generating... Cancel?";
-    dom.generateBtn.disabled = false;
+    dom.resultSection.classList.add("hidden");
+    progressStep = 0;
+    setButtonMessage(PROGRESS_MESSAGES[0]);
+    startCatAnimation();
+    progressInterval = setInterval(() => {
+        progressStep++;
+        if (progressStep < PROGRESS_MESSAGES.length) {
+            setButtonMessage(PROGRESS_MESSAGES[progressStep]);
+        } else {
+            setButtonMessage("🎨 Finalizing your masterpiece...");
+        }
+    }, 2500);
 }
 
 function resetButton() {
-    clearRetryCountdown();
     dom.generateBtn.classList.remove("generating", "retrying");
     dom.generateBtn.textContent = "Generate Meme";
-    dom.generateBtn.disabled = false;
     currentGenerationAbort = null;
-}
-
-function clearRetryCountdown() {
-    if (retryCountdownInterval) {
-        clearInterval(retryCountdownInterval);
-        retryCountdownInterval = null;
+    stopCatAnimation();
+    enableInputs();
+    updateGenerateButtonState();
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
     }
-}
-
-function showLoading() {
-    dom.loadingIndicator.classList.remove("hidden");
-    dom.resultSection.classList.add("hidden");
-}
-
-function hideLoading() {
-    dom.loadingIndicator.classList.add("hidden");
 }
 
 function showResult() {
@@ -225,17 +219,12 @@ function getSavedMemes() {
 
 // ── Animations ──────────────────────────────────────────────────────────────
 
-let catAnimationInterval;
 let progressInterval;
 let progressStep = 0;
+let catAnimationInterval;
 
-function startCatAnimation(mode = "loading") {
-    const catEmojis =
-        mode === "retry"
-            ? ANIMATION_CONFIG.RETRY_CATS
-            : ANIMATION_CONFIG.LOADING_CATS;
-    const speed = mode === "retry" ? 800 : 400;
-
+function startCatAnimation() {
+    const catEmojis = ["🐱", "😺", "😸", "😹", "😻", "🙀", "😿", "😾", "🐈", "🐈‍⬛"];
     catAnimationInterval = setInterval(() => {
         const cat = document.createElement("div");
         cat.style.cssText = `
@@ -252,7 +241,7 @@ function startCatAnimation(mode = "loading") {
         setTimeout(() => {
             if (cat.parentNode) cat.remove();
         }, 6000);
-    }, speed);
+    }, 400);
 }
 
 function stopCatAnimation() {
@@ -263,40 +252,6 @@ function stopCatAnimation() {
     for (const cat of document.querySelectorAll("[style*='catSlide']")) {
         cat.remove();
     }
-}
-
-function startFakeProgress() {
-    progressStep = 1;
-    const progressText = document.createElement("div");
-    progressText.id = "progress-text";
-    progressText.textContent = PROGRESS_MESSAGES[0];
-    progressText.style.cssText = `
-        text-align: center;
-        font-size: 0.9rem;
-        color: var(--color-primary);
-        margin-top: 1rem;
-        font-weight: 500;
-        animation: pulse 2s infinite;
-    `;
-    dom.loadingIndicator.appendChild(progressText);
-
-    progressInterval = setInterval(() => {
-        if (progressStep < PROGRESS_MESSAGES.length) {
-            progressText.textContent = PROGRESS_MESSAGES[progressStep];
-            progressStep++;
-        } else {
-            progressText.textContent = "🎨 Finalizing your masterpiece...";
-        }
-    }, 2500);
-}
-
-function stopFakeProgress() {
-    if (progressInterval) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-    }
-    const progressText = document.getElementById("progress-text");
-    if (progressText) progressText.remove();
 }
 
 function celebrate() {
@@ -435,14 +390,10 @@ function loadExamples() {
 // ── Generator ───────────────────────────────────────────────────────────────
 
 async function generateMeme() {
-    // If currently generating or retrying, cancel
-    if (dom.generateBtn.classList.contains("generating") || dom.generateBtn.classList.contains("retrying")) {
+    // If currently generating, cancel
+    if (dom.generateBtn.classList.contains("generating")) {
         if (currentGenerationAbort) currentGenerationAbort();
         resetButton();
-        hideLoading();
-        stopFakeProgress();
-        stopCatAnimation();
-        showNotification("Generation cancelled.", "info");
         return;
     }
 
@@ -455,9 +406,7 @@ async function generateMeme() {
 
     setURLPrompt(userQuestion);
     setButtonLoading();
-    showLoading();
-    startFakeProgress();
-    startCatAnimation();
+    disableInputs();
     dom.generateError.classList.add("hidden");
     dom.generateError.textContent = "";
 
@@ -495,10 +444,7 @@ async function generateMeme() {
         dom.generatedMeme.src = blobUrl;
 
         resetButton();
-        hideLoading();
-        stopFakeProgress();
         showResult();
-        stopCatAnimation();
         celebrate();
         saveGeneratedMeme(userQuestion, imageUrl);
         loadUserMemes();
@@ -506,9 +452,6 @@ async function generateMeme() {
         if (cancelled) return;
         console.error("Generation error:", error);
         resetButton();
-        hideLoading();
-        stopFakeProgress();
-        stopCatAnimation();
         dom.generateError.textContent = error.message || "Failed to generate meme. Please try again.";
         dom.generateError.classList.remove("hidden");
     }
@@ -672,10 +615,38 @@ async function updateAuthUI() {
     }
 }
 
+function updateGenerateButtonState() {
+    const hasText = dom.userInput.value.trim().length > 0;
+    const isGenerating = dom.generateBtn.classList.contains("generating");
+    dom.generateBtn.disabled = !hasText && !isGenerating;
+}
+
+function disableInputs() {
+    dom.userInput.disabled = true;
+    dom.userInput.classList.add("disabled");
+    const uploadBtn = document.getElementById("imageUploadBtn");
+    if (uploadBtn) {
+        uploadBtn.disabled = true;
+        uploadBtn.classList.add("disabled");
+    }
+}
+
+function enableInputs() {
+    dom.userInput.disabled = false;
+    dom.userInput.classList.remove("disabled");
+    const uploadBtn = document.getElementById("imageUploadBtn");
+    if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.classList.remove("disabled");
+    }
+}
+
 function setupEventListeners() {
     dom.generateBtn.addEventListener("click", generateMeme);
     dom.downloadBtn.addEventListener("click", downloadMeme);
     dom.shareBtn.addEventListener("click", shareMeme);
+
+    dom.userInput.addEventListener("input", updateGenerateButtonState);
 
     document.getElementById("imageUploadBtn").addEventListener("click", () => {
         dom.imageUpload.click();
@@ -702,6 +673,8 @@ function setupEventListeners() {
     dom.userInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") generateMeme();
     });
+
+    updateGenerateButtonState();
 
     document.addEventListener("keydown", handleKonamiCode);
 }

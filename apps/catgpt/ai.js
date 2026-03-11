@@ -108,12 +108,18 @@ export function createImageGenerationPrompt(
 
 export function generateImageURL(prompt, imageUrl = null) {
     const apiKey = getActiveApiKey();
-    const model = isLoggedIn() ? "nanobanana" : "gptimage";
-    const enhance = imageUrl ? "false" : "true";
-    const imageRef = imageUrl
-        ? `${imageUrl},${API_CONFIG.SELFIE_CATGPT_IMAGE}`
-        : API_CONFIG.ORIGINAL_CATGPT_IMAGE;
-    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&enhance=${enhance}&image=${encodeURIComponent(imageRef)}&key=${encodeURIComponent(apiKey)}`;
+    const loggedIn = isLoggedIn();
+    const model = loggedIn ? "nanobanana" : "gptimage";
+    let url = `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&key=${encodeURIComponent(apiKey)}`;
+    if (imageUrl) {
+        const imageRef = `${imageUrl},${API_CONFIG.SELFIE_CATGPT_IMAGE}`;
+        url += `&enhance=false&image=${encodeURIComponent(imageRef)}`;
+    } else if (loggedIn) {
+        url += `&enhance=true&image=${encodeURIComponent(API_CONFIG.ORIGINAL_CATGPT_IMAGE)}`;
+    } else {
+        url += "&enhance=true";
+    }
+    return url;
 }
 
 // ── Media Upload (replaces Cloudinary) ────────────────────────────────────

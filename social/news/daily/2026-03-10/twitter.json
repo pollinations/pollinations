@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "shipped 5 PRs. wired BYOP and media uploads into the ai dungeon master and product packaging apps. added dirtberry & claude to the model roster. changelogs now load dynamically from the news branch, so you can watch us ship in real time.",
+  "alt_tweet": "adding dynamic changelogs makes you slightly more accountable. wired BYOP and media services into a few community apps today (dungeon master, packaging designer). also added dirtberry and claude models. 5 PRs merged.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Cozy 8-bit pixel art scene with dynamic Twitter energy. Polly the bee mascot wearing a tiny tool belt is flying and wiring glowing lime green (#ecf874) cables into a retro arcade cabinet. Nearby, the round tan Nomnom creature is happily eating a glowing 'changelog.txt' pixel scroll. Soft pastel lavender and mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. High contrast within the brand palette, nostalgic but beautiful.",
+  "reasoning": "Lists specific app integrations and model additions straightforwardly. The dry joke about dynamic changelogs fits the builder ethos.",
+  "char_count": 239,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-10/images/twitter.jpg",
+    "prompt": "Cozy 8-bit pixel art scene with dynamic Twitter energy. Polly the bee mascot wearing a tiny tool belt is flying and wiring glowing lime green (#ecf874) cables into a retro arcade cabinet. Nearby, the round tan Nomnom creature is happily eating a glowing 'changelog.txt' pixel scroll. Soft pastel lavender and mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. High contrast within the brand palette, nostalgic but beautiful."
+  },
+  "date": "2026-03-10",
+  "generated_at": "2026-03-11T06:20:15.692471+00:00",
+  "platform": "twitter"
+}

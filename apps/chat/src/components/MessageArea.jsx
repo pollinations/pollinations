@@ -2,16 +2,36 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { formatMessage, formatStreamingMessage } from '../utils/markdown';
 import MemoizedMessageContent from './MemoizedMessageContent';
 import ThinkingProcess from './ThinkingProcess';
+import MediaLightbox from './MediaLightbox';
 import './MessageArea.css';
 
 const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => {
   const messagesEndRef = useRef(null);
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [expandedErrors, setExpandedErrors] = useState({});
+  const [lightboxData, setLightboxData] = useState({ isOpen: false, src: null, type: 'image' });
+
+
+
+
+
+  const scrollContainerRef = useRef(null);
+  const isUserScrolledUp = useRef(false);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+    isUserScrolledUp.current = distanceToBottom > 150;
+  }, []);
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!isUserScrolledUp.current) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
   }, []);
+
+
 
   useEffect(() => {
     scrollToBottom();
@@ -119,12 +139,14 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
         <div className="welcome-screen">
           <h1 className="welcome-text" key={welcomeMessage}>{welcomeMessage}</h1>
         </div>
-      </main>
+      <MediaLightbox isOpen={lightboxData.isOpen} src={lightboxData.src} type={lightboxData.type} onClose={() => setLightboxData({ isOpen: false, src: null, type: 'image' })} />
+    <MediaLightbox isOpen={lightboxData.isOpen} src={lightboxData.src} type={lightboxData.type} onClose={() => setLightboxData({ isOpen: false, src: null, type: 'image' })} />
+    </main>
     );
   }
 
   return (
-    <main className="messages-area">
+    <main className="messages-area" ref={scrollContainerRef} onScroll={handleScroll}>
       <div className="messages-container">
         {messages.map((message) => {
           const { cleanedContent, reasoningBlocks, pendingReasoning } = parseThinkTags(message.content || '', message.isStreaming);
@@ -236,12 +258,7 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
                 {/* Display generated image if present (assistant messages) */}
                 {message.imageUrl && (
                   <div className={`message-image-container ${!message.imageUrl.startsWith('data:') ? 'loading' : ''}`}>
-                    <img
-                      src={message.imageUrl}
-                      alt={message.imagePrompt || 'Generated image'}
-                      className="message-image"
-                      loading="lazy"
-                    />
+                    <img src={message.imageUrl} alt={message.imagePrompt || 'Generated image'} className="message-image cursor-pointer" loading="lazy" onClick={() => setLightboxData({ isOpen: true, src: message.imageUrl, type: 'image' })} style={{cursor: 'pointer'}} />
                     {message.imagePrompt && (
                       <div className="image-prompt">
                         <strong>Prompt:</strong> {message.imagePrompt}

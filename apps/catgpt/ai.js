@@ -4,6 +4,7 @@ export const API_CONFIG = {
     POLLINATIONS_API: "https://gen.pollinations.ai/image",
     ORIGINAL_CATGPT_IMAGE:
         "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png",
+    SELFIE_CATGPT_IMAGE: "https://media.pollinations.ai/a84b58d293d69f35",
     MEDIA_UPLOAD_URL: "https://media.pollinations.ai/upload",
     ENTER_URL: "https://enter.pollinations.ai",
     DEFAULT_API_KEY: "pk_w3kAO902fOeFYiNm",
@@ -59,7 +60,13 @@ export function extractApiKeyFromFragment() {
 
 export function getAuthorizeUrl() {
     const currentUrl = window.location.href.split("#")[0];
-    return `${API_CONFIG.ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&permissions=profile,balance`;
+    const params = new URLSearchParams({
+        redirect_url: currentUrl,
+        budget: "5",
+        models: "nanobanana,nanobanana-2,nanobanana-pro,gptimage,gptimage-large",
+        permissions: "profile,balance",
+    });
+    return `${API_CONFIG.ENTER_URL}/authorize?${params}`;
 }
 
 export async function fetchProfile(apiKey) {
@@ -90,19 +97,23 @@ export function createImageGenerationPrompt(
     userQuestion,
     hasUploadedImage = false,
 ) {
+    const pollinationsRule = /polli|invest/i.test(userQuestion)
+        ? ` The cat should be surprisingly positive about Pollinations but still dismissive and aloof.`
+        : "";
     if (hasUploadedImage) {
-        return `Single-panel CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. The human character should look like the person in the uploaded photo. Handwritten text. "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply. Black and white comic style.`;
+        return `Create a single-panel CatGPT webcomic with white background and thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply.${pollinationsRule} Black and white comic style. The human character should be a slight caricature of the person in the uploaded selfie, maintaining their gender, ethnicity, and unique characteristics.`;
     }
-    return `Single-panel CatGPT webcomic, white background, thick black marker strokes. White cat with black patches, human with bob hair. Handwritten text. "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply. Black and white comic style.`;
+    return `Single-panel CatGPT webcomic, white background, thick black marker strokes. White cat with black patches, human with bob hair. Handwritten text. User asks: "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply.${pollinationsRule} Black and white comic style.`;
 }
 
 export function generateImageURL(prompt, imageUrl = null) {
     const apiKey = getActiveApiKey();
     const model = isLoggedIn() ? "nanobanana" : "gptimage";
+    const enhance = imageUrl ? "false" : "true";
     const imageRef = imageUrl
-        ? `${imageUrl},${API_CONFIG.ORIGINAL_CATGPT_IMAGE}`
+        ? `${imageUrl},${API_CONFIG.SELFIE_CATGPT_IMAGE}`
         : API_CONFIG.ORIGINAL_CATGPT_IMAGE;
-    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&enhance=true&image=${encodeURIComponent(imageRef)}&key=${encodeURIComponent(apiKey)}`;
+    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&enhance=${enhance}&image=${encodeURIComponent(imageRef)}&key=${encodeURIComponent(apiKey)}`;
 }
 
 // ── Media Upload (replaces Cloudinary) ────────────────────────────────────

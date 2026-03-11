@@ -2,7 +2,23 @@ import React, { useState, useRef, useEffect } from "react";
 import { getApiToken } from "../utils/api";
 import "./CanvasCodeGenerator.css";
 
-const CanvasCodeGenerator = ({ onCodeGenerated, onClose }) => {
+const COLOR_SWATCHES = [
+    "#000000",
+    "#ffffff",
+    "#ef4444",
+    "#f97316",
+    "#eab308",
+    "#22c55e",
+    "#3b82f6",
+    "#a855f7",
+    "#ec4899",
+];
+
+const CanvasCodeGenerator = ({
+    onCodeGenerated,
+    onClose,
+    initialPrompt = "",
+}) => {
     const canvasRef = useRef(null);
     const iframeRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -12,7 +28,10 @@ const CanvasCodeGenerator = ({ onCodeGenerated, onClose }) => {
     const [generatedCode, setGeneratedCode] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [activeTab, setActiveTab] = useState("code"); // 'code' | 'preview'
-    const [prompt, setPrompt] = useState("");
+    const [prompt, setPrompt] = useState(initialPrompt);
+    const [refinePrompt, setRefinePrompt] = useState("");
+    const historyRef = useRef([]);
+    const [canUndo, setCanUndo] = useState(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -20,7 +39,11 @@ const CanvasCodeGenerator = ({ onCodeGenerated, onClose }) => {
         const ctx = canvas.getContext("2d");
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }, []);
+        // Auto-generate if opened with a prompt from /code command
+        if (initialPrompt.trim()) {
+            generateCode();
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Update iframe preview when code changes and preview tab is active
     useEffect(() => {
@@ -28,6 +51,87 @@ const CanvasCodeGenerator = ({ onCodeGenerated, onClose }) => {
             iframeRef.current.srcdoc = generatedCode;
         }
     }, [activeTab, generatedCode]);
+
+    const saveSnapshot = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        historyRef.current = [
+            ...historyRef.current.slice(-19),
+            canvas.toDataURL(),
+        ];
+        setCanUndo(true);
+    };
+
+    const undo = () => {
+        if (historyRef.current.length === 0) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        const prevDataUrl = historyRef.current[historyRef.current.length - 1];
+        historyRef.current = historyRef.current.slice(0, -1);
+        setCanUndo(historyRef.current.length > 0);
+        const img = new Image();
+        img.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = prevDataUrl;
+    };
+
+    // Ctrl+Z keyboard shortcut — undo reads historyRef so no stale closure
+    useEffect(() => {
+        const onKey = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+                e.preventDefault();
+                undo();
+            }
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const refineCode = async () => {
+        if (!refinePrompt.trim() || !generatedCode) return;
+        setIsGenerating(true);
+        try {
+            const apiToken = getApiToken();
+            const response = await fetch(
+                "https://gen.pollinations.ai/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(apiToken
+                            ? { Authorization: `Bearer ${apiToken}` }
+                            : {}),
+                    },
+                    body: JSON.stringify({
+                        model: "openai",
+                        messages: [
+                            {
+                                role: "user",
+                                content: `Here is an existing HTML page:\n\n\`\`\`html\n${generatedCode}\n\`\`\`\n\nPlease modify it: ${refinePrompt.trim()}\n\nReturn only the complete modified HTML, no explanation.`,
+                            },
+                        ],
+                        max_tokens: 4000,
+                    }),
+                },
+            );
+            if (!response.ok) throw new Error(`API error: ${response.status}`);
+            const data = await response.json();
+            const raw = data.choices?.[0]?.message?.content || "";
+            const match = raw.match(/```(?:html)?\s*([\s\S]*?)```/);
+            const code = match ? match[1].trim() : raw.trim();
+            setGeneratedCode(code);
+            setActiveTab("preview");
+            setRefinePrompt("");
+        } catch (error) {
+            console.error("Error refining code:", error);
+            if (window?.showToast)
+                window.showToast("Error refining: " + error.message, "error");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     const getCanvasPos = (e, canvas) => {
         const rect = canvas.getBoundingClientRect();
@@ -40,6 +144,7 @@ const CanvasCodeGenerator = ({ onCodeGenerated, onClose }) => {
     };
 
     const startDrawing = (e) => {
+        saveSnapshot();
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
         const { x, y } = getCanvasPos(e, canvas);
@@ -185,17 +290,6 @@ const CanvasCodeGenerator = ({ onCodeGenerated, onClose }) => {
                     {/* Left: Drawing panel */}
                     <div className="ccg-draw-panel">
                         <div className="ccg-draw-toolbar">
-                            <label className="ccg-tool-label" title="Color">
-                                <input
-                                    type="color"
-                                    value={color}
-                                    onChange={(e) => {
-                                        setColor(e.target.value);
-                                        setIsErasing(false);
-                                    }}
-                                />
-                            </label>
-
                             <div className="ccg-brush-row">
                                 <span className="ccg-tool-label">Size</span>
                                 <input
@@ -248,6 +342,55 @@ const CanvasCodeGenerator = ({ onCodeGenerated, onClose }) => {
                                     <path d="M10 11v6m4-6v6" />
                                 </svg>
                             </button>
+                            <button
+                                className="ccg-tool-btn"
+                                onClick={undo}
+                                disabled={!canUndo}
+                                title="Undo (Ctrl+Z)"
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    width="16"
+                                    height="16"
+                                >
+                                    <path d="M3 7v6h6" />
+                                    <path d="M3 13C5.5 6.5 14 3.5 21 8" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Color swatches row */}
+                        <div className="ccg-swatch-row">
+                            {COLOR_SWATCHES.map((c) => (
+                                <button
+                                    key={c}
+                                    className={`ccg-swatch${
+                                        color === c && !isErasing
+                                            ? " active"
+                                            : ""
+                                    }`}
+                                    style={{ background: c }}
+                                    onClick={() => {
+                                        setColor(c);
+                                        setIsErasing(false);
+                                    }}
+                                    title={c}
+                                />
+                            ))}
+                            <span className="ccg-swatch-sep" />
+                            <input
+                                type="color"
+                                className="ccg-custom-color"
+                                value={color}
+                                onChange={(e) => {
+                                    setColor(e.target.value);
+                                    setIsErasing(false);
+                                }}
+                                title="Custom color"
+                            />
                         </div>
 
                         <div className="ccg-canvas-wrap">
@@ -428,6 +571,45 @@ const CanvasCodeGenerator = ({ onCodeGenerated, onClose }) => {
                                 />
                             )}
                         </div>
+                        {generatedCode && (
+                            <div className="ccg-refine-row">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    width="14"
+                                    height="14"
+                                    className="ccg-refine-icon"
+                                >
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                </svg>
+                                <input
+                                    type="text"
+                                    className="ccg-refine-input"
+                                    placeholder="Refine: add animations, change colors, add a button…"
+                                    value={refinePrompt}
+                                    onChange={(e) =>
+                                        setRefinePrompt(e.target.value)
+                                    }
+                                    onKeyDown={(e) =>
+                                        e.key === "Enter" &&
+                                        !isGenerating &&
+                                        refineCode()
+                                    }
+                                />
+                                <button
+                                    className="ccg-refine-btn"
+                                    onClick={refineCode}
+                                    disabled={
+                                        isGenerating || !refinePrompt.trim()
+                                    }
+                                >
+                                    {isGenerating ? "Refining…" : "Refine"}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

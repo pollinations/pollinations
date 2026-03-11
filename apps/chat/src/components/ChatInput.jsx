@@ -157,6 +157,17 @@ const ChatInput = ({
                 }
             }
 
+            if (isCanvasMode && onOpenCanvas) {
+                const codePrompt = inputValue.trim().replace(/^\/code\s*/, "");
+                onOpenCanvas(codePrompt);
+                setInputValue("");
+                setSelectedAttachment(null);
+                setIsUserTyping(false);
+                if (onModeChange) onModeChange("chat");
+                setTimeout(() => inputRef.current?.focus(), 0);
+                return;
+            }
+
             // Pass both text and image data if present
             onSend({
                 text: inputValue,

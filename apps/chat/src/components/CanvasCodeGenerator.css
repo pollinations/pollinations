@@ -353,7 +353,121 @@ body.dark .ccg-canvas-wrap {
   background: #fff;
 }
 
-/* Responsive: stack panels on narrow screens */
+.ccg-tool-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Color swatches row */
+.ccg-swatch-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 0.75rem;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.ccg-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.12s, box-shadow 0.12s;
+  outline: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.ccg-swatch:hover {
+  transform: scale(1.25);
+}
+
+.ccg-swatch.active {
+  box-shadow: 0 0 0 2px var(--bg-tertiary), 0 0 0 4px var(--accent-color, #a855f7);
+}
+
+.ccg-swatch-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border-color);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.ccg-custom-color {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 1px;
+  background: none;
+}
+
+/* Refine row */
+.ccg-refine-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.ccg-refine-icon {
+  color: var(--text-muted, #888);
+  flex-shrink: 0;
+}
+
+.ccg-refine-input {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.ccg-refine-input:focus {
+  border-color: var(--accent-color, #a855f7);
+}
+
+.ccg-refine-input::placeholder {
+  color: var(--text-tertiary, #888);
+}
+
+.ccg-refine-btn {
+  padding: 0.4rem 0.8rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-color, #a855f7);
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ccg-refine-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--accent-color, #a855f7);
+}
+
+.ccg-refine-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+
 @media (max-width: 700px) {
   .ccg-modal {
     width: 100vw;

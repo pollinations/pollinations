@@ -73,6 +73,7 @@ function App() {
     });
     const [mode, setMode] = useState("chat");
     const [showCanvasGenerator, setShowCanvasGenerator] = useState(false);
+    const [canvasInitialPrompt, setCanvasInitialPrompt] = useState("");
     const [sessionSettings, setSessionSettings] = useState({
         systemPrompt:
             "You are a helpful AI assistant who speaks concisely and helpfully.",
@@ -762,7 +763,10 @@ function App() {
                     onImageModelChange={handleImageModelChange}
                     onVideoModelChange={handleVideoModelChange}
                     onOpenGenerationOptions={handleOpenGenerationOptions}
-                    onOpenCanvas={() => setShowCanvasGenerator(true)}
+                    onOpenCanvas={(prompt = "") => {
+                        setCanvasInitialPrompt(prompt);
+                        setShowCanvasGenerator(true);
+                    }}
                 />
             </div>
 
@@ -805,6 +809,7 @@ function App() {
 
             {showCanvasGenerator && (
                 <CanvasCodeGenerator
+                    initialPrompt={canvasInitialPrompt}
                     onCodeGenerated={() => {
                         setShowCanvasGenerator(false);
                     }}

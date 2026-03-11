@@ -4,7 +4,7 @@
 // Direct calls to gen.pollinations.ai with publishable key.
 // No proxy needed - publishable keys are safe to expose on frontend.
 
-export const DEFAULT_API_KEY = "pk_XDXnwCpYbihkQcEg"; // POLLINATIONS.AI_WEBSITE
+export const DEFAULT_API_KEY = "pk_31oNBvU9JLA1ApNX"; // POLLINATIONS.AI_WEBSITE
 export const API_BASE = "https://gen.pollinations.ai";
 
 // Re-export for backward compatibility (use getApiKey() from useAuth for dynamic key)

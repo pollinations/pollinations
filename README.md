@@ -47,6 +47,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-03-10** – **🧠 New Models: Claude & Dirtberry** Claude Sonnet 4.6 is now available via the `claude-airforce` text endpoint, alongside `dirtberry` for quick realistic image generation. Hit the [Unified API](https://gen.pollinations.ai) to try them out.
+- **2026-03-10** – **🔑 Bring Your Own Pollen** The Product Packaging Designer and AI Dungeon Master community apps now support Pollinations SSO. Log in, spend your own Pollen balance, and bypass third-party media hosts with our native upload service.
 - **2026-03-09** – **🤖 Polly V2** Our [Discord](https://discord.gg/pollinations-ai-885844321461485618) bot got a brain transplant. Rebuilt with native internals for speed, she now features an adaptive personality that matches your tone, skips the sycophancy, and points you to the docs instead of dumping massive code blocks.
 - **2026-03-09** – **🎨 Unfiltered nanobanana** We took the training wheels off the nanobanana image model. Passing `safe=false` to the [API](https://gen.pollinations.ai) now properly bypasses native safety settings instead of relying on clunky prompt injections, resulting in fewer false-positive blocks on your creative prompts.
 - **2026-03-08** – **🎨 Fresh coat of pixels** The [main website](https://hello.pollinations.ai) has a new look. We replaced the old theming engine with a cohesive color palette and dynamic retro pixel art backgrounds. Much cozier.
@@ -55,7 +57,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-03-06** – **💾 Media Storage Upgrades** Name tags for your files. Media downloads now preserve your original filenames, and re-uploading an existing file automatically resets its 14-day expiration timer.
 - **2026-03-05** – **🚀 GPT Image 1.5 Large** We unblocked the Azure endpoints and wired up the new 1.5 large model. Better pixels, fewer timeouts. Hit the [Unified API](https://gen.pollinations.ai) to try it.
 - **2026-03-05** – **✨ Unified Multimodal Chat** The community shipped `pollinations-ui`, a single interface that handles text, images, video, and audio without making you switch tabs.
-- **2026-03-05** – **🧩 Browser Extension** Generate images anywhere on the web using your own Pollen credits. No need to leave the tab you're supposed to be working in.
 ---
 
 ## 🌱 Introduction

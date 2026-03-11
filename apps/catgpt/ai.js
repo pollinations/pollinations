@@ -74,18 +74,20 @@ export function createImageGenerationPrompt(
     userQuestion,
     hasUploadedImage = false,
 ) {
+    const pollinationsRule = `If the question mentions Pollinations, the cat should be surprisingly positive but still dismissive and aloof.`;
     if (hasUploadedImage) {
-        return `Single-panel CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. The human character should look like the person in the uploaded photo. Handwritten text. "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply. Black and white comic style.`;
+        return `Create a single-panel CatGPT webcomic with white background and thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply. ${pollinationsRule} Black and white comic style. The human character should be a slight caricature of the person in the uploaded selfie, maintaining their gender, ethnicity, and unique characteristics.`;
     }
-    return `Single-panel CatGPT webcomic, white background, thick black marker strokes. White cat with black patches, human with bob hair. Handwritten text. "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply. Black and white comic style.`;
+    return `Single-panel CatGPT webcomic, white background, thick black marker strokes. White cat with black patches, human with bob hair. Handwritten text. User asks: "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply. ${pollinationsRule} Black and white comic style.`;
 }
 
 export function generateImageURL(prompt, imageUrl = null) {
     const apiKey = getActiveApiKey();
+    const enhance = imageUrl ? "false" : "true";
     const imageRef = imageUrl
         ? `${imageUrl},${API_CONFIG.ORIGINAL_CATGPT_IMAGE}`
         : API_CONFIG.ORIGINAL_CATGPT_IMAGE;
-    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=nanobanana&enhance=true&image=${encodeURIComponent(imageRef)}&key=${encodeURIComponent(apiKey)}`;
+    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=nanobanana&enhance=${enhance}&image=${encodeURIComponent(imageRef)}&key=${encodeURIComponent(apiKey)}`;
 }
 
 // ── Media Upload (replaces Cloudinary) ────────────────────────────────────

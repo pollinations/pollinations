@@ -8,31 +8,23 @@ import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 const logOps = debug("pollinations:flux-klein:ops");
 const logError = debug("pollinations:flux-klein:error");
 
-// Modal endpoints for Flux Klein variants
-const KLEIN_ENDPOINTS = {
-    klein: {
-        generate:
-            "https://myceli-ai--flux-klein-fluxklein-generate-web.modal.run",
-        edit: "https://myceli-ai--flux-klein-fluxklein-edit-web.modal.run",
-    },
-    "klein-large": {
-        generate:
-            "https://myceli-ai--flux-klein-9b-fluxklein9b-generate-web.modal.run",
-        edit: "https://myceli-ai--flux-klein-9b-fluxklein9b-edit-web.modal.run",
-    },
+// bpaigen.com endpoint for Klein 4B
+const BPAI_BASE_URL = "https://bpaigen.com";
+const BPAI_GENERATE_URL = `${BPAI_BASE_URL}/v1/images/generate`;
+
+// Modal endpoints for Klein Large (9B) only
+const KLEIN_LARGE_ENDPOINTS = {
+    generate:
+        "https://myceli-ai--flux-klein-9b-fluxklein9b-generate-web.modal.run",
+    edit: "https://myceli-ai--flux-klein-9b-fluxklein9b-edit-web.modal.run",
 } as const;
 
-type KleinVariant = keyof typeof KLEIN_ENDPOINTS;
+type KleinVariant = "klein" | "klein-large";
 
 /**
- * Calls the Flux Klein Modal API for image generation
- * Supports both text-to-image and image editing (with reference images)
- * @param prompt - The prompt for image generation
- * @param safeParams - The parameters for image generation (supports image array for editing)
- * @param progress - Progress manager for updates
- * @param requestId - Request ID for progress tracking
- * @param variant - Model variant: "klein" (4B) or "klein-large" (9B)
- * @returns Promise<ImageGenerationResult>
+ * Calls the Flux Klein API for image generation
+ * - klein (4B): uses bpaigen.com (text-to-image only)
+ * - klein-large (9B): uses Modal (text-to-image + editing)
  */
 export const callFluxKleinAPI = async (
     prompt: string,
@@ -42,10 +34,16 @@ export const callFluxKleinAPI = async (
     variant: KleinVariant = "klein",
 ): Promise<ImageGenerationResult> => {
     try {
-        const variantName =
-            variant === "klein-large" ? "Klein Large (9B)" : "Klein (4B)";
-        logOps(`Calling Flux ${variantName} API with prompt:`, prompt);
+        if (variant === "klein") {
+            return await generateWithBpai(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+        }
 
+        // klein-large uses Modal
         const backendToken = process.env.PLN_IMAGE_BACKEND_TOKEN;
         if (!backendToken) {
             throw new Error(
@@ -53,35 +51,32 @@ export const callFluxKleinAPI = async (
             );
         }
 
+        const hasReferenceImages =
+            safeParams.image && safeParams.image.length > 0;
+
         progress.updateBar(
             requestId,
             35,
             "Processing",
-            `Generating with Flux ${variantName}...`,
+            "Generating with Flux Klein Large (9B)...",
         );
 
-        // Check if we have reference images for editing mode
-        const hasReferenceImages =
-            safeParams.image && safeParams.image.length > 0;
-
         if (hasReferenceImages) {
-            return await generateWithEditing(
+            return await generateWithEditingModal(
                 prompt,
                 safeParams,
                 progress,
                 requestId,
                 backendToken,
-                variant,
             );
         }
 
-        return await generateTextToImage(
+        return await generateTextToImageModal(
             prompt,
             safeParams,
             progress,
             requestId,
             backendToken,
-            variant,
         );
     } catch (error) {
         logError("Error calling Flux Klein API:", error);
@@ -94,55 +89,91 @@ export const callFluxKleinAPI = async (
 };
 
 /**
- * Text-to-image generation using GET endpoint
+ * Klein 4B text-to-image via bpaigen.com
  */
-async function generateTextToImage(
+async function generateWithBpai(
     prompt: string,
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
-    backendToken: string,
-    variant: KleinVariant = "klein",
 ): Promise<ImageGenerationResult> {
-    logOps("Using text-to-image mode (GET)");
+    logOps("Calling bpaigen.com Klein 4B with prompt:", prompt);
 
-    // Build query parameters
-    const params = new URLSearchParams({
-        prompt: prompt,
-        width: String(safeParams.width || 1024),
-        height: String(safeParams.height || 1024),
-    });
+    progress.updateBar(
+        requestId,
+        35,
+        "Processing",
+        "Generating with Flux Klein (4B)...",
+    );
+
+    const body: Record<string, unknown> = {
+        prompt,
+        width: safeParams.width || 1024,
+        height: safeParams.height || 1024,
+    };
 
     if (safeParams.seed !== undefined) {
-        params.append("seed", String(safeParams.seed));
+        body.seed = safeParams.seed;
     }
 
-    const url = `${KLEIN_ENDPOINTS[variant].generate}?${params.toString()}`;
-    logOps("Flux Klein GET URL:", url);
+    const password = process.env.BPAI_PASSWORD;
+    if (password) {
+        body.password = password;
+    }
 
-    const response = await fetch(url, {
-        method: "GET",
-        headers: {
-            "x-backend-token": backendToken,
-        },
+    logOps("bpaigen request body:", JSON.stringify(body));
+
+    const response = await fetch(BPAI_GENERATE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
     });
 
     if (!response.ok) {
         const errorText = await response.text();
         logError(
-            "Flux Klein API request failed, status:",
+            "bpaigen API failed, status:",
             response.status,
             "response:",
             errorText,
         );
         throw new HttpError(
-            `Flux Klein API request failed: ${errorText}`,
+            `bpaigen API request failed: ${errorText}`,
             response.status,
         );
     }
 
-    const imageBuffer = Buffer.from(await response.arrayBuffer());
-    logOps("Generated image, buffer size:", imageBuffer.length);
+    const result = (await response.json()) as {
+        status: string;
+        image_url: string;
+        seed: number;
+        job_id: string;
+    };
+
+    if (result.status !== "succeeded") {
+        throw new Error(
+            `bpaigen generation failed with status: ${result.status}`,
+        );
+    }
+
+    logOps("bpaigen job succeeded, downloading from:", result.image_url);
+
+    // Download the generated image
+    const imageResponse = await fetch(`${BPAI_BASE_URL}${result.image_url}`);
+    if (!imageResponse.ok) {
+        throw new HttpError(
+            `bpaigen image download failed: ${imageResponse.status}`,
+            imageResponse.status,
+        );
+    }
+
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    logOps(
+        "Downloaded image, buffer size:",
+        imageBuffer.length,
+        "seed:",
+        result.seed,
+    );
 
     progress.updateBar(
         requestId,
@@ -156,7 +187,7 @@ async function generateTextToImage(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: variant,
+            actualModel: "klein",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
@@ -166,67 +197,17 @@ async function generateTextToImage(
 }
 
 /**
- * Image editing using POST endpoint with base64 images
+ * Klein Large (9B) text-to-image via Modal GET endpoint
  */
-async function generateWithEditing(
+async function generateTextToImageModal(
     prompt: string,
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
     backendToken: string,
-    variant: KleinVariant = "klein",
 ): Promise<ImageGenerationResult> {
-    logOps(
-        "Using image editing mode (POST) with",
-        safeParams.image?.length,
-        "reference images",
-    );
+    logOps("Using Modal text-to-image mode (GET) for Klein Large");
 
-    progress.updateBar(
-        requestId,
-        40,
-        "Processing",
-        "Downloading reference images...",
-    );
-
-    // Download and convert images to base64
-    const imageUrls = Array.isArray(safeParams.image)
-        ? safeParams.image.slice(0, 10) // Max 10 images
-        : [safeParams.image];
-
-    const base64Images: string[] = [];
-
-    for (let i = 0; i < imageUrls.length; i++) {
-        const imageUrl = imageUrls[i];
-        try {
-            logOps(
-                `Downloading reference image ${i + 1}/${imageUrls.length} from: ${imageUrl}`,
-            );
-
-            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
-
-            // Create data URL format for Modal endpoint
-            const dataUrl = `data:${mimeType};base64,${base64}`;
-            base64Images.push(dataUrl);
-
-            logOps(
-                `Successfully processed reference image ${i + 1}: ${mimeType}, ${base64.length} chars`,
-            );
-        } catch (error) {
-            const message =
-                error instanceof Error ? error.message : String(error);
-            logError(`Error processing reference image ${i + 1}:`, message);
-            // Continue with other images
-        }
-    }
-
-    if (base64Images.length === 0) {
-        throw new Error("Failed to download any reference images");
-    }
-
-    logOps("Image editing mode with", base64Images.length, "processed images");
-
-    // Build query parameters for edit endpoint (prompt + dimensions in URL)
     const params = new URLSearchParams({
         prompt: prompt,
         width: String(safeParams.width || 1024),
@@ -237,15 +218,121 @@ async function generateWithEditing(
         params.append("seed", String(safeParams.seed));
     }
 
-    const editUrl = `${KLEIN_ENDPOINTS[variant].edit}?${params.toString()}`;
-    logOps("Flux Klein POST URL:", editUrl);
-    logOps("Sending", base64Images.length, "images in body");
+    const url = `${KLEIN_LARGE_ENDPOINTS.generate}?${params.toString()}`;
+    logOps("Klein Large GET URL:", url);
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: { "x-backend-token": backendToken },
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        logError(
+            "Klein Large API failed, status:",
+            response.status,
+            "response:",
+            errorText,
+        );
+        throw new HttpError(
+            `Klein Large API request failed: ${errorText}`,
+            response.status,
+        );
+    }
+
+    const imageBuffer = Buffer.from(await response.arrayBuffer());
+    logOps("Generated image, buffer size:", imageBuffer.length);
+
+    progress.updateBar(
+        requestId,
+        90,
+        "Success",
+        "Klein Large generation completed",
+    );
+
+    return {
+        buffer: imageBuffer,
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: "klein-large",
+            usage: {
+                completionImageTokens: 1,
+                totalTokenCount: 1,
+            },
+        },
+    };
+}
+
+/**
+ * Klein Large (9B) image editing via Modal POST endpoint
+ */
+async function generateWithEditingModal(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+    backendToken: string,
+): Promise<ImageGenerationResult> {
+    logOps(
+        "Using Modal editing mode (POST) for Klein Large with",
+        safeParams.image?.length,
+        "images",
+    );
+
+    progress.updateBar(
+        requestId,
+        40,
+        "Processing",
+        "Downloading reference images...",
+    );
+
+    const imageUrls = Array.isArray(safeParams.image)
+        ? safeParams.image.slice(0, 10)
+        : [safeParams.image];
+
+    const base64Images: string[] = [];
+
+    for (let i = 0; i < imageUrls.length; i++) {
+        const imageUrl = imageUrls[i];
+        try {
+            logOps(
+                `Downloading reference image ${i + 1}/${imageUrls.length} from: ${imageUrl}`,
+            );
+            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+            base64Images.push(`data:${mimeType};base64,${base64}`);
+            logOps(
+                `Processed reference image ${i + 1}: ${mimeType}, ${base64.length} chars`,
+            );
+        } catch (error) {
+            const message =
+                error instanceof Error ? error.message : String(error);
+            logError(`Error processing reference image ${i + 1}:`, message);
+        }
+    }
+
+    if (base64Images.length === 0) {
+        throw new Error("Failed to download any reference images");
+    }
+
+    const params = new URLSearchParams({
+        prompt: prompt,
+        width: String(safeParams.width || 1024),
+        height: String(safeParams.height || 1024),
+    });
+
+    if (safeParams.seed !== undefined) {
+        params.append("seed", String(safeParams.seed));
+    }
+
+    const editUrl = `${KLEIN_LARGE_ENDPOINTS.edit}?${params.toString()}`;
+    logOps("Klein Large POST URL:", editUrl);
 
     progress.updateBar(
         requestId,
         50,
         "Processing",
-        "Generating with Flux Klein (editing)...",
+        "Generating with Klein Large (editing)...",
     );
 
     const response = await fetch(editUrl, {
@@ -260,13 +347,13 @@ async function generateWithEditing(
     if (!response.ok) {
         const errorText = await response.text();
         logError(
-            "Flux Klein edit API request failed, status:",
+            "Klein Large edit failed, status:",
             response.status,
             "response:",
             errorText,
         );
         throw new HttpError(
-            `Flux Klein edit API request failed: ${errorText}`,
+            `Klein Large edit request failed: ${errorText}`,
             response.status,
         );
     }
@@ -278,7 +365,7 @@ async function generateWithEditing(
         requestId,
         90,
         "Success",
-        "Flux Klein editing completed",
+        "Klein Large editing completed",
     );
 
     return {
@@ -286,7 +373,7 @@ async function generateWithEditing(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: variant,
+            actualModel: "klein-large",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,

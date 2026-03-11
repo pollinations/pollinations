@@ -270,7 +270,8 @@ export const IMAGE_SERVICES = {
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
-        provider: "modal",
+        provider: "bpai",
+        alpha: true,
         cost: [
             {
                 date: new Date("2026-01-21").getTime(), // Launch date
@@ -278,8 +279,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "FLUX.2 Klein 4B - Fast image generation & editing on Modal",
-        inputModalities: ["text", "image"],
+            "FLUX.2 Klein 4B - Fast image generation via bpaigen",
+        inputModalities: ["text"],
         outputModalities: ["image"],
     },
     "klein-large": {

@@ -60,7 +60,13 @@ export function extractApiKeyFromFragment() {
 
 export function getAuthorizeUrl() {
     const currentUrl = window.location.href.split("#")[0];
-    return `${API_CONFIG.ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}`;
+    const params = new URLSearchParams({
+        redirect_url: currentUrl,
+        budget: "5",
+        models: "nanobanana,nanobanana-2,nanobanana-pro,gptimage,gptimage-large",
+        permissions: "profile,balance",
+    });
+    return `${API_CONFIG.ENTER_URL}/authorize?${params}`;
 }
 
 export const EXAMPLE_PROMPTS = [
@@ -75,7 +81,7 @@ export function createImageGenerationPrompt(
     userQuestion,
     hasUploadedImage = false,
 ) {
-    const pollinationsRule = /polli/i.test(userQuestion)
+    const pollinationsRule = /polli|invest/i.test(userQuestion)
         ? ` The cat should be surprisingly positive about Pollinations but still dismissive and aloof.`
         : "";
     if (hasUploadedImage) {

@@ -5,8 +5,11 @@ import {
     createImageGenerationPrompt,
     EXAMPLE_PROMPTS,
     extractApiKeyFromFragment,
+    fetchBalance,
+    fetchProfile,
     generateImageURL,
     getAuthorizeUrl,
+    getStoredApiKey,
     handleImageUpload,
     isLoggedIn,
     storeApiKey,
@@ -104,10 +107,10 @@ function setURLPrompt(prompt) {
 }
 
 const NOTIFICATION_COLORS = {
-    success: "#05ffa1",
-    error: "#ff61d8",
-    info: "#ffcc00",
-    warning: "#ffcc00",
+    success: "#A8E6A2",
+    error: "#C9A9E4",
+    info: "#E8F372",
+    warning: "#E8F372",
 };
 
 function showNotification(message, type = "info") {
@@ -116,14 +119,17 @@ function showNotification(message, type = "info") {
     notification.textContent = message;
     notification.style.cssText = `
         position: fixed;
-        top: 20px;
+        bottom: 20px;
         right: 20px;
-        padding: 1rem 1.5rem;
-        background: ${NOTIFICATION_COLORS[type] || NOTIFICATION_COLORS.info};
+        max-width: 280px;
+        padding: 0.6rem 1rem;
+        background: ${NOTIFICATION_COLORS[type] || NOTIFICATION_COLORS.info}cc;
+        backdrop-filter: blur(8px);
         color: #000;
         border-radius: 10px;
-        font-weight: 600;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        font-size: 0.85rem;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         z-index: 1000;
         animation: slideIn 0.3s ease-out;
     `;
@@ -157,17 +163,45 @@ const dom = {
     removeImageBtn: document.getElementById("removeImageBtn"),
 };
 
-const BUTTON_DEFAULT_HTML =
-    '<span class="btn-text">Generate Meme</span><span class="btn-emoji">🎨</span>';
+let currentGenerationAbort = null;
+let retryCountdownInterval = null;
 
 function setButtonLoading() {
-    dom.generateBtn.disabled = true;
-    dom.generateBtn.innerHTML = "🐾 Generating... (~30s)";
+    dom.generateBtn.classList.add("generating");
+    dom.generateBtn.textContent = "Generating... Cancel?";
+    dom.generateBtn.disabled = false;
 }
 
 function resetButton() {
+    clearRetryCountdown();
+    dom.generateBtn.classList.remove("generating", "retrying");
+    dom.generateBtn.textContent = "Generate Meme";
     dom.generateBtn.disabled = false;
-    dom.generateBtn.innerHTML = BUTTON_DEFAULT_HTML;
+    currentGenerationAbort = null;
+}
+
+function setButtonRetry(seconds) {
+    dom.generateBtn.classList.remove("generating");
+    dom.generateBtn.classList.add("retrying");
+    dom.generateBtn.disabled = false;
+    let remaining = seconds;
+    dom.generateBtn.textContent = `Retrying in ${remaining}s... Cancel?`;
+    retryCountdownInterval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            clearRetryCountdown();
+            generateMeme();
+        } else {
+            dom.generateBtn.textContent = `Retrying in ${remaining}s... Cancel?`;
+        }
+    }, 1000);
+}
+
+function clearRetryCountdown() {
+    if (retryCountdownInterval) {
+        clearInterval(retryCountdownInterval);
+        retryCountdownInterval = null;
+    }
 }
 
 function showLoading() {
@@ -323,7 +357,7 @@ function addFloatingEmojis() {
         floater.style.cssText = `
             position: absolute;
             font-size: 2rem;
-            opacity: 0.1;
+            opacity: 0.25;
             animation: float ${10 + index * 2}s infinite ease-in-out;
             animation-delay: ${index * 2}s;
             pointer-events: none;
@@ -409,7 +443,7 @@ function loadUserMemes() {
         emptyMessage.style.cssText = `
             grid-column: 1 / -1;
             text-align: center;
-            color: var(--color-secondary);
+            color: var(--color-cream);
             padding: 2rem;
             font-style: italic;
         `;
@@ -439,92 +473,29 @@ function handleImageError(errorType = "general") {
     const randomMessage = getRandomItem(ERROR_MESSAGES);
     const message =
         errorType === "timeout"
-            ? `⏰ This cat took too long to respond... probably distracted by a laser pointer! ${randomMessage}`
+            ? `⏰ Too long... ${randomMessage}`
             : randomMessage;
     showNotification(message, "error");
     stopCatAnimation();
-    startRetryCountdown();
-}
-
-function startRetryCountdown() {
-    let countdown = 10;
-    startCatAnimation("retry");
-
-    const retryContainer = document.createElement("div");
-    retryContainer.id = "retryContainer";
-    retryContainer.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: linear-gradient(135deg, #ff61d8, #05ffa1);
-        color: white;
-        padding: 2rem;
-        border-radius: 20px;
-        text-align: center;
-        z-index: 1000;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        backdrop-filter: blur(10px);
-        border: 2px solid rgba(255,255,255,0.2);
-        font-family: 'Space Grotesk', sans-serif;
-        min-width: 300px;
-    `;
-
-    const title = document.createElement("h3");
-    title.style.cssText = `margin: 0 0 1rem 0; font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);`;
-    title.innerHTML = "😸 CatGPT is blowing up rn...";
-
-    const countdownDisplay = document.createElement("div");
-    countdownDisplay.style.cssText = `font-size: 4rem; font-weight: 700; margin: 1rem 0; animation: pulse 1s infinite; text-shadow: 0 4px 8px rgba(0,0,0,0.3);`;
-
-    const subtitle = document.createElement("p");
-    subtitle.style.cssText = `margin: 1rem 0 0 0; opacity: 0.9; font-size: 1rem;`;
-    subtitle.innerHTML =
-        "The whole internet wants cat wisdom! Auto-retry in... 🐾";
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.innerHTML = "Cancel ❌";
-    cancelBtn.style.cssText = `
-        background: rgba(255,255,255,0.2);
-        border: 2px solid rgba(255,255,255,0.3);
-        color: white;
-        padding: 0.8rem 1.5rem;
-        border-radius: 10px;
-        cursor: pointer;
-        font-weight: 600;
-        margin-top: 1rem;
-        transition: all 0.3s;
-    `;
-
-    retryContainer.appendChild(title);
-    retryContainer.appendChild(countdownDisplay);
-    retryContainer.appendChild(subtitle);
-    retryContainer.appendChild(cancelBtn);
-    document.body.appendChild(retryContainer);
-
-    countdownDisplay.textContent = countdown;
-
-    const countdownInterval = setInterval(() => {
-        countdown--;
-        countdownDisplay.textContent = countdown;
-        if (countdown <= 0) {
-            clearInterval(countdownInterval);
-            retryContainer.remove();
-            stopCatAnimation();
-            generateMeme();
-        }
-    }, 1000);
-
-    cancelBtn.addEventListener("click", () => {
-        clearInterval(countdownInterval);
-        retryContainer.remove();
-        stopCatAnimation();
-    });
+    hideLoading();
+    stopFakeProgress();
+    setButtonRetry(10);
 }
 
 // ── Generator ───────────────────────────────────────────────────────────────
 
 async function generateMeme() {
+    // If currently generating or retrying, cancel
+    if (dom.generateBtn.classList.contains("generating") || dom.generateBtn.classList.contains("retrying")) {
+        if (currentGenerationAbort) currentGenerationAbort();
+        resetButton();
+        hideLoading();
+        stopFakeProgress();
+        stopCatAnimation();
+        showNotification("Generation cancelled.", "info");
+        return;
+    }
+
     const userQuestion = dom.userInput.value.trim();
 
     if (!userQuestion) {
@@ -543,13 +514,14 @@ async function generateMeme() {
         !!uploadedImageUrl,
     );
     const imageUrl = generateImageURL(imagePrompt, uploadedImageUrl);
+    let cancelled = false;
     let timedOut = false;
 
+    currentGenerationAbort = () => { cancelled = true; };
+
     const imageLoadTimeout = setTimeout(() => {
+        if (cancelled) return;
         timedOut = true;
-        resetButton();
-        hideLoading();
-        stopFakeProgress();
         handleImageError("timeout");
     }, 45000);
 
@@ -561,6 +533,10 @@ async function generateMeme() {
             img.src = imageUrl;
         });
         clearTimeout(imageLoadTimeout);
+        if (cancelled) return;
+        resetButton();
+        hideLoading();
+        stopFakeProgress();
         showResult();
         stopCatAnimation();
         celebrate();
@@ -568,14 +544,11 @@ async function generateMeme() {
         loadUserMemes();
     } catch (error) {
         clearTimeout(imageLoadTimeout);
+        if (cancelled) return;
         console.error("Generation error:", error);
         if (!timedOut) {
             handleImageError("general");
         }
-    } finally {
-        resetButton();
-        hideLoading();
-        stopFakeProgress();
     }
 }
 
@@ -653,24 +626,87 @@ function handleAuthRedirect() {
     }
 }
 
-function updateAuthUI() {
-    const authBtn = document.getElementById("authBtn");
-    if (!authBtn) return;
+const TIER_EMOJIS = { seed: "🌱", flower: "🌸", nectar: "🍯" };
 
-    if (isLoggedIn()) {
-        authBtn.textContent = "Logout";
-        authBtn.className = "auth-btn auth-btn-logout";
-        authBtn.onclick = () => {
-            clearApiKey();
-            updateAuthUI();
-            showNotification("Logged out. Using free tier now.", "info");
-        };
-    } else {
-        authBtn.textContent = "Login (BYOP)";
-        authBtn.className = "auth-btn";
-        authBtn.onclick = () => {
-            window.location.href = getAuthorizeUrl();
-        };
+function maskApiKey(key) {
+    if (!key || key.length < 6) return "••••••••";
+    return key.substring(0, 4) + "••••••••";
+}
+
+async function updateAuthUI() {
+    const loggedOutEl = document.getElementById("authLoggedOut");
+    const loggedInEl = document.getElementById("authLoggedIn");
+    const loginBtn = document.getElementById("authLoginBtn");
+    const logoutBtn = document.getElementById("authLogoutBtn");
+
+    if (!loggedOutEl || !loggedInEl) return;
+
+    loginBtn.onclick = () => {
+        window.location.href = getAuthorizeUrl();
+    };
+
+    logoutBtn.onclick = () => {
+        clearApiKey();
+        updateAuthUI();
+        showNotification("Logged out. Using free tier now.", "info");
+    };
+
+    if (!isLoggedIn()) {
+        loggedOutEl.classList.remove("hidden");
+        loggedInEl.classList.add("hidden");
+        return;
+    }
+
+    loggedOutEl.classList.add("hidden");
+    loggedInEl.classList.remove("hidden");
+
+    const apiKey = getStoredApiKey();
+
+    // Show masked API key immediately
+    document.getElementById("authApiKey").textContent = maskApiKey(apiKey);
+
+    // Fetch profile and balance in parallel
+    try {
+        const [profile, balance] = await Promise.all([
+            fetchProfile(apiKey).catch(() => null),
+            fetchBalance(apiKey).catch(() => null),
+        ]);
+
+        if (profile) {
+            const name = profile.githubUsername || profile.name || "User";
+            document.getElementById("authUserName").textContent = name;
+            document.getElementById("authUserEmail").textContent = profile.email || "";
+
+            const avatarImg = document.getElementById("authAvatar");
+            const avatarFallback = document.getElementById("authAvatarFallback");
+            if (profile.image) {
+                avatarImg.src = profile.image;
+                avatarImg.classList.remove("hidden");
+                avatarFallback.classList.add("hidden");
+            } else {
+                avatarImg.classList.add("hidden");
+                avatarFallback.classList.remove("hidden");
+                avatarFallback.textContent = name.charAt(0).toUpperCase();
+            }
+
+            if (profile.tier && TIER_EMOJIS[profile.tier]) {
+                document.getElementById("authTier").textContent =
+                    `${TIER_EMOJIS[profile.tier]} ${profile.tier.charAt(0).toUpperCase() + profile.tier.slice(1)}`;
+            } else {
+                document.getElementById("authTier").textContent = "Free";
+            }
+        }
+
+        if (balance) {
+            document.getElementById("authBalance").textContent =
+                `${balance.balance.toFixed(2)} pollen`;
+        }
+    } catch (err) {
+        console.error("Failed to load account info:", err);
+        // If 401, the key is invalid — log out
+        clearApiKey();
+        updateAuthUI();
+        showNotification("Session expired. Please log in again.", "warning");
     }
 }
 
@@ -678,6 +714,10 @@ function setupEventListeners() {
     dom.generateBtn.addEventListener("click", generateMeme);
     dom.downloadBtn.addEventListener("click", downloadMeme);
     dom.shareBtn.addEventListener("click", shareMeme);
+
+    document.getElementById("imageUploadBtn").addEventListener("click", () => {
+        dom.imageUpload.click();
+    });
 
     dom.imageUpload.addEventListener("change", async (e) => {
         const file = e.target.files[0];

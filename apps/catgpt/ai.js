@@ -59,7 +59,23 @@ export function extractApiKeyFromFragment() {
 
 export function getAuthorizeUrl() {
     const currentUrl = window.location.href.split("#")[0];
-    return `${API_CONFIG.ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}`;
+    return `${API_CONFIG.ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&permissions=profile,balance`;
+}
+
+export async function fetchProfile(apiKey) {
+    const res = await fetch(`${API_CONFIG.ENTER_URL}/api/account/profile`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) throw new Error(`Profile fetch failed: ${res.status}`);
+    return res.json();
+}
+
+export async function fetchBalance(apiKey) {
+    const res = await fetch(`${API_CONFIG.ENTER_URL}/api/account/balance`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) throw new Error(`Balance fetch failed: ${res.status}`);
+    return res.json();
 }
 
 export const EXAMPLE_PROMPTS = [
@@ -82,10 +98,11 @@ export function createImageGenerationPrompt(
 
 export function generateImageURL(prompt, imageUrl = null) {
     const apiKey = getActiveApiKey();
+    const model = isLoggedIn() ? "nanobanana" : "gptimage";
     const imageRef = imageUrl
         ? `${imageUrl},${API_CONFIG.ORIGINAL_CATGPT_IMAGE}`
         : API_CONFIG.ORIGINAL_CATGPT_IMAGE;
-    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=nanobanana&enhance=true&image=${encodeURIComponent(imageRef)}&key=${encodeURIComponent(apiKey)}`;
+    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&enhance=true&image=${encodeURIComponent(imageRef)}&key=${encodeURIComponent(apiKey)}`;
 }
 
 // ── Media Upload (replaces Cloudinary) ────────────────────────────────────

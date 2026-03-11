@@ -355,6 +355,10 @@ function App() {
                 null,
                 messageMetadata,
             );
+            // Capture synchronously – onComplete closure would see stale `chats`
+            const isFirstMessage =
+                updatedChat?.messages.filter((m) => m.role === "user")
+                    .length === 1;
 
             // Set generating state
             setIsGenerating(true);
@@ -409,15 +413,7 @@ function App() {
                         });
                         setIsGenerating(false);
                         // Generate AI title after the first assistant reply
-                        const chatAtComplete = chats.find(
-                            (c) => c.id === activeChatId,
-                        );
-                        const isFirstExchange =
-                            chatAtComplete &&
-                            chatAtComplete.messages.filter(
-                                (m) => m.role === "user",
-                            ).length === 1;
-                        if (isFirstExchange) {
+                        if (isFirstMessage) {
                             generateChatTitle(messageContent, fullContent).then(
                                 (title) => {
                                     if (title)

@@ -488,6 +488,105 @@
     padding: 0;
 }
 
+/* Headings */
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4,
+.message-content h5,
+.message-content h6 {
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 1.4em 0 0.5em;
+    color: var(--text-primary);
+}
+
+.message-content h1 {
+    font-size: 1.45em;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.3em;
+}
+
+.message-content h2 {
+    font-size: 1.25em;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 0.25em;
+}
+
+.message-content h3 {
+    font-size: 1.1em;
+}
+
+.message-content h4 {
+    font-size: 1em;
+}
+
+/* Blockquote */
+.message-content blockquote {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    border-left: 3px solid var(--accent-color, #7c5cfc);
+    background: var(--bg-tertiary);
+    border-radius: 0 6px 6px 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.message-content blockquote p {
+    margin: 0.4em 0;
+}
+
+/* Tables */
+.message-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.875em;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.message-content th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.6em 0.8em;
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.message-content td {
+    padding: 0.5em 0.8em;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-secondary);
+}
+
+.message-content tr:last-child td {
+    border-bottom: none;
+}
+
+.message-content tr:nth-child(even) td {
+    background: var(--bg-tertiary);
+}
+
+/* Horizontal rule */
+.message-content hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 1.5em 0;
+}
+
+/* Links */
+.message-content a {
+    color: var(--accent-color, #7c5cfc);
+    text-decoration: none;
+}
+
+.message-content a:hover {
+    text-decoration: underline;
+}
+
 /* Think tags - smaller, muted reasoning text */
 .message-reasoning {
     margin-bottom: 0.4rem;

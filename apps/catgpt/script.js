@@ -57,16 +57,6 @@ const ANIMATION_CONFIG = {
     CELEBRATION_COLORS: ["#ff61d8", "#05ffa1", "#ffcc00"],
 };
 
-const ERROR_MESSAGES = [
-    "😾 *yawns* The art studio is full of sleeping cats... try again in 30 seconds!",
-    "🐱 *stretches paws* Too many humans asking questions! I need a catnap... wait 30 seconds, please.",
-    "😸 *knocks over coffee* Oops! The meme machine broke. Give me 30 seconds to fix it with my paws.",
-    "🙄 *rolls eyes* Seriously? Another request? The queue is fuller than my food bowl... try in 30 seconds.",
-    "😴 *curls up* All the AI cats are napping right now. Check back in 30 seconds, human.",
-    "🐾 *walks across keyboard* Purrfect timing... NOT. The servers are as full as a litter box. 30 seconds!",
-    "😼 *flicks tail dismissively* The internet tubes are clogged with cat hair. Try again in 30 seconds.",
-    "🎨 *knocks over paint* My artistic genius is in high demand! Wait your turn... 30 seconds, human.",
-];
 
 const PROGRESS_MESSAGES = [
     "🧠 Waking up CatGPT... (this cat is sleepy)",
@@ -150,6 +140,7 @@ const dom = {
     userInput: document.getElementById("userInput"),
     generateBtn: document.getElementById("generateBtn"),
     loadingIndicator: document.getElementById("loadingIndicator"),
+    generateError: document.getElementById("generateError"),
     resultSection: document.getElementById("resultSection"),
     generatedMeme: document.getElementById("generatedMeme"),
     downloadBtn: document.getElementById("downloadBtn"),
@@ -178,23 +169,6 @@ function resetButton() {
     dom.generateBtn.textContent = "Generate Meme";
     dom.generateBtn.disabled = false;
     currentGenerationAbort = null;
-}
-
-function setButtonRetry(seconds) {
-    dom.generateBtn.classList.remove("generating");
-    dom.generateBtn.classList.add("retrying");
-    dom.generateBtn.disabled = false;
-    let remaining = seconds;
-    dom.generateBtn.textContent = `Retrying in ${remaining}s... Cancel?`;
-    retryCountdownInterval = setInterval(() => {
-        remaining--;
-        if (remaining <= 0) {
-            clearRetryCountdown();
-            generateMeme();
-        } else {
-            dom.generateBtn.textContent = `Retrying in ${remaining}s... Cancel?`;
-        }
-    }, 1000);
 }
 
 function clearRetryCountdown() {
@@ -458,21 +432,6 @@ function loadExamples() {
     });
 }
 
-// ── Error Handling ──────────────────────────────────────────────────────────
-
-function handleImageError(errorType = "general") {
-    const randomMessage = getRandomItem(ERROR_MESSAGES);
-    const message =
-        errorType === "timeout"
-            ? `⏰ Too long... ${randomMessage}`
-            : randomMessage;
-    showNotification(message, "error");
-    stopCatAnimation();
-    hideLoading();
-    stopFakeProgress();
-    setButtonRetry(10);
-}
-
 // ── Generator ───────────────────────────────────────────────────────────────
 
 async function generateMeme() {
@@ -499,6 +458,8 @@ async function generateMeme() {
     showLoading();
     startFakeProgress();
     startCatAnimation();
+    dom.generateError.classList.add("hidden");
+    dom.generateError.textContent = "";
 
     const imagePrompt = createImageGenerationPrompt(
         userQuestion,
@@ -506,25 +467,33 @@ async function generateMeme() {
     );
     const imageUrl = generateImageURL(imagePrompt, uploadedImageUrl);
     let cancelled = false;
-    let timedOut = false;
 
     currentGenerationAbort = () => { cancelled = true; };
 
-    const imageLoadTimeout = setTimeout(() => {
-        if (cancelled) return;
-        timedOut = true;
-        handleImageError("timeout");
-    }, 45000);
-
     try {
-        await new Promise((resolve, reject) => {
-            const img = dom.generatedMeme;
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = imageUrl;
-        });
-        clearTimeout(imageLoadTimeout);
+        const response = await fetch(imageUrl);
         if (cancelled) return;
+
+        if (!response.ok) {
+            let errorMsg = `Error ${response.status}`;
+            try {
+                const contentType = response.headers.get("content-type") || "";
+                if (contentType.includes("json")) {
+                    const data = await response.json();
+                    errorMsg = data.error || data.message || errorMsg;
+                } else {
+                    const text = await response.text();
+                    if (text) errorMsg = text.slice(0, 200);
+                }
+            } catch {}
+            throw new Error(errorMsg);
+        }
+
+        const blob = await response.blob();
+        if (cancelled) return;
+        const blobUrl = URL.createObjectURL(blob);
+        dom.generatedMeme.src = blobUrl;
+
         resetButton();
         hideLoading();
         stopFakeProgress();
@@ -534,12 +503,14 @@ async function generateMeme() {
         saveGeneratedMeme(userQuestion, imageUrl);
         loadUserMemes();
     } catch (error) {
-        clearTimeout(imageLoadTimeout);
         if (cancelled) return;
         console.error("Generation error:", error);
-        if (!timedOut) {
-            handleImageError("general");
-        }
+        resetButton();
+        hideLoading();
+        stopFakeProgress();
+        stopCatAnimation();
+        dom.generateError.textContent = error.message || "Failed to generate meme. Please try again.";
+        dom.generateError.classList.remove("hidden");
     }
 }
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9032,
+  "title": "fix: switch gptimage endpoints to West US 3",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9032",
+  "merged_at": "2026-03-11T11:20:28Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A change of scenery",
+    "blurb": "Our GPT image models packed their bags and moved to the US West Coast. Turns out the previous servers were a bit too strict about what constitutes art.",
+    "summary": "Migrated the Azure endpoints for GPT image models to West US 3 to bypass overly aggressive content policy blocks in the previous region.",
+    "impact": "Image generation for gpt-image-1-mini and gpt-image-1.5 is back to being reliable and block-free.",
+    "keywords": [
+      "azure",
+      "gpt-image",
+      "bugfix",
+      "infrastructure",
+      "models"
+    ],
+    "visual_concept": "The bee mascot moving a glowing canvas or server from a snowy biome (Sweden) to a sunny beach biome (West US).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny sunglasses, carrying a glowing picture frame from a snowy pine tree patch to a sunny beach biome. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-11T11:25:10.433493+00:00"
+}

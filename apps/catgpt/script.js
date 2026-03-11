@@ -144,7 +144,7 @@ let currentGenerationAbort = null;
 
 function setButtonMessage(msg) {
     dom.generateBtn.textContent = "";
-    const textNode = document.createTextNode(`${msg} — `);
+    const textNode = document.createTextNode(`${msg} `);
     const cancelSpan = document.createElement("span");
     cancelSpan.textContent = "Cancel?";
     cancelSpan.style.color = "#ff6b6b";

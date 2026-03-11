@@ -3,9 +3,8 @@
 import {
     clearApiKey,
     createImageGenerationPrompt,
-    EXAMPLES_MAP,
+    EXAMPLE_PROMPTS,
     extractApiKeyFromFragment,
-    fetchImageWithAuth,
     generateImageURL,
     getAuthorizeUrl,
     handleImageUpload,
@@ -426,11 +425,12 @@ function loadUserMemes() {
 
 function loadExamples() {
     dom.examplesGrid.innerHTML = "";
-    let index = 0;
-    for (const [prompt, url] of EXAMPLES_MAP) {
-        const card = createMemeCard(prompt, index++, url);
+    EXAMPLE_PROMPTS.forEach((question, index) => {
+        const prompt = createImageGenerationPrompt(question);
+        const url = generateImageURL(prompt);
+        const card = createMemeCard(question, index, url);
         if (card) dom.examplesGrid.appendChild(card);
-    }
+    });
 }
 
 // ── Error Handling ──────────────────────────────────────────────────────────
@@ -538,7 +538,10 @@ async function generateMeme() {
     startFakeProgress();
     startCatAnimation();
 
-    const imagePrompt = createImageGenerationPrompt(userQuestion);
+    const imagePrompt = createImageGenerationPrompt(
+        userQuestion,
+        !!uploadedImageUrl,
+    );
     const imageUrl = generateImageURL(imagePrompt, uploadedImageUrl);
     let timedOut = false;
 
@@ -551,9 +554,13 @@ async function generateMeme() {
     }, 45000);
 
     try {
-        const blobUrl = await fetchImageWithAuth(imageUrl);
+        await new Promise((resolve, reject) => {
+            const img = dom.generatedMeme;
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = imageUrl;
+        });
         clearTimeout(imageLoadTimeout);
-        dom.generatedMeme.src = blobUrl;
         showResult();
         stopCatAnimation();
         celebrate();

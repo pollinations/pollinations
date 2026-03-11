@@ -378,73 +378,69 @@ export const sendMessage = async (
 
     const chartRequested = containsChartRequest(messages);
 
-    const tools = [
+            const tools = [
         {
             type: "function",
             function: {
                 name: "create_chart",
-                description:
-                    "Create a chart or graph visualization from data points.",
+                description: "Create a chart or graph visualization from data points.",
                 parameters: {
                     type: "object",
                     properties: {
-                        title: {
-                            type: "string",
-                            description: "Title displayed above the chart.",
-                        },
-                        data: {
-                            type: "array",
-                            items: {
-                                type: "object",
-                                description:
-                                    "Data points where each object represents a row with keys for x/y values.",
-                            },
-                            description:
-                                "Array of data objects, each containing keys for the chart axes.",
-                        },
-                        series: {
-                            type: "array",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    key: {
-                                        type: "string",
-                                        description:
-                                            "The key in data objects for this series",
-                                    },
-                                    name: {
-                                        type: "string",
-                                        description:
-                                            "Display name for this series",
-                                    },
-                                    color: {
-                                        type: "string",
-                                        description:
-                                            "Hex color for this series",
-                                    },
-                                },
-                                required: ["key", "name"],
-                            },
-                            description: "Series definitions for the chart.",
-                        },
-                        xKey: {
-                            type: "string",
-                            description:
-                                "The key in data objects to use for x-axis values.",
-                        },
-                        xLabel: {
-                            type: "string",
-                            description: "Label for the x-axis.",
-                        },
-                        yLabel: {
-                            type: "string",
-                            description: "Label for the y-axis.",
-                        },
+                        title: { type: "string", description: "Title displayed above the chart." },
+                        data: { type: "array", items: { type: "object" } },
+                        series: { type: "array", items: { type: "object", properties: { key: { type: "string" }, name: { type: "string" }, color: { type: "string" } }, required: ["key", "name"] } },
+                        xKey: { type: "string" },
+                        xLabel: { type: "string" },
+                        yLabel: { type: "string" },
                     },
                     required: ["title", "data", "series", "xKey"],
                 },
             },
         },
+        {
+            type: "function",
+            function: {
+                name: "preview_html_app",
+                description: "Create an interactive HTML/JS/CSS app or component that runs in a sandboxed preview iframe.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        html: { type: "string", description: "The complete HTML code including inline <style> and <script> tags for the app." },
+                        title: { type: "string", description: "A short title for the preview window." }
+                    },
+                    required: ["html", "title"]
+                }
+            }
+        },
+        {
+            type: "function",
+            function: {
+                name: "generate_image",
+                description: "Generate and display a high-quality image based on a prompt. Use this when the user asks for a picture or drawing.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        prompt: { type: "string", description: "A detailed visual description for the image to generate." }
+                    },
+                    required: ["prompt"]
+                }
+            }
+        },
+        {
+            type: "function",
+            function: {
+                name: "search_web",
+                description: "Provide the user with a web search link for looking up real-time information.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        query: { type: "string", description: "The search query." }
+                    },
+                    required: ["query"]
+                }
+            }
+        }
     ];
 
     try {
@@ -619,12 +615,13 @@ export const sendMessage = async (
                 .replace(/\s+$/g, "")
                 .replace(/\n{3,}/g, "\n\n");
         }
+                        
+        
         if (collectedFunctionCalls.length > 0) {
             for (const call of collectedFunctionCalls) {
                 if (call.name === "create_chart") {
                     try {
                         const args = call.arguments;
-                        // Use Nuxt-style format directly from function arguments
                         const chartData = {
                             type: "chart",
                             output: {
@@ -636,16 +633,39 @@ export const sendMessage = async (
                                 yLabel: args.yLabel || "Y Axis",
                             },
                         };
-                        finalContent += `\n\n__CHART__${JSON.stringify(chartData)}__CHART__`;
-                    } catch (chartError) {
-                        console.error(
-                            "Failed to parse chart arguments:",
-                            chartError,
-                        );
+                        finalContent += "\n\n__CHART__" + JSON.stringify(chartData) + "__CHART__";
+                    } catch (e) {
+                        console.error("Failed to parse chart arguments:", e);
                     }
+                } else if (call.name === "generate_image") {
+                    try {
+                        const args = call.arguments;
+                        const seed = Math.floor(Math.random() * 2147483647);
+                        const url = "https://image.pollinations.ai/prompt/" + encodeURIComponent(args.prompt) + "?seed=" + seed + "&nologo=true";
+                        finalContent += "\n\n![" + (args.prompt.replace(/\]/g, '')) + "](" + url + ")\n\n";
+                    } catch (e) { console.error(e); }
+                } else if (call.name === "search_web") {
+                    try {
+                        const args = call.arguments;
+                        const qs = encodeURIComponent(args.query);
+                        finalContent += "\n\n__SEARCH__" + qs + "__SEARCH__\n\n";
+                    } catch (e) { console.error(e); }
+                } else if (call.name === "preview_html_app") {
+                    try {
+                        const args = call.arguments;
+                        const output = { title: args.title, html: args.html };
+                        finalContent += "\n\n__HTML_PREVIEW__" + JSON.stringify(output) + "__HTML_PREVIEW__\n\n";
+                    } catch (e) { console.error(e); }
+                } else if (call.name === "generate_video") {
+                    try {
+                        const args = call.arguments;
+                        const url = "https://image.pollinations.ai/prompt/" + encodeURIComponent(args.prompt);
+                        finalContent += "\n\n__VIDEO__" + url + "__VIDEO__\n\n";
+                    } catch (e) { console.error(e); }
                 }
             }
         }
+
 
         if (onComplete) onComplete(finalContent, "");
 

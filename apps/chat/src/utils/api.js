@@ -372,7 +372,11 @@ const containsCodeRequest = (messages = []) => {
 const stripCodePrefix = (messages = []) => {
     if (!Array.isArray(messages) || messages.length === 0) return messages;
     return messages.map((msg, idx) => {
-        if (idx === messages.length - 1 && msg.role === "user" && typeof msg.content === "string") {
+        if (
+            idx === messages.length - 1 &&
+            msg.role === "user" &&
+            typeof msg.content === "string"
+        ) {
             const stripped = msg.content.replace(/^\/code\s*/, "");
             return { ...msg, content: stripped };
         }
@@ -399,20 +403,37 @@ export const sendMessage = async (
 
     const chartRequested = containsChartRequest(messages);
     const codeRequested = containsCodeRequest(messages);
-    const effectiveMessages = codeRequested ? stripCodePrefix(messages) : messages;
+    const effectiveMessages = codeRequested
+        ? stripCodePrefix(messages)
+        : messages;
 
-            const tools = [
+    const tools = [
         {
             type: "function",
             function: {
                 name: "create_chart",
-                description: "Create a chart or graph visualization from data points.",
+                description:
+                    "Create a chart or graph visualization from data points.",
                 parameters: {
                     type: "object",
                     properties: {
-                        title: { type: "string", description: "Title displayed above the chart." },
+                        title: {
+                            type: "string",
+                            description: "Title displayed above the chart.",
+                        },
                         data: { type: "array", items: { type: "object" } },
-                        series: { type: "array", items: { type: "object", properties: { key: { type: "string" }, name: { type: "string" }, color: { type: "string" } }, required: ["key", "name"] } },
+                        series: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    key: { type: "string" },
+                                    name: { type: "string" },
+                                    color: { type: "string" },
+                                },
+                                required: ["key", "name"],
+                            },
+                        },
                         xKey: { type: "string" },
                         xLabel: { type: "string" },
                         yLabel: { type: "string" },
@@ -425,45 +446,63 @@ export const sendMessage = async (
             type: "function",
             function: {
                 name: "preview_html_app",
-                description: "Create an interactive HTML/JS/CSS app or component that runs in a sandboxed preview iframe.",
+                description:
+                    "Create an interactive HTML/JS/CSS app or component that runs in a sandboxed preview iframe.",
                 parameters: {
                     type: "object",
                     properties: {
-                        html: { type: "string", description: "The complete HTML code including inline <style> and <script> tags for the app." },
-                        title: { type: "string", description: "A short title for the preview window." }
+                        html: {
+                            type: "string",
+                            description:
+                                "The complete HTML code including inline <style> and <script> tags for the app.",
+                        },
+                        title: {
+                            type: "string",
+                            description:
+                                "A short title for the preview window.",
+                        },
                     },
-                    required: ["html", "title"]
-                }
-            }
+                    required: ["html", "title"],
+                },
+            },
         },
         {
             type: "function",
             function: {
                 name: "generate_image",
-                description: "Generate and display a high-quality image based on a prompt. Use this when the user asks for a picture or drawing.",
+                description:
+                    "Generate and display a high-quality image based on a prompt. Use this when the user asks for a picture or drawing.",
                 parameters: {
                     type: "object",
                     properties: {
-                        prompt: { type: "string", description: "A detailed visual description for the image to generate." }
+                        prompt: {
+                            type: "string",
+                            description:
+                                "A detailed visual description for the image to generate.",
+                        },
                     },
-                    required: ["prompt"]
-                }
-            }
+                    required: ["prompt"],
+                },
+            },
         },
         {
             type: "function",
             function: {
                 name: "search_web",
-                description: "Provide the user with a web search link for looking up real-time information.",
+                description:
+                    "Provide the user with a web search link for looking up real-time information.",
                 parameters: {
                     type: "object",
                     properties: {
-                        query: { type: "string", description: "The search query." }
+                        query: {
+                            type: "string",
+                            description: "The search query.",
+                        },
                     },
-                    required: ["query"]
-                }
-            }
-        }
+                    required: ["query"],
+                },
+            },
+        },
     ];
 
     try {
@@ -487,8 +526,8 @@ export const sendMessage = async (
             tool_choice: chartRequested
                 ? { type: "function", function: { name: "create_chart" } }
                 : codeRequested
-                ? { type: "function", function: { name: "preview_html_app" } }
-                : "auto",
+                  ? { type: "function", function: { name: "preview_html_app" } }
+                  : "auto",
             stream: true,
         };
 
@@ -640,8 +679,7 @@ export const sendMessage = async (
                 .replace(/\s+$/g, "")
                 .replace(/\n{3,}/g, "\n\n");
         }
-                        
-        
+
         if (collectedFunctionCalls.length > 0) {
             for (const call of collectedFunctionCalls) {
                 if (call.name === "create_chart") {
@@ -658,7 +696,10 @@ export const sendMessage = async (
                                 yLabel: args.yLabel || "Y Axis",
                             },
                         };
-                        finalContent += "\n\n__CHART__" + JSON.stringify(chartData) + "__CHART__";
+                        finalContent +=
+                            "\n\n__CHART__" +
+                            JSON.stringify(chartData) +
+                            "__CHART__";
                     } catch (e) {
                         console.error("Failed to parse chart arguments:", e);
                     }
@@ -666,31 +707,54 @@ export const sendMessage = async (
                     try {
                         const args = call.arguments;
                         const seed = Math.floor(Math.random() * 2147483647);
-                        const url = "https://image.pollinations.ai/prompt/" + encodeURIComponent(args.prompt) + "?seed=" + seed + "&nologo=true";
-                        finalContent += "\n\n![" + (args.prompt.replace(/\]/g, '')) + "](" + url + ")\n\n";
-                    } catch (e) { console.error(e); }
+                        const url =
+                            "https://image.pollinations.ai/prompt/" +
+                            encodeURIComponent(args.prompt) +
+                            "?seed=" +
+                            seed +
+                            "&nologo=true";
+                        finalContent +=
+                            "\n\n![" +
+                            args.prompt.replace(/\]/g, "") +
+                            "](" +
+                            url +
+                            ")\n\n";
+                    } catch (e) {
+                        console.error(e);
+                    }
                 } else if (call.name === "search_web") {
                     try {
                         const args = call.arguments;
                         const qs = encodeURIComponent(args.query);
-                        finalContent += "\n\n__SEARCH__" + qs + "__SEARCH__\n\n";
-                    } catch (e) { console.error(e); }
+                        finalContent +=
+                            "\n\n__SEARCH__" + qs + "__SEARCH__\n\n";
+                    } catch (e) {
+                        console.error(e);
+                    }
                 } else if (call.name === "preview_html_app") {
                     try {
                         const args = call.arguments;
                         const output = { title: args.title, html: args.html };
-                        finalContent += "\n\n__HTML_PREVIEW__" + JSON.stringify(output) + "__HTML_PREVIEW__\n\n";
-                    } catch (e) { console.error(e); }
+                        finalContent +=
+                            "\n\n__HTML_PREVIEW__" +
+                            JSON.stringify(output) +
+                            "__HTML_PREVIEW__\n\n";
+                    } catch (e) {
+                        console.error(e);
+                    }
                 } else if (call.name === "generate_video") {
                     try {
                         const args = call.arguments;
-                        const url = "https://image.pollinations.ai/prompt/" + encodeURIComponent(args.prompt);
+                        const url =
+                            "https://image.pollinations.ai/prompt/" +
+                            encodeURIComponent(args.prompt);
                         finalContent += "\n\n__VIDEO__" + url + "__VIDEO__\n\n";
-                    } catch (e) { console.error(e); }
+                    } catch (e) {
+                        console.error(e);
+                    }
                 }
             }
         }
-
 
         if (onComplete) onComplete(finalContent, "");
 

@@ -5,6 +5,7 @@ const BASE_IMAGE_URL = "https://gen.pollinations.ai/image";
 const TEXT_MODELS_ENDPOINT = "https://gen.pollinations.ai/v1/models";
 const IMAGE_MODELS_ENDPOINT = "https://gen.pollinations.ai/image/models";
 const BALANCE_ENDPOINT = "https://enter.pollinations.ai/customer/d1-balance";
+const ACCOUNT_BASE = "https://gen.pollinations.ai/account";
 const FALLBACK_API_TOKEN =
     import.meta.env.VITE_POLLINATIONS_API_KEY || DEFAULT_API_KEY;
 
@@ -955,6 +956,24 @@ export const fetchPollenBalance = async (apiToken) => {
         };
     } catch (error) {
         console.error("Error fetching pollen balance:", error);
+        return null;
+    }
+};
+
+/**
+ * Fetch the user's account profile (name, email, image, tier)
+ * @param {string} apiToken - Secret key (sk_*)
+ * @returns {Promise<{name: string, email: string, image: string, tier: string, displayTier: string} | null>}
+ */
+export const fetchAccountProfile = async (apiToken) => {
+    try {
+        if (!apiToken || !apiToken.startsWith("sk_")) return null;
+        const response = await fetch(`${ACCOUNT_BASE}/profile`, {
+            headers: { Authorization: `Bearer ${apiToken}` },
+        });
+        if (!response.ok) return null;
+        return await response.json();
+    } catch {
         return null;
     }
 };

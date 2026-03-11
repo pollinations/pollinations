@@ -47,6 +47,7 @@ function App() {
         isLoggedIn,
         pollenBalance,
         isLoadingBalance,
+        profile,
         login,
         logout,
     } = useAuth();
@@ -707,6 +708,7 @@ function App() {
                 apiKey={apiKey}
                 pollenBalance={pollenBalance}
                 isLoadingBalance={isLoadingBalance}
+                profile={profile}
                 onLogin={login}
                 onLogout={logout}
             />

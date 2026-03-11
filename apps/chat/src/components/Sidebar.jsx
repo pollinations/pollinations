@@ -15,6 +15,7 @@ const Sidebar = memo(
         apiKey,
         pollenBalance,
         isLoadingBalance,
+        profile,
         onLogin,
         onLogout,
     }) => {
@@ -183,29 +184,86 @@ const Sidebar = memo(
                                         <div className="sidebar-auth-card sidebar-auth-card--active">
                                             <div className="sidebar-auth-card-row">
                                                 <div className="sidebar-auth-avatar">
-                                                    <svg
-                                                        aria-hidden="true"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                    >
-                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                        <circle
-                                                            cx="12"
-                                                            cy="7"
-                                                            r="4"
+                                                    {profile?.image ? (
+                                                        <img
+                                                            src={profile.image}
+                                                            alt={
+                                                                profile.name ||
+                                                                "User"
+                                                            }
+                                                            className="sidebar-auth-avatar-img"
+                                                            onError={(e) => {
+                                                                e.currentTarget.style.display =
+                                                                    "none";
+                                                                e.currentTarget.nextSibling.style.display =
+                                                                    "flex";
+                                                            }}
                                                         />
-                                                    </svg>
+                                                    ) : null}
+                                                    <span
+                                                        className="sidebar-auth-avatar-initials"
+                                                        style={
+                                                            profile?.image
+                                                                ? {
+                                                                      display:
+                                                                          "none",
+                                                                  }
+                                                                : {}
+                                                        }
+                                                    >
+                                                        {profile?.name ? (
+                                                            profile.name
+                                                                .trim()
+                                                                .split(/\s+/)
+                                                                .map(
+                                                                    (w) => w[0],
+                                                                )
+                                                                .slice(0, 2)
+                                                                .join("")
+                                                                .toUpperCase()
+                                                        ) : (
+                                                            <svg
+                                                                aria-hidden="true"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                            >
+                                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                                <circle
+                                                                    cx="12"
+                                                                    cy="7"
+                                                                    r="4"
+                                                                />
+                                                            </svg>
+                                                        )}
+                                                    </span>
                                                 </div>
                                                 <div className="sidebar-auth-details">
-                                                    <div className="sidebar-auth-status">
-                                                        Connected
+                                                    <div className="sidebar-auth-name">
+                                                        {profile?.name ||
+                                                            "Connected"}
                                                     </div>
-                                                    <div className="sidebar-auth-key">
-                                                        {apiKey.slice(0, 16)}…
-                                                    </div>
+                                                    {profile?.email && (
+                                                        <div className="sidebar-auth-email">
+                                                            {profile.email}
+                                                        </div>
+                                                    )}
+                                                    {!profile?.email && (
+                                                        <div className="sidebar-auth-key">
+                                                            {apiKey.slice(
+                                                                0,
+                                                                16,
+                                                            )}
+                                                            …
+                                                        </div>
+                                                    )}
                                                 </div>
+                                                {profile?.displayTier && (
+                                                    <span className="sidebar-auth-tier-badge">
+                                                        {profile.displayTier}
+                                                    </span>
+                                                )}
                                             </div>
                                             {(pollenBalance !== null ||
                                                 isLoadingBalance) && (

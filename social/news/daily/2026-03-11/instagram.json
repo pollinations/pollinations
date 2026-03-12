@@ -1,0 +1,45 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Translating a backend endpoint migration into a cozy visual metaphor of packing up and moving to a sunnier, unblocked location. The carousel shows the progression from moving servers to successfully generating art and cleaning up old errors.",
+  "visual_style": "Cozy 8-bit pixel art, soft pastel gradients, warm Stardew Valley style lighting, chunky sprites, prominent lime green (#ecf874) accents.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy 8-bit pixel art scene of the cute bee mascot (yellow body, dark brown horizontal stripes, small black legs, black antennae, black vertical oval eyes, pink blush marks, happy smile, light blue translucent wings) wearing a tiny explorer's hat, pushing a small glowing server rack on a wooden cart towards a sunny horizon. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm. Text in pixel font: 'WEST US 3'.",
+      "description": "Polly moving the servers to a new, sunnier endpoint.",
+      "text_in_image": "WEST US 3",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-11/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy 8-bit pixel art scene. A cute chunky pixel robot with a CRT monitor head sits on a picnic blanket, screen glowing lime green (#ecf874), happily holding a freshly painted picture frame. The cute bee mascot (yellow body, dark brown horizontal stripes, small black legs, black antennae, black vertical oval eyes, pink blush marks, happy smile, light blue translucent wings) wearing a tiny painter's beret hovers nearby, admiring the art. Soft mint and lavender gradient background. Large visible pixels, lo-fi aesthetic, warm lighting, cozy vibes like A Short Hike.",
+      "description": "Robot happily holding a successfully generated image, showing the unblocked status.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-11/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy 8-bit pixel art scene of a round tan mochi-ball creature with tiny dot eyes and a wide happy mouth enthusiastically eating a stack of red error logs. Speech bubble: 'NOMNOM' in pixel font. Beside it, the cute bee mascot (yellow body, dark brown horizontal stripes, small black legs, black antennae, black vertical oval eyes, pink blush marks, happy smile, light blue translucent wings) wearing tiny wizard glasses waters a blooming code-plant in a lime green (#ecf874) pot. Soft pastel gradient background. Chunky pixels, warm lighting, retro gaming vibes.",
+      "description": "Nomnom cleaning up the old timeout errors while Polly tends to healthy code.",
+      "text_in_image": "NOMNOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-11/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "GPT image generation was getting a little jammed up lately, so we packed our digital bags and migrated the endpoints over to West US 3. ☀️ Just a quick under-the-hood routing fix (shoutout PR #9032), but it means your prompts are completely unblocked and the pixels are flowing smoothly again. No more waiting around for timeouts. Dive back in and keep the weird, wonderful, and cozy ideas coming. 🐝✨ Everything is open source, check the repo to see how it's wired up.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#generativeai",
+    "#backenddev",
+    "#aiartcommunity",
+    "#cozyvibes"
+  ],
+  "alt_text": "A carousel of 3 pixel art images showing a bee mascot moving servers on a cart, a robot holding a generated picture frame, and a round creature eating error logs while the bee waters a plant.",
+  "date": "2026-03-11",
+  "generated_at": "2026-03-12T06:17:49.772580+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

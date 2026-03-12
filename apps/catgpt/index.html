@@ -80,17 +80,14 @@
             </div>
 
             <div class="input-group">
-                <label for="imageUpload">Optional: Upload your own reference image</label>
                 <div id="imageUploadContainer" class="upload-container">
-                    <input type="file" id="imageUpload" accept="image/*" class="image-upload-input hidden" />
-                    <button type="button" id="imageUploadBtn" class="upload-btn">Upload Image</button>
+                    <label for="imageUpload" class="upload-btn">Upload Selfie (optional)</label>
+                    <input type="file" id="imageUpload" accept="image/*" class="hidden" />
                 </div>
 
                 <div id="imageThumbnailContainer" class="thumbnail-container hidden">
                     <img id="imageThumbnail" class="image-thumbnail" alt="Uploaded image preview" />
-                    <button id="removeImageBtn" class="remove-image-btn" aria-label="Remove image">
-                        ✕
-                    </button>
+                    <button id="removeImageBtn" class="remove-image-btn" aria-label="Remove image">✕</button>
                 </div>
             </div>
 

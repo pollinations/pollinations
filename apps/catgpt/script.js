@@ -15,7 +15,7 @@ import {
     storeApiKey,
 } from "./ai.js";
 
-// ── UI Constants ────────────────────────────────────────────────────────────
+// ── Constants ────────────────────────────────────────────────────────────────
 
 const CAT_FACTS = [
     "Cats spend 70% of their lives sleeping 😴",
@@ -25,57 +25,110 @@ const CAT_FACTS = [
     "Cats can rotate their ears 180 degrees 👂",
 ];
 
-const KONAMI_SEQUENCE = [
-    "ArrowUp",
-    "ArrowUp",
-    "ArrowDown",
-    "ArrowDown",
-    "ArrowLeft",
-    "ArrowRight",
-    "ArrowLeft",
-    "ArrowRight",
-    "b",
-    "a",
-];
-
-const ANIMATION_CONFIG = {
-    FLOATING_EMOJIS: ["🐱", "💭", "✨", "🌟", "😸", "🐾", "💜", "🎨"],
-    CELEBRATION_EMOJIS: ["🎉", "✨", "🌟", "💫", "🎊"],
-    CELEBRATION_COLORS: ["#ff61d8", "#05ffa1", "#ffcc00"],
-};
-
-
 const PROGRESS_MESSAGES = [
-    "🧠 Waking up CatGPT... (this cat is sleepy)",
+    "🧠 Waking up CatGPT...",
     "☕ Brewing digital coffee for maximum sass...",
     "🎨 Sketching with chaotic energy...",
     "😼 Teaching AI the art of being unimpressed...",
-    "📝 Writing sarcastic responses in Comic Sans...",
-    "🌙 Channeling midnight cat energy...",
+    "📝 Writing sarcastic responses...",
     "✨ Sprinkling some magic dust...",
     "🎯 Perfecting the level of 'couldn't care less'...",
     "🔥 Making it fire (but like, ironically)...",
-    "🎭 Adding just the right amount of drama...",
     "💅 Polishing those aloof vibes...",
     "🚀 Almost done! (CatGPT doesn't rush for anyone)",
 ];
 
-// ── Utilities ───────────────────────────────────────────────────────────────
+const CELEBRATION_EMOJIS = ["🎉", "✨", "🌟", "💫", "🎊"];
+const FLOATING_EMOJIS = ["🐱", "💭", "✨", "🌟", "😸", "🐾", "💜", "🎨"];
+const CAT_EMOJIS = [
+    "🐱",
+    "😺",
+    "😸",
+    "😹",
+    "😻",
+    "🙀",
+    "😿",
+    "😾",
+    "🐈",
+    "🐈‍⬛",
+];
+
+const KONAMI_SEQUENCE =
+    "ArrowUp,ArrowUp,ArrowDown,ArrowDown,ArrowLeft,ArrowRight,ArrowLeft,ArrowRight,b,a";
+
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// ── DOM ──────────────────────────────────────────────────────────────────────
+
+const $ = (id) => document.getElementById(id);
+
+const dom = {
+    userInput: $("userInput"),
+    generateBtn: $("generateBtn"),
+    generateError: $("generateError"),
+    resultSection: $("resultSection"),
+    generatedMeme: $("generatedMeme"),
+    downloadBtn: $("downloadBtn"),
+    shareBtn: $("shareBtn"),
+    examplesGrid: $("examplesGrid"),
+    yourMemesGrid: $("yourMemesGrid"),
+    imageUpload: $("imageUpload"),
+    imageUploadContainer: $("imageUploadContainer"),
+    imageThumbnailContainer: $("imageThumbnailContainer"),
+    imageThumbnail: $("imageThumbnail"),
+    removeImageBtn: $("removeImageBtn"),
+};
+
+// ── State ────────────────────────────────────────────────────────────────────
+
+let uploadedImageUrl = null;
+let currentAbort = null;
+let progressInterval = null;
+let progressStep = 0;
+let catAnimInterval = null;
+let konamiBuffer = [];
+
+// ── Notifications ────────────────────────────────────────────────────────────
+
+const NOTIF_COLORS = {
+    success: "#A8E6A2",
+    error: "#C9A9E4",
+    info: "#E8F372",
+    warning: "#E8F372",
+};
+
+function notify(message, type = "info") {
+    const el = document.createElement("div");
+    el.textContent = message;
+    el.style.cssText = `
+        position: fixed; bottom: 20px; right: 20px; max-width: 280px;
+        padding: 0.6rem 1rem; background: ${NOTIF_COLORS[type] || NOTIF_COLORS.info};
+        color: #110518; border: 2px solid #110518; border-right-width: 4px;
+        border-bottom-width: 4px; font-size: 0.85rem; font-weight: 500;
+        box-shadow: 4px 4px 0 rgba(17,5,24,0.12); z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => {
+        el.style.animation = "slideOut 0.3s ease-in";
+        setTimeout(() => el.remove(), 300);
+    }, 3000);
+}
+
+// ── URL State ────────────────────────────────────────────────────────────────
 
 function getURLParams() {
-    const params = new URLSearchParams(window.location.search);
-    return { prompt: params.get("prompt"), image: params.get("image") };
+    const p = new URLSearchParams(window.location.search);
+    return { prompt: p.get("prompt"), image: p.get("image") };
 }
 
 function setURLPrompt(prompt) {
     const url = new URL(window.location);
     if (prompt) {
         url.searchParams.set("prompt", prompt);
-        if (uploadedImageUrl) {
-            url.searchParams.set("image", uploadedImageUrl);
-        } else {
-            url.searchParams.delete("image");
-        }
+        uploadedImageUrl
+            ? url.searchParams.set("image", uploadedImageUrl)
+            : url.searchParams.delete("image");
     } else {
         url.searchParams.delete("prompt");
         url.searchParams.delete("image");
@@ -83,130 +136,17 @@ function setURLPrompt(prompt) {
     window.history.replaceState({}, "", url);
 }
 
-const NOTIFICATION_COLORS = {
-    success: "#A8E6A2",
-    error: "#C9A9E4",
-    info: "#E8F372",
-    warning: "#E8F372",
-};
-
-function showNotification(message, type = "info") {
-    const notification = document.createElement("div");
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        max-width: 280px;
-        padding: 0.6rem 1rem;
-        background: ${NOTIFICATION_COLORS[type] || NOTIFICATION_COLORS.info}cc;
-        backdrop-filter: blur(8px);
-        color: #000;
-        border-radius: 10px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        animation: slideIn 0.3s ease-out;
-    `;
-    document.body.appendChild(notification);
-    setTimeout(() => {
-        notification.style.animation = "slideOut 0.3s ease-in";
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
-function getRandomItem(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
-
-// ── DOM Elements ────────────────────────────────────────────────────────────
-
-const dom = {
-    userInput: document.getElementById("userInput"),
-    generateBtn: document.getElementById("generateBtn"),
-    generateError: document.getElementById("generateError"),
-    resultSection: document.getElementById("resultSection"),
-    generatedMeme: document.getElementById("generatedMeme"),
-    downloadBtn: document.getElementById("downloadBtn"),
-    shareBtn: document.getElementById("shareBtn"),
-    examplesGrid: document.getElementById("examplesGrid"),
-    yourMemesGrid: document.getElementById("yourMemesGrid"),
-    imageUpload: document.getElementById("imageUpload"),
-    imageUploadContainer: document.getElementById("imageUploadContainer"),
-    imageThumbnailContainer: document.getElementById("imageThumbnailContainer"),
-    imageThumbnail: document.getElementById("imageThumbnail"),
-    removeImageBtn: document.getElementById("removeImageBtn"),
-};
-
-let currentGenerationAbort = null;
-
-function setButtonMessage(msg) {
-    dom.generateBtn.textContent = "";
-    const textNode = document.createTextNode(`${msg} `);
-    const cancelSpan = document.createElement("span");
-    cancelSpan.textContent = "Cancel?";
-    cancelSpan.style.color = "#ff6b6b";
-    dom.generateBtn.appendChild(textNode);
-    dom.generateBtn.appendChild(cancelSpan);
-}
-
-function setButtonLoading() {
-    dom.generateBtn.classList.add("generating");
-    dom.resultSection.classList.add("hidden");
-    progressStep = 0;
-    setButtonMessage(PROGRESS_MESSAGES[0]);
-    startCatAnimation();
-    progressInterval = setInterval(() => {
-        progressStep++;
-        if (progressStep < PROGRESS_MESSAGES.length) {
-            setButtonMessage(PROGRESS_MESSAGES[progressStep]);
-        } else {
-            setButtonMessage("🎨 Finalizing your masterpiece...");
-        }
-    }, 2500);
-}
-
-function resetButton() {
-    dom.generateBtn.classList.remove("generating", "retrying");
-    dom.generateBtn.textContent = "Generate Meme";
-    currentGenerationAbort = null;
-    stopCatAnimation();
-    enableInputs();
-    updateGenerateButtonState();
-    if (progressInterval) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-    }
-}
-
-function scrollToGenerator() {
-    requestAnimationFrame(() => {
-        const section = document.querySelector(".generator-section");
-        const top = section.getBoundingClientRect().top + window.scrollY;
-        window.scrollTo({ top, behavior: "smooth" });
-    });
-}
-
-function showResult() {
-    dom.resultSection.classList.remove("hidden");
-    scrollToGenerator();
-}
-
-function showImageThumbnail() {
-    dom.imageUploadContainer.classList.add("hidden");
-    dom.imageThumbnailContainer.classList.remove("hidden");
-}
-
-function hideImageThumbnail() {
-    dom.imageThumbnailContainer.classList.add("hidden");
-    dom.imageUploadContainer.classList.remove("hidden");
-}
-
-// ── Storage ─────────────────────────────────────────────────────────────────
+// ── Storage ──────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "catgpt-generated";
+
+function getSavedMemes() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch {
+        return [];
+    }
+}
 
 function saveGeneratedMeme(prompt, url) {
     const saved = getSavedMemes();
@@ -217,122 +157,140 @@ function saveGeneratedMeme(prompt, url) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 }
 
-function getSavedMemes() {
-    try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    } catch {
-        return [];
-    }
-}
-
-// ── Animations ──────────────────────────────────────────────────────────────
-
-let progressInterval;
-let progressStep = 0;
-let catAnimationInterval;
+// ── Animations ───────────────────────────────────────────────────────────────
 
 function startCatAnimation() {
-    const catEmojis = ["🐱", "😺", "😸", "😹", "😻", "🙀", "😿", "😾", "🐈", "🐈‍⬛"];
-    catAnimationInterval = setInterval(() => {
+    catAnimInterval = setInterval(() => {
         const cat = document.createElement("div");
         cat.style.cssText = `
-            position: fixed;
-            font-size: ${2 + Math.random() * 2}rem;
-            z-index: 999;
-            pointer-events: none;
-            top: ${Math.random() * 100}vh;
-            left: -100px;
+            position: fixed; font-size: ${2 + Math.random() * 2}rem; z-index: 999;
+            pointer-events: none; top: ${Math.random() * 100}vh; left: -100px;
             animation: catSlide ${3 + Math.random() * 2}s linear forwards;
         `;
-        cat.textContent = getRandomItem(catEmojis);
+        cat.textContent = pick(CAT_EMOJIS);
         document.body.appendChild(cat);
-        setTimeout(() => {
-            if (cat.parentNode) cat.remove();
-        }, 6000);
+        setTimeout(() => cat.parentNode && cat.remove(), 6000);
     }, 400);
 }
 
 function stopCatAnimation() {
-    if (catAnimationInterval) {
-        clearInterval(catAnimationInterval);
-        catAnimationInterval = null;
-    }
-    for (const cat of document.querySelectorAll("[style*='catSlide']")) {
-        cat.remove();
-    }
+    clearInterval(catAnimInterval);
+    catAnimInterval = null;
+    for (const el of document.querySelectorAll("[style*='catSlide']")) el.remove();
 }
 
 function celebrate() {
     for (let i = 0; i < 20; i++) {
         setTimeout(() => {
-            const emoji = document.createElement("div");
-            emoji.textContent = getRandomItem(
-                ANIMATION_CONFIG.CELEBRATION_EMOJIS,
-            );
-            emoji.style.cssText = `
-                position: fixed;
-                left: ${Math.random() * 100}%;
-                top: -50px;
+            const el = document.createElement("div");
+            el.textContent = pick(CELEBRATION_EMOJIS);
+            el.style.cssText = `
+                position: fixed; left: ${Math.random() * 100}%; top: -50px;
                 font-size: ${20 + Math.random() * 20}px;
-                color: ${getRandomItem(ANIMATION_CONFIG.CELEBRATION_COLORS)};
                 animation: fall ${2 + Math.random() * 2}s ease-in forwards;
-                z-index: 999;
-                pointer-events: none;
+                z-index: 999; pointer-events: none;
             `;
-            document.body.appendChild(emoji);
-            setTimeout(() => emoji.remove(), 4000);
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 4000);
         }, i * 100);
     }
 }
 
 function addFloatingEmojis() {
     const container = document.querySelector(".container");
-    ANIMATION_CONFIG.FLOATING_EMOJIS.forEach((emoji, index) => {
-        const floater = document.createElement("div");
-        floater.textContent = emoji;
-        floater.className = "floating-emoji";
-        floater.style.cssText = `
-            position: absolute;
-            font-size: 2rem;
-            opacity: 0.25;
-            animation: float ${10 + index * 2}s infinite ease-in-out;
-            animation-delay: ${index * 2}s;
-            pointer-events: none;
-            z-index: -1;
+    FLOATING_EMOJIS.forEach((emoji, i) => {
+        const el = document.createElement("div");
+        el.textContent = emoji;
+        el.style.cssText = `
+            position: absolute; font-size: 2rem; opacity: 0.15; pointer-events: none; z-index: -1;
+            animation: float ${10 + i * 2}s infinite ease-in-out ${i * 2}s;
         `;
-        container.appendChild(floater);
+        container.appendChild(el);
     });
 }
 
-// ── Image Upload State ──────────────────────────────────────────────────────
+// ── UI Helpers ───────────────────────────────────────────────────────────────
 
-let uploadedImageUrl = null;
+function scrollToGenerator() {
+    requestAnimationFrame(() => {
+        const section = document.querySelector(".generator-section");
+        window.scrollTo({
+            top: section.getBoundingClientRect().top + window.scrollY,
+            behavior: "smooth",
+        });
+    });
+}
 
-// ── Cards ───────────────────────────────────────────────────────────────────
+function updateGenerateButtonState() {
+    const hasText = dom.userInput.value.trim().length > 0;
+    dom.generateBtn.disabled =
+        !hasText && !dom.generateBtn.classList.contains("generating");
+}
 
-function sanitizeImageUrl(url) {
+function setInputsDisabled(disabled) {
+    dom.userInput.disabled = disabled;
+    dom.userInput.classList.toggle("disabled", disabled);
+}
+
+function setButtonLoading() {
+    dom.generateBtn.classList.add("generating");
+    dom.resultSection.classList.add("hidden");
+    progressStep = 0;
+    setButtonMessage(PROGRESS_MESSAGES[0]);
+    startCatAnimation();
+    progressInterval = setInterval(() => {
+        progressStep++;
+        setButtonMessage(
+            progressStep < PROGRESS_MESSAGES.length
+                ? PROGRESS_MESSAGES[progressStep]
+                : "🎨 Finalizing...",
+        );
+    }, 2500);
+}
+
+function setButtonMessage(msg) {
+    dom.generateBtn.textContent = "";
+    dom.generateBtn.appendChild(document.createTextNode(`${msg} `));
+    const cancel = document.createElement("span");
+    cancel.textContent = "Cancel?";
+    cancel.style.color = "#c0392b";
+    dom.generateBtn.appendChild(cancel);
+}
+
+function resetButton() {
+    dom.generateBtn.classList.remove("generating", "retrying");
+    dom.generateBtn.textContent = "Generate Meme";
+    currentAbort = null;
+    stopCatAnimation();
+    setInputsDisabled(false);
+    updateGenerateButtonState();
+    clearInterval(progressInterval);
+    progressInterval = null;
+}
+
+// ── URL Sanitization ─────────────────────────────────────────────────────────
+
+function sanitizeUrl(url) {
     if (!url || typeof url !== "string") return null;
     try {
         const parsed = new URL(url, window.location.href);
-        const allowedProtocols = ["http:", "https:", "blob:", "data:"];
-        if (!allowedProtocols.includes(parsed.protocol)) return null;
-        return parsed.toString();
+        return ["http:", "https:", "blob:", "data:"].includes(parsed.protocol)
+            ? parsed.toString()
+            : null;
     } catch {
         return null;
     }
 }
 
+// ── Cards ────────────────────────────────────────────────────────────────────
+
 function createMemeCard(prompt, index, imageUrl) {
-    const safeUrl = sanitizeImageUrl(imageUrl);
-    if (!safeUrl) {
-        console.warn(`Invalid or missing URL for: "${prompt}"`);
-        return null;
-    }
+    const safeUrl = sanitizeUrl(imageUrl);
+    if (!safeUrl) return null;
 
     const card = document.createElement("div");
     card.className = "example-card";
     card.style.animationDelay = `${index * 0.1}s`;
-
 
     const img = document.createElement("img");
     img.src = safeUrl;
@@ -340,148 +298,135 @@ function createMemeCard(prompt, index, imageUrl) {
     img.loading = "lazy";
     card.appendChild(img);
 
-    const promptText = document.createElement("p");
-    promptText.textContent = `"${prompt}"`;
-    card.appendChild(promptText);
+    const p = document.createElement("p");
+    p.textContent = `"${prompt}"`;
+    card.appendChild(p);
 
     card.addEventListener("click", () => {
         dom.userInput.value = prompt;
         updateGenerateButtonState();
         scrollToGenerator();
         dom.userInput.focus();
-        dom.userInput.style.animation = "pulse 0.5s";
-        setTimeout(() => {
-            dom.userInput.style.animation = "";
-        }, 500);
-        showNotification("Prompt loaded! Hit Generate 🎨", "info");
+        notify("Prompt loaded! Hit Generate 🎨");
     });
 
     return card;
 }
 
-// ── Meme Loading ────────────────────────────────────────────────────────────
-
 function loadUserMemes() {
     dom.yourMemesGrid.innerHTML = "";
-    const savedMemes = getSavedMemes();
+    const saved = getSavedMemes();
 
-    if (savedMemes.length === 0) {
-        const emptyMessage = document.createElement("p");
-        emptyMessage.textContent =
-            "No memes yet! Generate one to see it here. 🎨";
-        emptyMessage.style.cssText = `
-            grid-column: 1 / -1;
-            text-align: center;
-            color: var(--color-cream);
-            padding: 2rem;
-            font-style: italic;
-        `;
-        dom.yourMemesGrid.appendChild(emptyMessage);
+    if (!saved.length) {
+        const p = document.createElement("p");
+        p.textContent = "No memes yet! Generate one to see it here. 🎨";
+        p.style.cssText =
+            "grid-column: 1/-1; text-align: center; color: var(--color-muted); padding: 2rem; font-style: italic;";
+        dom.yourMemesGrid.appendChild(p);
         return;
     }
 
-    savedMemes.forEach((meme, index) => {
-        const card = createMemeCard(meme.prompt, index, meme.url, true);
+    saved.forEach((meme, i) => {
+        const card = createMemeCard(meme.prompt, i, meme.url);
         if (card) dom.yourMemesGrid.appendChild(card);
     });
 }
 
 function loadExamples() {
     dom.examplesGrid.innerHTML = "";
-    EXAMPLE_PROMPTS.forEach((question, index) => {
-        const prompt = createImageGenerationPrompt(question);
-        const url = generateImageURL(prompt);
-        const card = createMemeCard(question, index, url);
+    EXAMPLE_PROMPTS.forEach((q, i) => {
+        const card = createMemeCard(
+            q,
+            i,
+            generateImageURL(createImageGenerationPrompt(q)),
+        );
         if (card) dom.examplesGrid.appendChild(card);
     });
 }
 
-// ── Generator ───────────────────────────────────────────────────────────────
+// ── Generator ────────────────────────────────────────────────────────────────
 
 async function generateMeme() {
-    // If currently generating, cancel
     if (dom.generateBtn.classList.contains("generating")) {
-        if (currentGenerationAbort) currentGenerationAbort();
+        if (currentAbort) currentAbort();
         resetButton();
         return;
     }
 
-    const userQuestion = dom.userInput.value.trim();
-
-    if (!userQuestion) {
-        showNotification("Please enter a question for CatGPT! 😸", "warning");
+    const question = dom.userInput.value.trim();
+    if (!question) {
+        notify("Please enter a question for CatGPT! 😸", "warning");
         return;
     }
 
-    setURLPrompt(userQuestion);
+    setURLPrompt(question);
     setButtonLoading();
-    disableInputs();
+    setInputsDisabled(true);
     dom.generateError.classList.add("hidden");
     dom.generateError.textContent = "";
 
-    const imagePrompt = createImageGenerationPrompt(
-        userQuestion,
-        !!uploadedImageUrl,
+    const imageUrl = generateImageURL(
+        createImageGenerationPrompt(question, !!uploadedImageUrl),
+        uploadedImageUrl,
     );
-    const imageUrl = generateImageURL(imagePrompt, uploadedImageUrl);
     let cancelled = false;
-
-    currentGenerationAbort = () => { cancelled = true; };
+    currentAbort = () => {
+        cancelled = true;
+    };
 
     try {
         const response = await fetch(imageUrl);
         if (cancelled) return;
 
         if (!response.ok) {
-            let errorMsg = `Error ${response.status}`;
+            let msg = `Error ${response.status}`;
             try {
-                const contentType = response.headers.get("content-type") || "";
-                if (contentType.includes("json")) {
-                    const data = await response.json();
-                    errorMsg = data.error || data.message || errorMsg;
+                const ct = response.headers.get("content-type") || "";
+                if (ct.includes("json")) {
+                    const d = await response.json();
+                    msg = d.error || d.message || msg;
                 } else {
-                    const text = await response.text();
-                    if (text) errorMsg = text.slice(0, 200);
+                    const t = await response.text();
+                    if (t) msg = t.slice(0, 200);
                 }
             } catch {}
-            throw new Error(errorMsg);
+            throw new Error(msg);
         }
 
         const blob = await response.blob();
         if (cancelled) return;
-        const blobUrl = URL.createObjectURL(blob);
-        dom.generatedMeme.src = blobUrl;
+        dom.generatedMeme.src = URL.createObjectURL(blob);
 
         resetButton();
-        showResult();
+        dom.resultSection.classList.remove("hidden");
+        scrollToGenerator();
         celebrate();
-        saveGeneratedMeme(userQuestion, imageUrl);
+        saveGeneratedMeme(question, imageUrl);
         loadUserMemes();
     } catch (error) {
         if (cancelled) return;
         console.error("Generation error:", error);
         resetButton();
-        dom.generateError.textContent = error.message || "Failed to generate meme. Please try again.";
+        dom.generateError.textContent =
+            error.message || "Failed to generate meme. Please try again.";
         dom.generateError.classList.remove("hidden");
     }
 }
 
-// ── Interactions ────────────────────────────────────────────────────────────
+// ── Download / Share ─────────────────────────────────────────────────────────
 
 async function downloadMeme() {
     try {
-        const response = await fetch(dom.generatedMeme.src);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `catgpt-meme-${Date.now()}.png`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-        showNotification("Meme downloaded! 🎉", "success");
-    } catch (error) {
-        console.error("Download failed:", error);
-        showNotification(
+        const blob = await (await fetch(dom.generatedMeme.src)).blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `catgpt-meme-${Date.now()}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        notify("Meme downloaded! 🎉", "success");
+    } catch {
+        notify(
             "Download failed! Try right-clicking and save image instead.",
             "error",
         );
@@ -490,78 +435,48 @@ async function downloadMeme() {
 
 async function shareMeme() {
     if (!dom.generatedMeme.src) {
-        showNotification("Generate a meme first! 🎨", "warning");
+        notify("Generate a meme first! 🎨", "warning");
         return;
     }
     try {
         await navigator.clipboard.writeText(window.location.href);
-        showNotification("Link copied! Recipients will see the meme auto-generate 📋", "success");
-    } catch (error) {
-        console.error("Error copying to clipboard:", error);
-        showNotification(
-            "Could not copy link. Try copying it manually! 🔗",
-            "error",
-        );
-    }
-}
-
-// ── Main Init ───────────────────────────────────────────────────────────────
-
-let konamiCode = [];
-
-function initializeApp() {
-    handleAuthRedirect();
-    updateAuthUI();
-    loadUserMemes();
-    loadExamples();
-    loadRandomCatFact();
-    handleURLPrompt();
-    setupEventListeners();
-    addFloatingEmojis();
-}
-
-// ── BYOP Auth ──────────────────────────────────────────────────────────────
-
-function handleAuthRedirect() {
-    const key = extractApiKeyFromFragment();
-    if (key) {
-        storeApiKey(key);
-        // Clean URL fragment
-        window.history.replaceState(
-            {},
-            "",
-            window.location.pathname + window.location.search,
-        );
-        showNotification(
-            "Logged in! Using your Pollen balance now.",
+        notify(
+            "Link copied! Recipients will see the meme auto-generate 📋",
             "success",
         );
+    } catch {
+        notify("Could not copy link. Try copying it manually! 🔗", "error");
     }
 }
+
+// ── BYOP Auth ────────────────────────────────────────────────────────────────
 
 const TIER_EMOJIS = { seed: "🌱", flower: "🌸", nectar: "🍯" };
 
-function maskApiKey(key) {
-    if (!key || key.length < 6) return "••••••••";
-    return key.substring(0, 4) + "••••••••";
+function handleAuthRedirect() {
+    const key = extractApiKeyFromFragment();
+    if (!key) return;
+    storeApiKey(key);
+    window.history.replaceState(
+        {},
+        "",
+        window.location.pathname + window.location.search,
+    );
+    notify("Logged in! Using your Pollen balance now.", "success");
 }
 
 async function updateAuthUI() {
-    const loggedOutEl = document.getElementById("authLoggedOut");
-    const loggedInEl = document.getElementById("authLoggedIn");
-    const loginBtn = document.getElementById("authLoginBtn");
-    const logoutBtn = document.getElementById("authLogoutBtn");
-
+    const loggedOutEl = $("authLoggedOut");
+    const loggedInEl = $("authLoggedIn");
     if (!loggedOutEl || !loggedInEl) return;
 
-    loginBtn.onclick = () => {
+    $("authLoginBtn").onclick = () => {
         window.location.href = getAuthorizeUrl();
     };
-
-    logoutBtn.onclick = () => {
+    $("authLogoutBtn").onclick = () => {
         clearApiKey();
         updateAuthUI();
-        showNotification("Logged out. Using free tier now.", "info");
+        notify("Logged out. Using free tier now.");
     };
 
     if (!isLoggedIn()) {
@@ -574,11 +489,8 @@ async function updateAuthUI() {
     loggedInEl.classList.remove("hidden");
 
     const apiKey = getStoredApiKey();
+    $("authApiKey").textContent = apiKey.substring(0, 4) + "••••••••";
 
-    // Show masked API key immediately
-    document.getElementById("authApiKey").textContent = maskApiKey(apiKey);
-
-    // Fetch profile and balance in parallel
     try {
         const [profile, balance] = await Promise.all([
             fetchProfile(apiKey).catch(() => null),
@@ -587,11 +499,11 @@ async function updateAuthUI() {
 
         if (profile) {
             const name = profile.githubUsername || profile.name || "User";
-            document.getElementById("authUserName").textContent = name;
-            document.getElementById("authUserEmail").textContent = profile.email || "";
+            $("authUserName").textContent = name;
+            $("authUserEmail").textContent = profile.email || "";
 
-            const avatarImg = document.getElementById("authAvatar");
-            const avatarFallback = document.getElementById("authAvatarFallback");
+            const avatarImg = $("authAvatar");
+            const avatarFallback = $("authAvatarFallback");
             if (profile.image) {
                 avatarImg.src = profile.image;
                 avatarImg.classList.remove("hidden");
@@ -602,135 +514,101 @@ async function updateAuthUI() {
                 avatarFallback.textContent = name.charAt(0).toUpperCase();
             }
 
-            if (profile.tier && TIER_EMOJIS[profile.tier]) {
-                document.getElementById("authTier").textContent =
-                    `${TIER_EMOJIS[profile.tier]} ${profile.tier.charAt(0).toUpperCase() + profile.tier.slice(1)}`;
-            } else {
-                document.getElementById("authTier").textContent = "Free";
-            }
+            const tier = profile.tier;
+            $("authTier").textContent =
+                tier && TIER_EMOJIS[tier]
+                    ? `${TIER_EMOJIS[tier]} ${tier.charAt(0).toUpperCase() + tier.slice(1)}`
+                    : "Free";
         }
 
         if (balance) {
-            document.getElementById("authBalance").textContent =
+            $("authBalance").textContent =
                 `${balance.balance.toFixed(2)} pollen`;
         }
-    } catch (err) {
-        console.error("Failed to load account info:", err);
-        // If 401, the key is invalid — log out
+    } catch {
         clearApiKey();
         updateAuthUI();
-        showNotification("Session expired. Please log in again.", "warning");
+        notify("Session expired. Please log in again.", "warning");
     }
 }
 
-function updateGenerateButtonState() {
-    const hasText = dom.userInput.value.trim().length > 0;
-    const isGenerating = dom.generateBtn.classList.contains("generating");
-    dom.generateBtn.disabled = !hasText && !isGenerating;
-}
-
-function disableInputs() {
-    dom.userInput.disabled = true;
-    dom.userInput.classList.add("disabled");
-    const uploadBtn = document.getElementById("imageUploadBtn");
-    if (uploadBtn) {
-        uploadBtn.disabled = true;
-        uploadBtn.classList.add("disabled");
-    }
-}
-
-function enableInputs() {
-    dom.userInput.disabled = false;
-    dom.userInput.classList.remove("disabled");
-    const uploadBtn = document.getElementById("imageUploadBtn");
-    if (uploadBtn) {
-        uploadBtn.disabled = false;
-        uploadBtn.classList.remove("disabled");
-    }
-}
+// ── Init ─────────────────────────────────────────────────────────────────────
 
 function setupEventListeners() {
     dom.generateBtn.addEventListener("click", generateMeme);
     dom.downloadBtn.addEventListener("click", downloadMeme);
     dom.shareBtn.addEventListener("click", shareMeme);
-
     dom.userInput.addEventListener("input", updateGenerateButtonState);
-
-    document.getElementById("imageUploadBtn").addEventListener("click", () => {
-        dom.imageUpload.click();
+    dom.userInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") generateMeme();
     });
 
     dom.imageUpload.addEventListener("change", async (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const url = await handleImageUpload(file, showNotification);
-            if (url) {
-                uploadedImageUrl = url;
-                dom.imageThumbnail.src = URL.createObjectURL(file);
-                showImageThumbnail();
-            }
+        if (!file) return;
+        const url = await handleImageUpload(file, notify);
+        if (url) {
+            uploadedImageUrl = url;
+            dom.imageThumbnail.src = URL.createObjectURL(file);
+            dom.imageUploadContainer.classList.add("hidden");
+            dom.imageThumbnailContainer.classList.remove("hidden");
         }
     });
 
     dom.removeImageBtn.addEventListener("click", () => {
         uploadedImageUrl = null;
         dom.imageUpload.value = "";
-        hideImageThumbnail();
+        dom.imageThumbnailContainer.classList.add("hidden");
+        dom.imageUploadContainer.classList.remove("hidden");
     });
 
-    dom.userInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") generateMeme();
+    // Konami code easter egg
+    document.addEventListener("keydown", (e) => {
+        konamiBuffer.push(e.key);
+        konamiBuffer = konamiBuffer.slice(-10);
+        if (konamiBuffer.join(",") === KONAMI_SEQUENCE) {
+            document.body.style.animation = "rainbow 2s";
+            notify(
+                "🌈 Secret mode activated! You found the easter egg! 🦄",
+                "success",
+            );
+            document.querySelectorAll("h1, h2, h3").forEach((el) => {
+                el.textContent = el.textContent.replace(/Cat/g, "😸Cat😸");
+            });
+            setTimeout(() => {
+                document.body.style.animation = "";
+            }, 2000);
+        }
     });
 
     updateGenerateButtonState();
-
-    document.addEventListener("keydown", handleKonamiCode);
 }
 
-function handleURLPrompt() {
-    const { prompt, image } = getURLParams();
+document.addEventListener("DOMContentLoaded", () => {
+    handleAuthRedirect();
+    updateAuthUI();
+    loadUserMemes();
+    loadExamples();
+    addFloatingEmojis();
 
+    // Handle URL prompt (auto-generate if shared link)
+    const { prompt, image } = getURLParams();
     if (image) {
-        const safeImage = sanitizeImageUrl(image);
-        if (safeImage) {
-            uploadedImageUrl = safeImage;
-            dom.imageThumbnail.src = safeImage;
-            showImageThumbnail();
+        const safe = sanitizeUrl(image);
+        if (safe) {
+            uploadedImageUrl = safe;
+            dom.imageThumbnail.src = safe;
+            dom.imageUploadContainer.classList.add("hidden");
+            dom.imageThumbnailContainer.classList.remove("hidden");
         }
     }
-
     if (prompt) {
         dom.userInput.value = prompt;
         setTimeout(generateMeme, 500);
     }
-}
 
-function handleKonamiCode(e) {
-    konamiCode.push(e.key);
-    konamiCode = konamiCode.slice(-10);
+    setupEventListeners();
 
-    if (konamiCode.join(",") === KONAMI_SEQUENCE.join(",")) {
-        document.body.style.animation = "rainbow 2s";
-        showNotification(
-            "🌈 Secret mode activated! You found the easter egg! 🦄",
-            "success",
-        );
-
-        document.querySelectorAll("h1, h2, h3").forEach((el) => {
-            el.textContent = el.textContent.replace(/Cat/g, "😸Cat😸");
-        });
-
-        setTimeout(() => {
-            document.body.style.animation = "";
-        }, 2000);
-    }
-}
-
-function loadRandomCatFact() {
-    setTimeout(() => {
-        const randomFact = getRandomItem(CAT_FACTS);
-        showNotification(`Did you know? ${randomFact}`, "info");
-    }, 3000);
-}
-
-document.addEventListener("DOMContentLoaded", initializeApp);
+    // Random cat fact after 3s
+    setTimeout(() => notify(`Did you know? ${pick(CAT_FACTS)}`), 3000);
+});

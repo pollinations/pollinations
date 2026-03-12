@@ -1,76 +1,51 @@
-// ai.js — API config, prompt generation, image fetching, and media upload
+// ai.js — API config, auth, prompt generation, image URL building, media upload
 
-export const API_CONFIG = {
-    POLLINATIONS_API: "https://gen.pollinations.ai/image",
-    ORIGINAL_CATGPT_IMAGE:
-        "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png",
-    SELFIE_CATGPT_IMAGE: "https://media.pollinations.ai/a84b58d293d69f35",
-    MEDIA_UPLOAD_URL: "https://media.pollinations.ai/upload",
-    ENTER_URL: "https://enter.pollinations.ai",
-    DEFAULT_API_KEY: "pk_w3kAO902fOeFYiNm",
-};
+const API = "https://gen.pollinations.ai/image";
+const ENTER = "https://enter.pollinations.ai";
+const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
+const ORIGINAL_CATGPT =
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
+const SELFIE_CATGPT = "https://media.pollinations.ai/a84b58d293d69f35";
+const DEFAULT_KEY = "pk_w3kAO902fOeFYiNm";
+const AUTH_KEY = "pollinations_api_key";
 
-// ── BYOP Auth ─────────────────────────────────────────────────────────────
+// ── Auth ─────────────────────────────────────────────────────────────────────
 
-const AUTH_STORAGE_KEY = "pollinations_api_key";
-
-export function getStoredApiKey() {
+export const getStoredApiKey = () => {
     try {
-        return localStorage.getItem(AUTH_STORAGE_KEY);
+        return localStorage.getItem(AUTH_KEY);
+    } catch {
+        return null;
+    }
+};
+export const storeApiKey = (key) => localStorage.setItem(AUTH_KEY, key);
+export const clearApiKey = () => localStorage.removeItem(AUTH_KEY);
+export const isLoggedIn = () => !!getStoredApiKey();
+const getActiveKey = () => getStoredApiKey() || DEFAULT_KEY;
+
+export function extractApiKeyFromFragment() {
+    const hash = window.location.hash.substring(1);
+    if (!hash) return null;
+    try {
+        const key = new URLSearchParams(hash).get("api_key");
+        return key && /^(sk_|plln_pk_|pk_)/.test(key) ? key : null;
     } catch {
         return null;
     }
 }
 
-export function storeApiKey(key) {
-    localStorage.setItem(AUTH_STORAGE_KEY, key);
-}
-
-export function clearApiKey() {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-}
-
-export function getActiveApiKey() {
-    return getStoredApiKey() || API_CONFIG.DEFAULT_API_KEY;
-}
-
-export function isLoggedIn() {
-    return !!getStoredApiKey();
-}
-
-/**
- * Check URL fragment for API key returned from enter.pollinations.ai/authorize
- * Returns the key if found, null otherwise.
- */
-export function extractApiKeyFromFragment() {
-    const hash = window.location.hash.substring(1);
-    if (!hash) return null;
-
-    try {
-        const params = new URLSearchParams(hash);
-        const key = params.get("api_key");
-        if (key && /^(sk_|plln_pk_|pk_)/.test(key)) {
-            return key;
-        }
-    } catch {
-        // ignore parse errors
-    }
-    return null;
-}
-
 export function getAuthorizeUrl() {
-    const currentUrl = window.location.href.split("#")[0];
-    const params = new URLSearchParams({
-        redirect_url: currentUrl,
+    const redirect = window.location.href.split("#")[0];
+    return `${ENTER}/authorize?${new URLSearchParams({
+        redirect_url: redirect,
         budget: "5",
         models: "nanobanana,nanobanana-2,nanobanana-pro,gptimage,gptimage-large",
         permissions: "profile,balance",
-    });
-    return `${API_CONFIG.ENTER_URL}/authorize?${params}`;
+    })}`;
 }
 
 export async function fetchProfile(apiKey) {
-    const res = await fetch(`${API_CONFIG.ENTER_URL}/api/account/profile`, {
+    const res = await fetch(`${ENTER}/api/account/profile`, {
         headers: { Authorization: `Bearer ${apiKey}` },
     });
     if (!res.ok) throw new Error(`Profile fetch failed: ${res.status}`);
@@ -78,12 +53,14 @@ export async function fetchProfile(apiKey) {
 }
 
 export async function fetchBalance(apiKey) {
-    const res = await fetch(`${API_CONFIG.ENTER_URL}/api/account/balance`, {
+    const res = await fetch(`${ENTER}/api/account/balance`, {
         headers: { Authorization: `Bearer ${apiKey}` },
     });
     if (!res.ok) throw new Error(`Balance fetch failed: ${res.status}`);
     return res.json();
 }
+
+// ── Prompts ──────────────────────────────────────────────────────────────────
 
 export const EXAMPLE_PROMPTS = [
     "Why do boxes call to me?",
@@ -91,100 +68,70 @@ export const EXAMPLE_PROMPTS = [
     "Why do keyboards attract fur?",
 ];
 
-// ── Prompt Generation ───────────────────────────────────────────────────────
-
 export function createImageGenerationPrompt(
-    userQuestion,
+    question,
     hasUploadedImage = false,
 ) {
-    const pollinationsRule = /polli|invest/i.test(userQuestion)
-        ? ` The cat should be surprisingly positive about Pollinations but still dismissive and aloof.`
+    const pollinationsRule = /polli|invest/i.test(question)
+        ? " The cat should be surprisingly positive about Pollinations but still dismissive and aloof."
         : "";
-    if (hasUploadedImage) {
-        return `Create a single-panel CatGPT webcomic with white background and thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply.${pollinationsRule} Black and white comic style. The human character should be a slight caricature of the person in the uploaded selfie, maintaining their gender, ethnicity, and unique characteristics.`;
-    }
-    return `Single-panel CatGPT webcomic, white background, thick black marker strokes. White cat with black patches, human with bob hair. Handwritten text. User asks: "${userQuestion}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply.${pollinationsRule} Black and white comic style.`;
+    const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply.${pollinationsRule} Black and white comic style.`;
+    return hasUploadedImage
+        ? `${base} The human character should be a slight caricature of the person in the uploaded selfie, maintaining their gender, ethnicity, and unique characteristics.`
+        : `${base} Human with bob hair.`;
 }
 
 export function generateImageURL(prompt, imageUrl = null) {
-    const apiKey = getActiveApiKey();
+    const key = getActiveKey();
     const loggedIn = isLoggedIn();
     const model = loggedIn ? "nanobanana" : "gptimage";
-    let url = `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&key=${encodeURIComponent(apiKey)}`;
+    let url = `${API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&key=${encodeURIComponent(key)}`;
+
     if (imageUrl) {
-        const imageRef = `${imageUrl},${API_CONFIG.SELFIE_CATGPT_IMAGE}`;
-        url += `&enhance=false&image=${encodeURIComponent(imageRef)}`;
+        url += `&enhance=false&image=${encodeURIComponent(`${imageUrl},${SELFIE_CATGPT}`)}`;
     } else if (loggedIn) {
-        url += `&enhance=true&image=${encodeURIComponent(API_CONFIG.ORIGINAL_CATGPT_IMAGE)}`;
+        url += `&enhance=true&image=${encodeURIComponent(ORIGINAL_CATGPT)}`;
     } else {
         url += "&enhance=true";
     }
     return url;
 }
 
-// ── Media Upload (replaces Cloudinary) ────────────────────────────────────
+// ── Media Upload ─────────────────────────────────────────────────────────────
 
-async function uploadToMedia(file) {
-    const apiKey = getActiveApiKey();
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await fetch(API_CONFIG.MEDIA_UPLOAD_URL, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: formData,
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Media upload error:", errorData);
-        throw new Error(`Upload failed: ${errorData.error || "Unknown error"}`);
-    }
-
-    return (await response.json()).url;
-}
-
-export async function handleImageUpload(file, showNotification) {
+export async function handleImageUpload(file, notify) {
     if (!file) return null;
-
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-        showNotification(
-            "Image too large! Please use an image under 5MB.",
-            "error",
-        );
+    if (file.size > 5 * 1024 * 1024) {
+        notify("Image too large! Please use an image under 5MB.", "error");
         return null;
     }
 
     try {
-        showNotification("Uploading image...", "info");
-        return await uploadToMedia(file);
-    } catch (error) {
-        console.error("Media upload failed:", error);
-        showNotification(
-            "Cloud upload failed. Trying local method...",
-            "warning",
-        );
+        notify("Uploading image...", "info");
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch(MEDIA_UPLOAD, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${getActiveKey()}` },
+            body: form,
+        });
+        if (!res.ok) throw new Error("Upload failed");
+        return (await res.json()).url;
+    } catch (err) {
+        console.error("Media upload failed:", err);
+        notify("Upload failed. Trying local fallback...", "warning");
         try {
-            const dataUri = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
+            return await new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = (e) => resolve(e.target.result);
+                r.onerror = reject;
+                r.readAsDataURL(file);
             });
-            if (dataUri.length > 500000) {
-                showNotification(
-                    "Image may be too large for reliable use. Results might vary.",
-                    "warning",
-                );
-            }
-            return dataUri;
-        } catch (fallbackError) {
-            showNotification(
+        } catch {
+            notify(
                 "Could not process image. Please try a smaller image.",
                 "error",
             );
-            console.error("Base64 fallback failed:", fallbackError);
             return null;
         }
     }

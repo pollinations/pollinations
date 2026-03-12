@@ -26,7 +26,7 @@
     "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head holding a freshly printed newspaper, while the bee mascot reads it happily. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'NEWS'. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
-    "url": null,
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-12/PR-9052.jpg",
     "prompt": null
   },
   "generated_at": "2026-03-12T07:24:28.201911+00:00"

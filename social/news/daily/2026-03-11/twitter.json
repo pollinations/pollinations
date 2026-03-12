@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "gpt image generation was blocked. we moved the endpoints to west us 3 and now it works again. sometimes fixing infrastructure just means finding a data center that feels like cooperating today. your pixels are flowing again. 🖼️",
+  "alt_tweet": "if your gpt image calls were failing earlier, they're fixed. switched our endpoints to west us 3. the cloud is just someone else's computer, and today that computer simply demands to be on the west coast.",
+  "hashtags": [
+    "#buildinpublic",
+    "#opensource"
+  ],
+  "image_prompt": "Cozy pixel art scene of Polly the cute bee mascot (yellow body, dark brown stripes, pink blush, wearing a tiny trucker hat) and the chunky Monitor Robot physically carrying a glowing lime green (#ecf874) potted code-plant towards a sign that says 'WEST'. Soft pastel gradient background of lavender and peach. The robot's CRT screen displays a happy face. Warm lighting, lo-fi 8-bit aesthetic, chunky sprites, Stardew Valley vibes. Nostalgic but beautiful, emotionally warm.",
+  "reasoning": "Leads directly with the fix. Uses dry humor about the reality of cloud computing (sometimes you just have to change regions) rather than hyping up a bug fix.",
+  "char_count": 225,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-11/images/twitter.jpg",
+    "prompt": "Cozy pixel art scene of Polly the cute bee mascot (yellow body, dark brown stripes, pink blush, wearing a tiny trucker hat) and the chunky Monitor Robot physically carrying a glowing lime green (#ecf874) potted code-plant towards a sign that says 'WEST'. Soft pastel gradient background of lavender and peach. The robot's CRT screen displays a happy face. Warm lighting, lo-fi 8-bit aesthetic, chunky sprites, Stardew Valley vibes. Nostalgic but beautiful, emotionally warm."
+  },
+  "date": "2026-03-11",
+  "generated_at": "2026-03-12T06:17:49.772580+00:00",
+  "platform": "twitter"
+}

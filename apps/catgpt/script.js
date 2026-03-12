@@ -479,14 +479,21 @@ async function updateAuthUI() {
         notify("Logged out. Using free tier now.");
     };
 
+    const generatorSection = document.querySelector(".generator-section");
+    const heroHeader = document.querySelector("header");
+
     if (!isLoggedIn()) {
         loggedOutEl.classList.remove("hidden");
         loggedInEl.classList.add("hidden");
+        if (generatorSection) generatorSection.classList.add("hidden");
+        if (heroHeader) heroHeader.classList.remove("hidden");
         return;
     }
 
     loggedOutEl.classList.add("hidden");
     loggedInEl.classList.remove("hidden");
+    if (generatorSection) generatorSection.classList.remove("hidden");
+    if (heroHeader) heroHeader.classList.add("hidden");
 
     const apiKey = getStoredApiKey();
     $("authApiKey").textContent = apiKey.substring(0, 4) + "••••••••";

@@ -284,10 +284,38 @@ header {
     animation-delay: 0.3s;
 }
 
+.original-comic-link {
+    display: block;
+    max-width: 280px;
+    margin: 0 auto 1.5rem;
+}
+
+.original-comic {
+    width: 100%;
+    height: auto;
+    border: 2px solid var(--color-text);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    box-shadow: var(--shadow-md);
+    transition: all 0.15s;
+}
+
+.original-comic-link:hover .original-comic {
+    transform: translate(1px, 1px);
+    box-shadow: var(--shadow-sm);
+}
+
 .tagline {
-    font-size: 1rem;
+    font-size: 0.85rem;
     color: var(--color-subtle);
     font-weight: 400;
+    margin-top: 0.5rem;
+}
+
+.tagline a {
+    color: var(--color-muted);
+    font-weight: 700;
+    text-decoration: none;
 }
 
 /* === Section Cards === */

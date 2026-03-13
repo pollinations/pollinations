@@ -6,6 +6,7 @@
 import debug from "debug";
 import { callAirforceVideoAPI } from "./models/airforceModel.ts";
 import { callLtx2API } from "./models/ltx2VideoModel.ts";
+import { callPrunaVideoAPI } from "./models/prunaModel.ts";
 import {
     callSeedanceAPI,
     callSeedanceProAPI,
@@ -72,6 +73,14 @@ export async function createAndReturnVideo(
                 progress,
                 requestId,
                 "grok-imagine-video",
+            );
+            break;
+        case "p-video":
+            result = await callPrunaVideoAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
             );
             break;
         default:

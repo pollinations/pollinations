@@ -204,6 +204,30 @@ export const IMAGE_CONFIG = {
         maxDuration: 10, // 241 frames
         defaultResolution: "720p",
     },
+
+    // Pruna p-image - Text-to-image generation
+    "p-image": {
+        type: "pruna",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Pruna p-image-edit - Image-to-image editing
+    "p-image-edit": {
+        type: "pruna-edit",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Pruna p-video - Text/image-to-video generation
+    "p-video": {
+        type: "pruna-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "720p",
+    },
 } as const satisfies ImageModelsConfig;
 
 /**

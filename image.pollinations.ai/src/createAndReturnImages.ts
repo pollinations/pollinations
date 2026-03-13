@@ -11,6 +11,10 @@ import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
+    callPrunaImageAPI,
+    callPrunaImageEditAPI,
+} from "./models/prunaModel.ts";
+import {
     callSeedream5API,
     callSeedreamAPI,
     callSeedreamProAPI,
@@ -1131,6 +1135,39 @@ const generateImage = async (
                 );
             } catch (error) {
                 logError("Flux Klein Large generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "p-image": {
+            try {
+                return await callPrunaImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Pruna p-image generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "p-image-edit": {
+            try {
+                return await callPrunaImageEditAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError(
+                    "Pruna p-image-edit generation failed:",
+                    error.message,
+                );
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }

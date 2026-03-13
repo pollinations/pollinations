@@ -11,6 +11,7 @@ import {
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
+    createSeraphynModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -196,4 +197,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAirforceModelConfig({ model: "qwen-character" }),
     "claude-sonnet-4.6": () =>
         createAirforceModelConfig({ model: "claude-sonnet-4.6" }),
+
+    // -- seraphyn.ai ------------------------------------------------------
+    // "seraphyn-gpt-5.4": () =>
+    //     createSeraphynModelConfig({ model: "gpt-5.4" }),
 };

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollinations Image Generator</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fbbf24 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        h1 {
+            font-size: 28px;
+            margin: 0 0 8px 0;
+            color: #1f2937;
+        }
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .login-btn {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(245, 158, 11, 0.5);
+        }
+        .login-btn:disabled {
+            background: #d1d5db;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .prompt-section {
+            margin-top: 30px;
+            display: none;
+        }
+        .prompt-section.visible { display: block; }
+        textarea {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            font-size: 16px;
+            resize: none;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+        .generate-btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+        }
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(139, 92, 246, 0.5);
+        }
+        .generate-btn:disabled {
+            background: #d1d5db;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .image-container {
+            margin-top: 24px;
+            border-radius: 16px;
+            overflow: hidden;
+            display: none;
+            background: #f3f4f6;
+            min-height: 300px;
+            position: relative;
+        }
+        .image-container.visible { display: block; }
+        .image-container img {
+            width: 100%;
+            display: block;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            animation: bounce 1s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+        .user-info {
+            background: #f0fdf4;
+            padding: 12px 20px;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #166534;
+        }
+        .user-info img {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+        }
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>pollinations image gen</h1>
+        <p class="subtitle">login to generate images with AI no cap fr fr</p>
+        
+        <div id="userInfo" class="user-info" style="display: none;">
+            <img id="userAvatar" src="" alt="">
+            <span id="userName"></span>
+            <button class="logout-btn" onclick="logout()">logout</button>
+        </div>
+        
+        <button id="loginBtn" class="login-btn" onclick="login()">
+            Login with Pollinations
+        </button>
+        
+        <div id="promptSection" class="prompt-section">
+            <textarea id="prompt" rows="3" placeholder="describe ur image bestie...">wikihow style illustration: how to make pollen. a bee wearing safety goggles and a lab coat, carefully collecting yellow pollen from flowers into tiny jars, step by step instructional diagram with arrows</textarea>
+            <button id="generateBtn" class="generate-btn" onclick="generate()">
+                Generate Image
+            </button>
+        </div>
+        
+        <div id="imageContainer" class="image-container">
+            <div id="loading" class="loading"></div>
+            <img id="generatedImage" src="" alt="" style="display: none;">
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        const CLIENT_ID = 'test-app';
+        const CLIENT_SECRET = 'test-secret';
+        // Ensure we have the full path including .html
+const REDIRECT_URI = window.location.href.split('?')[0];
+        const AUTH_SERVER = window.location.origin;
+        
+        let accessToken = localStorage.getItem('access_token');
+        let userInfo = JSON.parse(localStorage.getItem('user_info') || 'null');
+        let savedRedirectUri = localStorage.getItem('oauth_redirect_uri');
+
+        window.onload = async function() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const error = params.get('error');
+            
+            if (error) {
+                showError(`login failed: ${error}`);
+                cleanUrl();
+                return;
+            }
+            
+            if (code) {
+                await exchangeCode(code);
+                cleanUrl();
+            }
+            
+            updateUI();
+        };
+
+        function login() {
+            const state = Math.random().toString(36).substring(2);
+            localStorage.setItem('oauth_state', state);
+            localStorage.setItem('oauth_redirect_uri', REDIRECT_URI);
+            
+            const authUrl = new URL(`${AUTH_SERVER}/api/auth/oauth2/authorize`);
+            authUrl.searchParams.set('client_id', CLIENT_ID);
+            authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+            authUrl.searchParams.set('response_type', 'code');
+            authUrl.searchParams.set('scope', 'openid profile email');
+            authUrl.searchParams.set('state', state);
+            
+            window.location.href = authUrl.toString();
+        }
+
+        async function exchangeCode(code) {
+            try {
+                const response = await fetch(`${AUTH_SERVER}/api/auth/oauth2/token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        grant_type: 'authorization_code',
+                        code: code,
+                        redirect_uri: savedRedirectUri || REDIRECT_URI,
+                        client_id: CLIENT_ID,
+                        client_secret: CLIENT_SECRET,
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'token exchange failed');
+                }
+                
+                accessToken = data.access_token;
+                localStorage.setItem('access_token', accessToken);
+                
+                // Try to get user info
+                try {
+                    const userRes = await fetch(`${AUTH_SERVER}/api/auth/oauth2/userinfo`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` },
+                    });
+                    if (userRes.ok) {
+                        userInfo = await userRes.json();
+                        localStorage.setItem('user_info', JSON.stringify(userInfo));
+                    }
+                } catch (e) {
+                    console.log('userinfo failed, but thats ok');
+                }
+                
+            } catch (err) {
+                showError(`login error: ${err.message}`);
+            }
+        }
+
+        function logout() {
+            accessToken = null;
+            userInfo = null;
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_info');
+            localStorage.removeItem('oauth_state');
+            updateUI();
+        }
+
+        function updateUI() {
+            const loginBtn = document.getElementById('loginBtn');
+            const promptSection = document.getElementById('promptSection');
+            const userInfoDiv = document.getElementById('userInfo');
+            
+            if (accessToken) {
+                loginBtn.style.display = 'none';
+                promptSection.classList.add('visible');
+                
+                if (userInfo) {
+                    userInfoDiv.style.display = 'inline-flex';
+                    document.getElementById('userName').textContent = userInfo.name || userInfo.email || 'logged in';
+                    if (userInfo.picture) {
+                        document.getElementById('userAvatar').src = userInfo.picture;
+                    } else {
+                        document.getElementById('userAvatar').style.display = 'none';
+                    }
+                }
+            } else {
+                loginBtn.style.display = 'inline-block';
+                promptSection.classList.remove('visible');
+                userInfoDiv.style.display = 'none';
+            }
+        }
+
+        async function generate() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) return;
+            
+            const btn = document.getElementById('generateBtn');
+            const container = document.getElementById('imageContainer');
+            const loading = document.getElementById('loading');
+            const img = document.getElementById('generatedImage');
+            
+            btn.disabled = true;
+            btn.textContent = 'generating...';
+            container.classList.add('visible');
+            loading.textContent = '';
+            loading.style.display = 'block';
+            img.style.display = 'none';
+            hideError();
+            
+            try {
+                const imageUrl = `${AUTH_SERVER}/api/generate/image/${encodeURIComponent(prompt)}?model=flux&width=512&height=512&nologo=true`;
+                
+                const response = await fetch(imageUrl, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` },
+                });
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`generation failed (${response.status}): ${text}`);
+                }
+                
+                const blob = await response.blob();
+                img.src = URL.createObjectURL(blob);
+                img.style.display = 'block';
+                loading.style.display = 'none';
+                
+            } catch (err) {
+                showError(err.message);
+                container.classList.remove('visible');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Image';
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function cleanUrl() {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    </script>
+</body>
+</html>

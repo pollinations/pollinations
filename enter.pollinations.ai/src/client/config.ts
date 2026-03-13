@@ -1,6 +1,6 @@
 const environmentConfig = {
     development: {
-        baseUrl: "http://localhost:3000",
+        baseUrl: "",
         authPath: "/api/auth",
         pollenTierMeterId: "1593243f-f646-4df2-9f55-30da37cbc3a0",
         pollenPackMeterId: "9bd156bb-2f2e-4e25-b1c0-1308c076c365",

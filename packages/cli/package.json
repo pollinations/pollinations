@@ -1,0 +1,46 @@
+{
+  "name": "@pollinations/cli",
+  "version": "0.1.0",
+  "description": "CLI tool for Pollinations platform management",
+  "type": "module",
+  "bin": {
+    "polli": "./bin/polli.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@pollinations/sdk": "workspace:*",
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "conf": "^13.0.0",
+    "inquirer": "^9.2.15",
+    "keytar": "^7.9.0",
+    "ora": "^8.0.1",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/keytar": "^4.4.2",
+    "@types/node": "^20.11.5",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "pollinations",
+    "cli",
+    "ai",
+    "image-generation",
+    "text-generation"
+  ],
+  "author": "Pollinations.AI",
+  "license": "MIT"
+}

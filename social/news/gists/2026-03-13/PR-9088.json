@@ -1,0 +1,34 @@
+{
+  "pr_number": 9088,
+  "title": "Add Gratisfy to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9088",
+  "merged_at": "2026-03-13T23:14:43Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One API to rule them all",
+    "blurb": "Gratisfy just landed in the apps showcase. It wrangles all the free AI inference providers—including us—into one unified API. Less hunting for endpoints, more building.",
+    "summary": "Added Gratisfy to the community apps showcase, a unified hub and API for discovering and accessing free AI inference providers.",
+    "impact": "Developers can now access Pollinations alongside other free AI providers through Gratisfy's single unified API endpoint.",
+    "keywords": [
+      "community",
+      "app-showcase",
+      "gratisfy",
+      "api",
+      "inference"
+    ],
+    "visual_concept": "Gratisfy unifies free AI providers. Visual metaphor: Polly the bee and the Monitor Robot gathering various glowing API nodes (representing different providers) into one central, glowing lime green hub. A sense of bringing things together.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot gathering various glowing, colorful API nodes into one central, glowing lime green (#ecf874) hub. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-13T23:15:34.598412+00:00"
+}

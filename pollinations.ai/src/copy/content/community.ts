@@ -156,5 +156,11 @@ export const COMMUNITY_PAGE = {
             description:
                 "AI API gateway — alpha models (imagen-4, grok-video, qwen-character)",
         },
+        {
+            name: "Seraphyn",
+            url: "https://seraphyn.ai/",
+            description:
+                "AI API gateway — community models (gpt-5.4, qwen3-tts)",
+        },
     ],
 };

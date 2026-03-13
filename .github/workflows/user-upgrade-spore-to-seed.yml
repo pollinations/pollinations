@@ -20,6 +20,7 @@ jobs:
         with:
           app-id: ${{ secrets.ORG_BOSS_APP_ID }}
           private-key: ${{ secrets.ORG_BOSS_PRIVATE_KEY }}
+          owner: pollinations
 
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

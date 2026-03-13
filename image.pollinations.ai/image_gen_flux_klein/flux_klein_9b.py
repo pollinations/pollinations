@@ -75,19 +75,20 @@ MODEL_ID = "black-forest-labs/FLUX.2-klein-9B"
 
 MINUTES = 60
 
-# Maximum resolution to prevent OOM - 9B model is memory-hungry
-MAX_TOTAL_PIXELS = 1024 * 1024  # 1 megapixel max
+MAX_TOTAL_PIXELS = 2048 * 2048  # 4 megapixels = full 2K support (2048px long side)
+# This is safe for the 9B model. Only 4K+ (8+ MP) will be clamped to prevent GPU crashes.
 
 def clamp_dimensions(width: int, height: int) -> tuple[int, int]:
-    """Scale down dimensions while maintaining aspect ratio to prevent OOM errors."""
-    # Scale down proportionally if total pixels exceed max
+    """Scale down dimensions while maintaining aspect ratio to prevent OOM errors.
+    Now allows true 2K (e.g. 1080x1920 for 9:16, 1920x1080 for 16:9, 2048x2048 square).
+    """
     total_pixels = width * height
     if total_pixels > MAX_TOTAL_PIXELS:
         scale = (MAX_TOTAL_PIXELS / total_pixels) ** 0.5
         width = int(width * scale)
         height = int(height * scale)
     
-    # Ensure divisible by 16 (required by model)
+    # Ensure divisible by 16 (required by Flux/Klein models)
     width = (width // 16) * 16
     height = (height // 16) * 16
     

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9035,
+  "title": "switch klein 4B from Modal to bpaigen.com",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9035",
+  "merged_at": "2026-03-13T15:03:17Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh pipes for Klein 4B",
+    "blurb": "We've rewired the Klein 4B model to use a shiny new dedicated provider. It's now laser-focused on pure text-to-image generation, leaving the heavy lifting to its big sibling.",
+    "summary": "Switched the backend provider for the Klein 4B image model from Modal to bpaigen.com, optimizing it specifically for text-to-image generation.",
+    "impact": "Klein 4B now runs on a new dedicated pipeline focused entirely on text-to-image generation, while Klein Large (9B) remains unchanged.",
+    "keywords": [
+      "klein",
+      "models",
+      "api",
+      "flux",
+      "backend"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny tool belt, working with the Monitor Robot to plug a glowing new cable into a retro server labeled 'KLEIN'. The robot looks excited about the new connection.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, helping a chunky Monitor Robot plug a glowing lime green (#ecf874) cable into a retro server rack. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-13T15:04:32.110224+00:00"
+}

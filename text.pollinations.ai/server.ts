@@ -251,7 +251,12 @@ function sendContentResponse(c: Context, completion: ChatCompletion): Response {
         return c.json(message);
     }
 
-    return c.text("");
+    errorLog("Empty message content from model:", JSON.stringify(completion));
+    const error: ServiceError = new Error(
+        "Empty response from model",
+    ) as ServiceError;
+    error.status = 502;
+    throw error;
 }
 
 function sendErrorResponse(

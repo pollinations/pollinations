@@ -18,6 +18,8 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 
+const FETCH_TIMEOUT_MS = 30_000;
+
 function createApiError(
     response: { status: number; statusText: string },
     details: unknown,
@@ -103,6 +105,7 @@ export async function genericOpenAIClient(
             method: "POST",
             headers,
             body: JSON.stringify(requestBody),
+            signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
         });
 
         if (!response.ok) {
@@ -158,7 +161,24 @@ export async function genericOpenAIClient(
             `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${data.model || modelName}`,
         );
 
-        const originalChoice = data.choices?.[0] ?? {};
+        if (
+            !data.choices ||
+            data.choices.length === 0 ||
+            !data.choices[0].message
+        ) {
+            errorLog(
+                `[${requestId}] Empty or invalid response from upstream: choices=%j`,
+                data.choices,
+            );
+            const error = new Error(
+                `Empty response from upstream model ${modelName}`,
+            ) as ServiceError;
+            error.status = 502;
+            error.model = modelName;
+            throw error;
+        }
+
+        const originalChoice = data.choices[0];
         const formattedChoice = (
             formatResponse
                 ? formatResponse(
@@ -184,6 +204,18 @@ export async function genericOpenAIClient(
         };
     } catch (thrown: unknown) {
         const error = thrown as ServiceError;
+        if (error.name === "TimeoutError" || error.name === "AbortError") {
+            const timeoutErr = new Error(
+                `Request to ${modelName} timed out after ${FETCH_TIMEOUT_MS}ms`,
+            ) as ServiceError;
+            timeoutErr.status = 504;
+            timeoutErr.model = modelName;
+            errorLog(`[${requestId}] Timeout:`, {
+                model: modelName,
+                timeout: FETCH_TIMEOUT_MS,
+            });
+            throw timeoutErr;
+        }
         errorLog(`[${requestId}] Error:`, {
             error: error.message,
             status: error.status,

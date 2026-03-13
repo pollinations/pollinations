@@ -118,94 +118,10 @@ async function generateWithBpai(
         "Generating with Flux Klein (4B)...",
     );
 
-    const body: Record<string, unknown> = {
-        prompt,
+    return await callBpaiApi(prompt, safeParams, requestId, progress, {
         width: safeParams.width || 1024,
         height: safeParams.height || 1024,
-    };
-
-    if (safeParams.seed !== undefined) {
-        body.seed = safeParams.seed;
-    }
-
-    const password = process.env.BPAI_PASSWORD;
-    if (password) {
-        body.password = password;
-    }
-
-    logOps("bpaigen request body:", JSON.stringify(body));
-
-    const response = await fetch(BPAI_GENERATE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError(
-            "bpaigen API failed, status:",
-            response.status,
-            "response:",
-            errorText,
-        );
-        throw new HttpError(
-            `bpaigen API request failed: ${errorText}`,
-            response.status,
-        );
-    }
-
-    const result = (await response.json()) as {
-        status: string;
-        image_url: string;
-        seed: number;
-        job_id: string;
-    };
-
-    if (result.status !== "succeeded") {
-        throw new Error(
-            `bpaigen generation failed with status: ${result.status}`,
-        );
-    }
-
-    logOps("bpaigen job succeeded, downloading from:", result.image_url);
-
-    // Download the generated image
-    const imageResponse = await fetch(`${BPAI_BASE_URL}${result.image_url}`);
-    if (!imageResponse.ok) {
-        throw new HttpError(
-            `bpaigen image download failed: ${imageResponse.status}`,
-            imageResponse.status,
-        );
-    }
-
-    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-    logOps(
-        "Downloaded image, buffer size:",
-        imageBuffer.length,
-        "seed:",
-        result.seed,
-    );
-
-    progress.updateBar(
-        requestId,
-        90,
-        "Success",
-        "Flux Klein generation completed",
-    );
-
-    return {
-        buffer: imageBuffer,
-        isMature: false,
-        isChild: false,
-        trackingData: {
-            actualModel: "klein",
-            usage: {
-                completionImageTokens: 1,
-                totalTokenCount: 1,
-            },
-        },
-    };
 }
 
 /**
@@ -230,7 +146,6 @@ async function generateWithBpaiEditing(
         "Downloading reference image...",
     );
 
-    // Download the first reference image and convert to base64
     const imageUrl = safeParams.image?.[0];
     const { base64 } = await downloadImageAsBase64(imageUrl);
 
@@ -241,11 +156,31 @@ async function generateWithBpaiEditing(
         "Generating with Flux Klein (4B) editing...",
     );
 
-    const body: Record<string, unknown> = {
-        prompt,
+    return await callBpaiApi(prompt, safeParams, requestId, progress, {
         image: base64,
         strength: 1,
-    };
+    });
+}
+
+type BpaiResponse = {
+    status: string;
+    image_url: string;
+    seed: number;
+    job_id: string;
+};
+
+/**
+ * Shared helper for bpaigen.com API calls (both generate and edit).
+ * Callers pass mode-specific fields via extraBody.
+ */
+async function callBpaiApi(
+    prompt: string,
+    safeParams: ImageParams,
+    requestId: string,
+    progress: ProgressManager,
+    extraBody: Record<string, unknown>,
+): Promise<ImageGenerationResult> {
+    const body: Record<string, unknown> = { prompt, ...extraBody };
 
     if (safeParams.seed !== undefined) {
         body.seed = safeParams.seed;
@@ -256,7 +191,7 @@ async function generateWithBpaiEditing(
         body.password = password;
     }
 
-    logOps("bpaigen edit request, prompt:", prompt);
+    logOps("bpaigen request body keys:", Object.keys(body).join(", "));
 
     const response = await fetch(BPAI_GENERATE_URL, {
         method: "POST",
@@ -267,29 +202,26 @@ async function generateWithBpaiEditing(
     if (!response.ok) {
         const errorText = await response.text();
         logError(
-            "bpaigen edit API failed, status:",
+            "bpaigen API failed, status:",
             response.status,
             "response:",
             errorText,
         );
         throw new HttpError(
-            `bpaigen edit API request failed: ${errorText}`,
+            `bpaigen API request failed: ${errorText}`,
             response.status,
         );
     }
 
-    const result = (await response.json()) as {
-        status: string;
-        image_url: string;
-        seed: number;
-        job_id: string;
-    };
+    const result = (await response.json()) as BpaiResponse;
 
     if (result.status !== "succeeded") {
-        throw new Error(`bpaigen edit failed with status: ${result.status}`);
+        throw new Error(
+            `bpaigen generation failed with status: ${result.status}`,
+        );
     }
 
-    logOps("bpaigen edit succeeded, downloading from:", result.image_url);
+    logOps("bpaigen job succeeded, downloading from:", result.image_url);
 
     const imageResponse = await fetch(`${BPAI_BASE_URL}${result.image_url}`);
     if (!imageResponse.ok) {
@@ -300,13 +232,13 @@ async function generateWithBpaiEditing(
     }
 
     const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-    logOps("Downloaded edited image, buffer size:", imageBuffer.length);
+    logOps("Downloaded image, buffer size:", imageBuffer.length, "seed:", result.seed);
 
     progress.updateBar(
         requestId,
         90,
         "Success",
-        "Flux Klein editing completed",
+        "Flux Klein generation completed",
     );
 
     return {

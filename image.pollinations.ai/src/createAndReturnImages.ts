@@ -1140,12 +1140,15 @@ const generateImage = async (
         case "imagen-4":
         case "grok-imagine":
         case "dirtberry":
+        case "dirtberry-pro":
             return await callAirforceImageAPI(
                 prompt,
                 safeParams,
                 progress,
                 requestId,
-                safeParams.model,
+                safeParams.model === "dirtberry-pro"
+                    ? "special-berry"
+                    : safeParams.model,
             );
 
         case "flux":

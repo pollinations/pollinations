@@ -47,6 +47,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-03-11** – **🎨 GPT Images Liberated** We relocated `gpt-image-1-mini` and `gpt-image-1.5` to a new region to sidestep some overly enthusiastic content filters. Reliable, block-free generation is back on the [Unified API](https://gen.pollinations.ai).
 - **2026-03-10** – **🧠 New Models: Claude & Dirtberry** Claude Sonnet 4.6 is now available via the `claude-airforce` text endpoint, alongside `dirtberry` for quick realistic image generation. Hit the [Unified API](https://gen.pollinations.ai) to try them out.
 - **2026-03-10** – **🔑 Bring Your Own Pollen** The Product Packaging Designer and AI Dungeon Master community apps now support Pollinations SSO. Log in, spend your own Pollen balance, and bypass third-party media hosts with our native upload service.
 - **2026-03-09** – **🤖 Polly V2** Our [Discord](https://discord.gg/pollinations-ai-885844321461485618) bot got a brain transplant. Rebuilt with native internals for speed, she now features an adaptive personality that matches your tone, skips the sycophancy, and points you to the docs instead of dumping massive code blocks.
@@ -56,7 +57,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-03-06** – **🧠 Step-3.5-Flash Available** `step-3.5-flash` is now wired up and ready for chat completions via the [Unified API](https://gen.pollinations.ai).
 - **2026-03-06** – **💾 Media Storage Upgrades** Name tags for your files. Media downloads now preserve your original filenames, and re-uploading an existing file automatically resets its 14-day expiration timer.
 - **2026-03-05** – **🚀 GPT Image 1.5 Large** We unblocked the Azure endpoints and wired up the new 1.5 large model. Better pixels, fewer timeouts. Hit the [Unified API](https://gen.pollinations.ai) to try it.
-- **2026-03-05** – **✨ Unified Multimodal Chat** The community shipped `pollinations-ui`, a single interface that handles text, images, video, and audio without making you switch tabs.
 ---
 
 ## 🌱 Introduction
@@ -384,6 +384,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 - [Modal](https://modal.com/): High-performance AI infrastructure
 - [Nebius](https://nebius.com/): AI-optimized cloud infrastructure with NVIDIA GPU clusters
 - [api.airforce](https://api.airforce): AI API gateway — alpha models (imagen-4, grok-video, qwen-character), may be unstable
+- [Seraphyn](https://seraphyn.ai): AI API gateway — community models (gpt-5.4, qwen3-tts)
 
 ## 💚 Support Us
 

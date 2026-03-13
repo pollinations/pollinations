@@ -17,6 +17,7 @@ import {
     openaiUsageToUsage,
 } from "../shared/registry/usage-headers.ts";
 import { availableModels, findModelByName } from "./availableModels.js";
+import { generateEmbeddings } from "./generateEmbeddings.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
@@ -501,6 +502,17 @@ app.post("/openai*", async (c) => {
 app.post("/v1/chat/completions", async (c) => {
     const body = await c.req.json().catch(() => ({}));
     return buildAndHandle(c, body, { isPrivate: true });
+});
+
+// Embeddings endpoint
+app.post("/embeddings", async (c) => {
+    const body = await c.req.json();
+    return generateEmbeddings(body);
+});
+
+app.post("/v1/embeddings", async (c) => {
+    const body = await c.req.json();
+    return generateEmbeddings(body);
 });
 
 app.get("/*", async (c) => {

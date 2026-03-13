@@ -1,4 +1,5 @@
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { resolveServiceId, type ServiceId } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -54,7 +55,9 @@ export function resolveModel(eventType: EventType) {
                 ? DEFAULT_TEXT_MODEL
                 : eventType === "generate.audio"
                   ? DEFAULT_AUDIO_MODEL
-                  : DEFAULT_IMAGE_MODEL;
+                  : eventType === "generate.embedding"
+                    ? DEFAULT_EMBEDDING_MODEL
+                    : DEFAULT_IMAGE_MODEL;
         const model = rawModel || defaultModel;
 
         // Resolve alias to canonical service ID

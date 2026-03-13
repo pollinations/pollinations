@@ -159,9 +159,9 @@ def batch_upgrade_users(
         total_skipped += skipped
 
         # Batch update - only upgrade spore/microbe users
-        # tier_balance = 3.0 matches seed tier pollen (source: enter.pollinations.ai/src/tier-config.ts)
+        # tier_balance is NOT set here — the daily cron refill at midnight UTC handles it
         update_query = f"""
-            UPDATE user SET tier = 'seed', tier_balance = 3.0
+            UPDATE user SET tier = 'seed'
             WHERE github_username IN ({username_list})
             AND (tier IN ('spore', 'microbe') OR tier IS NULL)
         """

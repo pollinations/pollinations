@@ -17,25 +17,40 @@ import type { Env } from "../env.ts";
 
 const log = getLogger(["hono", "admin"]);
 
-// KV key for tracking bulk refill timestamp (separate from individual user refills)
-const BULK_REFILL_KV_KEY = "tier:bulk_refill:last_timestamp";
+// KV keys for tracking bulk refill timestamps
+const HOURLY_REFILL_KV_KEY = "tier:hourly_refill:last_timestamp";
+const DAILY_REFILL_KV_KEY = "tier:daily_refill:last_timestamp";
 
 // Helper functions for tier refill
+function getCurrentHourStartMs(): number {
+    const now = new Date();
+    return Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        now.getUTCHours(),
+    );
+}
+
 function getTodayStartMs(): number {
     const now = new Date();
     return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 }
 
-async function getLastBulkRefillTime(kv: KVNamespace): Promise<number> {
-    const value = await kv.get(BULK_REFILL_KV_KEY);
+async function getLastRefillTime(
+    kv: KVNamespace,
+    key: string,
+): Promise<number> {
+    const value = await kv.get(key);
     return value ? Number.parseInt(value, 10) : 0;
 }
 
-async function setLastBulkRefillTime(
+async function setLastRefillTime(
     kv: KVNamespace,
+    key: string,
     timestamp: number,
 ): Promise<void> {
-    await kv.put(BULK_REFILL_KV_KEY, timestamp.toString());
+    await kv.put(key, timestamp.toString());
 }
 
 function calculateTierBreakdown(
@@ -258,22 +273,32 @@ export const adminRoutes = new Hono<Env>()
         const db = drizzle(c.env.DB);
         const kv = c.env.KV;
 
-        // Check idempotency: has BULK refill already run today?
-        // Uses KV to track bulk refill time separately from individual user refills
+        const currentHourStartMs = getCurrentHourStartMs();
         const todayStartMs = getTodayStartMs();
-        const lastBulkRefillMs = await getLastBulkRefillTime(kv);
+        const refillTimestamp = Date.now();
+        const timestamp = new Date(refillTimestamp).toISOString();
 
-        if (lastBulkRefillMs >= todayStartMs) {
-            const lastRefillDate = new Date(lastBulkRefillMs).toISOString();
-            log.info("TIER_REFILL_SKIPPED: already ran today at {lastRefill}", {
+        // Check idempotency separately for hourly and daily refills
+        const lastHourlyRefillMs = await getLastRefillTime(
+            kv,
+            HOURLY_REFILL_KV_KEY,
+        );
+        const lastDailyRefillMs = await getLastRefillTime(
+            kv,
+            DAILY_REFILL_KV_KEY,
+        );
+
+        const hourlyAlreadyRan = lastHourlyRefillMs >= currentHourStartMs;
+        const dailyAlreadyRan = lastDailyRefillMs >= todayStartMs;
+
+        if (hourlyAlreadyRan && dailyAlreadyRan) {
+            log.info("TIER_REFILL_SKIPPED: hourly and daily already ran", {
                 eventType: "tier_refill_skipped",
-                lastRefill: lastRefillDate,
             });
             return c.json({
                 success: true,
                 skipped: true,
-                reason: "Already refilled today",
-                lastRefill: lastRefillDate,
+                reason: "All refills already ran this period",
             });
         }
 
@@ -287,61 +312,56 @@ export const adminRoutes = new Hono<Env>()
             .from(userTable)
             .where(sql`tier IS NOT NULL`);
 
-        // Check if today is Monday (for weekly spore refill)
-        const now = new Date();
-        const isMonday = now.getUTCDay() === 1;
+        const refilledTiers = new Set<string>();
 
-        // Capture timestamp once for consistent last_tier_grant across all users
-        const refillTimestamp = Date.now();
-        const timestamp = new Date(refillTimestamp).toISOString();
-
-        // Daily refill: only tiers with pollen > 0 and daily cadence
-        // NOTE: If a new tier is added to tier-config.ts, this CASE must be updated.
-        const dailyResult = await db.run(sql`
-            UPDATE user
-            SET
-                tier_balance = CASE tier
-                    WHEN 'seed' THEN ${TIER_POLLEN.seed}
-                    WHEN 'flower' THEN ${TIER_POLLEN.flower}
-                    WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
-                    WHEN 'router' THEN ${TIER_POLLEN.router}
-                    ELSE 0
-                END,
-                last_tier_grant = ${refillTimestamp}
-            WHERE tier IN ('seed', 'flower', 'nectar', 'router')
-        `);
-
-        const dailyRefillCount = dailyResult.meta.changes ?? 0;
-
-        // Weekly refill: spore tier (Monday only)
-        let sporeRefillCount = 0;
-        if (isMonday) {
-            const sporeResult = await db.run(sql`
+        // Hourly refill: spore and seed get small hourly grants
+        let hourlyRefillCount = 0;
+        if (!hourlyAlreadyRan) {
+            const hourlyResult = await db.run(sql`
                 UPDATE user
                 SET
-                    tier_balance = ${TIER_POLLEN.spore},
+                    tier_balance = CASE tier
+                        WHEN 'spore' THEN ${TIER_POLLEN.spore}
+                        WHEN 'seed' THEN ${TIER_POLLEN.seed}
+                        ELSE tier_balance
+                    END,
                     last_tier_grant = ${refillTimestamp}
-                WHERE tier = 'spore'
+                WHERE tier IN ('spore', 'seed')
             `);
-            sporeRefillCount = sporeResult.meta.changes ?? 0;
+            hourlyRefillCount = hourlyResult.meta.changes ?? 0;
+            await setLastRefillTime(kv, HOURLY_REFILL_KV_KEY, refillTimestamp);
+            refilledTiers.add("spore");
+            refilledTiers.add("seed");
         }
 
-        const refillCount = dailyRefillCount + sporeRefillCount;
+        // Daily refill: flower, nectar, router keep daily grants
+        let dailyRefillCount = 0;
+        if (!dailyAlreadyRan) {
+            const dailyResult = await db.run(sql`
+                UPDATE user
+                SET
+                    tier_balance = CASE tier
+                        WHEN 'flower' THEN ${TIER_POLLEN.flower}
+                        WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
+                        WHEN 'router' THEN ${TIER_POLLEN.router}
+                        ELSE tier_balance
+                    END,
+                    last_tier_grant = ${refillTimestamp}
+                WHERE tier IN ('flower', 'nectar', 'router')
+            `);
+            dailyRefillCount = dailyResult.meta.changes ?? 0;
+            await setLastRefillTime(kv, DAILY_REFILL_KV_KEY, refillTimestamp);
+            refilledTiers.add("flower");
+            refilledTiers.add("nectar");
+            refilledTiers.add("router");
+        }
 
-        // Store bulk refill timestamp in KV for idempotency
-        await setLastBulkRefillTime(kv, refillTimestamp);
+        const refillCount = hourlyRefillCount + dailyRefillCount;
 
         // Calculate tier breakdown for response
         const tierBreakdown = calculateTierBreakdown(usersToRefill);
 
         // Send Tinybird events only for tiers that actually got refilled
-        const refilledTiers = new Set([
-            "seed",
-            "flower",
-            "nectar",
-            "router",
-            ...(isMonday ? ["spore"] : []),
-        ]);
         const usersForEvents = usersToRefill.filter(
             (u) => u.tier && refilledTiers.has(u.tier),
         );
@@ -357,13 +377,12 @@ export const adminRoutes = new Hono<Env>()
         );
 
         log.info(
-            "TIER_REFILL_COMPLETE: usersUpdated={usersUpdated} (daily={daily}, spore={spore}, isMonday={isMonday})",
+            "TIER_REFILL_COMPLETE: usersUpdated={usersUpdated} (hourly={hourly}, daily={daily})",
             {
                 eventType: "tier_refill_complete",
                 usersUpdated: refillCount,
+                hourlyRefillCount,
                 dailyRefillCount,
-                sporeRefillCount,
-                isMonday,
                 tierBreakdown,
             },
         );
@@ -372,9 +391,8 @@ export const adminRoutes = new Hono<Env>()
             success: true,
             skipped: false,
             usersRefilled: refillCount,
+            hourlyRefillCount,
             dailyRefillCount,
-            sporeRefillCount,
-            isMonday,
             tierBreakdown,
             timestamp,
         });

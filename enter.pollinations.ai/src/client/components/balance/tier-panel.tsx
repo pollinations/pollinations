@@ -68,12 +68,17 @@ const TierScreen: FC<{
     tier: TierStatus;
     active_tier_name: string;
     pollen: number;
-    cadence: "daily" | "weekly";
+    cadence: "daily" | "hourly";
 }> = ({ tier, active_tier_name, pollen, cadence }) => {
     const tierEmoji = getTierEmoji(tier);
     const panelColor = getPanelColor(tier);
     const cardColor = panelColor;
-    const isWeekly = cadence === "weekly";
+    const isHourly = cadence === "hourly";
+
+    const cadenceLabel = isHourly ? "hour" : "day";
+    const cadenceDescription = isHourly
+        ? "Refills every hour. Unused pollen does not carry over."
+        : "Refills daily at 00:00 UTC. Unused pollen does not carry over.";
 
     return (
         <Panel color={panelColor}>
@@ -87,15 +92,11 @@ const TierScreen: FC<{
                         size="lg"
                         className="font-semibold"
                     >
-                        {pollen} pollen/{isWeekly ? "week" : "day"}
+                        {pollen} pollen/{cadenceLabel}
                     </Badge>
                 </div>
 
-                <p className="text-sm text-gray-500">
-                    {isWeekly
-                        ? "Refreshes every Monday at 00:00 UTC. Unused pollen does not carry over."
-                        : "Refills daily at 00:00 UTC. Unused pollen does not carry over."}
-                </p>
+                <p className="text-sm text-gray-500">{cadenceDescription}</p>
 
                 <p className="text-sm">
                     📧 Questions about your tier?{" "}
@@ -124,7 +125,7 @@ type TierPanelProps = {
         tier: TierStatus;
         displayName: string;
         pollen?: number;
-        cadence?: "daily" | "weekly";
+        cadence?: "daily" | "hourly";
     };
 };
 

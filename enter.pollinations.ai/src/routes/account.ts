@@ -9,11 +9,19 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
-import { tierNames } from "@/tier-config.ts";
+import { getTierCadence, tierNames } from "@/tier-config.ts";
 
-// Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
-function getNextRefillAt(): string {
+// Calculate next tier refill time based on cadence
+function getNextRefillAt(tier: string): string {
     const now = new Date();
+    const cadence = getTierCadence(tier);
+    if (cadence === "hourly") {
+        // Next hour
+        const nextHour = new Date(now);
+        nextHour.setUTCHours(nextHour.getUTCHours() + 1, 0, 0, 0);
+        return nextHour.toISOString();
+    }
+    // Daily: next midnight UTC
     const tomorrow = new Date(now);
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     tomorrow.setUTCHours(0, 0, 0, 0);
@@ -211,8 +219,8 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
-            // Next reset is always midnight UTC (cron runs daily)
-            const nextResetAt = getNextRefillAt();
+            // Next reset depends on tier cadence (hourly for spore/seed, daily for others)
+            const nextResetAt = getNextRefillAt(profile.tier || "spore");
 
             return c.json({
                 name: profile.name,

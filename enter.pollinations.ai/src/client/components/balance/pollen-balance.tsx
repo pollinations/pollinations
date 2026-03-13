@@ -116,7 +116,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={displayTier}
                                 label={tierEmoji}
                                 color="teal"
-                                title={`${tierEmoji} Daily: ${displayTier.toFixed(2)} pollen\nFree pollen from your tier, refills at 00:00 UTC\nUsed first, except for 💎 Paid Only models`}
+                                title={`${tierEmoji} Tier: ${displayTier.toFixed(2)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 💎 Paid Only models`}
                                 position="right"
                                 offset={paidPercentage}
                             />

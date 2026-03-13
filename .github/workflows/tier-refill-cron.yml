@@ -1,9 +1,9 @@
-name: Daily Tier Refill
+name: Hourly Tier Refill
 
 on:
   schedule:
-    # Run at 00:00 UTC daily
-    - cron: '0 0 * * *'
+    # Run at the top of every hour
+    - cron: '0 * * * *'
   workflow_dispatch: # Manual trigger from GitHub UI
 
 jobs:
@@ -13,6 +13,7 @@ jobs:
       - name: Trigger Tier Refill
         run: |
           # Call the tier refill endpoint
+          # Handles both hourly (spore/seed) and daily (flower/nectar/router) refills
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "https://enter.pollinations.ai/api/admin/trigger-refill" \
             -H "Authorization: Bearer ${{ secrets.REFILL_TOKEN }}" \
@@ -34,7 +35,7 @@ jobs:
 
           # Report outcome
           if [ "$(echo "$body" | jq -r '.skipped')" = "true" ]; then
-            echo "::notice::Tier refill skipped - already ran today"
+            echo "::notice::Tier refill skipped - already ran this period"
           else
             users=$(echo "$body" | jq -r '.usersRefilled')
             echo "::notice::Tier refill complete - $users users refilled"

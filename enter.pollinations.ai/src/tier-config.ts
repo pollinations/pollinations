@@ -1,10 +1,46 @@
 export const TIERS = {
-    microbe: { pollen: 0, emoji: "🦠", color: "gray", cadence: "weekly" },
-    spore: { pollen: 1.5, emoji: "🍄", color: "blue", cadence: "weekly" },
-    seed: { pollen: 3, emoji: "🌱", color: "green", cadence: "daily" },
-    flower: { pollen: 10, emoji: "🌸", color: "pink", cadence: "daily" },
-    nectar: { pollen: 20, emoji: "🍯", color: "amber", cadence: "daily" },
-    router: { pollen: 500, emoji: "🐝", color: "red", cadence: "daily" },
+    microbe: {
+        pollen: 0,
+        pollenPerHour: 0,
+        emoji: "🦠",
+        color: "gray",
+        cadence: "hourly",
+    },
+    spore: {
+        pollen: 0.01,
+        pollenPerHour: 0.01,
+        emoji: "🍄",
+        color: "blue",
+        cadence: "hourly",
+    },
+    seed: {
+        pollen: 0.15,
+        pollenPerHour: 0.15,
+        emoji: "🌱",
+        color: "green",
+        cadence: "hourly",
+    },
+    flower: {
+        pollen: 10,
+        pollenPerHour: 10 / 24,
+        emoji: "🌸",
+        color: "pink",
+        cadence: "daily",
+    },
+    nectar: {
+        pollen: 20,
+        pollenPerHour: 20 / 24,
+        emoji: "🍯",
+        color: "amber",
+        cadence: "daily",
+    },
+    router: {
+        pollen: 500,
+        pollenPerHour: 500 / 24,
+        emoji: "🐝",
+        color: "red",
+        cadence: "daily",
+    },
 } as const;
 
 export type TierName = keyof typeof TIERS;
@@ -50,10 +86,22 @@ export function getTierColor(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].color : TIERS[DEFAULT_TIER].color;
 }
 
-export function getTierCadence(tier: TierName): "daily" | "weekly";
-export function getTierCadence(tier: string): "daily" | "weekly";
-export function getTierCadence(tier: string): "daily" | "weekly" {
+export function getTierCadence(tier: TierName): "daily" | "hourly";
+export function getTierCadence(tier: string): "daily" | "hourly";
+export function getTierCadence(tier: string): "daily" | "hourly" {
     return isValidTier(tier)
         ? TIERS[tier].cadence
         : TIERS[DEFAULT_TIER].cadence;
+}
+
+export const TIER_POLLEN_PER_HOUR = Object.fromEntries(
+    Object.entries(TIERS).map(([tier, config]) => [tier, config.pollenPerHour]),
+) as Record<TierName, number>;
+
+export function getTierPollenPerHour(tier: TierName): number;
+export function getTierPollenPerHour(tier: string): number;
+export function getTierPollenPerHour(tier: string): number {
+    return isValidTier(tier)
+        ? TIERS[tier].pollenPerHour
+        : TIERS[DEFAULT_TIER].pollenPerHour;
 }

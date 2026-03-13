@@ -390,22 +390,42 @@ export const proxyRoutes = new Hono<Env>()
             return c.json(models);
         },
     )
-    .get("/embeddings/models", async (c) => {
-        const services = getVisibleEmbeddingServices();
-        const models = services.map((id) => {
-            const def = getServiceDefinition(id);
-            return {
-                id,
-                object: "model",
-                created: Math.floor(Date.now() / 1000),
-                owned_by: def?.provider || "pollinations",
-                description: def?.description,
-                input_modalities: def?.inputModalities,
-                output_modalities: def?.outputModalities,
-            };
-        });
-        return c.json({ object: "list", data: models });
-    })
+    .get(
+        "/embeddings/models",
+        describeRoute({
+            tags: ["🔢 Embeddings"],
+            summary: "List Embedding Models",
+            description:
+                "Returns available embedding models with pricing, capabilities, and supported input modalities.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(GetModelsResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        async (c) => {
+            const services = getVisibleEmbeddingServices();
+            const models = services.map((id) => {
+                const def = getServiceDefinition(id);
+                return {
+                    id,
+                    object: "model",
+                    created: Math.floor(Date.now() / 1000),
+                    owned_by: def?.provider || "pollinations",
+                    description: def?.description,
+                    input_modalities: def?.inputModalities,
+                    output_modalities: def?.outputModalities,
+                };
+            });
+            return c.json({ object: "list", data: models });
+        },
+    )
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth({ allowApiKey: true, allowSessionCookie: false }))
     .use(frontendKeyRateLimit)

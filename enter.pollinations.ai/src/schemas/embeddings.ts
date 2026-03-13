@@ -59,8 +59,8 @@ export const CreateEmbeddingRequestSchema = z
         }),
         encoding_format: z
             .enum(["float", "base64"])
-            .default("float")
             .optional()
+            .default("float")
             .meta({
                 description: "Encoding format for the embedding values",
             }),

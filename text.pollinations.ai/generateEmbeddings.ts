@@ -5,6 +5,10 @@ import googleCloudAuth from "./auth/googleCloudAuth.ts";
 const GOOGLE_PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 const VERTEX_REGION = "us-central1";
 
+// Token estimate constants (Gemini docs: ~258 tokens per image, ~32 tokens/sec for audio)
+const IMAGE_TOKEN_ESTIMATE = 258;
+const AUDIO_TOKEN_ESTIMATE = 500;
+
 // Gemini embedding task types (passed through if provided)
 type GeminiTaskType =
     | "SEMANTIC_SIMILARITY"
@@ -101,6 +105,23 @@ async function inputToGeminiParts(
                     inline_data: { mime_type: mimeType, data },
                 });
             } else {
+                // Block internal/metadata URLs to prevent SSRF
+                const parsed = new URL(url);
+                const hostname = parsed.hostname;
+                if (
+                    hostname === "localhost" ||
+                    hostname.startsWith("127.") ||
+                    hostname.startsWith("10.") ||
+                    hostname.startsWith("192.168.") ||
+                    hostname.startsWith("169.254.") ||
+                    hostname === "metadata.google.internal" ||
+                    /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+                ) {
+                    throw new Error(
+                        `Blocked request to private/internal URL: ${hostname}`,
+                    );
+                }
+
                 const response = await fetch(url);
                 const buffer = await response.arrayBuffer();
                 const base64 = Buffer.from(buffer).toString("base64");
@@ -111,7 +132,7 @@ async function inputToGeminiParts(
                     inline_data: { mime_type: contentType, data: base64 },
                 });
             }
-            result.imageTokenEstimate += 258;
+            result.imageTokenEstimate += IMAGE_TOKEN_ESTIMATE;
         } else if (part.type === "input_audio") {
             const mimeType = `audio/${part.input_audio.format || "mp3"}`;
             result.parts.push({
@@ -120,7 +141,7 @@ async function inputToGeminiParts(
                     data: part.input_audio.data,
                 },
             });
-            result.audioTokenEstimate += 500;
+            result.audioTokenEstimate += AUDIO_TOKEN_ESTIMATE;
         }
     }
 
@@ -135,6 +156,10 @@ async function callGeminiEmbed(
     taskType?: GeminiTaskType,
     outputDimensionality?: number,
 ): Promise<GeminiEmbedResponse> {
+    if (!GOOGLE_PROJECT_ID) {
+        throw new Error("GOOGLE_PROJECT_ID not configured");
+    }
+
     const accessToken = await googleCloudAuth.getAccessToken();
     if (!accessToken) {
         throw new Error(
@@ -220,19 +245,10 @@ export async function generateEmbeddings(
         );
     }
 
-    // Track usage per modality for billing
-    let totalTextTokens = 0;
-    let totalImageTokens = 0;
-    let totalAudioTokens = 0;
-
-    const embeddings = await Promise.all(
+    // Collect per-input results first, then sum (avoids race condition in Promise.all)
+    const results = await Promise.all(
         inputs.map(async (singleInput, index) => {
             const parsed = await inputToGeminiParts(singleInput);
-
-            totalTextTokens += parsed.textTokenEstimate;
-            totalImageTokens += parsed.imageTokenEstimate;
-            totalAudioTokens += parsed.audioTokenEstimate;
-
             const result = await callGeminiEmbed(
                 modelId,
                 parsed.parts,
@@ -240,22 +256,31 @@ export async function generateEmbeddings(
                 dimensions,
             );
 
-            // Use actual token count from Gemini if available
-            if (result.usageMetadata?.promptTokenCount) {
-                // Override text estimate with actual count (Gemini reports total)
-                totalTextTokens +=
-                    result.usageMetadata.promptTokenCount -
-                    parsed.textTokenEstimate;
-            }
+            // Use actual token count from Gemini when available, fall back to estimate
+            const textTokens =
+                result.usageMetadata?.promptTokenCount ??
+                parsed.textTokenEstimate;
 
             return {
                 object: "embedding" as const,
                 embedding: result.embedding.values,
                 index,
+                textTokens,
+                imageTokens: parsed.imageTokenEstimate,
+                audioTokens: parsed.audioTokenEstimate,
             };
         }),
     );
 
+    const embeddings = results.map(({ object, embedding, index }) => ({
+        object,
+        embedding,
+        index,
+    }));
+
+    const totalTextTokens = results.reduce((s, r) => s + r.textTokens, 0);
+    const totalImageTokens = results.reduce((s, r) => s + r.imageTokens, 0);
+    const totalAudioTokens = results.reduce((s, r) => s + r.audioTokens, 0);
     const promptTokens = totalTextTokens + totalImageTokens + totalAudioTokens;
 
     // Build usage headers per modality for correct billing

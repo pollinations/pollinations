@@ -27,7 +27,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         ],
         description:
             "Gemini Embedding 2 - Multimodal embeddings for text, images, audio, video. 3072 dimensions, 8192 token limit.",
-        inputModalities: ["text", "image", "audio", "video"],
+        inputModalities: ["text", "image", "audio"],
         outputModalities: ["embedding"],
         contextLength: 8192,
     },

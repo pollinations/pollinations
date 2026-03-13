@@ -1,0 +1,34 @@
+{
+  "pr_number": 9071,
+  "title": "fix: tier upgrade defers balance refill to daily cron",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9071",
+  "merged_at": "2026-03-13T15:42:36Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Midnight pollen delivery",
+    "blurb": "We've synced up our tier upgrades with the daily clock. When you level up, your fresh pollen credits will now arrive right on schedule with the midnight delivery.",
+    "summary": "Corrected the tier upgrade logic to defer pollen balance refills to the standard daily midnight cron job.",
+    "impact": "Account upgrades now correctly wait for the daily system-wide refill cycle to grant new pollen allowances, ensuring consistent daily distributions.",
+    "keywords": [
+      "billing",
+      "tiers",
+      "cron",
+      "pollen",
+      "bug_fix"
+    ],
+    "visual_concept": "The pollinations bee (Polly) and the Nomnom creature waiting patiently for a midnight delivery. A glowing retro clock emphasizes the schedule/cron aspect. Night-time cozy vibes.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny nightcap, sitting next to a retro digital clock glowing lime green (#ecf874) showing 11:59. The round Nomnom creature waits patiently nearby with an empty bowl. Soft dark lavender and pastel peach night-time gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-13T15:46:29.384051+00:00"
+}

@@ -599,7 +599,8 @@ const callAzureGPTImageWithEndpoint = async (
     // GPT Image models support both generation and editing
     // Edit API uses /images/edits endpoint with multipart/form-data
     if (isEditMode) {
-        endpoint = endpoint.replace("/images/generations", "/images/edits")
+        endpoint = endpoint
+            .replace("/images/generations", "/images/edits")
             .replace(/api-version=[^&]+/, "api-version=2025-04-01-preview");
         logCloudflare(`Using Azure ${config.modelName} in edit mode (img2img)`);
     } else {

@@ -68,6 +68,72 @@ const {
 // Cloudflare Zone ID for pollinations.ai
 const CLOUDFLARE_ZONE_ID = "0942247b74a58e4fc5ea70341a3754a3";
 
+const CF_API = "https://api.cloudflare.com/client/v4";
+const cfHeaders = {
+    "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
+    "Content-Type": "application/json",
+};
+
+/**
+ * Find which Pages project holds a custom domain and move it to the target project.
+ * Lists all projects, checks their domains, removes from the old, adds to the new.
+ */
+async function reclaimDomain(customDomain, targetProject) {
+    // List all Pages projects
+    const res = await fetch(
+        `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects?per_page=50`,
+        { headers: cfHeaders },
+    );
+    const { result: projects } = await res.json();
+
+    for (const project of projects || []) {
+        if (project.name === targetProject) continue;
+
+        // Check if this project holds the domain
+        const domainsRes = await fetch(
+            `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${project.name}/domains`,
+            { headers: cfHeaders },
+        );
+        const { result: domains } = await domainsRes.json();
+        const hasDomain = domains?.some((d) => d.name === customDomain);
+        if (!hasDomain) continue;
+
+        console.log(`   Found domain on old project: ${project.name} — removing...`);
+        const deleteRes = await fetch(
+            `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${project.name}/domains/${customDomain}`,
+            { method: "DELETE", headers: cfHeaders },
+        );
+
+        if (!deleteRes.ok) {
+            const err = await deleteRes.json();
+            console.warn(`   Failed to remove from ${project.name}: ${JSON.stringify(err)}`);
+            return false;
+        }
+        console.log(`   Removed from ${project.name}`);
+
+        // Now add to target project
+        const addRes = await fetch(
+            `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${targetProject}/domains`,
+            {
+                method: "POST",
+                headers: cfHeaders,
+                body: JSON.stringify({ name: customDomain }),
+            },
+        );
+
+        if (!addRes.ok) {
+            const err = await addRes.json();
+            console.warn(`   Failed to add to ${targetProject}: ${JSON.stringify(err)}`);
+            return false;
+        }
+        console.log(`   ✅ Domain reclaimed and added to ${targetProject}`);
+        return true;
+    }
+
+    console.warn(`   Could not find domain ${customDomain} on any project`);
+    return false;
+}
+
 async function deployApp(appName) {
     console.log(`🚀 Deploying ${appName}...`);
 
@@ -90,13 +156,10 @@ async function deployApp(appName) {
     // Step 1: Create Pages project
     console.log("\n1️⃣ Creating Cloudflare Pages project...");
     const createResponse = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects`,
+        `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects`,
         {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
-                "Content-Type": "application/json",
-            },
+            headers: cfHeaders,
             body: JSON.stringify({
                 name: projectName,
                 production_branch: "production",
@@ -122,16 +185,13 @@ async function deployApp(appName) {
 
     console.log("✅ Project created/exists");
 
-    // Step 2: Add custom domain
+    // Step 2: Add custom domain (remove from old projects first if needed)
     console.log("\n2️⃣ Adding custom domain...");
     const domainResponse = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${projectName}/domains`,
+        `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${projectName}/domains`,
         {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
-                "Content-Type": "application/json",
-            },
+            headers: cfHeaders,
             body: JSON.stringify({
                 name: customDomain,
             }),
@@ -140,30 +200,31 @@ async function deployApp(appName) {
 
     const domainResult = await domainResponse.json();
 
-    if (
-        !domainResponse.ok &&
-        !domainResult.errors?.some((e) => e.code === 8000007)
-    ) {
-        // 8000007 = domain already exists
-        console.warn(`⚠️  Domain setup: ${JSON.stringify(domainResult)}`);
-    } else {
+    if (domainResponse.ok || domainResult.errors?.some((e) => e.code === 8000007)) {
         console.log("✅ Custom domain added");
+    } else if (domainResult.errors?.some((e) => e.code === 8000018)) {
+        // 8000018 = domain already added to another project — find and remove it
+        console.log("⚠️  Domain claimed by another project, attempting to reclaim...");
+        const reclaimed = await reclaimDomain(customDomain, projectName);
+        if (!reclaimed) {
+            console.warn(`⚠️  Could not reclaim domain: ${JSON.stringify(domainResult)}`);
+        }
+    } else {
+        console.warn(`⚠️  Domain setup: ${JSON.stringify(domainResult)}`);
     }
 
-    // Step 3: Create DNS CNAME record
-    console.log("\n3️⃣ Creating DNS CNAME record...");
+    // Step 3: Create or update DNS CNAME record
+    console.log("\n3️⃣ Setting up DNS CNAME record...");
+    const cnamTarget = `${projectName}.pages.dev`;
     const dnsResponse = await fetch(
-        `https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records`,
+        `${CF_API}/zones/${CLOUDFLARE_ZONE_ID}/dns_records`,
         {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
-                "Content-Type": "application/json",
-            },
+            headers: cfHeaders,
             body: JSON.stringify({
                 type: "CNAME",
                 name: subdomain,
-                content: `${projectName}.pages.dev`,
+                content: cnamTarget,
                 ttl: 1,
                 proxied: true,
             }),
@@ -172,11 +233,36 @@ async function deployApp(appName) {
 
     const dnsResult = await dnsResponse.json();
 
-    if (!dnsResponse.ok && !dnsResult.errors?.some((e) => e.code === 81057)) {
-        // 81057 = DNS record already exists
-        console.warn(`⚠️  DNS setup: ${JSON.stringify(dnsResult)}`);
-    } else {
+    if (dnsResponse.ok) {
         console.log("✅ DNS CNAME record created");
+    } else if (dnsResult.errors?.some((e) => e.code === 81053 || e.code === 81057)) {
+        // Record already exists — find it and update to point to the correct project
+        console.log("   DNS record exists, updating target...");
+        const listRes = await fetch(
+            `${CF_API}/zones/${CLOUDFLARE_ZONE_ID}/dns_records?type=CNAME&name=${customDomain}`,
+            { headers: cfHeaders },
+        );
+        const { result: records } = await listRes.json();
+        const record = records?.[0];
+        if (record && record.content !== cnamTarget) {
+            const updateRes = await fetch(
+                `${CF_API}/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${record.id}`,
+                {
+                    method: "PATCH",
+                    headers: cfHeaders,
+                    body: JSON.stringify({ content: cnamTarget }),
+                },
+            );
+            if (updateRes.ok) {
+                console.log(`   ✅ Updated CNAME: ${record.content} → ${cnamTarget}`);
+            } else {
+                console.warn(`   ⚠️  Failed to update DNS: ${JSON.stringify(await updateRes.json())}`);
+            }
+        } else {
+            console.log("✅ DNS CNAME already correct");
+        }
+    } else {
+        console.warn(`⚠️  DNS setup: ${JSON.stringify(dnsResult)}`);
     }
 
     // Step 4: Update Turnstile (placeholder - needs actual API)

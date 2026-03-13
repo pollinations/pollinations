@@ -93,5 +93,12 @@
         "outputDir": "dist",
         "title": "SlidePainter",
         "description": "AI-powered slide image generator by Pollinations"
+    },
+    "playground": {
+        "subdomain": "playground",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "title": "Pollinations Playground",
+        "description": "A playground for testing and showcasing new AI models and features"
     }
 }

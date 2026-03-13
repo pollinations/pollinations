@@ -88,7 +88,7 @@ export const fetchPersonaMessage = async (
   gameState: GameState,
   existingMessages: Message[] = [],
 ): Promise<Message> => {
-  const createErrorMessage = (error: unknown): Message => 
+  const createErrorMessage = (_error: unknown): Message =>
     createMessage(persona, "Apologies, I'm experiencing some difficulties.", 'none');
 
   try {

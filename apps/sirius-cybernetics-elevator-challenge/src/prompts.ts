@@ -129,7 +129,7 @@ export const getMarvinPrompt = (gameState: GameState) => {
   `;
 }
 
-export const getGuidePrompt = (gameState: GameState) => {
+export const getGuidePrompt = (_gameState: GameState) => {
   const mentionTowelInGroundFloor = Math.random() < 0.3 ? 'Mention there could be a towel in floor 1 urgently.' : '';
   
   return `

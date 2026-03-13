@@ -1,4 +1,3 @@
-import React from 'react';
 import { ElevatorAsciiProps, GAME_CONFIG } from '@/types';
 
 export const ElevatorAscii = ({ 

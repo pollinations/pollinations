@@ -1,0 +1,34 @@
+{
+  "pr_number": 8985,
+  "title": "perf: optimize seed upgrade workflow (25h → seconds)",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8985",
+  "merged_at": "2026-03-13T15:08:03Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Speedrunning the Seed upgrades",
+    "blurb": "We optimized the Spore to Seed auto-upgrade workflow, taking it from a 25-hour marathon down to mere seconds. Batch processing means you get your Pollen credits faster than ever.",
+    "summary": "Optimized the automated Spore to Seed tier upgrade workflow by replacing per-user subprocesses with batch SQL updates and adding concurrent GitHub API validation.",
+    "impact": "Contributors will now receive their Seed tier upgrades and daily Pollen credits almost instantly instead of waiting up to 25 hours.",
+    "keywords": [
+      "performance",
+      "automation",
+      "database",
+      "github-api",
+      "tiers"
+    ],
+    "visual_concept": "Polly the bee zooming incredibly fast with aviator goggles, dropping seeds into a garden, while the Robot companion holds a stopwatch looking amazed at the speed.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny aviator goggles, zooming at high speed while dropping glowing green seeds into a digital garden. A chunky retro robot with a CRT monitor head holds a stopwatch showing '0:01', looking amazed. Soft lime green (#ecf874) and pastel peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-13T15:09:27.606456+00:00"
+}

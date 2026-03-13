@@ -1,0 +1,34 @@
+{
+  "pr_number": 9073,
+  "title": "feat: hourly pollen refill announcement",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9073",
+  "merged_at": "2026-03-13T16:43:23Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A steady drip of nectar",
+    "blurb": "We're switching to hourly pollen refills! Spores and Seeds now get a steady drip of credits throughout the day, keeping your creative engines running without the long wait.",
+    "summary": "Updated the platform news banner to announce the transition to hourly pollen refills for Spore and Seed tiers starting March 16.",
+    "impact": "Users will now receive a continuous drip of free credits (0.01p/hr for Spores, 0.15p/hr for Seeds) instead of waiting for bulk refills.",
+    "keywords": [
+      "billing",
+      "pollen",
+      "credits",
+      "refill",
+      "banner"
+    ],
+    "visual_concept": "The concept is 'hourly refills' or a 'steady drip' of pollen/credits. A cute hourglass, a clock, or a dripping honey dipper. The bee mascot (Polly) catching drops of glowing nectar/pollen in a little jar, with a clock or timer motif in the background.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny worker's apron, happily catching glowing drops of golden nectar falling from a large, chunky retro clock. Soft lime green (#ecf874) and warm peach gradient background. A cute chunky pixel robot with a monitor head holds a sign saying 'HOURLY'. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-13T16:44:09.133011+00:00"
+}

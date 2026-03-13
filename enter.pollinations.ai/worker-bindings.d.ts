@@ -3,7 +3,7 @@
 declare namespace Cloudflare {
     interface GlobalProps {
         mainModule: typeof import("./src/index");
-        durableNamespaces: "PollenRateLimiter";
+        durableNamespaces: "PollenRateLimiter" | "RequestDeduplicator";
     }
     interface Env {
         KV: KVNamespace;
@@ -73,6 +73,7 @@ declare namespace Cloudflare {
         AIRFORCE_API_KEY: string;
         TINYBIRD_D1_SYNC_TOKEN: string;
         POLLEN_RATE_LIMITER: DurableObjectNamespace /* PollenRateLimiter from pollinations-enter */;
+        REQUEST_DEDUPLICATOR: DurableObjectNamespace /* RequestDeduplicator from pollinations-enter */;
         IMAGE_BUCKET: R2Bucket;
         TEXT_BUCKET: R2Bucket;
         DB: D1Database;

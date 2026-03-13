@@ -367,7 +367,7 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-13").getTime(),
-                completionImageTokens: 0.001, // ~free via api.airforce
+                completionImageTokens: 0.0015, // 1.5x dirtberry ($0.001)
             },
         ],
         description:

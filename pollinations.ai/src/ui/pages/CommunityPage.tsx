@@ -1,11 +1,12 @@
 import { COPY_CONSTANTS } from "../../copy/constants";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+import { BuildDiary } from "../components/BuildDiary";
 import { ImageGenerator } from "../components/ImageGenerator";
-import { NewsSection } from "../components/NewsSection";
 import { TopContributors } from "../components/TopContributors";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
@@ -23,6 +24,7 @@ interface VotingIssue {
 
 export default function CommunityPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(COMMUNITY_PAGE);
+    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const { translated: translatedVotingIssues } = useTranslate(
         COMMUNITY_PAGE.votingIssues as VotingIssue[],
@@ -37,152 +39,283 @@ export default function CommunityPage() {
     return (
         <PageContainer>
             <PageCard isTranslating={isTranslating}>
+                {/* Section 1 — Hero */}
                 <Title>{pageCopy.title}</Title>
-                <Body spacing="none" className="mb-8">
-                    {pageCopy.subtitle}
-                </Body>
-
-                {/* Discord & GitHub Cards - Bold brutalist blocks */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
-                    {/* Discord Card */}
-                    <SubCard>
-                        <Heading variant="lime" as="h2">
-                            {pageCopy.discordTitle}
-                        </Heading>
-                        <div className="font-body text-sm text-text-body-secondary mb-6">
-                            {pageCopy.discordSubtitle}
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <Button
-                                as="a"
-                                href={SOCIAL_LINKS.discord.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="primary"
-                                size="default"
-                            >
-                                {pageCopy.joinDiscordButton}
-                                <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
-                            </Button>
-                            <Button
-                                as="a"
-                                href={LINKS.discordPollenBeta}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="secondary"
-                                size="default"
-                            >
-                                {pageCopy.pollenBetaButton}
-                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                            </Button>
-                        </div>
-                    </SubCard>
-
-                    {/* GitHub Card */}
-                    <SubCard>
-                        <Heading variant="rose" as="h2">
-                            {pageCopy.githubTitle}
-                        </Heading>
-                        <div className="font-body text-sm text-text-body-secondary mb-6">
-                            {pageCopy.githubSubtitle}
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <Button
-                                as="a"
-                                href={SOCIAL_LINKS.github.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="primary"
-                                size="default"
-                            >
-                                {pageCopy.starContributeButton}
-                                <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
-                            </Button>
-                            <Button
-                                as="a"
-                                href={LINKS.githubSubmitApp}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="secondary"
-                                size="default"
-                            >
-                                {pageCopy.submitAppButton}
-                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                            </Button>
-                        </div>
-                    </SubCard>
+                <div className="mb-8">
+                    <Body spacing="none">
+                        {pageCopy.subtitlePrefix}{" "}
+                        <strong>{pageCopy.subtitleBold}</strong>
+                        {pageCopy.subtitleSuffix}
+                    </Body>
                 </div>
+                <p className="font-body text-base text-subtle mb-4">
+                    <span className="font-headline text-xs font-black text-muted">
+                        {pageCopy.heroStat1}
+                    </span>{" "}
+                    {pageCopy.heroStat1Label}
+                    <span className="mx-2 text-border-subtle">·</span>
+                    <span className="font-headline text-xs font-black text-muted">
+                        {pageCopy.heroStat2}
+                    </span>{" "}
+                    {pageCopy.heroStat2Label}
+                    <span className="mx-2 text-border-subtle">·</span>
+                    <span className="font-headline text-xs font-black text-muted">
+                        {pageCopy.heroStat3}
+                    </span>{" "}
+                    {pageCopy.heroStat3Label}
+                </p>
 
-                {/* Divider */}
                 <Divider />
 
-                {/* Voting Section */}
+                {/* Section 2 — Contributing Earns Pollen */}
                 <div className="mb-12">
-                    <Heading variant="section">
-                        {pageCopy.votingTitle || "Have Your Say"}
+                    <Heading variant="section" spacing="comfortable">
+                        {pageCopy.contributeTitle}
                     </Heading>
-                    <Body size="sm" spacing="comfortable">
-                        {pageCopy.votingSubtitle ||
-                            "We build what the community wants. Vote on what matters to you:"}
-                    </Body>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {translatedVotingIssues.map((issue) => (
-                            <a
-                                key={issue.url}
-                                href={issue.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block bg-input-background p-4 rounded-sub-card border-l-4 border-border-brand hover:border-border-highlight transition-colors"
+                    <Body spacing="comfortable">{pageCopy.contributeBody}</Body>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
                             >
-                                <div className="flex flex-col gap-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-2xl">
-                                            {issue.emoji}
-                                        </span>
-                                        <span className="font-mono text-xs text-text-caption">
-                                            👍 {issue.votes}
-                                        </span>
-                                    </div>
-                                    <p className="font-headline text-sm font-black text-text-body-main">
-                                        {issue.title}
-                                    </p>
-                                </div>
-                            </a>
-                        ))}
+                                {pageCopy.contributeCard1Title}
+                            </Heading>
+                            <Body size="sm" spacing="none">
+                                {pageCopy.contributeCard1Body}
+                            </Body>
+                        </div>
+                        <div className="p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
+                            >
+                                {pageCopy.contributeCard2Title}
+                            </Heading>
+                            <Body size="sm" spacing="none">
+                                {pageCopy.contributeCard2Body}
+                            </Body>
+                        </div>
+                        <div className="p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
+                            >
+                                {pageCopy.contributeCard3Title}
+                            </Heading>
+                            <Body size="sm" spacing="none">
+                                {pageCopy.contributeCard3Body}
+                            </Body>
+                        </div>
+                    </div>
+                    <Body
+                        size="sm"
+                        spacing="comfortable"
+                        className="text-muted"
+                    >
+                        {pageCopy.contributeNote}
+                    </Body>
+                    <a
+                        href={LINKS.enterTiersFaq}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
+                    >
+                        {pageCopy.learnAboutTiersButton}
+                        <ExternalLinkIcon className="w-3 h-3" strokeWidth="4" />
+                    </a>
+                </div>
+
+                <Divider />
+
+                {/* Section 3 — Jump In */}
+                <div className="mb-12">
+                    <Heading variant="section" spacing="comfortable">
+                        {pageCopy.jumpInTitle}
+                    </Heading>
+                    <div className="flex flex-col gap-4">
+                        {/* Discord — full width */}
+                        <SubCard>
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
+                            >
+                                {pageCopy.discordTitle}
+                            </Heading>
+                            <Body size="sm" spacing="comfortable">
+                                {pageCopy.discordSubtitle}
+                            </Body>
+                            <div className="flex flex-wrap gap-2">
+                                <Button
+                                    as="a"
+                                    href={SOCIAL_LINKS.discord.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="primary"
+                                    size="default"
+                                    className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                                >
+                                    {pageCopy.joinDiscordButton}
+                                    <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                                </Button>
+                                <Button
+                                    as="a"
+                                    href={LINKS.discordPollenBeta}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="secondary"
+                                    size="default"
+                                    className="bg-accent-strong text-dark hover:bg-accent-strong/80 hover:text-dark"
+                                >
+                                    {pageCopy.pollenBetaButton}
+                                    <ExternalLinkIcon className="w-3 h-3 text-dark" />
+                                </Button>
+                            </div>
+                        </SubCard>
+
+                        {/* GitHub + Submit App — 2 columns on desktop */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SubCard>
+                                <Heading
+                                    variant="subsection"
+                                    as="h3"
+                                    spacing="tight"
+                                >
+                                    {pageCopy.githubTitle}
+                                </Heading>
+                                <Body size="sm" spacing="comfortable">
+                                    {pageCopy.githubSubtitle}
+                                </Body>
+                                <Button
+                                    as="a"
+                                    href={SOCIAL_LINKS.github.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="primary"
+                                    size="default"
+                                    className="bg-tertiary-strong text-dark hover:bg-tertiary-strong/80 hover:text-dark"
+                                >
+                                    {pageCopy.starContributeButton}
+                                    <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                                </Button>
+                            </SubCard>
+
+                            <SubCard>
+                                <Heading
+                                    variant="subsection"
+                                    as="h3"
+                                    spacing="tight"
+                                >
+                                    {pageCopy.submitAppTitle}
+                                </Heading>
+                                <Body size="sm" spacing="comfortable">
+                                    {pageCopy.submitAppSubtitle}
+                                </Body>
+                                <Button
+                                    as="a"
+                                    href={LINKS.githubSubmitApp}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="primary"
+                                    size="default"
+                                    className="bg-primary-strong text-dark hover:bg-primary-strong/80 hover:text-dark"
+                                >
+                                    {pageCopy.submitAppButton}
+                                    <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                                </Button>
+                            </SubCard>
+                        </div>
                     </div>
                 </div>
 
-                {/* Divider */}
                 <Divider />
 
-                {/* Top Contributors Component */}
-                <TopContributors />
-
-                {/* News Section */}
-                <NewsSection limit={15} title={pageCopy.newsTitle} />
-
-                {/* Supporters Section */}
-                <div>
-                    <Heading variant="section">
-                        {pageCopy.supportersTitle}
+                {/* Section 4 — Voting + Contributors */}
+                <div className="mb-12">
+                    <Heading variant="section" spacing="comfortable">
+                        {pageCopy.votingTitle}
                     </Heading>
-                    <Body size="sm" spacing="comfortable">
-                        {pageCopy.supportersSubtitle}
-                    </Body>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {translatedSupporters.map((supporter, index) => {
-                            // Use original English description for logo prompt (keeps images consistent)
-                            const originalSupporter =
-                                COMMUNITY_PAGE.supportersList[index];
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {translatedVotingIssues.map((issue, i) => {
+                            const colors = [
+                                "border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
+                                "border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
+                                "border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                            ];
                             return (
                                 <a
-                                    key={supporter.name}
-                                    href={supporter.url}
+                                    key={issue.url}
+                                    href={issue.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group flex flex-col items-center text-center hover:opacity-70 transition-opacity"
+                                    className={`block bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i]} transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
                                 >
-                                    <div className="w-16 h-16 mb-2 overflow-hidden">
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-2xl">
+                                                {issue.emoji}
+                                            </span>
+                                            <span className="font-mono text-xs text-subtle">
+                                                {issue.votes}{" "}
+                                                {pageCopy.votesLabel}
+                                            </span>
+                                        </div>
+                                        <p className="font-headline text-xs font-black text-dark">
+                                            {issue.title}
+                                        </p>
+                                    </div>
+                                </a>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <Divider />
+
+                <TopContributors />
+
+                {/* Section 5 — Build Diary + Supporters */}
+                <div className="mb-12">
+                    <Heading variant="section">
+                        {pageCopy.buildDiaryTitle}
+                    </Heading>
+                    <Body size="sm" spacing="comfortable">
+                        {pageCopy.buildDiarySubtitle}
+                    </Body>
+                    <BuildDiary />
+                </div>
+
+                <Divider />
+
+                <div>
+                    <Heading variant="section" className="mb-8">
+                        {pageCopy.supportersTitle}
+                    </Heading>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-8">
+                        {translatedSupporters.map((supporter, index) => {
+                            const originalSupporter =
+                                COMMUNITY_PAGE.supportersList[index];
+                            const borderColors = [
+                                "border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)_/_0.3)]",
+                                "border-secondary-strong shadow-[2px_2px_0_rgb(var(--secondary-strong)_/_0.3)]",
+                                "border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                                "border-accent-strong shadow-[2px_2px_0_rgb(var(--accent-strong)_/_0.3)]",
+                            ];
+                            return (
+                                <div
+                                    key={supporter.name}
+                                    className="flex flex-col items-center text-center"
+                                >
+                                    <a
+                                        href={supporter.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`block w-16 h-16 overflow-hidden bg-white/60 rounded-sub-card border-r-2 border-b-2 ${borderColors[index % borderColors.length]} transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none mb-2`}
+                                    >
                                         <ImageGenerator
                                             key={`${supporter.name}-logo`}
                                             prompt={`${COPY_CONSTANTS.supporterLogoPrompt} ${originalSupporter.name}. ${originalSupporter.description}`}
@@ -195,16 +328,13 @@ export default function CommunityPage() {
                                                 COPY_CONSTANTS.supporterLogoModel
                                             }
                                             alt={supporter.name}
-                                            className="w-full h-full object-contain"
+                                            className="w-full h-full object-cover"
                                         />
-                                    </div>
-                                    <p className="font-headline text-xs font-black text-text-body-main mb-1 leading-tight">
+                                    </a>
+                                    <p className="font-body text-[10px] font-bold text-dark leading-tight">
                                         {supporter.name}
                                     </p>
-                                    <p className="font-body text-[10px] text-text-body-tertiary leading-tight line-clamp-2">
-                                        {supporter.description}
-                                    </p>
-                                </a>
+                                </div>
                             );
                         })}
                     </div>

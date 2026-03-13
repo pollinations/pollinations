@@ -15,7 +15,7 @@ import { cn } from "../../../utils";
 // - PlayPage: "Create" / "Watch" (spacing="none" for custom)
 // ============================================
 const titleVariants = cva(
-    "font-title text-4xl md:text-5xl font-black text-text-body-main leading-tight pt-1",
+    "font-title text-xl md:text-2xl font-black text-dark leading-tight pt-1 pb-1",
     {
         variants: {
             spacing: {
@@ -57,54 +57,29 @@ Title.displayName = "Title";
 // ============================================
 // HEADING COMPONENT (H2/H3)
 // ============================================
-// Section headings - organizes content into sections
-// Used for: Major sections, subsections, card titles
-//
-// Variant examples:
-// - section: Main content sections with rose border-left accent
-//   → HelloPage: "Pollen: One Simple Credit", "Fuel Your Vision", etc.
-//   → PlayPage: "Authentication", "Integrate"
-//   → Used for: Major page sections (H2)
-//
-// - lime: Subsection headings with lime color
-//   → HelloPage: "Simple & Fast: Buy What You Need" (inside cards)
-//   → CommunityPage: "Discord" card title
-//   → Used for: Feature cards, positive/action items (H3)
-//
-// - rose: Subsection headings with rose color
-//   → HelloPage: "Our Investment in You: The Sponsorship Program"
-//   → CommunityPage: "GitHub" card title
-//   → Used for: Feature cards, highlight items (H3)
-//
-// - simple: Clean headings without border or color
-//   → Used for: Nested sections, tertiary headings
+// - section: Major page sections (H2) — left border accent
+// - subsection: Card titles, nested sections (H3) — smaller, no border
 // ============================================
-const headingVariants = cva(
-    "font-headline font-black text-text-body-main uppercase",
-    {
-        variants: {
-            variant: {
-                // Section headings with border-left accent (H2 - major sections)
-                section:
-                    "text-2xl md:text-3xl tracking-widest border-l-4 border-border-brand pl-4",
-                // Colored headings (H3 - subsections in cards)
-                lime: "text-lg tracking-wider text-text-highlight",
-                rose: "text-lg tracking-wider text-text-brand",
-                // Simple headings (no border, no color)
-                simple: "text-xl md:text-2xl tracking-wider",
-            },
-            spacing: {
-                default: "mb-4", // Standard spacing
-                comfortable: "mb-6", // More breathing room
-                tight: "mb-2", // Compact, close to content
-            },
+const headingVariants = cva("font-headline font-black text-dark uppercase", {
+    variants: {
+        variant: {
+            // Section headings with border-left accent (H2 - major sections)
+            section:
+                "text-base md:text-lg tracking-widest border-l-4 border-dark pl-4",
+            // Subsection headings (H3 - card titles, nested sections)
+            subsection: "text-sm md:text-base tracking-wider text-dark",
         },
-        defaultVariants: {
-            variant: "section",
-            spacing: "default",
+        spacing: {
+            default: "mb-4", // Standard spacing
+            comfortable: "mb-6", // More breathing room
+            tight: "mb-2", // Compact, close to content
         },
     },
-);
+    defaultVariants: {
+        variant: "section",
+        spacing: "default",
+    },
+});
 
 interface HeadingProps
     extends React.HTMLAttributes<HTMLHeadingElement>,
@@ -150,9 +125,9 @@ Heading.displayName = "Heading";
 const bodyVariants = cva("font-body leading-relaxed", {
     variants: {
         size: {
-            base: "text-base text-text-body-main", // Main content
-            sm: "text-sm text-text-body-main", // Supporting text
-            xs: "text-xs text-text-body-main", // Fine print
+            base: "text-base text-dark", // Main content
+            sm: "text-sm text-dark", // Supporting text
+            xs: "text-xs text-dark", // Fine print
         },
         spacing: {
             default: "mb-4", // Standard paragraph spacing
@@ -206,7 +181,7 @@ Body.displayName = "Body";
 // - inline: Next to input or inline content
 // ============================================
 const labelVariants = cva(
-    "font-headline text-xs uppercase tracking-wider font-black text-text-body-main",
+    "font-headline text-xs uppercase tracking-wider font-black text-dark",
     {
         variants: {
             spacing: {

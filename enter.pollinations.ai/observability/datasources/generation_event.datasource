@@ -1,5 +1,5 @@
 TOKEN generation_event_append APPEND
-TOKEN generation_event_read READ
+TOKEN grafana_generation_read READ
 
 DESCRIPTION >
 Generative AI events with usage, pricing, metadata, moderation, and cache info
@@ -99,6 +99,10 @@ SCHEMA >
 `error_stack`                String                  `json:$.errorStack` DEFAULT 'undefined',
 `error_details`              String                  `json:$.errorDetails` DEFAULT 'undefined',
 
+-- Network
+`ip_subnet`       LowCardinality(String) `json:$.ipSubnet` DEFAULT 'undefined',
+`ip_hash`         String                 `json:$.ipHash` DEFAULT 'undefined',
+
 ENGINE "MergeTree" 
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"
 ENGINE_SORTING_KEY "start_time, environment, user_id, user_tier"
@@ -171,4 +175,6 @@ FORWARD_QUERY >
     error_source,
     error_message,
     error_stack,
-    error_details
+    error_details,
+    defaultValueOfTypeName('LowCardinality(String)') AS ip_subnet,
+    defaultValueOfTypeName('String') AS ip_hash

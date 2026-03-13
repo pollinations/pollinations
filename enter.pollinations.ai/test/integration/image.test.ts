@@ -331,6 +331,37 @@ describe("Image Integration Tests", () => {
     );
 
     test(
+        "nanobanana-2 should return image/png (Gemini 3.1 Flash Image)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20cat%20on%20a%20rainbow?model=nanobanana-2&width=512&height=512&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("nanobanana-2 response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
         "should use crypto balance when tier balance is exhausted",
         { timeout: 30000 },
         async ({ apiKey, mocks, sessionToken }) => {

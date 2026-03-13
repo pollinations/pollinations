@@ -86,10 +86,9 @@ describe("Tier Balance Management", () => {
                     )})`,
                 );
 
-            // Each user should have their tier balance set to the correct amount
-            expect(users.find((u) => u.id === "user-spore")?.tierBalance).toBe(
-                TIER_POLLEN.spore,
-            );
+            const isMonday = new Date().getUTCDay() === 1;
+
+            // Daily tiers always get refilled
             expect(users.find((u) => u.id === "user-seed")?.tierBalance).toBe(
                 TIER_POLLEN.seed,
             );
@@ -103,10 +102,19 @@ describe("Tier Balance Management", () => {
                 TIER_POLLEN.router,
             );
 
-            // All users should have lastTierGrant updated
-            for (const user of users) {
+            // Spore: weekly refill (Monday only)
+            const sporeUser = users.find((u) => u.id === "user-spore");
+            if (isMonday) {
+                expect(sporeUser?.tierBalance).toBe(TIER_POLLEN.spore);
+            } else {
+                // Not refilled on non-Monday — keeps pre-test balance
+                expect(sporeUser?.tierBalance).toBe(0.5);
+            }
+
+            // Daily-refill users should have lastTierGrant updated
+            for (const user of users.filter((u) => u.id !== "user-spore")) {
                 expect(user.lastTierGrant).toBeDefined();
-                expect(user.lastTierGrant).toBeGreaterThan(Date.now() - 60000); // Within last minute
+                expect(user.lastTierGrant).toBeGreaterThan(Date.now() - 60000);
             }
         });
 
@@ -444,7 +452,7 @@ describe("Tier Balance Management", () => {
             expect(getTierPollen("router")).toBe(TIER_POLLEN.router);
 
             // Default tier
-            expect(getTierPollen("spore")).toBe(1);
+            expect(getTierPollen("spore")).toBe(1.5);
         });
 
         test("tierNames should contain all valid tier names", () => {
@@ -461,7 +469,7 @@ describe("Tier Balance Management", () => {
             // Verify each name exists in TIER_POLLEN
             for (const tier of tierNames) {
                 expect(TIER_POLLEN[tier]).toBeDefined();
-                expect(TIER_POLLEN[tier]).toBeGreaterThan(0);
+                expect(TIER_POLLEN[tier]).toBeGreaterThanOrEqual(0);
             }
         });
     });
@@ -861,6 +869,60 @@ describe("Tier Balance Management", () => {
             const openai = models.find((m: any) => m.name === "openai");
             expect(openai).toBeDefined();
             expect(openai.paid_only).toBeUndefined();
+        });
+
+        test("should hide paid_only models when user has no paid balance", async ({
+            apiKey,
+        }) => {
+            // apiKey fixture creates user with tier balance only (no pack/crypto)
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/text/models",
+                { headers: { authorization: `Bearer ${apiKey}` } },
+            );
+            expect(response.status).toBe(200);
+            const models = (await response.json()) as any[];
+
+            // paid_only models should be hidden
+            const claudeLarge = models.find(
+                (m: any) => m.name === "claude-large",
+            );
+            expect(claudeLarge).toBeUndefined();
+
+            // regular models should still be present
+            const openai = models.find((m: any) => m.name === "openai");
+            expect(openai).toBeDefined();
+        });
+
+        test("should show paid_only models when user has paid balance", async ({
+            paidApiKey,
+        }) => {
+            // paidApiKey fixture sets packBalance: 100
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/text/models",
+                { headers: { authorization: `Bearer ${paidApiKey}` } },
+            );
+            expect(response.status).toBe(200);
+            const models = (await response.json()) as any[];
+
+            const claudeLarge = models.find(
+                (m: any) => m.name === "claude-large",
+            );
+            expect(claudeLarge).toBeDefined();
+            expect(claudeLarge.paid_only).toBe(true);
+        });
+
+        test("should show all models including paid_only when unauthenticated", async () => {
+            // No auth header — should show everything
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/text/models",
+            );
+            expect(response.status).toBe(200);
+            const models = (await response.json()) as any[];
+
+            const claudeLarge = models.find(
+                (m: any) => m.name === "claude-large",
+            );
+            expect(claudeLarge).toBeDefined();
         });
 
         test("should accept paid-only models with mixed balance (crypto + tier)", async ({

@@ -1,16 +1,13 @@
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { AUTH_COPY } from "../../copy/content/auth";
-import { LAYOUT } from "../../copy/content/layout";
-import { SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { LAYOUT, LAYOUT_NO_TRANSLATE } from "../../copy/content/layout";
+import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { useTheme } from "../contexts/ThemeContext";
-import { BackgroundRenderer } from "./BackgroundRenderer";
 import { Logo } from "./Logo";
-import { AIPromptInput } from "./theme/AIPromptInput";
-import { UserMenu } from "./UserMenu";
+import { SceneBackground } from "./SceneBackground";
 import { Button } from "./ui/button";
 
 const tabKeys = [
@@ -27,19 +24,13 @@ function Layout() {
     const showFooter = useFooterVisibility();
     const showHeader = useHeaderVisibility();
     const [emailCopied, setEmailCopied] = useState(false);
-    const { backgroundHtml } = useTheme();
-    const { isLoggedIn, login, apiKey } = useAuth();
+    const { isLoggedIn } = useAuth();
     const { copy: authCopy } = usePageCopy(AUTH_COPY);
-    const { copy: layoutCopy } = usePageCopy(LAYOUT);
-    const navigate = useNavigate();
+    const { copy: layoutCopy } = usePageCopy(LAYOUT, LAYOUT_NO_TRANSLATE);
 
     return (
-        <div
-            className={`relative min-h-screen ${
-                backgroundHtml ? "bg-transparent" : "bg-surface-base"
-            }`}
-        >
-            <BackgroundRenderer />
+        <div className="relative min-h-screen">
+            <SceneBackground />
             {/* Fixed Header */}
             <header
                 className={`fixed left-0 right-0 z-50 transition-all duration-300 flex flex-col ${
@@ -49,80 +40,18 @@ function Layout() {
             >
                 <div className="w-full px-4 py-3 pb-5 lg:py-4 lg:pb-5">
                     <div className="max-w-4xl mx-auto relative overflow-visible">
-                        {/* Mobile/Tablet: Grid — Logo spans all rows, content on right */}
-                        <div
-                            className="lg:hidden grid overflow-visible"
-                            style={{
-                                gridTemplateColumns: "auto minmax(0, 1fr)",
-                                gridTemplateRows: "auto auto auto",
-                            }}
-                        >
-                            {/* Logo: spans all rows */}
-                            <div className="row-span-3 flex items-start pr-3">
-                                <button
-                                    type="button"
-                                    onClick={() => navigate("/")}
-                                    className="flex-shrink-0 focus:outline-none transition-transform active:scale-95"
-                                >
-                                    <Logo className="w-20 h-20 object-contain" />
-                                </button>
-                            </div>
-                            {/* Row 1: Nav tabs + Enter/Register */}
-                            <div className="flex flex-wrap gap-1 items-center justify-end pb-1">
-                                {tabKeys.map((tab) => (
-                                    <NavLink
-                                        key={tab.path}
-                                        to={tab.path}
-                                        end={tab.path === "/"}
-                                        className="no-underline"
-                                    >
-                                        {({ isActive }) => (
-                                            <Button
-                                                variant="nav"
-                                                size={null}
-                                                data-active={isActive}
-                                            >
-                                                {layoutCopy[tab.copyKey]}
-                                            </Button>
-                                        )}
-                                    </NavLink>
-                                ))}
-                            </div>
-                            {/* Row 2: Login/Account */}
-                            <div className="flex flex-wrap gap-1.5 items-center justify-end pb-1">
-                                <UserMenu />
-                            </div>
-                            {/* Row 3: Theme Creator */}
-                            <div className="flex items-center justify-end gap-1.5 min-w-0 pb-1">
-                                <AIPromptInput
-                                    isLoggedIn={isLoggedIn}
-                                    onLoginRequired={login}
-                                    apiKey={apiKey}
-                                    compact
+                        {/* Header: Logo + Nav + Social + Enter — wraps naturally */}
+                        <div className="flex items-start gap-3">
+                            {/* Logo */}
+                            <Link to="/" className="flex-shrink-0">
+                                <Logo
+                                    className="w-20 h-20 object-contain"
+                                    mainColor="rgb(var(--dark))"
+                                    shadeColor="rgb(var(--accent-strong))"
                                 />
-                            </div>
-                        </div>
-
-                        {/* Desktop: Grid — Logo spans both rows, content on right */}
-                        <div
-                            className="hidden lg:grid overflow-visible"
-                            style={{
-                                gridTemplateColumns: "auto 1fr",
-                                gridTemplateRows: "1fr auto",
-                            }}
-                        >
-                            {/* Logo: spans both rows */}
-                            <div className="row-span-2 flex items-center pr-4">
-                                <button
-                                    type="button"
-                                    onClick={() => navigate("/")}
-                                    className="flex-shrink-0 focus:outline-none transition-transform active:scale-95"
-                                >
-                                    <Logo className="w-20 h-20 object-contain" />
-                                </button>
-                            </div>
-                            {/* Row 1: Nav Tabs + Social Icons (right-aligned, vertically centered) */}
-                            <div className="flex gap-3 items-center justify-end overflow-x-auto overflow-y-visible scrollbar-hide pb-2">
+                            </Link>
+                            {/* Nav + Social + Enter — wraps into rows as needed */}
+                            <div className="flex-1 flex flex-wrap gap-1 items-center justify-end pt-1">
                                 {tabKeys.map((tab) => (
                                     <NavLink
                                         key={tab.path}
@@ -158,23 +87,26 @@ function Layout() {
                                                 title={label}
                                                 variant="icon"
                                                 size={null}
-                                                className="text-text-body-main"
+                                                className=""
                                             >
                                                 <Icon className="w-full h-full" />
                                             </Button>
                                         ),
                                     )}
-                            </div>
-                            {/* Row 2: Theme Creator + Login + Register (right-aligned) */}
-                            <div className="flex items-center justify-end gap-2 overflow-visible pb-1">
-                                <AIPromptInput
-                                    isLoggedIn={isLoggedIn}
-                                    onLoginRequired={login}
-                                    apiKey={apiKey}
-                                    compact
-                                />
-
-                                <UserMenu />
+                                <Button
+                                    as="a"
+                                    href={LINKS.enter}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="iconText"
+                                    size={null}
+                                    className="bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
+                                >
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider">
+                                        {authCopy.enterButton}
+                                    </span>
+                                    <ExternalLinkIcon className="w-3 h-3" />
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -182,7 +114,7 @@ function Layout() {
             </header>
 
             {/* Main Content - Full Bleed */}
-            <main className="w-full min-h-screen pb-40 lg:pb-24 transition-all duration-200 pt-48 lg:pt-40">
+            <main className="relative z-10 w-full min-h-screen pb-[70vh] lg:pb-[50vh] transition-all duration-200 pt-48 lg:pt-40">
                 <Outlet />
             </main>
 
@@ -207,7 +139,7 @@ function Layout() {
                                         title={SOCIAL_LINKS.github.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-10 h-10 text-text-body-main"
+                                        className="w-7 h-7"
                                     >
                                         <SOCIAL_LINKS.github.icon className="w-full h-full" />
                                     </Button>
@@ -219,7 +151,7 @@ function Layout() {
                                         title={SOCIAL_LINKS.discord.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-10 h-10 text-text-body-main"
+                                        className="w-7 h-7"
                                     >
                                         <SOCIAL_LINKS.discord.icon className="w-full h-full" />
                                     </Button>
@@ -244,7 +176,7 @@ function Layout() {
                                                     title={label}
                                                     variant="icon"
                                                     size={null}
-                                                    className="w-10 h-10 text-text-body-main"
+                                                    className="w-7 h-7"
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
@@ -254,26 +186,26 @@ function Layout() {
                             </div>
 
                             {/* 2. Terms, Privacy, Email, Enter */}
-                            <div className="flex items-center justify-center">
+                            <div className="flex items-center justify-center gap-2">
                                 <Button
-                                    as="a"
-                                    href="/terms"
+                                    as={Link}
+                                    to="/terms"
                                     variant="iconText"
                                     size={null}
-                                    className="h-10"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.termsLink}
                                     </span>
                                 </Button>
                                 <Button
-                                    as="a"
-                                    href="/privacy"
+                                    as={Link}
+                                    to="/privacy"
                                     variant="iconText"
                                     size={null}
-                                    className="h-10"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.privacyLink}
                                     </span>
                                 </Button>
@@ -281,7 +213,7 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai",
+                                            layoutCopy.contactEmail,
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
@@ -291,32 +223,32 @@ function Layout() {
                                     }}
                                     variant="iconText"
                                     size={null}
-                                    className="h-10"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.emailLink}
                                     </span>
                                     {emailCopied && (
-                                        <span className="absolute -top-8 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
+                                        <span className="absolute -top-8 left-0 font-body text-xs font-bold text-dark uppercase tracking-wider">
                                             {layoutCopy.copiedLabel}
                                         </span>
                                     )}
                                 </Button>
                                 <Button
                                     as="a"
-                                    href="https://enter.pollinations.ai"
+                                    href={LINKS.enter}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     variant="iconText"
                                     size={null}
-                                    className="h-10"
+                                    className="h-7 bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
+                                    <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {isLoggedIn
                                             ? authCopy.enterButton
                                             : authCopy.registerButton}
                                     </span>
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-brand" />
+                                    <ExternalLinkIcon className="w-3 h-3" />
                                 </Button>
                             </div>
                         </div>
@@ -324,40 +256,40 @@ function Layout() {
                 </div>
 
                 {/* Desktop: Single line footer */}
-                <div className="hidden lg:block w-full px-4 py-3">
+                <div className="hidden lg:block w-full px-4 py-2">
                     <div className="max-w-4xl mx-auto">
-                        <div className="flex items-center justify-between gap-6">
+                        <div className="flex items-center justify-between gap-4">
                             {/* Left: Branding Text */}
                             <div className="text-left flex-shrink-0">
-                                <p className="font-headline text-xs font-black text-text-body-main uppercase tracking-wider">
+                                <p className="font-headline text-[7px] font-black text-dark uppercase tracking-wider">
                                     {layoutCopy.footerBranding}
                                 </p>
-                                <p className="font-body text-[10px] text-text-body-main">
+                                <p className="font-body text-[9px] text-dark">
                                     {layoutCopy.footerTagline}
                                 </p>
                             </div>
 
                             {/* Center: Links as Buttons */}
-                            <div className="flex items-center flex-shrink-0">
+                            <div className="flex items-center flex-shrink-0 gap-2">
                                 <Button
-                                    as="a"
-                                    href="/terms"
+                                    as={Link}
+                                    to="/terms"
                                     variant="iconText"
                                     size={null}
-                                    className="h-10"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.termsLink}
                                     </span>
                                 </Button>
                                 <Button
-                                    as="a"
-                                    href="/privacy"
+                                    as={Link}
+                                    to="/privacy"
                                     variant="iconText"
                                     size={null}
-                                    className="h-10"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.privacyLink}
                                     </span>
                                 </Button>
@@ -365,7 +297,7 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai",
+                                            layoutCopy.contactEmail,
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
@@ -375,13 +307,13 @@ function Layout() {
                                     }}
                                     variant="iconText"
                                     size={null}
-                                    className="h-10"
+                                    className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+                                    <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {layoutCopy.emailLink}
                                     </span>
                                     {emailCopied && (
-                                        <span className="absolute -top-8 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
+                                        <span className="absolute -top-8 left-0 font-body text-xs font-bold text-dark uppercase tracking-wider">
                                             {layoutCopy.copiedLabel}
                                         </span>
                                     )}
@@ -400,7 +332,7 @@ function Layout() {
                                         title={SOCIAL_LINKS.github.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-10 h-10 text-text-body-main"
+                                        className="w-7 h-7"
                                     >
                                         <SOCIAL_LINKS.github.icon className="w-full h-full" />
                                     </Button>
@@ -413,7 +345,7 @@ function Layout() {
                                         title={SOCIAL_LINKS.discord.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-10 h-10 text-text-body-main"
+                                        className="w-7 h-7"
                                     >
                                         <SOCIAL_LINKS.discord.icon className="w-full h-full" />
                                     </Button>
@@ -438,7 +370,7 @@ function Layout() {
                                                     title={label}
                                                     variant="icon"
                                                     size={null}
-                                                    className="w-10 h-10 text-text-body-main"
+                                                    className="w-7 h-7"
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
@@ -448,19 +380,19 @@ function Layout() {
                                 {/* Register Button */}
                                 <Button
                                     as="a"
-                                    href="https://enter.pollinations.ai"
+                                    href={LINKS.enter}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     variant="iconText"
                                     size={null}
-                                    className="h-10"
+                                    className="h-7 bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
+                                    <span className="font-headline text-[7px] font-black uppercase tracking-wider">
                                         {isLoggedIn
                                             ? authCopy.enterButton
                                             : authCopy.registerButton}
                                     </span>
-                                    <ExternalLinkIcon className="w-4 h-4 text-text-brand" />
+                                    <ExternalLinkIcon className="w-3 h-3" />
                                 </Button>
                             </div>
                         </div>

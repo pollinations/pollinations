@@ -349,6 +349,11 @@ debugsession_*/
 *.swo
 *~
 
+# Script results (local output)
+enter.pollinations.ai/scripts/results/
+
 # Agent communication file (temporary)
 agent-communication.md
 .claude/settings.local.json
+.claude/MAIN.md
+.claude/SETUP.md

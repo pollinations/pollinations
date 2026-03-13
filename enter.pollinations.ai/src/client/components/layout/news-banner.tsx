@@ -2,9 +2,11 @@ import { type FC, useEffect, useState } from "react";
 import { Panel } from "../ui/panel.tsx";
 
 const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/highlights.md";
+    "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md";
 const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/main/social/news/highlights.md";
+    "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md";
+
+const TOTAL_NEWS_COUNT = 5;
 
 interface Highlight {
     date: string;
@@ -12,6 +14,21 @@ interface Highlight {
     title: string;
     description: string;
 }
+
+/**
+ * Pinned news items that stay visible regardless of daily updates.
+ * Edit this array to add/remove pinned announcements.
+ * When empty, the full TOTAL_NEWS_COUNT dynamic highlights are shown.
+ */
+const PINNED_NEWS: Highlight[] = [
+    {
+        date: "2026-03-13",
+        emoji: "⏱️",
+        title: "Hourly Pollen Refills",
+        description:
+            "Starting March 16 - Spore: 0.01p/hr, Seed: 0.15p/hr. Need more? Grab a Pollen Pack below!",
+    },
+];
 
 function parseHighlights(md: string): Highlight[] {
     return md
@@ -33,28 +50,58 @@ function parseHighlights(md: string): Highlight[] {
 
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
+    const dynamicCount = TOTAL_NEWS_COUNT - PINNED_NEWS.length;
 
     useEffect(() => {
         fetch(HIGHLIGHTS_RAW_URL)
             .then((res) => res.text())
-            .then((md) => setHighlights(parseHighlights(md).slice(0, 3)))
+            .then((md) =>
+                setHighlights(parseHighlights(md).slice(0, dynamicCount)),
+            )
             .catch((err) => console.error("Failed to fetch highlights:", err));
-    }, []);
+    }, [dynamicCount]);
 
-    if (highlights.length === 0) return null;
+    if (highlights.length === 0 && PINNED_NEWS.length === 0) return null;
 
     return (
         <Panel color="violet" compact className="border-transparent">
             <div className="flex flex-col gap-2">
                 <span className="text-xs text-gray-500">What's new</span>
-                <ul className="text-xs space-y-1.5">
-                    {highlights.map((h) => (
-                        <li key={h.date + h.title} className="text-gray-600">
-                            {h.emoji} <strong>{h.title}:</strong>{" "}
-                            {h.description}
-                        </li>
-                    ))}
-                </ul>
+                {PINNED_NEWS.length > 0 && (
+                    <div className="bg-violet-50 rounded-md px-3 py-2">
+                        <ul className="text-xs space-y-1.5">
+                            {PINNED_NEWS.map((h) => (
+                                <li
+                                    key={`pinned-${h.title}`}
+                                    className="text-violet-900"
+                                >
+                                    {h.emoji} <strong>{h.title}:</strong>{" "}
+                                    <span
+                                        dangerouslySetInnerHTML={{
+                                            __html: h.description,
+                                        }}
+                                    />
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                {PINNED_NEWS.length > 0 && highlights.length > 0 && (
+                    <hr className="border-violet-200" />
+                )}
+                {highlights.length > 0 && (
+                    <ul className="text-xs space-y-1.5">
+                        {highlights.map((h) => (
+                            <li
+                                key={h.date + h.title}
+                                className="text-gray-600"
+                            >
+                                {h.emoji} <strong>{h.title}:</strong>{" "}
+                                {h.description}
+                            </li>
+                        ))}
+                    </ul>
+                )}
                 <a
                     href={HIGHLIGHTS_GITHUB_URL}
                     target="_blank"

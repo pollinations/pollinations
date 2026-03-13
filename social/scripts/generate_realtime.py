@@ -3,7 +3,7 @@
 Tier 1: PR Gist Generator
 
 On PR merge:
-  Step 1: AI analyzes PR → structured gist JSON → committed to main
+  Step 1: AI analyzes PR → structured gist JSON → committed to news branch
   Step 2: Generate pixel art image → update gist with image URL
 
 Discord posting is handled separately by publish_realtime.py.
@@ -26,11 +26,14 @@ from common import (
     apply_publish_tier_rules,
     build_minimal_gist,
     gist_path_for_pr,
-    commit_gist_to_main,
+    commit_gist,
     parse_json_response,
     github_api_request,
     GITHUB_API_BASE,
+    GISTS_BRANCH,
+    IMAGE_MODEL_FALLBACK,
     MODEL,
+    MODEL_FALLBACK,
     OWNER,
     REPO,
 )
@@ -115,6 +118,13 @@ Changed files:
     )
 
     if not response:
+        print(f"  Primary model ({MODEL}) failed — trying fallback ({MODEL_FALLBACK})...")
+        response = call_pollinations_api(
+            system_prompt, user_prompt, token,
+            temperature=0.2, model=MODEL_FALLBACK, exit_on_failure=False
+        )
+
+    if not response:
         return None
 
     return parse_json_response(response)
@@ -155,17 +165,20 @@ def generate_gist_image(gist: Dict, pollinations_token: str,
 
     print(f"  Image prompt: {image_prompt[:100]}...")
 
-    # Generate the image
+    # Generate the image (try primary model, then fallback)
     image_bytes, _ = generate_image(image_prompt, pollinations_token)
     if not image_bytes:
-        print("  Image generation failed")
+        print(f"  Primary image model failed — trying fallback ({IMAGE_MODEL_FALLBACK})...")
+        image_bytes, _ = generate_image(image_prompt, pollinations_token, model=IMAGE_MODEL_FALLBACK)
+    if not image_bytes:
+        print("  Image generation failed on both models")
         return None
 
-    # Commit image to repo on main
+    # Commit image to repo on news branch
     date_str = gist["merged_at"][:10]
     image_path = f"social/news/gists/{date_str}/PR-{gist['pr_number']}.jpg"
     image_url = commit_image_to_branch(
-        image_bytes, image_path, "main",
+        image_bytes, image_path, GISTS_BRANCH,
         github_token, owner, repo,
     )
 
@@ -217,9 +230,9 @@ def main():
             pr_data["html_url"], merged_at, labels
         )
 
-    # Commit gist to main
-    if not commit_gist_to_main(gist, github_token, owner, repo):
-        print("  FATAL: Could not commit gist to main")
+    # Commit gist to news branch
+    if not commit_gist(gist, github_token, owner, repo):
+        print("  FATAL: Could not commit gist to news branch")
         sys.exit(1)
 
     print(f"  Gist committed: publish_tier={gist['gist']['publish_tier']}, "
@@ -232,7 +245,7 @@ def main():
     if image_url:
         gist["image"]["url"] = image_url
         # Re-commit gist with image URL
-        commit_gist_to_main(gist, github_token, owner, repo)
+        commit_gist(gist, github_token, owner, repo)
         print(f"  Image URL: {image_url}")
     else:
         print("  No image generated — continuing without image")

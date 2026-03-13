@@ -106,6 +106,14 @@ export function useModelList(apiKey: string): UseModelListReturn {
     useEffect(() => {
         const controller = new AbortController();
 
+        // Reset state immediately when apiKey changes so stale allowed sets
+        // don't remain visible while the new fetch is in flight
+        setAllowedImageModelIds(new Set());
+        setAllowedTextModelIds(new Set());
+        setAllowedAudioModelIds(new Set());
+        setIsLoading(true);
+        setError(null);
+
         const extractIds = (
             list: Array<{ id?: string; name?: string } | string>,
         ) =>

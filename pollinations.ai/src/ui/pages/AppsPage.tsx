@@ -1,177 +1,233 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import { useSearchParams } from "react-router-dom";
+import remarkGfm from "remark-gfm";
 import { COPY_CONSTANTS } from "../../copy/constants";
-import { APPS_PAGE, CATEGORIES } from "../../copy/content/apps";
+import {
+    APPS_PAGE,
+    BADGE_FILTERS,
+    badges,
+    GENRE_FILTERS,
+} from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
+import { useAuth } from "../../hooks/useAuth";
+import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
+import { usePrettify } from "../../hooks/usePrettify";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { GithubIcon } from "../assets/SocialIcons";
+import { BackToTop } from "../components/ui/back-to-top";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
-// Helper to extract GitHub username from author field
-function getGitHubUsername(author: string) {
-    if (!author) return null;
-    // Remove @ symbol if present
-    return author.replace(/^@/, "");
+function getGitHubUsername(s: string) {
+    return s ? s.replace(/^@/, "") : null;
 }
 
-// Helper to extract repo name from GitHub URL
-function getRepoName(repoUrl: string) {
-    if (!repoUrl) return null;
-    const match = repoUrl.match(/github\.com\/([^/]+\/[^/]+)/);
-    return match ? match[1] : null;
+function getRepoName(url: string) {
+    const m = url?.match(/github\.com\/([^/]+\/[^/]+)/);
+    return m ? m[1] : null;
 }
 
-interface AppCardProps {
-    app: App;
-    byopTooltip: string;
-    byopBadge: string;
-    trendingBadge: string;
-    trendingTooltipSuffix: string;
-    authorPrefix: string;
-}
+// --- Platform badge ---
 
-function isTrending(requests: number): boolean {
-    return requests >= 1000;
-}
+// Map from platform id to copy key in APPS_PAGE
+const PLATFORM_COPY_KEY: Record<string, keyof typeof APPS_PAGE> = {
+    web: "platformWeb",
+    android: "platformAndroid",
+    ios: "platformIos",
+    windows: "platformWindows",
+    macos: "platformMacos",
+    desktop: "platformDesktop",
+    cli: "platformCli",
+    discord: "platformDiscord",
+    telegram: "platformTelegram",
+    whatsapp: "platformWhatsapp",
+    library: "platformLibrary",
+    "browser-ext": "platformBrowserExt",
+    roblox: "platformRoblox",
+    wordpress: "platformWordpress",
+    api: "platformApi",
+};
 
-function AppCard({
-    app,
-    byopTooltip,
-    byopBadge,
-    trendingBadge,
-    trendingTooltipSuffix,
-    authorPrefix,
-}: AppCardProps) {
+// --- App Card ---
+
+function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
     const githubUsername = getGitHubUsername(app.github);
     const repoName = app.repo?.includes("github.com")
         ? getRepoName(app.repo)
         : null;
 
-    const trending = isTrending(app.requests24h);
-    const hasStatusBadges = app.byop || trending;
-
-    // Card border accent: trending = brand (priority), BYOP = highlight, default = subtle
-    const cardBorder = trending
-        ? "border border-border-brand shadow-shadow-brand-sm"
-        : app.byop
-          ? "border border-border-highlight shadow-shadow-highlight-sm"
-          : "border border-border-subtle";
+    const cardBorder = badges.buzz(app)
+        ? "border-r-2 border-b-2 border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]"
+        : badges.pollen(app)
+          ? "border-r-2 border-b-2 border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]"
+          : "border-r-2 border-b-2 border-tan shadow-[1px_1px_0_rgb(var(--tan)_/_0.3)]";
 
     return (
         <div
-            className={`flex flex-col h-full rounded-sub-card overflow-hidden ${cardBorder}`}
+            className={`flex flex-col h-full overflow-visible transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${cardBorder}`}
         >
-            {/* Title header — full-width, links to app */}
             <a
                 href={app.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between px-4 py-3 bg-input-background hover:brightness-110 transition-all"
+                className="flex items-center justify-between px-4 py-3 bg-white hover:brightness-110 transition-all"
             >
-                <span className="font-headline text-base font-black uppercase text-text-body-main">
-                    {app.emoji && `${app.emoji} `}
-                    {app.name}
+                <span className="font-headline text-xs font-black uppercase text-dark flex items-center">
+                    {app.emoji && (
+                        <span className="flex-shrink-0 mr-2 text-base leading-none">
+                            {app.emoji}
+                        </span>
+                    )}
+                    <span>{app.name}</span>
                 </span>
-                <ExternalLinkIcon className="w-4 h-4 text-text-body-main opacity-60 flex-shrink-0" />
             </a>
 
-            {/* Card body */}
-            <div className="flex flex-col flex-1 px-4 py-3">
+            <div className="flex flex-col flex-1 px-4 py-3 bg-white/60">
                 <div className="flex-1">
                     {app.description && (
-                        <Body
-                            className="text-sm text-text-body-secondary mb-3"
-                            spacing="none"
-                        >
-                            {app.description}
-                        </Body>
+                        <div className="text-sm text-muted mb-3 font-body leading-relaxed">
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                    p: ({ node, ...props }) => (
+                                        <p
+                                            {...props}
+                                            className="mb-1 last:mb-0"
+                                        />
+                                    ),
+                                    ul: ({ node, ...props }) => (
+                                        <ul
+                                            {...props}
+                                            className="mt-1 space-y-0.5 list-disc list-inside"
+                                        />
+                                    ),
+                                    li: ({ node, ...props }) => (
+                                        <li {...props} className="text-muted" />
+                                    ),
+                                    strong: ({ node, ...props }) => (
+                                        <strong
+                                            {...props}
+                                            className="text-dark font-black"
+                                        />
+                                    ),
+                                    em: ({ node, ...props }) => (
+                                        <em
+                                            {...props}
+                                            className="text-dark not-italic font-medium"
+                                        />
+                                    ),
+                                    code: ({ node, ...props }) => (
+                                        <code
+                                            {...props}
+                                            className="bg-white text-dark px-1.5 py-0.5 rounded text-xs font-mono"
+                                        />
+                                    ),
+                                    a: ({ node, ...props }) => (
+                                        <a
+                                            {...props}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-dark hover:underline"
+                                        />
+                                    ),
+                                    del: ({ node, ...props }) => (
+                                        <del
+                                            {...props}
+                                            className="text-muted/50"
+                                        />
+                                    ),
+                                }}
+                            >
+                                {app.description}
+                            </ReactMarkdown>
+                        </div>
                     )}
 
-                    {/* Status badges */}
-                    {hasStatusBadges && (
+                    {(badges.pollen(app) ||
+                        badges.buzz(app) ||
+                        badges.new(app)) && (
                         <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                            {app.byop && (
-                                <span className="relative group/byop cursor-help">
-                                    <Badge variant="highlight">
-                                        {byopBadge}
-                                    </Badge>
-                                    <span className="hidden group-hover/byop:block absolute z-10 bottom-full left-0 mb-1 px-2 py-1 text-xs font-mono text-text-body-main bg-surface-card border border-border-main rounded shadow-shadow-dark-md whitespace-nowrap">
-                                        {byopTooltip}
-                                    </span>
-                                </span>
+                            {badges.pollen(app) && (
+                                <Badge variant="pollen">
+                                    {copy.pollenBadge}
+                                </Badge>
                             )}
-                            {trending && (
-                                <span className="relative group/fire cursor-help">
-                                    <Badge variant="brand">
-                                        {"\uD83D\uDD25"} {trendingBadge}
-                                    </Badge>
-                                    <span className="hidden group-hover/fire:block absolute z-10 bottom-full left-0 mb-1 px-2 py-1 text-xs font-mono text-text-body-main bg-surface-card border border-border-main rounded shadow-shadow-dark-md whitespace-nowrap">
-                                        {app.requests24h.toLocaleString()}{" "}
-                                        {trendingTooltipSuffix}
-                                    </span>
-                                </span>
+                            {badges.buzz(app) && (
+                                <Badge variant="buzz">{copy.buzzBadge}</Badge>
+                            )}
+                            {badges.new(app) && (
+                                <Badge variant="fresh">{copy.newBadge}</Badge>
                             )}
                         </div>
                     )}
                 </div>
 
-                <div className="flex flex-wrap gap-2 mt-auto">
-                    {/* Author (only shown when no repo) */}
+                <div className="flex flex-wrap gap-2 mt-auto items-center">
                     {!repoName && githubUsername && (
                         <a
                             href={`https://github.com/${githubUsername}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
-                            title={`View ${app.github} on GitHub`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition-all max-w-[200px]"
+                            title={copy.viewOnGithub.replace(
+                                "{name}",
+                                app.github,
+                            )}
                         >
-                            <span className="text-text-body-secondary">
-                                {authorPrefix}
+                            <span className="text-muted">
+                                {copy.authorPrefix}
                             </span>
-                            <span className="truncate text-text-body-main">
+                            <span className="truncate text-dark">
                                 {app.github}
                             </span>
-                            <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
+                            <GithubIcon className="w-3 h-3 text-dark opacity-60 flex-shrink-0" />
                         </a>
                     )}
                     {!repoName && !githubUsername && app.github && (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint max-w-[200px]">
-                            <span className="text-text-body-secondary">
-                                {authorPrefix}
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-white border border-cream rounded-tag max-w-[200px]">
+                            <span className="text-muted">
+                                {copy.authorPrefix}
                             </span>
-                            <span className="truncate text-text-body-main">
+                            <span className="truncate text-dark">
                                 {app.github}
                             </span>
                         </div>
                     )}
-
-                    {/* Repo + Stars */}
                     {repoName && (
                         <a
                             href={app.repo}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
-                            title={`View ${repoName} on GitHub`}
+                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition-all max-w-[200px]"
+                            title={copy.viewOnGithub.replace(
+                                "{name}",
+                                repoName,
+                            )}
                         >
                             <span className="inline-flex items-center gap-1.5 w-full">
-                                <span className="truncate flex-1 min-w-0 text-text-body-main">
+                                <span className="truncate flex-1 min-w-0 text-dark">
                                     {repoName}
                                 </span>
-                                <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
+                                <GithubIcon className="w-3 h-3 text-dark opacity-60 flex-shrink-0" />
                             </span>
                             {(app.stars || 0) > 0 && (
-                                <span className="text-text-body-secondary">
+                                <span className="text-muted">
                                     ⭐ {app.stars}
                                 </span>
                             )}
                         </a>
+                    )}
+                    {app.platform && PLATFORM_COPY_KEY[app.platform] && (
+                        <Badge variant="muted" className="ml-auto">
+                            {copy[PLATFORM_COPY_KEY[app.platform]] as string}
+                        </Badge>
                     )}
                 </div>
             </div>
@@ -179,181 +235,223 @@ function AppCard({
     );
 }
 
+// --- Sort: buzz → pollen → stars → newest ---
+
+const sortApps = (a: App, b: App) => {
+    const t = +badges.buzz(b) - +badges.buzz(a);
+    if (t) return t;
+    if (a.byop !== b.byop) return a.byop ? -1 : 1;
+    const s = (b.stars || 0) - (a.stars || 0);
+    if (s) return s;
+    return (b.approvedDate || "").localeCompare(a.approvedDate || "");
+};
+
+// --- Page ---
+
 export default function AppsPage() {
-    const [selectedCategory, setSelectedCategory] = useState("creative");
-    const [byopFilter, setByopFilter] = useState(false);
-    const [newFilter, setNewFilter] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filter = searchParams.get("filter") || "image";
+    const sort = searchParams.get("sort") || "new";
+    const setFilter = (f: string) =>
+        setSearchParams({ filter: f, ...(sort ? { sort } : {}) });
+    const setSort = (s: string) =>
+        setSearchParams({ filter, sort: sort === s ? "" : s });
+    const { apiKey } = useAuth();
 
-    // Fetch apps from GitHub
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
-
-    // Get translated copy
     const { copy: pageCopy, isTranslating } = usePageCopy(APPS_PAGE);
-
-    // Translate category labels
-    const { translated: translatedCategories } = useTranslate(
-        CATEGORIES,
+    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
+    const { translated: translatedGenre } = useTranslate(
+        GENRE_FILTERS,
+        "label",
+    );
+    const { translated: translatedBadge } = useTranslate(
+        BADGE_FILTERS,
         "label",
     );
 
-    // Filter and sort apps by category (+ optional BYOP/New filters)
     const filteredApps = useMemo(() => {
-        const fifteenDaysAgo = new Date();
-        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+        const f = GENRE_FILTERS.find((x) => x.id === filter);
+        if (!f) return allApps.slice().sort(sortApps);
+        const filtered = allApps.filter(f.match).sort(sortApps);
+        // If a badge sort is active, float matching apps to top
+        const badgeFn = BADGE_FILTERS.find((x) => x.id === sort);
+        if (!badgeFn) return filtered;
+        const matching = filtered.filter(badgeFn.match);
+        const rest = filtered.filter((a) => !badgeFn.match(a));
+        return [...matching, ...rest];
+    }, [allApps, filter, sort]);
 
-        return allApps
-            .filter((app: App) => {
-                if (newFilter) {
-                    if (!app.approvedDate) return false;
-                    return new Date(app.approvedDate) >= fifteenDaysAgo;
-                }
-                if (byopFilter) return app.byop;
-                return app.category === selectedCategory;
-            })
-            .sort((a, b) => {
-                // 1. Trending first (by request volume)
-                const aTrending = isTrending(a.requests24h);
-                const bTrending = isTrending(b.requests24h);
-                if (aTrending !== bTrending) return bTrending ? 1 : -1;
-                // 2. BYOP second
-                if (a.byop !== b.byop) return a.byop ? -1 : 1;
-                // 3. GitHub stars descending
-                if ((b.stars || 0) !== (a.stars || 0))
-                    return (b.stars || 0) - (a.stars || 0);
-                // 4. Approved date descending (newest first)
-                return (b.approvedDate || "").localeCompare(
-                    a.approvedDate || "",
-                );
-            });
-    }, [allApps, selectedCategory, byopFilter, newFilter]);
-
-    // Translate app descriptions
-    const { translated: displayApps } = useTranslate(
+    const { prettified } = usePrettify(
         filteredApps,
         "description",
+        apiKey,
+        "name",
+        "emoji",
     );
 
+    const { translated: displayApps } = useTranslate(prettified, "description");
+
     return (
-        <PageContainer>
-            <PageCard isTranslating={isTranslating}>
-                <Title>{pageCopy.title}</Title>
-                <Body spacing="comfortable">{pageCopy.subtitle}</Body>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                    <div className="flex items-center gap-4 p-4 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
-                        <div className="flex-1">
-                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
-                                {pageCopy.submitCtaTitle}
-                            </p>
-                            <p className="font-body text-xs text-text-body-secondary">
-                                {pageCopy.submitCtaDescription}
-                            </p>
+        <>
+            <PageContainer>
+                <PageCard isTranslating={isTranslating}>
+                    <Title>{pageCopy.title}</Title>
+                    <Body spacing="comfortable">
+                        {pageCopy.subtitlePrefix}
+                        <strong>{pageCopy.subtitleBold}</strong>
+                        {pageCopy.subtitleSuffix}
+                    </Body>
+
+                    {/* CTAs */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                        <div className="flex items-center gap-4 p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                            <div className="flex-1">
+                                <p className="font-headline text-xs font-black text-dark mb-1">
+                                    {pageCopy.submitCtaTitle}
+                                </p>
+                                <p className="font-body text-sm text-muted">
+                                    {pageCopy.submitCtaDescription}
+                                </p>
+                            </div>
+                            <Button
+                                as="a"
+                                href={LINKS.githubSubmitApp}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                            >
+                                {pageCopy.submitCtaButton}
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                            </Button>
                         </div>
-                        <Button
-                            as="a"
-                            href={LINKS.githubSubmitApp}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="primary"
-                            size="default"
-                        >
-                            {pageCopy.submitCtaButton}
-                            <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
-                        </Button>
-                    </div>
-                    <div className="flex items-center gap-4 p-4 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
-                        <div className="flex-1">
-                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
-                                {pageCopy.byopCtaTitle}
-                            </p>
-                            <p className="font-body text-xs text-text-body-secondary">
-                                {pageCopy.byopCtaDescription}
-                            </p>
+                        <div className="flex items-center gap-4 p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                            <div className="flex-1">
+                                <p className="font-headline text-xs font-black text-dark mb-1">
+                                    {pageCopy.pollenCtaTitle}
+                                </p>
+                                <p className="font-body text-sm text-muted">
+                                    {pageCopy.pollenCtaDescription}
+                                </p>
+                            </div>
+                            <Button
+                                as="a"
+                                href={LINKS.byopDocs}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                            >
+                                {pageCopy.pollenCtaButton}
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                            </Button>
                         </div>
-                        <Button
-                            as="a"
-                            href={LINKS.byopDocs}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="primary"
-                            size="default"
-                        >
-                            {pageCopy.byopCtaButton}
-                            <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
-                        </Button>
                     </div>
-                </div>
 
-                {/* Category Filters */}
-                <div className="flex flex-wrap gap-2 mb-8">
-                    {translatedCategories.map((cat) => (
-                        <Button
-                            key={cat.id}
-                            variant="toggle"
-                            data-active={
-                                !byopFilter &&
-                                !newFilter &&
-                                selectedCategory === cat.id
-                            }
-                            onClick={() => {
-                                setByopFilter(false);
-                                setNewFilter(false);
-                                setSelectedCategory(cat.id);
-                            }}
-                            className="px-4 py-2 text-sm"
-                        >
-                            {cat.label}
-                        </Button>
-                    ))}
-                    <Button
-                        variant="toggle"
-                        data-active={byopFilter}
-                        onClick={() => {
-                            setNewFilter(false);
-                            setByopFilter(!byopFilter);
-                        }}
-                        className="px-4 py-2 text-sm"
-                    >
-                        {pageCopy.byopFilterLabel}
-                    </Button>
-                    <Button
-                        variant="toggle"
-                        data-active={newFilter}
-                        onClick={() => {
-                            setByopFilter(false);
-                            setNewFilter(!newFilter);
-                        }}
-                        className="px-4 py-2 text-sm"
-                    >
-                        {pageCopy.newFilterLabel}
-                    </Button>
-                </div>
-
-                {/* App Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                    {displayApps.map((app, index) => (
-                        <AppCard
-                            key={`${app.name}-${index}`}
-                            app={app}
-                            byopTooltip={pageCopy.byopTooltip}
-                            byopBadge={pageCopy.byopBadge}
-                            trendingBadge={pageCopy.trendingBadge}
-                            trendingTooltipSuffix={
-                                pageCopy.trendingTooltipSuffix
-                            }
-                            authorPrefix={pageCopy.authorPrefix}
-                        />
-                    ))}
-                </div>
-
-                {/* No Results */}
-                {displayApps.length === 0 && (
-                    <div className="text-center py-12">
-                        <Body className="text-text-body-main">
-                            {pageCopy.noAppsMessage}
-                        </Body>
+                    {/* Filters */}
+                    <div id="filters" className="flex flex-wrap gap-2 mb-4">
+                        {translatedGenre.map((f) => (
+                            <Button
+                                key={f.id}
+                                variant="toggle-glow"
+                                data-active={filter === f.id}
+                                onClick={() => setFilter(f.id)}
+                                className="px-2 py-1 text-sm md:px-4 md:py-2 md:text-base"
+                                style={
+                                    { "--glow": f.glow } as React.CSSProperties
+                                }
+                            >
+                                {f.label}
+                            </Button>
+                        ))}
                     </div>
-                )}
-            </PageCard>
-        </PageContainer>
+
+                    {/* Sort + Legend */}
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-8">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-headline text-xs font-black uppercase tracking-wider text-muted">
+                                {pageCopy.sortLabel}
+                            </span>
+                            {translatedBadge.map((f) => (
+                                <Button
+                                    key={f.id}
+                                    variant="toggle-glow"
+                                    size={null}
+                                    data-active={sort === f.id}
+                                    onClick={() => setSort(f.id)}
+                                    className="rounded-full px-3 py-1 text-xs"
+                                    style={
+                                        {
+                                            "--glow": f.glow,
+                                        } as React.CSSProperties
+                                    }
+                                >
+                                    {f.label}
+                                </Button>
+                            ))}
+                        </div>
+                        <div className="flex flex-col items-start md:items-end gap-0.5 text-xs text-muted">
+                            <span className="inline-flex items-center gap-1 flex-wrap md:flex-nowrap">
+                                <span className="text-dark font-bold">
+                                    {pageCopy.pollenBadge}
+                                </span>
+                                {" = "}
+                                {pageCopy.pollenLegendDesc}
+                                {" · "}
+                                <a
+                                    href={LINKS.byopDocs}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-headline font-black text-dark bg-accent-strong px-1.5 py-0.5 hover:underline inline-flex items-center gap-0.5"
+                                >
+                                    {pageCopy.pollenDocsLink}
+                                    <ExternalLinkIcon
+                                        className="w-2.5 h-2.5"
+                                        strokeWidth="4"
+                                    />
+                                </a>
+                            </span>
+                            <span>
+                                <span className="text-dark font-bold">
+                                    {pageCopy.buzzBadge}
+                                </span>
+                                {" = "}
+                                {pageCopy.buzzLegendDesc}
+                            </span>
+                            <span>
+                                <span className="text-dark font-bold">
+                                    {pageCopy.newBadge}
+                                </span>
+                                {" = "}
+                                {pageCopy.newLegendDesc}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* App Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                        {displayApps.map((app, i) => (
+                            <AppCard
+                                key={`${app.name}-${i}`}
+                                app={app}
+                                copy={pageCopy}
+                            />
+                        ))}
+                    </div>
+
+                    {displayApps.length === 0 && (
+                        <div className="text-center py-12">
+                            <Body className="text-dark">
+                                {pageCopy.noAppsMessage}
+                            </Body>
+                        </div>
+                    )}
+                </PageCard>
+            </PageContainer>
+            <BackToTop targetId="filters" hideWhenId="filters" />
+        </>
     );
 }

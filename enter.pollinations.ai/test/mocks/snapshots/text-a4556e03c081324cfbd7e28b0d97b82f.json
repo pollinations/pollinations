@@ -9,40 +9,38 @@
     "params": {}
   },
   "response": {
-    "status": 530,
-    "statusText": "unknown",
+    "status": 401,
+    "statusText": "Unauthorized",
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "331",
-      "content-type": "application/json; charset=utf-8",
-      "date": "Sun, 08 Feb 2026 00:05:45 GMT",
-      "etag": "W/\"14b-hoaTxU3/he3ZEZwKS4EAnT8MknU\"",
-      "keep-alive": "timeout=5",
-      "x-powered-by": "Express"
+      "content-length": "370",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:42:45 GMT",
+      "keep-alive": "timeout=5"
     },
     "body": {
       "type": "json",
       "data": {
-        "error": "Internal Server Error",
-        "message": "530 <none>",
-        "requestId": "1pgjfl",
+        "error": "Unauthorized",
+        "message": "401 Unauthorized",
+        "requestId": "vka7dg",
         "requestParameters": {
+          "seed": 42,
+          "model": "nomnom",
+          "voice": "alloy",
+          "jsonMode": false,
           "messages": [
             {
               "role": "user",
-              "content": "Is Berlin the capital of Germany? Reply yes or no."
+              "content": "Is Berlin the capital of Germany%3F Reply yes or no."
             }
           ],
-          "jsonMode": false,
-          "seed": 42,
-          "model": "nomnom",
           "referrer": null,
-          "isPrivate": false,
-          "voice": "alloy"
+          "isPrivate": false
         },
         "details": {
-          "html-message": "error code: 1033"
+          "detail": "Invalid API key. Get your key at https://enter.pollinations.ai"
         }
       }
     }

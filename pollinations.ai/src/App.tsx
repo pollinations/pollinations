@@ -1,9 +1,17 @@
-import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import ErrorBoundary from "./ui/components/ErrorBoundary";
 import { FontLoader } from "./ui/components/FontLoader";
 import Layout from "./ui/components/Layout";
-import { PresetEditor } from "./ui/components/theme";
+
+function ScrollToTop() {
+    const location = useLocation();
+    // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on route change
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [location.pathname]);
+    return null;
+}
 
 // Lazy load pages
 const HelloPage = lazy(() => import("./ui/pages/HelloPage"));
@@ -16,7 +24,7 @@ const PrivacyPage = lazy(() => import("./ui/pages/PrivacyPage"));
 // Loading component
 const PageLoader = () => (
     <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-border-brand"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dark"></div>
     </div>
 );
 
@@ -24,8 +32,8 @@ function App() {
     return (
         <ErrorBoundary>
             <FontLoader />
-            <PresetEditor />
             <Suspense fallback={<PageLoader />}>
+                <ScrollToTop />
                 <Routes>
                     <Route path="/" element={<Layout />}>
                         <Route index element={<HelloPage />} />

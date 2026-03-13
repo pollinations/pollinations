@@ -22,7 +22,9 @@ POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
 # Models - single source of truth for all social scripts
 MODEL = "gemini-large"  # Text generation model
+MODEL_FALLBACK = "gemini-fast"  # Text fallback when primary model fails
 IMAGE_MODEL = "nanobanana-pro"  # Image generation model
+IMAGE_MODEL_FALLBACK = "zimage"  # Image fallback when primary model fails
 WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
 
 # Limits and retry settings
@@ -34,9 +36,19 @@ DEFAULT_TIMEOUT = 30  # seconds for GitHub API / general requests
 # Repository constants
 OWNER = "pollinations"
 REPO = "pollinations"
+GISTS_BRANCH = "news"  # Unprotected branch for gist data (avoids main branch protection)
 
 # Image generation
 IMAGE_SIZE = 2048
+# Style suffix appended to every image prompt — ensures consistent pixel art style
+# regardless of what the text AI writes in image_prompt fields
+IMAGE_STYLE_SUFFIX = (
+    "Cozy pixel art, 8-bit aesthetic, large visible chunky pixels, "
+    "soft pastel gradients, warm ambient glow lighting, CRT glow effects. "
+    "Lime green #ecf874 used BOLDLY. "
+    "Tiny pixel sparkles and glowing particles floating in the air. Magical warm atmosphere. "
+    "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike."
+)
 
 # Discord-specific
 DISCORD_CHAR_LIMIT = 2000
@@ -359,21 +371,25 @@ def call_pollinations_api(
     return None
 
 
-def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
+def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image via the pollinations.ai image API."""
+    use_model = model or IMAGE_MODEL
 
-    # Append bee character description if not already present (loaded from prompt file)
+    # Append character descriptions if not already present (loaded from prompt file)
     if "bee mascot" not in prompt.lower():
         bee_desc = load_shared("bee")
         if bee_desc:
             prompt = f"{prompt} {bee_desc}"
+
+    # Always append style suffix — forces consistent pixel art rendering
+    prompt = f"{prompt} {IMAGE_STYLE_SUFFIX}"
 
     # Strip single quotes — they cause 400 errors from the image API even when URL-encoded
     sanitized = prompt.replace("'", "")
     encoded_prompt = quote(sanitized)
     base_url = f"{POLLINATIONS_IMAGE_BASE}/{encoded_prompt}"
 
-    print(f"\n  Generating image {index + 1}: {prompt[:80]}...")
+    print(f"\n  Generating image {index + 1} (model={use_model}): {prompt[:80]}...")
 
     last_error = None
 
@@ -381,7 +397,7 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
         seed = random.randint(0, MAX_SEED)
 
         params = {
-            "model": IMAGE_MODEL,
+            "model": use_model,
             "width": width,
             "height": height,
             "quality": "hd",
@@ -613,8 +629,8 @@ def gist_path_for_pr(pr_number: int, merged_at: str) -> str:
     return f"{GISTS_REL_DIR}/{date_str}/PR-{pr_number}.json"
 
 
-def commit_gist_to_main(gist: Dict, github_token: str, owner: str, repo: str) -> bool:
-    """Commit a gist JSON file to main via the GitHub Contents API.
+def commit_gist(gist: Dict, github_token: str, owner: str, repo: str) -> bool:
+    """Commit a gist JSON file to the news branch via the GitHub Contents API.
     Returns True on success, False on failure."""
     file_path = gist_path_for_pr(gist["pr_number"], gist["merged_at"])
     content = json.dumps(gist, indent=2, ensure_ascii=False)
@@ -625,12 +641,12 @@ def commit_gist_to_main(gist: Dict, github_token: str, owner: str, repo: str) ->
     headers = _github_headers(github_token)
 
     # Check if file already exists (re-run / retry scenario)
-    sha = get_file_sha(github_token, owner, repo, file_path, "main")
+    sha = get_file_sha(github_token, owner, repo, file_path, GISTS_BRANCH)
 
     payload = {
         "message": f"chore(news): add gist for PR #{gist['pr_number']}",
         "content": encoded,
-        "branch": "main",
+        "branch": GISTS_BRANCH,
     }
     if sha:
         payload["sha"] = sha
@@ -643,7 +659,7 @@ def commit_gist_to_main(gist: Dict, github_token: str, owner: str, repo: str) ->
     )
 
     if resp.status_code in [200, 201]:
-        print(f"  Committed gist to {file_path}")
+        print(f"  Committed gist to {file_path} on {GISTS_BRANCH}")
         return True
 
     print(f"  Failed to commit gist: {resp.status_code} {resp.text[:200]}")
@@ -682,6 +698,60 @@ def read_gists_for_date(date_str: str, repo_root: str = None) -> List[Dict]:
 def filter_daily_gists(gists: List[Dict]) -> List[Dict]:
     """Filter gists to only those with publish_tier == 'daily'."""
     return [g for g in gists if g.get("gist", {}).get("publish_tier") == "daily"]
+
+
+def read_news_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[Dict]:
+    """Read a JSON file from the news branch (local overlay first, GitHub API fallback).
+
+    The workflow overlays social/news/ from the news branch onto the local checkout,
+    so local reads work during CI. Falls back to the GitHub API with ?ref=news.
+    """
+    # Try local first (workflow overlay)
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # Fall back to GitHub API
+    import base64 as _b64
+    headers = _github_headers(github_token)
+    resp = github_api_request(
+        "GET",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={GISTS_BRANCH}",
+        headers=headers,
+    )
+    if resp.status_code == 200:
+        content = _b64.b64decode(resp.json()["content"]).decode()
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            pass
+    return None
+
+
+def read_news_text_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[str]:
+    """Read a text file from the news branch (local overlay first, GitHub API fallback)."""
+    # Try local first (workflow overlay)
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except OSError:
+            pass
+
+    # Fall back to GitHub API
+    import base64 as _b64
+    headers = _github_headers(github_token)
+    resp = github_api_request(
+        "GET",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={GISTS_BRANCH}",
+        headers=headers,
+    )
+    if resp.status_code == 200:
+        return _b64.b64decode(resp.json()["content"]).decode()
+    return None
 
 
 def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
@@ -820,7 +890,7 @@ def commit_files_to_branch(
         encoded = _b64.b64encode(content.encode()).decode()
 
         sha = get_file_sha(github_token, owner, repo, file_path, branch)
-        if not sha:
+        if not sha and branch != GISTS_BRANCH:
             sha = get_file_sha(github_token, owner, repo, file_path, "main")
 
         msg = f"news: add {file_path.split('/')[-1]}"

@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Dedup test 1771385609873"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2144",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 18 Feb 2026 03:33:37 GMT",
+      "etag": "W/\"860-tUdo2wBMCImEIAGxMbdto+NAe18\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "320",
+      "x-usage-completion-text-tokens": "248",
+      "x-usage-prompt-text-tokens": "256"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Got the tag: “Dedup test 1771385609873.” Do you want me to run or explain a deduplication check, or are you just verifying the ID?\n\nIf you want help deduping data, tell me where the data lives (file, CSV, database, list in memory) and I can give precise steps. Quick examples in case they’re useful:\n\n- Shell (text file): sort -u infile > outfile\n  - Or: awk '!seen[$0]++' infile > outfile (preserves first occurrence order)\n\n- Python:\n  - For a list preserving order: list(dict.fromkeys(my_list))\n  - With pandas: df = df.drop_duplicates(subset=['col1','col2']) or df.drop_duplicates(inplace=True)\n\n- SQL:\n  - Simple: SELECT DISTINCT col1, col2 FROM table;\n  - With full-row dedupe keeping one row: use ROW_NUMBER() OVER (PARTITION BY key_cols ORDER BY timestamp_col) and keep row_number = 1\n\nIf you want, paste a small sample of the data or tell me the tool you’re using and I’ll give a tailored command or script.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1771385611,
+        "id": "pllns_41fd33100f5c14def6a975d167db934c",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 568,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 320,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 256,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 824
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Dedup test 1772521314990"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2059",
+      "content-type": "application/json",
+      "date": "Tue, 03 Mar 2026 07:02:00 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-usage-completion-reasoning-tokens": "320",
+      "x-usage-completion-text-tokens": "233",
+      "x-usage-prompt-text-tokens": "256"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Got the ID: 1772521314990. What would you like me to do with it — just check if it’s a duplicate in a dataset, run a dedup example, or something else?\n\nIf you want quick examples for common contexts:\n\n- Python (list):\n  if my_list.count(\"1772521314990\") > 1:\n      print(\"duplicate\")\n  else:\n      print(\"unique\")\n\n- Python (remove duplicates, preserve order):\n  seen = set()\n  deduped = [x for x in my_list if not (x in seen or seen.add(x))]\n\n- Pandas:\n  df = df.drop_duplicates(subset=[\"id_column\"])\n\n- SQL:\n  SELECT DISTINCT id_column FROM table;\n  -- or to find duplicates:\n  SELECT id_column, COUNT(*) c FROM table GROUP BY id_column HAVING c > 1;\n\n- JavaScript (array):\n  const deduped = [...new Set(arr)];\n\nIf you paste the dataset (or tell me where it is), I can check this ID against it or run a dedup for you.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772521315,
+        "id": "pllns_3ca22689babaeb6053d8c3996e20a989",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 553,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 320,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 256,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 809
+        }
+      }
+    }
+  }
+}

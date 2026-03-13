@@ -497,7 +497,7 @@ export const CreateChatCompletionResponseSchema = z.object({
     model: z.string(),
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
-    usage: CompletionUsageSchema,
+    usage: CompletionUsageSchema.optional(),
     user_tier: UserTierSchema.optional(),
     citations: z.array(z.string()).optional(), // Perplexity citations
 });
@@ -567,7 +567,7 @@ const OpenAIModelSchema = z
         supported_endpoints: z.array(z.string()).optional(),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
-        context_window: z.number().optional(),
+        context_length: z.number().optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

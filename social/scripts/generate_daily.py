@@ -9,11 +9,13 @@ At 06:00 UTC daily:
   4. Generate platform posts using existing prompts: twitter.json, instagram.json, reddit.json
   5. Generate platform images (1 twitter + 3 instagram + 1 reddit)
   Note: LinkedIn is weekly-only — no daily LinkedIn posts.
-  6. Create single PR with all files
+  6. Generate highlights from gists
+  7. Commit all content (posts, images, highlights) to the news branch
 
 See social/PIPELINE.md for full architecture.
 """
 
+import os
 import sys
 import json
 import time
@@ -24,25 +26,147 @@ from typing import Dict, List, Optional
 from common import (
     load_prompt,
     get_env,
+    get_repo_root,
     call_pollinations_api,
     generate_image,
     generate_platform_post,
     commit_image_to_branch,
     read_gists_for_date,
+    read_news_text_file,
     filter_daily_gists,
     parse_json_response,
     github_api_request,
-    create_branch_from_main,
     commit_files_to_branch,
-    create_or_update_pr,
     GITHUB_API_BASE,
+    GISTS_BRANCH,
     IMAGE_SIZE,
+    OWNER,
+    REPO,
 )
-from update_highlights import generate_highlights_and_readme
 
 # ── Constants ────────────────────────────────────────────────────────
 
 DAILY_REL_DIR = "social/news/daily"
+HIGHLIGHTS_PATH = "social/news/highlights.md"
+
+
+# ── Highlights ────────────────────────────────────────────────────────
+
+def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
+    """Read gists for a date and format as a changelog for the highlights prompt.
+
+    Filters to user-facing, publishable gists only.
+    Returns (changelog_text, gist_count).
+    """
+    gists = read_gists_for_date(date_str)
+
+    filtered = [
+        g for g in gists
+        if g.get("gist", {}).get("publish_tier") != "none"
+        and g.get("gist", {}).get("user_facing", False)
+    ]
+
+    if not filtered:
+        return "", 0
+
+    lines = [f"# Updates for {date_str}\n"]
+    for g in filtered:
+        ai = g.get("gist", {})
+        lines.append(f"## PR #{g['pr_number']}: {g['title']}")
+        if ai.get("summary"):
+            lines.append(f"**Summary:** {ai['summary']}")
+        if ai.get("impact"):
+            lines.append(f"**Impact:** {ai['impact']}")
+        if ai.get("headline"):
+            lines.append(f"**Headline:** {ai['headline']}")
+        if ai.get("keywords"):
+            lines.append(f"**Keywords:** {', '.join(ai['keywords'])}")
+        lines.append("")
+
+    return "\n".join(lines), len(filtered)
+
+
+def create_highlights_prompt(news_content: str, news_date: str) -> tuple:
+    """Create prompt to extract only the most significant highlights."""
+    template = load_prompt("highlights")
+    system_prompt = (template.replace("{news_date}", news_date)
+                     .replace("{news_content}", news_content))
+
+    return system_prompt, "Generate the highlights now."
+
+
+def parse_highlights_response(response: str) -> str:
+    """Clean up AI response, removing code blocks if present"""
+    message = response.strip()
+
+    if message.startswith('```'):
+        lines = message.split('\n')
+        if lines[0].strip() == '```' or lines[0].startswith('```'):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == '```':
+            lines = lines[:-1]
+        message = '\n'.join(lines)
+
+    return message.strip()
+
+
+def merge_highlights(new_highlights: str, existing_highlights: str) -> str:
+    """Prepend new highlights to existing ones"""
+    new_clean = new_highlights.strip()
+    existing_clean = existing_highlights.strip()
+
+    if not existing_clean:
+        return new_clean + "\n"
+
+    return new_clean + "\n" + existing_clean + "\n"
+
+
+def generate_highlights(pollinations_token: str, date_str: str) -> str | None:
+    """Generate updated highlights.md content without creating a PR.
+
+    Reads gists for the given date, AI-curates highlights, merges with existing
+    highlights.md.
+
+    Returns merged highlights content, or None if no updates.
+    """
+    changelog, gist_count = load_gists_as_changelog(date_str)
+    if not changelog:
+        print(f"  Highlights: no qualifying gists for {date_str}")
+        return None
+    print(f"  Highlights: {gist_count} qualifying gists for {date_str}")
+
+    system_prompt, user_prompt = create_highlights_prompt(changelog, date_str)
+    ai_response = call_pollinations_api(
+        system_prompt, user_prompt, pollinations_token,
+        temperature=0.3, exit_on_failure=False,
+    )
+    if not ai_response:
+        print("  Highlights: AI generation failed")
+        return None
+
+    new_highlights = parse_highlights_response(ai_response)
+    if not new_highlights.strip():
+        print("  Highlights: empty response from AI")
+        return None
+
+    print(f"  Highlights: generated new entries")
+
+    repo_root = get_repo_root()
+    highlights_path = os.path.join(repo_root, HIGHLIGHTS_PATH)
+    existing_highlights = ""
+    if os.path.exists(highlights_path):
+        with open(highlights_path, "r") as f:
+            existing_highlights = f.read()
+    else:
+        github_token = get_env("GITHUB_TOKEN", required=False)
+        if github_token:
+            fetched = read_news_text_file(HIGHLIGHTS_PATH, github_token, OWNER, REPO)
+            if fetched:
+                existing_highlights = fetched
+                print("  Highlights: fetched existing from news branch via API")
+    merged_highlights = merge_highlights(new_highlights, existing_highlights)
+
+    return merged_highlights
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -173,11 +297,10 @@ def generate_platform_images(
     return urls
 
 
-# ── Step 4: Create PR ───────────────────────────────────────────────
+# ── Step 4: Commit to news branch ─────────────────────────────────
 
-def create_daily_pr(
+def commit_daily_to_news(
     date_str: str,
-    summary: Dict,
     twitter_post: Optional[Dict],
     instagram_post: Optional[Dict],
     github_token: str,
@@ -185,18 +308,21 @@ def create_daily_pr(
     repo: str,
     reddit_post: Optional[Dict] = None,
     highlights_content: Optional[str] = None,
-    readme_content: Optional[str] = None,
-) -> Optional[int]:
-    """Create a single PR with all daily post files + highlights + README. Returns PR number."""
-    branch = f"daily-summary-{date_str}"
-
-    if create_branch_from_main(branch, github_token, owner, repo) is None:
-        return None
-
+) -> bool:
+    """Commit all daily content directly to the news branch. Returns True on success."""
     base_path = f"{DAILY_REL_DIR}/{date_str}"
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    # Add platform metadata and collect files
+    # Generate images (commits them directly to news branch)
+    print("\n  Generating platform images...")
+    generate_platform_images(
+        twitter_post, instagram_post,
+        date_str, get_env("POLLINATIONS_TOKEN"),
+        github_token, owner, repo, GISTS_BRANCH,
+        reddit_post=reddit_post,
+    )
+
+    # Collect files to commit
     files_to_commit = []
     if twitter_post:
         twitter_post.update({"date": date_str, "generated_at": now_iso, "platform": "twitter"})
@@ -210,74 +336,16 @@ def create_daily_pr(
     if reddit_post:
         reddit_post.update({"date": date_str, "generated_at": now_iso, "platform": "reddit"})
         files_to_commit.append((f"{base_path}/reddit.json", reddit_post))
-
-    # Include highlights and README (str data — commit_files_to_branch handles both str and dict)
     if highlights_content:
         files_to_commit.append(("social/news/highlights.md", highlights_content))
-    if readme_content:
-        files_to_commit.append(("README.md", readme_content))
 
-    # Generate images (commits them to the branch)
-    print("\n  Generating platform images...")
-    generate_platform_images(
-        twitter_post, instagram_post,
-        date_str, get_env("POLLINATIONS_TOKEN"),
-        github_token, owner, repo, branch,
-        reddit_post=reddit_post,
-    )
+    if not files_to_commit:
+        print("  No files to commit")
+        return False
 
-    # Commit all files (JSON posts + text highlights/README)
-    commit_files_to_branch(files_to_commit, branch, github_token, owner, repo, label=f"for {date_str}")
-
-    # Build PR body
-    arc_preview = ""
-    for arc in summary.get("arcs", []):
-        arc_preview += f"\n**{arc['headline']}** ({arc['importance']})\n"
-        arc_preview += f"{arc['summary']}\n"
-        arc_preview += f"PRs: {', '.join(f'#{p}' for p in arc.get('prs', []))}\n"
-
-    pr_count = summary.get("pr_count", 0)
-    one_liner = summary.get("one_liner", "")
-
-    twitter_preview = ""
-    if twitter_post:
-        tweet = twitter_post.get("tweet", twitter_post.get("full_tweet", ""))
-        twitter_preview = f"\n### Twitter\n```\n{tweet}\n```\n"
-
-    instagram_preview = ""
-    if instagram_post:
-        caption = instagram_post.get("caption", "")[:200]
-        img_count = len(instagram_post.get("images", []))
-        instagram_preview = f"\n### Instagram ({img_count} images)\n{caption}...\n"
-
-    reddit_preview = ""
-    if reddit_post:
-        title = reddit_post.get("title", "")
-        reddit_preview = f"\n### Reddit\n**Title:** {title}\n"
-
-    highlights_note = ""
-    if highlights_content:
-        highlights_note = "\n### Highlights + README\nUpdated in this PR.\n"
-
-    pr_body = f"""## Daily Summary — {date_str}
-
-**{one_liner}**
-
-{pr_count} PRs merged, {len(summary.get('arcs', []))} narrative arcs.
-
-### Story Arcs
-{arc_preview}
-{twitter_preview}{instagram_preview}{reddit_preview}{highlights_note}
----
-When this PR is merged, posts will be staged to Buffer (Twitter, Instagram) and Reddit deployed to VPS. LinkedIn is weekly-only.
-
-Generated automatically by GitHub Actions.
-"""
-
-    return create_or_update_pr(
-        f"Daily Summary — {date_str}", pr_body, branch,
-        github_token, owner, repo,
-    )
+    commit_files_to_branch(files_to_commit, GISTS_BRANCH, github_token, owner, repo, label=f"for {date_str}")
+    print(f"  Committed {len(files_to_commit)} files to {GISTS_BRANCH} branch")
+    return True
 
 
 # ── Main ─────────────────────────────────────────────────────────────
@@ -311,7 +379,7 @@ def main():
         gists_dir = f"social/news/gists/{date_str}"
         resp = github_api_request(
             "GET",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{gists_dir}",
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{gists_dir}?ref={GISTS_BRANCH}",
             headers=headers,
         )
         if resp.status_code == 200:
@@ -367,26 +435,25 @@ def main():
     if reddit_post:
         print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
 
-    # ── Generate highlights + README ─────────────────────────────────
-    print(f"\n[4/5] Generating highlights + README...")
-    highlights_content, readme_content = generate_highlights_and_readme(pollinations_token, date_str)
+    # ── Generate highlights ──────────────────────────────────────────
+    print(f"\n[4/5] Generating highlights...")
+    highlights_content = generate_highlights(pollinations_token, date_str)
 
-    # ── Create PR ────────────────────────────────────────────────────
-    print(f"\n[5/5] Creating PR...")
-    pr_number = create_daily_pr(
-        date_str, summary,
+    # ── Commit daily content to news branch ──────────────────────────
+    print(f"\n[5/5] Committing daily content to news branch...")
+    success = commit_daily_to_news(
+        date_str,
         twitter_post, instagram_post,
         github_token, owner, repo,
         reddit_post=reddit_post,
         highlights_content=highlights_content,
-        readme_content=readme_content,
     )
 
-    if pr_number:
-        print(f"\n=== Done! PR #{pr_number} created ===")
-    else:
-        print("\n=== Failed to create PR ===")
+    if not success:
+        print("\n=== Failed to commit daily content ===")
         sys.exit(1)
+
+    print("\n=== Done! ===")
 
 
 if __name__ == "__main__":

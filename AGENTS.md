@@ -2,17 +2,30 @@
 
 ## App Submission Handling
 
-App submissions are now **fully automated** via the `app-review-submission.yml` workflow.
+App submissions use a **two-phase review** via `app-review-submission.yml`: AI review + human approval.
 
 **Source of truth:** `apps/APPS.md` - A single markdown table with all apps.
 
 **How it works:**
 
-1. User opens issue with `tier:review` label
-2. Workflow parses issue with AI, checks Enter registration
-3. If valid: fetches GitHub stars, AI generates emoji + description
-4. Prepends new row to `apps/APPS.md`, updates README with last 10 apps
-5. Creates PR automatically
+1. User opens issue with `TIER-APP` label
+2. Workflow validates (Enter registration, duplicates), AI generates emoji + description
+3. Bot posts preview comment with `APP_REVIEW_DATA` JSON block, labels `TIER-APP-REVIEW`
+4. Maintainer reviews preview, adds `TIER-APP-APPROVED` label
+5. Workflow creates branch, prepends row to `apps/APPS.md`, creates PR with auto-merge
+6. After checks pass, PR merges automatically, issue closed with `TIER-APP-COMPLETE`
+
+**Label state machine:**
+
+```
+TIER-APP (new issue)
+  → TIER-APP-REJECTED (validation failed: duplicate/spore)
+  → TIER-APP-INCOMPLETE (not registered, user needs to fix)
+  → TIER-APP-REVIEW (AI review passed, preview posted, awaiting human)
+    → TIER-APP-APPROVED (maintainer approves → PR created + auto-merged)
+      → TIER-APP-COMPLETE (PR merged, tier upgraded, issue closed)
+    → TIER-APP-REJECTED (maintainer closes issue)
+```
 
 **Manual edits (if needed):**
 
@@ -22,24 +35,48 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 **Table format in APPS.md:**
 
 ```markdown
-| Emoji | Name     | Web_URL | Description                   | Language | Category | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted_Date | Issue_URL | Approved_Date |
-| ----- | -------- | ------- | ----------------------------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | -------------- | --------- | ------------- |
-| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01     | #1234     | 2025-01-02    |
+| Emoji | Name     | Web_URL | Description                   | Language | Category | Platform | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted_Date | Issue_URL | Approved_Date |
+| ----- | -------- | ------- | ----------------------------- | -------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | -------------- | --------- | ------------- |
+| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | web      | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01     | #1234     | 2025-01-02    |
 ```
 
 - **Submitted_Date**: Issue creation date (when user submitted)
 - **Issue_URL**: Link to original GitHub issue
 - **Approved_Date**: PR merge date (when app was approved)
 
+**Platform values** (auto-detected from URL + description):
+
+| Value | When to use |
+|-------|-------------|
+| `web` | Browser-based app (default when URL exists) |
+| `android` | Google Play Store app |
+| `ios` | App Store or Apple Shortcuts (routinehub.co) |
+| `windows` | Windows desktop / .exe |
+| `macos` | macOS native app |
+| `desktop` | Cross-platform desktop (Python/Qt, Electron, etc.) |
+| `cli` | Command-line tool |
+| `discord` | Discord bot or app |
+| `telegram` | Telegram bot |
+| `whatsapp` | WhatsApp bot |
+| `library` | npm/PyPI/Go package, SDK, API wrapper |
+| `browser-ext` | Browser extension (Firefox, Chrome) |
+| `roblox` | Roblox game |
+| `wordpress` | WordPress plugin |
+| `api` | Backend/server with no public UI (default when no URL) |
+
+Multiple platforms: comma-separated, e.g. `telegram,whatsapp`
+
 **Categories:**
 
-- Vibes ✨ (`Vibes`): No-code / describe-to-code playgrounds and builders
-- Creative 🎨 (`Creative`): Turn prompts into images, video, music, design, slides
-- Games 🎲 (`Games`): AI-powered play, interactive fiction, puzzle & agent worlds
-- Dev_Tools 🛠️ (`Dev_Tools`): SDKs, integration libs, extensions, dashboards, MCP servers
-- Chat 💬 (`Chat`): Standalone chat UIs / multi-model playgrounds
-- Social_Bots 🤖 (`Social_Bots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
-- Learn 📚 (`Learn`): Tutorials, guides, style books & educational demos
+- 🖼️ Image (`image`): Image gen, editing, design, avatars, stickers
+- 🎬 Video & Audio (`video_audio`): Video gen, animation, music, TTS
+- ✍️ Write (`writing`): Content creation, storytelling, copy, slides
+- 💬 Chat (`chat`): Assistants, companions, AI studio, multi-modal chat
+- 🎮 Play (`games`): AI games, interactive fiction, Roblox worlds
+- 📚 Learn (`learn`): Education, tutoring, language learning
+- 🤖 Bots (`bots`): Discord, Telegram, WhatsApp bots
+- 🛠️ Build (`build`): Dev tools, SDKs, integrations, vibe coding
+- 💼 Business (`business`): Productivity, finance, marketing, health, food
 
 ## Non-English Apps
 
@@ -67,8 +104,8 @@ pollinations/
 ├── text.pollinations.ai/      # Text generation backend (EC2)
 ├── pollinations.ai/           # Main React frontend
 ├── packages/
-│   ├── sdk/                   # @pollinations/sdk - Client library with React hooks
-│   └── mcp/                   # @pollinations/model-context-protocol - MCP server
+│   ├── sdk/                   # @pollinations_ai/sdk - Client library with React hooks
+│   └── mcp/                   # @pollinations_ai/model-context-protocol - MCP server
 ├── shared/                    # Shared utilities (auth, registry, IP queue)
 │   └── registry/              # Model registries (image.ts, text.ts, audio.ts, video.ts)
 ├── apps/                      # Community apps + APPS.md showcase
@@ -199,6 +236,19 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 - **Check which branch you're on** - Run `git branch --show-current` before starting work
 - **Check related PRs and issues** - Use GitHub MCP tools to find context before implementing
 - **Look for existing utility functions** in `shared/` before writing new ones (auth, queue, registry)
+
+## Tinybird Deployment Safety
+
+**CRITICAL — These rules apply whenever deploying to Tinybird:**
+
+- **Always validate first**: `tb --cloud deploy --check --wait` before any deploy
+- **Never use `--allow-destructive-operations`** without explicit user permission
+- **Never use `tb push`** — it's deprecated; use `tb --cloud deploy --wait`
+- **Always use `--cloud`** — without it, CLI tries Tinybird Local (Docker)
+- **Run from `enter.pollinations.ai/observability`** — not from repo root
+- **Pipes are shared** — multiple apps/dashboards may consume the same pipe. Verify all consumers before modifying any pipe
+- **Timeout mitigation**: Use `uniq()` over `uniqExact()`, avoid CTE+JOIN, prefer single-pass queries. For large time ranges, use `start_date` parameter pattern for week-by-week querying
+- Full deploy procedure: see `.claude/skills/tinybird-deploy/SKILL.md`
 
 ## Common Mistakes to Avoid
 

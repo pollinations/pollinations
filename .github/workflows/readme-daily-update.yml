@@ -1,0 +1,84 @@
+name: Daily README Update
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # 07:00 UTC — after news generation at 06:00
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Overlay news branch data
+        run: |
+          git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
+          git restore --staged social/news/ || true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update Latest News section
+        run: python social/scripts/update_readme.py
+
+      - name: Update Recent Apps section
+        run: node .github/scripts/app-update-readme.js
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet README.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          BRANCH="readme-update-${DATE}"
+
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+
+          # Create branch, commit, push
+          git checkout -b "$BRANCH"
+          git add README.md
+          git commit -m "docs: update README — ${DATE}"
+          git push -u origin "$BRANCH"
+
+          # Create PR with auto-merge
+          PR_URL=$(gh pr create \
+            --title "docs: update README — ${DATE}" \
+            --body "Daily README update: Latest News + Recent Apps sections." \
+            --label "NEWS" \
+            --base main)
+          echo "Created PR: $PR_URL"
+
+          # Enable auto-merge
+          gh pr merge "$PR_URL" --auto --squash || echo "Auto-merge not available"

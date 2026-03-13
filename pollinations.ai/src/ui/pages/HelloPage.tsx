@@ -1,378 +1,398 @@
+import ReactMarkdown from "react-markdown";
+import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
-import { LINKS } from "../../copy/content/socialLinks";
+import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { useHighlights } from "../../hooks/useHighlights";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { NewsSection } from "../components/NewsSection";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
-import { FeatureItem } from "../components/ui/feature-item";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
-import { RoadmapItem } from "../components/ui/roadmap-item";
-import { SubCard } from "../components/ui/sub-card";
 import { Body, Heading, Title } from "../components/ui/typography";
 
 function HelloPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(HELLO_PAGE);
+    const { highlights } = useHighlights();
+    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
+
+    const tiers = [
+        {
+            emoji: pageCopy.tierSeedEmoji,
+            title: pageCopy.tierSeedTitle,
+            desc: pageCopy.tierSeedDescription,
+            grant: pageCopy.tierSeedGrant,
+        },
+        {
+            emoji: pageCopy.tierFlowerEmoji,
+            title: pageCopy.tierFlowerTitle,
+            desc: pageCopy.tierFlowerDescription,
+            grant: pageCopy.tierFlowerGrant,
+        },
+        {
+            emoji: pageCopy.tierNectarEmoji,
+            title: pageCopy.tierNectarTitle,
+            desc: pageCopy.tierNectarDescription,
+            grant: pageCopy.tierNectarGrant,
+        },
+    ];
 
     return (
         <PageContainer>
             <PageCard isTranslating={isTranslating}>
-                {/* Hero */}
+                {/* Section 1 — Hero */}
                 <Title>{pageCopy.heroTitle}</Title>
-                <div className="mb-12">
-                    <Body>{pageCopy.heroIntro}</Body>
-                    <Body spacing="none">{pageCopy.heroTagline}</Body>
+                <div className="mb-8">
+                    <Body spacing="comfortable">
+                        {pageCopy.heroBodyPrefix}{" "}
+                        <strong>{pageCopy.heroBodyBold}</strong>
+                        {pageCopy.heroBodySuffix}
+                    </Body>
                 </div>
-
-                {/* CTAs */}
-                <div className="flex flex-wrap gap-3 mb-12">
+                <div className="flex flex-wrap gap-3 mb-8">
                     <Button
                         as="a"
-                        href="https://enter.pollinations.ai"
+                        href={LINKS.enter}
                         target="_blank"
                         rel="noopener noreferrer"
                         variant="primary"
                         size="lg"
+                        className="bg-[rgb(var(--primary-strong))] hover:bg-[rgb(var(--primary-strong)/0.8)] text-dark"
                     >
-                        {pageCopy.startCreatingButton}
-                        <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
+                        {pageCopy.startBuildingButton}
+                        <ExternalLinkIcon className="w-4 h-4" />
                     </Button>
                     <Button
                         as="a"
-                        href="https://enter.pollinations.ai"
+                        href={SOCIAL_LINKS.discord.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         variant="secondary"
                         size="lg"
+                        className="bg-secondary-strong text-dark"
                     >
-                        {pageCopy.getApiKeyButton}
-                        <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
+                        {pageCopy.joinDiscordButton}
+                        <ExternalLinkIcon className="w-4 h-4 text-dark" />
+                    </Button>
+                    <Button
+                        as="a"
+                        href={LINKS.enterDocs}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="secondary"
+                        size="lg"
+                        className="bg-tertiary-strong text-dark"
+                    >
+                        {pageCopy.readTheDocsButton}
+                        <ExternalLinkIcon className="w-4 h-4 text-dark" />
                     </Button>
                 </div>
+                <p className="font-body text-base text-subtle mb-4">
+                    <span className="font-headline text-xs font-black text-muted">
+                        {pageCopy.heroStat1}
+                    </span>{" "}
+                    {pageCopy.heroStat1Label}
+                    <span className="mx-2 text-border-subtle">·</span>
+                    <span className="font-headline text-xs font-black text-muted">
+                        {pageCopy.heroStat2}
+                    </span>{" "}
+                    {pageCopy.heroStat2Label}
+                    <span className="mx-2 text-border-subtle">·</span>
+                    <span className="font-headline text-xs font-black text-muted">
+                        {pageCopy.heroStat3}
+                    </span>{" "}
+                    {pageCopy.heroStat3Label}
+                </p>
 
                 <Divider />
 
-                {/* What's New - Compact news feed */}
-                <NewsSection limit={5} compact title={pageCopy.whatsNewTitle} />
-
-                <Divider />
-
-                {/* What Pollinations Is */}
+                {/* Section 2 — How it works */}
                 <div className="mb-12">
-                    <Heading variant="section">{pageCopy.whatIsTitle}</Heading>
-                    <Body spacing="comfortable">
-                        {pageCopy.whatIsDescription}
-                    </Body>
-                    <Body size="sm" spacing="none">
-                        {pageCopy.whatIsTagline}
-                    </Body>
-                </div>
-
-                <Divider />
-
-                {/* Pollen */}
-                <div className="mb-12">
-                    <Heading variant="section" spacing="comfortable">
-                        {pageCopy.pollenTitle}
-                    </Heading>
-                    <Body spacing="comfortable">
-                        {pageCopy.pollenDescription}
-                    </Body>
-
-                    {/* Two main paths: Buy and Earn */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                        {/* 1. Buy Pollen */}
-                        <SubCard>
-                            <Heading variant="lime" as="h3">
-                                {pageCopy.buyCardTitle}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Left: heading + bullets */}
+                        <div className="flex flex-col">
+                            <Heading variant="section" spacing="comfortable">
+                                {pageCopy.howItWorksTitle}
                             </Heading>
-                            <Body size="sm" spacing="tight">
-                                {pageCopy.buyCardDescription}
-                            </Body>
-                            <Body
-                                size="xs"
-                                spacing="comfortable"
-                                className="text-text-highlight font-bold"
-                            >
-                                {pageCopy.buyCardPromo}
-                            </Body>
-                            <Button
-                                as="a"
-                                href="https://enter.pollinations.ai"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="secondary"
-                                size="sm"
-                            >
-                                {pageCopy.viewPricingButton}
-                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                            </Button>
-                        </SubCard>
-
-                        {/* 2. Earn Pollen */}
-                        <SubCard>
-                            <div className="flex items-baseline gap-2 mb-2">
-                                <Heading variant="rose" as="h3" spacing="tight">
-                                    {pageCopy.earnCardTitle}
-                                </Heading>
-                                <Badge variant="highlight">
-                                    {pageCopy.newBadge}
-                                </Badge>
+                            <div className="flex flex-col gap-1.5 mb-6 mt-10">
+                                {pageCopy.startFreeLines.map(
+                                    (line: {
+                                        pre: string;
+                                        bold: string;
+                                        post: string;
+                                    }) => (
+                                        <p
+                                            key={line.pre}
+                                            className="font-body text-base text-muted leading-relaxed"
+                                        >
+                                            {line.pre}
+                                            {line.bold && (
+                                                <strong className="text-dark">
+                                                    {line.bold}
+                                                </strong>
+                                            )}
+                                            {line.post}
+                                        </p>
+                                    ),
+                                )}
                             </div>
-                            <Body size="sm" spacing="comfortable">
-                                {pageCopy.earnCardDescription}
-                            </Body>
-                            <div className="flex flex-wrap gap-2">
-                                <Button
-                                    as="a"
-                                    href="https://github.com/pollinations/pollinations"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="secondary"
-                                    size="sm"
-                                >
-                                    {pageCopy.contributeOnGitHubButton}
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                                </Button>
-                                <Button
-                                    as="a"
-                                    href={LINKS.githubSubmitApp}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="secondary"
-                                    size="sm"
-                                >
-                                    {pageCopy.submitYourAppButton}
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                                </Button>
-                            </div>
-                        </SubCard>
-                    </div>
-
-                    {/* Earn Pollen Details: Tiers + Quests */}
-                    <div className="space-y-6">
-                        {/* Sponsorship Tiers */}
-                        <div>
-                            <Heading
-                                variant="simple"
-                                as="h3"
-                                spacing="comfortable"
-                            >
-                                {pageCopy.tiersSubtitle}
-                            </Heading>
-                            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-                                {[
-                                    {
-                                        emoji: "🦠",
-                                        name: pageCopy.tierMicrobeTitle,
-                                        pollen: pageCopy.tierMicrobePollen,
-                                        desc: pageCopy.tierMicrobeDescription,
-                                    },
-                                    {
-                                        emoji: "🍄",
-                                        name: pageCopy.tierSporeTitle,
-                                        pollen: pageCopy.tierSporePollen,
-                                        desc: pageCopy.tierSporeDescription,
-                                    },
-                                    {
-                                        emoji: "🌱",
-                                        name: pageCopy.tierSeedTitle,
-                                        pollen: pageCopy.tierSeedPollen,
-                                        desc: pageCopy.tierSeedDescription,
-                                    },
-                                    {
-                                        emoji: "🌸",
-                                        name: pageCopy.tierFlowerTitle,
-                                        pollen: pageCopy.tierFlowerPollen,
-                                        desc: pageCopy.tierFlowerDescription,
-                                    },
-                                    {
-                                        emoji: "🍯",
-                                        name: pageCopy.tierNectarTitle,
-                                        pollen: pageCopy.tierNectarPollen,
-                                        desc: pageCopy.tierNectarDescription,
-                                    },
-                                ].map((tier) => (
-                                    <div
-                                        key={tier.name}
-                                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-card border border-border-subtle"
+                            <div className="flex flex-col gap-1">
+                                <span className="font-body text-sm text-muted">
+                                    {pageCopy.tierHowText}
+                                </span>
+                                <div>
+                                    <a
+                                        href={LINKS.enterTiersFaq}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
                                     >
-                                        <span className="text-xl">
-                                            {tier.emoji}
-                                        </span>
-                                        <div className="text-left">
-                                            <p className="text-sm font-semibold text-text-body-main">
-                                                {tier.name}
-                                            </p>
-                                            <p className="text-xs text-text-body-secondary">
-                                                {tier.pollen} pollen/day ·{" "}
-                                                {tier.desc}
-                                            </p>
+                                        {pageCopy.tierHowLink}
+                                        <ExternalLinkIcon
+                                            className="w-3 h-3"
+                                            strokeWidth="4"
+                                        />
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Right: tier ladder */}
+                        <div className="md:max-w-[280px]">
+                            <div className="border-2 border-dark border-r-4 border-b-4 p-4 bg-accent-light flex flex-col">
+                                <Heading
+                                    variant="subsection"
+                                    spacing="comfortable"
+                                >
+                                    {pageCopy.computeTiersTitle}
+                                </Heading>
+                                {tiers.map((tier, i) => (
+                                    <div key={tier.title}>
+                                        {i > 0 && (
+                                            <div className="flex justify-start pl-7 py-0.5 text-subtle font-mono text-xs">
+                                                ▼
+                                            </div>
+                                        )}
+                                        <div className="flex items-start gap-3 py-1.5">
+                                            <span className="text-lg mt-0.5">
+                                                {tier.emoji}
+                                            </span>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-headline text-xs font-black text-dark">
+                                                        {tier.title}
+                                                    </span>
+                                                    <span className="font-mono text-xs font-black text-dark ml-auto">
+                                                        {tier.grant}
+                                                    </span>
+                                                </div>
+                                                <Body
+                                                    size="sm"
+                                                    spacing="none"
+                                                    className="text-muted mt-0.5"
+                                                >
+                                                    {tier.desc}
+                                                </Body>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
-                            </div>
-                            {/* Beta note */}
-                            <p className="text-sm text-text-highlight mt-4">
-                                {pageCopy.tiersBetaNote}
-                            </p>
-                            {/* Tiers CTA */}
-                            <div className="mt-4">
-                                <Button
-                                    as="a"
-                                    href="https://enter.pollinations.ai"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="secondary"
-                                    size="default"
-                                >
-                                    {pageCopy.exploreTiersButton}
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                                </Button>
+                                <span className="font-body text-xs text-subtle italic mt-3 pt-3 border-t border-border-subtle">
+                                    {pageCopy.tiersBetaNote}
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <Divider />
-
-                {/* Why Developers Choose Pollinations */}
-                <div className="mb-12">
-                    <Heading variant="section">
-                        {pageCopy.whyChooseTitle}
-                    </Heading>
-                    <Body spacing="comfortable">{pageCopy.whyChooseIntro}</Body>
-                    <ul className="space-y-3">
-                        <FeatureItem variant="brand" icon="✨">
-                            {pageCopy.whyChooseFeature1}
-                        </FeatureItem>
-                        <FeatureItem variant="brand" icon="🔗">
-                            {pageCopy.whyChooseFeature2}
-                        </FeatureItem>
-                        <FeatureItem variant="brand" icon="💰">
-                            {pageCopy.whyChooseFeature3}
-                        </FeatureItem>
-                        <FeatureItem variant="brand" icon="👥">
-                            {pageCopy.whyChooseFeature4}
-                        </FeatureItem>
-                        <FeatureItem variant="brand" icon="📖">
-                            {pageCopy.whyChooseFeature5}
-                        </FeatureItem>
-                    </ul>
-                </div>
-
-                <Divider />
-
-                {/* What You Can Build */}
-                <div className="mb-12">
-                    <Heading variant="section">{pageCopy.buildTitle}</Heading>
-                    <Body spacing="comfortable">{pageCopy.buildIntro}</Body>
-                    <ul className="space-y-3">
-                        <FeatureItem variant="highlight" icon="🤖">
-                            {pageCopy.buildFeature1}
-                        </FeatureItem>
-                        <FeatureItem variant="highlight" icon="🎨">
-                            {pageCopy.buildFeature2}
-                        </FeatureItem>
-                        <FeatureItem variant="highlight" icon="⚡">
-                            {pageCopy.buildFeature3}
-                        </FeatureItem>
-                        <FeatureItem variant="highlight" icon="🎬">
-                            {pageCopy.buildFeature4}
-                        </FeatureItem>
-                    </ul>
-                    <div className="mt-6">
-                        <Button
-                            as="a"
-                            href="/apps"
-                            variant="secondary"
-                            size="default"
+                {/* Section 3 — Users pay */}
+                <div className="flex flex-col gap-6 mb-12">
+                    <div className="border-2 border-dark border-r-4 border-b-4 p-5 bg-primary-light md:max-w-[75%]">
+                        <Heading variant="subsection" spacing="comfortable">
+                            {pageCopy.usersTitle}
+                        </Heading>
+                        <Body spacing="comfortable" className="text-muted">
+                            {pageCopy.usersBody}
+                        </Body>
+                        <a
+                            href={LINKS.byopDocs}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-headline text-xs font-black text-dark bg-accent-strong px-2 py-0.5 hover:underline inline-flex items-center gap-1"
                         >
-                            {pageCopy.seeAppsButton}
-                        </Button>
+                            {pageCopy.usersPaymentsLink}
+                            <ExternalLinkIcon
+                                className="w-3 h-3"
+                                strokeWidth="4"
+                            />
+                        </a>
                     </div>
                 </div>
 
                 <Divider />
 
-                {/* Built With Community */}
+                {/* Section 5 — We build in the open */}
                 <div className="mb-12">
-                    <Heading variant="section">
-                        {pageCopy.communityTitle}
+                    <Heading variant="section" spacing="comfortable">
+                        {pageCopy.openTitle}
                     </Heading>
-                    <Body spacing="comfortable">
-                        {pageCopy.communityDescription}
-                    </Body>
-                    <Button
-                        as="a"
-                        href="/community"
-                        variant="secondary"
-                        size="default"
-                    >
-                        {pageCopy.joinCommunityButton}
-                    </Button>
-                </div>
 
-                <Divider />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* What's New — 2/3 width */}
+                        <div
+                            className="md:col-span-2 bg-secondary-light border-2 border-dark border-r-4 border-b-4 p-5"
+                            style={{
+                                boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)",
+                            }}
+                        >
+                            <Badge variant="highlight" className="mb-4">
+                                {pageCopy.recentUpdatesTitle}
+                            </Badge>
+                            <div className="space-y-2">
+                                {highlights.map((item) => (
+                                    <div
+                                        key={`${item.date}-${item.title}`}
+                                        className="py-1"
+                                    >
+                                        <p className="font-mono font-black text-xs text-dark">
+                                            <span className="bg-primary-strong px-1.5 py-0.5">
+                                                {item.date}
+                                            </span>
+                                            <span className="ml-2">
+                                                {item.emoji}
+                                            </span>
+                                            <span className="font-headline text-[10px] font-black text-dark ml-1">
+                                                {item.title}
+                                            </span>
+                                        </p>
+                                        <div className="font-body text-sm text-muted leading-relaxed mt-0.5">
+                                            <ReactMarkdown
+                                                components={{
+                                                    a: ({ node, ...props }) => (
+                                                        <a
+                                                            {...props}
+                                                            className="text-dark hover:underline font-bold"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        />
+                                                    ),
+                                                    p: ({ node, ...props }) => (
+                                                        <span
+                                                            {...props}
+                                                            className="inline"
+                                                        />
+                                                    ),
+                                                }}
+                                            >
+                                                {item.description}
+                                            </ReactMarkdown>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
 
-                {/* Roadmap */}
-                <div className="mb-12">
-                    <Heading variant="section">{pageCopy.roadmapTitle}</Heading>
-                    <Body spacing="comfortable">{pageCopy.roadmapIntro}</Body>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <RoadmapItem
-                            icon="🔐"
-                            title={pageCopy.roadmapItem1Title}
-                            description={pageCopy.roadmapItem1Description}
-                        />
-                        <RoadmapItem
-                            icon="💳"
-                            title={pageCopy.roadmapItem2Title}
-                            description={pageCopy.roadmapItem2Description}
-                        />
-                        <RoadmapItem
-                            icon="🚀"
-                            title={pageCopy.roadmapItem3Title}
-                            description={pageCopy.roadmapItem3Description}
-                        />
-                        <RoadmapItem
-                            icon="🎬"
-                            title={pageCopy.roadmapItem4Title}
-                            description={pageCopy.roadmapItem4Description}
-                        />
+                        {/* What's Next — 1/3 width */}
+                        <div
+                            className="md:col-span-1 bg-tertiary-light border-2 border-dark border-r-4 border-b-4 p-5"
+                            style={{
+                                boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)",
+                            }}
+                        >
+                            <Badge variant="highlight" className="mb-4">
+                                {pageCopy.roadmapLabel}
+                            </Badge>
+                            <div className="space-y-2">
+                                {pageCopy.roadmapItems.map(
+                                    (item: {
+                                        emoji: string;
+                                        title: string;
+                                        description: string;
+                                    }) => (
+                                        <div key={item.title} className="py-1">
+                                            <p className="font-headline text-[10px] font-black text-dark">
+                                                <span className="mr-2">
+                                                    {item.emoji}
+                                                </span>
+                                                {item.title}
+                                            </p>
+                                            <p className="font-body text-sm text-muted leading-relaxed mt-0.5">
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    ),
+                                )}
+                            </div>
+                            <p className="font-body text-xs text-subtle italic mt-4 pt-3 border-t border-border-subtle">
+                                🌱 Plans change. We build in the open and figure
+                                it out as we go.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 mt-10">
+                        <span className="text-3xl">
+                            {pageCopy.comingFooterEmoji}
+                        </span>
+                        <p className="font-headline text-xs leading-loose text-dark">
+                            {pageCopy.comingFooterLine1}
+                            <br />
+                            {pageCopy.comingFooterLine2}
+                        </p>
                     </div>
                 </div>
 
                 <Divider />
 
-                {/* Final CTA */}
+                {/* Section 6 — CTA */}
                 <div>
                     <Heading variant="section" spacing="comfortable">
                         {pageCopy.ctaTitle}
                     </Heading>
-                    <Body spacing="comfortable">{pageCopy.ctaDescription}</Body>
+                    <Body spacing="comfortable">{pageCopy.ctaBody}</Body>
                     <div className="flex flex-wrap gap-3">
                         <Button
                             as="a"
-                            href="https://enter.pollinations.ai"
+                            href={LINKS.enter}
                             target="_blank"
                             rel="noopener noreferrer"
                             variant="primary"
                             size="lg"
+                            className="bg-[rgb(var(--primary-strong))] hover:bg-[rgb(var(--primary-strong)/0.8)] text-dark"
                         >
-                            {pageCopy.getApiKeyButton}
-                            <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
+                            {pageCopy.startBuildingButton}
+                            <ExternalLinkIcon className="w-4 h-4" />
+                        </Button>
+                        <Button
+                            as={Link}
+                            to="/apps"
+                            variant="secondary"
+                            size="lg"
+                            className="bg-accent-light text-dark"
+                        >
+                            {pageCopy.browseAppsLink}
+                        </Button>
+                        <Button
+                            as={Link}
+                            to="/community"
+                            variant="secondary"
+                            size="lg"
+                            className="bg-accent-light text-dark"
+                        >
+                            {pageCopy.communityLink}
                         </Button>
                         <Button
                             as="a"
-                            href="/docs"
+                            href={LINKS.enterDocs}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             variant="secondary"
                             size="lg"
+                            className="bg-tertiary-strong text-dark"
                         >
                             {pageCopy.readTheDocsButton}
-                            <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
+                            <ExternalLinkIcon className="w-4 h-4 text-dark" />
                         </Button>
                     </div>
                 </div>

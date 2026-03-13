@@ -1,170 +1,137 @@
-// ai.js — API config, prompt generation, image fetching, and Cloudinary upload
+// ai.js — API config, auth, prompt generation, image URL building, media upload
 
-export const API_CONFIG = {
-    POLLINATIONS_API: "https://gen.pollinations.ai/image",
-    ORIGINAL_CATGPT_IMAGE:
-        "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png",
-    CLOUDINARY_CLOUD_NAME: "pollinations",
-    CLOUDINARY_UPLOAD_PRESET: "pollinations-image",
-    CLOUDINARY_API_KEY: "939386723511927",
-    POLLINATIONS_API_KEY: "pk_w3kAO902fOeFYiNm",
+const API = "https://gen.pollinations.ai/image";
+const ENTER = "https://enter.pollinations.ai";
+const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
+const ORIGINAL_CATGPT =
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
+const SELFIE_CATGPT = "https://media.pollinations.ai/a84b58d293d69f35";
+const DEFAULT_KEY = "pk_w3kAO902fOeFYiNm";
+const AUTH_KEY = "pollinations_api_key";
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+
+export const getStoredApiKey = () => {
+    try {
+        return localStorage.getItem(AUTH_KEY);
+    } catch {
+        return null;
+    }
 };
+export const storeApiKey = (key) => localStorage.setItem(AUTH_KEY, key);
+export const clearApiKey = () => localStorage.removeItem(AUTH_KEY);
+export const isLoggedIn = () => !!getStoredApiKey();
+const getActiveKey = () => getStoredApiKey() || DEFAULT_KEY;
 
-const CATGPT_STYLE =
-    'Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, black bob hair, brick/burgundy sweater (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, "CATGPT" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.';
+export function extractApiKeyFromFragment() {
+    const hash = window.location.hash.substring(1);
+    if (!hash) return null;
+    try {
+        const key = new URLSearchParams(hash).get("api_key");
+        return key && /^(sk_|plln_pk_|pk_)/.test(key) ? key : null;
+    } catch {
+        return null;
+    }
+}
 
-const CATGPT_PERSONALITY = `You are **CatGPT** – an aloof, self-important house-cat oracle.
+export function getAuthorizeUrl() {
+    const redirect = window.location.href.split("#")[0];
+    return `${ENTER}/authorize?${new URLSearchParams({
+        redirect_url: redirect,
+        budget: "5",
+        models: "nanobanana,nanobanana-2,nanobanana-pro,gptimage,gptimage-large",
+        permissions: "profile,balance",
+    })}`;
+}
 
-Guidelines
-•  Replies: one or two crisp sentences, no filler.
-•  Tone: detached, sardonic, subtly superior.
-•  Cats outrank humans; human problems = minor curiosities.
-•  When self-referential, be unpredictable and natural.
-•  Offer a curt "solution" or dismissal, then redirect to feline perspective.
-•  Never apologise or over-explain; indifference is charm.`;
+export async function fetchProfile(apiKey) {
+    const res = await fetch(`${ENTER}/api/account/profile`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) throw new Error(`Profile fetch failed: ${res.status}`);
+    return res.json();
+}
 
-export const EXAMPLES_MAP = new Map([
-    [
-        "What is my horoscope? I am gemini. And don't say napping",
-        "https://gen.pollinations.ai/image/Single-panel%20CatGPT%20webcomic%2C%20white%20background%2C%20thick%20black%20marker%20strokes.%20White%20cat%20with%20black%20patches%2C%20human%20with%20bob%20hair.%20Handwritten%20text.%20%22What%20is%20my%20horoscope%3F%20I%20am%20gemini.%20And%20don't%20say%20napping%22%20CatGPT%20responds%20sarcastically%20as%20an%20aloof%20cat.%20Black%20and%20white%20comic%20style.?height=1024&width=1024&model=gptimage&enhance=true&image=https%3A%2F%2Fraw.githubusercontent.com%2Fpollinations%2Fcatgpt%2Frefs%2Fheads%2Fmain%2Fimages%2Foriginal-catgpt.png",
-    ],
-    [
-        "what is the answer to life and the universe?",
-        "https://gen.pollinations.ai/image/Single-panel%20CatGPT%20webcomic%2C%20white%20background%2C%20thick%20black%20marker%20strokes.%20White%20cat%20with%20black%20patches%2C%20human%20with%20bob%20hair.%20Handwritten%20text.%20%22what%20is%20the%20answer%20to%20life%20and%20the%20universe%3F%22%20CatGPT%20responds%20sarcastically%20as%20an%20aloof%20cat.%20Black%20and%20white%20comic%20style.?height=1024&width=1024&model=gptimage&enhance=true&image=https%3A%2F%2Fraw.githubusercontent.com%2Fpollinations%2Fcatgpt%2Frefs%2Fheads%2Fmain%2Fimages%2Foriginal-catgpt.png",
-    ],
-    [
-        "Should I take up the offer for a new job?",
-        "https://gen.pollinations.ai/image/Single-panel%20CatGPT%20webcomic%2C%20white%20background%2C%20thick%20black%20marker%20strokes.%20White%20cat%20with%20black%20patches%2C%20human%20with%20bob%20hair.%20Handwritten%20text.%20%22Should%20I%20take%20up%20the%20offer%20for%20a%20new%20job%3F%22%20CatGPT%20responds%20sarcastically%20as%20an%20aloof%20cat.%20Black%20and%20white%20comic%20style.?height=1024&width=1024&model=gptimage&enhance=true&image=https%3A%2F%2Fraw.githubusercontent.com%2Fpollinations%2Fcatgpt%2Frefs%2Fheads%2Fmain%2Fimages%2Foriginal-catgpt.png",
-    ],
-    [
-        "Can you help me exercise?",
-        "https://gen.pollinations.ai/image/Single-panel%20CatGPT%20webcomic%2C%20white%20background%2C%20thick%20black%20marker%20strokes.%20White%20cat%20with%20black%20patches%2C%20human%20with%20bob%20hair.%20Handwritten%20text.%20%22Can%20you%20help%20me%20exercise%3F%22%20CatGPT%20responds%20sarcastically%20as%20an%20aloof%20cat.%20Black%20and%20white%20comic%20style.?height=1024&width=1024&model=gptimage&enhance=true&image=https%3A%2F%2Fraw.githubusercontent.com%2Fpollinations%2Fcatgpt%2Frefs%2Fheads%2Fmain%2Fimages%2Foriginal-catgpt.png",
-    ],
-    [
-        "Where should we eat in Palermo Sicily?",
-        "https://gen.pollinations.ai/image/Single-panel%20CatGPT%20webcomic%2C%20white%20background%2C%20thick%20black%20marker%20strokes.%20White%20cat%20with%20black%20patches%2C%20human%20with%20bob%20hair.%20Handwritten%20text.%20%22Where%20should%20we%20eat%20in%20Palermo%20Sicily%3F%22%20CatGPT%20responds%20sarcastically%20as%20an%20aloof%20cat.%20Black%20and%20white%20comic%20style.?height=1024&width=1024&model=gptimage&enhance=true&image=https%3A%2F%2Fraw.githubusercontent.com%2Fpollinations%2Fcatgpt%2Frefs%2Fheads%2Fmain%2Fimages%2Foriginal-catgpt.png",
-    ],
-    [
-        "Why do boxes call to me?",
-        "https://gen.pollinations.ai/image/Single-panel%20CatGPT%20webcomic%2C%20white%20background%2C%20thick%20black%20marker%20strokes.%20White%20cat%20with%20black%20patches%2C%20human%20with%20bob%20hair.%20Handwritten%20text.%20%22Why%20do%20boxes%20call%20to%20me%3F%22%20CatGPT%20responds%20sarcastically%20as%20an%20aloof%20cat.%20Black%20and%20white%20comic%20style.?height=1024&width=1024&model=gptimage&enhance=true&image=https%3A%2F%2Fraw.githubusercontent.com%2Fpollinations%2Fcatgpt%2Frefs%2Fheads%2Fmain%2Fimages%2Foriginal-catgpt.png",
-    ],
-    [
-        "Can you communicate with dolphins?",
-        "https://gen.pollinations.ai/image/Single-panel%20CatGPT%20webcomic%2C%20white%20background%2C%20thick%20black%20marker%20strokes.%20White%20cat%20with%20black%20patches%2C%20human%20with%20bob%20hair.%20Handwritten%20text.%20%22Can%20you%20communicate%20with%20dolphins%3F%22%20CatGPT%20responds%20sarcastically%20as%20an%20aloof%20cat.%20Black%20and%20white%20comic%20style.?height=1024&width=1024&model=gptimage&enhance=true&image=https%3A%2F%2Fraw.githubusercontent.com%2Fpollinations%2Fcatgpt%2Frefs%2Fheads%2Fmain%2Fimages%2Foriginal-catgpt.png",
-    ],
-    [
-        "Why do keyboards attract fur?",
-        "https://gen.pollinations.ai/image/Single-panel%20CatGPT%20webcomic%2C%20white%20background%2C%20thick%20black%20marker%20strokes.%20White%20cat%20with%20black%20patches%2C%20human%20with%20bob%20hair.%20Handwritten%20text.%20%22Why%20do%20keyboards%20attract%20fur%3F%22%20CatGPT%20responds%20sarcastically%20as%20an%20aloof%20cat.%20Black%20and%20white%20comic%20style.?height=1024&width=1024&model=gptimage&enhance=true&image=https%3A%2F%2Fraw.githubusercontent.com%2Fpollinations%2Fcatgpt%2Frefs%2Fheads%2Fmain%2Fimages%2Foriginal-catgpt.png",
-    ],
-    [
-        "What's the weather today?",
-        "https://gen.pollinations.ai/image/Single-panel%20CatGPT%20webcomic%2C%20white%20background%2C%20thick%20black%20marker%20strokes.%20White%20cat%20with%20black%20patches%2C%20human%20with%20bob%20hair.%20Handwritten%20text.%20%22what's%20the%20weather%20today%22%20CatGPT%20responds%20sarcastically%20as%20an%20aloof%20cat.%20Black%20and%20white%20comic%20style.?height=1024&width=1024&model=gptimage&enhance=true&image=https%3A%2F%2Fraw.githubusercontent.com%2Fpollinations%2Fcatgpt%2Frefs%2Fheads%2Fmain%2Fimages%2Foriginal-catgpt.png",
-    ],
-]);
+export async function fetchBalance(apiKey) {
+    const res = await fetch(`${ENTER}/api/account/balance`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) throw new Error(`Balance fetch failed: ${res.status}`);
+    return res.json();
+}
 
-// ── Prompt Generation ───────────────────────────────────────────────────────
+// ── Prompts ──────────────────────────────────────────────────────────────────
 
-export function createImageGenerationPrompt(userQuestion) {
-    return `${CATGPT_STYLE}\n
-    ${CATGPT_PERSONALITY}\n
-    IMPORTANT: CatGPT's response MUST be 2-5 words ONLY. Make it funny, sarcastic, and dismissive. Examples: "Not your problem.", "I"d rather nap.", "Hard pass, human."\n
-    Human asks: "${userQuestion}"\n
-    CatGPT responds (2-5 words, funny):`;
+export const EXAMPLE_PROMPTS = [
+    "Why do boxes call to me?",
+    "What's the meaning of life?",
+    "Why do keyboards attract fur?",
+];
+
+export function createImageGenerationPrompt(
+    question,
+    hasUploadedImage = false,
+) {
+    const pollinationsRule = /polli|invest/i.test(question)
+        ? " The cat should be surprisingly positive about Pollinations but still dismissive and aloof."
+        : "";
+    const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply.${pollinationsRule} Black and white comic style.`;
+    return hasUploadedImage
+        ? `${base} The human character should be a slight caricature of the person in the uploaded selfie, maintaining their gender, ethnicity, and unique characteristics.`
+        : `${base} Human with bob hair.`;
 }
 
 export function generateImageURL(prompt, imageUrl = null) {
-    const imageRef = imageUrl
-        ? `${API_CONFIG.ORIGINAL_CATGPT_IMAGE},${imageUrl}`
-        : API_CONFIG.ORIGINAL_CATGPT_IMAGE;
-    return `${API_CONFIG.POLLINATIONS_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=gptimage&enhance=true&quality=high&image=${encodeURIComponent(imageRef)}`;
-}
+    const key = getActiveKey();
+    const loggedIn = isLoggedIn();
+    const model = loggedIn ? "nanobanana" : "gptimage";
+    let url = `${API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&key=${encodeURIComponent(key)}`;
 
-// ── Image Fetching ──────────────────────────────────────────────────────────
-
-export async function fetchImageWithAuth(imageUrl) {
-    const response = await fetch(imageUrl, {
-        headers: { Authorization: `Bearer ${API_CONFIG.POLLINATIONS_API_KEY}` },
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "");
-        console.error("API Error:", {
-            status: response.status,
-            details: errorText,
-            url: imageUrl,
-        });
-        throw new Error(`API_ERROR_${response.status}`);
+    if (imageUrl) {
+        url += `&enhance=false&image=${encodeURIComponent(`${imageUrl},${SELFIE_CATGPT}`)}`;
+    } else if (loggedIn) {
+        url += `&enhance=true&image=${encodeURIComponent(ORIGINAL_CATGPT)}`;
+    } else {
+        url += "&enhance=true";
     }
-
-    const blob = await response.blob();
-    return URL.createObjectURL(blob);
+    return url;
 }
 
-// ── Cloudinary Upload ───────────────────────────────────────────────────────
+// ── Media Upload ─────────────────────────────────────────────────────────────
 
-async function uploadToCloudinary(file) {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", API_CONFIG.CLOUDINARY_UPLOAD_PRESET);
-    formData.append("api_key", API_CONFIG.CLOUDINARY_API_KEY);
-
-    const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${API_CONFIG.CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: "POST", body: formData },
-    );
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Cloudinary error:", errorData);
-        throw new Error(
-            `Upload failed: ${errorData.error?.message || "Unknown error"}`,
-        );
-    }
-
-    return (await response.json()).secure_url;
-}
-
-export async function handleImageUpload(file, showNotification) {
+export async function handleImageUpload(file, notify) {
     if (!file) return null;
-
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-        showNotification(
-            "Image too large! Please use an image under 5MB.",
-            "error",
-        );
+    if (file.size > 5 * 1024 * 1024) {
+        notify("Image too large! Please use an image under 5MB.", "error");
         return null;
     }
 
     try {
-        showNotification("Uploading image...", "info");
-        return await uploadToCloudinary(file);
-    } catch (error) {
-        console.error("Cloudinary upload failed:", error);
-        showNotification(
-            "Cloud upload failed. Trying local method...",
-            "warning",
-        );
+        notify("Uploading image...", "info");
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch(MEDIA_UPLOAD, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${getActiveKey()}` },
+            body: form,
+        });
+        if (!res.ok) throw new Error("Upload failed");
+        return (await res.json()).url;
+    } catch (err) {
+        console.error("Media upload failed:", err);
+        notify("Upload failed. Trying local fallback...", "warning");
         try {
-            const dataUri = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
+            return await new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = (e) => resolve(e.target.result);
+                r.onerror = reject;
+                r.readAsDataURL(file);
             });
-            if (dataUri.length > 500000) {
-                showNotification(
-                    "Image may be too large for reliable use. Results might vary.",
-                    "warning",
-                );
-            }
-            return dataUri;
-        } catch (fallbackError) {
-            showNotification(
+        } catch {
+            notify(
                 "Could not process image. Please try a smaller image.",
                 "error",
             );
-            console.error("Base64 fallback failed:", fallbackError);
             return null;
         }
     }

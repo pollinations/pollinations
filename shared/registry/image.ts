@@ -359,6 +359,22 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "dirtberry-pro": {
+        aliases: ["special-berry"],
+        modelId: "special-berry",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.0015, // 1.5x dirtberry ($0.001)
+            },
+        ],
+        description:
+            "Dirtberry Pro (api.airforce) - High quality realism, pixel art & complex scenes",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "grok-video": {
         aliases: ["grok-imagine-video"],
         modelId: "grok-video",

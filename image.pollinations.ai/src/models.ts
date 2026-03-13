@@ -185,6 +185,13 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
+    // Dirtberry Pro - High quality realism, pixel art & complex scenes via api.airforce
+    "dirtberry-pro": {
+        type: "airforce",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Grok Imagine Video - xAI video generation via api.airforce
     "grok-video": {
         type: "airforce-video",

@@ -176,7 +176,8 @@ function startCatAnimation() {
 function stopCatAnimation() {
     clearInterval(catAnimInterval);
     catAnimInterval = null;
-    for (const el of document.querySelectorAll("[style*='catSlide']")) el.remove();
+    for (const el of document.querySelectorAll("[style*='catSlide']"))
+        el.remove();
 }
 
 function celebrate() {
@@ -496,7 +497,7 @@ async function updateAuthUI() {
     if (heroHeader) heroHeader.classList.add("hidden");
 
     const apiKey = getStoredApiKey();
-    $("authApiKey").textContent = apiKey.substring(0, 4) + "••••••••";
+    $("authApiKey").textContent = `${apiKey.substring(0, 4)}••••••••`;
 
     try {
         const [profile, balance] = await Promise.all([

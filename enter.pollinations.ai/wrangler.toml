@@ -41,6 +41,13 @@ script_name = "pollinations-enter"
 tag = "v2"
 new_classes = ["PollenRateLimiter"]
 
+# Service binding to image container Worker (zero-latency internal routing)
+# When deployed alongside the container Worker, enter routes image/video
+# requests via this binding instead of HTTP to IMAGE_SERVICE_URL
+# services = [
+#     { binding = "IMAGE_SERVICE", service = "image-service-container" }
+# ]
+
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
@@ -148,6 +155,12 @@ class_name = "PollenRateLimiter"
 tag = "v2"
 new_classes = ["PollenRateLimiter"]
 
+# Service binding to image container Worker
+# Uncomment to switch from EC2 to Cloudflare Container routing
+# [[env.production.services]]
+# binding = "IMAGE_SERVICE"
+# service = "image-service-container"
+
 [env.production.vars]
 ENVIRONMENT = "production"
 LOG_LEVEL = "debug"
@@ -208,6 +221,12 @@ class_name = "PollenRateLimiter"
 [[env.staging.migrations]]
 tag = "v2"
 new_classes = ["PollenRateLimiter"]
+
+# Service binding to image container Worker
+# Uncomment to switch from EC2 to Cloudflare Container routing
+# [[env.staging.services]]
+# binding = "IMAGE_SERVICE"
+# service = "image-service-container"
 
 [env.staging.vars]
 ENVIRONMENT = "staging"

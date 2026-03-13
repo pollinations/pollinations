@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"lib": [
+			"ESNext"
+		],
+		"types": [
+			"@cloudflare/workers-types"
+		],
+		"strict": true,
+		"noEmit": true,
+		"skipLibCheck": true
+	},
+	"include": [
+		"src/**/*.ts"
+	]
+}

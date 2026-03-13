@@ -659,4 +659,23 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
         alpha: true,
     },
+    "openai-seraphyn": {
+        aliases: ["gpt-5.4-seraphyn", "gpt-5.4"],
+        modelId: "gpt-5.4",
+        provider: "seraphyn",
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                promptTextTokens: perMillion(1.25), // Half of OpenAI's $2.50/M
+                completionTextTokens: perMillion(7.5), // Half of OpenAI's $15.00/M
+            },
+        ],
+        description:
+            "GPT-5.4 (seraphyn.ai) - OpenAI's latest model via community provider",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+        alpha: true,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

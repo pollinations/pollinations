@@ -178,6 +178,10 @@ const models: ModelDefinition[] = [
         name: "claude-airforce",
         config: portkeyConfig["claude-sonnet-4.6"],
     },
+    {
+        name: "openai-seraphyn",
+        config: portkeyConfig["seraphyn-gpt-5.4"],
+    },
 ];
 
 export const availableModels = models;

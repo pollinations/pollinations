@@ -16,6 +16,7 @@ export interface ApiKeyUpdateParams {
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
+    freeOnly?: boolean;
     expiresAt?: Date | null;
 }
 
@@ -38,6 +39,8 @@ export type CreateApiKey = {
     expiryDays?: number | null;
     /** Account permissions: ["balance", "usage"]. null = no permissions */
     accountPermissions?: string[] | null;
+    /** Restrict this key to free models only. Paid models will be blocked. */
+    freeOnly?: boolean;
     /** App URL for publishable keys (optional, for consent screen attribution) */
     appUrl?: string;
 };

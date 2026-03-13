@@ -666,8 +666,8 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-13").getTime(),
-                promptTextTokens: perMillion(0.01),
-                completionTextTokens: perMillion(0.01),
+                promptTextTokens: perMillion(1.25), // Half of OpenAI's $2.50/M
+                completionTextTokens: perMillion(7.5), // Half of OpenAI's $15.00/M
             },
         ],
         description:

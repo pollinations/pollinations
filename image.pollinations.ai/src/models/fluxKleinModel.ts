@@ -232,7 +232,12 @@ async function callBpaiApi(
     }
 
     const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-    logOps("Downloaded image, buffer size:", imageBuffer.length, "seed:", result.seed);
+    logOps(
+        "Downloaded image, buffer size:",
+        imageBuffer.length,
+        "seed:",
+        result.seed,
+    );
 
     progress.updateBar(
         requestId,

@@ -278,7 +278,8 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.01,
             },
         ],
-        description: "FLUX.2 Klein 4B - Fast image generation and editing via bpaigen",
+        description:
+            "FLUX.2 Klein 4B - Fast image generation and editing via bpaigen",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

@@ -6,6 +6,8 @@ export type ErrorVariables = {
 };
 
 export type Env = {
-    Bindings: CloudflareBindings;
+    Bindings: CloudflareBindings & {
+        X402_SERVER_ADDRESS: string;
+    };
     Variables: RequestIdVariables & LoggerVariables & ErrorVariables;
 };

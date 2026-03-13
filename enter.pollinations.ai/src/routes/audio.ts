@@ -447,14 +447,16 @@ export async function generateMusic(opts: {
 /**
  * Generate music via Suno (api.airforce).
  * Calls the airforce images/generations endpoint with SSE, downloads the MP4 result.
- * Falls back to suno-v4.5 if suno-v5 fails.
+ * If a specific version is requested (suno-v5 or suno-v4.5), only that version is used.
+ * Otherwise falls back from suno-v5 to suno-v4.5 on failure.
  */
 export async function generateSunoMusic(opts: {
     prompt: string;
     apiKey: string;
     log: Logger;
+    requestedModel?: string;
 }): Promise<Response> {
-    const { prompt, apiKey, log } = opts;
+    const { prompt, apiKey, log, requestedModel } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -468,7 +470,13 @@ export async function generateSunoMusic(opts: {
         });
     }
 
-    const models = ["suno-v5", "suno-v4.5"];
+    // Honor explicit version requests; otherwise try v5 then fall back to v4.5
+    const models =
+        requestedModel === "suno-v4.5"
+            ? ["suno-v4.5"]
+            : requestedModel === "suno-v5"
+              ? ["suno-v5"]
+              : ["suno-v5", "suno-v4.5"];
 
     for (const model of models) {
         try {
@@ -673,6 +681,7 @@ export const audioRoutes = new Hono<Env>()
                     prompt: input,
                     apiKey: airforceApiKey,
                     log,
+                    requestedModel: c.var.model.requested,
                 });
             }
 

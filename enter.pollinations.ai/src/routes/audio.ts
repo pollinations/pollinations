@@ -605,6 +605,112 @@ export async function generateSunoMusic(opts: {
     });
 }
 
+/**
+ * Generate speech via Qwen3-TTS (seraphyn.ai).
+ * Seraphyn serves qwen3-tts through /v1/chat/completions but returns
+ * {audio: "data:audio/wav;base64,...", output_format: "wav"} — not standard
+ * OpenAI format. We decode the base64 audio and return raw bytes.
+ */
+export async function generateSeraphynTTS(opts: {
+    text: string;
+    voice: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { text, voice, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Qwen3-TTS service is not configured (missing API key)",
+        });
+    }
+
+    if (text.length > 4096) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Input text too long: ${text.length} characters. Maximum is 4096.`,
+        });
+    }
+
+    log.info("Qwen3-TTS request: voice={voice}, chars={chars}", {
+        voice,
+        chars: text.length,
+    });
+
+    // Voice control via system prompt (qwen3-tts-instruct style)
+    const messages: Array<{ role: string; content: string }> = [];
+    if (voice && voice !== "alloy") {
+        messages.push({
+            role: "system",
+            content: `You are ${voice}. Speak naturally in this voice.`,
+        });
+    }
+    messages.push({ role: "user", content: text });
+
+    const response = await fetch(
+        "https://seraphyn.ai/api/v1/chat/completions",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                model: "qwen3-tts",
+                messages,
+            }),
+        },
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        log.warn("Seraphyn TTS error {status}: {body}", {
+            status: response.status,
+            body: errorText,
+        });
+        throw new UpstreamError(remapUpstreamStatus(response.status), {
+            message: errorText || getDefaultErrorMessage(response.status),
+        });
+    }
+
+    const result = (await response.json()) as {
+        audio?: string;
+        output_format?: string;
+        input_character_length?: number;
+    };
+
+    if (!result.audio) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Seraphyn TTS returned no audio data",
+        });
+    }
+
+    // Strip data URI prefix (e.g. "data:audio/wav;base64,") and decode
+    const base64Data = result.audio.replace(/^data:[^;]+;base64,/, "");
+    const binaryString = atob(base64Data);
+    const audioBytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        audioBytes[i] = binaryString.charCodeAt(i);
+    }
+
+    const usageHeaders = buildUsageHeaders(
+        "qwen3-tts",
+        createAudioTokenUsage(text.length),
+    );
+
+    log.info("Qwen3-TTS success: {chars} characters, {bytes} bytes", {
+        chars: text.length,
+        bytes: audioBytes.byteLength,
+    });
+
+    return new Response(audioBytes, {
+        status: 200,
+        headers: {
+            "Content-Type": "audio/wav",
+            ...usageHeaders,
+        },
+    });
+}
+
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), balance)
@@ -664,6 +770,18 @@ export const audioRoutes = new Hono<Env>()
             ) as CreateSpeechRequest;
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "qwen3-tts") {
+                const seraphynApiKey = (
+                    c.env as unknown as { SERAPHYN_API_KEY: string }
+                ).SERAPHYN_API_KEY;
+                return generateSeraphynTTS({
+                    text: input,
+                    voice,
+                    apiKey: seraphynApiKey,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "suno") {
                 const airforceApiKey = (

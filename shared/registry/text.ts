@@ -659,8 +659,8 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
         alpha: true,
     },
-    "gpt-5.4-seraphyn": {
-        aliases: ["gpt-5.4"],
+    "openai-seraphyn": {
+        aliases: ["gpt-5.4-seraphyn", "gpt-5.4"],
         modelId: "gpt-5.4",
         provider: "seraphyn",
         cost: [

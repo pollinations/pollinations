@@ -179,7 +179,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-sonnet-4.6"],
     },
     {
-        name: "gpt-5.4-seraphyn",
+        name: "openai-seraphyn",
         config: portkeyConfig["seraphyn-gpt-5.4"],
     },
 ];

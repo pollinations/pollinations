@@ -1,0 +1,34 @@
+{
+  "pr_number": 9078,
+  "title": "feat: add d1_user_public Tinybird pipe",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9078",
+  "merged_at": "2026-03-13T17:46:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Show off your stripes",
+    "blurb": "We've added a new public endpoint to show off your GitHub stats and Pollen tier without exposing the sensitive stuff. Time to see who the biggest flowers in the garden are!",
+    "summary": "Added a restricted public Tinybird endpoint for user data that safely exposes profile info and tiers while keeping sensitive details secure.",
+    "impact": "Developers can now build community leaderboards and profile cards using public user data without compromising privacy.",
+    "keywords": [
+      "api",
+      "tinybird",
+      "users",
+      "community",
+      "privacy"
+    ],
+    "visual_concept": "Polly the bee pinning a cute, safe profile card to a community bulletin board, representing public user data being shared safely.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot pinning a small pixelated profile card to a wooden community bulletin board. The card shows a tiny flower icon and a checkmark. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-13T17:47:01.970892+00:00"
+}

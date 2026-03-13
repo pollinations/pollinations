@@ -8,7 +8,7 @@ We have multiple projects under the `pollinations.ai` umbrella, and each project
 
 ### 1. Explore Projects and Issues
 
-Before you start, please refer to the main `README.md` file of the `pollinations.ai` repository. It lists all the insights and provides an overview. There are dedicated issues from versatile topics under the repository [Issues](https://github.com/pollinations/pollinations/issues) section.
+Before you start, please refer to the main `README.md` file of the `pollinations.ai` repository. It provides a comprehensive overview and key insights. You can find dedicated issues covering various topics under the repository [Issues](https://github.com/pollinations/pollinations/issues) section.
 
 Look for issues that interest you and feel free to tackle them!
 
@@ -18,7 +18,7 @@ Once you've selected an issue, take the time to thoroughly understand its requir
 
 ### 3. Documentation Contributions
 
-We are in profound need of members who can help enhance our documentation. If you possess experience in data science, machine learning, LLMs (Large Language Models), or Stable Diffusion, your insights will be invaluable. You can contribute by:
+We are actively seeking contributors to help enhance our documentation. If you have experience in data science, machine learning, LLMs (Large Language Models), or Stable Diffusion, your insights will be invaluable. You can contribute by:
 
 - Improving existing documentation to be clearer and more comprehensive.
 - Writing new guides or tutorials that explain complex concepts or workflows.
@@ -31,19 +31,12 @@ Want to build something cool? Check out our **[apps folder](./apps/README.md)**!
 
 **How it works:**
 
-1. **Propose your app idea** by creating a GitHub issue using the "SubmitApp" template
-2. Describe what you want to build and which pollinations.ai APIs you'll use
-3. Get feedback from maintainers
-4. Build your app and submit a PR
+1. **Propose your app idea** by creating a GitHub issue using the "SubmitApp" template.
+2. Describe what you want to build and which pollinations.ai APIs you'll use.
+3. Get feedback from maintainers.
+4. Build your app and submit a PR.
 
-Create apps using pollinations.ai APIs and get them featured. Each app lives in its own folder with clear docs. Perfect for:
-
-- Creative tools (meme generators, art tools)
-- Productivity apps (thumbnail creators, content generators)
-- Fun projects (games, quizzes)
-- Developer tools (API playgrounds, dashboards)
-
-See the [apps README](./apps/README.md) for detailed guidelines and templates.
+Create apps using pollinations.ai APIs and get them featured. Each app lives in its own folder with clear docs. Perfect for creative tools, productivity apps, fun projects, and developer tools.
 
 ### 5. Code Contributions
 
@@ -66,53 +59,52 @@ Once your pull request is merged, you will automatically be issued the badge!
 
 ## Getting Started
 
-1.  **Fork the Repository**: Click on the "Fork" button at the top right of the repository page to create your own copy of the project under your GitHub account.
+1. **Fork the Repository**: Click on the "Fork" button at the top right of the repository page to create your own copy of the project under your GitHub account.
 
-2.  **Clone Your Fork**: Clone your forked repository to your local machine. Replace `your-username` with your GitHub username.
+2. **Clone Your Fork**: Clone your forked repository to your local machine. Replace `your-username` with your GitHub username.
 
-    ```bash
-    git clone https://github.com/your-username/pollinations.git
-    ```
+```bash
+git clone [https://github.com/your-username/pollinations.git](https://github.com/your-username/pollinations.git)
 
-3.  **Create a Branch for Your Work**: Create a new branch for your specific contribution. It's good practice to name your branch related to the issue you're addressing (e.g., `fix/bug-description` or `feat/new-feature-name`).
+```
 
-    ```bash
-    git checkout -b my-feature-branch
-    ```
+3. **Create a Branch for Your Work**: Create a new branch for your specific contribution. Use a descriptive name (e.g., `fix/bug-description` or `feat/new-feature-name`).
 
-4.  **Make Your Changes**: Implement your changes, focusing on the MVP for the chosen issue.
+```bash
+git checkout -b my-feature-branch
 
-5.  **Commit Your Changes**: Commit your changes with a clear and descriptive message.
+```
 
-    ```bash
-    git commit -m "feat: Implement new feature for issue #XYZ"
-    ```
+4. **Make Your Changes**: Implement your changes, focusing on the MVP for the chosen issue.
+5. **Commit Your Changes**: Commit your changes with a clear and descriptive message using the conventional commit format.
 
-    (Replace "XYZ" with the actual issue number)
+```bash
+git commit -m "feat: implement new feature for issue #XYZ"
 
-6.  **Push Your Changes**: Push your local branch with your changes to your forked repository on GitHub.
+```
 
-    ```bash
-    git push origin my-feature-branch
-    ```
+6. **Push Your Changes**: Push your local branch with your changes to your forked repository on GitHub.
 
-7.  **Create a Pull Request (PR)**: Go to the original `pollinations/pollinations` repository on GitHub. You will see an option to create a Pull Request from your recently pushed branch.
-    - **Crucially:** Link your PR to the original issue it addresses (e.g., "Closes #XYZ" in your PR description).
-    - Ensure your PR clearly explains the changes you've made and how they resolve the issue.
+```bash
+git push origin my-feature-branch
+
+```
+
+7. **Create a Pull Request (PR)**: Go to the original `pollinations/pollinations` repository on GitHub. You will see an option to create a Pull Request from your recently pushed branch.
+* **Crucially:** Link your PR to the original issue it addresses (e.g., "Closes #XYZ" in your PR description).
+* Ensure your PR clearly explains the changes you've made and how they resolve the issue.
+
+
 
 ## Guidelines
 
-Follow the Coding Style: Write your code using the same style and rules that the project already uses. This helps keep the code consistent and easy to read for everyone.
+* **Follow the Coding Style**: Write your code using the same style and rules that the project already uses.
+* **Code Formatting**: We use [Biome]() for code formatting and linting. Before submitting your PR:
+* Run `npm run format` to auto-format your code.
+* Run `npm run lint` to check for issues.
 
-**Code Formatting**: We use [Biome](https://biomejs.dev/) for code formatting and linting. Before submitting your PR:
-- Run `npm run format` to auto-format your code
-- Run `npm run lint` to check for issues
-- Our CI will automatically check formatting on changed files
 
-Write Clear Commit Messages: When saving your changes (committing), write messages that clearly and simply explain what you did and why.
+* **Write Clear Commit Messages**: Write messages that clearly and simply explain what you did and why.
+* **Document Your Changes**: Add comments to your code where needed and ensure any updated documentation is accurate.
+* **Test Your Work**: Run tests to check that your changes work correctly and do not break anything else.
 
-Document Your Changes Well: Add comments to your code where needed to explain how it works. If you are updating or adding documentation, make sure it is clear and accurate.
-
-Test Your Work: If you can, write and run tests to check that your changes work correctly and do not break anything else.
-
-Thank You! Thank you for contributing! Your help makes the pollinations.ai project stronger and more useful for the community. Happy coding!

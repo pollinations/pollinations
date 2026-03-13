@@ -1,5 +1,4 @@
 import debug from "debug";
-import fetch from "node-fetch";
 import { createSseStreamConverter } from "./sseStreamConverter.js";
 import {
     normalizeOptions,
@@ -54,7 +53,7 @@ export async function genericOpenAIClient(
         additionalHeaders = {},
     } = config;
     const startTime = Date.now();
-    const requestId = Math.random().toString(36).substring(7);
+    const requestId = crypto.randomUUID();
 
     log(`[${requestId}] Starting request`, {
         messageCount: messages?.length || 0,
@@ -120,9 +119,9 @@ export async function genericOpenAIClient(
                 `[${requestId}] Streaming response, status: ${response.status}`,
             );
 
-            let streamToReturn = response.body;
+            let streamToReturn: ReadableStream | null = response.body;
             if (response.body && formatResponse) {
-                streamToReturn = response.body.pipe(
+                streamToReturn = response.body.pipeThrough(
                     createSseStreamConverter((json: unknown) => {
                         const parsed = json as ChatCompletion;
                         const delta = parsed?.choices?.[0]?.delta;

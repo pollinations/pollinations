@@ -1,24 +1,23 @@
 import debug from "debug";
-import fetch from "node-fetch";
+import { importPKCS8, SignJWT } from "jose";
 
 const log = debug("pollinations:google-auth");
 const errorLog = debug("pollinations:google-auth:error");
 
 interface ServiceAccountKey {
-    type: string;
     project_id: string | undefined;
     private_key_id: string;
     private_key: string;
     client_email: string;
 }
 
-/** Refresh tokens at 50 minutes (tokens last 60 minutes) */
-const TOKEN_REFRESH_INTERVAL_MS = 50 * 60 * 1000;
+/** Tokens last 60 minutes; refresh at 50 minutes */
+const TOKEN_LIFETIME_MS = 50 * 60 * 1000;
 
 let cachedToken: string | null = null;
 let tokenExpiration = 0;
 
-async function refreshToken(): Promise<string | null> {
+function getKeyData(): ServiceAccountKey | null {
     const privateKey = process.env.GOOGLE_PRIVATE_KEY;
     const privateKeyId = process.env.GOOGLE_PRIVATE_KEY_ID;
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
@@ -31,53 +30,37 @@ async function refreshToken(): Promise<string | null> {
         return null;
     }
 
-    const keyData: ServiceAccountKey = {
-        type: "service_account",
+    return {
         project_id: projectId,
         private_key_id: privateKeyId,
         private_key: privateKey.replace(/\\n/g, "\n"),
         client_email: clientEmail,
     };
-
-    const jwt = await generateJwtToken(keyData);
-    if (!jwt) return null;
-
-    const accessToken = await exchangeJwtForAccessToken(jwt);
-    if (!accessToken) return null;
-
-    log("Successfully authenticated using service account key");
-    return accessToken;
 }
 
 async function generateJwtToken(
     keyData: ServiceAccountKey,
 ): Promise<string | null> {
     try {
-        const jwt = (await import("jsonwebtoken")).default;
-
+        const privateKey = await importPKCS8(keyData.private_key, "RS256");
         const now = Math.floor(Date.now() / 1000);
 
-        const signedJwt = jwt.sign(
-            {
-                iss: keyData.client_email,
-                sub: keyData.client_email,
-                aud: "https://oauth2.googleapis.com/token",
-                iat: now,
-                exp: now + 3600,
-                scope: "https://www.googleapis.com/auth/cloud-platform",
-            },
-            keyData.private_key,
-            {
-                header: {
-                    alg: "RS256" as const,
-                    typ: "JWT" as const,
-                    kid: keyData.private_key_id,
-                },
-                algorithm: "RS256",
-            },
-        );
+        const jwt = await new SignJWT({
+            iss: keyData.client_email,
+            sub: keyData.client_email,
+            aud: "https://oauth2.googleapis.com/token",
+            iat: now,
+            exp: now + 3600,
+            scope: "https://www.googleapis.com/auth/cloud-platform",
+        })
+            .setProtectedHeader({
+                alg: "RS256",
+                typ: "JWT",
+                kid: keyData.private_key_id,
+            })
+            .sign(privateKey);
 
-        return signedJwt;
+        return jwt;
     } catch (error) {
         errorLog("Failed to generate JWT token:", error);
         return null;
@@ -122,6 +105,20 @@ async function exchangeJwtForAccessToken(jwt: string): Promise<string | null> {
     }
 }
 
+async function refreshToken(): Promise<string | null> {
+    const keyData = getKeyData();
+    if (!keyData) return null;
+
+    const jwt = await generateJwtToken(keyData);
+    if (!jwt) return null;
+
+    const accessToken = await exchangeJwtForAccessToken(jwt);
+    if (!accessToken) return null;
+
+    log("Successfully authenticated using service account key");
+    return accessToken;
+}
+
 async function getAccessToken(): Promise<string | null> {
     if (cachedToken && Date.now() < tokenExpiration) {
         return cachedToken;
@@ -129,7 +126,7 @@ async function getAccessToken(): Promise<string | null> {
 
     log("Token missing or expired, refreshing...");
     cachedToken = await refreshToken();
-    tokenExpiration = Date.now() + TOKEN_REFRESH_INTERVAL_MS;
+    tokenExpiration = Date.now() + TOKEN_LIFETIME_MS;
     log(
         "Token refreshed, expires at:",
         new Date(tokenExpiration).toISOString(),
@@ -137,17 +134,8 @@ async function getAccessToken(): Promise<string | null> {
     return cachedToken;
 }
 
-// Start periodic token refresh if credentials are configured
-if (process.env.GOOGLE_PRIVATE_KEY) {
-    getAccessToken().catch((error) => {
-        errorLog("Failed to initialize Google Cloud authentication:", error);
-    });
-
-    setInterval(() => {
-        getAccessToken().catch((error) => {
-            errorLog("Failed to refresh Google Cloud access token:", error);
-        });
-    }, TOKEN_REFRESH_INTERVAL_MS);
-}
+// No setInterval: Workers do not support long-lived timers.
+// On-demand refresh via getAccessToken() works because the global scope
+// (cachedToken, tokenExpiration) persists across requests on the same isolate.
 
 export default { getAccessToken };

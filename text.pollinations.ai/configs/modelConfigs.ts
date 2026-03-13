@@ -3,7 +3,6 @@ import {
     createAirforceModelConfig,
     createAnthropicConfig,
     createAzureModelConfig,
-    createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
     createNomNomConfig,
@@ -35,15 +34,21 @@ function createVertexGeminiConfig(
     });
 }
 
-/** Creates an Azure config with a max-completion-tokens limit. */
+/** Creates an Azure config with a max-completion-tokens limit.
+ *  Takes env var NAMES (not values) so they resolve at request time,
+ *  after the Worker env bridge populates process.env. */
 function createAzureWithMaxTokens(
-    apiKeyEnv: string | undefined,
-    endpointEnv: string | undefined,
+    apiKeyVarName: string,
+    endpointVarName: string,
     modelName: string,
     maxTokens: number,
 ): PortkeyConfigFactory {
     return () => ({
-        ...createAzureModelConfig(apiKeyEnv, endpointEnv, modelName),
+        ...createAzureModelConfig(
+            process.env[apiKeyVarName],
+            process.env[endpointVarName],
+            modelName,
+        ),
         "max-completion-tokens": maxTokens,
     });
 }
@@ -55,20 +60,20 @@ function createAzureWithMaxTokens(
 export const portkeyConfig: PortkeyConfigMap = {
     // -- Azure (Myceli) -------------------------------------------------------
     "gpt-5-mini": createAzureWithMaxTokens(
-        process.env.AZURE_PF_GPT5MINI_API_KEY,
-        process.env.AZURE_PF_GPT5MINI_ENDPOINT,
+        "AZURE_PF_GPT5MINI_API_KEY",
+        "AZURE_PF_GPT5MINI_ENDPOINT",
         "gpt-5-mini",
         16384,
     ),
     "gpt-5.2-2025-12-11": createAzureWithMaxTokens(
-        process.env.AZURE_MYCELI_GPT52_API_KEY,
-        process.env.AZURE_MYCELI_GPT52_ENDPOINT,
+        "AZURE_MYCELI_GPT52_API_KEY",
+        "AZURE_MYCELI_GPT52_ENDPOINT",
         "gpt-5.2-2025-12-11",
         16384,
     ),
     "gpt-4o-mini-audio-preview-2024-12-17": createAzureWithMaxTokens(
-        process.env.AZURE_MYCELI_GPT4O_AUDIO_API_KEY,
-        process.env.AZURE_MYCELI_GPT4O_AUDIO_ENDPOINT,
+        "AZURE_MYCELI_GPT4O_AUDIO_API_KEY",
+        "AZURE_MYCELI_GPT4O_AUDIO_ENDPOINT",
         "gpt-4o-mini-audio-preview-2024-12-17",
         2048,
     ),
@@ -76,8 +81,8 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- Azure (PointsFlyer) --------------------------------------------------
     "gpt-5-nano-2025-08-07": createAzureWithMaxTokens(
-        process.env.AZURE_PF_GPT5NANO_API_KEY,
-        process.env.AZURE_PF_GPT5NANO_ENDPOINT,
+        "AZURE_PF_GPT5NANO_API_KEY",
+        "AZURE_PF_GPT5NANO_ENDPOINT",
         "gpt-5-nano-2025-08-07",
         512,
     ),

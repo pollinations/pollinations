@@ -68,12 +68,12 @@ const computeGameState = (messages: Message[]): GameState => {
         isLoading: false,
     };
 
-    const gameState = messages.reduce<GameState>((state, msg) => {
-        const newFloor = calculateNewFloor(state.currentFloor, msg.action);
-
-        return {
-            ...state,
+    let gameState = initialState;
+    for (const msg of messages) {
+        const newFloor = calculateNewFloor(gameState.currentFloor, msg.action);
+        gameState = {
             currentFloor: newFloor,
+            movesLeft: gameState.movesLeft,
             showInstruction:
                 msg.action === "show_instructions" || messages.length <= 3,
             isLoading: msg.persona === "user",
@@ -81,14 +81,16 @@ const computeGameState = (messages: Message[]): GameState => {
                 msg.persona === "guide" &&
                 msg.message === GAME_CONFIG.MARVIN_TRANSITION_MSG
                     ? "marvin"
-                    : state.currentPersona,
+                    : gameState.currentPersona,
             conversationMode:
-                msg.action === "join" ? "autonomous" : state.conversationMode,
-            marvinJoined: msg.action === "join" || state.marvinJoined,
-            hasWon: state.marvinJoined && newFloor === GAME_CONFIG.FLOORS,
-            firstStageComplete: state.firstStageComplete || newFloor === 1,
+                msg.action === "join"
+                    ? "autonomous"
+                    : gameState.conversationMode,
+            marvinJoined: msg.action === "join" || gameState.marvinJoined,
+            hasWon: gameState.marvinJoined && newFloor === GAME_CONFIG.FLOORS,
+            firstStageComplete: gameState.firstStageComplete || newFloor === 1,
         };
-    }, initialState);
+    }
 
     console.log("gameState", gameState);
     return gameState;

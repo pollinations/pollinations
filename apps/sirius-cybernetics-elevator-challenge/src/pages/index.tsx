@@ -257,9 +257,9 @@ export default function Index() {
                             {messages
                                 // remove first message
                                 .slice(1)
-                                .map((msg, index) => (
+                                .map((msg, _index) => (
                                     <MessageDisplay
-                                        key={index}
+                                        key={`${msg.persona}-${msg.message.slice(0, 20)}`}
                                         msg={msg}
                                         gameState={gameState}
                                     />

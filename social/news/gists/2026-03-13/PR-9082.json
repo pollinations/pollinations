@@ -1,0 +1,33 @@
+{
+  "pr_number": 9082,
+  "title": "feat: add dirtberry-pro image model",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9082",
+  "merged_at": "2026-03-13T19:19:54Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Dirtberry Pro has sprouted",
+    "blurb": "Added Dirtberry Pro to the image generation lineup. It handles complex scenes and pixel art without breaking a sweat. Go paint some pixels.",
+    "summary": "Integrated the new dirtberry-pro image model into the API for enhanced realism and complex scene generation.",
+    "impact": "You can now pass dirtberry-pro as your model parameter to get upgraded, high-quality image generation capabilities.",
+    "keywords": [
+      "image generation",
+      "models",
+      "dirtberry-pro",
+      "api"
+    ],
+    "visual_concept": "The PR adds a new image model called 'dirtberry-pro'. Visual metaphors: a literal 'dirt berry' (a glowing, high-tech berry growing from soil or code), the bee mascot acting as a gardener, and the monitor robot generating high-quality images from the harvest.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny farmer's straw hat, harvesting a glowing, magical berry from a lime green (#ecf874) code-plant. A chunky monitor-head robot stands nearby holding a freshly printed, highly detailed picture. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'DIRTBERRY PRO'. Cozy pixel art, 8-bit aesthetic, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-13T19:21:17.822247+00:00"
+}

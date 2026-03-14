@@ -16,10 +16,7 @@
 
 import { execSync } from "node:child_process";
 import { boolean, command, run, string } from "@drizzle-team/brocli";
-import {
-    TIER_POLLEN as TIER_POLLEN_CONFIG,
-    type TierName,
-} from "../src/tier-config.ts";
+import type { TierName } from "../src/tier-config.ts";
 
 type Environment = "staging" | "production";
 
@@ -96,20 +93,16 @@ function getD1User(env: Environment, githubUsername: string): D1User | null {
     }
 }
 
-// Use pollen amounts from central config
-const TIER_POLLEN = TIER_POLLEN_CONFIG;
-
 /**
  * Update tier directly in D1 database.
- * Also sets tier_balance to the new tier's pollen amount.
+ * Does NOT set tier_balance — the daily cron refill handles that at midnight UTC.
  */
 function updateD1Tier(
     env: Environment,
     userId: string,
     tier: TierName,
 ): { success: boolean; error?: string } {
-    const tierBalance = TIER_POLLEN[tier];
-    const sql = `UPDATE user SET tier = '${tier}', tier_balance = ${tierBalance} WHERE id = '${userId}';`;
+    const sql = `UPDATE user SET tier = '${tier}' WHERE id = '${userId}';`;
 
     try {
         queryD1(env, sql);

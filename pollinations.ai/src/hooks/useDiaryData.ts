@@ -78,6 +78,14 @@ function parseDateInfo(dateStr: string) {
     };
 }
 
+// Daily files are generated the day AFTER the PRs they cover.
+// Subtract one day so they align with the gists they describe.
+function subtractOneDay(dateStr: string): string {
+    const d = new Date(`${dateStr}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+}
+
 const PLATFORM_ORDER = [
     "twitter",
     "instagram-1",
@@ -113,6 +121,7 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
             weeklyImages: string[];
             prImages: string[];
             hasWeekly: boolean;
+            hasDaily: boolean;
         }
     >();
 
@@ -124,6 +133,7 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
                 weeklyImages: [],
                 prImages: [],
                 hasWeekly: false,
+                hasDaily: false,
             });
         }
         // biome-ignore lint/style/noNonNullAssertion: guaranteed by has() check above
@@ -150,12 +160,24 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
             continue;
         }
 
-        // Daily images: social/news/daily/2026-02-15/images/twitter.jpg
+        // Daily images: social/news/daily/2026-03-08/images/twitter.jpg
+        // → covers PRs from 2026-03-07, so shift date back by 1 day
         const dailyImgMatch = p.match(
             /^social\/news\/daily\/(\d{4}-\d{2}-\d{2})\/images\/(.+\.jpg)$/,
         );
         if (dailyImgMatch) {
-            ensure(dailyImgMatch[1]).dailyImages.push(dailyImgMatch[2]);
+            const shiftedDate = subtractOneDay(dailyImgMatch[1]);
+            ensure(shiftedDate).dailyImages.push(dailyImgMatch[2]);
+            continue;
+        }
+
+        // Daily JSON: marks a date as having a daily summary (shift date back)
+        const dailyJsonMatch = p.match(
+            /^social\/news\/daily\/(\d{4}-\d{2}-\d{2})\/.+\.json$/,
+        );
+        if (dailyJsonMatch) {
+            const shiftedDate = subtractOneDay(dailyJsonMatch[1]);
+            ensure(shiftedDate).hasDaily = true;
             continue;
         }
 
@@ -187,15 +209,20 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
     for (const date of dates) {
         const data = dateMap.get(date);
         if (!data) continue;
+
+        // Only show entries that have a daily or weekly summary.
+        // Gist-only entries (today's PRs before the daily runs) are hidden.
+        const hasContent =
+            data.hasDaily || data.dailyImages.length > 0 || data.hasWeekly;
+        if (!hasContent) continue;
+
         const info = parseDateInfo(date);
 
-        // If this date has weekly content, create a week entry
-        // If it also has daily content, create both (day first, then week)
-        const hasDaily =
-            data.dailyImages.length > 0 ||
-            (!data.hasWeekly && data.prNumbers.length > 0);
+        // If this date has weekly content, create a week entry.
+        // If it also has daily content, create both (day first, then week).
+        const hasDailyContent = data.dailyImages.length > 0 || data.hasDaily;
 
-        if (hasDaily && data.hasWeekly) {
+        if (hasDailyContent && data.hasWeekly) {
             // Both day and week entries for this date
             const dayImages = buildImageVariants(
                 date,
@@ -322,8 +349,40 @@ interface GistJson {
     gist: {
         headline: string;
         blurb: string;
+        summary: string;
         category: string;
     };
+}
+
+// Strip [Tag] category markers, hashtags, and URLs from social copy
+function cleanSocialText(text: string): string {
+    return text
+        .replace(/\[.*?\]\s*/g, "") // Remove ALL [Tag] markers anywhere in text
+        .replace(/\s*#\w+/g, "") // Remove hashtags
+        .replace(/https?:\/\/\S+/g, "") // Remove URLs
+        .replace(/\s{2,}/g, " ") // Collapse extra whitespace
+        .trim();
+}
+
+function extractTitle(text: string): string {
+    const cleaned = cleanSocialText(text);
+    const sentences = cleaned.split(/(?<=[.!?])\s+/);
+    return (sentences[0] || cleaned).trim();
+}
+
+// Extract a clean DNA quote from the LinkedIn hook by stripping decorative-only lines
+function cleanHookForDNA(hook: string): string | undefined {
+    const meaningful = hook
+        .split("\n")
+        .filter(
+            (line) =>
+                line.trim().length > 0 &&
+                /[a-zA-Z]{4,}/.test(line) &&
+                !/^[\s·˚✿─→\-#]+$/.test(line),
+        );
+    const last = meaningful.pop();
+    if (!last) return undefined;
+    return cleanSocialText(last) || undefined;
 }
 
 async function fetchTreePaths(signal: AbortSignal): Promise<string[]> {
@@ -402,35 +461,44 @@ export function useDiaryData() {
             type: "day" | "week",
             prNumbers: number[],
         ): Promise<EntryContent | null> => {
-            const tier = type === "week" ? "weekly" : "daily";
-
-            // Try twitter.json for title/summary
-            const twitter = await fetchJSON<TwitterJson>(
-                `${RAW_BASE}/${tier}/${date}/twitter.json`,
-            );
-
             let title = "";
             let summary = "";
             let dna: string | undefined;
-
-            if (twitter) {
-                // Extract first sentence as title
-                const sentences = twitter.tweet.split(/[.!]\s/);
-                title = (sentences[0] || twitter.tweet)
-                    .replace(/[^\w\s''—\-:,&@#]/g, "")
-                    .trim();
-                summary = twitter.tweet;
-            }
 
             if (type === "week") {
                 const linkedin = await fetchJSON<LinkedInJson>(
                     `${RAW_BASE}/weekly/${date}/linkedin.json`,
                 );
                 if (linkedin) {
-                    dna = linkedin.hook;
-                    if (!summary && linkedin.body) {
-                        summary = linkedin.body.slice(0, 400);
+                    dna = cleanHookForDNA(linkedin.hook);
+                    if (linkedin.body) {
+                        const cleanedBody = cleanSocialText(linkedin.body);
+                        title = extractTitle(linkedin.body);
+                        // Strip the title sentence from the start of summary to avoid duplication
+                        const afterTitle = cleanedBody.startsWith(title)
+                            ? cleanedBody.slice(title.length).trim()
+                            : cleanedBody;
+                        summary = afterTitle.slice(0, 600).trim();
                     }
+                    if (!title) title = extractTitle(linkedin.hook);
+                }
+            } else {
+                // Daily: fetch twitter.json (note: stored at the shifted date + 1 day in the repo)
+                // We need to fetch from the original file date (date + 1 day)
+                const nextDay = new Date(`${date}T12:00:00Z`);
+                nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+                const fileDate = nextDay.toISOString().slice(0, 10);
+
+                const twitter = await fetchJSON<TwitterJson>(
+                    `${RAW_BASE}/daily/${fileDate}/twitter.json`,
+                );
+                if (twitter) {
+                    title = extractTitle(twitter.tweet);
+                    const cleanedTweet = cleanSocialText(twitter.tweet);
+                    const afterTitle = cleanedTweet.startsWith(title)
+                        ? cleanedTweet.slice(title.length).trim()
+                        : cleanedTweet;
+                    summary = afterTitle;
                 }
             }
 
@@ -441,7 +509,7 @@ export function useDiaryData() {
                 );
                 if (gist) {
                     title = gist.gist.headline;
-                    summary = gist.gist.blurb;
+                    summary = gist.gist.summary || gist.gist.blurb;
                 }
             }
 
@@ -462,7 +530,7 @@ export function useDiaryData() {
             return {
                 prNumber: gist.pr_number,
                 title: gist.gist.headline,
-                description: gist.gist.blurb,
+                description: gist.gist.summary || gist.gist.blurb,
                 author: gist.author,
                 impact: gist.gist.category,
                 imageUrl: `${RAW_BASE}/gists/${date}/PR-${prNumber}.jpg`,

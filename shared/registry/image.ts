@@ -270,7 +270,8 @@ export const IMAGE_SERVICES = {
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
-        provider: "modal",
+        provider: "bpai",
+        alpha: true,
         cost: [
             {
                 date: new Date("2026-01-21").getTime(), // Launch date
@@ -278,22 +279,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "FLUX.2 Klein 4B - Fast image generation & editing on Modal",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-    },
-    "klein-large": {
-        aliases: ["flux-klein-9b", "klein-9b"],
-        modelId: "klein-large",
-        provider: "modal",
-        cost: [
-            {
-                date: new Date("2026-01-21").getTime(),
-                completionImageTokens: 0.015,
-            },
-        ],
-        description:
-            "FLUX.2 Klein 9B - Higher quality image generation & editing on Modal",
+            "FLUX.2 Klein 4B - Fast image generation and editing via bpaigen",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -339,6 +325,38 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Grok Imagine (api.airforce) - xAI image gen",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "dirtberry": {
+        aliases: [],
+        modelId: "dirtberry",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-03-09").getTime(),
+                completionImageTokens: 0.001, // ~free via api.airforce
+            },
+        ],
+        description:
+            "Dirtberry (api.airforce) - Quick realistic image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "dirtberry-pro": {
+        aliases: ["special-berry"],
+        modelId: "special-berry",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.0015, // 1.5x dirtberry ($0.001)
+            },
+        ],
+        description:
+            "Dirtberry Pro (api.airforce) - High quality realism, pixel art & complex scenes",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },

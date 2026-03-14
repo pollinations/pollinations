@@ -992,13 +992,15 @@ const generateImage = async (
             );
 
             try {
-                await requireSafePrompt(
-                    prompt,
-                    safeParams,
-                    userInfo,
-                    progress,
-                    requestId,
-                );
+                if (safeParams.safe) {
+                    await requireSafePrompt(
+                        prompt,
+                        safeParams,
+                        userInfo,
+                        progress,
+                        requestId,
+                    );
+                }
 
                 const modelDisplayName =
                     safeParams.model === "nanobanana-pro"
@@ -1118,31 +1120,19 @@ const generateImage = async (
             }
         }
 
-        case "klein-large": {
-            try {
-                return await callFluxKleinAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                    "klein-large",
-                );
-            } catch (error) {
-                logError("Flux Klein Large generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
-
         case "flux-2-dev":
         case "imagen-4":
         case "grok-imagine":
+        case "dirtberry":
+        case "dirtberry-pro":
             return await callAirforceImageAPI(
                 prompt,
                 safeParams,
                 progress,
                 requestId,
-                safeParams.model,
+                safeParams.model === "dirtberry-pro"
+                    ? "special-berry"
+                    : safeParams.model,
             );
 
         case "flux":

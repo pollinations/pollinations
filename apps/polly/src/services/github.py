@@ -1,9 +1,9 @@
 import asyncio
 import logging
-from urllib.parse import quote
 
 import aiohttp
 
+from .._url import quote
 from ..config import config
 from ..constants import API_TIMEOUT, MAX_ERROR_LENGTH
 from . import github_auth

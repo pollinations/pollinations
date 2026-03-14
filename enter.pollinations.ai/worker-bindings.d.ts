@@ -71,6 +71,7 @@ declare namespace Cloudflare {
         ELEVENLABS_API_KEY: string;
         OVHCLOUD_API_KEY: string;
         AIRFORCE_API_KEY: string;
+        SERAPHYN_API_KEY: string;
         TINYBIRD_D1_SYNC_TOKEN: string;
         POLLEN_RATE_LIMITER: DurableObjectNamespace /* PollenRateLimiter from pollinations-enter */;
         IMAGE_BUCKET: R2Bucket;

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9093,
+  "title": "Remove Pollinations AI Python SDK",
+  "author": "GamerC0der",
+  "url": "https://github.com/pollinations/pollinations/pull/9093",
+  "merged_at": "2026-03-14T02:23:18Z",
+  "labels": [
+    "WEB",
+    ".DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the greenhouse",
+    "blurb": "We did a little weeding in the documentation and removed a broken link to an old Python SDK. Keeping the garden paths clear and 404-free!",
+    "summary": "Removed a broken link to an invalid Python SDK repository from the apps directory and main documentation.",
+    "impact": "Developers browsing the apps page will no longer be misdirected to a 404 page.",
+    "keywords": [
+      "docs",
+      "cleanup",
+      "apps",
+      "greenhouse"
+    ],
+    "visual_concept": "Polly the bee doing some light gardening, removing a dead pixelated plant or broken signpost (representing the dead link) from a vibrant digital greenhouse.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's hat, pulling a small withered weed from a lime green (#ecf874) flower pot in a digital greenhouse. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T02:24:01.361557+00:00"
+}

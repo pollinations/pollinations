@@ -65,12 +65,8 @@ function imageServiceUrl(
     },
 ): URL {
     const u = new URL(`${baseUrl}/prompt/`);
-    u.searchParams.set("model", p.model);
-    u.searchParams.set("width", String(p.width));
-    u.searchParams.set("height", String(p.height));
-    u.searchParams.set("quality", p.quality);
-    u.searchParams.set("seed", String(p.seed));
-    u.searchParams.set("nofeed", "true");
+    for (const [k, v] of Object.entries({ ...p, nofeed: "true" }))
+        u.searchParams.set(k, String(v));
     return u;
 }
 
@@ -212,15 +208,11 @@ export function handleImageGeneration(
 
         const body = (await c.req.json()) as CreateImageRequest &
             Record<string, unknown>;
-        const model = c.var.model.resolved;
-        const { width, height, quality, seed } = resolveParams(body);
+        const resolved = resolveParams(body);
 
         const url = imageServiceUrl(c.env.IMAGE_SERVICE_URL, {
-            model,
-            width,
-            height,
-            quality,
-            seed,
+            model: c.var.model.resolved,
+            ...resolved,
         });
         const postBody = {
             prompt: body.prompt,
@@ -240,11 +232,8 @@ export function handleImageGeneration(
                 `https://gen.pollinations.ai/image/${encodeURIComponent(body.prompt)}`,
             );
             for (const [k, v] of Object.entries({
-                model,
-                width,
-                height,
-                quality,
-                seed,
+                model: c.var.model.resolved,
+                ...resolved,
                 nologo: "true",
             }))
                 imageUrl.searchParams.set(k, String(v));
@@ -268,23 +257,11 @@ export function handleImageEdit(
 
         const { prompt, imageUrls, size, quality, seed, extra } =
             await parseEditInput(c);
-        const {
-            width,
-            height,
-            quality: q,
-            seed: s,
-        } = resolveParams({
-            size,
-            quality,
-            seed,
-        });
+        const resolved = resolveParams({ size, quality, seed });
 
         const url = imageServiceUrl(c.env.IMAGE_SERVICE_URL, {
             model: c.var.model.resolved,
-            width,
-            height,
-            quality: q,
-            seed: s,
+            ...resolved,
         });
 
         const response = await postToImageService(

@@ -1,0 +1,36 @@
+{
+  "pr_number": 9065,
+  "title": "fix: use correct API version for gptimage edits endpoint",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9065",
+  "merged_at": "2026-03-14T21:56:46Z",
+  "labels": [
+    "IMAGE",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "GPT image edits, restored",
+    "blurb": "We squashed a routing bug that was causing 404 errors when trying to edit images with the GPT model. The img2img pipeline is back to its fully functional, pixel-perfect self.",
+    "summary": "Fixed an API versioning mismatch that caused 404 errors when using the gptimage model for image-to-image edits.",
+    "impact": "Users can once again successfully use the gptimage model with an image input parameter to modify existing images.",
+    "keywords": [
+      "gptimage",
+      "img2img",
+      "bug fix",
+      "api",
+      "image generation"
+    ],
+    "visual_concept": "Polly the bee fixing a broken painting or adjusting a canvas with a wrench, representing the restoration of the image editing (img2img) feature. Nomnom eating the 404 error.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, using a glowing wrench to fix a beautiful framed painting on a wooden easel. The round tan nomnom creature sits nearby, happily eating a crumpled paper that says '404'. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T21:57:57.820659+00:00"
+}

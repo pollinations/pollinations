@@ -1,0 +1,45 @@
+{
+  "content_type": "carousel",
+  "linked_images": true,
+  "strategy_reasoning": "A 3-image carousel visually breaks down a dense technical changelog (8 PRs) into cozy, digestible vignettes. The pixel art aesthetic softens the infrastructure updates, focusing on the feeling of speed, new tools, and data processing rather than dry code.",
+  "visual_style": "Cozy 8-bit pixel art aesthetic with chunky sprites. Soft pastel gradients heavily featuring lime green (#ecf874), warm lighting, and lo-fi retro gaming vibes reminiscent of Stardew Valley or A Short Hike.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy 8-bit pixel art scene of Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, pink rectangular blush marks, and small translucent blue wings wearing a tiny red scarf. She is watering a glowing lime green (#ecf874) seed that is instantly sprouting into a digital code-plant. A chunky retro hourglass sits nearby with sand falling fast. Soft pastel lavender and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm.",
+      "description": "Polly instantly growing a seed, representing the optimized seed upgrade workflow dropping from 25h to seconds.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-13/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy 8-bit pixel art scene of Polly, a cute pixel art bee mascot with a yellow body, dark brown stripes, pink blush, and small blue wings wearing a tiny tool belt, hovering next to a chunky pixel robot with a CRT monitor head. The robot has square pixel eyes, stubby arms, wears retro headphones, and holds a glowing picture frame showing a landscape. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm.",
+      "description": "Polly and the Monitor Robot testing out the new qwen3-tts audio provider and dirtberry-pro image models.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-13/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy 8-bit pixel art scene of Polly, a cute pixel art bee mascot with a yellow body, dark brown stripes, pink blush, and small blue wings wearing tiny wizard glasses. She watches amused as a round tan mochi-ball Nomnom creature with dot eyes happily eats a stack of glowing data logs. A retro terminal nearby glows with a bright sunny light theme showing a tiny pixel cat face. Soft lime green (#ecf874) and mint gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic. Nostalgic but beautiful, emotionally warm.",
+      "description": "The Nomnom creature consuming data for the new Tinybird leaderboard pipe, while a terminal shows off CatGPT's new light theme.",
+      "text_in_image": "NOMNOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-13/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "8 PRs merged. The seed tier upgrade workflow used to take 25 hours. Now it takes seconds. We also switched to hourly pollen refills, so the drip is continuous.\n\nElsewhere in the repo: CatGPT got a light theme and BYOP auth, Seraphyn is now providing qwen3-tts, and we added the dirtberry-pro image model. Also wired up a public Tinybird pipe if you're building leaderboards.\n\nCode is open. Go build something weird. link in bio.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#buildinpublic",
+    "#webdev",
+    "#generativeai",
+    "#developers"
+  ],
+  "alt_text": "A carousel of three cozy pixel art images featuring a digital bee mascot, a monitor-headed robot, and a round mochi-like creature interacting with glowing seeds, picture frames, and retro computer terminals in warm pastel and lime green environments.",
+  "date": "2026-03-13",
+  "generated_at": "2026-03-14T06:14:34.829767+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

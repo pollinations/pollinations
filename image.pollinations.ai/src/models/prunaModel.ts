@@ -4,7 +4,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:pruna:ops");
@@ -343,9 +343,7 @@ export async function callPrunaImageEditAPI(
         // Pruna p-image-edit accepts image URLs (1-5 images)
         // Inline base64/data URIs are rejected, so upload those via /v1/files first
         if (safeParams.image && safeParams.image.length > 0) {
-            const rawImages = Array.isArray(safeParams.image)
-                ? safeParams.image.slice(0, 5)
-                : [safeParams.image];
+            const rawImages = safeParams.image.slice(0, 5);
 
             const resolvedImages: string[] = [];
             for (const img of rawImages) {
@@ -439,19 +437,21 @@ export async function callPrunaVideoAPI(
 
         // Image-to-video mode
         if (safeParams.image && safeParams.image.length > 0) {
-            const imageUrl = Array.isArray(safeParams.image)
-                ? safeParams.image[0]
-                : safeParams.image;
+            const img = safeParams.image[0];
 
-            logOps("Downloading reference image for I2V:", imageUrl);
+            logOps("Reference image for I2V:", img);
             progress.updateBar(
                 requestId,
                 30,
                 "Processing",
-                "Downloading reference image...",
+                "Preparing reference image...",
             );
-            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
-            input.image = `data:${mimeType};base64,${base64}`;
+            // Pruna rejects inline base64/data URIs — pass URLs directly, upload others
+            if (img.startsWith("http://") || img.startsWith("https://")) {
+                input.image = img;
+            } else {
+                input.image = await uploadImageToPruna(img);
+            }
             // I2V ignores aspect_ratio, uses input image dimensions
         } else {
             // Text-to-video: determine aspect ratio from requested dimensions

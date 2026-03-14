@@ -453,29 +453,25 @@ describe("POST /v1/images/generations", () => {
         },
     );
 
-    test(
-        "requires authentication",
-        { timeout: 10000 },
-        async ({ mocks }) => {
-            await mocks.enable("polar", "tinybird");
+    test("requires authentication", { timeout: 10000 }, async ({ mocks }) => {
+        await mocks.enable("polar", "tinybird");
 
-            const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/images/generations`,
-                {
-                    method: "POST",
-                    headers: {
-                        "content-type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        prompt: "test",
-                        model: "flux",
-                    }),
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/images/generations`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
                 },
-            );
-            expect(response.status).toBe(401);
-            await response.text();
-        },
-    );
+                body: JSON.stringify({
+                    prompt: "test",
+                    model: "flux",
+                }),
+            },
+        );
+        expect(response.status).toBe(401);
+        await response.text();
+    });
 
     test(
         "forwards Pollinations-specific passthrough params",
@@ -624,30 +620,26 @@ describe("POST /v1/images/edits", () => {
         },
     );
 
-    test(
-        "requires authentication",
-        { timeout: 10000 },
-        async ({ mocks }) => {
-            await mocks.enable("polar", "tinybird");
+    test("requires authentication", { timeout: 10000 }, async ({ mocks }) => {
+        await mocks.enable("polar", "tinybird");
 
-            const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/images/edits`,
-                {
-                    method: "POST",
-                    headers: {
-                        "content-type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        prompt: "test",
-                        model: "flux",
-                        image: testImageUrl,
-                    }),
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/images/edits`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
                 },
-            );
-            expect(response.status).toBe(401);
-            await response.text();
-        },
-    );
+                body: JSON.stringify({
+                    prompt: "test",
+                    model: "flux",
+                    image: testImageUrl,
+                }),
+            },
+        );
+        expect(response.status).toBe(401);
+        await response.text();
+    });
 
     test(
         "returns 400 when image is missing",

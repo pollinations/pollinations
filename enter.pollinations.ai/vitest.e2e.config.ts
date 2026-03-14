@@ -1,5 +1,5 @@
-import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
+import { defineConfig } from "vitest/config";
 
 /**
  * Vitest config for e2e tests that run in Node.js (not Cloudflare Workers pool).

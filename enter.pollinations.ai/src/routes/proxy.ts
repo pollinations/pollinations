@@ -1,6 +1,6 @@
 import { type Context, Hono } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { proxy } from "hono/proxy";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";
@@ -777,7 +777,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI-compatible image generation endpoint.",
                 "",
-                "Generate images from text prompts. Supports `response_format: \"url\"` (returns a pollinations.ai URL) or `\"b64_json\"` (returns base64-encoded image data, default).",
+                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default).',
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
             ].join("\n"),
@@ -1063,8 +1063,7 @@ export const proxyRoutes = new Hono<Env>()
             const resolvedQuality =
                 qualityMap[quality || ""] || quality || "medium";
 
-            const resolvedSeed =
-                seed ?? Math.floor(Math.random() * 2147483647);
+            const resolvedSeed = seed ?? Math.floor(Math.random() * 2147483647);
 
             const targetUrl = new URL(
                 `${c.env.IMAGE_SERVICE_URL}/prompt/${encodeURIComponent(prompt)}`,

@@ -95,6 +95,19 @@ function generateLLMDoc(): string {
     );
     lines.push("```");
     lines.push("");
+    lines.push("### Image (Python, OpenAI SDK)");
+    lines.push("");
+    lines.push("```python");
+    lines.push("from openai import OpenAI");
+    lines.push(
+        'client = OpenAI(base_url="https://gen.pollinations.ai/v1", api_key="YOUR_API_KEY")',
+    );
+    lines.push(
+        'response = client.images.generate(model="flux", prompt="a cat in space", size="1024x1024")',
+    );
+    lines.push("print(response.data[0].url)");
+    lines.push("```");
+    lines.push("");
     lines.push("### Audio (cURL)");
     lines.push("");
     lines.push("```bash");
@@ -171,6 +184,34 @@ function generateLLMDoc(): string {
     lines.push(
         "- audio (boolean, default: false): Video audio. wan/ltx-2 always have audio",
     );
+    lines.push("");
+
+    lines.push("### POST /v1/images/generations");
+    lines.push(
+        'OpenAI-compatible image generation. Use any OpenAI SDK with `base_url="https://gen.pollinations.ai/v1"`.',
+    );
+    lines.push("");
+    lines.push("Request body (JSON):");
+    lines.push("- prompt (string, required): Text description of the image");
+    lines.push('- model (string, default: "flux"): Image model');
+    lines.push('- size (string, default: "1024x1024"): WIDTHxHEIGHT');
+    lines.push(
+        '- response_format ("url"|"b64_json", default: "b64_json"): Return format',
+    );
+    lines.push(
+        "- quality, seed, nologo, enhance, safe: Same as GET /image/{prompt}",
+    );
+    lines.push("");
+
+    lines.push("### POST /v1/images/edits");
+    lines.push(
+        "OpenAI-compatible image editing. Accepts JSON with image URLs or multipart/form-data file uploads.",
+    );
+    lines.push("");
+    lines.push("Request body (JSON or multipart):");
+    lines.push("- prompt (string, required): Description of the edit");
+    lines.push("- image (string or array): Source image URL(s)");
+    lines.push('- model (string, default: "flux"): Image model');
     lines.push("");
 
     lines.push("### GET /audio/{text}");

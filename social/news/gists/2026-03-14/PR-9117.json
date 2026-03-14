@@ -1,0 +1,33 @@
+{
+  "pr_number": 9117,
+  "title": "fix: expand trustedOrigins to unblock key generation",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9117",
+  "merged_at": "2026-03-14T19:44:28Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Unlocking the hive",
+    "blurb": "Fixed a pesky bug that was blocking some users from generating API keys. The gates are open, go grab your keys and start building!",
+    "summary": "Expanded the trusted origins configuration in our authentication service to resolve 'Invalid origin' errors during API key generation.",
+    "impact": "Users can now successfully generate API keys from the main website and local development environments without encountering origin errors.",
+    "keywords": [
+      "auth",
+      "api-keys",
+      "cors",
+      "bug-fix"
+    ],
+    "visual_concept": "The PR is about fixing API key generation and authentication (trusted origins). Visual symbols: keys, locks, gates. Let's have Polly the bee holding a shiny golden pixel-art key, unlocking a glowing lime green gate or chest.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot holding a shiny golden key, unlocking a glowing lime green (#ecf874) digital gate in a lush garden. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T19:45:20.303115+00:00"
+}

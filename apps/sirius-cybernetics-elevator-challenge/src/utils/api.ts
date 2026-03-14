@@ -1,8 +1,8 @@
 import {
-    type PollingsMessage,
-    type PollingsResponse,
     API_CONFIG,
     getApiKey,
+    type PollingsMessage,
+    type PollingsResponse,
 } from "@/types";
 
 const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => ({

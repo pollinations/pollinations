@@ -18,11 +18,53 @@ import {
 } from "@/game/logic";
 import { useInput, useMessageScroll } from "@/hooks/ui";
 import type { Message } from "@/types";
+import {
+    API_CONFIG,
+    hasUserApiKey,
+    getApiKey,
+    setApiKey,
+    clearApiKey,
+    maskApiKey,
+} from "@/types";
+
+function useBYOP() {
+    const [authenticated, setAuthenticated] = useState(hasUserApiKey());
+
+    useEffect(() => {
+        const hash = window.location.hash;
+        if (hash) {
+            const params = new URLSearchParams(hash.slice(1));
+            const apiKey = params.get("api_key");
+            if (apiKey) {
+                setApiKey(apiKey);
+                setAuthenticated(true);
+                // Clean the URL fragment
+                window.history.replaceState(null, "", window.location.pathname);
+            }
+        }
+    }, []);
+
+    const login = () => {
+        const params = new URLSearchParams({
+            redirect_url: window.location.href.split("#")[0],
+            app_key: API_CONFIG.BYOP_APP_KEY,
+        });
+        window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
+    };
+
+    const logout = () => {
+        clearApiKey();
+        setAuthenticated(false);
+    };
+
+    return { authenticated, login, logout };
+}
 
 export default function Index() {
     const { messages, addMessage, setMessages } = useMessages();
     const gameState = useGameState(messages);
     const [inputPrompt, setInputPrompt] = useState("");
+    const byop = useBYOP();
 
     useGuideMessages(gameState, messages, addMessage);
     useAutonomousConversation(gameState, messages, addMessage);
@@ -154,6 +196,30 @@ export default function Index() {
                     <h2 className="text-xl font-semibold text-green-400">
                         Happy Vertical People Transporter
                     </h2>
+
+                    {/* BYOP Auth */}
+                    <div className="flex items-center justify-center space-x-2">
+                        {byop.authenticated ? (
+                            <>
+                                <span className="text-xs text-green-400">
+                                    Pollen: {maskApiKey(getApiKey())}
+                                </span>
+                                <Button
+                                    onClick={byop.logout}
+                                    className="bg-red-900 text-red-300 hover:bg-red-800 text-xs py-0.5 px-2"
+                                >
+                                    Disconnect
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                onClick={byop.login}
+                                className="bg-yellow-600 text-black hover:bg-yellow-500 text-xs py-0.5 px-2"
+                            >
+                                Connect with Pollinations
+                            </Button>
+                        )}
+                    </div>
 
                     {/* Add moves remaining display */}
                     {messages.length > 0 && (

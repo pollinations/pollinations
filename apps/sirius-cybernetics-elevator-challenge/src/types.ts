@@ -47,9 +47,33 @@ export const API_CONFIG = {
   MAX_RETRIES: 3,
   RETRY_DELAY: 1000,
   ENDPOINT: 'https://enter.pollinations.ai/api/generate/v1/chat/completions',
-  API_KEY: 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A'
+  DEFAULT_API_KEY: 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A',
+  BYOP_APP_KEY: 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A',
 //   ENDPOINT: 'http://localhost:16385/openai'
 } as const;
+
+const BYOP_STORAGE_KEY = 'sirius_cybernetics_byop_key';
+
+export function getApiKey(): string {
+  return localStorage.getItem(BYOP_STORAGE_KEY) || API_CONFIG.DEFAULT_API_KEY;
+}
+
+export function setApiKey(key: string): void {
+  localStorage.setItem(BYOP_STORAGE_KEY, key);
+}
+
+export function clearApiKey(): void {
+  localStorage.removeItem(BYOP_STORAGE_KEY);
+}
+
+export function hasUserApiKey(): boolean {
+  return !!localStorage.getItem(BYOP_STORAGE_KEY);
+}
+
+export function maskApiKey(key: string): string {
+  if (key.length <= 8) return '****';
+  return '*****' + key.slice(-5);
+}
 
 // Game Types
 export type Persona = 'user' | 'marvin' | 'elevator' | 'guide';

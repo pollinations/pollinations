@@ -1,14 +1,15 @@
-import { 
-  PollingsMessage, 
-  PollingsResponse, 
-  API_CONFIG 
+import {
+  PollingsMessage,
+  PollingsResponse,
+  API_CONFIG,
+  getApiKey
 } from '@/types';
 
 const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => ({
   method: 'POST',
-  headers: { 
+  headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${API_CONFIG.API_KEY}`
+    'Authorization': `Bearer ${getApiKey()}`
   },
   body: JSON.stringify({
     messages,

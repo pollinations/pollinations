@@ -1,0 +1,34 @@
+{
+  "pr_number": 9120,
+  "title": "docs: add polly review trigger convention",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9120",
+  "merged_at": "2026-03-14T22:32:47Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Summoning Polly",
+    "blurb": "Added a quick note to our agent docs on how to summon Polly for PR reviews. Just whisper her name in a comment!",
+    "summary": "Updated AGENTS.md to document the convention for triggering automated PR reviews by mentioning 'polly' in a comment.",
+    "impact": "Contributors now have clear instructions on how to request an AI review on their pull requests.",
+    "keywords": [
+      "docs",
+      "agents",
+      "polly",
+      "review",
+      "workflow"
+    ],
+    "visual_concept": "The PR is about summoning 'Polly' (the bee mascot) for a review by saying her name. Visual: The cute bee mascot (Polly) appearing magically from a glowing comment box or terminal, holding a tiny magnifying glass (for reviewing code).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses and holding a magnifying glass, magically popping out of a glowing retro terminal screen. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T22:33:35.005198+00:00"
+}

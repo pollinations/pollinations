@@ -56,9 +56,9 @@ function RouteComponent() {
         Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
-    const [activeTab, setActiveTab] = useState<
-        "balance" | "usage" | "create"
-    >("balance");
+    const [activeTab, setActiveTab] = useState<"balance" | "usage" | "create">(
+        "balance",
+    );
     const [playgroundApiKey, setPlaygroundApiKey] = useState("");
     const [downloadOpen, setDownloadOpen] = useState(false);
     const apiKeysSectionRef = useRef<HTMLDivElement>(null);
@@ -274,7 +274,11 @@ function RouteComponent() {
                         {activeTab === "create" && (
                             <button
                                 type="button"
-                                onClick={() => apiKeysSectionRef.current?.scrollIntoView({ behavior: "smooth" })}
+                                onClick={() =>
+                                    apiKeysSectionRef.current?.scrollIntoView({
+                                        behavior: "smooth",
+                                    })
+                                }
                                 className="text-sm font-medium text-green-700 hover:underline"
                             >
                                 Create API key
@@ -482,7 +486,9 @@ function RouteComponent() {
                             setApiKey={setPlaygroundApiKey}
                             githubUsername={user?.githubUsername ?? ""}
                             githubId={user?.githubId ?? null}
-                            totalPollen={tierBalance + packBalance + cryptoBalance}
+                            totalPollen={
+                                tierBalance + packBalance + cryptoBalance
+                            }
                             onCreateKeyClick={() => {
                                 apiKeysSectionRef.current?.scrollIntoView({
                                     behavior: "smooth",

@@ -39,8 +39,7 @@ function resolveAuthSecret(env: Cloudflare.Env): string {
         if (typeof process !== "undefined" && process?.env) {
             process.env.BETTER_AUTH_SECRET = randomSecret;
         }
-    } catch {
-    }
+    } catch {}
 
     return randomSecret;
 }
@@ -107,19 +106,18 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         typeof env.GITHUB_CLIENT_SECRET === "string" &&
         env.GITHUB_CLIENT_SECRET.length > 0;
 
-    const socialProviders =
-        hasGithubCredentials
-            ? {
-                  github: {
-                      clientId: env.GITHUB_CLIENT_ID,
-                      clientSecret: env.GITHUB_CLIENT_SECRET,
-                      mapProfileToUser: (profile) => ({
-                          githubId: profile.id,
-                          githubUsername: profile.login,
-                      }),
-                  },
-              }
-            : {};
+    const socialProviders = hasGithubCredentials
+        ? {
+              github: {
+                  clientId: env.GITHUB_CLIENT_ID,
+                  clientSecret: env.GITHUB_CLIENT_SECRET,
+                  mapProfileToUser: (profile) => ({
+                      githubId: profile.id,
+                      githubUsername: profile.login,
+                  }),
+              },
+          }
+        : {};
 
     const authSecret = resolveAuthSecret(env);
 

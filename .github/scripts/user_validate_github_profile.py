@@ -18,6 +18,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 
 from tqdm import tqdm
@@ -182,8 +183,10 @@ def score_user(data: dict | None, username: str) -> dict:
     }
 
 
-def fetch_batch(usernames: list[str], retries: int = 3) -> list[dict]:
-    """Fetch and score a batch of users with retry logic."""
+def fetch_batch(
+    usernames: list[str], retries: int = 3
+) -> tuple[list[dict], int | None]:
+    """Fetch and score a batch of users with retry logic. Returns (results, rate_limit_remaining)."""
     query = build_query(usernames)
     request = urllib.request.Request(
         GITHUB_GRAPHQL,
@@ -194,10 +197,14 @@ def fetch_batch(usernames: list[str], retries: int = 3) -> list[dict]:
         },
     )
 
+    rate_remaining = None
     for attempt in range(retries):
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
                 data = json.loads(response.read())
+                rate_remaining_header = response.headers.get("X-RateLimit-Remaining")
+                if rate_remaining_header:
+                    rate_remaining = int(rate_remaining_header)
             break
         except urllib.error.HTTPError as error:
             if attempt < retries - 1 and error.code in (502, 503, 504):
@@ -221,37 +228,51 @@ def fetch_batch(usernames: list[str], retries: int = 3) -> list[dict]:
     for i, username in enumerate(usernames):
         user_data = data.get("data", {}).get(f"u{i}")
         results.append(score_user(user_data, username))
-    return results
+    return results, rate_remaining
 
 
 def validate_users(usernames: list[str]) -> list[dict]:
-    """Validate users in batches of 50."""
+    """Validate users in concurrent batches."""
     if not usernames:
         return []
 
-    # Don't shuffle - preserve order (new users first, then slice)
+    batches = [
+        usernames[i : i + BATCH_SIZE] for i in range(0, len(usernames), BATCH_SIZE)
+    ]
+    if MAX_BATCHES:
+        batches = batches[:MAX_BATCHES]
+
     results = []
     approved_count = 0
 
     progress_bar = tqdm(
-        range(0, len(usernames), BATCH_SIZE),
+        total=len(batches),
         desc="Validating",
         unit="batch",
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}] {postfix}",
     )
 
-    for batch_num, start_index in enumerate(progress_bar):
-        if MAX_BATCHES and batch_num >= MAX_BATCHES:
-            break
+    # Use 3 concurrent workers to stay well under API limits
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {
+            executor.submit(fetch_batch, batch): i for i, batch in enumerate(batches)
+        }
 
-        batch = usernames[start_index : start_index + BATCH_SIZE]
-        batch_results = fetch_batch(batch)
-        results.extend(batch_results)
+        for future in as_completed(futures):
+            batch_results, rate_remaining = future.result()
+            results.extend(batch_results)
+            approved_count += sum(1 for r in batch_results if r["approved"])
+            approval_rate = 100 * approved_count / len(results)
+            progress_bar.set_postfix(
+                seed=f"{approval_rate:.0f}%", quota=rate_remaining or "?"
+            )
+            progress_bar.update(1)
 
-        approved_count += sum(1 for result in batch_results if result["approved"])
-        approval_rate = 100 * approved_count / len(results)
-        progress_bar.set_postfix(seed=f"{approval_rate:.0f}%")
+            # Adaptive rate limiting: go fast when quota is healthy
+            if rate_remaining is not None and rate_remaining <= 100:
+                time.sleep(1 if rate_remaining > 50 else 2)
+            elif rate_remaining is None:
+                time.sleep(2)  # Conservative fallback
 
-        time.sleep(2)  # Rate limiting between batches
-
+    progress_bar.close()
     return results

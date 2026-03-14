@@ -22,11 +22,11 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-03-05",
-        emoji: "🏷️",
-        title: "Image Pricing Update",
+        date: "2026-03-13",
+        emoji: "⏱️",
+        title: "Hourly Pollen Refills",
         description:
-            "Flux $0.001/img, Z-Image $0.002/img, Klein $0.01/img, Klein-Large $0.015/img.",
+            "Starting March 16 - Spore: 0.01p/hr, Seed: 0.15p/hr. Need more? Grab a Pollen Pack below!",
     },
 ];
 
@@ -76,7 +76,11 @@ export const NewsBanner: FC = () => {
                                     className="text-violet-900"
                                 >
                                     {h.emoji} <strong>{h.title}:</strong>{" "}
-                                    {h.description}
+                                    <span
+                                        dangerouslySetInnerHTML={{
+                                            __html: h.description,
+                                        }}
+                                    />
                                 </li>
                             ))}
                         </ul>

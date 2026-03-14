@@ -132,7 +132,12 @@ const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
     keyType: z.string().optional(),
     plaintextKey: z.string().optional(),
-    appUrl: z.string().url().optional(),
+    appUrl: z
+        .string()
+        .refine((val) => /^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val), {
+            message: "Must be a valid URL with a scheme (e.g. https://...)",
+        })
+        .optional(),
 });
 
 /**

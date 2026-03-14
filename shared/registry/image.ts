@@ -270,7 +270,8 @@ export const IMAGE_SERVICES = {
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
-        provider: "modal",
+        provider: "bpai",
+        alpha: true,
         cost: [
             {
                 date: new Date("2026-01-21").getTime(), // Launch date
@@ -278,22 +279,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "FLUX.2 Klein 4B - Fast image generation & editing on Modal",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-    },
-    "klein-large": {
-        aliases: ["flux-klein-9b", "klein-9b"],
-        modelId: "klein-large",
-        provider: "modal",
-        cost: [
-            {
-                date: new Date("2026-01-21").getTime(),
-                completionImageTokens: 0.015,
-            },
-        ],
-        description:
-            "FLUX.2 Klein 9B - Higher quality image generation & editing on Modal",
+            "FLUX.2 Klein 4B - Fast image generation and editing via bpaigen",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -358,6 +344,22 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "dirtberry-pro": {
+        aliases: ["special-berry"],
+        modelId: "special-berry",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.0015, // 1.5x dirtberry ($0.001)
+            },
+        ],
+        description:
+            "Dirtberry Pro (api.airforce) - High quality realism, pixel art & complex scenes",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "grok-video": {
         aliases: ["grok-imagine-video"],
         modelId: "grok-video",
@@ -390,6 +392,52 @@ export const IMAGE_SERVICES = {
         description:
             "LTX-2 - Fast text-to-video generation with audio on Modal",
         inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
+    "p-image": {
+        aliases: ["pruna-image", "pruna"],
+        modelId: "p-image",
+        provider: "pruna",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.005, // $0.005 per image
+            },
+        ],
+        description: "Pruna p-image - Fast text-to-image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "p-image-edit": {
+        aliases: ["pruna-edit", "pruna-image-edit"],
+        modelId: "p-image-edit",
+        provider: "pruna",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.01, // $0.01 per image
+            },
+        ],
+        description: "Pruna p-image-edit - Image-to-image editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "p-video": {
+        aliases: ["pruna-video"],
+        modelId: "p-video",
+        provider: "pruna",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionVideoSeconds: 0.024, // $0.12 per run / 5s default = $0.024/sec
+            },
+        ],
+        description:
+            "Pruna p-video - Text/image-to-video generation (up to 1080p)",
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
 } as const satisfies Record<string, ServiceDefinition<string>>;

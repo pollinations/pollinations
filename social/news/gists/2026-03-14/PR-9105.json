@@ -1,0 +1,34 @@
+{
+  "pr_number": 9105,
+  "title": "feat(enter): add OpenAI-compatible image generation endpoints",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9105",
+  "merged_at": "2026-03-14T13:11:36Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive speaks OpenAI",
+    "blurb": "You can now use the standard OpenAI SDK to generate and edit images through Pollinations. Just swap the base URL and let the pixel magic flow!",
+    "summary": "Added OpenAI-compatible endpoints for image generation and editing, allowing developers to use standard SDKs to create and modify images.",
+    "impact": "Developers can now seamlessly integrate Pollinations image generation into existing apps using the OpenAI SDK by simply changing the base URL.",
+    "keywords": [
+      "api",
+      "openai",
+      "images",
+      "sdk",
+      "integration"
+    ],
+    "visual_concept": "Polly the bee acting as a bridge/adapter. She is plugging a standard cable into a glowing lime green canvas. The Robot companion is holding an 'SDK' manual, excited about the new compatibility.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, plugging a standard cable into a glowing lime green (#ecf874) canvas that is painting a picture. A chunky retro robot companion with a monitor head holds an 'SDK' manual, screen showing happy square eyes. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T13:12:28.672607+00:00"
+}

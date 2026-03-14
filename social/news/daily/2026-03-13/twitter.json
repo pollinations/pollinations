@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "shipped 8 PRs today. the seed upgrade workflow used to take 25 hours. rewrote it, now it takes seconds. also added dirtberry-pro for images, qwen3-tts for audio, and moved klein 4b to a dedicated pipeline. open source ai infrastructure continues. 🐝",
+  "alt_tweet": "merged 8 PRs. seed upgrades are now instant instead of taking a full day. wired up dirtberry-pro for images and qwen3-tts for audio. and catgpt finally got a light theme. sending prompts is still free.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Cozy 8-bit pixel art scene of Polly, a cute bee mascot (yellow body, brown stripes, pink blush, blue translucent wings) wearing a tiny builder's hardhat. She is zapping a glowing lime green (#ecf874) digital seed that is instantly blooming into a pixelated flower. Nearby, the round tan Nomnom creature is happily eating a massive stack of old calendar pages. Soft pastel lavender and cream gradient background. High contrast within the brand palette, dynamic scroll-stopping energy, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful.",
+  "reasoning": "Highlights the massive performance win (25h to seconds) as a dry engineering fact, followed by the new model additions. The image matches the speed/upgrade theme with Nomnom eating the old delays.",
+  "char_count": 255,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-13/images/twitter.jpg",
+    "prompt": "Cozy 8-bit pixel art scene of Polly, a cute bee mascot (yellow body, brown stripes, pink blush, blue translucent wings) wearing a tiny builder's hardhat. She is zapping a glowing lime green (#ecf874) digital seed that is instantly blooming into a pixelated flower. Nearby, the round tan Nomnom creature is happily eating a massive stack of old calendar pages. Soft pastel lavender and cream gradient background. High contrast within the brand palette, dynamic scroll-stopping energy, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "date": "2026-03-13",
+  "generated_at": "2026-03-14T06:14:34.829767+00:00",
+  "platform": "twitter"
+}

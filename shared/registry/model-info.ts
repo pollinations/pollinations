@@ -16,7 +16,7 @@ export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
     pricing: z
-        .record(z.string(), z.union([z.number(), z.string()]))
+        .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -51,7 +51,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
     }
     // Filter out date, zero, and undefined values from price definition
     const { date: _date, ...priceFields } = priceDefinition;
-    const pricing: Record<string, number | string> & { currency: "pollen" } = {
+    const pricing: Record<string, string> & { currency: "pollen" } = {
         currency: "pollen",
     };
     for (const [key, value] of Object.entries(priceFields)) {

@@ -108,8 +108,9 @@ export function Playground({
             credentials: "include",
         })
             .then((r) => (r.ok ? r.json() : null))
-            .then((d: { key?: string } | null) => {
-                if (d?.key) setApiKey(d.key);
+            .then((d: unknown) => {
+                const parsed = d as { key?: string } | null;
+                if (parsed?.key) setApiKey(parsed.key);
             })
             .catch(() => {});
     }, [githubId, apiKey, ppkgFetched, setApiKey]);
@@ -262,7 +263,11 @@ export function Playground({
                             ?.message || res.statusText,
                     );
                 }
-                const data = await res.json();
+                const data = (await res.json()) as {
+                    choices?: Array<{
+                        message?: { audio?: { data?: string } };
+                    }>;
+                };
                 const b64 = data.choices?.[0]?.message?.audio?.data;
                 if (!b64) throw new Error("No audio in response");
                 const bytes = Uint8Array.from(atob(b64), (c) =>
@@ -291,7 +296,9 @@ export function Playground({
                             ?.message || res.statusText,
                     );
                 }
-                const data = await res.json();
+                const data = (await res.json()) as {
+                    choices?: Array<{ message?: { content?: string } }>;
+                };
                 const text =
                     data.choices?.[0]?.message?.content ?? "No response";
                 setResult(text);

@@ -1,0 +1,33 @@
+{
+  "pr_number": 9119,
+  "title": "fix: update claude-airforce pricing to ~1/3 of official Sonnet 4.6",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9119",
+  "merged_at": "2026-03-14T21:49:18Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sustainable flights for Claude",
+    "blurb": "We've recalibrated the pollen rates for the claude-airforce model to ensure sustainable, long-term access while keeping it at a sweet one-third of official Sonnet 4.6 rates.",
+    "summary": "Recalibrated the registry pricing for the claude-airforce model to ensure sustainable access.",
+    "impact": "Users will experience fairer usage rates for claude-airforce that remain highly competitive compared to official Anthropic pricing.",
+    "keywords": [
+      "pricing",
+      "claude",
+      "models",
+      "registry"
+    ],
+    "visual_concept": "The pollinations bee adjusting a dial or price tag on a retro terminal with a small airplane sticker, representing the 'airforce' model. The Nomnom creature is happily eating a tiny coin, symbolizing the updated pricing.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot adjusting a glowing dial on a retro computer terminal with a tiny airplane sticker. The round tan Nomnom creature sits nearby happily eating a small pixel coin. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T21:50:11.512224+00:00"
+}

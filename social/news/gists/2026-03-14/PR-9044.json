@@ -1,0 +1,35 @@
+{
+  "pr_number": 9044,
+  "title": "fix(dashboard): fix model permissions reset and account permissions state on edit modal",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/9044",
+  "merged_at": "2026-03-14T21:11:09Z",
+  "labels": [
+    "WEB",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Permission to edit: granted",
+    "blurb": "Squashed a pesky bug in the dashboard where API key permissions were getting a little forgetful. The edit modal now remembers your settings perfectly, and we've polished up the UI to make managing model access a breeze.",
+    "summary": "Fixed a UI bug in the dashboard where API key model permissions would reset unexpectedly and account permissions wouldn't persist when reopening the edit modal.",
+    "impact": "Users can now reliably edit and save their API key permissions without losing their previous selections, thanks to a more intuitive and stable interface.",
+    "keywords": [
+      "dashboard",
+      "api-keys",
+      "permissions",
+      "ui",
+      "bug-fix"
+    ],
+    "visual_concept": "The PR is about fixing 'keys', 'permissions', and 'dashboard UI'. The scene should feature Polly the bee fixing or adjusting a giant golden key or interacting with glowing toggles on a retro control panel, representing the fixed permissions UI.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, using a small wrench to adjust a glowing golden key on a retro control panel. A chunky pixel robot with a CRT monitor head watches happily, its screen glowing lime green (#ecf874). Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T21:12:16.670116+00:00"
+}

@@ -654,8 +654,6 @@ export const CreateImageResponseSchema = z
     })
     .meta({ $id: "CreateImageResponse" });
 
-export type CreateImageResponse = z.infer<typeof CreateImageResponseSchema>;
-
 // Schema for JSON-based image edit requests
 // For multipart/form-data requests, parsing is done manually in the route handler
 export const CreateImageEditRequestSchema = z

@@ -187,13 +187,17 @@ async function parseEditInput(c: Context): Promise<{
         });
 
     const extra = collectPassthrough(body, "seed");
+    const { seed, ...passthrough } = extra as { seed?: number } & Record<
+        string,
+        unknown
+    >;
     return {
         prompt: parsed.data.prompt,
         imageUrls,
         size: parsed.data.size,
         quality: parsed.data.quality,
-        seed: extra.seed as number | undefined,
-        extra,
+        seed,
+        extra: passthrough,
     };
 }
 

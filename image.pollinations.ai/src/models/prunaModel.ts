@@ -14,6 +14,8 @@ const logError = debug("pollinations:pruna:error");
 const PRUNA_API_BASE = "https://api.pruna.ai/v1";
 const PREDICTIONS_URL = `${PRUNA_API_BASE}/predictions`;
 
+const FILES_URL = `${PRUNA_API_BASE}/files`;
+
 // Polling configuration
 const POLL_MAX_ATTEMPTS = 120; // 10 minutes max
 const POLL_DELAY_MS = 3000; // 3 second intervals
@@ -103,6 +105,53 @@ async function submitPrediction(
     }
 
     return (await response.json()) as PrunaPredictionResponse;
+}
+
+/**
+ * Upload a base64/data URI image to Pruna's file endpoint and return the hosted URL.
+ * Pruna rejects inline base64 in predictions but accepts URLs to uploaded files.
+ */
+async function uploadImageToPruna(imageData: string): Promise<string> {
+    const apiKey = process.env.PRUNA_API_KEY;
+    if (!apiKey) {
+        throw new HttpError(
+            "PRUNA_API_KEY environment variable is required",
+            500,
+        );
+    }
+
+    // Strip data URI prefix if present
+    let base64 = imageData;
+    let mimeType = "image/png";
+    const dataUriMatch = imageData.match(/^data:([^;]+);base64,(.+)$/);
+    if (dataUriMatch) {
+        mimeType = dataUriMatch[1];
+        base64 = dataUriMatch[2];
+    }
+
+    const buffer = Buffer.from(base64, "base64");
+    const ext = mimeType.split("/")[1] || "png";
+    const blob = new Blob([buffer], { type: mimeType });
+    const formData = new FormData();
+    formData.append("content", blob, `image.${ext}`);
+
+    const response = await fetch(FILES_URL, {
+        method: "POST",
+        headers: { apikey: apiKey },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new HttpError(
+            `Pruna file upload failed: ${errorText}`,
+            response.status,
+        );
+    }
+
+    const result = (await response.json()) as { urls: { get: string } };
+    logOps("Uploaded image to Pruna:", result.urls.get);
+    return result.urls.get;
 }
 
 /**
@@ -291,13 +340,23 @@ export async function callPrunaImageEditAPI(
 
         const input: Record<string, unknown> = { prompt };
 
-        // Pruna p-image-edit accepts image URLs directly (1-5 images)
-        // Note: data URIs are rejected by the Pruna API with "property input is required"
+        // Pruna p-image-edit accepts image URLs (1-5 images)
+        // Inline base64/data URIs are rejected, so upload those via /v1/files first
         if (safeParams.image && safeParams.image.length > 0) {
-            const imageUrls = Array.isArray(safeParams.image)
+            const rawImages = Array.isArray(safeParams.image)
                 ? safeParams.image.slice(0, 5)
                 : [safeParams.image];
-            input.images = imageUrls;
+
+            const resolvedImages: string[] = [];
+            for (const img of rawImages) {
+                if (img.startsWith("http://") || img.startsWith("https://")) {
+                    resolvedImages.push(img);
+                } else {
+                    // base64 or data URI — upload to Pruna's file hosting
+                    resolvedImages.push(await uploadImageToPruna(img));
+                }
+            }
+            input.images = resolvedImages;
         }
 
         if (safeParams.seed !== undefined) {

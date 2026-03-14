@@ -639,4 +639,43 @@ export const TEXT_SERVICES = {
         isSpecialized: true,
         alpha: true,
     },
+    "claude-airforce": {
+        aliases: [],
+        modelId: "claude-sonnet-4.6",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-03-09").getTime(),
+                promptTextTokens: perMillion(1.0), // ~1/3 of official Sonnet 4.6 pricing
+                completionTextTokens: perMillion(5.0),
+            },
+        ],
+        description:
+            "Claude Sonnet 4.6 (api.airforce) - Anthropic's balanced model via community provider",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 200000,
+        isSpecialized: false,
+        alpha: true,
+    },
+    "openai-seraphyn": {
+        aliases: ["gpt-5.4-seraphyn", "gpt-5.4"],
+        modelId: "gpt-5.4",
+        provider: "seraphyn",
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                promptTextTokens: perMillion(1.25), // Half of OpenAI's $2.50/M
+                completionTextTokens: perMillion(7.5), // Half of OpenAI's $15.00/M
+            },
+        ],
+        description:
+            "GPT-5.4 (seraphyn.ai) - OpenAI's latest model via community provider",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+        alpha: true,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

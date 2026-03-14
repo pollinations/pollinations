@@ -11,6 +11,10 @@ import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
+    callPrunaImageAPI,
+    callPrunaImageEditAPI,
+} from "./models/prunaModel.ts";
+import {
     callSeedream5API,
     callSeedreamAPI,
     callSeedreamProAPI,
@@ -599,7 +603,9 @@ const callAzureGPTImageWithEndpoint = async (
     // GPT Image models support both generation and editing
     // Edit API uses /images/edits endpoint with multipart/form-data
     if (isEditMode) {
-        endpoint = endpoint.replace("/images/generations", "/images/edits");
+        endpoint = endpoint
+            .replace("/images/generations", "/images/edits")
+            .replace(/api-version=[^&]+/, "api-version=2025-04-01-preview");
         logCloudflare(`Using Azure ${config.modelName} in edit mode (img2img)`);
     } else {
         logCloudflare(
@@ -1120,17 +1126,34 @@ const generateImage = async (
             }
         }
 
-        case "klein-large": {
+        case "p-image": {
             try {
-                return await callFluxKleinAPI(
+                return await callPrunaImageAPI(
                     prompt,
                     safeParams,
                     progress,
                     requestId,
-                    "klein-large",
                 );
             } catch (error) {
-                logError("Flux Klein Large generation failed:", error.message);
+                logError("Pruna p-image generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "p-image-edit": {
+            try {
+                return await callPrunaImageEditAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError(
+                    "Pruna p-image-edit generation failed:",
+                    error.message,
+                );
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }

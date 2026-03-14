@@ -561,6 +561,9 @@ interface AzureGPTImageConfig {
     modelName: string;
 }
 
+const GENERATIONS_API_VERSION = "2024-02-01";
+const EDITS_API_VERSION = "2025-04-01-preview";
+
 const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
     gptimage: {
         apiKeyEnvVar: "AZURE_GPTIMAGE_1_MINI_API_KEY",
@@ -589,23 +592,28 @@ const callAzureGPTImageWithEndpoint = async (
     config: AzureGPTImageConfig = AZURE_GPTIMAGE_CONFIGS.gptimage,
 ): Promise<ImageGenerationResult> => {
     const apiKey = process.env[config.apiKeyEnvVar];
-    let endpoint = process.env[config.endpointEnvVar];
+    const baseEndpoint = process.env[config.endpointEnvVar];
 
-    if (!apiKey || !endpoint) {
+    if (!apiKey || !baseEndpoint) {
         throw new Error(
             `Azure API key or endpoint 1 not found in environment variables`,
         );
     }
 
+    // Strip any trailing path/query from the env var to get the base deployment URL
+    // Env may contain full URL (legacy) or just the base deployment path
+    const baseUrl = baseEndpoint.replace(/\/images\/.*$/, "");
+
     // Check if we have input images for edit mode
     const isEditMode = safeParams.image && safeParams.image.length > 0;
 
-    // GPT Image models support both generation and editing
-    // Edit API uses /images/edits endpoint with multipart/form-data
+    // Construct the full endpoint URL based on mode
+    let endpoint: string;
     if (isEditMode) {
-        endpoint = endpoint.replace("/images/generations", "/images/edits");
+        endpoint = `${baseUrl}/images/edits?api-version=${EDITS_API_VERSION}`;
         logCloudflare(`Using Azure ${config.modelName} in edit mode (img2img)`);
     } else {
+        endpoint = `${baseUrl}/images/generations?api-version=${GENERATIONS_API_VERSION}`;
         logCloudflare(
             `Using Azure ${config.modelName} in generation mode (text2img)`,
         );

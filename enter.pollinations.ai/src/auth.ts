@@ -110,7 +110,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 await env.KV.delete(addKeyPrefix(key));
             },
         },
-        trustedOrigins: ["https://enter.pollinations.ai", "http://localhost"],
+        trustedOrigins: ["*"],
         user: {
             additionalFields: {
                 githubId: {

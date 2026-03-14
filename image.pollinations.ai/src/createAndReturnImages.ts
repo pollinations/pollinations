@@ -11,6 +11,10 @@ import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
+    callPrunaImageAPI,
+    callPrunaImageEditAPI,
+} from "./models/prunaModel.ts";
+import {
     callSeedream5API,
     callSeedreamAPI,
     callSeedreamProAPI,
@@ -1122,17 +1126,34 @@ const generateImage = async (
             }
         }
 
-        case "klein-large": {
+        case "p-image": {
             try {
-                return await callFluxKleinAPI(
+                return await callPrunaImageAPI(
                     prompt,
                     safeParams,
                     progress,
                     requestId,
-                    "klein-large",
                 );
             } catch (error) {
-                logError("Flux Klein Large generation failed:", error.message);
+                logError("Pruna p-image generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "p-image-edit": {
+            try {
+                return await callPrunaImageEditAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError(
+                    "Pruna p-image-edit generation failed:",
+                    error.message,
+                );
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
@@ -1142,12 +1163,15 @@ const generateImage = async (
         case "imagen-4":
         case "grok-imagine":
         case "dirtberry":
+        case "dirtberry-pro":
             return await callAirforceImageAPI(
                 prompt,
                 safeParams,
                 progress,
                 requestId,
-                safeParams.model,
+                safeParams.model === "dirtberry-pro"
+                    ? "special-berry"
+                    : safeParams.model,
             );
 
         case "flux":

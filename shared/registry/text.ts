@@ -646,8 +646,8 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-09").getTime(),
-                promptTextTokens: perMillion(0.01), // via api.airforce
-                completionTextTokens: perMillion(0.01),
+                promptTextTokens: perMillion(1.0), // ~1/3 of official Sonnet 4.6 pricing
+                completionTextTokens: perMillion(5.0),
             },
         ],
         description:

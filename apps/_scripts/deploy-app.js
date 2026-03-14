@@ -98,7 +98,9 @@ async function reclaimDomain(customDomain, targetProject) {
         const hasDomain = domains?.some((d) => d.name === customDomain);
         if (!hasDomain) continue;
 
-        console.log(`   Found domain on old project: ${project.name} — removing...`);
+        console.log(
+            `   Found domain on old project: ${project.name} — removing...`,
+        );
         const deleteRes = await fetch(
             `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${project.name}/domains/${customDomain}`,
             { method: "DELETE", headers: cfHeaders },
@@ -106,7 +108,9 @@ async function reclaimDomain(customDomain, targetProject) {
 
         if (!deleteRes.ok) {
             const err = await deleteRes.json();
-            console.warn(`   Failed to remove from ${project.name}: ${JSON.stringify(err)}`);
+            console.warn(
+                `   Failed to remove from ${project.name}: ${JSON.stringify(err)}`,
+            );
             return false;
         }
         console.log(`   Removed from ${project.name}`);
@@ -123,7 +127,9 @@ async function reclaimDomain(customDomain, targetProject) {
 
         if (!addRes.ok) {
             const err = await addRes.json();
-            console.warn(`   Failed to add to ${targetProject}: ${JSON.stringify(err)}`);
+            console.warn(
+                `   Failed to add to ${targetProject}: ${JSON.stringify(err)}`,
+            );
             return false;
         }
         console.log(`   ✅ Domain reclaimed and added to ${targetProject}`);
@@ -200,14 +206,21 @@ async function deployApp(appName) {
 
     const domainResult = await domainResponse.json();
 
-    if (domainResponse.ok || domainResult.errors?.some((e) => e.code === 8000007)) {
+    if (
+        domainResponse.ok ||
+        domainResult.errors?.some((e) => e.code === 8000007)
+    ) {
         console.log("✅ Custom domain added");
     } else if (domainResult.errors?.some((e) => e.code === 8000018)) {
         // 8000018 = domain already added to another project — find and remove it
-        console.log("⚠️  Domain claimed by another project, attempting to reclaim...");
+        console.log(
+            "⚠️  Domain claimed by another project, attempting to reclaim...",
+        );
         const reclaimed = await reclaimDomain(customDomain, projectName);
         if (!reclaimed) {
-            console.warn(`⚠️  Could not reclaim domain: ${JSON.stringify(domainResult)}`);
+            console.warn(
+                `⚠️  Could not reclaim domain: ${JSON.stringify(domainResult)}`,
+            );
         }
     } else {
         console.warn(`⚠️  Domain setup: ${JSON.stringify(domainResult)}`);
@@ -235,7 +248,9 @@ async function deployApp(appName) {
 
     if (dnsResponse.ok) {
         console.log("✅ DNS CNAME record created");
-    } else if (dnsResult.errors?.some((e) => e.code === 81053 || e.code === 81057)) {
+    } else if (
+        dnsResult.errors?.some((e) => e.code === 81053 || e.code === 81057)
+    ) {
         // Record already exists — find it and update to point to the correct project
         console.log("   DNS record exists, updating target...");
         const listRes = await fetch(
@@ -254,9 +269,13 @@ async function deployApp(appName) {
                 },
             );
             if (updateRes.ok) {
-                console.log(`   ✅ Updated CNAME: ${record.content} → ${cnamTarget}`);
+                console.log(
+                    `   ✅ Updated CNAME: ${record.content} → ${cnamTarget}`,
+                );
             } else {
-                console.warn(`   ⚠️  Failed to update DNS: ${JSON.stringify(await updateRes.json())}`);
+                console.warn(
+                    `   ⚠️  Failed to update DNS: ${JSON.stringify(await updateRes.json())}`,
+                );
             }
         } else {
             console.log("✅ DNS CNAME already correct");

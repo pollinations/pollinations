@@ -27,6 +27,7 @@ from buffer_publish import (
 )
 from common import (
     DISCORD_CHUNK_SIZE,
+    GITHUB_API_BASE,
     deploy_reddit_post,
     get_env,
     read_news_file,
@@ -155,6 +156,46 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
     return True
 
 
+def create_github_release(
+    github_token: str, owner: str, repo: str, release_data: Dict
+) -> bool:
+    """Create a GitHub Release for the weekly digest. Returns True on success."""
+    title = release_data.get("title", "Weekly Update")
+    body = release_data.get("body", "")
+    tag_name = release_data.get("tag_name", f"weekly-{int(time.time())}")
+
+    # Append image if available
+    image_url = release_data.get("image", {}).get("url")
+    if image_url:
+        body += f"\n\n![Weekly Digest]({image_url})"
+
+    url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/releases"
+    headers = {
+        "Authorization": f"Bearer {github_token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    payload = {
+        "tag_name": tag_name,
+        "name": title,
+        "body": body,
+        "draft": False,
+        "prerelease": False,
+        "generate_release_notes": False,
+    }
+
+    try:
+        resp = requests.post(url, headers=headers, json=payload, timeout=30)
+        if resp.status_code in (201, 200):
+            print(f"  GitHub Release created: {resp.json().get('html_url')}")
+            return True
+        print(f"  Failed to create GitHub Release: {resp.status_code} - {resp.text}")
+        return False
+    except Exception as e:
+        print(f"  Error creating GitHub Release: {e}")
+        return False
+
+
 def stage_buffer_posts(
     weekly_dir: str, buffer_token: str, github_token: str, owner: str, repo: str
 ) -> Dict[str, bool]:
@@ -213,6 +254,16 @@ def main():
         for platform, success in buffer_results.items():
             status = "OK" if success else "FAILED"
             print(f"  {platform}: {status}")
+
+        # GitHub Release (part of the summary step)
+        github_path = os.path.join(weekly_dir, "github.json")
+        github_data = read_news_file(github_path, github_token, owner, repo)
+        if github_data:
+            print("\n  Creating GitHub Release...")
+            success = create_github_release(github_token, owner, repo, github_data)
+            results["github"] = success
+            status = "OK" if success else "FAILED"
+            print(f"  github release: {status}")
 
     # ── Direct channels (Reddit + Discord) ────────────────────────
     if publish_mode in ("direct", "all"):

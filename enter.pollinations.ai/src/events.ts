@@ -12,6 +12,10 @@ export async function sendToTinybird(
     tinybirdIngestToken: string,
     log: Logger,
 ): Promise<void> {
+    if (!tinybirdIngestUrl || !tinybirdIngestToken) {
+        return;
+    }
+
     const tinybirdEvent = removeUnset(event);
     const body = JSON.stringify(tinybirdEvent);
 

@@ -16,6 +16,7 @@ import { customerRoutes } from "./routes/customer.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
+import { ppkgRoutes } from "./routes/ppkg.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
@@ -41,6 +42,7 @@ export const api = new Hono<Env>()
     .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes)
+    .route("/ppkg", ppkgRoutes)
     .route("/generate", proxyRoutes)
     .route("/generate/v1/audio", audioRoutes);
 

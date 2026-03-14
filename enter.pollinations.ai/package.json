@@ -7,9 +7,9 @@
     "scripts": {
         "typecheck": "tsc --noEmit",
         "decrypt-vars": "sops decrypt secrets/dev.vars.json --output-type dotenv > .dev.vars",
-        "dev": "npm run decrypt-vars && vite dev",
-        "dev:production": "npm run decrypt-vars:production && CLOUDFLARE_ENV=production vite dev",
-        "test": "npm run decrypt-vars && vitest run",
+        "dev": "vite dev",
+        "dev:production": "CLOUDFLARE_ENV=production vite dev",
+        "test": "vitest run",
         "gen:migrations": "drizzle-kit generate",
         "gen:auth-schema": "npx @better-auth/cli@latest generate --config betterAuth.config.ts --output src/db/schema/better-auth.ts",
         "gen:types:runtime": "wrangler types --include-env=false worker-runtime.d.ts",

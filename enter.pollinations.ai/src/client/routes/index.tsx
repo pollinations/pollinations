@@ -14,6 +14,7 @@ import { Footer } from "../components/layout/footer.tsx";
 import { Header } from "../components/layout/header.tsx";
 import { NewsBanner } from "../components/layout/news-banner.tsx";
 import { User } from "../components/layout/user.tsx";
+import { Playground } from "../components/playground/playground.tsx";
 import { Pricing } from "../components/pricing";
 import { UsageGraph } from "../components/usage-analytics";
 
@@ -55,8 +56,12 @@ function RouteComponent() {
         Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
-    const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
+    const [activeTab, setActiveTab] = useState<
+        "balance" | "usage" | "create"
+    >("balance");
+    const [playgroundApiKey, setPlaygroundApiKey] = useState("");
     const [downloadOpen, setDownloadOpen] = useState(false);
+    const apiKeysSectionRef = useRef<HTMLDivElement>(null);
     const [downloadingDetailed, setDownloadingDetailed] = useState(false);
     const downloadRef = useRef<HTMLDivElement>(null);
 
@@ -164,6 +169,7 @@ function RouteComponent() {
         }
 
         router.invalidate();
+        if (apiKey.key && !isPublishable) setPlaygroundApiKey(apiKey.key);
         return {
             id: apiKey.id,
             key: apiKey.key,
@@ -228,7 +234,7 @@ function RouteComponent() {
                 <NewsBanner />
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-                        <h2 className="flex items-center gap-3">
+                        <h2 className="flex items-center gap-3 flex-wrap">
                             <button
                                 type="button"
                                 onClick={() => setActiveTab("balance")}
@@ -251,26 +257,45 @@ function RouteComponent() {
                                 }`}
                             >
                                 Usage
-                                {activeTab === "balance" && (
-                                    <img
-                                        src="/stats-icon.svg"
-                                        alt="stats"
-                                        className="emoji-pulse ml-1 w-7 h-7 inline-block"
-                                    />
-                                )}
+                            </button>
+                            <span className="text-gray-300">·</span>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("create")}
+                                className={`font-bold ${
+                                    activeTab === "create"
+                                        ? "text-green-950"
+                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                }`}
+                            >
+                                Create
                             </button>
                         </h2>
+                        {activeTab === "create" && (
+                            <a
+                                href="#api-keys"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    apiKeysSectionRef.current?.scrollIntoView({
+                                        behavior: "smooth",
+                                    });
+                                }}
+                                className="text-sm font-medium text-green-700 hover:underline"
+                            >
+                                Create API key
+                            </a>
+                        )}
                         {activeTab === "balance" && (
                             <div
                                 id="buy-pollen"
-                                className="flex flex-wrap gap-2"
+                                className="flex flex-nowrap gap-1.5 shrink-0"
                             >
                                 <Button
                                     as="button"
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(5)}
-                                    className="btn-shimmer"
+                                    className="btn-shimmer !px-2.5 !py-1.5 text-sm whitespace-nowrap"
                                 >
                                     💎 $5
                                 </Button>
@@ -279,7 +304,7 @@ function RouteComponent() {
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(10)}
-                                    className="btn-shimmer"
+                                    className="btn-shimmer !px-2.5 !py-1.5 text-sm whitespace-nowrap"
                                 >
                                     💎 $10
                                 </Button>
@@ -288,7 +313,7 @@ function RouteComponent() {
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(20)}
-                                    className="btn-shimmer"
+                                    className="btn-shimmer !px-2.5 !py-1.5 text-sm whitespace-nowrap"
                                 >
                                     💎 $20
                                 </Button>
@@ -297,7 +322,7 @@ function RouteComponent() {
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(50)}
-                                    className="btn-shimmer"
+                                    className="btn-shimmer !px-2.5 !py-1.5 text-sm whitespace-nowrap"
                                 >
                                     💎 $50
                                 </Button>
@@ -456,6 +481,20 @@ function RouteComponent() {
                     {activeTab === "usage" && (
                         <UsageGraph tier={tierData?.active?.tier} />
                     )}
+                    {activeTab === "create" && (
+                        <Playground
+                            apiKey={playgroundApiKey}
+                            setApiKey={setPlaygroundApiKey}
+                            githubUsername={user?.githubUsername ?? ""}
+                            githubId={user?.githubId ?? null}
+                            totalPollen={tierBalance + packBalance + cryptoBalance}
+                            onCreateKeyClick={() => {
+                                apiKeysSectionRef.current?.scrollIntoView({
+                                    behavior: "smooth",
+                                });
+                            }}
+                        />
+                    )}
                 </div>
                 {tierData && (
                     <div className="flex flex-col gap-2">
@@ -463,12 +502,14 @@ function RouteComponent() {
                         <TierPanel {...tierData} />
                     </div>
                 )}
-                <ApiKeyList
-                    apiKeys={apiKeys}
-                    onCreate={handleCreateApiKey}
-                    onUpdate={handleUpdateApiKey}
-                    onDelete={handleDeleteApiKey}
-                />
+                <div ref={apiKeysSectionRef} id="api-keys">
+                    <ApiKeyList
+                        apiKeys={apiKeys}
+                        onCreate={handleCreateApiKey}
+                        onUpdate={handleUpdateApiKey}
+                        onDelete={handleDeleteApiKey}
+                    />
+                </div>
                 <Pricing packBalance={packBalance} />
                 <FAQ />
                 <Footer />

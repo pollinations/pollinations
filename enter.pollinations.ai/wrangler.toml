@@ -42,6 +42,7 @@ tag = "v2"
 new_classes = ["PollenRateLimiter"]
 
 [vars]
+BETTER_AUTH_SECRET = "enter-pollinations-local-dev-secret"
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
@@ -86,6 +87,7 @@ bucket_name = "pollinations-text-enter"
 remote = true
 
 [env.local.vars]
+BETTER_AUTH_SECRET = "enter-pollinations-local-dev-secret"
 ENVIRONMENT = "local"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"

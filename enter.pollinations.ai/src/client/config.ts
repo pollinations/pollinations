@@ -19,5 +19,17 @@ const environmentConfig = {
     },
 } as const;
 
-export const config =
-    environmentConfig[import.meta.env.MODE as keyof typeof environmentConfig];
+function getConfig() {
+    if (
+        typeof window !== "undefined" &&
+        (window.location.origin === "http://localhost:3000" ||
+            window.location.origin === "http://127.0.0.1:3000")
+    ) {
+        return environmentConfig.development;
+    }
+    return environmentConfig[
+        import.meta.env.MODE as keyof typeof environmentConfig
+    ];
+}
+
+export const config = getConfig();

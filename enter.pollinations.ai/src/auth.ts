@@ -15,6 +15,36 @@ import { user as userTable } from "./db/schema/better-auth.ts";
 import { sendTierEventToTinybird } from "./events.ts";
 import { DEFAULT_TIER, getTierPollen } from "./tier-config.ts";
 
+let generatedAuthSecret: string | undefined;
+const LOCAL_AUTH_SECRET = "enter-pollinations-local-dev-secret";
+
+function resolveAuthSecret(env: Cloudflare.Env): string {
+    const envSecret = env.BETTER_AUTH_SECRET || env.AUTH_SECRET;
+    if (env.ENVIRONMENT !== "production") {
+        return envSecret || LOCAL_AUTH_SECRET;
+    }
+    if (
+        envSecret &&
+        envSecret !== "better-auth-secret-123456789" &&
+        envSecret.length >= 32
+    ) {
+        return envSecret;
+    }
+    if (generatedAuthSecret) return generatedAuthSecret;
+
+    const randomSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
+    generatedAuthSecret = randomSecret;
+
+    try {
+        if (typeof process !== "undefined" && process?.env) {
+            process.env.BETTER_AUTH_SECRET = randomSecret;
+        }
+    } catch {
+    }
+
+    return randomSecret;
+}
+
 function addKeyPrefix(key: string) {
     return `auth:${key}`;
 }
@@ -71,8 +101,31 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         disableDefaultReference: true,
     });
 
+    const hasGithubCredentials =
+        typeof env.GITHUB_CLIENT_ID === "string" &&
+        env.GITHUB_CLIENT_ID.length > 0 &&
+        typeof env.GITHUB_CLIENT_SECRET === "string" &&
+        env.GITHUB_CLIENT_SECRET.length > 0;
+
+    const socialProviders =
+        hasGithubCredentials
+            ? {
+                  github: {
+                      clientId: env.GITHUB_CLIENT_ID,
+                      clientSecret: env.GITHUB_CLIENT_SECRET,
+                      mapProfileToUser: (profile) => ({
+                          githubId: profile.id,
+                          githubUsername: profile.login,
+                      }),
+                  },
+              }
+            : {};
+
+    const authSecret = resolveAuthSecret(env);
+
     return betterAuth({
         basePath: "/api/auth",
+        secret: authSecret,
         onAPIError: {
             errorURL: "/error",
         },
@@ -128,16 +181,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 },
             },
         },
-        socialProviders: {
-            github: {
-                clientId: env.GITHUB_CLIENT_ID,
-                clientSecret: env.GITHUB_CLIENT_SECRET,
-                mapProfileToUser: (profile) => ({
-                    githubId: profile.id,
-                    githubUsername: profile.login,
-                }),
-            },
-        },
+        socialProviders,
         plugins: [
             adminPlugin,
             apiKeyPlugin,

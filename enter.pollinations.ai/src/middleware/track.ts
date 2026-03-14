@@ -517,8 +517,12 @@ function extractUsageAndContentFilterResultsHeaders(response: Response): {
     };
 }
 
+/** Rough chars-per-token ratio used for fallback estimation when providers omit usage. */
+const CHARS_PER_TOKEN = 4;
+
 async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
+    resolvedModelRequested: string,
 ): Promise<{
     modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
@@ -545,9 +549,23 @@ async function extractUsageAndContentFilterResultsStream(
     let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
+    let completionChars = 0;
 
     for await (const event of events) {
         const parseResult = EventSchema.safeParse(event);
+
+        // Accumulate completion text length for fallback estimation
+        const rawEvent = event as Record<string, unknown>;
+        const choices = rawEvent?.choices;
+        if (Array.isArray(choices) && choices.length > 0) {
+            const delta = (choices[0] as Record<string, unknown>)?.delta;
+            if (delta && typeof delta === "object") {
+                const content = (delta as Record<string, unknown>).content;
+                if (typeof content === "string") {
+                    completionChars += content.length;
+                }
+            }
+        }
 
         const incomingPromptFilterResults =
             parseResult.data?.prompt_filter_results?.map(
@@ -574,6 +592,11 @@ async function extractUsageAndContentFilterResultsStream(
             usage = parseResult.data?.usage;
             model = parseResult.data?.model;
         }
+
+        // Capture model from any chunk (providers always include it)
+        if (!model && parseResult.data?.model) {
+            model = parseResult.data.model;
+        }
     }
 
     const contentFilterResults = contentFilterResultsToEventParams({
@@ -582,6 +605,30 @@ async function extractUsageAndContentFilterResultsStream(
     });
 
     if (!model || !usage) {
+        // Fallback: estimate tokens from accumulated completion characters
+        if (completionChars > 0) {
+            const estimatedCompletionTokens = Math.ceil(
+                completionChars / CHARS_PER_TOKEN,
+            );
+            log.warn(
+                "No usage object in stream — using estimated usage: {completionChars} chars ≈ {tokens} tokens for model {model}",
+                {
+                    completionChars,
+                    tokens: estimatedCompletionTokens,
+                    model: model || resolvedModelRequested,
+                },
+            );
+            return {
+                modelUsage: {
+                    model: (model || resolvedModelRequested) as ModelId,
+                    usage: {
+                        promptTextTokens: 0,
+                        completionTextTokens: estimatedCompletionTokens,
+                    },
+                },
+                contentFilterResults,
+            };
+        }
         log.error("No usage object found in event stream");
         return {
             modelUsage: null,
@@ -612,7 +659,10 @@ async function extractUsageAndContentFilterResults(
         response.body instanceof ReadableStream
     ) {
         const eventStream = extractResponseStream(response);
-        return await extractUsageAndContentFilterResultsStream(eventStream);
+        return await extractUsageAndContentFilterResultsStream(
+            eventStream,
+            requestTracking.resolvedModelRequested,
+        );
     }
     return extractUsageAndContentFilterResultsHeaders(response);
 }

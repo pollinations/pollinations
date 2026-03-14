@@ -424,6 +424,45 @@ describe("Veo Video Generation", () => {
 });
 
 /**
+ * Pruna p-video Generation Tests
+ *
+ * Cost considerations:
+ * - p-video: ~$0.12 per 5-second video (~$0.024/sec)
+ */
+describe("Pruna Video Generation", () => {
+    test(
+        "p-video T2V should return video/mp4",
+        { timeout: 180000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20cat%20walking?model=p-video&duration=3`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("Pruna T2V response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+});
+
+/**
  * Grok Video Generation Tests (api.airforce)
  *
  * Cost considerations:

@@ -394,4 +394,50 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["video"],
     },
+    "p-image": {
+        aliases: ["pruna-image", "pruna"],
+        modelId: "p-image",
+        provider: "pruna",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.005, // $0.005 per image
+            },
+        ],
+        description: "Pruna p-image - Fast text-to-image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "p-image-edit": {
+        aliases: ["pruna-edit", "pruna-image-edit"],
+        modelId: "p-image-edit",
+        provider: "pruna",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.01, // $0.01 per image
+            },
+        ],
+        description: "Pruna p-image-edit - Image-to-image editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "p-video": {
+        aliases: ["pruna-video"],
+        modelId: "p-video",
+        provider: "pruna",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionVideoSeconds: 0.024, // $0.12 per run / 5s default = $0.024/sec
+            },
+        ],
+        description:
+            "Pruna p-video - Text/image-to-video generation (up to 1080p)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

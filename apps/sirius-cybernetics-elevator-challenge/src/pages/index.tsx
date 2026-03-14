@@ -19,11 +19,11 @@ import {
 import { useInput, useMessageScroll } from "@/hooks/ui";
 import type { Message } from "@/types";
 import {
-    hasUserApiKey,
-    getApiKey,
-    setApiKey,
     clearApiKey,
+    getApiKey,
+    hasUserApiKey,
     maskApiKey,
+    setApiKey,
 } from "@/types";
 
 function useBYOP() {

@@ -1,0 +1,33 @@
+{
+  "pr_number": 9104,
+  "title": "docs: update README — 2026-03-14",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9104",
+  "merged_at": "2026-03-14T07:18:45Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Hive Report",
+    "blurb": "Our trusty bot just gave the README its daily polish, adding the latest news and community apps to the front page.",
+    "summary": "Automated daily update to the README file to reflect the latest news and recent community applications.",
+    "impact": "Keeps the repository's landing page fresh with the latest community highlights and platform updates.",
+    "keywords": [
+      "readme",
+      "bot",
+      "news",
+      "documentation"
+    ],
+    "visual_concept": "A cute robot with a monitor head (representing the bot) updating a giant digital billboard or scroll (the README) while Polly the bee watches approvingly.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head painting new text on a large wooden signpost. The cute bee mascot hovers nearby wearing a tiny painter's beret. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T07:20:04.979243+00:00"
+}

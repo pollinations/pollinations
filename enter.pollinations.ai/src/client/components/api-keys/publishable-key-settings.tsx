@@ -18,7 +18,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                 App URL
             </Field.Label>
             <Field.Input
-                type="url"
+                type="text"
                 value={appUrl}
                 onChange={(e) => onAppUrlChange(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-600 autofill:shadow-[inset_0_0_0px_1000px_#dcfce7]"

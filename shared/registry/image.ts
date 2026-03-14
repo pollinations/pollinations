@@ -283,21 +283,6 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
-    "klein-large": {
-        aliases: ["flux-klein-9b", "klein-9b"],
-        modelId: "klein-large",
-        provider: "modal",
-        cost: [
-            {
-                date: new Date("2026-01-21").getTime(),
-                completionImageTokens: 0.015,
-            },
-        ],
-        description:
-            "FLUX.2 Klein 9B - Higher quality image generation & editing on Modal",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-    },
     "imagen-4": {
         aliases: ["imagen"],
         modelId: "imagen-4",

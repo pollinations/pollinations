@@ -584,29 +584,39 @@ export const GetModelsResponseSchema = z
 
 // OpenAI Images API Schemas
 
+// Shared fields between image generation and editing requests
+const imageModelField = z.string().optional().default("flux").meta({
+    description: "The model to use for image generation",
+});
+const imageNField = z
+    .number()
+    .int()
+    .min(1)
+    .max(1)
+    .optional()
+    .default(1)
+    .meta({ description: "Number of images to generate (currently max 1)" });
+const imageSizeField = z.string().optional().default("1024x1024").meta({
+    description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
+});
+const imageQualityField = z
+    .enum(["standard", "hd", "low", "medium", "high"])
+    .optional()
+    .default("medium")
+    .meta({
+        description:
+            "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
+    });
+
 export const CreateImageRequestSchema = z
     .object({
         prompt: z.string().min(1).max(32000).meta({
             description: "A text description of the desired image(s)",
         }),
-        model: z.string().optional().default("flux").meta({
-            description: "The model to use for image generation",
-        }),
-        n: z.number().int().min(1).max(1).optional().default(1).meta({
-            description: "Number of images to generate (currently max 1)",
-        }),
-        size: z.string().optional().default("1024x1024").meta({
-            description:
-                "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
-        }),
-        quality: z
-            .enum(["standard", "hd", "low", "medium", "high"])
-            .optional()
-            .default("medium")
-            .meta({
-                description:
-                    "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
-            }),
+        model: imageModelField,
+        n: imageNField,
+        size: imageSizeField,
+        quality: imageQualityField,
         response_format: z
             .enum(["url", "b64_json"])
             .optional()
@@ -662,24 +672,10 @@ export const CreateImageEditRequestSchema = z
                 description:
                     "Source image(s). A URL string, or an array of {image_url} objects (OpenAI format)",
             }),
-        model: z.string().optional().default("flux").meta({
-            description: "The model to use for image editing",
-        }),
-        n: z.number().int().min(1).max(1).optional().default(1).meta({
-            description: "Number of images to generate (currently max 1)",
-        }),
-        size: z.string().optional().default("1024x1024").meta({
-            description:
-                "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
-        }),
-        quality: z
-            .enum(["standard", "hd", "low", "medium", "high"])
-            .optional()
-            .default("medium")
-            .meta({
-                description:
-                    "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
-            }),
+        model: imageModelField,
+        n: imageNField,
+        size: imageSizeField,
+        quality: imageQualityField,
     })
     .passthrough()
     .meta({ $id: "CreateImageEditRequest" });

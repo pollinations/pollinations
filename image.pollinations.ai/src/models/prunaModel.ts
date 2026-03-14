@@ -291,22 +291,13 @@ export async function callPrunaImageEditAPI(
 
         const input: Record<string, unknown> = { prompt };
 
-        // Pruna p-image-edit requires "images" array (1-5 images as data URIs)
-        // We download and send as data URIs since Pruna can't fetch many external URLs
+        // Pruna p-image-edit accepts image URLs directly (1-5 images)
+        // Note: data URIs are rejected by the Pruna API with "property input is required"
         if (safeParams.image && safeParams.image.length > 0) {
             const imageUrls = Array.isArray(safeParams.image)
                 ? safeParams.image.slice(0, 5)
                 : [safeParams.image];
-
-            const encodedImages: string[] = [];
-            for (const imageUrl of imageUrls) {
-                logOps("Downloading reference image:", imageUrl);
-                const { base64, mimeType } =
-                    await downloadImageAsBase64(imageUrl);
-                encodedImages.push(`data:${mimeType};base64,${base64}`);
-                logOps("Reference image encoded, mimeType:", mimeType);
-            }
-            input.images = encodedImages;
+            input.images = imageUrls;
         }
 
         if (safeParams.seed !== undefined) {

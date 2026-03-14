@@ -712,7 +712,6 @@
 | [🏗️ JCode Website Builder](https://jcode-ai-website-bulder.netlify.app/) | Generate websites using the Pollinations text API. | [@web](https://github.com/web) |  |  |
 | [🛠️ MCPollinations (Community)](195895956) | Community MCP server with tunable params, model options, and image saving. | [@api](https://github.com/api) |  |  |
 | 📦 pollinations NPM Module | JavaScript/Node.js SDK for the Pollinations API. | [@api](https://github.com/api) |  |  |
-| [📦 pollinations.ai Python SDK](151645294) | Provides a Python SDK for interacting with Pollinations APIs, enabling prompt enhancement, image generation, and model access. | [@api](https://github.com/api) |  |  |
 | [🔌 pypollinations](https://pypi.org/project/pypollinations/) | Python SDK with ImageClient and TextClient wrappers for Pollinations AI generation APIs | [@library](https://github.com/library) |  |  |
 | [🌐 Websim](https://websim.ai/c/bXsmNE96e3op5rtUS) | Web simulation platform for creating interactive AI-powered browser experiences | [@web](https://github.com/web) |  |  |
 

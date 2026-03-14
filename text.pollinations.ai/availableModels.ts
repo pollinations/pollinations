@@ -175,6 +175,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["step-3.5-flash:free"],
     },
     {
+        name: "grok-airforce",
+        config: portkeyConfig["grok-4.20-beta"],
+    },
+    {
         name: "claude-airforce",
         config: portkeyConfig["claude-sonnet-4.6"],
     },

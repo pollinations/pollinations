@@ -639,6 +639,27 @@ export const TEXT_SERVICES = {
         isSpecialized: true,
         alpha: true,
     },
+    "grok-airforce": {
+        aliases: ["grok-4.20-beta"],
+        modelId: "grok-4.20-beta",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-03-14").getTime(),
+                promptTextTokens: perMillion(0.01),
+                completionTextTokens: perMillion(0.01),
+            },
+        ],
+        description:
+            "Grok 4.20 Beta (api.airforce) - xAI model with code execution, web search & tool calling",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        search: true,
+        codeExecution: true,
+        isSpecialized: false,
+        alpha: true,
+    },
     "claude-airforce": {
         aliases: [],
         modelId: "claude-sonnet-4.6",

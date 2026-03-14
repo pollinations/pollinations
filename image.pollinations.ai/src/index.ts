@@ -230,8 +230,16 @@ function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {
     if (req.method !== "POST") return Promise.resolve({});
     return new Promise((resolve) => {
         let data = "";
-        req.on("data", (chunk: Buffer) => { data += chunk.toString(); });
-        req.on("end", () => { try { resolve(JSON.parse(data)); } catch { resolve({}); } });
+        req.on("data", (chunk: Buffer) => {
+            data += chunk.toString();
+        });
+        req.on("end", () => {
+            try {
+                resolve(JSON.parse(data));
+            } catch {
+                resolve({});
+            }
+        });
         req.on("error", () => resolve({}));
     });
 }

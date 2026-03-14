@@ -19,6 +19,16 @@ function addKeyPrefix(key: string) {
     return `auth:${key}`;
 }
 
+/**
+ * Per-isolate write deduplication for KV.
+ * Better Auth calls secondaryStorage.set 2-3 times per verifyApiKey
+ * (updating updatedAt, lastRequest, requestCount). Under high traffic
+ * this exceeds Cloudflare KV's 1000 writes/sec limit.
+ * Skip the KV write if the same key was written within the last 60s.
+ */
+const recentKvWrites = new Map<string, number>();
+const KV_WRITE_DEDUP_MS = 60_000;
+
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
 
@@ -102,9 +112,31 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 return await env.KV.get(addKeyPrefix(key));
             },
             set: async (key, value, ttl) => {
-                await env.KV.put(addKeyPrefix(key), value, {
-                    expirationTtl: ttl,
-                });
+                const prefixedKey = addKeyPrefix(key);
+                const now = Date.now();
+                const lastWrite = recentKvWrites.get(prefixedKey);
+                if (lastWrite && now - lastWrite < KV_WRITE_DEDUP_MS) {
+                    return; // Skip — same key written recently
+                }
+                try {
+                    await env.KV.put(prefixedKey, value, {
+                        expirationTtl: ttl,
+                    });
+                    recentKvWrites.set(prefixedKey, now);
+                    // Lazy cleanup: cap map size to prevent unbounded growth
+                    if (recentKvWrites.size > 10_000) {
+                        for (const [k, t] of recentKvWrites) {
+                            if (now - t >= KV_WRITE_DEDUP_MS)
+                                recentKvWrites.delete(k);
+                        }
+                    }
+                } catch (e: unknown) {
+                    // Suppress 429 — D1 is the source of truth via fallbackToDatabase
+                    if (e instanceof Error && e.message.includes("429")) {
+                        return;
+                    }
+                    throw e;
+                }
             },
             delete: async (key) => {
                 await env.KV.delete(addKeyPrefix(key));

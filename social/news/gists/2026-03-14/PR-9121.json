@@ -1,0 +1,34 @@
+{
+  "pr_number": 9121,
+  "title": "fix: construct Azure GPT Image endpoints from base URL",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9121",
+  "merged_at": "2026-03-14T22:25:56Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Routing the Azure pipes",
+    "blurb": "We've tidied up how we connect to Azure's GPT Image models under the hood. Smoother routing means more reliable pixel delivery!",
+    "summary": "Refactored the Azure GPT Image endpoint construction to use base URLs and paths instead of regex replacements.",
+    "impact": "Improves the reliability and maintainability of our image generation backend when connecting to Azure services.",
+    "keywords": [
+      "azure",
+      "gpt-image",
+      "backend",
+      "routing",
+      "bug-fix"
+    ],
+    "visual_concept": "Connecting pipes or routing cables to represent URL construction. Polly the bee and the Monitor Robot working together to connect glowing cables.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, working with a chunky monitor-head robot to connect glowing lime green (#ecf874) cables in a server room. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T22:26:47.475285+00:00"
+}

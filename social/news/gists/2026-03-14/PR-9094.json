@@ -1,0 +1,34 @@
+{
+  "pr_number": 9094,
+  "title": "fix: remove klein-large (9B) — Modal billing limit reached",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9094",
+  "merged_at": "2026-03-14T06:58:33Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Streamlining the Klein models",
+    "blurb": "We're focusing our Flux Klein offerings on the lightning-fast 4B variant, saying goodbye to the 9B version to keep the hive running smoothly.",
+    "summary": "The image generation API has been updated to focus exclusively on the efficient Klein 4B model, deprecating the larger 9B variant.",
+    "impact": "Users will experience a more streamlined model selection, with the fast and capable Klein 4B remaining fully available for image generation.",
+    "keywords": [
+      "models",
+      "image-generation",
+      "flux",
+      "klein",
+      "api"
+    ],
+    "visual_concept": "The bee mascot acting as a gardener, pruning a larger plant to allow a smaller, faster-growing sprout (representing the 4B model) to thrive.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, carefully pruning a large glowing code-plant in a lime green (#ecf874) pot to help a smaller, faster-growing sprout thrive. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T06:59:25.125564+00:00"
+}

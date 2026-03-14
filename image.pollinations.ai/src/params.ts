@@ -68,11 +68,12 @@ export const ImageParamsSchema = z
         private: sanitizedBoolean.catch(false).optional(),
         quality: z.literal(validQualities).catch("medium"),
         image: z
-            .union([z.string(), z.null(), z.undefined()])
-            .transform((value?: string | null) => {
+            .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+            .transform((value?: string[] | string | null) => {
                 if (!value) return [];
-                // Support both pipe (|) and comma (,) separators
-                // Prefer pipe separator if present, otherwise use comma
+                // Already an array (from POST JSON body)
+                if (Array.isArray(value)) return value;
+                // String: support both pipe (|) and comma (,) separators
                 return value.includes("|")
                     ? value.split("|")
                     : value.split(",");

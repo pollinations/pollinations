@@ -20,8 +20,7 @@ const LOCAL_AUTH_SECRET = "enter-pollinations-local-dev-secret";
 
 function resolveAuthSecret(env: Cloudflare.Env): string {
     const envSecret =
-        env.BETTER_AUTH_SECRET ||
-        (env as { AUTH_SECRET?: string }).AUTH_SECRET;
+        env.BETTER_AUTH_SECRET || (env as { AUTH_SECRET?: string }).AUTH_SECRET;
     if (env.ENVIRONMENT !== "production") {
         return envSecret || LOCAL_AUTH_SECRET;
     }
@@ -113,7 +112,10 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
               github: {
                   clientId: env.GITHUB_CLIENT_ID,
                   clientSecret: env.GITHUB_CLIENT_SECRET,
-                  mapProfileToUser: (profile: { id: string; login: string }) => ({
+                  mapProfileToUser: (profile: {
+                      id: string;
+                      login: string;
+                  }) => ({
                       githubId: profile.id,
                       githubUsername: profile.login,
                   }),

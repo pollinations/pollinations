@@ -628,6 +628,13 @@ export const CreateImageRequestSchema = z
         user: z.string().optional().meta({
             description: "End-user identifier for abuse tracking",
         }),
+        image: z
+            .union([z.string(), z.array(z.string())])
+            .optional()
+            .meta({
+                description:
+                    "Reference image URL(s) for image-to-image generation (Pollinations extension)",
+            }),
     })
     .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, safe, etc.
     .meta({ $id: "CreateImageRequest" });

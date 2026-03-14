@@ -8,6 +8,9 @@ import type { Logger } from "@logtape/logtape";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
+import type { BalanceVariables } from "@/middleware/balance.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
@@ -216,8 +219,9 @@ async function parseImageEditInput(c: Context): Promise<{
 
 // --- Route handler functions (called from proxy.ts) ---
 
-// biome-ignore lint/suspicious/noExplicitAny: accepts any context variables shape from proxy.ts
-type CheckBalance = (vars: any) => Promise<void>;
+type CheckBalance = (
+    vars: AuthVariables & BalanceVariables & ModelVariables,
+) => Promise<void>;
 
 /** Handler for POST /v1/images/generations */
 export function handleImageGeneration(
@@ -229,7 +233,11 @@ export function handleImageGeneration(
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
         c.var.auth.requireKeyBudget();
-        await checkBalance(c.var);
+        await checkBalance(
+            c.var as unknown as AuthVariables &
+                BalanceVariables &
+                ModelVariables,
+        );
 
         const body = (await c.req.json()) as CreateImageRequest &
             Record<string, unknown>;
@@ -289,7 +297,11 @@ export function handleImageEdit(
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
         c.var.auth.requireKeyBudget();
-        await checkBalance(c.var);
+        await checkBalance(
+            c.var as unknown as AuthVariables &
+                BalanceVariables &
+                ModelVariables,
+        );
 
         const { prompt, imageUrls, size, quality, seed, extra } =
             await parseImageEditInput(c);

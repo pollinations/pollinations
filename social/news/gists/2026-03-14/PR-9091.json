@@ -1,0 +1,34 @@
+{
+  "pr_number": 9091,
+  "title": "fix: add BPAI_PASSWORD for klein 4B to avoid 429s",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9091",
+  "merged_at": "2026-03-14T01:09:27Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Unlocking the Klein model",
+    "blurb": "We've smoothed out the rate limits for the Klein 4B image model. Your generations should now flow freely without hitting those pesky 429 errors.",
+    "summary": "Added the required authentication secrets for the bpaigen provider to resolve rate limiting issues with the Klein 4B model.",
+    "impact": "Users generating images with the `klein` model will no longer experience 429 Too Many Requests errors, resulting in reliable generations.",
+    "keywords": [
+      "bug fix",
+      "image generation",
+      "klein",
+      "rate limits",
+      "api"
+    ],
+    "visual_concept": "The PR is about fixing rate limits and unlocking a model using a password/secret. Visual metaphors: a key, unlocking a terminal, smooth flow. The bee mascot using a glowing key to unlock a retro terminal while the monitor robot looks happy.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing lime green (#ecf874) pixelated key, unlocking a retro computer terminal. The chunky monitor robot stands nearby looking relieved and happy, with a beautiful generated landscape on its screen. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T01:10:33.819104+00:00"
+}

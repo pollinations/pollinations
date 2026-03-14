@@ -1,0 +1,34 @@
+{
+  "pr_number": 9089,
+  "title": "fix: deploy script domain reclaim + sirius-cybernetics biome fixes",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9089",
+  "merged_at": "2026-03-14T00:02:41Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Elevator maintenance",
+    "blurb": "We've tuned up the deployment scripts to properly route our community apps and gave the Sirius Cybernetics Elevator a fresh coat of lint-free paint.",
+    "summary": "Updated the app deployment scripts to reclaim custom domains from legacy projects and resolved Biome formatting issues in the Sirius Cybernetics Elevator app.",
+    "impact": "Community apps will now correctly route to their new deployment targets with updated DNS records.",
+    "keywords": [
+      "infrastructure",
+      "deployment",
+      "dns",
+      "apps",
+      "linting"
+    ],
+    "visual_concept": "The bee mascot wearing a hard hat, fixing a retro futuristic elevator control panel or routing glowing cables to represent DNS and domain routing.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, plugging glowing lime green (#ecf874) cables into a retro-futuristic elevator control panel. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T00:03:31.828353+00:00"
+}

@@ -153,7 +153,7 @@ export function Playground({
 
     useEffect(() => {
         setShowAllModels(false);
-    }, [activeCategory]);
+    }, []);
 
     const promptPlaceholder = isImageModel
         ? "Describe the image you want..."
@@ -376,8 +376,9 @@ export function Playground({
                     {isImageModel && (
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Width</label>
+                                <label htmlFor="playground-width" className="block text-sm font-medium text-gray-700 mb-1">Width</label>
                                 <input
+                                    id="playground-width"
                                     type="number"
                                     value={width}
                                     onChange={(e) => setWidth(Number(e.target.value))}
@@ -385,8 +386,9 @@ export function Playground({
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Height</label>
+                                <label htmlFor="playground-height" className="block text-sm font-medium text-gray-700 mb-1">Height</label>
                                 <input
+                                    id="playground-height"
                                     type="number"
                                     value={height}
                                     onChange={(e) => setHeight(Number(e.target.value))}
@@ -394,10 +396,11 @@ export function Playground({
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1" title="Same seed + same prompt = same image">
+                                <label htmlFor="playground-seed" className="block text-sm font-medium text-gray-700 mb-1" title="Same seed + same prompt = same image">
                                     Seed
                                 </label>
                                 <input
+                                    id="playground-seed"
                                     type="number"
                                     value={seed}
                                     onChange={(e) => setSeed(Number(e.target.value))}
@@ -405,11 +408,12 @@ export function Playground({
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1" title="AI improves your prompt for better results">
+                                <label htmlFor="playground-enhance" className="block text-sm font-medium text-gray-700 mb-1" title="AI improves your prompt for better results">
                                     Enhance
                                 </label>
-                                <label className="flex items-center h-[42px]">
+                                <label htmlFor="playground-enhance" className="flex items-center h-[42px]">
                                     <input
+                                        id="playground-enhance"
                                         type="checkbox"
                                         checked={enhance}
                                         onChange={(e) => setEnhance(e.target.checked)}
@@ -451,7 +455,11 @@ export function Playground({
                             {resultType === "video" && (
                                 <video src={result} controls autoPlay loop muted className="w-full h-auto" />
                             )}
-                            {resultType === "audio" && <audio src={result} controls autoPlay className="w-full" />}
+                            {resultType === "audio" && (
+                                <audio src={result} controls autoPlay className="w-full">
+                                    <track kind="captions" />
+                                </audio>
+                            )}
                             {resultType === "text" && (
                                 <pre className="p-4 text-sm text-gray-800 whitespace-pre-wrap font-sans">{result}</pre>
                             )}

@@ -272,18 +272,13 @@ function RouteComponent() {
                             </button>
                         </h2>
                         {activeTab === "create" && (
-                            <a
-                                href="#api-keys"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    apiKeysSectionRef.current?.scrollIntoView({
-                                        behavior: "smooth",
-                                    });
-                                }}
+                            <button
+                                type="button"
+                                onClick={() => apiKeysSectionRef.current?.scrollIntoView({ behavior: "smooth" })}
                                 className="text-sm font-medium text-green-700 hover:underline"
                             >
                                 Create API key
-                            </a>
+                            </button>
                         )}
                         {activeTab === "balance" && (
                             <div

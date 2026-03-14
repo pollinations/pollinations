@@ -138,7 +138,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // Required for deferUpdates to work properly
             backgroundTasks: ctx
                 ? {
-                      handler: (promise: Promise<any>) => {
+                      handler: (promise: Promise<unknown>) => {
                           ctx.waitUntil(
                               promise.catch(() => {
                                   // Silently ignore - these are non-critical tracking updates

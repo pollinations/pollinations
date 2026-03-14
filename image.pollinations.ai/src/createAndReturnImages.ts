@@ -1120,22 +1120,6 @@ const generateImage = async (
             }
         }
 
-        case "klein-large": {
-            try {
-                return await callFluxKleinAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                    "klein-large",
-                );
-            } catch (error) {
-                logError("Flux Klein Large generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
-
         case "flux-2-dev":
         case "imagen-4":
         case "grok-imagine":

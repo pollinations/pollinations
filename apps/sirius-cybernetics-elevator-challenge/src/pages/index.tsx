@@ -27,18 +27,26 @@ import {
 } from "@/types";
 
 function useBYOP() {
-    const [authenticated, setAuthenticated] = useState(hasUserApiKey());
+    const [apiKey, setApiKeyState] = useState<string | null>(null);
+    const [authenticated, setAuthenticated] = useState<boolean>(false);
 
     useEffect(() => {
         const hash = window.location.hash;
         if (hash) {
             const params = new URLSearchParams(hash.slice(1));
-            const apiKey = params.get("api_key");
-            if (apiKey) {
-                setApiKey(apiKey);
+            const incomingApiKey = params.get("api_key");
+            if (incomingApiKey) {
+                setApiKeyState(incomingApiKey);
                 setAuthenticated(true);
                 window.history.replaceState(null, "", window.location.pathname);
+                return;
             }
+        }
+        // Fallback to any non-persistent source if available.
+        const existingKey = getApiKey();
+        if (existingKey) {
+            setApiKeyState(existingKey);
+            setAuthenticated(true);
         }
     }, []);
 
@@ -50,7 +58,7 @@ function useBYOP() {
     };
 
     const logout = () => {
-        clearApiKey();
+        setApiKeyState(null);
         setAuthenticated(false);
     };
 

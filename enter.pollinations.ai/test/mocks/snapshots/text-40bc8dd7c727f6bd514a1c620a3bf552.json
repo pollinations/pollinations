@@ -1,0 +1,126 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sequential test 1772717200385"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2520",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 13:26:48 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-usage-completion-reasoning-tokens": "320",
+      "x-usage-completion-text-tokens": "306",
+      "x-usage-prompt-text-tokens": "14"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "I’m not sure what you mean by “Sequential test 1772717200385.” Do you want me to look up a test with that ID, run a sequential-analysis on data, or explain what a sequential test is?\n\nTell me which of these (or another) you want and give the details below so I can help:\n\n1) Look up a test by ID in your system\n- Tell me the system or service (e.g., internal app, AWS/GCP job, CI/CD pipeline) and how I can access it (paste the output/logs or give API responses). I don’t have access to external systems, so you’ll need to paste the relevant info.\n\n2) Run / simulate a sequential test (SPRT or group-sequential)\n- Provide the data sequence (or summary per step), or say you want a simulation.\n- State hypotheses (H0, H1), effect size, or parameters to compare.\n- Give error-rate targets (Type I α and Type II β) or desired power.\n- Say whether you want Wald SPRT, Bayesian sequential, or group-sequential design.\n\n3) Explain sequential testing / interpret results\n- I can summarize methods, stopping rules, boundaries, and an example interpretation if you want a conceptual explanation.\n\nIf you want me to perform a sequential probability ratio test now, paste the observed sequence (or counts/likelihoods) and the hypotheses and I’ll compute the stopping boundaries and current decision.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772717201,
+        "id": "pllns_7fba1b43743bed2dfd42cf912ad79916",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 626,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 320,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 14,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 640
+        }
+      }
+    }
+  }
+}

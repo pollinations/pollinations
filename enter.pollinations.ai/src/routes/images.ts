@@ -25,11 +25,12 @@ const PASSTHROUGH_PARAMS = [
     "guidance_scale",
 ] as const;
 
-function arrayBufferToBase64(buf: ArrayBuffer): string {
-    const bytes = new Uint8Array(buf);
-    let s = "";
-    for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
-    return btoa(s);
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binaryStr = "";
+    for (let i = 0; i < bytes.length; i++)
+        binaryStr += String.fromCharCode(bytes[i]);
+    return btoa(binaryStr);
 }
 
 function imageResponse(
@@ -54,9 +55,9 @@ async function requireAuthAndBalance(
 }
 
 /** Build image service URL with core params (kept in URL for caching/logging). */
-function imageServiceUrl(
+function buildImageServiceUrl(
     baseUrl: string,
-    p: {
+    params: {
         model: string;
         width: number;
         height: number;
@@ -64,29 +65,29 @@ function imageServiceUrl(
         seed: number;
     },
 ): URL {
-    const u = new URL(`${baseUrl}/prompt/`);
-    for (const [k, v] of Object.entries({ ...p, nofeed: "true" }))
-        u.searchParams.set(k, String(v));
-    return u;
+    const targetUrl = new URL(`${baseUrl}/prompt/`);
+    for (const [key, value] of Object.entries({ ...params, nofeed: "true" }))
+        targetUrl.searchParams.set(key, String(value));
+    return targetUrl;
 }
 
 /** POST to image service, throw on error. */
 async function postToImageService(
-    url: URL,
+    targetUrl: URL,
     c: Context,
     body: Record<string, unknown>,
     proxyHeaders: (c: Context) => Record<string, string>,
 ): Promise<Response> {
-    const response = await fetch(url.toString(), {
+    const response = await fetch(targetUrl.toString(), {
         method: "POST",
         headers: { ...proxyHeaders(c), "Content-Type": "application/json" },
         body: JSON.stringify(body),
     });
     if (!response.ok) {
-        const text = await response.text();
+        const responseText = await response.text();
         throw new UpstreamError(response.status as ContentfulStatusCode, {
-            message: text || getDefaultErrorMessage(response.status),
-            requestUrl: url,
+            message: responseText || getDefaultErrorMessage(response.status),
+            requestUrl: targetUrl,
         });
     }
     return response;
@@ -98,12 +99,12 @@ function resolveParams(opts: {
     quality?: string;
     seed?: number;
 }) {
-    const [w, h] = (opts.size || "1024x1024")
+    const [width, height] = (opts.size || "1024x1024")
         .split("x")
         .map((s) => Number.parseInt(s, 10));
     return {
-        width: w || 1024,
-        height: h || 1024,
+        width: width || 1024,
+        height: height || 1024,
         quality: QUALITY_MAP[opts.quality || ""] || opts.quality || "medium",
         seed: opts.seed ?? Math.floor(Math.random() * 2147483647),
     };
@@ -148,9 +149,9 @@ async function parseEditInput(c: Context): Promise<{
             if (typeof entry === "string") {
                 imageUrls.push(entry);
             } else if (entry instanceof File) {
-                const b64 = arrayBufferToBase64(await entry.arrayBuffer());
+                const base64 = arrayBufferToBase64(await entry.arrayBuffer());
                 imageUrls.push(
-                    `data:${entry.type || "image/png"};base64,${b64}`,
+                    `data:${entry.type || "image/png"};base64,${base64}`,
                 );
             }
         }
@@ -212,10 +213,11 @@ export function handleImageGeneration(
 
         const body = (await c.req.json()) as CreateImageRequest &
             Record<string, unknown>;
+        const model = c.var.model.resolved;
         const resolved = resolveParams(body);
 
-        const url = imageServiceUrl(c.env.IMAGE_SERVICE_URL, {
-            model: c.var.model.resolved,
+        const targetUrl = buildImageServiceUrl(c.env.IMAGE_SERVICE_URL, {
+            model,
             ...resolved,
         });
         const postBody = {
@@ -224,7 +226,7 @@ export function handleImageGeneration(
         };
 
         const response = await postToImageService(
-            url,
+            targetUrl,
             c,
             postBody,
             proxyHeaders,
@@ -235,20 +237,20 @@ export function handleImageGeneration(
             const imageUrl = new URL(
                 `https://gen.pollinations.ai/image/${encodeURIComponent(body.prompt)}`,
             );
-            for (const [k, v] of Object.entries({
-                model: c.var.model.resolved,
+            for (const [key, value] of Object.entries({
+                model,
                 ...resolved,
                 nologo: "true",
             }))
-                imageUrl.searchParams.set(k, String(v));
+                imageUrl.searchParams.set(key, String(value));
             await response.arrayBuffer();
             return c.json(
                 imageResponse({ url: imageUrl.toString() }, body.prompt),
             );
         }
 
-        const b64 = arrayBufferToBase64(await response.arrayBuffer());
-        return c.json(imageResponse({ b64_json: b64 }, body.prompt));
+        const base64 = arrayBufferToBase64(await response.arrayBuffer());
+        return c.json(imageResponse({ b64_json: base64 }, body.prompt));
     };
 }
 
@@ -263,20 +265,20 @@ export function handleImageEdit(
             await parseEditInput(c);
         const resolved = resolveParams({ size, quality, seed });
 
-        const url = imageServiceUrl(c.env.IMAGE_SERVICE_URL, {
+        const targetUrl = buildImageServiceUrl(c.env.IMAGE_SERVICE_URL, {
             model: c.var.model.resolved,
             ...resolved,
         });
 
         const response = await postToImageService(
-            url,
+            targetUrl,
             c,
             { prompt, image: imageUrls, ...extra },
             proxyHeaders,
         );
         c.var.track.overrideResponseTracking(response.clone());
 
-        const b64 = arrayBufferToBase64(await response.arrayBuffer());
-        return c.json(imageResponse({ b64_json: b64 }, prompt));
+        const base64 = arrayBufferToBase64(await response.arrayBuffer());
+        return c.json(imageResponse({ b64_json: base64 }, prompt));
     };
 }

@@ -1,0 +1,38 @@
+{
+  "pr_number": 9001,
+  "title": "fix: output pollen costs in fixed-point notation",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9001",
+  "merged_at": "2026-03-14T22:34:16Z",
+  "labels": [
+    "IMAGE",
+    "TEXT",
+    "AUDIO",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more math homework",
+    "blurb": "We fixed a bug where API model costs were showing up in scientific notation. Now you get clean, readable decimals instead of trying to parse 1.65e-7.",
+    "summary": "Updated the models API endpoints to return pollen costs as fixed-point decimal strings rather than scientific notation.",
+    "impact": "Developers querying model pricing will now receive easily readable decimal values instead of scientific notation, simplifying cost parsing.",
+    "keywords": [
+      "api",
+      "pricing",
+      "bugfix",
+      "models",
+      "formatting"
+    ],
+    "visual_concept": "The Nomnom creature eating complex math equations or scientific notation (like '1.65e-7') while the bee mascot holds a clean, simple decimal number ('0.000000165').",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a glowing scientific notation math equation '1.65e-7' while the cute bee mascot holds up a clean sign showing '0.000000165'. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T22:35:06.288995+00:00"
+}

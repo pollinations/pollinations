@@ -1,0 +1,34 @@
+{
+  "pr_number": 9108,
+  "title": "refactor: simplify OpenAI image handlers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9108",
+  "merged_at": "2026-03-14T14:52:04Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the image API",
+    "blurb": "We've done some spring cleaning under the hood of our OpenAI-compatible image handlers. The code is now leaner, cleaner, and easier to maintain.",
+    "summary": "Refactored the OpenAI image handler routes to consolidate parameter resolution, response building, and authentication checks.",
+    "impact": "The core platform code is now more maintainable and easier for contributors to navigate, with zero changes to the external API behavior.",
+    "keywords": [
+      "refactor",
+      "api",
+      "images",
+      "maintenance",
+      "openai"
+    ],
+    "visual_concept": "Polly the bee cleaning up and organizing code blocks, representing the refactoring and simplification of the image handlers. The Nomnom creature eating the removed lines of code.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up glowing lines of old code with a small broom. The round tan nomnom creature happily eats the swept-up code snippets. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T14:52:54.573713+00:00"
+}

@@ -50,27 +50,6 @@ export const API_CONFIG = {
     ENDPOINT: "https://gen.pollinations.ai/v1/chat/completions",
 } as const;
 
-const BYOP_STORAGE_KEY = "sirius_cybernetics_byop_key";
-
-// Note: To avoid storing sensitive data (API keys) in clear text, these helpers
-// no longer persist the key in browser storage. The key should be kept only
-// in memory for the current page lifecycle.
-export function getApiKey(): string | null {
-    return null;
-}
-
-export function setApiKey(_key: string): void {
-    // Intentionally left blank to avoid persisting sensitive data.
-}
-
-export function clearApiKey(): void {
-    // Intentionally left blank; nothing is persisted.
-}
-
-export function hasUserApiKey(): boolean {
-    return false;
-}
-
 export function maskApiKey(key: string): string {
     if (key.length <= 8) return "****";
     return "*****" + key.slice(-5);

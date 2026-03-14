@@ -1,15 +1,20 @@
 import {
     API_CONFIG,
-    getApiKey,
     type PollingsMessage,
     type PollingsResponse,
 } from "@/types";
+
+let _apiKey: string | null = null;
+
+export function setApiKeyForFetch(key: string | null) {
+    _apiKey = key;
+}
 
 const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => ({
     method: "POST",
     headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${getApiKey()}`,
+        ..._apiKey ? { Authorization: `Bearer ${_apiKey}` } : {},
     },
     body: JSON.stringify({
         messages,

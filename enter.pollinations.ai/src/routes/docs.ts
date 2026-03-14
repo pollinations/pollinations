@@ -1224,7 +1224,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "",
                                 "**Key parameters:** `model`, `width`, `height`, `seed`, `enhance`, `negative_prompt`, `image` (for editing), `quality`, `transparent`",
                                 "",
-                                "**OpenAI SDK:** Also available via `POST /v1/images/generations` and `POST /v1/images/edits` — use any OpenAI SDK with `base_url=\"https://gen.pollinations.ai/v1\"`.",
+                                '**OpenAI SDK:** Also available via `POST /v1/images/generations` and `POST /v1/images/edits` — use any OpenAI SDK with `base_url="https://gen.pollinations.ai/v1"`.',
                             ].join("\n"),
                         },
                         {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9077,
+  "title": "feat: add Pruna p-image, p-image-edit, p-video models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9077",
+  "merged_at": "2026-03-14T15:25:08Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh pixels from Pruna",
+    "blurb": "We just wired up Pruna's p-image, p-image-edit, and p-video models to the API. More ways to generate, tweak, and animate your ideas.",
+    "summary": "Integrated Pruna's image generation, image editing, and video models into the core API.",
+    "impact": "Developers can now access p-image, p-image-edit, and p-video models directly through the standard pollinations endpoints.",
+    "keywords": [
+      "pruna",
+      "models",
+      "image-generation",
+      "video-generation",
+      "api"
+    ],
+    "visual_concept": "Polly the bee holding a film clapperboard (representing video) and a paintbrush (representing image edit) next to the Monitor Robot, who is displaying a fresh image. Focus on the new media capabilities.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret and holding a film clapperboard. She hovers next to a chunky robot with a CRT monitor head whose screen glows lime green (#ecf874) displaying a beautiful landscape. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-14T15:25:59.695445+00:00"
+}

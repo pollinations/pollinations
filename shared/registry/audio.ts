@@ -134,6 +134,23 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
+    "qwen3-tts": {
+        aliases: ["qwen-tts"],
+        modelId: "qwen3-tts",
+        provider: "seraphyn",
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                // Half of Alibaba's cheapest (qwen3-tts-flash $0.01/1K chars)
+                completionAudioTokens: 0.005 / 1000,
+            },
+        ],
+        description:
+            "Qwen3 TTS (seraphyn.ai) - Text-to-speech via community provider",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        alpha: true,
+    },
 } satisfies Record<string, ServiceDefinition<string>>;
 
 export function resolveElevenLabsVoiceId(voice: string): string {

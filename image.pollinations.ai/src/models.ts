@@ -150,13 +150,6 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Klein Large - Higher quality 9B parameter model on Modal (text-to-image + image editing)
-    "klein-large": {
-        type: "modal-klein-large",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
     // Flux 2 Dev - Next-gen Flux image generation via api.airforce
     "flux-2-dev": {
         type: "airforce",
@@ -180,6 +173,13 @@ export const IMAGE_CONFIG = {
 
     // Dirtberry - Quick realistic image generation via api.airforce
     "dirtberry": {
+        type: "airforce",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Dirtberry Pro - High quality realism, pixel art & complex scenes via api.airforce
+    "dirtberry-pro": {
         type: "airforce",
         enhance: false,
         defaultSideLength: 1024,

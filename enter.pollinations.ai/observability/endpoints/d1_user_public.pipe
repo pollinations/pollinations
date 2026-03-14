@@ -1,0 +1,23 @@
+DESCRIPTION >
+    Restricted public view of D1 user table (no emails, no balances).
+
+TOKEN d1_user_public_read READ
+
+NODE d1_user_public_node
+SQL >
+    SELECT
+        id,
+        name,
+        github_username,
+        github_id,
+        tier,
+        banned,
+        ban_reason,
+        ban_expires,
+        last_tier_grant,
+        created_at,
+        synced_at
+    FROM d1_user
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
+
+TYPE endpoint

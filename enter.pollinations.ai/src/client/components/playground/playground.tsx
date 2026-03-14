@@ -15,7 +15,12 @@ type PlaygroundModel = {
     paid_only?: boolean;
 };
 
-function normalizeImageModel(m: { name: string; description?: string; paid_only?: boolean; output_modalities?: string[] }): PlaygroundModel {
+function normalizeImageModel(m: {
+    name: string;
+    description?: string;
+    paid_only?: boolean;
+    output_modalities?: string[];
+}): PlaygroundModel {
     const hasVideo = m.output_modalities?.includes("video");
     return {
         id: m.name,
@@ -26,7 +31,12 @@ function normalizeImageModel(m: { name: string; description?: string; paid_only?
     };
 }
 
-function normalizeTextModel(m: { name: string; description?: string; paid_only?: boolean; output_modalities?: string[] }): PlaygroundModel {
+function normalizeTextModel(m: {
+    name: string;
+    description?: string;
+    paid_only?: boolean;
+    output_modalities?: string[];
+}): PlaygroundModel {
     const hasAudio = m.output_modalities?.includes("audio");
     return {
         id: m.name,
@@ -70,9 +80,15 @@ export function Playground({
     const [textModels, setTextModels] = useState<PlaygroundModel[]>([]);
     const [audioModels, setAudioModels] = useState<PlaygroundModel[]>([]);
     const [modelsLoading, setModelsLoading] = useState(false);
-    const [allowedImageIds, setAllowedImageIds] = useState<Set<string>>(new Set());
-    const [allowedTextIds, setAllowedTextIds] = useState<Set<string>>(new Set());
-    const [allowedAudioIds, setAllowedAudioIds] = useState<Set<string>>(new Set());
+    const [allowedImageIds, setAllowedImageIds] = useState<Set<string>>(
+        new Set(),
+    );
+    const [allowedTextIds, setAllowedTextIds] = useState<Set<string>>(
+        new Set(),
+    );
+    const [allowedAudioIds, setAllowedAudioIds] = useState<Set<string>>(
+        new Set(),
+    );
 
     const [width, setWidth] = useState(1024);
     const [height, setHeight] = useState(1024);
@@ -80,7 +96,9 @@ export function Playground({
     const [enhance, setEnhance] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [result, setResult] = useState<string | null>(null);
-    const [resultType, setResultType] = useState<"image" | "video" | "audio" | "text" | null>(null);
+    const [resultType, setResultType] = useState<
+        "image" | "video" | "audio" | "text" | null
+    >(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -110,30 +128,51 @@ export function Playground({
         setModelsLoading(true);
         const headers = { Authorization: `Bearer ${apiKey}` };
         Promise.all([
-            fetch(`${API_BASE}/image/models`, { headers, signal: ac.signal }).then((r) => r.json()).catch(() => []),
-            fetch(`${API_BASE}/text/models`, { headers, signal: ac.signal }).then((r) => r.json()).catch(() => []),
-            fetch(`${API_BASE}/audio/models`, { headers, signal: ac.signal }).then((r) => r.json()).catch(() => []),
-        ]).then(([imgList, textList, audioList]) => {
-            if (ac.signal.aborted) return;
-            const img = (Array.isArray(imgList) ? imgList : []).map(normalizeImageModel);
-            const text = (Array.isArray(textList) ? textList : []).map(normalizeTextModel);
-            const audio = (Array.isArray(audioList) ? audioList : []).map(normalizeTextModel);
-            setImageModels(img);
-            setTextModels(text);
-            setAudioModels(audio);
-            setAllowedImageIds(new Set(img.map((m) => m.id)));
-            setAllowedTextIds(new Set(text.map((m) => m.id)));
-            setAllowedAudioIds(new Set(audio.map((m) => m.id)));
-        }).finally(() => {
-            if (!ac.signal.aborted) setModelsLoading(false);
-        });
+            fetch(`${API_BASE}/image/models`, { headers, signal: ac.signal })
+                .then((r) => r.json())
+                .catch(() => []),
+            fetch(`${API_BASE}/text/models`, { headers, signal: ac.signal })
+                .then((r) => r.json())
+                .catch(() => []),
+            fetch(`${API_BASE}/audio/models`, { headers, signal: ac.signal })
+                .then((r) => r.json())
+                .catch(() => []),
+        ])
+            .then(([imgList, textList, audioList]) => {
+                if (ac.signal.aborted) return;
+                const img = (Array.isArray(imgList) ? imgList : []).map(
+                    normalizeImageModel,
+                );
+                const text = (Array.isArray(textList) ? textList : []).map(
+                    normalizeTextModel,
+                );
+                const audio = (Array.isArray(audioList) ? audioList : []).map(
+                    normalizeTextModel,
+                );
+                setImageModels(img);
+                setTextModels(text);
+                setAudioModels(audio);
+                setAllowedImageIds(new Set(img.map((m) => m.id)));
+                setAllowedTextIds(new Set(text.map((m) => m.id)));
+                setAllowedAudioIds(new Set(audio.map((m) => m.id)));
+            })
+            .finally(() => {
+                if (!ac.signal.aborted) setModelsLoading(false);
+            });
         return () => ac.abort();
     }, [apiKey]);
 
     const allModels = useMemo(() => {
-        const typeOrder: Record<ModelType, number> = { image: 0, video: 1, text: 2, audio: 3 };
+        const typeOrder: Record<ModelType, number> = {
+            image: 0,
+            video: 1,
+            text: 2,
+            audio: 3,
+        };
         const list: PlaygroundModel[] = [
-            ...imageModels.filter((m) => m.type === "image" || m.type === "video"),
+            ...imageModels.filter(
+                (m) => m.type === "image" || m.type === "video",
+            ),
             ...textModels.filter((m) => m.type === "text"),
             ...audioModels.filter((m) => m.type === "audio"),
         ];
@@ -146,9 +185,14 @@ export function Playground({
     );
 
     const currentModel = allModels.find((m) => m.id === selectedModel);
-    const isImageModel = currentModel?.type === "image" || currentModel?.type === "video";
+    const isImageModel =
+        currentModel?.type === "image" || currentModel?.type === "video";
     const isAudioModel = currentModel?.type === "audio";
-    const allowedSet = isImageModel ? allowedImageIds : isAudioModel ? allowedAudioIds : allowedTextIds;
+    const allowedSet = isImageModel
+        ? allowedImageIds
+        : isAudioModel
+          ? allowedAudioIds
+          : allowedTextIds;
     const isAllowed = allowedSet.has(selectedModel);
 
     useEffect(() => {
@@ -186,16 +230,24 @@ export function Playground({
                 );
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error((err as { error?: { message?: string } })?.error?.message || res.statusText);
+                    throw new Error(
+                        (err as { error?: { message?: string } })?.error
+                            ?.message || res.statusText,
+                    );
                 }
                 const blob = await res.blob();
                 setResult(URL.createObjectURL(blob));
-                setResultType(currentModel?.type === "video" ? "video" : "image");
+                setResultType(
+                    currentModel?.type === "video" ? "video" : "image",
+                );
             } else if (isAudioModel) {
                 const res = await fetch(`${API_BASE}/v1/chat/completions`, {
                     method: "POST",
                     credentials: "include",
-                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                    },
                     body: JSON.stringify({
                         model: selectedModel,
                         modalities: ["text", "audio"],
@@ -205,12 +257,17 @@ export function Playground({
                 });
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error((err as { error?: { message?: string } })?.error?.message || res.statusText);
+                    throw new Error(
+                        (err as { error?: { message?: string } })?.error
+                            ?.message || res.statusText,
+                    );
                 }
                 const data = await res.json();
                 const b64 = data.choices?.[0]?.message?.audio?.data;
                 if (!b64) throw new Error("No audio in response");
-                const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+                const bytes = Uint8Array.from(atob(b64), (c) =>
+                    c.charCodeAt(0),
+                );
                 const blob = new Blob([bytes], { type: "audio/wav" });
                 setResult(URL.createObjectURL(blob));
                 setResultType("audio");
@@ -218,7 +275,10 @@ export function Playground({
                 const res = await fetch(`${API_BASE}/v1/chat/completions`, {
                     method: "POST",
                     credentials: "include",
-                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                    },
                     body: JSON.stringify({
                         model: selectedModel,
                         messages: [{ role: "user", content: prompt.trim() }],
@@ -226,10 +286,14 @@ export function Playground({
                 });
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error((err as { error?: { message?: string } })?.error?.message || res.statusText);
+                    throw new Error(
+                        (err as { error?: { message?: string } })?.error
+                            ?.message || res.statusText,
+                    );
                 }
                 const data = await res.json();
-                const text = data.choices?.[0]?.message?.content ?? "No response";
+                const text =
+                    data.choices?.[0]?.message?.content ?? "No response";
                 setResult(text);
                 setResultType("text");
             }
@@ -256,8 +320,12 @@ export function Playground({
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                    <span className="font-medium text-green-950">{githubUsername || "You"}</span>
-                    <span className="font-mono">{totalPollen.toFixed(1)} pollen</span>
+                    <span className="font-medium text-green-950">
+                        {githubUsername || "You"}
+                    </span>
+                    <span className="font-mono">
+                        {totalPollen.toFixed(1)} pollen
+                    </span>
                 </div>
                 <a
                     href="https://enter.pollinations.ai"
@@ -274,12 +342,17 @@ export function Playground({
 
             {!apiKey ? (
                 githubId ? (
-                    <p className="text-sm text-gray-500">Loading playground key…</p>
+                    <p className="text-sm text-gray-500">
+                        Loading playground key…
+                    </p>
                 ) : (
                     <div className="rounded-lg border-2 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                        <p className="font-medium mb-2">Paste an API key to use the playground</p>
+                        <p className="font-medium mb-2">
+                            Paste an API key to use the playground
+                        </p>
                         <p className="text-gray-600 mb-3">
-                            Create a secret key below, copy it, then paste it here. Your key is never stored on our servers.
+                            Create a secret key below, copy it, then paste it
+                            here. Your key is never stored on our servers.
                         </p>
                         <input
                             type="password"
@@ -309,7 +382,9 @@ export function Playground({
                                 type="button"
                                 onClick={() => setActiveCategory(key)}
                                 weight="light"
-                                color={activeCategory === key ? "green" : "amber"}
+                                color={
+                                    activeCategory === key ? "green" : "amber"
+                                }
                                 className="text-sm"
                             >
                                 {label}
@@ -319,21 +394,32 @@ export function Playground({
                     <div className="flex flex-wrap items-center gap-2">
                         {modelsLoading
                             ? [1, 2, 3, 4].map((i) => (
-                                  <div key={i} className="h-9 w-24 rounded bg-gray-200 animate-pulse" />
+                                  <div
+                                      key={i}
+                                      className="h-9 w-24 rounded bg-gray-200 animate-pulse"
+                                  />
                               ))
                             : modelsToShow.map((m) => {
-                                  const allowed = (activeCategory === "image" || activeCategory === "video"
-                                      ? allowedImageIds
-                                      : activeCategory === "audio"
-                                        ? allowedAudioIds
-                                        : allowedTextIds
+                                  const allowed = (
+                                      activeCategory === "image" ||
+                                      activeCategory === "video"
+                                          ? allowedImageIds
+                                          : activeCategory === "audio"
+                                            ? allowedAudioIds
+                                            : allowedTextIds
                                   ).has(m.id);
                                   return (
-                                      <div key={m.id} className="relative group">
+                                      <div
+                                          key={m.id}
+                                          className="relative group"
+                                      >
                                           <Button
                                               as="button"
                                               type="button"
-                                              onClick={() => allowed && setSelectedModel(m.id)}
+                                              onClick={() =>
+                                                  allowed &&
+                                                  setSelectedModel(m.id)
+                                              }
                                               color="green"
                                               weight="light"
                                               className={`border-2 text-sm transition-colors ${
@@ -343,11 +429,17 @@ export function Playground({
                                               } ${selectedModel === m.id ? "ring-2 ring-green-700 ring-offset-1" : ""}`}
                                           >
                                               {m.name}
-                                              {m.paid_only && <span className="ml-1">💎</span>}
+                                              {m.paid_only && (
+                                                  <span className="ml-1">
+                                                      💎
+                                                  </span>
+                                              )}
                                           </Button>
                                           {!allowed && (
                                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1.5 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
-                                                  Top up your pollen balance to unlock this model · enter.pollinations.ai
+                                                  Top up your pollen balance to
+                                                  unlock this model ·
+                                                  enter.pollinations.ai
                                               </div>
                                           )}
                                       </div>
@@ -376,47 +468,76 @@ export function Playground({
                     {isImageModel && (
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div>
-                                <label htmlFor="playground-width" className="block text-sm font-medium text-gray-700 mb-1">Width</label>
+                                <label
+                                    htmlFor="playground-width"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    Width
+                                </label>
                                 <input
                                     id="playground-width"
                                     type="number"
                                     value={width}
-                                    onChange={(e) => setWidth(Number(e.target.value))}
+                                    onChange={(e) =>
+                                        setWidth(Number(e.target.value))
+                                    }
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                                 />
                             </div>
                             <div>
-                                <label htmlFor="playground-height" className="block text-sm font-medium text-gray-700 mb-1">Height</label>
+                                <label
+                                    htmlFor="playground-height"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    Height
+                                </label>
                                 <input
                                     id="playground-height"
                                     type="number"
                                     value={height}
-                                    onChange={(e) => setHeight(Number(e.target.value))}
+                                    onChange={(e) =>
+                                        setHeight(Number(e.target.value))
+                                    }
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                                 />
                             </div>
                             <div>
-                                <label htmlFor="playground-seed" className="block text-sm font-medium text-gray-700 mb-1" title="Same seed + same prompt = same image">
+                                <label
+                                    htmlFor="playground-seed"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                    title="Same seed + same prompt = same image"
+                                >
                                     Seed
                                 </label>
                                 <input
                                     id="playground-seed"
                                     type="number"
                                     value={seed}
-                                    onChange={(e) => setSeed(Number(e.target.value))}
+                                    onChange={(e) =>
+                                        setSeed(Number(e.target.value))
+                                    }
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                                 />
                             </div>
                             <div>
-                                <label htmlFor="playground-enhance" className="block text-sm font-medium text-gray-700 mb-1" title="AI improves your prompt for better results">
+                                <label
+                                    htmlFor="playground-enhance"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                    title="AI improves your prompt for better results"
+                                >
                                     Enhance
                                 </label>
-                                <label htmlFor="playground-enhance" className="flex items-center h-[42px]">
+                                <label
+                                    htmlFor="playground-enhance"
+                                    className="flex items-center h-[42px]"
+                                >
                                     <input
                                         id="playground-enhance"
                                         type="checkbox"
                                         checked={enhance}
-                                        onChange={(e) => setEnhance(e.target.checked)}
+                                        onChange={(e) =>
+                                            setEnhance(e.target.checked)
+                                        }
                                         className="w-4 h-4 rounded border-gray-300 text-green-600"
                                     />
                                 </label>
@@ -429,7 +550,9 @@ export function Playground({
                             as="button"
                             type="button"
                             onClick={handleGenerate}
-                            disabled={!prompt.trim() || isGenerating || !isAllowed}
+                            disabled={
+                                !prompt.trim() || isGenerating || !isAllowed
+                            }
                             color="green"
                             className="min-w-[160px]"
                         >
@@ -451,17 +574,37 @@ export function Playground({
 
                     {result && resultType && !error && (
                         <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
-                            {resultType === "image" && <img src={result} alt="Generated" className="w-full h-auto" />}
+                            {resultType === "image" && (
+                                <img
+                                    src={result}
+                                    alt="Generated"
+                                    className="w-full h-auto"
+                                />
+                            )}
                             {resultType === "video" && (
-                                <video src={result} controls autoPlay loop muted className="w-full h-auto" />
+                                <video
+                                    src={result}
+                                    controls
+                                    autoPlay
+                                    loop
+                                    muted
+                                    className="w-full h-auto"
+                                />
                             )}
                             {resultType === "audio" && (
-                                <audio src={result} controls autoPlay className="w-full">
+                                <audio
+                                    src={result}
+                                    controls
+                                    autoPlay
+                                    className="w-full"
+                                >
                                     <track kind="captions" />
                                 </audio>
                             )}
                             {resultType === "text" && (
-                                <pre className="p-4 text-sm text-gray-800 whitespace-pre-wrap font-sans">{result}</pre>
+                                <pre className="p-4 text-sm text-gray-800 whitespace-pre-wrap font-sans">
+                                    {result}
+                                </pre>
                             )}
                         </div>
                     )}

@@ -134,14 +134,9 @@ const UpdateMetadataSchema = z.object({
     plaintextKey: z.string().optional(),
     appUrl: z
         .string()
-        .refine(
-            (val) =>
-                /^(https?|chrome-extension|moz-extension):\/\/.+/.test(val),
-            {
-                message:
-                    "Must be a valid URL (http, https, chrome-extension, or moz-extension)",
-            },
-        )
+        .refine((val) => /^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val), {
+            message: "Must be a valid URL with a scheme (e.g. https://...)",
+        })
         .optional(),
 });
 

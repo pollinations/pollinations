@@ -46,16 +46,13 @@ export const MESSAGE_CONFIG = {
 export const API_CONFIG = {
   MAX_RETRIES: 3,
   RETRY_DELAY: 1000,
-  ENDPOINT: 'https://enter.pollinations.ai/api/generate/v1/chat/completions',
-  DEFAULT_API_KEY: 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A',
-  BYOP_APP_KEY: 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A',
-//   ENDPOINT: 'http://localhost:16385/openai'
+  ENDPOINT: 'https://gen.pollinations.ai/v1/chat/completions',
 } as const;
 
 const BYOP_STORAGE_KEY = 'sirius_cybernetics_byop_key';
 
-export function getApiKey(): string {
-  return localStorage.getItem(BYOP_STORAGE_KEY) || API_CONFIG.DEFAULT_API_KEY;
+export function getApiKey(): string | null {
+  return localStorage.getItem(BYOP_STORAGE_KEY);
 }
 
 export function setApiKey(key: string): void {

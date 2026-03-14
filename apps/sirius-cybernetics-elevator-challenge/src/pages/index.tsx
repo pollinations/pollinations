@@ -19,7 +19,6 @@ import {
 import { useInput, useMessageScroll } from "@/hooks/ui";
 import type { Message } from "@/types";
 import {
-    API_CONFIG,
     hasUserApiKey,
     getApiKey,
     setApiKey,
@@ -38,7 +37,6 @@ function useBYOP() {
             if (apiKey) {
                 setApiKey(apiKey);
                 setAuthenticated(true);
-                // Clean the URL fragment
                 window.history.replaceState(null, "", window.location.pathname);
             }
         }
@@ -47,7 +45,6 @@ function useBYOP() {
     const login = () => {
         const params = new URLSearchParams({
             redirect_url: window.location.href.split("#")[0],
-            app_key: API_CONFIG.BYOP_APP_KEY,
         });
         window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
     };
@@ -202,7 +199,7 @@ export default function Index() {
                         {byop.authenticated ? (
                             <>
                                 <span className="text-xs text-green-400">
-                                    Pollen: {maskApiKey(getApiKey())}
+                                    Pollen: {maskApiKey(getApiKey()!)}
                                 </span>
                                 <Button
                                     onClick={byop.logout}

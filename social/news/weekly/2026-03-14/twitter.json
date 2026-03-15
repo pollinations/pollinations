@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "shipped 31 PRs this week. added OpenAI-compatible image endpoints, wired up a bunch of new models (pruna, seraphyn, dirtberry), and optimized the seed upgrade job from 25 hours down to seconds. pollen also refills hourly now.",
+  "alt_tweet": "shipped a new coat of paint and 31 PRs. you can now use OpenAI-compatible endpoints for image generation. seed tier upgrades take seconds instead of 25 hours. added hourly pollen refills and a pile of new models.",
+  "hashtags": [
+    "#opensource",
+    "#ai"
+  ],
+  "image_prompt": "Cozy 8-bit pixel art scene of a retro RPG quest board. The cute pixel bee mascot (yellow body, dark stripes, pink blush, tiny wings, wearing a tiny adventurer's hat) is pinning up a glowing lime green (#ecf874) signboard. Large pixel font text on the main board reads 'Weekly Wrap'. Smaller retro UI wooden panels show text: 'OpenAI API', '25h -> Secs', 'Hourly Pollen'. Soft pastel background, mint to lavender gradient. Warm lighting, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm.",
+  "reasoning": "Leads with the concrete numbers and biggest architectural/UX wins (OpenAI compatibility, massive speedup, hourly refills) in a dry, matter-of-fact tone.",
+  "char_count": 226,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-14/images/twitter.jpg",
+    "prompt": "Cozy 8-bit pixel art scene of a retro RPG quest board. The cute pixel bee mascot (yellow body, dark stripes, pink blush, tiny wings, wearing a tiny adventurer's hat) is pinning up a glowing lime green (#ecf874) signboard. Large pixel font text on the main board reads 'Weekly Wrap'. Smaller retro UI wooden panels show text: 'OpenAI API', '25h -> Secs', 'Hourly Pollen'. Soft pastel background, mint to lavender gradient. Warm lighting, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "date": "2026-03-14",
+  "generated_at": "2026-03-15T06:25:52.957902+00:00",
+  "platform": "twitter"
+}

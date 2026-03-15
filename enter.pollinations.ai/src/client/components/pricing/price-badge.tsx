@@ -2,9 +2,9 @@ import type { FC } from "react";
 import { cn } from "../../../util.ts";
 
 const priceBadgeColors = {
-    gray: "bg-gray-100 text-gray-700",
-    purple: "bg-purple-200 text-purple-700",
-    teal: "bg-teal-200 text-teal-700",
+    gray: "text-gray-700",
+    purple: "text-purple-700",
+    teal: "text-teal-700",
 } as const;
 
 export const PriceBadge: FC<{
@@ -45,7 +45,7 @@ export const PriceBadge: FC<{
     return (
         <span
             className={cn(
-                "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap",
+                "inline-flex items-center gap-1.5 px-2 py-0.5 text-xs whitespace-nowrap",
                 priceBadgeColors[color],
                 className,
             )}

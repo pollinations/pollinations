@@ -1,0 +1,44 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Using a cozy, Stardew-inspired pixel art carousel to visualize abstract infrastructure updates. Translating backend speedruns and new models into tangible, warm visual metaphors (painting UIs, eating floppy disks, hourglasses) makes the technical changelog feel human and approachable.",
+  "visual_style": "Cozy 8-bit pixel art aesthetic with soft pastel gradients, prominent lime green (#ecf874) accents, and warm ambient lighting. Chunky sprites, retro RPG UI panels for text, and a nostalgic, emotionally warm atmosphere reminiscent of Stardew Valley.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. The cute pixel art bee mascot with yellow body, brown stripes, black oval eyes, pink blush, and tiny blue wings, wearing a tiny painter's beret, is arranging pixelated code-plants in terracotta pots around a glowing retro computer. A wooden Stardew-style signboard reads 'WEEKLY WRAP'. A floating retro UI panel reads 'COZY UI'. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm.",
+      "description": "Polly setting up the newly redesigned, cozier frontend workspace.",
+      "text_in_image": "WEEKLY WRAP / COZY UI",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-14/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender gradient background. Sitting in a garden of glowing digital vines, the round tan mochi-ball creature Nomnom with tiny dot eyes and wide happy mouth is enthusiastically eating a glowing floppy disk. The cute pixel art bee mascot with yellow body, brown stripes, black oval eyes, pink blush, wearing tiny wizard glasses, hovers nearby watching amused. A retro quest log panel reads 'NEW MODELS'. Warm lighting, lo-fi vibes like A Short Hike. Nostalgic but beautiful, emotionally warm.",
+      "description": "Nomnom consuming the massive influx of new AI models added this week.",
+      "text_in_image": "NEW MODELS",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-14/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and warm cream gradient background. Surrounded by blooming pixel flowers, a chunky cute robot with a CRT monitor head and square pixel eyes happily holds a glowing hourglass dropping golden pixels. The cute pixel art bee mascot with yellow body, brown stripes, black oval eyes, pink blush, wearing a tiny red scarf, flies next to him. A small floating retro signboard reads 'HOURLY POLLEN'. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm.",
+      "description": "Monitor Robot celebrating the new hourly pollen refills and faster infrastructure.",
+      "text_in_image": "HOURLY POLLEN",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-14/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "31 PRs merged this week. The infrastructure got faster and the frontend got a lot cozier.\n\nSeed upgrades used to take 25 hours; now they take seconds. Pollen refills are now hourly, so you don't have to wait as long to keep building. We completely redesigned the site's background and palette system, shipped Polly v2 with a more adaptive personality, and rolled out OpenAI-compatible image endpoints.\n\nOh, and a mountain of new models: dirtberry, claude-airforce, Seraphyn qwen3-tts, and Pruna. \n\nBYOP (Bring Your Own Prompt/Provider) is becoming the standard across our apps. Check the repo for the full changelog. Grab an endpoint and make something weird. 🌸🐝",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#buildinpublic",
+    "#webdev",
+    "#api"
+  ],
+  "alt_text": "A carousel of three cozy 8-bit pixel art images featuring a cute bee mascot, a round mochi-like creature, and a monitor-headed robot interacting with retro computers, floppy disks, and hourglasses in a digital garden. Text overlays read 'WEEKLY WRAP', 'COZY UI', 'NEW MODELS', and 'HOURLY POLLEN'.",
+  "date": "2026-03-14",
+  "generated_at": "2026-03-15T06:25:52.957902+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

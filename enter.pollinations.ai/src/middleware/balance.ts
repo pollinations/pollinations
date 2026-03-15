@@ -18,6 +18,28 @@ export type UserBalance = {
     cryptoBalance: number;
 };
 
+/**
+ * Get the total available balance across relevant buckets.
+ * For paid-only models: crypto + pack only.
+ * For regular models: tier + crypto + pack (only positive buckets).
+ */
+export function getAvailableBalance(
+    balances: UserBalance,
+    isPaidOnly = false,
+): number {
+    if (isPaidOnly) {
+        return (
+            Math.max(0, balances.cryptoBalance) +
+            Math.max(0, balances.packBalance)
+        );
+    }
+    return (
+        Math.max(0, balances.tierBalance) +
+        Math.max(0, balances.cryptoBalance) +
+        Math.max(0, balances.packBalance)
+    );
+}
+
 export type BalanceVariables = {
     balance: {
         requirePositiveBalance: (

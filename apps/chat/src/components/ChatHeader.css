@@ -2,11 +2,16 @@
 .chat-header {
     height: 56px;
     padding: 0 1rem;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--glass-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--bg-primary);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    position: sticky;
+    top: 0;
+    z-index: 50;
 }
 
 .header-left {

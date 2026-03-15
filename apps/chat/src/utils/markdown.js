@@ -9,7 +9,9 @@ const escapeHtml = (value) =>
   String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 marked.setOptions({
   gfm: true,
@@ -107,7 +109,29 @@ export const formatMessage = (content) => {
     // Remove multiple consecutive spaces (but not in code blocks or inline code)
     textContent = textContent.replace(/([^`\n])([ ]{2,})([^`\n])/g, '$1 $3');
     
-    // Extract chart markers before rendering markdown
+    
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    // Extract HTML preview markers
+    const previewRegex = /__HTML_PREVIEW__(.*?)__HTML_PREVIEW__/g;
+    const previews = [];
+    let previewMatch;
+    while ((previewMatch = previewRegex.exec(textContent)) !== null) {
+      try {
+        previews.push(JSON.parse(previewMatch[1]));
+      } catch(e) {}
+    }
+    textContent = textContent.replace(previewRegex, '');
+
+    // Extract chart markers
     const chartRegex = /__CHART__(.*?)__CHART__/g;
     const charts = [];
     let match;
@@ -118,9 +142,27 @@ export const formatMessage = (content) => {
         console.error('Failed to parse chart data:', e);
       }
     }
-    
-    // Remove chart markers from text
     textContent = textContent.replace(chartRegex, '');
+
+    
+    // Extract video markers
+    const videoRegex = /__VIDEO__(.*?)__VIDEO__/g;
+    const videos = [];
+    let videoMatch;
+    while ((videoMatch = videoRegex.exec(textContent)) !== null) {
+      videos.push(videoMatch[1]);
+    }
+    textContent = textContent.replace(videoRegex, '');
+
+    // Extract search markers
+    const searchRegex = /__SEARCH__(.*?)__SEARCH__/g;
+    const searches = [];
+    let searchMatch;
+    while ((searchMatch = searchRegex.exec(textContent)) !== null) {
+      searches.push(searchMatch[1]);
+    }
+    textContent = textContent.replace(searchRegex, '');
+
     
     // First, render markdown
     let html = md.render(textContent);
@@ -128,12 +170,44 @@ export const formatMessage = (content) => {
     // Then, render LaTeX math equations
     html = renderMath(html);
     
-    // Append chart data for component to render
+    
+    
+    // Append HTML preview data
+    if (previews.length > 0) {
+      previews.forEach(preview => {
+        html += "<div class='html-preview-tool' data-preview='" + escapeHtml(JSON.stringify(preview)) + "'></div>";
+      });
+    }
+
+    // Append chart data
     if (charts.length > 0) {
-      html += `<div data-charts='${JSON.stringify(charts).replace(/'/g, "&apos;")}'></div>`;
+      html += "<div data-charts='" + JSON.stringify(charts).replace(/'/g, "&apos;") + "'></div>";
+    }
+
+    
+    // Append video data
+    if (videos.length > 0) {
+      videos.forEach(url => {
+        html += '<div class="video-result-tool">' +
+                '<video controls src="' + escapeHtml(url) + '" class="markdown-video" style="max-width: 100%; border-radius: 12px; margin: 1rem 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2);"></video>' +
+                '</div>';
+      });
+    }
+
+    // Append search data
+    if (searches.length > 0) {
+      searches.forEach(qs => {
+        const decoded = decodeURIComponent(qs);
+        html += '<div class="search-result-tool">' +
+                '<a href="https://duckduckgo.com/?q=' + qs + '" target="_blank" rel="noopener noreferrer" class="search-pill">' +
+                '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>' +
+                'Search Web: ' + escapeHtml(decoded) +
+                '</a></div>';
+      });
     }
     
     return html;
+
   } catch (error) {
     console.error('Markdown rendering error:', error);
     // Return escaped HTML as fallback

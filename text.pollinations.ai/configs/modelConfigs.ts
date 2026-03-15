@@ -163,6 +163,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
 
     // -- Fireworks AI ---------------------------------------------------------
+    "accounts/fireworks/models/qwen3p5-35b-a3b": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3p5-35b-a3b",
+        }),
     "accounts/fireworks/models/kimi-k2p5": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p5",

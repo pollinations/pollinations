@@ -899,7 +899,11 @@ function App() {
             {showCanvasGenerator && (
                 <CanvasCodeGenerator
                     initialPrompt={canvasInitialPrompt}
-                    onCodeGenerated={() => {
+                    onCodeGenerated={(generatedCode) => {
+                        console.log(
+                            "Generated HTML from CanvasCodeGenerator:",
+                            generatedCode,
+                        );
                         setShowCanvasGenerator(false);
                     }}
                     onClose={() => setShowCanvasGenerator(false)}

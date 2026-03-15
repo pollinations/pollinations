@@ -153,6 +153,16 @@ export function createAirforceModelConfig(
     );
 }
 
+export function createSeraphynModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://seraphyn.ai/api/v1",
+        process.env.SERAPHYN_API_KEY,
+        overrides,
+    );
+}
+
 /**
  * Creates a NomNom model configuration (community model with web search/scrape/crawl).
  * Uses user's API key for billing passthrough - NomNom calls Pollinations internally.

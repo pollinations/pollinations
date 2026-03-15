@@ -174,6 +174,14 @@ const models: ModelDefinition[] = [
         name: "step-3.5-flash",
         config: portkeyConfig["step-3.5-flash:free"],
     },
+    {
+        name: "claude-airforce",
+        config: portkeyConfig["claude-sonnet-4.6"],
+    },
+    {
+        name: "openai-seraphyn",
+        config: portkeyConfig["seraphyn-gpt-5.4"],
+    },
 ];
 
 export const availableModels = models;

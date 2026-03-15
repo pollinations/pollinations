@@ -225,13 +225,25 @@ const imageGen = async ({
     }
 };
 
-/**
- * @async
- * @function
- * @param {Object} req - The request object.
- * @param {Object} res - The response object.
- * @returns {Promise<void>}
- */
+/** Read JSON body from a POST request. Returns empty object for non-POST or parse errors. */
+function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {
+    if (req.method !== "POST") return Promise.resolve({});
+    return new Promise((resolve) => {
+        let data = "";
+        req.on("data", (chunk: Buffer) => {
+            data += chunk.toString();
+        });
+        req.on("end", () => {
+            try {
+                resolve(JSON.parse(data));
+            } catch {
+                resolve({});
+            }
+        });
+        req.on("error", () => resolve({}));
+    });
+}
+
 const checkCacheAndGenerate = async (
     req: IncomingMessage,
     res: ServerResponse,
@@ -242,7 +254,15 @@ const checkCacheAndGenerate = async (
 
     if (!needsProcessing) return;
 
-    const rawPrompt = pathname.split("/prompt/")[1] || "random_prompt";
+    // Read POST body (if any) and merge with query params (body wins)
+    const body = await readJsonBody(req);
+    const mergedParams = { ...query, ...body };
+
+    // Prompt priority: body.prompt > path prompt > "random_prompt"
+    const pathPrompt = pathname?.split("/prompt/")[1] || "";
+    const rawPrompt = (body.prompt as string) || pathPrompt || "random_prompt";
+    delete mergedParams.prompt;
+
     let originalPrompt: string;
     try {
         originalPrompt = decodeURIComponent(rawPrompt);
@@ -261,7 +281,7 @@ const checkCacheAndGenerate = async (
 
     try {
         // Validate parameters with proper error handling
-        const parseResult = ImageParamsSchema.safeParse(query);
+        const parseResult = ImageParamsSchema.safeParse(mergedParams);
         if (!parseResult.success) {
             throw new HttpError(
                 `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
@@ -541,6 +561,12 @@ const server = http.createServer((req, res) => {
         res.end(
             "w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G.r54qAqCZSs4xyyeamMffaxyR1FWYVb5OvwUh8EcrhpI",
         );
+        return;
+    }
+
+    if (pathname === "/robots.txt") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("User-agent: *\nDisallow: /\n");
         return;
     }
 

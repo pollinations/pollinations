@@ -1447,3 +1447,96 @@ describe("API key pollen budget enforcement", async () => {
         },
     );
 });
+
+describe("Streaming billing content-type handling", () => {
+    test(
+        "should return 502 when stream requested but upstream returns JSON",
+        { timeout: 30000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "text");
+            mocks.text.state.forceNonStreaming = true;
+
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "content-type": "application/json",
+                            "authorization": `Bearer ${paidApiKey}`,
+                        },
+                        body: JSON.stringify({
+                            model: "openai",
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: TEST_MESSAGE_CONTENT,
+                                },
+                            ],
+                            stream: true,
+                            seed: 42,
+                        }),
+                    },
+                ),
+                env,
+                ctx,
+            );
+            expect(response.status).toBe(502);
+
+            await response.text();
+            await waitOnExecutionContext(ctx);
+
+            // Error response → not billed
+            const events = mocks.tinybird.state.events;
+            expect(events).toHaveLength(1);
+            expect(events[0].isBilledUsage).toBe(false);
+        },
+    );
+
+    test(
+        "should bill correctly when stream requested and upstream returns SSE",
+        { timeout: 30000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "text");
+
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "content-type": "application/json",
+                            "authorization": `Bearer ${paidApiKey}`,
+                        },
+                        body: JSON.stringify({
+                            model: "openai",
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: TEST_MESSAGE_CONTENT,
+                                },
+                            ],
+                            stream: true,
+                            seed: 42,
+                        }),
+                    },
+                ),
+                env,
+                ctx,
+            );
+            expect(response.status).toBe(200);
+
+            await response.text();
+            await waitOnExecutionContext(ctx);
+
+            const events = mocks.tinybird.state.events;
+            expect(events).toHaveLength(1);
+            expect(events[0].isBilledUsage).toBe(true);
+            expect(events[0].tokenCountPromptText).toBeGreaterThan(0);
+            expect(events[0].tokenCountCompletionText).toBeGreaterThan(0);
+            expect(events[0].totalCost).toBeGreaterThan(0);
+        },
+    );
+});

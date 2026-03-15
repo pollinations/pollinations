@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DEFAULTS } from "../../api.config";
+import { useAuth } from "../../hooks/useAuth";
 import { generateImage } from "../../services/pollinationsAPI";
 
 interface ImageGeneratorProps
@@ -23,6 +24,7 @@ export function ImageGenerator({
     className = "",
     ...props
 }: ImageGeneratorProps) {
+    const { apiKey } = useAuth();
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -30,23 +32,31 @@ export function ImageGenerator({
     useEffect(() => {
         if (!prompt) return;
 
+        let objectUrl: string | null = null;
         setLoading(true);
         setError(null);
 
-        generateImage(prompt, { width, height, seed, model })
-            .then(setImageUrl)
+        generateImage(prompt, { width, height, seed, model, apiKey })
+            .then((url) => {
+                objectUrl = url;
+                setImageUrl(url);
+            })
             .catch(setError)
             .finally(() => setLoading(false));
-    }, [prompt, width, height, seed, model]);
+
+        return () => {
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [prompt, width, height, seed, model, apiKey]);
 
     if (loading) {
         return (
             <div
-                className={`${className} flex items-center justify-center bg-input-background`}
+                className={`${className} flex items-center justify-center bg-white`}
                 style={{ width, height }}
                 {...props}
             >
-                <span className="text-xs text-text-caption">...</span>
+                <span className="text-xs text-subtle">...</span>
             </div>
         );
     }
@@ -54,11 +64,11 @@ export function ImageGenerator({
     if (error || !imageUrl) {
         return (
             <div
-                className={`${className} flex items-center justify-center bg-input-background`}
+                className={`${className} flex items-center justify-center bg-white`}
                 style={{ width, height }}
                 {...props}
             >
-                <span className="text-xs text-text-caption">✗</span>
+                <span className="text-xs text-subtle">✗</span>
             </div>
         );
     }
@@ -69,6 +79,7 @@ export function ImageGenerator({
             alt={alt}
             width={width}
             height={height}
+            loading="lazy"
             className={className}
             {...props}
         />

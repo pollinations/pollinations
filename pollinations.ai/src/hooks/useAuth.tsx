@@ -4,9 +4,11 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useState,
 } from "react";
 import { DEFAULT_API_KEY } from "../api.config";
+import { fetchWithRetry } from "../utils/fetchWithRetry";
 
 const STORAGE_KEY = "pollinations_api_key";
 const ENTER_URL = "https://enter.pollinations.ai";
@@ -24,17 +26,36 @@ interface UserBalance {
     balance: number;
 }
 
-interface AuthContextValue {
+// Split into three contexts to minimize re-renders:
+// - AuthState: apiKey + isLoggedIn (changes rarely — only on login/logout)
+// - AuthProfile: profile + balance + isLoadingProfile (changes during login flow)
+// - AuthActions: login + logout (stable refs, never changes)
+
+interface AuthStateValue {
     apiKey: string;
     isLoggedIn: boolean;
+}
+
+interface AuthProfileValue {
     profile: UserProfile | null;
     balance: UserBalance | null;
     isLoadingProfile: boolean;
+}
+
+interface AuthActionsValue {
     login: () => void;
     logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+// Combined type for backward compatibility
+interface AuthContextValue
+    extends AuthStateValue,
+        AuthProfileValue,
+        AuthActionsValue {}
+
+const AuthStateContext = createContext<AuthStateValue | null>(null);
+const AuthProfileContext = createContext<AuthProfileValue | null>(null);
+const AuthActionsContext = createContext<AuthActionsValue | null>(null);
 
 /**
  * Provider that holds authentication state for the entire app.
@@ -81,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const fetchProfile = async () => {
             setIsLoadingProfile(true);
             try {
-                const response = await fetch(
+                const response = await fetchWithRetry(
                     `${ACCOUNT_API_BASE}/account/profile`,
                     {
                         headers: {
@@ -89,32 +110,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         },
                     },
                 );
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setProfile({
-                        name: data.name,
-                        email: data.email,
-                        githubUsername: data.githubUsername,
-                        image: data.image ?? null,
-                        tier: data.tier ?? null,
-                    });
-                } else if (response.status === 401) {
-                    // Invalid/expired key - clear it
+                const data = await response.json();
+                setProfile({
+                    name: data.name,
+                    email: data.email,
+                    githubUsername: data.githubUsername,
+                    image: data.image ?? null,
+                    tier: data.tier ?? null,
+                });
+            } catch (err) {
+                const message = err instanceof Error ? err.message : "";
+                if (message.startsWith("HTTP 401")) {
                     console.warn("[useAuth] API key invalid or expired");
                     localStorage.removeItem(STORAGE_KEY);
                     setUserApiKey(null);
-                    setProfile(null);
                 } else {
-                    // 403 = no permission, log for debugging
-                    console.debug(
-                        "[useAuth] Profile fetch failed:",
-                        response.status,
-                    );
-                    setProfile(null);
+                    console.debug("[useAuth] Profile fetch failed:", message);
                 }
-            } catch (err) {
-                console.warn("[useAuth] Profile fetch error:", err);
                 setProfile(null);
             } finally {
                 setIsLoadingProfile(false);
@@ -126,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fetch balance (separate permission, gracefully fails)
         const fetchBalance = async () => {
             try {
-                const response = await fetch(
+                const response = await fetchWithRetry(
                     `${ACCOUNT_API_BASE}/account/balance`,
                     {
                         headers: {
@@ -134,21 +146,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         },
                     },
                 );
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setBalance({
-                        balance: data.balance,
-                    });
-                } else {
-                    console.debug(
-                        "[useAuth] Balance fetch failed:",
-                        response.status,
-                    );
-                    setBalance(null);
-                }
+                const data = await response.json();
+                setBalance({ balance: data.balance });
             } catch (err) {
-                console.warn("[useAuth] Balance fetch error:", err);
+                console.debug(
+                    "[useAuth] Balance fetch failed:",
+                    err instanceof Error ? err.message : err,
+                );
                 setBalance(null);
             }
         };
@@ -169,29 +173,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setBalance(null);
     }, []);
 
-    const value: AuthContextValue = {
-        apiKey: userApiKey || DEFAULT_API_KEY,
-        isLoggedIn: !!userApiKey,
-        profile,
-        balance,
-        isLoadingProfile,
-        login,
-        logout,
-    };
+    const stateValue = useMemo<AuthStateValue>(
+        () => ({
+            apiKey: userApiKey || DEFAULT_API_KEY,
+            isLoggedIn: !!userApiKey,
+        }),
+        [userApiKey],
+    );
+
+    const profileValue = useMemo<AuthProfileValue>(
+        () => ({ profile, balance, isLoadingProfile }),
+        [profile, balance, isLoadingProfile],
+    );
+
+    const actionsValue = useMemo<AuthActionsValue>(
+        () => ({ login, logout }),
+        [login, logout],
+    );
 
     return (
-        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+        <AuthActionsContext.Provider value={actionsValue}>
+            <AuthStateContext.Provider value={stateValue}>
+                <AuthProfileContext.Provider value={profileValue}>
+                    {children}
+                </AuthProfileContext.Provider>
+            </AuthStateContext.Provider>
+        </AuthActionsContext.Provider>
     );
 }
 
+/** Only apiKey + isLoggedIn — won't re-render on profile/balance changes */
+export function useAuthState(): AuthStateValue {
+    const context = useContext(AuthStateContext);
+    if (!context)
+        throw new Error("useAuthState must be used within an AuthProvider");
+    return context;
+}
+
+/** Only profile + balance — won't re-render on apiKey changes */
+export function useAuthProfile(): AuthProfileValue {
+    const context = useContext(AuthProfileContext);
+    if (!context)
+        throw new Error("useAuthProfile must be used within an AuthProvider");
+    return context;
+}
+
+/** Only login/logout — stable refs, never triggers re-renders */
+export function useAuthActions(): AuthActionsValue {
+    const context = useContext(AuthActionsContext);
+    if (!context)
+        throw new Error("useAuthActions must be used within an AuthProvider");
+    return context;
+}
+
 /**
- * Hook for accessing shared authentication state.
- * Must be used within an AuthProvider.
+ * Combined hook for backward compatibility.
+ * Prefer useAuthState/useAuthProfile/useAuthActions for targeted subscriptions.
  */
 export function useAuth(): AuthContextValue {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
-    return context;
+    const state = useAuthState();
+    const profileData = useAuthProfile();
+    const actions = useAuthActions();
+    return { ...state, ...profileData, ...actions };
 }

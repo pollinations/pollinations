@@ -21,7 +21,8 @@ export interface VertexAIImageRequest {
     height?: number;
     referenceImages?: VertexAIImageData[];
     model?: string; // Model ID: gemini-2.5-flash-image-preview (default) or gemini-3-pro-image-preview
-    imageSize?: string; // "1K", "2K", "4K" - only supported by gemini-3-pro-image-preview
+    imageSize?: string; // "0.5K", "1K", "2K", "4K" - supported by gemini-3-pro-image-preview and gemini-3.1-flash-image-preview
+    safe?: boolean; // When true, use stricter safety settings; when false, use BLOCK_ONLY_HIGH
 }
 
 export interface VertexAIPart {
@@ -118,17 +119,19 @@ export async function generateImageWithVertexAI(
             );
         }
 
-        // Determine image size for nanobanana-pro based on pixel count
-        // Only gemini-3-pro-image-preview supports imageSize parameter
+        // Determine image size based on pixel count
+        // Both gemini-3-pro-image-preview and gemini-3.1-flash-image-preview support imageSize
         let imageSize: string | undefined;
         if (
-            modelId === "gemini-3-pro-image-preview" &&
+            (modelId === "gemini-3-pro-image-preview" ||
+                modelId === "gemini-3.1-flash-image-preview") &&
             request.width &&
             request.height
         ) {
             const totalPixels = request.width * request.height;
             // Pick closest resolution tier based on pixel count
             const tiers = [
+                { name: "0.5K", pixels: 512 * 512 }, // ~0.26M
                 { name: "1K", pixels: 1024 * 1024 }, // ~1.0M
                 { name: "2K", pixels: 1920 * 1080 }, // ~2.1M
                 { name: "4K", pixels: 3840 * 2160 }, // ~8.3M
@@ -154,6 +157,31 @@ export async function generateImageWithVertexAI(
         if (aspectRatio) imageConfig.aspectRatio = aspectRatio;
         if (imageSize) imageConfig.imageSize = imageSize;
 
+        // Configure safety settings based on the safe flag
+        // BLOCK_ONLY_HIGH reduces false positives on creative prompts
+        // BLOCK_MEDIUM_AND_ABOVE is stricter for safe=true
+        const safetyThreshold = request.safe
+            ? "BLOCK_MEDIUM_AND_ABOVE"
+            : "BLOCK_ONLY_HIGH";
+        const safetySettings = [
+            {
+                category: "HARM_CATEGORY_HATE_SPEECH",
+                threshold: safetyThreshold,
+            },
+            {
+                category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                threshold: safetyThreshold,
+            },
+            {
+                category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                threshold: safetyThreshold,
+            },
+            {
+                category: "HARM_CATEGORY_HARASSMENT",
+                threshold: safetyThreshold,
+            },
+        ];
+
         // Build the request body in Vertex AI format
         const requestBody: {
             contents: Array<{
@@ -167,6 +195,10 @@ export async function generateImageWithVertexAI(
                 max_output_tokens: number;
                 imageConfig?: { aspectRatio?: string; imageSize?: string };
             };
+            safetySettings: Array<{
+                category: string;
+                threshold: string;
+            }>;
         } = {
             contents: [
                 {
@@ -185,6 +217,7 @@ export async function generateImageWithVertexAI(
                 max_output_tokens: 2048,
                 ...(Object.keys(imageConfig).length > 0 && { imageConfig }),
             },
+            safetySettings,
         };
 
         log(

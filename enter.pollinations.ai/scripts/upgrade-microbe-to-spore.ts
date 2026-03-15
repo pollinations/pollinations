@@ -150,7 +150,7 @@ function checkSporeForSeed(
 
     // Call the Python GitHub validation script
     try {
-        const scriptPath = `${process.cwd()}/../.github/scripts`;
+        const scriptPath = `${import.meta.dirname}/../../../.github/scripts`;
 
         // Use the Python script's validate_users function via a wrapper
         const pythonScript = `
@@ -171,7 +171,8 @@ print(json.dumps(results))
 
         for (const result of results) {
             const username = result.username;
-            const totalScore = result.details?.total ?? 0;
+            const rawScore = Number(result.details?.total ?? 0);
+            const totalScore = Number.isFinite(rawScore) ? rawScore : 0;
             const safeUsername = username.replace(/'/g, "''");
 
             // Store score and score_checked_at for all checked users

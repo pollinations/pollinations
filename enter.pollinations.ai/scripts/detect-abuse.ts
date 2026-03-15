@@ -154,7 +154,12 @@ function fetchUsers(
     console.log(`📊 Fetching ${limit} most recent users${label}...`);
 
     const conditions: string[] = [];
-    if (unchecked) conditions.push("trust_score IS NULL");
+    if (unchecked) {
+        conditions.push("trust_score IS NULL");
+    } else {
+        // Skip users already scored (avoids double-scan with --unchecked step)
+        conditions.push("trust_score IS NOT NULL");
+    }
     if (sinceTimestamp) conditions.push(`created_at > ${sinceTimestamp}`);
     const whereClause =
         conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -506,33 +511,39 @@ function storeTrustScores(scored: ScoredUser[]): void {
     console.log("\n📝 Storing trust scores in D1...");
 
     // Trust score = 100 - abuse score (invert so higher = more trusted)
+    // Batch into single SQL using CASE to avoid one subprocess per user
     const BATCH_SIZE = 50;
     let stored = 0;
 
     for (let i = 0; i < scored.length; i += BATCH_SIZE) {
         const batch = scored.slice(i, i + BATCH_SIZE);
+        // Safe: emails come from D1 query results, not user input
+        const cases = batch
+            .map((u) => {
+                const trustScore = 100 - u.score;
+                const safeEmail = u.email.replace(/'/g, "''");
+                return `WHEN '${safeEmail}' THEN ${trustScore}`;
+            })
+            .join(" ");
+        const emailList = batch
+            .map((u) => `'${u.email.replace(/'/g, "''")}'`)
+            .join(", ");
+        const query = `UPDATE user SET trust_score = CASE email ${cases} END WHERE email IN (${emailList})`;
 
-        for (const user of batch) {
-            const trustScore = 100 - user.score;
-            const safeEmail = user.email.replace(/'/g, "''");
-            // Safe: email comes from D1 query results, not user input
-            const query = `UPDATE user SET trust_score = ${trustScore} WHERE email = '${safeEmail}'`;
-
-            try {
-                execSync(
-                    `npx wrangler d1 execute DB --remote --env production --command "${query}"`,
-                    {
-                        encoding: "utf-8",
-                        stdio: ["pipe", "pipe", "pipe"],
-                        maxBuffer: 10 * 1024 * 1024,
-                    },
-                );
-                stored++;
-            } catch {
-                console.error(
-                    `   ❌ Failed to store trust_score for ${user.email}`,
-                );
-            }
+        try {
+            execSync(
+                `npx wrangler d1 execute DB --remote --env production --command "${query}"`,
+                {
+                    encoding: "utf-8",
+                    stdio: ["pipe", "pipe", "pipe"],
+                    maxBuffer: 10 * 1024 * 1024,
+                },
+            );
+            stored += batch.length;
+        } catch {
+            console.error(
+                `   ❌ Failed to store batch ${Math.floor(i / BATCH_SIZE) + 1}`,
+            );
         }
 
         console.log(

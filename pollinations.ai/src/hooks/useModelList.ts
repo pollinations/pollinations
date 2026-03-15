@@ -161,7 +161,7 @@ export function useModelList(apiKey: string): UseModelListReturn {
         [apiKey],
     );
 
-    const cacheKey = `${CACHE_KEY_PREFIX}${apiKey}`;
+    const cacheKey = `${CACHE_KEY_PREFIX}${apiKey ? apiKey.slice(-8) : "anon"}`;
     const { data, loading: isLoading } = useCachedFetch<AllowedModelsData>(
         cacheKey,
         fetcher,

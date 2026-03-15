@@ -31,7 +31,6 @@ export interface App {
 interface UseAppsReturn {
     apps: App[];
     loading: boolean;
-    error: Error | null;
 }
 
 /**
@@ -151,5 +150,5 @@ export function useApps(filePath: string): UseAppsReturn {
         !!filePath,
     );
 
-    return { apps: data ?? [], loading, error: null };
+    return { apps: data ?? [], loading };
 }

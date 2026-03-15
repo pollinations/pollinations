@@ -77,7 +77,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <strong className="text-gray-800 text-sm">Spore</strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.spore} pollen/week
+                        {TIER_POLLEN.spore} pollen/hour
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
@@ -94,7 +94,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <strong className="text-gray-800 text-sm">Seed</strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.seed} pollen/day
+                        {TIER_POLLEN.seed} pollen/hour
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>

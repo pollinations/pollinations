@@ -1,9 +1,9 @@
-name: Daily Tier Refill
+name: Hourly Tier Refill (backup)
 
 on:
   schedule:
-    # Run at 00:00 UTC daily
-    - cron: '0 0 * * *'
+    # Backup trigger - primary cron is Cloudflare scheduled handler
+    - cron: '0 * * * *'
   workflow_dispatch: # Manual trigger from GitHub UI
 
 jobs:
@@ -34,8 +34,9 @@ jobs:
 
           # Report outcome
           if [ "$(echo "$body" | jq -r '.skipped')" = "true" ]; then
-            echo "::notice::Tier refill skipped - already ran today"
+            echo "::notice::Tier refill skipped - already ran this period"
           else
-            users=$(echo "$body" | jq -r '.usersRefilled')
-            echo "::notice::Tier refill complete - $users users refilled"
+            hourly=$(echo "$body" | jq -r '.hourlyRefillCount')
+            daily=$(echo "$body" | jq -r '.dailyRefillCount')
+            echo "::notice::Tier refill complete - hourly: $hourly, daily: $daily users"
           fi

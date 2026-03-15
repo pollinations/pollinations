@@ -177,7 +177,7 @@ const chatCompletionHandlers = factory.createHandlers(
             const contentType = response.headers.get("content-type") || "";
             if (!contentType.includes("text/event-stream")) {
                 throw new UpstreamError(502, {
-                    message: `Stream requested but upstream returned content-type: ${contentType}`,
+                    message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
                     requestUrl: targetUrl,
                 });
             }

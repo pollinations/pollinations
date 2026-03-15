@@ -612,6 +612,16 @@ async function extractUsageAndContentFilterResults(
         requestTracking.streamRequested &&
         response.body instanceof ReadableStream &&
         contentType.includes("text/event-stream");
+    if (
+        requestTracking.streamRequested &&
+        !contentType.includes("text/event-stream")
+    ) {
+        const log = getLogger(["hono", "track", "usage"]);
+        log.warn(
+            "Stream requested but upstream returned non-SSE content-type: {contentType}",
+            { contentType },
+        );
+    }
     if (isActuallyStreaming) {
         const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);

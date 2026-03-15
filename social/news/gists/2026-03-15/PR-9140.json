@@ -1,0 +1,34 @@
+{
+  "pr_number": 9140,
+  "title": "fix: skip redundant KV writes for API key verify tracking",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9140",
+  "merged_at": "2026-03-15T09:31:24Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Silencing the KV chatter",
+    "blurb": "Our API keys were getting a little too chatty with the database at 5 million requests a day. We've optimized the caching layer to keep things fast, quiet, and highly scalable.",
+    "summary": "Optimized API key verification to prevent redundant KV writes and eliminate rate-limiting errors at high request volumes.",
+    "impact": "Backend infrastructure is now more stable and efficient, easily handling millions of daily API requests without hitting database write limits.",
+    "keywords": [
+      "auth",
+      "performance",
+      "kv",
+      "caching",
+      "api-keys"
+    ],
+    "visual_concept": "The bee mascot organizing a fast-moving stream of data, preventing the Nomnom creature from being overwhelmed by too many API requests. Represents caching and reducing redundant database writes.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing a neat, single-file line of glowing API keys, while the round tan Nomnom creature happily eats a single data packet instead of a massive pile. A retro server rack in the background glows with a soft lime green (#ecf874) light. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-15T09:32:12.608065+00:00"
+}

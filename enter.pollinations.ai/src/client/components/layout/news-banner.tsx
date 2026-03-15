@@ -64,7 +64,11 @@ export const NewsBanner: FC = () => {
     if (highlights.length === 0 && PINNED_NEWS.length === 0) return null;
 
     return (
-        <Panel color="violet" compact className="border-transparent !bg-transparent">
+        <Panel
+            color="violet"
+            compact
+            className="border-transparent !bg-transparent"
+        >
             <div className="flex flex-col gap-2">
                 <span className="text-xs text-gray-500">What's new</span>
                 {PINNED_NEWS.length > 0 && (

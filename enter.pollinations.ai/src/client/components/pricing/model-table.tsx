@@ -247,7 +247,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                                 </span>
                             )}
                             {showPaidOnly && (
-                                <span className={cn(isDisabled && "opacity-50")}>
+                                <span
+                                    className={cn(isDisabled && "opacity-50")}
+                                >
                                     <Badge color="purple" size="md">
                                         PAID
                                     </Badge>

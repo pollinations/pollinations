@@ -54,13 +54,19 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx tsx scripts/upgrade-microbe-to-spore.ts --env production
 
-      # Step 3: Spore→Seed re-check (1/7th slice, so each spore user re-checked ~weekly)
+      # Step 3: Spore→Seed re-check (1/7th slice, daily at midnight UTC only)
       - name: Spore to Seed re-check
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: python ../.github/scripts/user_upgrade_spore_to_seed.py
+        run: |
+          HOUR=$(date -u +%H)
+          if [ "$HOUR" = "00" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python ../.github/scripts/user_upgrade_spore_to_seed.py
+          else
+            echo "Skipping — only runs at midnight UTC (current hour: $HOUR)"
+          fi
 
       # Step 4: Ongoing abuse scan on active non-microbe users
       - name: Ongoing abuse scan

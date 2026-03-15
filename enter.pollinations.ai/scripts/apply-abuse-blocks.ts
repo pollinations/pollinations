@@ -248,7 +248,7 @@ const applyBlocksCommand = command({
                             continue;
                         }
                         const safeEmail = user.email.replace(/'/g, "''");
-                        const sql = `UPDATE user SET tier = 'microbe', tier_balance = 0.1 WHERE email = '${safeEmail}'`;
+                        const sql = `UPDATE user SET tier = 'microbe', tier_balance = 0 WHERE email = '${safeEmail}'`;
                         queryD1(env, sql);
                         succeeded++;
                     } catch {

@@ -150,7 +150,7 @@ function checkSporeForSeed(
 
     // Call the Python GitHub validation script
     try {
-        const scriptPath = `${import.meta.dirname}/../../../.github/scripts`;
+        const scriptPath = `${import.meta.dirname}/../../.github/scripts`;
 
         // Use the Python script's validate_users function via a wrapper
         const pythonScript = `

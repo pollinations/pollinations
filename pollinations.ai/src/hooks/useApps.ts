@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useCachedFetch } from "./useCachedFetch";
+
+const CACHE_KEY_PREFIX = "pollinations:apps:";
+const TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 /**
  * Hook to fetch and parse APPS.md file
@@ -27,7 +31,6 @@ export interface App {
 interface UseAppsReturn {
     apps: App[];
     loading: boolean;
-    error: Error | null;
 }
 
 /**
@@ -131,39 +134,21 @@ function parseAppsMarkdown(markdown: string): App[] {
  * Returns array of apps parsed from markdown table
  */
 export function useApps(filePath: string): UseAppsReturn {
-    const [apps, setApps] = useState<App[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<Error | null>(null);
-
-    useEffect(() => {
-        if (!filePath) {
-            setLoading(false);
-            return;
+    const fetcher = useCallback(async (): Promise<App[]> => {
+        const response = await fetch(filePath);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch apps: ${response.statusText}`);
         }
-
-        async function fetchApps() {
-            try {
-                const response = await fetch(filePath);
-                if (!response.ok) {
-                    throw new Error(
-                        `Failed to fetch apps: ${response.statusText}`,
-                    );
-                }
-
-                const text = await response.text();
-                const parsedApps = parseAppsMarkdown(text);
-
-                setApps(parsedApps);
-                setLoading(false);
-            } catch (err) {
-                console.error("Error loading apps:", err);
-                setError(err instanceof Error ? err : new Error(String(err)));
-                setLoading(false);
-            }
-        }
-
-        fetchApps();
+        const text = await response.text();
+        return parseAppsMarkdown(text);
     }, [filePath]);
 
-    return { apps, loading, error };
+    const { data, loading } = useCachedFetch<App[]>(
+        `${CACHE_KEY_PREFIX}${filePath}`,
+        fetcher,
+        TTL_MS,
+        !!filePath,
+    );
+
+    return { apps: data ?? [], loading };
 }

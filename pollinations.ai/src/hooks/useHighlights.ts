@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCachedFetch } from "./useCachedFetch";
 
 const HIGHLIGHTS_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/social/news/highlights.md";
 
 const MAX_ITEMS = 5;
+const CACHE_KEY = "pollinations:highlights";
+const TTL_MS = 60 * 60 * 1000; // 1 hour
 
 export interface Highlight {
     date: string;
@@ -28,25 +30,23 @@ function parseLine(line: string): Highlight | null {
     };
 }
 
+async function fetchHighlights(): Promise<Highlight[]> {
+    const r = await fetch(HIGHLIGHTS_URL);
+    const text = await r.text();
+    return text
+        .split("\n")
+        .filter((line) => line.trim().startsWith("- "))
+        .map(parseLine)
+        .filter((item): item is Highlight => item !== null)
+        .slice(0, MAX_ITEMS);
+}
+
 export function useHighlights() {
-    const [highlights, setHighlights] = useState<Highlight[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data, loading } = useCachedFetch<Highlight[]>(
+        CACHE_KEY,
+        fetchHighlights,
+        TTL_MS,
+    );
 
-    useEffect(() => {
-        fetch(HIGHLIGHTS_URL)
-            .then((r) => r.text())
-            .then((text) => {
-                const items = text
-                    .split("\n")
-                    .filter((line) => line.trim().startsWith("- "))
-                    .map(parseLine)
-                    .filter((item): item is Highlight => item !== null)
-                    .slice(0, MAX_ITEMS);
-                setHighlights(items);
-            })
-            .catch((err) => console.error("Failed to load highlights:", err))
-            .finally(() => setLoading(false));
-    }, []);
-
-    return { highlights, loading };
+    return { highlights: data ?? [], loading };
 }

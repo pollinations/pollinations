@@ -1,8 +1,10 @@
 User-agent: *
 Allow: /
-
-# Block auth/app flows — not indexable pages
+Allow: /api/docs
+Allow: /api/docs/llm.txt
+Disallow: /api/
 Disallow: /sign-in
 Disallow: /authorize
+Disallow: /error
 
 Sitemap: https://enter.pollinations.ai/sitemap.xml

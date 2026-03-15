@@ -5,13 +5,13 @@
  */
 
 import { createMiddleware } from "hono/factory";
+import type { RequestIdVariables } from "hono/request-id";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
+    createCaptureStream,
     generateCacheKey,
     getCachedResponse,
-    createCaptureStream,
 } from "@/utils/text-cache.ts";
-import type { LoggerVariables } from "@/middleware/logger.ts";
-import type { RequestIdVariables } from "hono/request-id";
 
 type TextCacheEnv = {
     Bindings: CloudflareBindings;

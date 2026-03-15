@@ -15,6 +15,17 @@ export default defineConfig({
     server: {
         open: true,
     },
+    build: {
+        reportCompressedSize: true,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ["react", "react-dom", "react-router-dom"],
+                    markdown: ["react-markdown", "remark-gfm"],
+                },
+            },
+        },
+    },
     optimizeDeps: {
         esbuildOptions: {
             loader: {

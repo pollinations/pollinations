@@ -538,6 +538,7 @@ function extractUsageAndContentFilterResultsHeaders(response: Response): {
 
 async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
+    resolvedModelRequested: string,
 ): Promise<{
     modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
@@ -560,13 +561,28 @@ async function extractUsageAndContentFilterResultsStream(
             .nullish(),
     });
 
+    // Schema for extracting delta content from stream chunks
+    const DeltaContentSchema = z.object({
+        choices: z.array(
+            z.object({
+                delta: z.object({ content: z.string().nullish() }).nullish(),
+            }),
+        ),
+    });
+
     let model: string | undefined;
     let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
+    let completionChars = 0;
 
     for await (const event of events) {
         const parseResult = EventSchema.safeParse(event);
+
+        // Track model from any chunk (not just the usage chunk)
+        if (parseResult.data?.model && !model) {
+            model = parseResult.data.model;
+        }
 
         const incomingPromptFilterResults =
             parseResult.data?.prompt_filter_results?.map(
@@ -593,6 +609,13 @@ async function extractUsageAndContentFilterResultsStream(
             usage = parseResult.data?.usage;
             model = parseResult.data?.model;
         }
+
+        // Accumulate completion text length for fallback estimation
+        const deltaResult = DeltaContentSchema.safeParse(event);
+        const deltaContent = deltaResult.data?.choices[0]?.delta?.content;
+        if (deltaContent) {
+            completionChars += deltaContent.length;
+        }
     }
 
     const contentFilterResults = contentFilterResultsToEventParams({
@@ -600,19 +623,46 @@ async function extractUsageAndContentFilterResultsStream(
         completionFilterResults,
     });
 
-    if (!model || !usage) {
-        log.error("No usage object found in event stream");
+    if (usage) {
         return {
-            modelUsage: null,
+            modelUsage: {
+                model:
+                    (model as ModelId) || (resolvedModelRequested as ModelId),
+                usage: openaiUsageToUsage(usage),
+            },
             contentFilterResults,
         };
     }
 
+    // Fallback: estimate completion tokens from accumulated delta content
+    // when the upstream provider doesn't support stream_options.include_usage
+    if (completionChars > 0) {
+        const estimatedCompletionTokens = Math.ceil(completionChars / 4);
+        log.warn(
+            "No usage object in stream, estimating from {chars} completion chars → {tokens} tokens for model {model}",
+            {
+                chars: completionChars,
+                tokens: estimatedCompletionTokens,
+                model: model || resolvedModelRequested,
+            },
+        );
+        return {
+            modelUsage: {
+                model:
+                    (model as ModelId) || (resolvedModelRequested as ModelId),
+                usage: {
+                    completionTextTokens: estimatedCompletionTokens,
+                },
+            },
+            contentFilterResults,
+        };
+    }
+
+    log.error(
+        "No usage object found in event stream and no content to estimate from",
+    );
     return {
-        modelUsage: {
-            model: model as ModelId,
-            usage: openaiUsageToUsage(usage),
-        },
+        modelUsage: null,
         contentFilterResults,
     };
 }
@@ -633,7 +683,10 @@ async function extractUsageAndContentFilterResults(
         contentType.includes("text/event-stream")
     ) {
         const eventStream = extractResponseStream(response);
-        return await extractUsageAndContentFilterResultsStream(eventStream);
+        return await extractUsageAndContentFilterResultsStream(
+            eventStream,
+            requestTracking.resolvedModelRequested,
+        );
     }
     return extractUsageAndContentFilterResultsHeaders(response);
 }

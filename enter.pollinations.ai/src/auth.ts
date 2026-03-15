@@ -142,7 +142,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 },
                 tier: {
                     type: "string",
-                    defaultValue: "spore",
+                    defaultValue: "microbe",
                     input: false,
                 },
             },

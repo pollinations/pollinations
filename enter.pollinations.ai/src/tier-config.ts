@@ -12,7 +12,7 @@ export type TierStatus = TierName | "none";
 
 export const tierNames = Object.keys(TIERS) as TierName[];
 
-export const DEFAULT_TIER: TierName = "spore";
+export const DEFAULT_TIER: TierName = "microbe";
 
 export const TIER_POLLEN = Object.fromEntries(
     Object.entries(TIERS).map(([tier, config]) => [tier, config.pollen]),

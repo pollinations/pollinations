@@ -1,0 +1,76 @@
+name: New User Verification Pipeline
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  verification-pipeline:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: enter.pollinations.ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate GitHub App token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ORG_BOSS_APP_ID }}
+          private-key: ${{ secrets.ORG_BOSS_PRIVATE_KEY }}
+          owner: pollinations
+
+      - name: Install dependencies
+        run: |
+          npm install
+          pip install tqdm
+
+      - name: Create API token file
+        run: echo "ENTER_API_TOKEN_REMOTE=${{ secrets.ENTER_API_TOKEN }}" > .testingtokens
+
+      # Step 1: Abuse check on unchecked users (trust_score IS NULL)
+      - name: Abuse check on new users
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx tsx scripts/detect-abuse.ts --unchecked --parallel 3 --store-status
+
+      # Step 2: Upgrade pipeline (microbe→spore, then spore→seed for just-upgraded)
+      - name: Upgrade pipeline
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx tsx scripts/upgrade-microbe-to-spore.ts --env production
+
+      # Step 3: Spore→Seed re-check (1/7th slice, daily at midnight UTC only)
+      - name: Spore to Seed re-check
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          HOUR=$(date -u +%H)
+          if [ "$HOUR" = "00" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python ../.github/scripts/user_upgrade_spore_to_seed.py
+          else
+            echo "Skipping — only runs at midnight UTC (current hour: $HOUR)"
+          fi
+
+      # Step 4: Ongoing abuse scan on active non-microbe users
+      - name: Ongoing abuse scan
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx tsx scripts/detect-abuse.ts --last 1h --parallel 3 --auto-apply

@@ -29,11 +29,14 @@ export const user = sqliteTable("user", {
   banExpires: integer("ban_expires", { mode: "timestamp" }),
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
-  tier: text("tier").default("spore").notNull(),
+  tier: text("tier").default("microbe").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
   cryptoBalance: real("crypto_balance"),
   lastTierGrant: integer("last_tier_grant"),
+  trustScore: integer("trust_score"),
+  score: real("score"),
+  scoreCheckedAt: integer("score_checked_at"),
 }, (table) => [
   index("idx_user_email").on(table.email),
 ]);

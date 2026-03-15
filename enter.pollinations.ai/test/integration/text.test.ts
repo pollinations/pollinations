@@ -1450,7 +1450,7 @@ describe("API key pollen budget enforcement", async () => {
 
 describe("Streaming billing content-type handling", () => {
     test(
-        "should mark unbilled when stream requested but upstream returns JSON",
+        "should return 502 when stream requested but upstream returns JSON",
         { timeout: 30000 },
         async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "text");
@@ -1482,12 +1482,12 @@ describe("Streaming billing content-type handling", () => {
                 env,
                 ctx,
             );
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(502);
 
             await response.text();
             await waitOnExecutionContext(ctx);
 
-            // Event still sent to Tinybird but marked as unbilled
+            // Error response → not billed
             const events = mocks.tinybird.state.events;
             expect(events).toHaveLength(1);
             expect(events[0].isBilledUsage).toBe(false);

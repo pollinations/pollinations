@@ -4,7 +4,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:pruna:ops");
@@ -13,6 +13,8 @@ const logError = debug("pollinations:pruna:error");
 // Pruna API configuration
 const PRUNA_API_BASE = "https://api.pruna.ai/v1";
 const PREDICTIONS_URL = `${PRUNA_API_BASE}/predictions`;
+
+const FILES_URL = `${PRUNA_API_BASE}/files`;
 
 // Polling configuration
 const POLL_MAX_ATTEMPTS = 120; // 10 minutes max
@@ -103,6 +105,53 @@ async function submitPrediction(
     }
 
     return (await response.json()) as PrunaPredictionResponse;
+}
+
+/**
+ * Upload a base64/data URI image to Pruna's file endpoint and return the hosted URL.
+ * Pruna rejects inline base64 in predictions but accepts URLs to uploaded files.
+ */
+async function uploadImageToPruna(imageData: string): Promise<string> {
+    const apiKey = process.env.PRUNA_API_KEY;
+    if (!apiKey) {
+        throw new HttpError(
+            "PRUNA_API_KEY environment variable is required",
+            500,
+        );
+    }
+
+    // Strip data URI prefix if present
+    let base64 = imageData;
+    let mimeType = "image/png";
+    const dataUriMatch = imageData.match(/^data:([^;]+);base64,(.+)$/);
+    if (dataUriMatch) {
+        mimeType = dataUriMatch[1];
+        base64 = dataUriMatch[2];
+    }
+
+    const buffer = Buffer.from(base64, "base64");
+    const ext = mimeType.split("/")[1] || "png";
+    const blob = new Blob([buffer], { type: mimeType });
+    const formData = new FormData();
+    formData.append("content", blob, `image.${ext}`);
+
+    const response = await fetch(FILES_URL, {
+        method: "POST",
+        headers: { apikey: apiKey },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new HttpError(
+            `Pruna file upload failed: ${errorText}`,
+            response.status,
+        );
+    }
+
+    const result = (await response.json()) as { urls: { get: string } };
+    logOps("Uploaded image to Pruna:", result.urls.get);
+    return result.urls.get;
 }
 
 /**
@@ -291,22 +340,21 @@ export async function callPrunaImageEditAPI(
 
         const input: Record<string, unknown> = { prompt };
 
-        // Pruna p-image-edit requires "images" array (1-5 images as data URIs)
-        // We download and send as data URIs since Pruna can't fetch many external URLs
+        // Pruna p-image-edit accepts image URLs (1-5 images)
+        // Inline base64/data URIs are rejected, so upload those via /v1/files first
         if (safeParams.image && safeParams.image.length > 0) {
-            const imageUrls = Array.isArray(safeParams.image)
-                ? safeParams.image.slice(0, 5)
-                : [safeParams.image];
+            const rawImages = safeParams.image.slice(0, 5);
 
-            const encodedImages: string[] = [];
-            for (const imageUrl of imageUrls) {
-                logOps("Downloading reference image:", imageUrl);
-                const { base64, mimeType } =
-                    await downloadImageAsBase64(imageUrl);
-                encodedImages.push(`data:${mimeType};base64,${base64}`);
-                logOps("Reference image encoded, mimeType:", mimeType);
+            const resolvedImages: string[] = [];
+            for (const img of rawImages) {
+                if (img.startsWith("http://") || img.startsWith("https://")) {
+                    resolvedImages.push(img);
+                } else {
+                    // base64 or data URI — upload to Pruna's file hosting
+                    resolvedImages.push(await uploadImageToPruna(img));
+                }
             }
-            input.images = encodedImages;
+            input.images = resolvedImages;
         }
 
         if (safeParams.seed !== undefined) {
@@ -389,19 +437,21 @@ export async function callPrunaVideoAPI(
 
         // Image-to-video mode
         if (safeParams.image && safeParams.image.length > 0) {
-            const imageUrl = Array.isArray(safeParams.image)
-                ? safeParams.image[0]
-                : safeParams.image;
+            const img = safeParams.image[0];
 
-            logOps("Downloading reference image for I2V:", imageUrl);
+            logOps("Reference image for I2V:", img);
             progress.updateBar(
                 requestId,
                 30,
                 "Processing",
-                "Downloading reference image...",
+                "Preparing reference image...",
             );
-            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
-            input.image = `data:${mimeType};base64,${base64}`;
+            // Pruna rejects inline base64/data URIs — pass URLs directly, upload others
+            if (img.startsWith("http://") || img.startsWith("https://")) {
+                input.image = img;
+            } else {
+                input.image = await uploadImageToPruna(img);
+            }
             // I2V ignores aspect_ratio, uses input image dimensions
         } else {
             // Text-to-video: determine aspect ratio from requested dimensions

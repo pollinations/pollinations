@@ -102,7 +102,7 @@ const profileResponseSchema = z.object({
     nextResetAt: z.iso
         .datetime()
         .nullable()
-        .describe("Next daily pollen reset timestamp (ISO 8601)"),
+        .describe("Next pollen refill timestamp (ISO 8601)"),
 });
 
 const balanceResponseSchema = z.object({

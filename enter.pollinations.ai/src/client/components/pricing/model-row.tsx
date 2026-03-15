@@ -81,17 +81,19 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance = 0 }) => {
                         </span>
                     )}
                     {showPaidOnly && (
-                        <Tooltip
-                            content={
-                                isDisabled
-                                    ? "Top up your pollen balance to unlock this model."
-                                    : "This model uses purchased pollen only."
-                            }
-                        >
-                            <Badge color="purple" size="md">
-                                PAID
-                            </Badge>
-                        </Tooltip>
+                        <span className={cn(isDisabled && "opacity-50")}>
+                            <Tooltip
+                                content={
+                                    isDisabled
+                                        ? "Top up your pollen balance to unlock this model."
+                                        : "This model uses purchased pollen only."
+                                }
+                            >
+                                <Badge color="purple" size="md">
+                                    PAID
+                                </Badge>
+                            </Tooltip>
+                        </span>
                     )}
                 </div>
                 <div

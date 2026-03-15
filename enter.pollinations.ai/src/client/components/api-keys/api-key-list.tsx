@@ -70,7 +70,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 return (
                                     <div
                                         key={apiKey.id}
-                                        className="bg-white/40 rounded-xl p-3 transition-colors hover:bg-white/60"
+                                        className="bg-white/60 rounded-xl p-3 transition-colors hover:bg-white/80"
                                     >
                                         {/* Row 1: Type, Name, Key, Actions */}
                                         <div className="flex items-center gap-2 mb-2">

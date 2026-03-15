@@ -22,7 +22,7 @@ export const Tooltip: FC<TooltipProps> = ({ children, content, onClick }) => {
         <button
             ref={buttonRef}
             type="button"
-            className="relative cursor-default text-left"
+            className="relative cursor-default text-left inline-flex items-center"
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
             onClick={(e) => {

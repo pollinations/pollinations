@@ -46,13 +46,15 @@ export function useCachedFetch<T>(
     const cached = enabled ? readCache<T>(key) : null;
 
     const [data, setData] = useState<T | null>(cached?.data ?? null);
-    const [loading, setLoading] = useState<boolean>(
-        enabled && !cached ? true : false,
-    );
+    const [loading, setLoading] = useState<boolean>(!!(enabled && !cached));
 
     // Track the key so we can skip stale responses
     const activeKey = useRef(key);
     activeKey.current = key;
+
+    // Stable ref for fetcher to avoid re-triggering the effect
+    const fetcherRef = useRef(fetcher);
+    fetcherRef.current = fetcher;
 
     useEffect(() => {
         if (!enabled) {
@@ -81,7 +83,7 @@ export function useCachedFetch<T>(
 
         let cancelled = false;
 
-        fetcher().then(
+        fetcherRef.current().then(
             (freshData) => {
                 if (cancelled || activeKey.current !== key) return;
                 writeCache(key, freshData);
@@ -99,7 +101,7 @@ export function useCachedFetch<T>(
         return () => {
             cancelled = true;
         };
-    }, [key, ttlMs, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [key, ttlMs, enabled]);
 
     return { data, loading };
 }

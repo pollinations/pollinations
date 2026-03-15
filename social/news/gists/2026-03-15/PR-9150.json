@@ -1,0 +1,34 @@
+{
+  "pr_number": 9150,
+  "title": "frontend: lazy-load markdown, chunk splitting, SWR caching, footer dedup",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9150",
+  "merged_at": "2026-03-15T12:34:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Lighter, faster, buzzier",
+    "blurb": "We chopped the frontend bundle size and added aggressive caching. The site now loads before you can even finish blinking.",
+    "summary": "Implemented lazy-loading, chunk splitting, and stale-while-revalidate caching to significantly reduce initial bundle size and speed up page loads.",
+    "impact": "Users will experience near-instant rendering on return visits and a much faster, smoother browsing experience across the site.",
+    "keywords": [
+      "frontend",
+      "performance",
+      "caching",
+      "optimization",
+      "vite"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot optimizing speed. The robot holding a stopwatch or a glowing 'cache' box, with Polly flying fast. Emphasize speed, lightness, and streamlined data.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny aviator goggles, flying fast alongside a chunky Monitor Robot holding a glowing stopwatch. They are racing along a glowing lime green (#ecf874) data stream. Soft pastel mint and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-15T12:35:18.086219+00:00"
+}

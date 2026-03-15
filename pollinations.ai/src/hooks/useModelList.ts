@@ -5,8 +5,9 @@ import {
     getVisibleTextServices,
     type ServiceId,
 } from "@shared/registry/registry";
-import { useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { API_BASE } from "../api.config";
+import { useCachedFetch } from "./useCachedFetch";
 
 const IMAGE_MODELS_URL = `${API_BASE}/image/models`;
 const TEXT_MODELS_URL = `${API_BASE}/text/models`;
@@ -84,6 +85,64 @@ const ALL_MODELS: Model[] = [
     ...REGISTRY_AUDIO_MODELS,
 ];
 
+const CACHE_KEY_PREFIX = "pollinations:allowedModels:";
+const TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+type RawModel =
+    | { id?: string; name?: string; output_modalities?: string[] }
+    | string;
+
+interface AllowedModelsData {
+    image: string[];
+    text: string[];
+    audio: string[];
+}
+
+function extractIds(
+    list: Array<{ id?: string; name?: string } | string>,
+): string[] {
+    return list.map((m) => (typeof m === "string" ? m : m.id || m.name || ""));
+}
+
+function hasAudioOutput(m: RawModel): boolean {
+    return typeof m !== "string" && !!m.output_modalities?.includes("audio");
+}
+
+async function fetchAllowedModels(apiKey: string): Promise<AllowedModelsData> {
+    const authHeaders = { Authorization: `Bearer ${apiKey}` };
+
+    const [allowedImageList, allowedTextList, allowedAudioList] =
+        await Promise.all([
+            fetch(IMAGE_MODELS_URL, { headers: authHeaders })
+                .then((r) => r.json())
+                .catch(() => []),
+            fetch(TEXT_MODELS_URL, { headers: authHeaders })
+                .then((r) => r.json())
+                .catch(() => []),
+            fetch(AUDIO_MODELS_URL, { headers: authHeaders })
+                .then((r) => r.json())
+                .catch(() => []),
+        ]);
+
+    const textOnly = (allowedTextList || []).filter(
+        (m: RawModel) => !hasAudioOutput(m),
+    );
+    const audioFromText = (allowedTextList || []).filter((m: RawModel) =>
+        hasAudioOutput(m),
+    );
+
+    const audioIds = extractIds(allowedAudioList || []);
+    for (const id of extractIds(audioFromText)) {
+        audioIds.push(id);
+    }
+
+    return {
+        image: extractIds(allowedImageList || []),
+        text: extractIds(textOnly),
+        audio: audioIds,
+    };
+}
+
 /**
  * Custom hook to fetch and manage available models from the API
  * Full model list comes from the shared registry (instant).
@@ -91,113 +150,36 @@ const ALL_MODELS: Model[] = [
  * @param apiKey - API key to use for authentication (from useAuth hook)
  */
 export function useModelList(apiKey: string): UseModelListReturn {
-    const [allowedImageModelIds, setAllowedImageModelIds] = useState<
-        Set<string>
-    >(new Set());
-    const [allowedTextModelIds, setAllowedTextModelIds] = useState<Set<string>>(
-        new Set(),
-    );
-    const [allowedAudioModelIds, setAllowedAudioModelIds] = useState<
-        Set<string>
-    >(new Set());
-    const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | null>(null);
 
-    useEffect(() => {
-        const controller = new AbortController();
-
-        // Reset state immediately when apiKey changes so stale allowed sets
-        // don't remain visible while the new fetch is in flight
-        setAllowedImageModelIds(new Set());
-        setAllowedTextModelIds(new Set());
-        setAllowedAudioModelIds(new Set());
-        setIsLoading(true);
-        setError(null);
-
-        const extractIds = (
-            list: Array<{ id?: string; name?: string } | string>,
-        ) =>
-            new Set<string>(
-                list.map((m) =>
-                    typeof m === "string" ? m : m.id || m.name || "",
-                ),
-            );
-
-        const fetchAllowed = async () => {
-            try {
-                const authHeaders = {
-                    Authorization: `Bearer ${apiKey}`,
-                };
-                const signal = controller.signal;
-
-                // Fetch which models are allowed for this key
-                const [allowedImageList, allowedTextList, allowedAudioList] =
-                    await Promise.all([
-                        fetch(IMAGE_MODELS_URL, {
-                            headers: authHeaders,
-                            signal,
-                        })
-                            .then((r) => r.json())
-                            .catch(() => []),
-                        fetch(TEXT_MODELS_URL, {
-                            headers: authHeaders,
-                            signal,
-                        })
-                            .then((r) => r.json())
-                            .catch(() => []),
-                        fetch(AUDIO_MODELS_URL, {
-                            headers: authHeaders,
-                            signal,
-                        })
-                            .then((r) => r.json())
-                            .catch(() => []),
-                    ]);
-
-                if (controller.signal.aborted) return;
-
-                setAllowedImageModelIds(extractIds(allowedImageList || []));
-
-                // openai-audio lives in /text/models but is displayed as audio
-                // in the UI — extract it from the text response and merge with
-                // the dedicated /audio/models response.
-                type RawModel =
-                    | {
-                          id?: string;
-                          name?: string;
-                          output_modalities?: string[];
-                      }
-                    | string;
-                const hasAudioOutput = (m: RawModel) =>
-                    typeof m !== "string" &&
-                    m.output_modalities?.includes("audio");
-
-                const textOnly = (allowedTextList || []).filter(
-                    (m: RawModel) => !hasAudioOutput(m),
-                );
-                const audioFromText = (allowedTextList || []).filter(
-                    (m: RawModel) => hasAudioOutput(m),
-                );
-
-                setAllowedTextModelIds(extractIds(textOnly));
-
-                const audioIds = extractIds(allowedAudioList || []);
-                for (const id of extractIds(audioFromText)) {
-                    audioIds.add(id);
-                }
-                setAllowedAudioModelIds(audioIds);
-                setIsLoading(false);
-            } catch (err) {
-                if (controller.signal.aborted) return;
-                console.error("Failed to fetch allowed models:", err);
+    const fetcher = useCallback(
+        () =>
+            fetchAllowedModels(apiKey).catch((err) => {
                 setError(err instanceof Error ? err : new Error(String(err)));
-                setIsLoading(false);
-            }
-        };
+                throw err;
+            }),
+        [apiKey],
+    );
 
-        fetchAllowed();
+    const cacheKey = `${CACHE_KEY_PREFIX}${apiKey ? apiKey.slice(-8) : "anon"}`;
+    const { data, loading: isLoading } = useCachedFetch<AllowedModelsData>(
+        cacheKey,
+        fetcher,
+        TTL_MS,
+    );
 
-        return () => controller.abort();
-    }, [apiKey]);
+    const allowedImageModelIds = useMemo(
+        () => new Set<string>(data?.image ?? []),
+        [data],
+    );
+    const allowedTextModelIds = useMemo(
+        () => new Set<string>(data?.text ?? []),
+        [data],
+    );
+    const allowedAudioModelIds = useMemo(
+        () => new Set<string>(data?.audio ?? []),
+        [data],
+    );
 
     return {
         imageModels: REGISTRY_IMAGE_MODELS,

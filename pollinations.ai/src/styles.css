@@ -33,80 +33,14 @@ select {
     background-image: none;
 }
 
-/* Hide scrollbar utility class */
-.scrollbar-hide {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-}
-
-/* Continuous scroll animation for image carousel */
-@keyframes scroll {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-33.33%);
-    }
-}
-
-.animate-scroll {
-    animation: scroll linear infinite;
-}
-
-/* Smooth scroll for infinite carousel - slides one image width over 4s */
-@keyframes scroll-smooth {
-    from {
-        transform: translateX(0);
-    }
-    to {
-        transform: translateX(-33.33%);
-    }
-}
-
-.animate-scroll-smooth {
-    animation: scroll-smooth 4s linear infinite;
-}
-
-/* Infinite scroll with duplicated items - scrolls through half (50%) then resets seamlessly */
-@keyframes scroll-infinite {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-.animate-scroll-infinite {
-    animation: scroll-infinite 24s linear infinite;
-}
-
-/* Fade in animation for new images */
+/* Fade in animation for page transitions */
 @keyframes fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
 }
 
 .animate-fade-in {
-    animation: fade-in 0.5s ease-out;
-}
-
-/* Smooth gliding carousel - scrolls through 50% (first set) then loops seamlessly */
-@keyframes glide-smooth {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-.animate-glide-smooth {
-    animation: glide-smooth 24s linear infinite;
+    animation: fade-in 0.3s ease-out;
 }
 
 /* Style range slider thumb (brutalist) */
@@ -129,13 +63,7 @@ input[type="range"]::-moz-range-thumb {
     border-radius: 0;
 }
 
-/* Reset and base styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
+/* Base styles (Tailwind preflight handles box-sizing/margin/padding reset) */
 body,
 html {
     background-color: rgb(var(--cream));
@@ -246,13 +174,14 @@ html {
 
 /* ═══════════════ CRT OVERLAY ═══════════════ */
 
-/* Subtle CRT scanline texture */
+/* Subtle CRT scanline texture — GPU-promoted for compositing */
 body::after {
     content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 9998;
+    will-change: transform;
     background: repeating-linear-gradient(
         0deg,
         transparent,
@@ -274,4 +203,21 @@ body::after {
 :focus-visible {
     outline: 2px solid rgb(var(--dark));
     outline-offset: 2px;
+}
+
+/* Reduced motion: disable animations for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    .pollen-particle {
+        animation: none;
+        opacity: 0;
+    }
+    .animate-fade-in {
+        animation: none;
+    }
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }

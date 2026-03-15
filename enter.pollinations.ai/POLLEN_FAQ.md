@@ -19,12 +19,12 @@ You build the app your way — with any framework, any tool, any language. Then 
 There are three ways:
 
 1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and *never expires*. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
-2.  **Grants:** Registered users get 1.5 free Pollen per week. Creator tiers get daily grants that scale with your level.
-3.  **Earn It:** Contribute to the ecosystem — code, docs, community support, publishing apps — and unlock higher tiers with bigger daily grants.
+2.  **Grants:** All tiers receive free Pollen that refills hourly (spore/seed) or daily (flower/nectar/router).
+3.  **Earn It:** Contribute to the ecosystem — code, docs, community support, publishing apps — and unlock higher tiers with bigger grants.
 
 ## 🆓 Can I try it for free?
 
-Yes. Register, grab an API key, and start building. Every account gets 1.5 free Pollen per week right away — no credit card required. As you contribute, you unlock creator tiers with daily grants (up to 20 pollen/day at Nectar).
+Yes. Register, grab an API key, and start building. Every account gets free Pollen that refills hourly — no credit card required. As you contribute, you unlock creator tiers with bigger grants (up to 20 pollen/day at Nectar).
 
 ## 💳 What payment methods do you accept?
 

@@ -95,7 +95,7 @@ function getD1User(env: Environment, githubUsername: string): D1User | null {
 
 /**
  * Update tier directly in D1 database.
- * Does NOT set tier_balance — the daily cron refill handles that at midnight UTC.
+ * Does NOT set tier_balance — the cron refill handles that (hourly for spore/seed, daily for others).
  */
 function updateD1Tier(
     env: Environment,

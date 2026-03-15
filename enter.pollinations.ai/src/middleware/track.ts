@@ -285,6 +285,23 @@ async function trackResponse(
             };
         }
     }
+    // For text streaming, verify the response is actually SSE.
+    // Don't try SSE parsing if upstream returned JSON for a stream: true request.
+    if (eventType === "generate.text" && requestTracking.streamRequested) {
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("text/event-stream")) {
+            log.warn(
+                "Stream requested but upstream returned non-SSE content-type: {contentType}",
+                { contentType },
+            );
+            return {
+                responseOk: response.ok,
+                responseStatus: response.status,
+                cacheData: cacheInfo,
+                isBilledUsage: false,
+            };
+        }
+    }
     // For audio generation, verify the response content-type is expected.
     // TTS returns audio/*, STT (whisper) returns application/json — both are valid.
     if (eventType === "generate.audio") {
@@ -606,17 +623,13 @@ async function extractUsageAndContentFilterResults(
     modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
+    const contentType = response.headers.get("content-type") || "";
     if (
         eventType === "generate.text" &&
         requestTracking.streamRequested &&
-        response.body instanceof ReadableStream
+        response.body instanceof ReadableStream &&
+        contentType.includes("text/event-stream")
     ) {
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("text/event-stream")) {
-            throw new Error(
-                `Stream requested but upstream returned content-type: ${contentType}`,
-            );
-        }
         const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }

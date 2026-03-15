@@ -6,6 +6,9 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
+import type { BalanceVariables } from "@/middleware/balance.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
@@ -46,12 +49,16 @@ function imageResponse(
 /** Auth + balance checks shared by both handlers. */
 async function requireAuthAndBalance(
     c: Context,
-    checkBalance: (vars: unknown) => Promise<void>,
+    checkBalance: (
+        vars: AuthVariables & BalanceVariables & ModelVariables,
+    ) => Promise<void>,
 ) {
     await c.var.auth.requireAuthorization();
     c.var.auth.requireModelAccess();
     c.var.auth.requireKeyBudget();
-    await checkBalance(c.var);
+    await checkBalance(
+        c.var as unknown as AuthVariables & BalanceVariables & ModelVariables,
+    );
 }
 
 /** Build image service URL with core params (kept in URL for caching/logging). */
@@ -205,7 +212,9 @@ async function parseEditInput(c: Context): Promise<{
 // --- Exported handlers ---
 
 export function handleImageGeneration(
-    checkBalance: (vars: unknown) => Promise<void>,
+    checkBalance: (
+        vars: AuthVariables & BalanceVariables & ModelVariables,
+    ) => Promise<void>,
     proxyHeaders: (c: Context) => Record<string, string>,
 ) {
     return async (c: Context) => {
@@ -255,7 +264,9 @@ export function handleImageGeneration(
 }
 
 export function handleImageEdit(
-    checkBalance: (vars: unknown) => Promise<void>,
+    checkBalance: (
+        vars: AuthVariables & BalanceVariables & ModelVariables,
+    ) => Promise<void>,
     proxyHeaders: (c: Context) => Record<string, string>,
 ) {
     return async (c: Context) => {

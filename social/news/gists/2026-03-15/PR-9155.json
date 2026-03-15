@@ -1,0 +1,34 @@
+{
+  "pr_number": 9155,
+  "title": "Add LoreLoom  AI-Powered Interactive Storybook for Kid to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9155",
+  "merged_at": "2026-03-15T19:20:00Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Once upon a prompt",
+    "blurb": "LoreLoom just joined the hive. It's an AI-powered interactive storybook that weaves personalized, narrated tales for kids with custom characters and settings.",
+    "summary": "Added LoreLoom, an interactive AI storybook generator for children, to the community app showcase.",
+    "impact": "The community can now discover LoreLoom to create and explore personalized, narrated stories with touch-based interactions.",
+    "keywords": [
+      "community",
+      "app-showcase",
+      "storytelling",
+      "kids",
+      "interactive"
+    ],
+    "visual_concept": "A cozy bedtime storytelling scene. Polly the bee reading a glowing, magical storybook to the round Nomnom creature, with pixelated magic and code floating from the pages.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, reading from a glowing magical storybook to the round tan Nomnom creature. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-15T19:20:48.999870+00:00"
+}

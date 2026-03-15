@@ -5,13 +5,13 @@
  */
 
 import { createMiddleware } from "hono/factory";
+import type { RequestIdVariables } from "hono/request-id";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
+    createCaptureStream,
     generateCacheKey,
     getCachedResponse,
-    createCaptureStream,
 } from "@/utils/text-cache.ts";
-import type { LoggerVariables } from "@/middleware/logger.ts";
-import type { RequestIdVariables } from "hono/request-id";
 
 type TextCacheEnv = {
     Bindings: CloudflareBindings;
@@ -107,6 +107,26 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
             status: c.res?.status,
         });
         return;
+    }
+
+    // Don't cache non-SSE responses for streaming requests — upstream returned
+    // JSON instead of event-stream, which is a transient upstream error.
+    const resContentType = c.res.headers.get("content-type") || "";
+    if (bodyText) {
+        try {
+            const bodyObj = JSON.parse(bodyText);
+            if (
+                bodyObj.stream === true &&
+                !resContentType.includes("text/event-stream")
+            ) {
+                log.warn(
+                    "[TEXT-CACHE] Not caching non-SSE response for streaming request",
+                );
+                return;
+            }
+        } catch {
+            // Not JSON body, continue
+        }
     }
 
     const originalBody = c.res.body;

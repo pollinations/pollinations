@@ -274,8 +274,8 @@ async function trackResponse(
             !contentType.startsWith("video/")
         ) {
             log.warn(
-                "Image generation returned non-image content-type: {contentType}",
-                { contentType },
+                "Image generation returned non-image content-type: {contentType} for model {model}",
+                { contentType, model: resolvedModelRequested },
             );
             return {
                 responseOk: response.ok,
@@ -291,8 +291,8 @@ async function trackResponse(
         const contentType = response.headers.get("content-type") || "";
         if (!contentType.includes("text/event-stream")) {
             log.warn(
-                "Stream requested but upstream returned non-SSE content-type: {contentType}",
-                { contentType },
+                "Stream requested but upstream returned non-SSE content-type: {contentType} for model {model}",
+                { contentType, model: resolvedModelRequested },
             );
             return {
                 responseOk: response.ok,
@@ -313,8 +313,8 @@ async function trackResponse(
                 ?.outputModalities?.[0] === "text";
         if (!isAudio && !isSTT) {
             log.warn(
-                "Audio generation returned unexpected content-type: {contentType}",
-                { contentType },
+                "Audio generation returned unexpected content-type: {contentType} for model {model}",
+                { contentType, model: resolvedModelRequested },
             );
             return {
                 responseOk: response.ok,
@@ -331,7 +331,9 @@ async function trackResponse(
             response,
         );
     if (!modelUsage) {
-        log.error("Failed to extract model usage");
+        log.error("Failed to extract model usage for model {model}", {
+            model: resolvedModelRequested,
+        });
         return {
             responseOk: response.ok,
             responseStatus: response.status,

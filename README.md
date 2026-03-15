@@ -16,6 +16,31 @@
 
 <p align="center"><img src="https://gen.pollinations.ai/image/Chunky%20pixel%20art%20cozy%20hackerspace%20panorama.%20A%20cute%20chunky%20robot%20with%20CRT%20monitor%20head%20and%20stubby%20arms%20sits%20at%20a%20retro%20terminal%20glowing%20lime%20green%20%28%23ecf874%29.%20Next%20to%20it%20a%20round%20tan%20mochi-ball%20creature%20with%20tiny%20dot%20eyes%20happily%20munches%20on%20a%20stack%20of%20code%20printouts.%20The%20pollinations%20bee%20mascot%20with%20tiny%20reading%20glasses%20hovers%20between%20them.%20Potted%20pixel%20code-plants%20sprout%20on%20wooden%20shelves.%20Fairy%20lights.%20Simple%20cozy%20interior.%20Large%20visible%20chunky%20pixels%2C%20lo-fi%208-bit%20aesthetic%2C%20soft%20lime%20green%20and%20cream%20gradient%20background%2C%20warm%20lighting%2C%20Stardew%20Valley%20vibes.?model=nanobanana-pro&seed=9001&nologo=true&width=800&height=340&quality=high" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" /></p>
 
+<details>
+<summary><strong>Table of Contents</strong></summary>
+
+- [Recent Apps](#-recent-apps)
+- [New Unified API](#-new-unified-api--now-live)
+- [Latest News](#-latest-news)
+- [Introduction](#-introduction)
+- [Key Features](#-key-features)
+- [Getting Started](#-getting-started)
+- [Authentication](#-authentication)
+- [How to Use](#%EF%B8%8F-how-to-use)
+- [Examples](#-examples)
+- [Integration](#%EF%B8%8F-integration)
+- [Architecture](#architecture)
+- [Future Developments](#-future-developments)
+- [Our Vision](#-our-vision)
+- [Community and Development](#-community-and-development)
+- [Project Structure](#%EF%B8%8F-project-structure)
+- [Supported By](#-supported-by)
+- [Support Us](#-support-us)
+- [Stay Connected](#-stay-connected)
+- [License](#-license)
+
+</details>
+
 ## 🆕 Recent Apps
 
 | Name | Description | Author |

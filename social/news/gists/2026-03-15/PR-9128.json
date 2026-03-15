@@ -1,0 +1,34 @@
+{
+  "pr_number": 9128,
+  "title": "fix: pass image URLs directly to Pruna p-image-edit",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9128",
+  "merged_at": "2026-03-15T00:03:33Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Skipping the middleman",
+    "blurb": "The Pruna image editor was getting confused by base64 data, so we stopped translating. We now hand it image URLs directly, which it vastly prefers.",
+    "summary": "Fixed an issue with the Pruna image editing model by passing image URLs directly instead of downloading and re-encoding them as base64 strings.",
+    "impact": "Image editing requests to the Pruna model now work reliably without throwing misleading input errors.",
+    "keywords": [
+      "pruna",
+      "image-edit",
+      "bug-fix",
+      "api",
+      "base64"
+    ],
+    "visual_concept": "Polly the bee bypassing a messy pile of base64 code to hand a clean, glowing URL link directly to the Monitor Robot, who is working on a digital painting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot handing a glowing lime green (#ecf874) URL link directly to a chunky monitor-headed robot who is painting on a digital canvas. A messy pile of discarded base64 code scrolls sits in the corner. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-15T00:04:37.683769+00:00"
+}

@@ -606,23 +606,17 @@ async function extractUsageAndContentFilterResults(
     modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
-    const contentType = response.headers.get("content-type") || "";
-    const isActuallyStreaming =
+    if (
         eventType === "generate.text" &&
         requestTracking.streamRequested &&
-        response.body instanceof ReadableStream &&
-        contentType.includes("text/event-stream");
-    if (
-        requestTracking.streamRequested &&
-        !contentType.includes("text/event-stream")
+        response.body instanceof ReadableStream
     ) {
-        const log = getLogger(["hono", "track", "usage"]);
-        log.warn(
-            "Stream requested but upstream returned non-SSE content-type: {contentType}",
-            { contentType },
-        );
-    }
-    if (isActuallyStreaming) {
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("text/event-stream")) {
+            throw new Error(
+                `Stream requested but upstream returned content-type: ${contentType}`,
+            );
+        }
         const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }

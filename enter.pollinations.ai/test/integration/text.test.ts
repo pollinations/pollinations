@@ -1450,60 +1450,9 @@ describe("API key pollen budget enforcement", async () => {
 
 describe("Streaming billing content-type handling", () => {
     test(
-        "should bill correctly when stream requested but upstream returns JSON",
-        { timeout: 30000 },
-        async ({ paidApiKey, mocks }) => {
-            // Use text mock (not VCR) so we can control the response type
-            await mocks.enable("polar", "tinybird", "text");
-            // Force non-streaming response even for stream: true
-            mocks.text.state.forceNonStreaming = true;
-
-            const ctx = createExecutionContext();
-            const response = await worker.fetch(
-                new Request(
-                    `http://localhost:3000/api/generate/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "content-type": "application/json",
-                            "authorization": `Bearer ${paidApiKey}`,
-                        },
-                        body: JSON.stringify({
-                            model: "openai",
-                            messages: [
-                                {
-                                    role: "user",
-                                    content: TEST_MESSAGE_CONTENT,
-                                },
-                            ],
-                            stream: true,
-                            seed: 42,
-                        }),
-                    },
-                ),
-                env,
-                ctx,
-            );
-            expect(response.status).toBe(200);
-
-            await response.text();
-            await waitOnExecutionContext(ctx);
-
-            // Usage should be extracted from headers (fallback path)
-            const events = mocks.tinybird.state.events;
-            expect(events).toHaveLength(1);
-            expect(events[0].isBilledUsage).toBe(true);
-            expect(events[0].tokenCountPromptText).toBeGreaterThan(0);
-            expect(events[0].tokenCountCompletionText).toBeGreaterThan(0);
-            expect(events[0].totalCost).toBeGreaterThan(0);
-        },
-    );
-
-    test(
         "should bill correctly when stream requested and upstream returns SSE",
         { timeout: 30000 },
         async ({ paidApiKey, mocks }) => {
-            // Use text mock with normal streaming behavior
             await mocks.enable("polar", "tinybird", "text");
 
             const ctx = createExecutionContext();

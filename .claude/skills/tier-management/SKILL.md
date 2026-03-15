@@ -20,9 +20,9 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 
 | Tier | Emoji | Pollen | Cadence | Criteria |
 |------|-------|--------|---------|----------|
-| microbe | 🦠 | 0 | weekly | Account under review |
-| spore | 🍄 | 1.5 | weekly | Verified accounts |
-| seed | 🌱 | 3 | daily | GitHub engagement |
+| microbe | 🦠 | 0 | none | Account under review |
+| spore | 🍄 | 0.01 | hourly | Verified accounts |
+| seed | 🌱 | 0.15 | hourly | GitHub engagement |
 | flower | 🌸 | 10 | daily | Contributor |
 | nectar | 🍯 | 20 | daily | Coming soon |
 
@@ -185,6 +185,6 @@ export TIER_EVAL_GIST_ID=your_gist_id  # optional
 
 # Notes
 
-- **Tier balance resets** at midnight UTC (daily for seed+, weekly Mon for spore/microbe; no rollover)
-- New users get `spore` tier + 1.5 pollen/week
+- **Tier balance refills** hourly for spore/seed, daily at midnight UTC for flower+; no rollover
+- New users get `spore` tier + 0.01 pollen/hour
 - Tier upgrades take effect on next refill (or set `tier_balance` manually)

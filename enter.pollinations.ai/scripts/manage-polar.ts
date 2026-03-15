@@ -7,7 +7,7 @@ const VERSION = "v1";
 
 const TIERS = [
     {
-        name: "🦠 Spore",
+        name: "🍄 Spore",
         slug: "spore",
         pollenGrantAmount: 1,
     },

@@ -18,11 +18,45 @@ import {
 } from "@/game/logic";
 import { useInput, useMessageScroll } from "@/hooks/ui";
 import type { Message } from "@/types";
+import { maskApiKey } from "@/types";
+import { setApiKeyForFetch } from "@/utils/api";
+
+function useBYOP() {
+    const [apiKey, setApiKeyState] = useState<string | null>(null);
+
+    useEffect(() => {
+        const hash = window.location.hash;
+        if (hash) {
+            const params = new URLSearchParams(hash.slice(1));
+            const incomingApiKey = params.get("api_key");
+            if (incomingApiKey) {
+                setApiKeyState(incomingApiKey);
+                setApiKeyForFetch(incomingApiKey);
+                window.history.replaceState(null, "", window.location.pathname);
+            }
+        }
+    }, []);
+
+    const login = () => {
+        const params = new URLSearchParams({
+            redirect_url: window.location.href.split("#")[0],
+        });
+        window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
+    };
+
+    const logout = () => {
+        setApiKeyState(null);
+        setApiKeyForFetch(null);
+    };
+
+    return { apiKey, login, logout };
+}
 
 export default function Index() {
     const { messages, addMessage, setMessages } = useMessages();
     const gameState = useGameState(messages);
     const [inputPrompt, setInputPrompt] = useState("");
+    const byop = useBYOP();
 
     useGuideMessages(gameState, messages, addMessage);
     useAutonomousConversation(gameState, messages, addMessage);
@@ -155,149 +189,185 @@ export default function Index() {
                         Happy Vertical People Transporter
                     </h2>
 
+                    {/* BYOP Auth */}
+                    <div className="flex items-center justify-center space-x-2">
+                        {byop.apiKey ? (
+                            <>
+                                <span className="text-xs text-green-400">
+                                    Pollen: {maskApiKey(byop.apiKey)}
+                                </span>
+                                <Button
+                                    onClick={byop.logout}
+                                    className="bg-red-900 text-red-300 hover:bg-red-800 text-xs py-0.5 px-2"
+                                >
+                                    Disconnect
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                onClick={byop.login}
+                                className="bg-yellow-600 text-black hover:bg-yellow-500 text-xs py-0.5 px-2"
+                            >
+                                Connect with Pollinations
+                            </Button>
+                        )}
+                    </div>
+
+                    {!byop.apiKey && (
+                        <p className="text-sm text-gray-400">
+                            Connect with Pollinations to start the game.
+                        </p>
+                    )}
+                </div>
+
+                {byop.apiKey && (
+                    <>
                     {/* Add moves remaining display */}
                     {messages.length > 0 && (
-                        <div className="text-sm text-yellow-400">
+                        <div className="text-sm text-yellow-400 text-center">
                             Charge Remaining: <b>{gameState.movesLeft}</b>{" "}
                             {gameState.movesLeft < 7 ? "🪫" : "🔋"}
                         </div>
                     )}
 
-                    {getInstructionMessage()}
+                    <div className="text-center">
+                        {getInstructionMessage()}
 
-                    <Button
-                        onClick={
-                            gameState.conversationMode === "autonomous"
-                                ? handlePersonaSwitch
-                                : handleGuideAdvice
-                        }
-                        className={`${
-                            gameState.conversationMode === "autonomous"
-                                ? "bg-yellow-600 hover:bg-yellow-700 text-white"
-                                : "bg-gray-700 text-green-400 hover:bg-gray-600"
-                        } text-xs py-1 px-2`}
-                    >
-                        {gameState.conversationMode === "autonomous"
-                            ? "Rewind Time"
-                            : "Don't Panic!"}
-                    </Button>
-                </div>
+                        <Button
+                            onClick={
+                                gameState.conversationMode === "autonomous"
+                                    ? handlePersonaSwitch
+                                    : handleGuideAdvice
+                            }
+                            className={`${
+                                gameState.conversationMode === "autonomous"
+                                    ? "bg-yellow-600 hover:bg-yellow-700 text-white"
+                                    : "bg-gray-700 text-green-400 hover:bg-gray-600"
+                            } text-xs py-1 px-2 mt-4`}
+                        >
+                            {gameState.conversationMode === "autonomous"
+                                ? "Rewind Time"
+                                : "Don't Panic!"}
+                        </Button>
+                    </div>
 
-                {gameState.showInstruction &&
-                    gameState.currentPersona === "elevator" &&
-                    gameState.firstStageComplete && (
-                        <div className="bg-green-900 text-green-200 p-4 rounded-lg flex items-center space-x-2">
-                            <AlertCircle className="w-5 h-5" />
-                            <p>
-                                <strong>Congratulations!</strong> You've
-                                successfully navigated the neurotic elevator to
-                                the ground floor.
-                                <br />
-                                <br />
-                                Now, brace yourself for the next challenge:{" "}
-                                <em>Marvin the Paranoid Android</em> awaits.
-                                <br />
-                                <br />
-                                <Button
-                                    onClick={handlePersonaSwitch}
-                                    className="bg-green-400 text-black hover:bg-green-500 text-xs py-1 px-2"
-                                >
-                                    Confirm
-                                </Button>
-                            </p>
-                        </div>
-                    )}
+                    {gameState.showInstruction &&
+                        gameState.currentPersona === "elevator" &&
+                        gameState.firstStageComplete && (
+                            <div className="bg-green-900 text-green-200 p-4 rounded-lg flex items-center space-x-2">
+                                <AlertCircle className="w-5 h-5" />
+                                <p>
+                                    <strong>Congratulations!</strong> You've
+                                    successfully navigated the neurotic elevator to
+                                    the ground floor.
+                                    <br />
+                                    <br />
+                                    Now, brace yourself for the next challenge:{" "}
+                                    <em>Marvin the Paranoid Android</em> awaits.
+                                    <br />
+                                    <br />
+                                    <Button
+                                        onClick={handlePersonaSwitch}
+                                        className="bg-green-400 text-black hover:bg-green-500 text-xs py-1 px-2"
+                                    >
+                                        Confirm
+                                    </Button>
+                                </p>
+                            </div>
+                        )}
 
-                {(gameState.currentPersona === "elevator" ||
-                    gameState.currentPersona === "marvin") &&
-                    !gameState.hasWon && (
-                        <pre className="text-green-400 text-center">
-                            {ElevatorAscii({
-                                floor: gameState.currentFloor,
-                                showLegend: gameState.showInstruction,
-                                isMarvinMode:
-                                    gameState.currentPersona === "marvin",
-                                hasMarvinJoined: gameState.marvinJoined,
-                            })}
-                        </pre>
-                    )}
-                {messages.length > 1 && (
-                    <>
-                        {" "}
-                        {gameState.hasWon && (
-                            <div className="space-y-4">
-                                <div className="bg-green-900 text-green-200 p-4 rounded-lg text-center animate-bounce">
+                    {(gameState.currentPersona === "elevator" ||
+                        gameState.currentPersona === "marvin") &&
+                        !gameState.hasWon && (
+                            <pre className="text-green-400 text-center">
+                                {ElevatorAscii({
+                                    floor: gameState.currentFloor,
+                                    showLegend: gameState.showInstruction,
+                                    isMarvinMode:
+                                        gameState.currentPersona === "marvin",
+                                    hasMarvinJoined: gameState.marvinJoined,
+                                })}
+                            </pre>
+                        )}
+                    {messages.length > 1 && (
+                        <>
+                            {" "}
+                            {gameState.hasWon && (
+                                <div className="space-y-4">
+                                    <div className="bg-green-900 text-green-200 p-4 rounded-lg text-center animate-bounce">
+                                        <p className="text-xl font-bold">
+                                            So Long, and Thanks for All the Fish!
+                                        </p>
+                                        <p>
+                                            You've successfully convinced Marvin to
+                                            join you and reached the top floor
+                                            together. Even if Marvin thinks it was
+                                            all pointless, you've done a remarkable
+                                            job!
+                                        </p>
+                                    </div>
+                                    <GargleBlaster />
+                                </div>
+                            )}
+                            {!gameState.hasWon && gameState.movesLeft <= 0 && (
+                                <div className="bg-red-900 text-red-200 p-4 rounded-lg text-center animate-bounce">
                                     <p className="text-xl font-bold">
-                                        So Long, and Thanks for All the Fish!
+                                        Mostly Harmless
                                     </p>
                                     <p>
-                                        You've successfully convinced Marvin to
-                                        join you and reached the top floor
-                                        together. Even if Marvin thinks it was
-                                        all pointless, you've done a remarkable
-                                        job!
+                                        You've run out of moves. Time to consult
+                                        your copy of the Hitchhiker's Guide to the
+                                        Galaxy!
                                     </p>
                                 </div>
-                                <GargleBlaster />
+                            )}
+                            <div className="h-64 overflow-y-auto space-y-2 p-2 bg-gray-800 border border-green-400">
+                                {messages
+                                    // remove first message
+                                    .slice(1)
+                                    .map((msg, _index) => (
+                                        <MessageDisplay
+                                            key={`${msg.persona}-${msg.message.slice(0, 20)}`}
+                                            msg={msg}
+                                            gameState={gameState}
+                                        />
+                                    ))}
+                                <div ref={messagesEndRef} />
                             </div>
-                        )}
-                        {!gameState.hasWon && gameState.movesLeft <= 0 && (
-                            <div className="bg-red-900 text-red-200 p-4 rounded-lg text-center animate-bounce">
-                                <p className="text-xl font-bold">
-                                    Mostly Harmless
-                                </p>
-                                <p>
-                                    You've run out of moves. Time to consult
-                                    your copy of the Hitchhiker's Guide to the
-                                    Galaxy!
-                                </p>
-                            </div>
-                        )}
-                        <div className="h-64 overflow-y-auto space-y-2 p-2 bg-gray-800 border border-green-400">
-                            {messages
-                                // remove first message
-                                .slice(1)
-                                .map((msg, _index) => (
-                                    <MessageDisplay
-                                        key={`${msg.persona}-${msg.message.slice(0, 20)}`}
-                                        msg={msg}
-                                        gameState={gameState}
+                            {gameState.conversationMode === "interactive" && (
+                                <div className="flex space-x-2">
+                                    <Input
+                                        type="text"
+                                        value={inputPrompt}
+                                        onChange={(e) =>
+                                            setInputPrompt(e.target.value)
+                                        }
+                                        placeholder={
+                                            gameState.currentPersona === "elevator"
+                                                ? "Communicate with the elevator..."
+                                                : "Try to convince Marvin..."
+                                        }
+                                        onKeyPress={(e) =>
+                                            e.key === "Enter" &&
+                                            handleMessage(inputPrompt)
+                                        }
+                                        className="flex-grow bg-gray-800 text-green-400 border-green-400 placeholder-green-600"
+                                        ref={inputRef}
+                                        disabled={gameState.isLoading}
                                     />
-                                ))}
-                            <div ref={messagesEndRef} />
-                        </div>
-                        {gameState.conversationMode === "interactive" && (
-                            <div className="flex space-x-2">
-                                <Input
-                                    type="text"
-                                    value={inputPrompt}
-                                    onChange={(e) =>
-                                        setInputPrompt(e.target.value)
-                                    }
-                                    placeholder={
-                                        gameState.currentPersona === "elevator"
-                                            ? "Communicate with the elevator..."
-                                            : "Try to convince Marvin..."
-                                    }
-                                    onKeyPress={(e) =>
-                                        e.key === "Enter" &&
-                                        handleMessage(inputPrompt)
-                                    }
-                                    className="flex-grow bg-gray-800 text-green-400 border-green-400 placeholder-green-600"
-                                    ref={inputRef}
-                                    disabled={gameState.isLoading}
-                                />
-                                <Button
-                                    onClick={() => handleMessage(inputPrompt)}
-                                    className="bg-green-400 text-black hover:bg-green-500"
-                                    disabled={gameState.isLoading}
-                                >
-                                    {gameState.isLoading
-                                        ? "Processing..."
-                                        : "Send"}
-                                </Button>
-                            </div>
-                        )}
+                                    <Button
+                                        onClick={() => handleMessage(inputPrompt)}
+                                        className="bg-green-400 text-black hover:bg-green-500"
+                                        disabled={gameState.isLoading}
+                                    >
+                                        {gameState.isLoading
+                                            ? "Processing..."
+                                            : "Send"}
+                                    </Button>
+                                </div>
+                            )}
+                        </>
+                    )}
                     </>
                 )}
             </Card>

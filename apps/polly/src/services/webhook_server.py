@@ -1,12 +1,21 @@
 import hashlib
 import hmac
 import logging
+import re
 
 from aiohttp import web
 
 from .._json import dumps as _json_dumps
 from .._json import loads as _json_loads
 from ..config import config
+
+# Matches Pollinations API keys: pk_ or sk_ followed by 8+ alphanumeric chars
+_API_KEY_PATTERN = re.compile(r"\b(pk_|sk_)[a-zA-Z0-9]{8,}")
+
+
+def _mask_api_keys(text: str) -> str:
+    """Replace Pollinations API keys (pk_... / sk_...) with masked versions."""
+    return _API_KEY_PATTERN.sub(r"\1[REDACTED]", text)
 
 logger = logging.getLogger(__name__)
 
@@ -411,6 +420,9 @@ Respond to the reviewer's feedback.{admin_note}"""
         """Post response back to GitHub using shared session."""
         from .github import github_manager
         from .github_auth import github_app_auth
+
+        # Redact any API keys before posting
+        response = _mask_api_keys(response)
 
         repo = context.get("repo")
         if not repo:

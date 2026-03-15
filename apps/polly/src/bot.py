@@ -209,6 +209,15 @@ def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> li
     return files
 
 
+# Matches Pollinations API keys: pk_ or sk_ followed by 8+ alphanumeric chars
+_API_KEY_PATTERN = re.compile(r"\b(pk_|sk_)[a-zA-Z0-9]{8,}")
+
+
+def mask_api_keys(text: str) -> str:
+    """Replace Pollinations API keys (pk_... / sk_...) with masked versions."""
+    return _API_KEY_PATTERN.sub(r"\1[REDACTED]", text)
+
+
 def suppress_url_embeds(text: str) -> str:
     """Wrap bare URLs in angle brackets to suppress Discord embed previews.
 
@@ -1324,6 +1333,9 @@ async def send_long_message(
         files: Optional list of discord.File to attach (only to first message, max 10)
         mention_author: Whether to ping the author when replying (default True)
     """
+    # Redact any API keys before sending
+    text = mask_api_keys(text)
+
     # Files only go with the first message - Discord max 10 files
     files_to_send = files[:10] if files else []
 

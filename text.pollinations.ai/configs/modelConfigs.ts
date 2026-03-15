@@ -197,6 +197,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAirforceModelConfig({ model: "qwen-character" }),
     "claude-sonnet-4.6": () =>
         createAirforceModelConfig({ model: "claude-sonnet-4.6" }),
+    "grok-4.20-beta": () =>
+        createAirforceModelConfig({ model: "grok-4.20-beta" }),
 
     // -- seraphyn.ai ------------------------------------------------------
     "seraphyn-gpt-5.4": () => createSeraphynModelConfig({ model: "gpt-5.4" }),

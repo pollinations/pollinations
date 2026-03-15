@@ -91,11 +91,6 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
 
     return (
         <>
-            {/* Mobile subtitle */}
-            <div className="md:hidden px-3 py-1.5 text-sm text-gray-400">
-                1 pollen ≈ {unitLabels[type]}
-            </div>
-
             {/* Desktop cards */}
             <div className="hidden md:flex md:flex-col gap-2 py-1">
                 {regularModels.map((model) => (
@@ -189,8 +184,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
             className={cn(
                 "rounded-xl my-1",
                 isDisabled
-                    ? "bg-transparent border border-gray-200"
-                    : "bg-teal-50/60",
+                    ? expanded
+                        ? "bg-transparent border border-teal-200"
+                        : "bg-transparent"
+                    : expanded
+                      ? "bg-teal-50/60 border border-teal-200"
+                      : "bg-teal-50/60",
             )}
         >
             {/* Clickable header */}
@@ -200,17 +199,37 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                 onClick={() => setExpanded(!expanded)}
             >
                 <div className="flex flex-col gap-1 min-w-0">
-                    <span
-                        className={cn(
-                            "text-sm",
-                            showNew ? "font-bold" : "font-medium",
-                            isDisabled && "opacity-50",
-                        )}
-                    >
-                        {displayName || model.name}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                        <svg
+                            className={cn(
+                                "w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
+                                expanded && "rotate-180",
+                            )}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            aria-hidden="true"
+                        >
+                            <title>Expand model details</title>
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19 9l-7 7-7-7"
+                            />
+                        </svg>
+                        <span
+                            className={cn(
+                                "text-sm",
+                                showNew ? "font-bold" : "font-medium",
+                                isDisabled && "opacity-50",
+                            )}
+                        >
+                            {displayName || model.name}
+                        </span>
+                    </div>
                     {(showNew || showAlpha || showPaidOnly) && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 pl-5">
                             {showNew && (
                                 <span
                                     className={cn(isDisabled && "opacity-50")}
@@ -237,34 +256,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                         </div>
                     )}
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <span
-                        className={cn(
-                            "text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full",
-                            isDisabled && "opacity-50",
-                        )}
-                    >
-                        {perPollen}
-                    </span>
-                    <svg
-                        className={cn(
-                            "w-3.5 h-3.5 text-gray-300 transition-transform duration-200",
-                            expanded && "rotate-180",
-                        )}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        aria-hidden="true"
-                    >
-                        <title>Expand model details</title>
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19 9l-7 7-7-7"
-                        />
-                    </svg>
-                </div>
+                <span
+                    className={cn(
+                        "text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full shrink-0",
+                        isDisabled && "opacity-50",
+                    )}
+                >
+                    {perPollen}
+                </span>
             </button>
 
             {/* Expanded: model ID + capabilities + full pricing */}
@@ -440,13 +439,13 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             weight="light"
             size="small"
             className={cn(
-                "px-4",
+                "px-3",
                 activeTab !== section.type && "!bg-teal-50/60 text-gray-500",
             )}
             onClick={() => setActiveTab(section.type)}
         >
             {sectionLabels[section.type]}
-            <span className="ml-1.5 text-xs opacity-60">
+            <span className="ml-1.5 text-xs opacity-60 hidden md:inline">
                 {section.models.length}
             </span>
         </Button>
@@ -454,11 +453,14 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
 
     return (
         <div>
-            {/* Desktop: tabs + column headers in one row */}
-            <div className="hidden md:flex items-center px-3 py-2">
-                <div className="flex gap-1.5 flex-1 min-w-0">{tabButtons}</div>
+            {/* Tabs + column headers - single responsive row */}
+            <div className="flex items-center px-3 py-2 gap-y-2">
+                <div className="grid grid-cols-2 min-[600px]:flex gap-1.5 min-w-0 shrink-0">
+                    {tabButtons}
+                </div>
+                <div className="flex-1 min-w-6" />
                 <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
-                    <div className="cursor-help text-center w-[90px] shrink-0">
+                    <div className="cursor-help text-right min-[480px]:text-center shrink-0 w-[90px]">
                         <div className="text-sm font-bold text-gray-900">
                             1 pollen ≈
                         </div>
@@ -469,13 +471,13 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                         </div>
                     </div>
                 </Tooltip>
-                <div className="text-center w-[100px] shrink-0">
+                <div className="hidden md:block text-center w-[100px] shrink-0">
                     <div className="text-sm font-bold text-gray-900">Input</div>
                     <div className="text-xs font-normal text-gray-700 opacity-70 italic">
                         pollen
                     </div>
                 </div>
-                <div className="text-center w-[100px] shrink-0">
+                <div className="hidden md:block text-center w-[100px] shrink-0">
                     <div className="text-sm font-bold text-gray-900">
                         Output
                     </div>
@@ -484,9 +486,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     </div>
                 </div>
             </div>
-
-            {/* Mobile: tabs as separate row */}
-            <div className="md:hidden flex gap-1.5 pb-3">{tabButtons}</div>
 
             {/* Tab content */}
             {activeSection && (

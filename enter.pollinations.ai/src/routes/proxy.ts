@@ -171,6 +171,18 @@ const chatCompletionHandlers = factory.createHandlers(
             });
         }
 
+        // Validate streaming responses: if client requested stream but upstream
+        // returned non-SSE, throw rather than forwarding broken data.
+        if (c.var.track.streamRequested) {
+            const contentType = response.headers.get("content-type") || "";
+            if (!contentType.includes("text/event-stream")) {
+                throw new UpstreamError(502, {
+                    message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
+                    requestUrl: targetUrl,
+                });
+            }
+        }
+
         // add content filter headers if not streaming
         let contentFilterHeaders = {};
         if (!c.var.track.streamRequested) {

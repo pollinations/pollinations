@@ -132,7 +132,7 @@ type TierPanelProps = {
         tier: TierStatus;
         displayName: string;
         pollen?: number;
-        cadence?: "daily" | "weekly" | "hourly";
+        cadence?: "daily" | "weekly" | "hourly" | "none";
     };
 };
 
@@ -148,7 +148,7 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
             tier={tier}
             active_tier_name={active.displayName}
             pollen={pollen ?? 0}
-            cadence={cadence ?? "daily"}
+            cadence={(cadence === "none" ? "daily" : cadence) ?? "daily"}
         />
     );
 };

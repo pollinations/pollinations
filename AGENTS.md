@@ -266,6 +266,7 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 - **Check `.testingtokens`** file for test API keys: `enter.pollinations.ai/.testingtokens`
 - **Confirm which branch you're on** before making changes — branch mix-ups are a recurring problem
 - **Don't reimplement existing logic** — search for existing functions before writing new ones (e.g. SSE parsing, retry wrappers, auth extraction)
+- **Request PR reviews by mentioning `polly`** — include lowercase `polly` in a PR comment (e.g. "polly please review") to trigger the Polly bot reviewer
 
 ## Development Guidelines
 

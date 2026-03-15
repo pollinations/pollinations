@@ -19,6 +19,8 @@
  *   --since DATE      Only scan users created after this date (YYYY-MM-DD)
  *   --last DURATION   Only scan users from the last N hours/days (e.g. 24h, 7d)
  *   --auto-apply      Automatically apply blocks after scanning (no dry-run)
+ *   --unchecked       Only scan users with trust_score IS NULL (new user verification)
+ *   --store-status    Write trust_score (inverted abuse score) back to D1
  *
  * OUTPUT:
  *   abuse-report.csv - All users sorted by score (action, score, email, github, signals, date)
@@ -55,6 +57,8 @@ interface ParsedArgs {
     singleChunk: boolean;
     sinceTimestamp: number | null;
     autoApply: boolean;
+    unchecked: boolean;
+    storeStatus: boolean;
 }
 
 function parseArguments(): ParsedArgs {
@@ -83,6 +87,8 @@ function parseArguments(): ParsedArgs {
         singleChunk: args.includes("--single-chunk"),
         sinceTimestamp,
         autoApply: args.includes("--auto-apply"),
+        unchecked: args.includes("--unchecked"),
+        storeStatus: args.includes("--store-status"),
     };
 }
 
@@ -135,15 +141,24 @@ function loadApiKey(): string {
     return match[1].trim();
 }
 
-function fetchUsers(limit: number, sinceTimestamp: number | null): User[] {
-    const sinceLabel = sinceTimestamp
-        ? ` created after ${new Date(sinceTimestamp * 1000).toISOString().split("T")[0]}`
-        : "";
-    console.log(`📊 Fetching ${limit} most recent users${sinceLabel}...`);
+function fetchUsers(
+    limit: number,
+    sinceTimestamp: number | null,
+    unchecked: boolean,
+): User[] {
+    const label = unchecked
+        ? " with trust_score IS NULL"
+        : sinceTimestamp
+          ? ` created after ${new Date(sinceTimestamp * 1000).toISOString().split("T")[0]}`
+          : "";
+    console.log(`📊 Fetching ${limit} most recent users${label}...`);
 
-    const whereClause = sinceTimestamp
-        ? `WHERE created_at > ${sinceTimestamp}`
-        : "";
+    const conditions: string[] = [];
+    if (unchecked) conditions.push("trust_score IS NULL");
+    if (sinceTimestamp) conditions.push(`created_at > ${sinceTimestamp}`);
+    const whereClause =
+        conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
     const query = `
         SELECT email, github_username, created_at, tier
         FROM user
@@ -487,19 +502,73 @@ function exportResults(users: ScoredUser[]): void {
     }
 }
 
+function storeTrustScores(scored: ScoredUser[]): void {
+    console.log("\n📝 Storing trust scores in D1...");
+
+    // Trust score = 100 - abuse score (invert so higher = more trusted)
+    const BATCH_SIZE = 50;
+    let stored = 0;
+
+    for (let i = 0; i < scored.length; i += BATCH_SIZE) {
+        const batch = scored.slice(i, i + BATCH_SIZE);
+
+        for (const user of batch) {
+            const trustScore = 100 - user.score;
+            const safeEmail = user.email.replace(/'/g, "''");
+            // Safe: email comes from D1 query results, not user input
+            const query = `UPDATE user SET trust_score = ${trustScore} WHERE email = '${safeEmail}'`;
+
+            try {
+                execSync(
+                    `npx wrangler d1 execute DB --remote --env production --command "${query}"`,
+                    {
+                        encoding: "utf-8",
+                        stdio: ["pipe", "pipe", "pipe"],
+                        maxBuffer: 10 * 1024 * 1024,
+                    },
+                );
+                stored++;
+            } catch {
+                console.error(
+                    `   ❌ Failed to store trust_score for ${user.email}`,
+                );
+            }
+        }
+
+        console.log(
+            `   📊 ${Math.min(i + BATCH_SIZE, scored.length)}/${scored.length} trust scores stored`,
+        );
+    }
+
+    const passed = scored.filter((u) => 100 - u.score >= 60).length;
+    const failed = scored.filter((u) => 100 - u.score < 60).length;
+    console.log(
+        `✅ Stored ${stored} trust scores (${passed} passed, ${failed} failed)`,
+    );
+}
+
 async function main(): Promise<void> {
     const config = parseArguments();
 
     console.log("🚀 Abuse Detection");
     console.log("=".repeat(50));
-    const sinceLabel = config.sinceTimestamp
-        ? `, since ${new Date(config.sinceTimestamp * 1000).toISOString().split("T")[0]}`
-        : "";
+    const labels: string[] = [];
+    if (config.unchecked) labels.push("unchecked only");
+    if (config.storeStatus) labels.push("store-status");
+    if (config.sinceTimestamp)
+        labels.push(
+            `since ${new Date(config.sinceTimestamp * 1000).toISOString().split("T")[0]}`,
+        );
+    const extra = labels.length > 0 ? `, ${labels.join(", ")}` : "";
     console.log(
-        `📋 Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}${sinceLabel}`,
+        `📋 Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}${extra}`,
     );
 
-    const users = fetchUsers(config.userLimit, config.sinceTimestamp);
+    const users = fetchUsers(
+        config.userLimit,
+        config.sinceTimestamp,
+        config.unchecked,
+    );
     if (users.length === 0) {
         console.log("⚠️  No users found");
         return;
@@ -507,6 +576,11 @@ async function main(): Promise<void> {
 
     const scored = await scoreUsers(users, config);
     exportResults(scored);
+
+    // Store trust scores in D1 if --store-status is set
+    if (config.storeStatus) {
+        storeTrustScores(scored);
+    }
 
     if (config.autoApply) {
         const blockCount = scored.filter((u) => u.action === "block").length;

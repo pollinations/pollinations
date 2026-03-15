@@ -153,7 +153,7 @@ ads to earn pollen is winning! 🗳️
 
 ## ⚡ pollen rebalance
 
-adjusting daily pollen to sustain compute
+adjusting pollen grants to sustain compute
 effective from next refill
 
 \`\`\`

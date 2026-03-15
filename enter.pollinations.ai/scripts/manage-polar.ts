@@ -871,7 +871,7 @@ const REQUIRED_WEBHOOK_EVENTS = [
     "subscription.uncanceled",
     "benefit_grant.created", // New subscription benefit grants
     "benefit_grant.updated", // Tier changes (upgrade/downgrade) - benefit gets updated
-    "benefit_grant.cycled", // Daily pollen grants
+    "benefit_grant.cycled", // Pollen grants (hourly/daily)
     "order.paid", // Pollen pack purchases
 ] as const;
 

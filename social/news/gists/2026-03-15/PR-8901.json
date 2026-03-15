@@ -1,0 +1,36 @@
+{
+  "pr_number": 8901,
+  "title": "fix: exclude free-tier requests from pricing avg cost",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8901",
+  "merged_at": "2026-03-15T19:10:25Z",
+  "labels": [
+    "API",
+    "WEB",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fixing the pollen abacus",
+    "blurb": "Our pricing calculator was accidentally counting free-tier requests in its averages, making some models look mathematically impossible. We've fixed the math so the stats page tells the truth.",
+    "summary": "Updated the public model stats pipeline to exclude zero-cost requests, fixing an issue that artificially lowered the displayed average cost per model.",
+    "impact": "Users will now see accurate, transparent 'per pollen' generation estimates on the pricing page.",
+    "keywords": [
+      "pricing",
+      "stats",
+      "bug-fix",
+      "api",
+      "transparency"
+    ],
+    "visual_concept": "The pollinations bee mascot wearing tiny accountant glasses, looking at a retro calculator. The Nomnom creature is eating 'free' receipts so they don't get counted in the final bill. Lime green and pastel background.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny accountant glasses, using a retro chunky calculator. Nearby, the round Nomnom creature happily eats a stack of zero-dollar receipts. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-15T19:11:21.694728+00:00"
+}

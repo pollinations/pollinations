@@ -39,14 +39,14 @@ When you test manually with a valid secret key (`sk_`), you bypass auth/quota is
 ```
 User Request → enter.pollinations.ai (Cloudflare Worker)
                     ↓
-              Logs to Cloudflare Workers Observability
+              Logs to Cloudflare Workers Observability (real-time)
                     ↓
-              Events stored in D1 database
+              Events batched to Tinybird (async, via ctx.waitUntil)
                     ↓
-              Batched to Tinybird (async, 100-500 events)
-                    ↓
-              Model Monitor queries Tinybird (model_health.pipe)
+              Model Monitor queries Tinybird pipes (model_health, model_health_60m)
 ```
+
+**Note**: D1 stores auth/user data, NOT request events. Tinybird is the sole event store.
 
 **Structured Logging**: enter.pollinations.ai uses LogTape with:
 - `requestId`: Unique per request (passed to downstream via `x-request-id` header)
@@ -72,10 +72,24 @@ npx wrangler d1 execute pollinations-db --remote --command "SELECT model_request
 ### enter.pollinations.ai (Cloudflare Worker)
 ```bash
 cd enter.pollinations.ai
-wrangler tail --format json | tee logs.jsonl
-# Or with formatting:
-wrangler tail --format json | npx tsx scripts/format-logs.ts
+
+# Live production logs (human-readable) — MUST use --env production
+wrangler tail --env production --format pretty
+
+# Filter for errors only
+wrangler tail --env production --format pretty 2>&1 | grep -E "KV PUT failed|error|500|429"
+
+# JSON format for programmatic analysis
+wrangler tail --env production --format json | tee logs.jsonl
+
+# Trigger a test request while tailing to see the full flow
+curl -s 'https://gen.pollinations.ai/v1/chat/completions' \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"model": "openai", "messages": [{"role": "user", "content": "hi"}], "stream": false}'
 ```
+
+**IMPORTANT**: Without `--env production`, wrangler tail connects to the dev environment which has no traffic.
 
 ### image.pollinations.ai (EC2 systemd)
 ```bash
@@ -101,6 +115,19 @@ ssh enter-services "sudo journalctl -u text-pollinations.service --since '3 minu
 ---
 
 # Common Error Patterns
+
+## KV PUT 429 Rate Limiting (Better Auth)
+**Error**: `KV PUT failed: 429 Too Many Requests`
+**Cause**: Better Auth writes 2-3 KV PUTs per `verifyApiKey` call (`updatedAt`, `lastRequest`, `requestCount`). Under high traffic this exceeds KV's 1000 writes/sec limit.
+**Impact**: Log noise; KV is just a cache, D1 is source of truth via `fallbackToDatabase`
+**Fix**: PR #9126 adds per-isolate write dedup (60s window) + try/catch. Also see commit `51f74d538`.
+
+## Unbilled Streaming Responses
+**Error**: No error visible — requests succeed but `isBilledUsage: false` in tracking
+**Cause**: Community providers (airforce, seraphyn, nomnom, polly) ignore `stream_options: { include_usage: true }`, so usage extraction returns null
+**Impact**: Streaming requests to these providers are not billed
+**Fix**: PR #9127 adds token estimation from `delta.content` char counts
+**Detection**: Query Tinybird for `total_price = 0` on streaming requests
 
 ## Azure Content Safety DNS Failure
 **Error**: `getaddrinfo ENOTFOUND gptimagemain1-resource.cognitiveservices.azure.com`
@@ -212,6 +239,12 @@ ssh enter-services "nslookup gptimagemain1-resource.cognitiveservices.azure.com"
 | `veo` | Vertex AI | Quota, empty responses |
 | `openai-audio` | Azure OpenAI | Invalid voice names |
 | `deepseek` | DeepSeek API | Rate limits, API key |
+| `openai-seraphyn` | seraphyn.ai | Upstream outages (alias: gpt-5.4) |
+| `klein` | bpaigen.com | Upstream outages (Flux Klein 4B) |
+| `dirtberry` | api.airforce | Upstream outages |
+| `flux-2-dev` | api.airforce (SSE) | SSE parsing, upstream outages |
+| `kimi` | api.airforce | Upstream outages |
+| `imagen-4` | api.airforce | Upstream outages |
 
 ---
 
@@ -424,20 +457,62 @@ log.warn("Chat completions error {status}: {body}", {
 });
 ```
 
-## Tinybird Analytics (Alternative)
+## Tinybird Analytics (Primary for Aggregates)
 
-For aggregated model health stats, query Tinybird directly:
+Tinybird is the **primary event store** — all generation events flow here via `ctx.waitUntil`.
 
+### Public Token (pipes only, no raw SQL)
 ```bash
-# Get model health stats (last 5 minutes)
-curl "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_TOKEN" | jq '.data'
-
-# Get detailed error breakdown
-curl "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_errors.json?token=$TINYBIRD_TOKEN" | jq '.data'
+# Extract from model-monitor source (this is a public read-only token, served to browsers)
+TINYBIRD_TOKEN=$(grep -oP 'p\.eyJ[^"]+' apps/model-monitor/src/hooks/useModelMonitor.js)
 ```
 
-The Tinybird token is a read-only public token found in:
-- `apps/model-monitor/src/hooks/useModelMonitor.js`
+### Pipe Queries (Public Token)
+```bash
+# Model health — last 5 minutes (used by monitor.pollinations.ai)
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_TOKEN" | jq '.data'
+
+# Model health — 60-minute windows (better for trend analysis)
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health_60m.json?token=$TINYBIRD_TOKEN" | jq '.data'
+
+# Filter by specific model
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health_60m.json?token=$TINYBIRD_TOKEN&model_requested=openai" | jq '.data'
+```
+
+### Raw SQL Queries (Admin Token)
+```bash
+TINYBIRD_ADMIN_TOKEN=$(jq -r '.token' enter.pollinations.ai/observability/.tinyb)
+
+# Find unbilled streaming requests (billing bug detection)
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN" \
+  --data-urlencode "q=SELECT model_requested, count() as cnt, sum(total_price) as revenue
+FROM generation_event
+WHERE start_time > now() - interval 1 hour AND total_price = 0 AND response_status = 200
+GROUP BY model_requested ORDER BY cnt DESC LIMIT 20"
+
+# Find users with frequent errors
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN" \
+  --data-urlencode "q=SELECT user_github_username, model_requested, response_status, count() as error_count
+FROM generation_event
+WHERE response_status >= 500 AND start_time > now() - interval 24 hour
+GROUP BY user_github_username, model_requested, response_status
+ORDER BY error_count DESC LIMIT 20"
+```
+
+### Testing Directly Against EC2 (Bypass Enter)
+When `gen.pollinations.ai` test tokens are expired, test models directly against EC2:
+```bash
+# Text model via EC2 (use x-enter-token header)
+curl -s 'http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/v1/chat/completions' \
+  -H 'Content-Type: application/json' \
+  -H 'x-enter-token: test' \
+  -d '{"model": "openai", "messages": [{"role": "user", "content": "hi"}]}'
+
+# Image model via EC2
+curl -s 'http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/image/test?model=flux&width=256&height=256' -o test.jpg
+
+# Note: EC2 hostname may change — check enter.pollinations.ai/wrangler.toml for current values
+```
 
 ---
 
@@ -523,8 +598,8 @@ Tinybird provides pre-aggregated model health stats and raw event data.
 ### Basic Queries (Public Token)
 
 ```bash
-# Public read-only token from apps/model-monitor
-TINYBIRD_TOKEN="p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJmZTRjODM1Ni1iOTYwLTQ0ZTYtODE1Mi1kY2UwYjc0YzExNjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.Wc49vYoVYI_xd4JSsH_Fe8mJk7Oc9hx0IIldwc1a44g"
+# Extract public read-only token from model-monitor source
+TINYBIRD_TOKEN=$(grep -oP 'p\.eyJ[^"]+' apps/model-monitor/src/hooks/useModelMonitor.js)
 
 # Get model health (last 5 min)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_TOKEN" | jq '.data'
@@ -622,7 +697,7 @@ Helper scripts for common debugging tasks. Run from repo root.
 
 ---
 
-# Tested Models (All Working as of 2025-12-22)
+# Tested Models (Last verified 2026-03-15)
 
 | Model | Type | Endpoint | Status |
 |-------|------|----------|--------|

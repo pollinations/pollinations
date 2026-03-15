@@ -310,48 +310,49 @@ describe("Tier Balance Management", () => {
         });
 
         test("identifyDeductionSource should pick single bucket", () => {
-            // Tier is positive — full amount attributed to tier
-            const fromTier = identifyDeductionSource(5, 3, 7);
+            // Tier is positive, has paid balance — tier first
+            const fromTier = identifyDeductionSource(5, 3, 7, 5);
             expect(fromTier.fromTier).toBe(7);
             expect(fromTier.fromCrypto).toBe(0);
             expect(fromTier.fromPack).toBe(0);
 
-            // Tier is zero, crypto is positive — full amount from crypto
-            const fromCrypto = identifyDeductionSource(0, 3, 7);
+            // Tier zero, crypto positive, has paid — falls to crypto
+            const fromCrypto = identifyDeductionSource(0, 3, 7, 0);
             expect(fromCrypto.fromTier).toBe(0);
             expect(fromCrypto.fromCrypto).toBe(7);
             expect(fromCrypto.fromPack).toBe(0);
 
-            // Tier and crypto are zero — full amount from pack
-            const fromPack = identifyDeductionSource(0, 0, 8);
+            // Tier/crypto zero, pack positive — falls to pack
+            const fromPack = identifyDeductionSource(0, 0, 8, 5);
             expect(fromPack.fromTier).toBe(0);
             expect(fromPack.fromCrypto).toBe(0);
             expect(fromPack.fromPack).toBe(8);
 
-            // All zero — falls through to pack
-            const allZero = identifyDeductionSource(0, 0, 3);
-            expect(allZero.fromPack).toBe(3);
+            // No paid balance (crypto+pack ≤ 0) — always tier, never spills
+            const noPaid = identifyDeductionSource(0, 0, 3);
+            expect(noPaid.fromTier).toBe(3);
+            expect(noPaid.fromPack).toBe(0);
 
-            // Negative tier, zero crypto — falls through to pack
-            const negTier = identifyDeductionSource(-3, 0, 4);
-            expect(negTier.fromTier).toBe(0);
-            expect(negTier.fromCrypto).toBe(0);
-            expect(negTier.fromPack).toBe(4);
+            // Negative tier, no paid balance — always tier
+            const negTierNoPaid = identifyDeductionSource(-3, 0, 4);
+            expect(negTierNoPaid.fromTier).toBe(4);
+            expect(negTierNoPaid.fromCrypto).toBe(0);
+            expect(negTierNoPaid.fromPack).toBe(0);
 
-            // Negative tier, positive crypto — skips tier, uses crypto
-            const negTierPosCrypto = identifyDeductionSource(-3, 2, 4);
+            // Negative tier, positive crypto+pack — falls to crypto
+            const negTierPosCrypto = identifyDeductionSource(-3, 2, 4, 0);
             expect(negTierPosCrypto.fromTier).toBe(0);
             expect(negTierPosCrypto.fromCrypto).toBe(4);
             expect(negTierPosCrypto.fromPack).toBe(0);
 
-            // All negative — falls through to pack
+            // All negative — no paid balance, always tier
             const allNeg = identifyDeductionSource(-3, -1, 5);
-            expect(allNeg.fromTier).toBe(0);
+            expect(allNeg.fromTier).toBe(5);
             expect(allNeg.fromCrypto).toBe(0);
-            expect(allNeg.fromPack).toBe(5);
+            expect(allNeg.fromPack).toBe(0);
         });
 
-        test("should deduct from pack when all buckets are negative or zero", async () => {
+        test("should deduct from tier when all buckets are negative or zero", async () => {
             const db = drizzle(env.DB);
             const userId = "test-all-negative";
 
@@ -377,13 +378,13 @@ describe("Tier Balance Management", () => {
                     },
                 });
 
-            // All buckets ≤ 0 — falls through to pack
+            // All paid buckets ≤ 0 — deducts from tier to prevent paid spillover
             await atomicDeductUserBalance(db, userId, 3);
 
             const balances = await getUserBalances(db, userId);
-            expect(balances.tierBalance).toBe(-1); // Unchanged
+            expect(balances.tierBalance).toBe(-4); // -1 - 3
             expect(balances.cryptoBalance).toBe(-1); // Unchanged
-            expect(balances.packBalance).toBe(-5); // -2 - 3
+            expect(balances.packBalance).toBe(-2); // Unchanged
         });
     });
 

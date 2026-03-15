@@ -107,6 +107,7 @@ async function deductUserBalance(
             balancesBefore.tierBalance,
             balancesBefore.cryptoBalance,
             amount,
+            balancesBefore.packBalance,
         );
 
         await atomicDeductUserBalance(db, userId, amount);

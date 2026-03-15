@@ -118,6 +118,28 @@ describe("airforceModel - grok-imagine-video", () => {
         expect(lastFetchBody.image_urls).toBeUndefined();
     });
 
+    it("uses explicit aspectRatio when width/height default to square (#9099)", async () => {
+        const params: ImageParams = {
+            ...baseParams,
+            width: 1024,
+            height: 1024,
+            aspectRatio: "16:9",
+        };
+
+        await callAirforceVideoAPI(
+            "test prompt",
+            params,
+            makeProgress() as any,
+            "req-ar",
+            "grok-imagine-video",
+        );
+
+        // Should use 3:2 (airforce remapping of 16:9), NOT 2:3
+        expect(lastFetchBody.aspectRatio).toBe("3:2");
+        // Should use landscape size, not portrait
+        expect(lastFetchBody.size).toBe("1280x720");
+    });
+
     it("sends single image as array in image_urls", async () => {
         const params: ImageParams = {
             ...baseParams,

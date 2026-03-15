@@ -65,9 +65,11 @@ export function calculateVideoResolution(
         const totalPixels = input.width * input.height;
         const ratio = input.width / input.height;
 
-        // Determine aspect ratio (16:9 = 1.778, 9:16 = 0.5625)
-        // Threshold at 1.0 (square) - wider than square → 16:9, taller → 9:16
-        const aspectRatio = ratio > 1.0 ? "16:9" : "9:16";
+        // Explicit aspectRatio takes priority over calculated ratio from dimensions
+        // This handles the case where default 1024x1024 dimensions are set but user
+        // explicitly requested a specific aspect ratio
+        const aspectRatio =
+            input.aspectRatio || (ratio > 1.0 ? "16:9" : "9:16");
 
         // Determine resolution tier from pixel count
         let resolution = RESOLUTION_TIERS[0].label; // Default to lowest

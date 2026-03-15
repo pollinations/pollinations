@@ -409,6 +409,16 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 4. **Explain Changes**: High-level summary at each step
 5. **Capture Lessons**: When corrected, update this AGENTS.md with the pattern to prevent recurrence
 
+## Compact Instructions
+
+When compacting conversation context, preserve:
+- Full list of modified files with paths and line numbers
+- All code snippets, diffs, and implementation details
+- Test output, error messages, and command results
+- Complete task plan, progress, and pending items
+- User preferences and corrections from this session
+- Key architectural decisions and their rationale
+
 ## Core Principles
 
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.

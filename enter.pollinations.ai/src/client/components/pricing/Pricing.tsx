@@ -18,7 +18,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                 el.scrollIntoView({ behavior: "smooth", block: "start" });
             }
         }
-    });
+    }, []);
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
 

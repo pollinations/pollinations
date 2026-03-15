@@ -216,7 +216,7 @@ export function PlayGenerator({
     const handleFileUpload = async (file: File) => {
         if (!file || imageUrls.length >= 4) return;
         if (file.size > 5 * 1024 * 1024) {
-            setError("Image too large — please use an image under 5MB.");
+            setError(copy.uploadTooLarge);
             return;
         }
         setIsUploading(true);
@@ -233,7 +233,7 @@ export function PlayGenerator({
             const { url } = await res.json();
             setImageUrls((prev) => [...prev, url]);
         } catch {
-            setError("Image upload failed. Please try again.");
+            setError(copy.uploadFailed);
         } finally {
             setIsUploading(false);
         }
@@ -463,7 +463,9 @@ export function PlayGenerator({
                                 e.target.value = "";
                             }}
                         />
-                        {isUploading ? "Uploading…" : "📎 Upload image"}
+                        {isUploading
+                            ? copy.uploadingLabel
+                            : copy.uploadImageLabel}
                     </label>
                 </div>
             )}

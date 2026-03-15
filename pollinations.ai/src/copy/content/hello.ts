@@ -124,12 +124,6 @@ export const HELLO_PAGE = {
         },
     ],
 
-    // Section — For your users / BYOP
-    usersTitle: "For your users",
-    usersBody:
-        "Each user who signs in gets free weekly compute to try your app. When they need more, it just works — no Stripe setup on your end.",
-    usersPaymentsLink: "🔌 Set up for your app",
-
     // Section 8 — We Build in the Open
     openTitle: "We build in the open",
     recentUpdatesTitle: "What's New",

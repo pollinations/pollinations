@@ -606,11 +606,13 @@ async function extractUsageAndContentFilterResults(
     modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
-    if (
+    const contentType = response.headers.get("content-type") || "";
+    const isActuallyStreaming =
         eventType === "generate.text" &&
         requestTracking.streamRequested &&
-        response.body instanceof ReadableStream
-    ) {
+        response.body instanceof ReadableStream &&
+        contentType.includes("text/event-stream");
+    if (isActuallyStreaming) {
         const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }

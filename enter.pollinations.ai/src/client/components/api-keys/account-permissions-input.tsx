@@ -220,7 +220,13 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                 : "max-h-0 opacity-0",
                         )}
                     >
-                        <div className="px-3 pb-3 space-y-3 border-t border-gray-200 pt-3">
+                        <div
+                            className="px-3 pb-3 space-y-3 border-t border-gray-200 pt-3 overflow-y-auto"
+                            style={{
+                                maxHeight: "50vh",
+                                scrollbarWidth: "thin",
+                            }}
+                        >
                             {/* Restriction toggle */}
                             <div className="flex items-center justify-between">
                                 <span className="text-xs text-gray-500">

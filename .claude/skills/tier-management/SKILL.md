@@ -20,9 +20,9 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 
 | Tier | Emoji | Pollen | Cadence | Criteria |
 |------|-------|--------|---------|----------|
-| microbe | 🦠 | 0 | weekly | Account under review |
-| spore | 🍄 | 1.5 | weekly | Verified accounts |
-| seed | 🌱 | 3 | daily | GitHub engagement |
+| microbe | 🦠 | 0 | none | Account under review |
+| spore | 🍄 | 0.01 | hourly | Verified accounts |
+| seed | 🌱 | 0.15 | hourly | GitHub engagement |
 | flower | 🌸 | 10 | daily | Contributor |
 | nectar | 🍯 | 20 | daily | Coming soon |
 
@@ -74,8 +74,8 @@ gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '
 
 ## How Tiers Work Now
 
-- **Tier balance refills daily** at midnight UTC via Cloudflare cron trigger
-- **No rollover** - balance resets to tier amount each day
+- **Tier balance refills** hourly for spore/seed, daily at midnight UTC for flower+
+- **No rollover** - balance resets to tier amount each period
 - **Just update D1** - no external subscription system needed
 
 ## Quick Update
@@ -93,7 +93,7 @@ npx wrangler d1 execute DB --remote --env production \
   --command "UPDATE user SET tier='TIER' WHERE github_username='USERNAME';"
 ```
 
-Balance will update automatically at next midnight UTC refill.
+Balance will update automatically at next refill cycle (hourly for spore/seed, daily for flower/nectar).
 
 ### Step 3 (Optional): Immediate balance update
 ```bash
@@ -108,7 +108,7 @@ npx wrangler d1 execute DB --remote --env production \
 Hey @USERNAME! You've been upgraded to **[EMOJI] [TIER] tier**! ✨
 
 Your benefits:
-- [POLLEN] pollen/day (refills daily at midnight UTC)
+- [POLLEN] free compute (refills hourly or daily depending on tier)
 - 🎨 All standard models
 
 Thanks for being part of pollinations.ai! 🚀
@@ -177,7 +177,7 @@ export TIER_EVAL_GIST_ID=your_gist_id  # optional
 | File | Purpose |
 |------|---------|
 | `enter.pollinations.ai/src/tier-config.ts` | Tier → pollen mapping (source of truth) |
-| `enter.pollinations.ai/src/scheduled.ts` | Cron handler: daily refill |
+| `enter.pollinations.ai/src/scheduled.ts` | Cron handler: tier refill (hourly/daily) |
 | `enter.pollinations.ai/src/auth.ts` | Sets tier on new user registration |
 | `enter.pollinations.ai/wrangler.toml` | Cron schedule: `0 0 * * *` |
 
@@ -185,6 +185,6 @@ export TIER_EVAL_GIST_ID=your_gist_id  # optional
 
 # Notes
 
-- **Tier balance resets** at midnight UTC (daily for seed+, weekly Mon for spore/microbe; no rollover)
-- New users get `spore` tier + 1.5 pollen/week
+- **Tier balance refills** hourly for spore/seed, daily at midnight UTC for flower+; no rollover
+- New users get `spore` tier + 0.01 pollen/hour
 - Tier upgrades take effect on next refill (or set `tier_balance` manually)

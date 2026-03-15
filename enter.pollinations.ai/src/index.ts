@@ -85,4 +85,12 @@ export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 export default {
     fetch: app.fetch,
+    async scheduled(
+        _event: ScheduledController,
+        env: CloudflareBindings,
+        ctx: ExecutionContext,
+    ) {
+        const { runTierRefill } = await import("./routes/admin.ts");
+        await runTierRefill(env, ctx);
+    },
 } satisfies ExportedHandler<CloudflareBindings>;

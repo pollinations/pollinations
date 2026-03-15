@@ -376,6 +376,6 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 
 - **IP coverage**: Started 2026-03-06, ~19% user coverage initially. Re-run analysis as coverage grows.
 - **d1_user sync lag**: The `d1_user` table in Tinybird syncs periodically (not real-time). After banning/demoting on D1, Tinybird data is stale — verify actions on D1 directly.
-- **Spore "spend" is misleading**: Spore tier gets ~$1.50/week free allotment. Filter with `total_spend <= 1.6` to catch free-only users.
+- **Spore "spend" is misleading**: Spore tier gets ~$0.01/hour (~$0.24/day) free allotment. Filter with `total_spend <= 0.25` to catch free-only users.
 - **Gibberish suffix usernames**: Bot farms use GitHub usernames with suffixes like `-boop`, `-a11y`, `-max`, `-sudo`, `-cmd`, `-stack`, `-pixel`, `-dot`, `-beep`, `-commits`, `-ops`, `-dotcom`, `-lang`, `-bit`. These are auto-generated.
 - Consider adding: account age signal, GitHub account age, user-agent clustering

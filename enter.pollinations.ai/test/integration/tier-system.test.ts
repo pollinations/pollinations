@@ -97,21 +97,19 @@ describe("Tier System End-to-End", () => {
             );
         });
 
-        test("multiple users with different tiers get correct daily allowance", async () => {
+        test("multiple users with different tiers get correct allowance", async () => {
             const db = drizzle(env.DB);
             const _executionContext = createExecutionContext();
 
-            // Spore tier only refills on Mondays (weekly cadence)
-            const isMonday = new Date().getUTCDay() === 1;
-
             // Setup diverse user base
+            // Hourly tiers (spore, seed) get incremental add; daily tiers get hard reset
             const users = [
                 {
                     id: "free-user",
                     tier: "spore",
-                    expectedPollen: isMonday ? 1.5 : 0,
+                    expectedPollen: 0.01,
                 },
-                { id: "basic-user", tier: "seed", expectedPollen: 3 },
+                { id: "basic-user", tier: "seed", expectedPollen: 0.15 },
                 { id: "pro-user", tier: "flower", expectedPollen: 10 },
                 { id: "enterprise-user", tier: "nectar", expectedPollen: 20 },
                 { id: "router-user", tier: "router", expectedPollen: 500 },
@@ -359,7 +357,7 @@ describe("Tier System End-to-End", () => {
                 {
                     id: "migrated-new",
                     tier: "seed",
-                    tierBalance: 3, // Full balance
+                    tierBalance: 0.15, // Full hourly balance
                     packBalance: 0,
                 },
                 {

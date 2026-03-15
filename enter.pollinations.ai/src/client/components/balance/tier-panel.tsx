@@ -64,16 +64,24 @@ const MicrobeLimitedPanel: FC = () => (
 
 // ─── Tier screen (spore + creator tiers) ─────────────────────
 
+const cadenceLabel = (cadence: "daily" | "hourly") =>
+    cadence === "hourly" ? "hour" : "day";
+
+const cadenceDescription = (cadence: "daily" | "hourly") => {
+    if (cadence === "hourly")
+        return "Resets every hour. Unused pollen does not carry over.";
+    return "Resets daily at 00:00 UTC. Unused pollen does not carry over.";
+};
+
 const TierScreen: FC<{
     tier: TierStatus;
     active_tier_name: string;
     pollen: number;
-    cadence: "daily" | "weekly";
+    cadence: "daily" | "hourly";
 }> = ({ tier, active_tier_name, pollen, cadence }) => {
     const tierEmoji = getTierEmoji(tier);
     const panelColor = getPanelColor(tier);
     const cardColor = panelColor;
-    const isWeekly = cadence === "weekly";
 
     return (
         <Panel color={panelColor}>
@@ -87,14 +95,12 @@ const TierScreen: FC<{
                         size="lg"
                         className="font-semibold"
                     >
-                        {pollen} pollen/{isWeekly ? "week" : "day"}
+                        {pollen} pollen/{cadenceLabel(cadence)}
                     </Badge>
                 </div>
 
                 <p className="text-sm text-gray-500">
-                    {isWeekly
-                        ? "Refreshes every Monday at 00:00 UTC. Unused pollen does not carry over."
-                        : "Refills daily at 00:00 UTC. Unused pollen does not carry over."}
+                    {cadenceDescription(cadence)}
                 </p>
 
                 <p className="text-sm">
@@ -124,7 +130,7 @@ type TierPanelProps = {
         tier: TierStatus;
         displayName: string;
         pollen?: number;
-        cadence?: "daily" | "weekly";
+        cadence?: "daily" | "hourly" | "none";
     };
 };
 
@@ -140,7 +146,7 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
             tier={tier}
             active_tier_name={active.displayName}
             pollen={pollen ?? 0}
-            cadence={cadence ?? "daily"}
+            cadence={(cadence === "none" ? "daily" : cadence) ?? "daily"}
         />
     );
 };

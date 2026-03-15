@@ -130,7 +130,7 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
 
         switch (payload.type) {
             // Tier subscription events - DEPRECATED
-            // Tier is now managed via D1 + daily cron refill, not Polar webhooks
+            // Tier is now managed via D1 + cron refill (hourly/daily), not Polar webhooks
             case "subscription.canceled":
             case "subscription.revoked":
             case "subscription.updated":

@@ -7,13 +7,12 @@ The pollinations.ai tier system rewards contributors with increasing API credits
 | Tier | Pollen | Cadence | Notes |
 |------|--------|---------|-------|
 | Microbe* | 0 | — | Internal: Account under review |
-| Spore* | 1.5 | Weekly (Mon) | Internal: Verified account |
-| **Seed** | 3 | Daily | Automatic via GitHub activity |
+| Spore* | 0.01 | Hourly | Internal: Verified account |
+| **Seed** | 0.15 | Hourly | Automatic via GitHub activity |
 | **Flower** | 10 | Daily | Contributor (app submission) |
 | **Nectar** | 20 | Daily | Coming soon |
 
-> **Note:** *Microbe/Spore are internal-only. Public UI shows "Account under review" / "Weekly pollen (1.5/week)".
-> Refills at midnight UTC via Cloudflare cron. No rollover.
+> **Note:** *Microbe/Spore are internal-only. Spore and Seed refill hourly. Flower/Nectar refill daily at midnight UTC. No rollover.
 
 ---
 
@@ -57,7 +56,7 @@ Example: A 12-month-old account (6 pts) with 20 commits (2 pts) qualifies.
 - **Script:** `tier-update-user.ts` (in `enter.pollinations.ai`)
 - **Action:** For each approved user:
   1. Updates D1 database: `tier = 'seed'`
-  2. Balance refills automatically at next midnight UTC
+  2. Balance refills automatically at next refill cycle (hourly for Spore/Seed, daily for Flower+)
 - **Rate limiting:** 1 second delay between upgrades
 
 ### Scripts
@@ -368,7 +367,7 @@ npx tsx scripts/tier-update-user.ts verify-tier \
 This script updates:
 - **D1 database** (Cloudflare) - `tier` column in `user` table
 
-> Balance refills automatically at next midnight UTC via cron trigger.
+> Balance refills automatically at next refill cycle (hourly for Spore/Seed, daily for Flower+).
 
 ---
 

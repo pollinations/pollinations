@@ -153,19 +153,19 @@ ads to earn pollen is winning! 🗳️
 
 ## ⚡ pollen rebalance
 
-adjusting daily pollen to sustain compute
+adjusting pollen grants to sustain compute
 effective from next refill
 
 \`\`\`
-🦠 spore    1/day
-🌱 seed     3/day
+🍄 spore    0.01/hour
+🌱 seed     0.15/hour
 🌸 flower   10/day
 🍯 nectar   20/day
 \`\`\`
 
 ## 🌱 🌸 upgrade paths
 
-**🦠 → 🌱** show us you're part of the community
+**🍄 → 🌱** show us you're part of the community
 - ⭐ star [repo](https://github.com/pollinations/pollinations)
 - 🔀 merged PR
 

@@ -86,7 +86,7 @@ const AboutPage = () => {
         {
             title: "Open & Accessible",
             description:
-                "AI tools available to everyone — earn daily Pollen by contributing, no credit card required.",
+                "AI tools available to everyone — earn Pollen by contributing, no credit card required.",
         },
         {
             title: "Transparent & Ethical",

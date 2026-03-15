@@ -29,15 +29,15 @@ async function triggerTierRefill() {
 }
 
 describe("Tier Balance Management", () => {
-    describe("Daily Cron Refill", () => {
+    describe("Cron Refill", () => {
         test("should refill tier balance for all users based on their tier", async () => {
             const db = drizzle(env.DB);
             const executionContext = createExecutionContext();
 
             // Setup: Create test users with different tiers and depleted balances
             const testUsers = [
-                { id: "user-spore", tier: "spore", tierBalance: 0.5 },
-                { id: "user-seed", tier: "seed", tierBalance: 1.0 },
+                { id: "user-spore", tier: "spore", tierBalance: 0 },
+                { id: "user-seed", tier: "seed", tierBalance: 0 },
                 { id: "user-flower", tier: "flower", tierBalance: 2.0 },
                 { id: "user-nectar", tier: "nectar", tierBalance: 0 },
                 { id: "user-router", tier: "router", tierBalance: 100 },
@@ -67,7 +67,7 @@ describe("Tier Balance Management", () => {
                     });
             }
 
-            // Execute the scheduled handler
+            // Execute the refill
             await triggerTierRefill();
 
             // Verify: Check that all users have their tier balance refilled
@@ -86,12 +86,15 @@ describe("Tier Balance Management", () => {
                     )})`,
                 );
 
-            const isMonday = new Date().getUTCDay() === 1;
-
-            // Daily tiers always get refilled
-            expect(users.find((u) => u.id === "user-seed")?.tierBalance).toBe(
-                TIER_POLLEN.seed,
+            // Hourly tiers: incremental add (0 + increment)
+            expect(users.find((u) => u.id === "user-spore")?.tierBalance).toBe(
+                TIER_POLLEN.spore, // 0.01
             );
+            expect(users.find((u) => u.id === "user-seed")?.tierBalance).toBe(
+                TIER_POLLEN.seed, // 0.15
+            );
+
+            // Daily tiers: hard reset to full amount
             expect(users.find((u) => u.id === "user-flower")?.tierBalance).toBe(
                 TIER_POLLEN.flower,
             );
@@ -102,17 +105,8 @@ describe("Tier Balance Management", () => {
                 TIER_POLLEN.router,
             );
 
-            // Spore: weekly refill (Monday only)
-            const sporeUser = users.find((u) => u.id === "user-spore");
-            if (isMonday) {
-                expect(sporeUser?.tierBalance).toBe(TIER_POLLEN.spore);
-            } else {
-                // Not refilled on non-Monday — keeps pre-test balance
-                expect(sporeUser?.tierBalance).toBe(0.5);
-            }
-
-            // Daily-refill users should have lastTierGrant updated
-            for (const user of users.filter((u) => u.id !== "user-spore")) {
+            // All refilled users should have lastTierGrant updated
+            for (const user of users) {
                 expect(user.lastTierGrant).toBeDefined();
                 expect(user.lastTierGrant).toBeGreaterThan(Date.now() - 60000);
             }
@@ -452,7 +446,7 @@ describe("Tier Balance Management", () => {
             expect(getTierPollen("router")).toBe(TIER_POLLEN.router);
 
             // Default tier
-            expect(getTierPollen("spore")).toBe(1.5);
+            expect(getTierPollen("spore")).toBe(0.01);
         });
 
         test("tierNames should contain all valid tier names", () => {

@@ -162,6 +162,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["polly"],
     },
     {
+        name: "mercury",
+        config: portkeyConfig["mercury-coder-small"],
+    },
+    {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],
     },

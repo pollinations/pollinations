@@ -621,6 +621,26 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
         alpha: true,
     },
+    "mercury": {
+        aliases: ["mercury-2", "mercury-coder-small"],
+        modelId: "mercury-coder-small",
+        provider: "inception",
+        cost: [
+            {
+                date: new Date("2026-03-06").getTime(),
+                promptTextTokens: perMillion(0.25),
+                promptCachedTokens: perMillion(0.025),
+                completionTextTokens: perMillion(0.75),
+            },
+        ],
+        description:
+            "Inception Mercury 2 - Diffusion LLM, Ultra Fast & Structured Output",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
     "qwen-character": {
         aliases: [],
         modelId: "qwen-character",

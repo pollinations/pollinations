@@ -193,6 +193,16 @@ export function createPollyConfig(
     };
 }
 
+export function createInceptionModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.inceptionlabs.ai/v1",
+        process.env.INCEPTION_API_KEY,
+        overrides,
+    );
+}
+
 /**
  * Creates an Anthropic model configuration for direct Claude API access.
  */

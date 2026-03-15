@@ -1,8 +1,6 @@
 // biome-ignore-all lint/a11y/useKeyWithClickEvents: Component has global keyboard navigation via arrow keys
 // biome-ignore-all lint/a11y/noStaticElementInteractions: Interactive elements handled via global keydown
 import { useCallback, useEffect, useMemo, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { LAYOUT } from "../../copy/content/layout";
 import { useAuth } from "../../hooks/useAuth";
 import {
@@ -12,6 +10,7 @@ import {
     useDiaryData,
 } from "../../hooks/useDiaryData";
 import { usePrettify } from "../../hooks/usePrettify";
+import { LazyMarkdownGfm } from "./ui/lazy-markdown";
 
 const MOBILE_BP = 580;
 
@@ -25,7 +24,7 @@ const impactEmoji: Record<string, string> = {
 };
 
 const chipBase =
-    "inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium rounded-sub-card cursor-pointer transition-all duration-300 ease-in-out";
+    "inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium rounded-sub-card cursor-pointer transition duration-300 ease-in-out";
 const chipColors = [
     "border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
     "border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
@@ -246,7 +245,7 @@ export function BuildDiary() {
             <div className="self-start inline-flex items-center gap-2">
                 <span
                     onClick={() => go("left")}
-                    className={`font-headline text-sm select-none flex items-center justify-center w-8 h-8 rounded-sub-card transition-all duration-200 ${
+                    className={`font-headline text-sm select-none flex items-center justify-center w-8 h-8 rounded-sub-card transition duration-200 ${
                         x > 0
                             ? "text-muted cursor-pointer bg-white/60 border-r-2 border-b-2 border-border-subtle shadow-[1px_1px_0_rgb(var(--dark)_/_0.08)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                             : "text-dark/15 cursor-default bg-white/30"
@@ -255,7 +254,7 @@ export function BuildDiary() {
                     &#x25C0;
                 </span>
                 <span
-                    className={`font-headline inline-flex items-center justify-center py-2 text-sm font-black uppercase tracking-wider rounded-tag cursor-pointer transition-all duration-300 ease-in-out min-w-[220px] ${!onPR ? `${chipActiveColors[x % chipActiveColors.length]} font-black` : chipInactiveDefault}`}
+                    className={`font-headline inline-flex items-center justify-center py-2 text-sm font-black uppercase tracking-wider rounded-tag cursor-pointer transition duration-300 ease-in-out min-w-[220px] ${!onPR ? `${chipActiveColors[x % chipActiveColors.length]} font-black` : chipInactiveDefault}`}
                     onClick={() => {
                         setY(0);
                         setAutoCycling(false);
@@ -265,7 +264,7 @@ export function BuildDiary() {
                 </span>
                 <span
                     onClick={() => go("right")}
-                    className={`font-headline text-sm select-none flex items-center justify-center w-8 h-8 rounded-sub-card transition-all duration-200 ${
+                    className={`font-headline text-sm select-none flex items-center justify-center w-8 h-8 rounded-sub-card transition duration-200 ${
                         x < timeline.length - 1
                             ? "text-muted cursor-pointer bg-white/60 border-r-2 border-b-2 border-border-subtle shadow-[1px_1px_0_rgb(var(--dark)_/_0.08)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                             : "text-dark/15 cursor-default bg-white/30"
@@ -307,8 +306,7 @@ export function BuildDiary() {
 
                 {/* Summary */}
                 <div className="text-sm text-muted leading-relaxed overflow-hidden line-clamp-[8]">
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
+                    <LazyMarkdownGfm
                         components={{
                             p: ({ node, ...props }) => (
                                 <p {...props} className="mb-1 last:mb-0" />
@@ -343,7 +341,7 @@ export function BuildDiary() {
                         }}
                     >
                         {shownSummary || rawSummary}
-                    </ReactMarkdown>
+                    </LazyMarkdownGfm>
                 </div>
 
                 {/* PR metadata */}

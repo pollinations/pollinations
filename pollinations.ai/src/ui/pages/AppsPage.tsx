@@ -1,7 +1,5 @@
 import { useMemo } from "react";
-import ReactMarkdown from "react-markdown";
 import { useSearchParams } from "react-router-dom";
-import remarkGfm from "remark-gfm";
 import { COPY_CONSTANTS } from "../../copy/constants";
 import {
     APPS_PAGE,
@@ -21,6 +19,7 @@ import { GithubIcon } from "../assets/SocialIcons";
 import { BackToTop } from "../components/ui/back-to-top";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { LazyMarkdownGfm } from "../components/ui/lazy-markdown";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
@@ -71,13 +70,13 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
 
     return (
         <div
-            className={`flex flex-col h-full overflow-visible transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${cardBorder}`}
+            className={`flex flex-col h-full overflow-visible transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${cardBorder}`}
         >
             <a
                 href={app.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between px-4 py-3 bg-white hover:brightness-110 transition-all"
+                className="flex items-center justify-between px-4 py-3 bg-white hover:brightness-110 transition"
             >
                 <span className="font-headline text-xs font-black uppercase text-dark flex items-center">
                     {app.emoji && (
@@ -93,8 +92,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                 <div className="flex-1">
                     {app.description && (
                         <div className="text-sm text-muted mb-3 font-body leading-relaxed">
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
+                            <LazyMarkdownGfm
                                 components={{
                                     p: ({ node, ...props }) => (
                                         <p
@@ -146,7 +144,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                 }}
                             >
                                 {app.description}
-                            </ReactMarkdown>
+                            </LazyMarkdownGfm>
                         </div>
                     )}
 
@@ -175,7 +173,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             href={`https://github.com/${githubUsername}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition-all max-w-[200px]"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition max-w-[200px]"
                             title={copy.viewOnGithub.replace(
                                 "{name}",
                                 app.github,
@@ -205,7 +203,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             href={app.repo}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition-all max-w-[200px]"
+                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition max-w-[200px]"
                             title={copy.viewOnGithub.replace(
                                 "{name}",
                                 repoName,

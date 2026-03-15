@@ -1,10 +1,5 @@
 User-agent: *
 Allow: /
-
-# Block API endpoints — not indexable pages
 Disallow: /api/
-
-# Block play page URL parameter variations — infinite crawl space
-Disallow: /play?
 
 Sitemap: https://pollinations.ai/sitemap.xml

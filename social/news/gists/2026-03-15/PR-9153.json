@@ -1,0 +1,35 @@
+{
+  "pr_number": 9153,
+  "title": "Add PromptPilot MCP Server to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9153",
+  "merged_at": "2026-03-15T14:25:49Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "PromptPilot takes flight",
+    "blurb": "PromptPilot just dropped a new MCP server powered by Pollinations. Now your favorite AI agents like Claude and Cursor can generate images, video, and audio directly from the chat.",
+    "summary": "Added the PromptPilot MCP Server to the community showcase, enabling multimedia generation directly within MCP-compatible AI agents.",
+    "impact": "Developers can now seamlessly generate images, video, and audio right inside their favorite AI coding assistants and chat interfaces using the Pollinations API.",
+    "keywords": [
+      "mcp",
+      "promptpilot",
+      "claude",
+      "cursor",
+      "integrations",
+      "community"
+    ],
+    "visual_concept": "PromptPilot implies flying/piloting, while MCP implies connecting agents. Polly the bee wearing an aviator hat/goggles (pilot), plugging a glowing cable (MCP connection) into a retro terminal or the Monitor Robot to give it multimedia powers.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny aviator goggles, plugging a glowing lime green (#ecf874) cable into a chunky retro computer terminal. The screen displays colorful pixelated images and audio waves. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-15T14:26:34.837848+00:00"
+}

@@ -130,7 +130,7 @@ export function PlayGenerator({
     const [seed, setSeed] = useState(0);
     const [enhance, setEnhance] = useState(false);
     const [imageUrls, setImageUrls] = useState<string[]>([]);
-    const [imageUrlInput, setImageUrlInput] = useState("");
+    const [isUploading, setIsUploading] = useState(false);
 
     const isImageModel = imageModels.some((m) => m.id === selectedModel);
 
@@ -213,10 +213,29 @@ export function PlayGenerator({
         copy,
     ]);
 
-    const addImageUrl = () => {
-        if (imageUrlInput.trim() && imageUrls.length < 4) {
-            setImageUrls([...imageUrls, imageUrlInput.trim()]);
-            setImageUrlInput("");
+    const handleFileUpload = async (file: File) => {
+        if (!file || imageUrls.length >= 4) return;
+        if (file.size > 5 * 1024 * 1024) {
+            setError(copy.uploadTooLarge);
+            return;
+        }
+        setIsUploading(true);
+        setError(null);
+        try {
+            const form = new FormData();
+            form.append("file", file);
+            const res = await fetch("https://media.pollinations.ai/upload", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${apiKey}` },
+                body: form,
+            });
+            if (!res.ok) throw new Error("Upload failed");
+            const { url } = await res.json();
+            setImageUrls((prev) => [...prev, url]);
+        } catch {
+            setError(copy.uploadFailed);
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -420,23 +439,34 @@ export function PlayGenerator({
                             ))}
                         </div>
                     )}
-                    <input
-                        id="image-url"
-                        name="image-url"
-                        type="url"
-                        value={imageUrlInput}
-                        onChange={(e) => setImageUrlInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault();
-                                addImageUrl();
-                            }
+                    <label
+                        className={`flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-border-subtle rounded-input font-body text-sm cursor-pointer transition-colors ${isUploading ? "bg-white/60 text-subtle" : "bg-white hover:bg-cream text-muted hover:text-dark"} ${imageUrls.length >= 4 ? "opacity-50 pointer-events-none" : ""}`}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                         }}
-                        onBlur={addImageUrl}
-                        placeholder={copy.imageUrlPlaceholder}
-                        className="w-full p-3 bg-white text-dark font-body focus:outline-none focus:bg-white hover:bg-white transition-colors placeholder:text-subtle rounded-input"
-                        disabled={imageUrls.length >= 4}
-                    />
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const file = e.dataTransfer.files[0];
+                            if (file) handleFileUpload(file);
+                        }}
+                    >
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={imageUrls.length >= 4 || isUploading}
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleFileUpload(file);
+                                e.target.value = "";
+                            }}
+                        />
+                        {isUploading
+                            ? copy.uploadingLabel
+                            : copy.uploadImageLabel}
+                    </label>
                 </div>
             )}
 

@@ -46,6 +46,10 @@ export const PLAY_PAGE = {
     referenceImagesLabel: "Reference images",
     referenceImagesCount: "/4 images",
     imageUrlPlaceholder: "Image URL",
+    uploadImageLabel: "📎 Upload image",
+    uploadingLabel: "Uploading…",
+    uploadTooLarge: "Image too large — please use an image under 5MB.",
+    uploadFailed: "Image upload failed. Please try again.",
 
     // Button states
     generatingText: "Generating...",

@@ -45,8 +45,6 @@ export default {
                     "Disallow: /v1/",
                     "Disallow: /api/generate/",
                     "Disallow: /api/v1/",
-                    "",
-                    "Sitemap: https://gen.pollinations.ai/sitemap.xml",
                 ].join("\n"),
                 { headers: { "Content-Type": "text/plain" } },
             );

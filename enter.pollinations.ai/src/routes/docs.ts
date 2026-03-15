@@ -1256,6 +1256,19 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             ].join("\n"),
                         },
                         {
+                            name: "🔢 Embeddings",
+                            description: [
+                                "Generate vector embeddings for text, images, or audio using Google's Gemini Embedding 2 model.",
+                                "",
+                                "| Endpoint | Description |",
+                                "|----------|-------------|",
+                                "| `POST /v1/embeddings` | OpenAI-compatible embeddings endpoint |",
+                                "| `GET /embeddings/models` | List available embedding models |",
+                                "",
+                                "**Features:** Multimodal input (text, images, audio), configurable dimensions (1–3072), task type hints for optimized results.",
+                            ].join("\n"),
+                        },
+                        {
                             name: "🤖 Models",
                             description: [
                                 "Discover available models with pricing, capabilities, and metadata. **No authentication required.**",
@@ -1266,6 +1279,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "| `GET /text/models` | Text models with pricing, context window, tool support |",
                                 "| `GET /image/models` | Image & video models with capabilities and pricing |",
                                 "| `GET /audio/models` | Audio models with supported voices |",
+                                "| `GET /embeddings/models` | Embedding models with pricing and capabilities |",
                             ].join("\n"),
                         },
                         {

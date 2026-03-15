@@ -26,7 +26,10 @@ import {
     getImageModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
-import { getServiceDefinition } from "@shared/registry/registry.ts";
+import {
+    getServiceDefinition,
+    getVisibleEmbeddingServices,
+} from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -36,6 +39,10 @@ import {
     UpstreamError,
 } from "@/error.ts";
 import { validator } from "@/middleware/validator.ts";
+import {
+    CreateEmbeddingRequestSchema,
+    CreateEmbeddingResponseSchema,
+} from "@/schemas/embeddings.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import {
     CreateChatCompletionRequestSchema,
@@ -232,6 +239,10 @@ export const proxyRoutes = new Hono<Env>()
         "/audio/models",
         auth({ allowApiKey: true, allowSessionCookie: false }),
     )
+    .use(
+        "/embeddings/models",
+        auth({ allowApiKey: true, allowSessionCookie: false }),
+    )
     .get(
         "/v1/models",
         describeRoute({
@@ -423,6 +434,42 @@ export const proxyRoutes = new Hono<Env>()
             return c.json(models);
         },
     )
+    .get(
+        "/embeddings/models",
+        describeRoute({
+            tags: ["🔢 Embeddings"],
+            summary: "List Embedding Models",
+            description:
+                "Returns available embedding models with pricing, capabilities, and supported input modalities.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(GetModelsResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        async (c) => {
+            const services = getVisibleEmbeddingServices();
+            const models = services.map((id) => {
+                const def = getServiceDefinition(id);
+                return {
+                    id,
+                    object: "model",
+                    created: Math.floor(Date.now() / 1000),
+                    owned_by: def?.provider || "pollinations",
+                    description: def?.description,
+                    input_modalities: def?.inputModalities,
+                    output_modalities: def?.outputModalities,
+                };
+            });
+            return c.json({ object: "list", data: models });
+        },
+    )
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth({ allowApiKey: true, allowSessionCookie: false }))
     .use(frontendKeyRateLimit)
@@ -455,6 +502,73 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/embeddings",
+        describeRoute({
+            tags: ["🔢 Embeddings"],
+            summary: "Create Embeddings",
+            description: [
+                "Generate vector embeddings for text, images, or audio. Compatible with the OpenAI Embeddings API format, extended with multimodal content part support.",
+                "",
+                "**Multimodal input:** Pass content parts (text, image_url, input_audio) in the `input` field — same format as chat completion messages.",
+                "",
+                "**Task types:** Optionally specify `task_type` (e.g. `RETRIEVAL_QUERY`, `CLASSIFICATION`) to optimize embeddings for your use case.",
+                "",
+                "**Dimensions:** Default 3072. Use `dimensions` to reduce (128-3072).",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateEmbeddingResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator("json", CreateEmbeddingRequestSchema),
+        resolveModel("generate.embedding"),
+        track("generate.embedding"),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            c.var.auth.requireModelAccess();
+            c.var.auth.requireKeyBudget();
+
+            const requestBody = await c.req.json();
+            const serviceId = c.var.model.resolved;
+            const serviceDef = getServiceDefinition(serviceId);
+            requestBody.model = serviceDef.modelId;
+            await checkBalance(c.var);
+
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            const targetUrl = new URL(`${textServiceUrl}/embeddings`);
+
+            const response = await proxy(targetUrl, {
+                method: "POST",
+                headers: {
+                    ...proxyHeaders(c),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) {
+                const responseText = await response.text();
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        responseText || getDefaultErrorMessage(response.status),
+                    requestUrl: targetUrl,
+                });
+            }
+
+            return new Response(response.body, {
+                headers: Object.fromEntries(response.headers),
+            });
+        },
     )
     .get(
         "/text/:prompt",

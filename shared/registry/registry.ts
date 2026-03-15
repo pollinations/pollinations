@@ -5,6 +5,11 @@ import {
     type AudioServiceId,
 } from "./audio";
 import {
+    EMBEDDING_SERVICES,
+    type EmbeddingModelId,
+    type EmbeddingServiceId,
+} from "./embeddings";
+import {
     IMAGE_SERVICES,
     type ImageModelId,
     type ImageServiceId,
@@ -57,14 +62,23 @@ const MODEL_REGISTRY = Object.fromEntries(
         ...TEXT_SERVICES,
         ...IMAGE_SERVICES,
         ...AUDIO_SERVICES,
+        ...EMBEDDING_SERVICES,
     }).map((service) => [
         service.modelId.toLowerCase(),
         sortDefinitions([...service.cost]),
     ]),
 );
 
-export type ModelId = ImageModelId | TextModelId | AudioModelId;
-export type ServiceId = ImageServiceId | TextServiceId | AudioServiceId;
+export type ModelId =
+    | ImageModelId
+    | TextModelId
+    | AudioModelId
+    | EmbeddingModelId;
+export type ServiceId =
+    | ImageServiceId
+    | TextServiceId
+    | AudioServiceId
+    | EmbeddingServiceId;
 
 export type ServiceDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
@@ -129,6 +143,7 @@ const SERVICE_REGISTRY = Object.fromEntries(
         ...TEXT_SERVICES,
         ...IMAGE_SERVICES,
         ...AUDIO_SERVICES,
+        ...EMBEDDING_SERVICES,
     }).map(([name, service]) => [
         name,
         {
@@ -212,6 +227,16 @@ function filterVisible(ids: ServiceId[]): ServiceId[] {
 export const getVisibleTextServices = () => filterVisible(getTextServices());
 export const getVisibleImageServices = () => filterVisible(getImageServices());
 export const getVisibleAudioServices = () => filterVisible(getAudioServices());
+
+/**
+ * Get embedding service IDs
+ */
+export function getEmbeddingServices(): ServiceId[] {
+    return Object.keys(EMBEDDING_SERVICES) as ServiceId[];
+}
+
+export const getVisibleEmbeddingServices = () =>
+    filterVisible(getEmbeddingServices());
 
 /**
  * Get service definition by ID

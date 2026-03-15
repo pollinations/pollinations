@@ -16,7 +16,7 @@ export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
     pricing: z
-        .record(z.string(), z.union([z.number(), z.literal("pollen")]))
+        .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -32,6 +32,14 @@ export const ModelInfoSchema = z.object({
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
 
 /**
+ * Format a number to fixed-point string, avoiding scientific notation (e.g. 1.65e-7 → "0.000000165").
+ * Strips trailing zeros for cleaner output.
+ */
+function toFixedPoint(n: number): string {
+    return n.toFixed(12).replace(/\.?0+$/, "");
+}
+
+/**
  * Get enriched model information for a service
  * Combines pricing from price definitions with metadata from service definition
  */
@@ -43,11 +51,12 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
     }
     // Filter out date, zero, and undefined values from price definition
     const { date: _date, ...priceFields } = priceDefinition;
-    const pricing: Record<string, number | "pollen"> & { currency: "pollen" } =
-        { currency: "pollen" };
+    const pricing: Record<string, string> & { currency: "pollen" } = {
+        currency: "pollen",
+    };
     for (const [key, value] of Object.entries(priceFields)) {
         if (typeof value === "number" && value > 0) {
-            pricing[key] = value;
+            pricing[key] = toFixedPoint(value);
         }
     }
 

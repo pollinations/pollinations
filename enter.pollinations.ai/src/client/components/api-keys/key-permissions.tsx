@@ -25,7 +25,9 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
     );
     const [expiryDays, setExpiryDays] = useState(initial.expiryDays ?? null);
     const [accountPermissions, setAccountPermissions] = useState(
-        initial.accountPermissions ?? DEFAULT_ACCOUNT_PERMISSIONS,
+        initial.accountPermissions !== undefined
+            ? initial.accountPermissions
+            : DEFAULT_ACCOUNT_PERMISSIONS,
     );
 
     return {

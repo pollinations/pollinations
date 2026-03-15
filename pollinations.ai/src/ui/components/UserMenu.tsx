@@ -55,7 +55,7 @@ export function UserMenu() {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-4 px-3 py-1.5 font-headline text-xs font-black tracking-wider text-dark bg-secondary-strong border-r-4 border-b-4 border-dark rounded-button transition-all hover:bg-secondary-strong/80 hover:text-dark hover:shadow-dark-md whitespace-nowrap"
+                className="flex items-center gap-4 px-3 py-1.5 font-headline text-xs font-black tracking-wider text-dark bg-secondary-strong border-r-4 border-b-4 border-dark rounded-button transition hover:bg-secondary-strong/80 hover:text-dark hover:shadow-dark-md whitespace-nowrap"
             >
                 {profile?.image && (
                     <img

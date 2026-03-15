@@ -158,15 +158,19 @@ export function TopContributors() {
                                 href={contributor.profile_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="group flex flex-col items-center text-center transition-all hover:translate-x-[2px] hover:translate-y-[2px]"
+                                className="group flex flex-col items-center text-center transition hover:translate-x-[2px] hover:translate-y-[2px]"
                             >
                                 <div
-                                    className={`w-16 h-16 mb-2 overflow-hidden rounded-full border-2 border-r-4 border-b-4 ${colorClass} shadow-[3px_3px_0_rgb(17_5_24_/_0.15)] group-hover:shadow-none transition-all`}
+                                    className={`w-16 h-16 mb-2 overflow-hidden rounded-full border-2 border-r-4 border-b-4 ${colorClass} shadow-[3px_3px_0_rgb(17_5_24_/_0.15)] group-hover:shadow-none transition`}
                                 >
                                     <img
                                         src={contributor.avatar_url}
                                         alt={contributor.login}
                                         className="w-full h-full object-cover"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width={64}
+                                        height={64}
                                     />
                                 </div>
                                 <p className="font-headline text-[10px] font-black text-dark mb-1">

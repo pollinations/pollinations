@@ -150,13 +150,6 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Klein Large - Higher quality 9B parameter model on Modal (text-to-image + image editing)
-    "klein-large": {
-        type: "modal-klein-large",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
     // Flux 2 Dev - Next-gen Flux image generation via api.airforce
     "flux-2-dev": {
         type: "airforce",
@@ -185,6 +178,13 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
+    // Dirtberry Pro - High quality realism, pixel art & complex scenes via api.airforce
+    "dirtberry-pro": {
+        type: "airforce",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Grok Imagine Video - xAI video generation via api.airforce
     "grok-video": {
         type: "airforce-video",
@@ -202,6 +202,30 @@ export const IMAGE_CONFIG = {
         isVideo: true,
         defaultDuration: 5, // 121 frames at 24 FPS
         maxDuration: 10, // 241 frames
+        defaultResolution: "720p",
+    },
+
+    // Pruna p-image - Text-to-image generation
+    "p-image": {
+        type: "pruna",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Pruna p-image-edit - Image-to-image editing
+    "p-image-edit": {
+        type: "pruna-edit",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Pruna p-video - Text/image-to-video generation
+    "p-video": {
+        type: "pruna-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
         defaultResolution: "720p",
     },
 } as const satisfies ImageModelsConfig;

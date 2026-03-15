@@ -12,7 +12,6 @@
         "deploy:production": "npm run build && wrangler deploy"
     },
     "dependencies": {
-        "@types/webfontloader": "^1.6.38",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "lucide-react": "^0.553.0",
@@ -21,8 +20,7 @@
         "react-markdown": "^10.1.0",
         "react-router-dom": "^6.20.0",
         "remark-gfm": "^4.0.1",
-        "tailwind-merge": "^3.4.0",
-        "webfontloader": "^1.6.28"
+        "tailwind-merge": "^3.4.0"
     },
     "devDependencies": {
         "@cloudflare/vite-plugin": "^1.15.0",

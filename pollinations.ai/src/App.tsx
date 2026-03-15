@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import ErrorBoundary from "./ui/components/ErrorBoundary";
-import { FontLoader } from "./ui/components/FontLoader";
 import Layout from "./ui/components/Layout";
 
 function ScrollToTop() {
@@ -21,6 +20,18 @@ const CommunityPage = lazy(() => import("./ui/pages/CommunityPage"));
 const TermsPage = lazy(() => import("./ui/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("./ui/pages/PrivacyPage"));
 
+// Prefetch likely routes on idle
+const prefetchRoutes = () => {
+    import("./ui/pages/PlayPage");
+    import("./ui/pages/AppsPage");
+};
+
+if (typeof requestIdleCallback !== "undefined") {
+    requestIdleCallback(prefetchRoutes);
+} else {
+    setTimeout(prefetchRoutes, 2000);
+}
+
 // Loading component
 const PageLoader = () => (
     <div className="min-h-[50vh] flex items-center justify-center">
@@ -31,7 +42,6 @@ const PageLoader = () => (
 function App() {
     return (
         <ErrorBoundary>
-            <FontLoader />
             <Suspense fallback={<PageLoader />}>
                 <ScrollToTop />
                 <Routes>

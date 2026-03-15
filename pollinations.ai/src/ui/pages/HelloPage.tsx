@@ -1,4 +1,3 @@
-import ReactMarkdown from "react-markdown";
 import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
@@ -9,6 +8,7 @@ import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
+import { LazyMarkdown } from "../components/ui/lazy-markdown";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { Body, Heading, Title } from "../components/ui/typography";
@@ -267,7 +267,7 @@ function HelloPage() {
                                             </span>
                                         </p>
                                         <div className="font-body text-sm text-muted leading-relaxed mt-0.5">
-                                            <ReactMarkdown
+                                            <LazyMarkdown
                                                 components={{
                                                     a: ({ node, ...props }) => (
                                                         <a
@@ -286,7 +286,7 @@ function HelloPage() {
                                                 }}
                                             >
                                                 {item.description}
-                                            </ReactMarkdown>
+                                            </LazyMarkdown>
                                         </div>
                                     </div>
                                 ))}

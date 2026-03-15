@@ -50,16 +50,24 @@
     <!-- Fonts (display=swap prevents FOIT) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;700&display=swap" />
 
     <title>pollinations.ai</title>
   </head>
   <body>
     <div id="root"></div>
     <noscript>
-      <div style="font-family:sans-serif;padding:2rem;text-align:center">
+      <div style="font-family:sans-serif;padding:2rem;max-width:600px;margin:0 auto">
         <h1>pollinations.ai</h1>
-        <p>This app requires JavaScript. Please enable it in your browser settings.</p>
+        <p>Build AI apps with easy APIs, daily grants, and community support. Generate images, text, audio and video with state-of-the-art AI models.</p>
+        <nav style="margin-top:1rem">
+          <a href="/">Home</a> &middot;
+          <a href="/play">Play</a> &middot;
+          <a href="/apps">Apps</a> &middot;
+          <a href="/community">Community</a> &middot;
+          <a href="https://enter.pollinations.ai/api/docs">API Docs</a>
+        </nav>
+        <p style="margin-top:1rem;font-size:0.875rem;color:#666">Enable JavaScript for full functionality.</p>
       </div>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>

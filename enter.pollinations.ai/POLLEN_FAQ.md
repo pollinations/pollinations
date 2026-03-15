@@ -43,21 +43,25 @@ Registration gives you access to the Pollinations API. You can create API keys t
 - **🌐 Publishable Key (pk\_):** Designed for client-side apps *(bound to your domain)*. Rate limits: 1 pollen per IP per hour. Access to all models, which consume Pollen based on usage.
 - **🔒 Secret Key (sk\_):** For server-side apps only. *No rate limits.* Access to all models, which consume Pollen based on usage.
 
-All registered accounts get **1.5 free Pollen per week** — no purchase required. Active creators unlock higher tiers with bigger daily grants.
+All registered accounts get free Pollen refilled hourly — no purchase required. Active creators unlock higher tiers with bigger grants.
 
 ## 🏅 What are tiers?
 
 There are two kinds of tiers on Pollinations:
 
-**Free weekly grant — for everyone on the platform:**
+**Hourly refill tiers — for everyone on the platform:**
 
-Every registered user gets **1.5 free Pollen per week**, refreshed every Monday. Use it across any app — no creator tier required.
+| Tier | Pollen Rate | Accumulation Cap |
+|------|------------|-----------------|
+| 🍄 Spore | 0.01/hour | 0.24 (24h) |
+| 🌱 Seed | 0.15/hour | 3.6 (24h) |
 
-**Creator tiers — for builders and contributors:**
+Pollen accumulates when unused, up to 24 hours worth.
+
+**Daily refill tiers — for builders and contributors:**
 
 | Tier | Daily Pollen |
 |------|-------------|
-| 🌿 Seed | 3 pollen/day |
 | 🌸 Flower | 10 pollen/day |
 | 🍯 Nectar | 20 pollen/day |
 
@@ -69,13 +73,13 @@ BYOP lets your app's users pay for their own AI generations with their Pollen �
 
 **Why it matters:** Without BYOP, every user of your app burns *your* Pollen. With BYOP, your compute cost drops to zero. Your users get a seamless experience, and you can scale without worrying about costs.
 
-Every user on the platform gets 1.5 free Pollen per week. With BYOP, they spend that Pollen in *your* app. BYOP is the key to the Pollinations flywheel: build an app for free → integrate BYOP → your users arrive with Pollen → they fuel the app → you grow → bigger daily grants → build bigger.
+Every user on the platform gets free Pollen refilled hourly. With BYOP, they spend that Pollen in *your* app. BYOP is the key to the Pollinations flywheel: build an app for free → integrate BYOP → your users arrive with Pollen → they fuel the app → you grow → bigger grants → build bigger.
 
 ## 🌱 How do Pollen grants work?
 
-**Registered users:** 1.5 Pollen per week, refreshed weekly.
+**Spore/Seed users:** Pollen refills every hour and accumulates up to 24 hours worth.
 
-**Seed / Flower / Nectar (creator tiers):** Daily Pollen grants that scale with your tier. Unused daily Pollen expires each day.
+**Flower / Nectar (creator tiers):** Daily Pollen grants that reset at midnight UTC. Unused daily Pollen does not carry over.
 
 In both cases, grant Pollen is spent *before* your purchased Pollen. Purchased Pollen never expires.
 

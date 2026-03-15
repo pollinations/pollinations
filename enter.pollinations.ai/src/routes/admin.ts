@@ -165,6 +165,16 @@ export async function runTierRefill(
     const refillTimestamp = Date.now();
     const timestamp = new Date(refillTimestamp).toISOString();
 
+    // Snapshot balances before updates (for Tinybird events)
+    const usersBeforeRefill = await db
+        .select({
+            id: userTable.id,
+            tier: userTable.tier,
+            tierBalance: userTable.tierBalance,
+        })
+        .from(userTable)
+        .where(sql`tier IS NOT NULL`);
+
     // --- Hourly refill (spore, seed) ---
     const currentHourMs = getCurrentHourMs();
     const lastHourlyMs = await getLastRefillTime(kv, HOURLY_REFILL_KV_KEY);
@@ -225,22 +235,12 @@ export async function runTierRefill(
         };
     }
 
-    // Get users for Tinybird events
-    const usersToRefill = await db
-        .select({
-            id: userTable.id,
-            tier: userTable.tier,
-            tierBalance: userTable.tierBalance,
-        })
-        .from(userTable)
-        .where(sql`tier IS NOT NULL`);
-
-    const tierBreakdown = calculateTierBreakdown(usersToRefill);
+    const tierBreakdown = calculateTierBreakdown(usersBeforeRefill);
     const refilledTiers = new Set([
         ...(!hourlySkipped ? ["spore", "seed"] : []),
         ...(!dailySkipped ? ["flower", "nectar", "router"] : []),
     ]);
-    const usersForEvents = usersToRefill.filter(
+    const usersForEvents = usersBeforeRefill.filter(
         (u) => u.tier && refilledTiers.has(u.tier),
     );
 

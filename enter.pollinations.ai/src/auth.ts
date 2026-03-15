@@ -15,6 +15,14 @@ import { user as userTable } from "./db/schema/better-auth.ts";
 import { sendTierEventToTinybird } from "./events.ts";
 import { DEFAULT_TIER, getTierPollen } from "./tier-config.ts";
 
+// Track which API keys have been written to KV in this isolate.
+// Better Auth writes tracking data (lastRequest, requestCount, updatedAt) to KV
+// on every verify call. At ~3-5M req/day this exceeds KV's write limits (429s).
+// First write per key (cache-warm on KV miss) goes through; subsequent writes
+// (verify tracking updates) are skipped. Session writes are unaffected.
+// Dashboard reads lastRequest from D1 (updated via deferUpdates).
+const kvWrittenKeys = new Set<string>();
+
 function addKeyPrefix(key: string) {
     return `auth:${key}`;
 }
@@ -102,12 +110,23 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 return await env.KV.get(addKeyPrefix(key));
             },
             set: async (key, value, ttl) => {
+                if (key.startsWith("api-key:")) {
+                    const prefixedKey = addKeyPrefix(key);
+                    if (kvWrittenKeys.has(prefixedKey)) return;
+                    await env.KV.put(prefixedKey, value, {
+                        expirationTtl: ttl,
+                    });
+                    kvWrittenKeys.add(prefixedKey);
+                    return;
+                }
                 await env.KV.put(addKeyPrefix(key), value, {
                     expirationTtl: ttl,
                 });
             },
             delete: async (key) => {
-                await env.KV.delete(addKeyPrefix(key));
+                const prefixedKey = addKeyPrefix(key);
+                kvWrittenKeys.delete(prefixedKey);
+                await env.KV.delete(prefixedKey);
             },
         },
         trustedOrigins: ["*"],

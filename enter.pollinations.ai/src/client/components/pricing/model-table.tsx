@@ -184,12 +184,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
             className={cn(
                 "rounded-xl my-1",
                 isDisabled
-                    ? expanded
-                        ? "bg-transparent border border-teal-200"
-                        : "bg-transparent"
+                    ? "bg-transparent"
                     : expanded
-                      ? "bg-teal-50/60 border border-teal-200"
-                      : "bg-teal-50/60",
+                      ? "bg-white/80"
+                      : "bg-white/60 hover:bg-white/80 transition-colors",
             )}
         >
             {/* Clickable header */}
@@ -442,11 +440,11 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             size="small"
             className={cn(
                 "px-3",
-                activeTab !== section.type && "!bg-teal-50/60 text-gray-500",
+                activeTab !== section.type && "!bg-white/60 text-gray-500",
             )}
             onClick={() => setActiveTab(section.type)}
         >
-            {sectionLabels[section.type]}
+            <span className="font-bold">{sectionLabels[section.type]}</span>
             <span className="ml-1.5 text-xs opacity-60 hidden md:inline">
                 {section.models.length}
             </span>

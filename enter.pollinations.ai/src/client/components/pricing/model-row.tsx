@@ -49,7 +49,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance = 0 }) => {
         <div
             className={cn(
                 "flex items-center rounded-xl px-3 py-2.5",
-                isDisabled ? "bg-transparent" : "bg-teal-50/60",
+                isDisabled ? "bg-transparent" : "bg-white/60 hover:bg-white/80 transition-colors",
             )}
         >
             {/* Model info — flexible width */}

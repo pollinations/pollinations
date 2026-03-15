@@ -51,12 +51,12 @@ There are two kinds of tiers on Pollinations:
 
 **Hourly refill tiers — for everyone on the platform:**
 
-| Tier | Pollen Rate | Accumulation Cap |
-|------|------------|-----------------|
-| 🍄 Spore | 0.01/hour | 0.24 (24h) |
-| 🌱 Seed | 0.15/hour | 3.6 (24h) |
+| Tier | Pollen Rate |
+|------|------------|
+| 🍄 Spore | 0.01/hour |
+| 🌱 Seed | 0.15/hour |
 
-Pollen accumulates when unused, up to 24 hours worth.
+Pollen resets every hour. Unused pollen does not carry over.
 
 **Daily refill tiers — for builders and contributors:**
 
@@ -77,7 +77,7 @@ Every user on the platform gets free Pollen refilled hourly. With BYOP, they spe
 
 ## 🌱 How do Pollen grants work?
 
-**Spore/Seed users:** Pollen refills every hour and accumulates up to 24 hours worth.
+**Spore/Seed users:** Pollen resets every hour. Unused pollen does not carry over.
 
 **Flower / Nectar (creator tiers):** Daily Pollen grants that reset at midnight UTC. Unused daily Pollen does not carry over.
 

@@ -64,22 +64,20 @@ const MicrobeLimitedPanel: FC = () => (
 
 // ─── Tier screen (spore + creator tiers) ─────────────────────
 
-const cadenceLabel = (cadence: "daily" | "weekly" | "hourly") =>
-    cadence === "hourly" ? "hour" : cadence === "weekly" ? "week" : "day";
+const cadenceLabel = (cadence: "daily" | "hourly") =>
+    cadence === "hourly" ? "hour" : "day";
 
-const cadenceDescription = (cadence: "daily" | "weekly" | "hourly") => {
+const cadenceDescription = (cadence: "daily" | "hourly") => {
     if (cadence === "hourly")
-        return "Refills every hour. Accumulates up to 24 hours worth.";
-    if (cadence === "weekly")
-        return "Refreshes every Monday at 00:00 UTC. Unused pollen does not carry over.";
-    return "Refills daily at 00:00 UTC. Unused pollen does not carry over.";
+        return "Resets every hour. Unused pollen does not carry over.";
+    return "Resets daily at 00:00 UTC. Unused pollen does not carry over.";
 };
 
 const TierScreen: FC<{
     tier: TierStatus;
     active_tier_name: string;
     pollen: number;
-    cadence: "daily" | "weekly" | "hourly";
+    cadence: "daily" | "hourly";
 }> = ({ tier, active_tier_name, pollen, cadence }) => {
     const tierEmoji = getTierEmoji(tier);
     const panelColor = getPanelColor(tier);
@@ -132,7 +130,7 @@ type TierPanelProps = {
         tier: TierStatus;
         displayName: string;
         pollen?: number;
-        cadence?: "daily" | "weekly" | "hourly" | "none";
+        cadence?: "daily" | "hourly" | "none";
     };
 };
 

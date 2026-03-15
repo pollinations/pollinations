@@ -182,14 +182,13 @@ export async function runTierRefill(
     const hourlySkipped = lastHourlyMs >= currentHourMs;
 
     if (!hourlySkipped) {
-        // Increment balance, capped at the equivalent daily amount to prevent unbounded accumulation
-        // Spore: +0.01/hr, cap at 0.24 (24h worth). Seed: +0.15/hr, cap at 3.6 (24h worth).
+        // Reset balance to the hourly pollen amount (same pattern as daily tiers)
         const hourlyResult = await db.run(sql`
             UPDATE user
             SET
                 tier_balance = CASE tier
-                    WHEN 'spore' THEN MIN(MAX(tier_balance, 0) + ${TIER_POLLEN.spore}, ${TIER_POLLEN.spore * 24})
-                    WHEN 'seed' THEN MIN(MAX(tier_balance, 0) + ${TIER_POLLEN.seed}, ${TIER_POLLEN.seed * 24})
+                    WHEN 'spore' THEN ${TIER_POLLEN.spore}
+                    WHEN 'seed' THEN ${TIER_POLLEN.seed}
                     ELSE tier_balance
                 END,
                 last_tier_grant = ${refillTimestamp}

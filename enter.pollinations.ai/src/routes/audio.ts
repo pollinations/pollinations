@@ -956,14 +956,15 @@ export const audioRoutes = new Hono<Env>()
             }
 
             // Re-build formData for Whisper (Hono consumed the original body stream)
+            // Always request verbose_json from OVHcloud so we get usage.duration for billing,
+            // then reformat the response locally based on the user's requested response_format.
             const whisperFormData = new FormData();
             whisperFormData.append("file", file);
             if (language) whisperFormData.append("language", language);
-            if (responseFormat)
-                whisperFormData.append("response_format", responseFormat);
+            whisperFormData.append("response_format", "verbose_json");
             whisperFormData.append("model", "whisper-large-v3");
 
-            // Thin proxy to OVHcloud Whisper
+            // Proxy to OVHcloud Whisper
             const response = await fetch(
                 "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions",
                 {
@@ -995,12 +996,12 @@ export const audioRoutes = new Hono<Env>()
                 createAudioSecondsUsage(duration),
             );
 
-            // Build final response with usage headers
-            const headers = {
-                ...Object.fromEntries(response.headers),
-                ...usageHeaders,
-            };
-            const result = new Response(responseBody, { headers });
+            // Reformat response based on user's requested response_format
+            const result = formatWhisperResponse(
+                responseBody,
+                responseFormat,
+                usageHeaders,
+            );
             c.var.track.overrideResponseTracking(result.clone());
 
             return result;
@@ -1008,7 +1009,7 @@ export const audioRoutes = new Hono<Env>()
     );
 
 /**
- * Extract usage from Whisper response body and build tracking headers.
+ * Extract usage from Whisper verbose_json response body.
  * OVH returns: {"usage": {"type": "duration", "duration": 21.0}, ...}
  */
 function extractWhisperUsage(responseBody: string, log: Logger): number {
@@ -1021,4 +1022,34 @@ function extractWhisperUsage(responseBody: string, log: Logger): number {
     }
     log.debug("Whisper usage: {duration}s", { duration });
     return duration;
+}
+
+/**
+ * Reformat the Whisper verbose_json response based on the user's requested response_format.
+ * We always fetch verbose_json from OVHcloud for billing, then reshape here.
+ */
+function formatWhisperResponse(
+    responseBody: string,
+    responseFormat: string | null,
+    usageHeaders: Record<string, string>,
+): Response {
+    const json = JSON.parse(responseBody);
+
+    if (responseFormat === "text") {
+        return new Response(json.text, {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                ...usageHeaders,
+            },
+        });
+    }
+
+    if (responseFormat === "verbose_json") {
+        // Strip internal usage field, pass through as-is
+        const { usage: _usage, ...rest } = json;
+        return Response.json(rest, { headers: usageHeaders });
+    }
+
+    // Default: json format — return just { text }
+    return Response.json({ text: json.text }, { headers: usageHeaders });
 }

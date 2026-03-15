@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import { type FC, useEffect } from "react";
 import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -11,6 +11,14 @@ type PricingProps = {
 };
 
 export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
+    useEffect(() => {
+        if (window.location.hash === "#models") {
+            const el = document.getElementById("models");
+            if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }
+    });
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
 
@@ -20,7 +28,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
     const textModels = allModels.filter((m) => m.type === "text");
 
     return (
-        <div className="flex flex-col gap-2">
+        <div id="models" className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <h2 className="font-bold flex-1">Pricing</h2>
                 <div className="flex flex-wrap gap-2">

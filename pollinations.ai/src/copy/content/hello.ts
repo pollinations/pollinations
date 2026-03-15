@@ -29,16 +29,34 @@ export const HELLO_PAGE = {
     // Start free section
     startFreeTitle: "Start free",
     startFreeLines: [
-        { pre: "🔌 Use ", bold: "one API", post: " across models" },
-        { pre: "🚀 ", bold: "No setup", post: " required" },
-        { pre: "🏢 No company needed", bold: "", post: "" },
-        { pre: "🌱 ", bold: "Free daily compute", post: " to build and ship" },
         {
-            pre: "📈 As your app grows, you ",
+            pre: "Use ",
+            bold: "one API",
+            post: " across models",
+            emoji: "🔌",
+            pillColor: "bg-primary-light",
+        },
+        {
+            pre: "",
+            bold: "No setup",
+            post: " required",
+            emoji: "🚀",
+            pillColor: "bg-accent-light",
+        },
+        {
+            pre: "",
+            bold: "Free daily compute",
+            post: " to build and ship",
+            emoji: "🌱",
+            pillColor: "bg-tertiary-light",
+        },
+        {
+            pre: "As your app grows, you ",
             bold: "get more compute",
             post: "",
+            emoji: "📈",
+            pillColor: "bg-secondary-light",
         },
-        { pre: "⚡ Just ", bold: "sign up", post: " and go" },
     ],
     freeDailyComputeTitle: "Free daily compute",
 
@@ -62,6 +80,49 @@ export const HELLO_PAGE = {
     tierNectarDescription: "Most active builders.",
     tierNectarGrant: "20 pollen / day",
     tierNectarPoints: "",
+
+    // Section — What you get
+    whatYouGetTitle: "What you get",
+    whatYouGetItems: [
+        {
+            emoji: "🔤",
+            title: "Text, image, video, audio",
+            desc: "All modalities, one endpoint.",
+            linkText: "Browse the model list",
+        },
+        {
+            emoji: "🔌",
+            title: "OpenAI-compatible",
+            desc: "Change one line. Your existing SDK code just works.",
+        },
+        {
+            emoji: "📎",
+            title: "Media uploads",
+            desc: "Upload files, get a URL. Use them as inputs for generation.",
+        },
+        {
+            emoji: "⚡",
+            title: "Streaming & function calling",
+            desc: "Real-time responses, tool use, structured output.",
+        },
+        {
+            emoji: "👁",
+            title: "Vision & web search",
+            desc: "Models that see images and search the live web.",
+        },
+        {
+            emoji: "🌐",
+            title: "Open source",
+            desc: "The whole stack. Fork it, self-host, contribute.",
+        },
+        {
+            emoji: "👥",
+            title: "For your users",
+            desc: "Each user who signs in gets free weekly compute to try your app.\nWhen they need more, it just works — no Stripe setup on your end.",
+            linkText: "🔌 Set up for your app",
+            linkUrl: "byopDocs",
+        },
+    ],
 
     // Section — For your users / BYOP
     usersTitle: "For your users",

@@ -116,46 +116,32 @@ function HelloPage() {
                             <Heading variant="section" spacing="comfortable">
                                 {pageCopy.howItWorksTitle}
                             </Heading>
-                            <div className="flex flex-col gap-1.5 mb-6 mt-10">
+                            <div className="flex flex-col gap-3 mb-6 mt-10">
                                 {pageCopy.startFreeLines.map(
                                     (line: {
                                         pre: string;
                                         bold: string;
                                         post: string;
+                                        emoji: string;
+                                        pillColor: string;
                                     }) => (
-                                        <p
-                                            key={line.pre}
-                                            className="font-body text-base text-muted leading-relaxed"
+                                        <div
+                                            key={line.emoji}
+                                            className={`${line.pillColor} border border-border-subtle rounded-full px-4 py-2 flex items-center gap-3 w-fit`}
                                         >
-                                            {line.pre}
-                                            {line.bold && (
-                                                <strong className="text-dark">
-                                                    {line.bold}
-                                                </strong>
-                                            )}
-                                            {line.post}
-                                        </p>
+                                            <span className="text-lg">
+                                                {line.emoji}
+                                            </span>
+                                            <span className="font-body text-base text-dark leading-relaxed">
+                                                {line.pre}
+                                                {line.bold && (
+                                                    <strong>{line.bold}</strong>
+                                                )}
+                                                {line.post}
+                                            </span>
+                                        </div>
                                     ),
                                 )}
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <span className="font-body text-sm text-muted">
-                                    {pageCopy.tierHowText}
-                                </span>
-                                <div>
-                                    <a
-                                        href={LINKS.enterTiersFaq}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
-                                    >
-                                        {pageCopy.tierHowLink}
-                                        <ExternalLinkIcon
-                                            className="w-3 h-3"
-                                            strokeWidth="4"
-                                        />
-                                    </a>
-                                </div>
                             </div>
                         </div>
                         {/* Right: tier ladder */}
@@ -204,29 +190,102 @@ function HelloPage() {
                             </div>
                         </div>
                     </div>
+                    <div className="flex flex-col gap-1 mt-6">
+                        <span className="font-body text-sm text-muted">
+                            {pageCopy.tierHowText}
+                        </span>
+                        <div>
+                            <a
+                                href={LINKS.enterTiersFaq}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
+                            >
+                                {pageCopy.tierHowLink}
+                                <ExternalLinkIcon
+                                    className="w-3 h-3"
+                                    strokeWidth="4"
+                                />
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Section 3 — Users pay */}
-                <div className="flex flex-col gap-6 mb-12">
-                    <div className="border-2 border-dark border-r-4 border-b-4 p-5 bg-primary-light md:max-w-[75%]">
-                        <Heading variant="subsection" spacing="comfortable">
-                            {pageCopy.usersTitle}
-                        </Heading>
-                        <Body spacing="comfortable" className="text-muted">
-                            {pageCopy.usersBody}
-                        </Body>
-                        <a
-                            href={LINKS.byopDocs}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-headline text-xs font-black text-dark bg-accent-strong px-2 py-0.5 hover:underline inline-flex items-center gap-1"
-                        >
-                            {pageCopy.usersPaymentsLink}
-                            <ExternalLinkIcon
-                                className="w-3 h-3"
-                                strokeWidth="4"
-                            />
-                        </a>
+                <Divider />
+
+                {/* Section — What you get */}
+                <div className="mb-12">
+                    <Heading variant="section" spacing="comfortable">
+                        {pageCopy.whatYouGetTitle}
+                    </Heading>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        {pageCopy.whatYouGetItems.map(
+                            (
+                                item: {
+                                    emoji: string;
+                                    title: string;
+                                    desc: string;
+                                    linkText?: string;
+                                    linkUrl?: string;
+                                },
+                                i: number,
+                            ) => {
+                                const colors = [
+                                    "border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
+                                    "border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
+                                    "border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                                    "border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]",
+                                ];
+                                return (
+                                    <div
+                                        key={item.title}
+                                        className={`bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i % colors.length]}${item.linkUrl ? " md:col-span-2 w-fit" : ""}`}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <span className="text-lg mt-0.5 w-6 text-center shrink-0">
+                                                {item.emoji}
+                                            </span>
+                                            <div className="flex-1">
+                                                <span className="font-headline text-xs font-black text-dark">
+                                                    {item.title}
+                                                </span>
+                                                <p className="font-body text-sm text-muted leading-relaxed mt-0.5 whitespace-pre-line">
+                                                    {item.desc}
+                                                </p>
+                                                {item.linkText && (
+                                                    <div
+                                                        className={
+                                                            item.linkUrl
+                                                                ? "mt-2"
+                                                                : ""
+                                                        }
+                                                    >
+                                                        <a
+                                                            href={
+                                                                item.linkUrl
+                                                                    ? LINKS[
+                                                                          item.linkUrl as keyof typeof LINKS
+                                                                      ]
+                                                                    : LINKS.enterModels
+                                                            }
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5 mt-1"
+                                                        >
+                                                            {item.linkText}
+                                                            <ExternalLinkIcon
+                                                                className="w-3 h-3"
+                                                                strokeWidth="4"
+                                                            />
+                                                        </a>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            },
+                        )}
                     </div>
                 </div>
 
@@ -240,12 +299,7 @@ function HelloPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* What's New — 2/3 width */}
-                        <div
-                            className="md:col-span-2 bg-secondary-light border-2 border-dark border-r-4 border-b-4 p-5"
-                            style={{
-                                boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)",
-                            }}
-                        >
+                        <div className="md:col-span-2 bg-secondary-light border-2 border-dark border-r-4 border-b-4 p-5">
                             <Badge variant="highlight" className="mb-4">
                                 {pageCopy.recentUpdatesTitle}
                             </Badge>
@@ -294,12 +348,7 @@ function HelloPage() {
                         </div>
 
                         {/* What's Next — 1/3 width */}
-                        <div
-                            className="md:col-span-1 bg-tertiary-light border-2 border-dark border-r-4 border-b-4 p-5"
-                            style={{
-                                boxShadow: "3px 3px 0px rgba(17, 5, 24, 0.12)",
-                            }}
-                        >
+                        <div className="md:col-span-1 bg-tertiary-light border-2 border-dark border-r-4 border-b-4 p-5">
                             <Badge variant="highlight" className="mb-4">
                                 {pageCopy.roadmapLabel}
                             </Badge>

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9144,
+  "title": "fix: check response content-type before SSE parsing for billing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9144",
+  "merged_at": "2026-03-15T12:28:26Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Filtering the data stream",
+    "blurb": "We added a new net to catch confused upstream responses before they get cached. Your text streams should flow much smoother now.",
+    "summary": "Added strict content-type validation for streaming requests to prevent malformed upstream responses from being cached.",
+    "impact": "Developers relying on text streaming will see improved reliability and no longer receive broken, cached JSON blobs when expecting a stream.",
+    "keywords": [
+      "api",
+      "streaming",
+      "bug-fix",
+      "reliability",
+      "caching"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny fisher hat, using a net to catch bad data packets from a literal glowing green stream of water/data. The Nomnom creature sits on the bank eating the bad packets.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny fisher hat, using a net to catch broken code blocks from a flowing, glowing lime green (#ecf874) digital stream. The round Nomnom creature sits on the riverbank, happily eating the scooped-up bad data. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-15T12:29:36.810290+00:00"
+}

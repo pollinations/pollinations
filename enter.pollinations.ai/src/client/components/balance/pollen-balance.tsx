@@ -125,7 +125,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
             {/* Purchase info */}
-            <Card color="purple" className="mt-4">
+            <Card color="purple" className="mt-4 !border-transparent">
                 <p className="text-sm font-medium text-purple-900">
                     🎁 During beta, we double your pollen! ($5 → 10💎, $10 →
                     20💎, $20 → 40💎, $50 → 100💎)

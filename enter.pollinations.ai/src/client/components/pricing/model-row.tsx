@@ -23,7 +23,7 @@ type ModelRowProps = {
     packBalance?: number;
 };
 
-export const ModelRow: FC<ModelRowProps> = ({ model, packBalance = 0 }) => {
+export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [copied, setCopied] = useState(false);
@@ -43,7 +43,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance = 0 }) => {
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
-    const isDisabled = showPaidOnly && packBalance <= 0;
+    const isDisabled =
+        showPaidOnly && packBalance !== undefined && packBalance <= 0;
 
     return (
         <div
@@ -57,15 +58,24 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance = 0 }) => {
             {/* Model info — flexible width */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 whitespace-nowrap">
-                    <span
-                        className={cn(
-                            "text-sm",
-                            showNew ? "font-bold" : "font-medium",
-                            isDisabled && "opacity-50",
-                        )}
-                    >
-                        {modelDisplayName || model.name}
-                    </span>
+                    {isDisabled ? (
+                        <Tooltip content="Top up your pollen balance to unlock this model.">
+                            <span
+                                className={cn("text-sm font-medium opacity-75")}
+                            >
+                                {modelDisplayName || model.name}
+                            </span>
+                        </Tooltip>
+                    ) : (
+                        <span
+                            className={cn(
+                                "text-sm",
+                                showNew ? "font-bold" : "font-medium",
+                            )}
+                        >
+                            {modelDisplayName || model.name}
+                        </span>
+                    )}
                     {showNew && (
                         <span className={cn(isDisabled && "opacity-50")}>
                             <Badge color="green" size="sm">

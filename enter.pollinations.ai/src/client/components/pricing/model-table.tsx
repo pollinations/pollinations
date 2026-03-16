@@ -53,7 +53,7 @@ const unitLabels: Record<string, string> = {
     text: "responses",
     image: "images",
     video: "videos",
-    audio: "requests",
+    audio: "responses",
 };
 
 const sectionLabels: Record<string, string> = {
@@ -79,7 +79,7 @@ type PriceBadgeEntry = {
 type TabContentProps = {
     type: "text" | "image" | "video" | "audio";
     models: ModelPrice[];
-    packBalance: number;
+    packBalance?: number;
 };
 
 const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
@@ -152,7 +152,7 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
 
 type MobileModelRowProps = {
     model: ModelPrice;
-    packBalance: number;
+    packBalance?: number;
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
@@ -163,7 +163,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
-    const isDisabled = showPaidOnly && packBalance <= 0;
+    const isDisabled =
+        showPaidOnly && packBalance !== undefined && packBalance <= 0;
     const capabilities = [
         hasVision(model.name) && "👁️",
         hasAudioInput(model.name) && "🎙️",
@@ -216,15 +217,22 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                             d="M19 9l-7 7-7-7"
                         />
                     </svg>
-                    <span
-                        className={cn(
-                            "text-sm",
-                            showNew ? "font-bold" : "font-medium",
-                            isDisabled && "opacity-50",
-                        )}
-                    >
-                        {displayName || model.name}
-                    </span>
+                    {isDisabled ? (
+                        <Tooltip content="Top up your pollen balance to unlock this model.">
+                            <span className="text-sm font-medium opacity-75">
+                                {displayName || model.name}
+                            </span>
+                        </Tooltip>
+                    ) : (
+                        <span
+                            className={cn(
+                                "text-sm",
+                                showNew ? "font-bold" : "font-medium",
+                            )}
+                        >
+                            {displayName || model.name}
+                        </span>
+                    )}
                     {(showNew || showAlpha || showPaidOnly) && (
                         <span
                             className={cn(
@@ -412,7 +420,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     videoModels,
     textModels,
     audioModels,
-    packBalance = 0,
+    packBalance,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
@@ -445,32 +453,30 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     return (
         <div>
             {/* Tabs + column headers - single responsive row */}
-            <div className="flex items-center py-2 pr-8 gap-y-2">
+            <div className="flex items-center py-2 pr-4 md:pr-8 gap-y-2">
                 <div className="grid grid-cols-2 min-[500px]:flex gap-1.5 min-w-0 shrink-0">
                     {tabButtons}
                 </div>
                 <div className="flex-1 min-w-6" />
                 <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
                     <div className="cursor-help text-right min-[500px]:text-center shrink-0">
-                        <div className="min-[500px]:flex min-[500px]:items-baseline min-[500px]:gap-1.5 min-[500px]:justify-center">
-                            <span className="text-sm font-bold text-gray-900">
-                                1 pollen ≈
-                            </span>
-                            <span className="block min-[500px]:inline text-xs font-normal text-gray-700 opacity-70 italic">
-                                {activeSection
-                                    ? unitLabels[activeSection.type]
-                                    : ""}
-                            </span>
+                        <div className="text-sm font-bold text-gray-900">
+                            1 pollen ≈
+                        </div>
+                        <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                            {activeSection
+                                ? unitLabels[activeSection.type]
+                                : ""}
                         </div>
                     </div>
                 </Tooltip>
-                <div className="hidden md:block text-center w-[100px] shrink-0">
+                <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
                     <div className="text-sm font-bold text-gray-900">Input</div>
                     <div className="text-xs font-normal text-gray-700 opacity-70 italic">
                         pollen
                     </div>
                 </div>
-                <div className="hidden md:block text-center w-[100px] shrink-0">
+                <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
                     <div className="text-sm font-bold text-gray-900">
                         Output
                     </div>
@@ -480,15 +486,13 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 </div>
             </div>
 
-            {/* Tab content — scrollable */}
+            {/* Tab content */}
             {activeSection && (
-                <div className="max-h-[calc(100vh-300px)] overflow-y-auto overscroll-contain pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-teal-200 [&::-webkit-scrollbar-thumb]:rounded-full">
-                    <TabContent
-                        type={activeSection.type}
-                        models={activeSection.models}
-                        packBalance={packBalance}
-                    />
-                </div>
+                <TabContent
+                    type={activeSection.type}
+                    models={activeSection.models}
+                    packBalance={packBalance}
+                />
             )}
         </div>
     );

@@ -10,7 +10,7 @@ type PricingProps = {
     packBalance?: number;
 };
 
-export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
+export const Pricing: FC<PricingProps> = ({ packBalance }) => {
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
 
@@ -58,7 +58,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                 </div>
 
                 <div className="pt-2 space-y-3">
-                    <Card color="teal" className="text-xs">
+                    <Card color="teal" className="text-xs !border-transparent">
                         <div className="flex flex-col min-[500px]:flex-row gap-4 min-[500px]:gap-0">
                             <div className="flex-1 flex flex-col items-start min-[500px]:items-center text-left min-[500px]:text-center">
                                 <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
@@ -114,7 +114,10 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                         </div>
                     </Card>
                     <div className="flex flex-col md:flex-row gap-3">
-                        <Card color="teal" className="flex-1">
+                        <Card
+                            color="teal"
+                            className="flex-1 !border-transparent"
+                        >
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 💡 How Pollen is Spent
                             </div>
@@ -130,7 +133,10 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                 </div>
                             </div>
                         </Card>
-                        <Card color="teal" className="flex-1">
+                        <Card
+                            color="teal"
+                            className="flex-1 !border-transparent"
+                        >
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 🎁 Beta Bonus
                             </div>

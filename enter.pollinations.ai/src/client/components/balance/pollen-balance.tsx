@@ -90,7 +90,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
         totalPollen > 0 ? Math.min(100 - MIN_SEGMENT, rawFreePercentage) : 50;
 
     return (
-        <Panel color="purple" className="sm:p-8">
+        <Panel color="purple">
             <div className="flex flex-row justify-center text-center pb-1">
                 {/* Combined Pollen Gauge */}
                 <div className="flex flex-col items-center gap-4 w-full">

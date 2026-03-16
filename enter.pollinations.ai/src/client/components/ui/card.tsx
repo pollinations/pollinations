@@ -22,7 +22,7 @@ type CardProps = PropsWithChildren<{
 
 export const Card: FC<CardProps> = ({
     color = "gray",
-    bg = "bg-white/60",
+    bg = "bg-white/80",
     className,
     children,
 }) => (

@@ -227,7 +227,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                     {(showNew || showAlpha || showPaidOnly) && (
                         <span
                             className={cn(
-                                "flex items-center gap-1.5",
+                                "flex items-center gap-1.5 basis-full min-[500px]:basis-auto",
                                 isDisabled && "opacity-50",
                             )}
                         >

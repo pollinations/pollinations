@@ -21,7 +21,7 @@ export interface VertexAIImageRequest {
     height?: number;
     referenceImages?: VertexAIImageData[];
     model?: string; // Model ID: gemini-2.5-flash-image-preview (default) or gemini-3-pro-image-preview
-    imageSize?: string; // "0.5K", "1K", "2K", "4K" - supported by gemini-3-pro-image-preview and gemini-3.1-flash-image-preview
+    imageSize?: string; // "1K", "2K", "4K" - supported by gemini-3-pro-image-preview and gemini-3.1-flash-image-preview
     safe?: boolean; // When true, use stricter safety settings; when false, use BLOCK_ONLY_HIGH
 }
 

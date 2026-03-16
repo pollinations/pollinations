@@ -48,10 +48,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance = 0 }) => {
     return (
         <div
             className={cn(
-                "flex items-center rounded-xl px-3 py-2.5",
+                "flex items-center rounded-xl p-4",
                 isDisabled
                     ? "bg-transparent"
-                    : "bg-white/60 hover:bg-white/80 transition-colors",
+                    : "bg-white/80 hover:bg-white/90 transition-colors",
             )}
         >
             {/* Model info — flexible width */}
@@ -68,7 +68,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance = 0 }) => {
                     </span>
                     {showNew && (
                         <span className={cn(isDisabled && "opacity-50")}>
-                            <Badge color="green" size="md">
+                            <Badge color="green" size="sm">
                                 NEW
                             </Badge>
                         </span>
@@ -76,7 +76,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance = 0 }) => {
                     {showAlpha && (
                         <span className={cn(isDisabled && "opacity-50")}>
                             <Tooltip content="Alpha model — experimental, may be unstable">
-                                <Badge color="amber" size="md">
+                                <Badge color="amber" size="sm">
                                     ALPHA
                                 </Badge>
                             </Tooltip>
@@ -91,7 +91,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance = 0 }) => {
                                         : "This model uses purchased pollen only."
                                 }
                             >
-                                <Badge color="purple" size="md">
+                                <Badge color="purple" size="sm">
                                     PAID
                                 </Badge>
                             </Tooltip>

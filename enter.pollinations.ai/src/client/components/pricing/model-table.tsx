@@ -233,17 +233,17 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                             )}
                         >
                             {showNew && (
-                                <Badge color="green" size="md">
+                                <Badge color="green" size="sm">
                                     NEW
                                 </Badge>
                             )}
                             {showAlpha && (
-                                <Badge color="amber" size="md">
+                                <Badge color="amber" size="sm">
                                     ALPHA
                                 </Badge>
                             )}
                             {showPaidOnly && (
-                                <Badge color="purple" size="md">
+                                <Badge color="purple" size="sm">
                                     PAID
                                 </Badge>
                             )}

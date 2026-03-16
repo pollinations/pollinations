@@ -74,13 +74,6 @@ export const CreateEmbeddingRequestSchema = z
             description: "Output embedding dimensions (1-3072). Default: 3072.",
             example: 768,
         }),
-        encoding_format: z
-            .enum(["float", "base64"])
-            .optional()
-            .default("float")
-            .meta({
-                description: "Encoding format for the embedding values",
-            }),
         task_type: z
             .enum([
                 "SEMANTIC_SIMILARITY",

@@ -10,7 +10,7 @@ const IMAGE_TOKEN_ESTIMATE = 258;
 const AUDIO_TOKEN_ESTIMATE = 500;
 // Video: ~258 tokens/sec of video (visual frames) + audio tokens if present
 const VIDEO_TOKEN_ESTIMATE = 2580; // ~10 seconds worth as a rough default
-const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB max for fetched videos
+const MAX_MEDIA_SIZE = 20 * 1024 * 1024; // 20MB max for fetched media (images/videos)
 
 /**
  * Block internal/metadata URLs to prevent SSRF.
@@ -31,6 +31,33 @@ function assertPublicUrl(url: string): URL {
         throw new Error(`Blocked request to private/internal URL: ${h}`);
     }
     return parsed;
+}
+
+/**
+ * Fetch a media URL with SSRF protection and size limits.
+ * Returns the raw buffer and content-type header.
+ */
+async function fetchMedia(
+    url: string,
+    label: string,
+): Promise<{ buffer: ArrayBuffer; contentType: string }> {
+    assertPublicUrl(url);
+    const response = await fetch(url);
+    const cl = parseInt(response.headers.get("content-length") || "0", 10);
+    if (cl > MAX_MEDIA_SIZE) {
+        throw new Error(
+            `${label} too large: ${cl} bytes (max ${MAX_MEDIA_SIZE})`,
+        );
+    }
+    const buffer = await response.arrayBuffer();
+    if (buffer.byteLength > MAX_MEDIA_SIZE) {
+        throw new Error(
+            `${label} too large: ${buffer.byteLength} bytes (max ${MAX_MEDIA_SIZE})`,
+        );
+    }
+    const contentType =
+        response.headers.get("content-type") || "application/octet-stream";
+    return { buffer, contentType };
 }
 
 // Gemini embedding task types (passed through if provided)
@@ -72,7 +99,6 @@ interface EmbeddingRequest {
     model: string;
     input: string | string[] | ContentPart | ContentPart[];
     dimensions?: number;
-    encoding_format?: "float" | "base64";
     task_type?: GeminiTaskType;
 }
 
@@ -136,13 +162,8 @@ async function inputToGeminiParts(
                     inline_data: { mime_type: mimeType, data },
                 });
             } else {
-                assertPublicUrl(url);
-                const response = await fetch(url);
-                const buffer = await response.arrayBuffer();
+                const { buffer, contentType } = await fetchMedia(url, "Image");
                 const base64 = Buffer.from(buffer).toString("base64");
-                const contentType =
-                    response.headers.get("content-type") ||
-                    "application/octet-stream";
                 result.parts.push({
                     inline_data: { mime_type: contentType, data: base64 },
                 });
@@ -166,30 +187,13 @@ async function inputToGeminiParts(
                     inline_data: { mime_type: mimeType, data },
                 });
             } else {
-                assertPublicUrl(url);
-                const response = await fetch(url);
-                const contentLength = parseInt(
-                    response.headers.get("content-length") || "0",
-                    10,
-                );
-                if (contentLength > MAX_VIDEO_SIZE) {
-                    throw new Error(
-                        `Video too large: ${contentLength} bytes (max ${MAX_VIDEO_SIZE})`,
-                    );
-                }
-                const buffer = await response.arrayBuffer();
-                if (buffer.byteLength > MAX_VIDEO_SIZE) {
-                    throw new Error(
-                        `Video too large: ${buffer.byteLength} bytes (max ${MAX_VIDEO_SIZE})`,
-                    );
-                }
+                const { buffer, contentType } = await fetchMedia(url, "Video");
                 const base64 = Buffer.from(buffer).toString("base64");
-                const contentType =
-                    mime_type ||
-                    response.headers.get("content-type") ||
-                    "video/mp4";
                 result.parts.push({
-                    inline_data: { mime_type: contentType, data: base64 },
+                    inline_data: {
+                        mime_type: mime_type || contentType,
+                        data: base64,
+                    },
                 });
             }
             result.videoTokenEstimate += VIDEO_TOKEN_ESTIMATE;

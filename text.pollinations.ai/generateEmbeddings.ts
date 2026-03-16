@@ -8,6 +8,8 @@ const VERTEX_REGION = "us-central1";
 // Token estimate constants (Gemini docs: ~258 tokens per image, ~32 tokens/sec for audio)
 const IMAGE_TOKEN_ESTIMATE = 258;
 const AUDIO_TOKEN_ESTIMATE = 500;
+// Video: ~258 tokens/sec of video (visual frames) + audio tokens if present
+const VIDEO_TOKEN_ESTIMATE = 2580; // ~10 seconds worth as a rough default
 
 // Gemini embedding task types (passed through if provided)
 type GeminiTaskType =
@@ -37,7 +39,12 @@ interface AudioInput {
     input_audio: { data: string; format: string };
 }
 
-type ContentPart = TextInput | ImageUrlInput | AudioInput;
+interface VideoUrlInput {
+    type: "video_url";
+    video_url: { url: string; mime_type?: string };
+}
+
+type ContentPart = TextInput | ImageUrlInput | AudioInput | VideoUrlInput;
 
 interface EmbeddingRequest {
     model: string;
@@ -69,6 +76,7 @@ interface ParsedInput {
     textTokenEstimate: number;
     imageTokenEstimate: number;
     audioTokenEstimate: number;
+    videoTokenEstimate: number;
 }
 
 async function inputToGeminiParts(
@@ -79,6 +87,7 @@ async function inputToGeminiParts(
         textTokenEstimate: 0,
         imageTokenEstimate: 0,
         audioTokenEstimate: 0,
+        videoTokenEstimate: 0,
     };
 
     if (typeof input === "string") {
@@ -142,6 +151,44 @@ async function inputToGeminiParts(
                 },
             });
             result.audioTokenEstimate += AUDIO_TOKEN_ESTIMATE;
+        } else if (part.type === "video_url") {
+            const { url, mime_type } = part.video_url;
+            if (url.startsWith("data:")) {
+                const [meta, data] = url.split(",", 2);
+                const mimeType = mime_type || meta.split(":")[1].split(";")[0];
+                result.parts.push({
+                    inline_data: { mime_type: mimeType, data },
+                });
+            } else {
+                // Block internal/metadata URLs to prevent SSRF
+                const parsed = new URL(url);
+                const hostname = parsed.hostname;
+                if (
+                    hostname === "localhost" ||
+                    hostname.startsWith("127.") ||
+                    hostname.startsWith("10.") ||
+                    hostname.startsWith("192.168.") ||
+                    hostname.startsWith("169.254.") ||
+                    hostname === "metadata.google.internal" ||
+                    /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+                ) {
+                    throw new Error(
+                        `Blocked request to private/internal URL: ${hostname}`,
+                    );
+                }
+
+                const response = await fetch(url);
+                const buffer = await response.arrayBuffer();
+                const base64 = Buffer.from(buffer).toString("base64");
+                const contentType =
+                    mime_type ||
+                    response.headers.get("content-type") ||
+                    "video/mp4";
+                result.parts.push({
+                    inline_data: { mime_type: contentType, data: base64 },
+                });
+            }
+            result.videoTokenEstimate += VIDEO_TOKEN_ESTIMATE;
         }
     }
 
@@ -268,6 +315,7 @@ export async function generateEmbeddings(
                 textTokens,
                 imageTokens: parsed.imageTokenEstimate,
                 audioTokens: parsed.audioTokenEstimate,
+                videoTokens: parsed.videoTokenEstimate,
             };
         }),
     );
@@ -281,13 +329,19 @@ export async function generateEmbeddings(
     const totalTextTokens = results.reduce((s, r) => s + r.textTokens, 0);
     const totalImageTokens = results.reduce((s, r) => s + r.imageTokens, 0);
     const totalAudioTokens = results.reduce((s, r) => s + r.audioTokens, 0);
-    const promptTokens = totalTextTokens + totalImageTokens + totalAudioTokens;
+    const totalVideoTokens = results.reduce((s, r) => s + r.videoTokens, 0);
+    const promptTokens =
+        totalTextTokens +
+        totalImageTokens +
+        totalAudioTokens +
+        totalVideoTokens;
 
     // Build usage headers per modality for correct billing
     const usage: Usage = {};
     if (totalTextTokens > 0) usage.promptTextTokens = totalTextTokens;
     if (totalImageTokens > 0) usage.promptImageTokens = totalImageTokens;
     if (totalAudioTokens > 0) usage.promptAudioTokens = totalAudioTokens;
+    if (totalVideoTokens > 0) usage.promptVideoTokens = totalVideoTokens;
 
     const usageHeaders = buildUsageHeaders(modelId, usage);
 

@@ -29,10 +29,27 @@ const AudioContentPartSchema = z.object({
     }),
 });
 
+const VideoUrlContentPartSchema = z.object({
+    type: z.literal("video_url"),
+    video_url: z.object({
+        url: z.string().meta({
+            description:
+                "Video URL or base64 data URI. Supports mp4 and mpeg. Max 80s with audio, 120s without.",
+            example: "https://example.com/video.mp4",
+        }),
+        mime_type: z.string().optional().meta({
+            description:
+                "Video MIME type (auto-detected if omitted). Supported: video/mp4, video/mpeg.",
+            example: "video/mp4",
+        }),
+    }),
+});
+
 const ContentPartSchema = z.union([
     TextContentPartSchema,
     ImageUrlContentPartSchema,
     AudioContentPartSchema,
+    VideoUrlContentPartSchema,
 ]);
 
 export const CreateEmbeddingRequestSchema = z
@@ -50,7 +67,7 @@ export const CreateEmbeddingRequestSchema = z
             ])
             .meta({
                 description:
-                    "Input text or content parts to embed. Supports strings, arrays of strings, or multimodal content parts (text, image_url, input_audio).",
+                    "Input text or content parts to embed. Supports strings, arrays of strings, or multimodal content parts (text, image_url, input_audio, video_url).",
                 example: "Hello world",
             }),
         dimensions: z.number().int().min(1).max(3072).optional().meta({

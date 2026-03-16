@@ -9,6 +9,7 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     promptAudioTokens: "x-usage-prompt-audio-tokens",
     promptAudioSeconds: "x-usage-prompt-audio-seconds",
     promptImageTokens: "x-usage-prompt-image-tokens",
+    promptVideoTokens: "x-usage-prompt-video-tokens",
     completionTextTokens: "x-usage-completion-text-tokens",
     completionReasoningTokens: "x-usage-completion-reasoning-tokens",
     completionAudioTokens: "x-usage-completion-audio-tokens",

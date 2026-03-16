@@ -115,7 +115,7 @@ const TierScreen: FC<{
                     </a>
                 </p>
 
-                <Card color={cardColor}>
+                <Card color={cardColor} className="!border-transparent">
                     <TierExplanation currentTier={tier} />
                 </Card>
 

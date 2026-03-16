@@ -1,4 +1,5 @@
 import { type FC, useState } from "react";
+import { cn } from "../../../util.ts";
 import { Badge } from "../ui/badge.tsx";
 import { calculatePerPollen } from "./calculations.ts";
 import {
@@ -19,15 +20,10 @@ import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
-    isLast?: boolean;
     packBalance?: number;
 };
 
-export const ModelRow: FC<ModelRowProps> = ({
-    model,
-    isLast = false,
-    packBalance = 0,
-}) => {
+export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [copied, setCopied] = useState(false);
@@ -38,7 +34,6 @@ export const ModelRow: FC<ModelRowProps> = ({
         setTimeout(() => setCopied(false), 1500);
     };
 
-    // Get model capabilities
     const showReasoning = hasReasoning(model.name);
     const showVision = hasVision(model.name);
     const showAudioInput = hasAudioInput(model.name);
@@ -48,203 +43,223 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
-    const isDisabled = showPaidOnly && packBalance <= 0;
-
-    const borderClass = isLast ? "" : "border-b border-gray-200";
-    const priceColor = showPaidOnly ? "purple" : ("teal" as const);
+    const isDisabled =
+        showPaidOnly && packBalance !== undefined && packBalance <= 0;
 
     return (
-        <tr>
-            <td
-                className={`py-2 px-2 text-sm text-gray-700 relative group ${borderClass}`}
-            >
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-4 whitespace-nowrap">
+        <div
+            className={cn(
+                "flex items-center rounded-xl p-4",
+                isDisabled
+                    ? "bg-transparent"
+                    : "bg-white/80 hover:bg-white/90 transition-colors",
+            )}
+        >
+            {/* Model info — flexible width */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 whitespace-nowrap">
+                    {isDisabled ? (
+                        <Tooltip content="Top up your pollen balance to unlock this model.">
+                            <span
+                                className={cn("text-sm font-medium opacity-75")}
+                            >
+                                {modelDisplayName || model.name}
+                            </span>
+                        </Tooltip>
+                    ) : (
                         <span
-                            className={`${showNew ? "font-bold" : "font-medium"} ${isDisabled ? "opacity-50" : ""}`}
+                            className={cn(
+                                "text-sm",
+                                showNew ? "font-bold" : "font-medium",
+                            )}
                         >
                             {modelDisplayName || model.name}
                         </span>
-                        {showNew && (
-                            <Badge
-                                color="green"
-                                size="sm"
-                                className="font-semibold shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-[glow_2s_ease-in-out_infinite]"
-                            >
+                    )}
+                    {showNew && (
+                        <span className={cn(isDisabled && "opacity-50")}>
+                            <Badge color="green" size="sm">
                                 NEW
                             </Badge>
-                        )}
-                        {showAlpha && (
+                        </span>
+                    )}
+                    {showAlpha && (
+                        <span className={cn(isDisabled && "opacity-50")}>
                             <Tooltip content="Alpha model — experimental, may be unstable">
-                                <span className="text-[10px] text-amber-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.5)] whitespace-nowrap">
-                                    ⚠️ ALPHA
-                                </span>
+                                <Badge color="amber" size="sm">
+                                    ALPHA
+                                </Badge>
                             </Tooltip>
-                        )}
-                        {showPaidOnly && (
+                        </span>
+                    )}
+                    {showPaidOnly && (
+                        <span className={cn(isDisabled && "opacity-50")}>
                             <Tooltip
                                 content={
                                     isDisabled
-                                        ? "Top up your 💎 pollen balance to unlock this model."
-                                        : "This model uses your purchased pollen 💎 only."
+                                        ? "Top up your pollen balance to unlock this model."
+                                        : "This model uses purchased pollen only."
                                 }
                             >
-                                <span className="text-[10px] text-purple-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)] animate-[glow-purple_2s_ease-in-out_infinite] whitespace-nowrap">
-                                    💎 PAID ONLY
-                                </span>
+                                <Badge color="purple" size="sm">
+                                    PAID
+                                </Badge>
                             </Tooltip>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-3 whitespace-nowrap">
-                        <button
-                            type="button"
-                            onClick={copyModelName}
-                            className={`text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer text-left ${isDisabled ? "opacity-50" : ""}`}
-                            title="Click to copy"
-                        >
-                            {copied ? "✓ copied" : model.name}
-                        </button>
-                        {showVision && (
-                            <Tooltip
-                                content={
-                                    model.type === "image"
-                                        ? "Vision (image-to-image)"
-                                        : "Vision input"
-                                }
-                            >
-                                <span className="text-base">👁️</span>
-                            </Tooltip>
-                        )}
-                        {showAudioInput && (
-                            <Tooltip content="Audio input">
-                                <span className="text-base">🎙️</span>
-                            </Tooltip>
-                        )}
-                        {showAudioOutput && (
-                            <Tooltip content="Audio output">
-                                <span className="text-base">🔊</span>
-                            </Tooltip>
-                        )}
-                        {showReasoning && (
-                            <Tooltip content="Reasoning">
-                                <span className="text-base">🧠</span>
-                            </Tooltip>
-                        )}
-                        {showSearch && (
-                            <Tooltip content="Web search">
-                                <span className="text-base">🔍</span>
-                            </Tooltip>
-                        )}
-                        {showCodeExecution && (
-                            <Tooltip content="Code execution">
-                                <span className="text-base">💻</span>
-                            </Tooltip>
-                        )}
-                    </div>
+                        </span>
+                    )}
                 </div>
-            </td>
-            <td className={`py-2 px-2 text-sm ${borderClass}`}>
-                <div className="flex justify-center">
-                    <Badge
-                        color={showPaidOnly ? "purple" : "teal"}
-                        className={model.type === "image" ? "uppercase" : ""}
+                <div
+                    className={cn(
+                        "flex items-center gap-2 whitespace-nowrap",
+                        isDisabled && "opacity-50",
+                    )}
+                >
+                    <button
+                        type="button"
+                        onClick={copyModelName}
+                        className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer text-left"
+                        title="Click to copy"
                     >
-                        {genPerPollen}
-                    </Badge>
+                        {copied ? "✓ copied" : model.name}
+                    </button>
+                    {showVision && (
+                        <Tooltip
+                            content={
+                                model.type === "image"
+                                    ? "Vision (image-to-image)"
+                                    : "Vision input"
+                            }
+                        >
+                            <span className="text-sm">👁️</span>
+                        </Tooltip>
+                    )}
+                    {showAudioInput && (
+                        <Tooltip content="Audio input">
+                            <span className="text-sm">🎙️</span>
+                        </Tooltip>
+                    )}
+                    {showAudioOutput && (
+                        <Tooltip content="Audio output">
+                            <span className="text-sm">🔊</span>
+                        </Tooltip>
+                    )}
+                    {showReasoning && (
+                        <Tooltip content="Reasoning">
+                            <span className="text-sm">🧠</span>
+                        </Tooltip>
+                    )}
+                    {showSearch && (
+                        <Tooltip content="Web search">
+                            <span className="text-sm">🔍</span>
+                        </Tooltip>
+                    )}
+                    {showCodeExecution && (
+                        <Tooltip content="Code execution">
+                            <span className="text-sm">💻</span>
+                        </Tooltip>
+                    )}
                 </div>
-            </td>
-            <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
+            </div>
+
+            {/* Per pollen — fixed width */}
+            <div
+                className={cn(
+                    "w-[90px] text-center shrink-0",
+                    isDisabled && "opacity-50",
+                )}
+            >
+                <span className="inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full">
+                    {genPerPollen}
+                </span>
+            </div>
+
+            {/* Input prices — fixed width */}
+            <div
+                className={cn("w-[100px] shrink-0", isDisabled && "opacity-50")}
+            >
                 <div className="flex flex-col gap-1 items-center">
                     <PriceBadge
                         prices={[model.promptTextPrice]}
                         emoji="💬"
                         subEmojis={["💬"]}
                         perToken={model.perToken}
-                        color={priceColor}
                     />
                     <PriceBadge
                         prices={[model.promptCachedPrice]}
                         emoji="💾"
                         subEmojis={["💾"]}
                         perToken={model.perToken}
-                        color={priceColor}
                     />
                     <PriceBadge
                         prices={[model.promptAudioPrice]}
                         emoji="🔊"
                         subEmojis={["🔊"]}
                         perToken={model.perToken}
-                        color={priceColor}
                     />
                     <PriceBadge
                         prices={[model.promptImagePrice]}
                         emoji="🖼️"
                         subEmojis={["🖼️"]}
                         perToken={model.perToken}
-                        color={priceColor}
                     />
                 </div>
-            </td>
-            <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
+            </div>
+
+            {/* Output prices — fixed width */}
+            <div
+                className={cn("w-[100px] shrink-0", isDisabled && "opacity-50")}
+            >
                 <div className="flex flex-col gap-1 items-center">
                     <PriceBadge
                         prices={[model.completionTextPrice]}
                         emoji="💬"
                         subEmojis={["💬"]}
                         perToken={model.perToken}
-                        color={priceColor}
                     />
                     <PriceBadge
                         prices={[model.completionAudioPrice]}
                         emoji="🔊"
                         subEmojis={["🔊"]}
                         perToken={model.perToken}
-                        color={priceColor}
                     />
                     <PriceBadge
                         prices={[model.perCharPrice]}
                         emoji="🔊"
                         subEmojis={["🔊"]}
                         perKChar
-                        color={priceColor}
                     />
                     <PriceBadge
                         prices={[model.perSecondPrice]}
                         emoji={model.type === "audio" ? "🔊" : "🎬"}
                         subEmojis={[model.type === "audio" ? "🔊" : "🎬"]}
                         perSecond
-                        color={priceColor}
                     />
                     <PriceBadge
                         prices={[model.perAudioSecondPrice]}
                         emoji="🔊"
                         subEmojis={["🔊"]}
                         perSecond
-                        color={priceColor}
                     />
                     <PriceBadge
                         prices={[model.perTokenPrice]}
                         emoji="🎬"
                         subEmojis={["🎬"]}
                         perToken
-                        color={priceColor}
                     />
                     <PriceBadge
                         prices={[model.perImagePrice]}
                         emoji="🖼️"
                         subEmojis={["🖼️"]}
                         perImage
-                        color={priceColor}
                     />
                     <PriceBadge
                         prices={[model.completionImagePrice]}
                         emoji="🖼️"
                         subEmojis={["🖼️"]}
                         perToken={model.perToken}
-                        color={priceColor}
                     />
                 </div>
-            </td>
-        </tr>
+            </div>
+        </div>
     );
 };

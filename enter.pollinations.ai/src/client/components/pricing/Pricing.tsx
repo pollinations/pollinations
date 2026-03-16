@@ -10,7 +10,7 @@ type PricingProps = {
     packBalance?: number;
 };
 
-export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
+export const Pricing: FC<PricingProps> = ({ packBalance }) => {
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
 
@@ -22,7 +22,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
     return (
         <div className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row justify-between gap-3">
-                <h2 className="font-bold flex-1">Pricing</h2>
+                <h2 className="font-bold flex-1">Models</h2>
                 <div className="flex flex-wrap gap-2">
                     <Button
                         as="a"
@@ -46,7 +46,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                     </Button>
                 </div>
             </div>
-            <Panel color="teal" className="space-y-6">
+            <Panel color="teal" className="space-y-4 pt-3">
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable
                         imageModels={imageModels}
@@ -57,10 +57,10 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                     />
                 </div>
 
-                <div className="pt-4 space-y-3">
-                    <Card color="teal" className="text-xs">
-                        <div className="flex">
-                            <div className="flex-1 flex flex-col items-center text-center">
+                <div className="pt-2 space-y-3">
+                    <Card color="teal" className="text-xs !border-transparent">
+                        <div className="flex flex-col min-[500px]:flex-row gap-4 min-[500px]:gap-0">
+                            <div className="flex-1 flex flex-col items-start min-[500px]:items-center text-left min-[500px]:text-center">
                                 <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                                     Model Capabilities
                                 </div>
@@ -73,8 +73,9 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     <div>💻 code exec</div>
                                 </div>
                             </div>
-                            <div className="w-px bg-teal-300 mx-4 self-stretch" />
-                            <div className="flex-1 flex flex-col items-center text-center">
+                            <div className="hidden min-[500px]:block w-px bg-teal-300 mx-4 self-stretch" />
+                            <div className="min-[500px]:hidden h-px bg-teal-300" />
+                            <div className="flex-1 flex flex-col items-start min-[500px]:items-center text-left min-[500px]:text-center">
                                 <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                                     Token Types
                                 </div>
@@ -86,8 +87,9 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     <div>🔊 audio</div>
                                 </div>
                             </div>
-                            <div className="w-px bg-teal-300 mx-4 self-stretch" />
-                            <div className="flex-1 flex flex-col items-center text-center">
+                            <div className="hidden min-[500px]:block w-px bg-teal-300 mx-4 self-stretch" />
+                            <div className="min-[500px]:hidden h-px bg-teal-300" />
+                            <div className="flex-1 flex flex-col items-start min-[500px]:items-center text-left min-[500px]:text-center">
                                 <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                                     Pricing Metrics
                                 </div>
@@ -111,8 +113,11 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                             </div>
                         </div>
                     </Card>
-                    <div className="flex flex-col md:flex-row justify-center gap-3">
-                        <Card color="teal">
+                    <div className="flex flex-col md:flex-row gap-3">
+                        <Card
+                            color="teal"
+                            className="flex-1 !border-transparent"
+                        >
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 💡 How Pollen is Spent
                             </div>
@@ -128,7 +133,10 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                 </div>
                             </div>
                         </Card>
-                        <Card color="teal">
+                        <Card
+                            color="teal"
+                            className="flex-1 !border-transparent"
+                        >
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 🎁 Beta Bonus
                             </div>

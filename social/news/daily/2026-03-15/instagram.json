@@ -1,0 +1,42 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Translating technical PRs (frontend optimization, MCP integrations, showcase apps) into a cozy visual diary. Using the rotating cast of characters to represent building dioramas, optimizing speed, and cleaning up old logs.",
+  "visual_style": "Cozy 8-bit pixel art, soft pastel gradients, prominent lime green (#ecf874), Stardew Valley/A Short Hike aesthetic, warm lighting, chunky sprites.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wearing a tiny architect hat. She hovers next to a chunky pixel robot with a CRT monitor head who is holding a glowing miniature city diorama. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'CITY'. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic, soft pastel gradients.",
+      "description": "Polly and the Monitor Robot admiring a newly generated AI city diorama.",
+      "text_in_image": "CITY"
+    },
+    {
+      "prompt": "Cozy pixel art scene of a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wearing a tiny sweatband. She is zipping around watering a fast-growing digital code-plant in a lime green (#ecf874) flower pot. Soft mint and peach pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like A Short Hike. Text in pixel font: 'SPEED'. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic, soft pastel gradients.",
+      "description": "Polly doing a frontend speed run, watering a fast-growing code plant.",
+      "text_in_image": "SPEED",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-15/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of a round tan mochi-ball creature with tiny dot eyes happily eating a stack of old error logs, while a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wearing tiny wizard glasses reads a glowing storybook nearby. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Speech bubble in pixel font: 'NOMNOM'. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic, soft pastel gradients.",
+      "description": "Nomnom cleaning up error logs while Polly reads the new LoreLoom interactive storybook.",
+      "text_in_image": "NOMNOM"
+    }
+  ],
+  "caption": "9 PRs merged this week. The showcase is getting wild—someone built an AI City Diorama generator, and another shipped LoreLoom, an interactive storybook. We also added PromptPilot to the MCP server because making agents talk to each other is just what we do now.\n\nUnder the hood: frontend speed runs (lazy-loading, SWR caching) so things snap into place faster, plus some necessary un-breaking of image editing URLs and billing logic.\n\nEverything's open source. Come build something weird. 🌸",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#webdev",
+    "#generativeai",
+    "#mcp"
+  ],
+  "alt_text": "A carousel of three cozy pixel art images featuring a digital bee, a robot, and a round mochi creature interacting with miniature cities, fast-growing plants, and glowing storybooks in a warm, retro aesthetic.",
+  "date": "2026-03-15",
+  "generated_at": "2026-03-16T06:30:44.244975+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

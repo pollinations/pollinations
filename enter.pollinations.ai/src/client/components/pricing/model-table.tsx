@@ -483,7 +483,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
 
             {/* Tab content — scrollable */}
             {activeSection && (
-                <div className="max-h-[70vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-teal-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+                <div className="max-h-[70vh] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-teal-200 [&::-webkit-scrollbar-thumb]:rounded-full">
                     <TabContent
                         type={activeSection.type}
                         models={activeSection.models}

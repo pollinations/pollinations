@@ -60,7 +60,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                 <div className="pt-2 space-y-3">
                     <Card color="teal" className="text-xs">
                         <div className="flex flex-col min-[500px]:flex-row gap-4 min-[500px]:gap-0">
-                            <div className="flex-1 flex flex-col items-center text-center">
+                            <div className="flex-1 flex flex-col items-start min-[500px]:items-center text-left min-[500px]:text-center">
                                 <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                                     Model Capabilities
                                 </div>
@@ -75,7 +75,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                             </div>
                             <div className="hidden min-[500px]:block w-px bg-teal-300 mx-4 self-stretch" />
                             <div className="min-[500px]:hidden h-px bg-teal-300" />
-                            <div className="flex-1 flex flex-col items-center text-center">
+                            <div className="flex-1 flex flex-col items-start min-[500px]:items-center text-left min-[500px]:text-center">
                                 <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                                     Token Types
                                 </div>
@@ -89,7 +89,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                             </div>
                             <div className="hidden min-[500px]:block w-px bg-teal-300 mx-4 self-stretch" />
                             <div className="min-[500px]:hidden h-px bg-teal-300" />
-                            <div className="flex-1 flex flex-col items-center text-center">
+                            <div className="flex-1 flex flex-col items-start min-[500px]:items-center text-left min-[500px]:text-center">
                                 <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                                     Pricing Metrics
                                 </div>

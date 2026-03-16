@@ -1,0 +1,34 @@
+{
+  "pr_number": 9178,
+  "title": "fix: bump Tinybird model stats limit from 50 to 200",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9178",
+  "merged_at": "2026-03-16T20:06:31Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No model left behind",
+    "blurb": "We fixed a tiny bug where some of our AI models were hiding from the pricing page. Now all 65+ models proudly display their pollen estimates!",
+    "summary": "Increased the Tinybird model stats fetch limit from 50 to 200 to ensure all available models are properly retrieved.",
+    "impact": "Users will now see accurate per-pollen cost estimates on the pricing page for all models, including those that were previously missing.",
+    "keywords": [
+      "pricing",
+      "models",
+      "tinybird",
+      "bugfix",
+      "api"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot looking at a very long, unrolled list or receipt of data. Represents the expanded limit of items being fetched and displayed.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a very long, unrolled paper scroll filled with pixelated charts and numbers. A chunky pixel robot with a CRT monitor head looks at the scroll excitedly, screen glowing lime green (#ecf874). Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-16T20:07:19.134013+00:00"
+}

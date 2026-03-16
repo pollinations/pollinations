@@ -165,6 +165,30 @@ export async function runTierRefill(
     const refillTimestamp = Date.now();
     const timestamp = new Date(refillTimestamp).toISOString();
 
+    // --- Hourly refill (spore, seed) ---
+    const currentHourMs = getCurrentHourMs();
+    const lastHourlyMs = await getLastRefillTime(kv, HOURLY_REFILL_KV_KEY);
+    let hourlyRefillCount = 0;
+    const hourlySkipped = lastHourlyMs >= currentHourMs;
+
+    // --- Daily refill check ---
+    const todayStartMs = getTodayStartMs();
+    const lastDailyMs = await getLastRefillTime(kv, DAILY_REFILL_KV_KEY);
+    let dailyRefillCount = 0;
+    const dailySkipped = lastDailyMs >= todayStartMs;
+
+    // Skip early if both already ran (avoids unnecessary DB scan)
+    if (hourlySkipped && dailySkipped) {
+        log.info("TIER_REFILL_SKIPPED: hourly and daily already ran", {
+            eventType: "tier_refill_skipped",
+        });
+        return {
+            success: true,
+            skipped: true,
+            timestamp,
+        };
+    }
+
     // Snapshot balances before updates (for Tinybird events)
     const usersBeforeRefill = await db
         .select({
@@ -174,12 +198,6 @@ export async function runTierRefill(
         })
         .from(userTable)
         .where(sql`tier IS NOT NULL`);
-
-    // --- Hourly refill (spore, seed) ---
-    const currentHourMs = getCurrentHourMs();
-    const lastHourlyMs = await getLastRefillTime(kv, HOURLY_REFILL_KV_KEY);
-    let hourlyRefillCount = 0;
-    const hourlySkipped = lastHourlyMs >= currentHourMs;
 
     if (!hourlySkipped) {
         // Add hourly pollen, capped at the tier max (negative balances recover gradually)
@@ -198,12 +216,6 @@ export async function runTierRefill(
         await kv.put(HOURLY_REFILL_KV_KEY, refillTimestamp.toString());
     }
 
-    // --- Daily refill (flower, nectar, router) ---
-    const todayStartMs = getTodayStartMs();
-    const lastDailyMs = await getLastRefillTime(kv, DAILY_REFILL_KV_KEY);
-    let dailyRefillCount = 0;
-    const dailySkipped = lastDailyMs >= todayStartMs;
-
     if (!dailySkipped) {
         // Add daily pollen, capped at the tier max (negative balances recover gradually)
         const dailyResult = await db.run(sql`
@@ -213,26 +225,13 @@ export async function runTierRefill(
                     WHEN 'flower' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.flower}, ${TIER_POLLEN.flower})
                     WHEN 'nectar' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.nectar}, ${TIER_POLLEN.nectar})
                     WHEN 'router' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.router}, ${TIER_POLLEN.router})
-                    ELSE 0
+                    ELSE tier_balance
                 END,
                 last_tier_grant = ${refillTimestamp}
             WHERE tier IN ('flower', 'nectar', 'router')
         `);
         dailyRefillCount = dailyResult.meta.changes ?? 0;
         await kv.put(DAILY_REFILL_KV_KEY, refillTimestamp.toString());
-    }
-
-    const totalSkipped = hourlySkipped && dailySkipped;
-
-    if (totalSkipped) {
-        log.info("TIER_REFILL_SKIPPED: hourly and daily already ran", {
-            eventType: "tier_refill_skipped",
-        });
-        return {
-            success: true,
-            skipped: true,
-            reason: "Both hourly and daily refills already ran",
-        };
     }
 
     const tierBreakdown = calculateTierBreakdown(usersBeforeRefill);

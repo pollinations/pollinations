@@ -86,6 +86,14 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "gemini-lite",
+        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
+        transform: pipe(
+            sanitizeToolSchemas(),
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
         name: "gemini-search",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(

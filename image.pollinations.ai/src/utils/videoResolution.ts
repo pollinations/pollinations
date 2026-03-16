@@ -17,12 +17,12 @@ const log = debug("pollinations:video:resolution");
 export interface VideoResolutionInput {
     width?: number;
     height?: number;
-    aspectRatio?: "16:9" | "9:16";
+    aspectRatio?: "16:9" | "9:16" | "1:1";
     defaultResolution?: "480P" | "720P" | "1080P";
 }
 
 export interface VideoResolutionOutput {
-    aspectRatio: "16:9" | "9:16";
+    aspectRatio: "16:9" | "9:16" | "1:1";
     resolution: "480P" | "720P" | "1080P";
 }
 
@@ -65,9 +65,10 @@ export function calculateVideoResolution(
         const totalPixels = input.width * input.height;
         const ratio = input.width / input.height;
 
-        // Determine aspect ratio (16:9 = 1.778, 9:16 = 0.5625)
-        // Threshold at 1.0 (square) - wider than square → 16:9, taller → 9:16
-        const aspectRatio = ratio > 1.0 ? "16:9" : "9:16";
+        // Determine aspect ratio (16:9 = 1.778, 1:1 = 1.0, 9:16 = 0.5625)
+        // Use thresholds: >1.2 → 16:9, 0.83-1.2 → 1:1, <0.83 → 9:16
+        const aspectRatio: "16:9" | "9:16" | "1:1" =
+            ratio > 1.2 ? "16:9" : ratio < 0.83 ? "9:16" : "1:1";
 
         // Determine resolution tier from pixel count
         let resolution = RESOLUTION_TIERS[0].label; // Default to lowest

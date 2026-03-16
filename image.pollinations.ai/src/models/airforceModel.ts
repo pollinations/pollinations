@@ -203,8 +203,13 @@ async function buildRequestBody(
                         ? "3:2"
                         : aspectRatio === "9:16"
                           ? "2:3"
-                          : aspectRatio;
+                          : aspectRatio; // 1:1 passes through as-is
                 requestBody.aspectRatio = airforceAspectRatio;
+
+                // Pass mode parameter if provided (fun, normal, spicy)
+                if (safeParams.mode) {
+                    requestBody.mode = safeParams.mode;
+                }
             }
 
             // Map resolution to size parameter (grok-video uses WxH format)
@@ -218,6 +223,11 @@ async function buildRequestBody(
                     "480P": "480x854",
                     "720P": "720x1280",
                     "1080P": "1080x1920",
+                },
+                "1:1": {
+                    "480P": "480x480",
+                    "720P": "720x720",
+                    "1080P": "1080x1080",
                 },
             };
 

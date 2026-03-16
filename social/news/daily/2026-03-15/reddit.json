@@ -1,0 +1,13 @@
+{
+  "title": "Merged 9 PRs: frontend chunk splitting, MCP integration, and SSE parsing fixes",
+  "image_prompt": "Cozy pixel art scene of a cute 8-bit bee mascot wearing a tiny tool belt, optimizing a retro server rack. The round tan mochi-ball Nomnom creature is happily eating chunked code blocks nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Text in simple pixel font: 'FRONTEND OPTIMIZED'. Emotionally warm, nostalgic but beautiful.",
+  "body": "Merged 9 PRs today. The focus was mostly on frontend performance optimization and fixing some backend edge cases with streaming and image editing.\n\nOn the frontend, we did a minor speed run. We implemented markdown lazy-loading, chunk splitting, and SWR caching. The UI should feel noticeably snappier. While we were in there, we fixed a bug where the model list was getting cut off in the edit key dialog.\n\nFor the backend, we resolved a billing pipeline issue by enforcing a check on the response content-type before attempting SSE parsing. If you were seeing weird behavior with streaming responses, that is why. We also fixed how image URLs are passed directly to Pruna p-image-edit, so image manipulation endpoints are reliable again. We also tweaked our internal metrics to exclude free-tier requests from the average cost calculation, which was heavily skewing the dashboard data.\n\nFinally, a few community apps hit the showcase: PromptPilot MCP Server, an AI City Diorama generator, and LoreLoom.\n\nCode and roadmap are open as always: https://github.com/pollinations/pollinations. Let us know if the frontend caching changes broke anything on your end.",
+  "reasoning": "Leads with technical specifics rather than hype. Acknowledges past bugs honestly (SSE parsing, UI cut-offs). The tone is direct, peer-to-peer, and invites practical feedback.",
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-15/images/reddit.jpg",
+    "prompt": "Cozy pixel art scene of a cute 8-bit bee mascot wearing a tiny tool belt, optimizing a retro server rack. The round tan mochi-ball Nomnom creature is happily eating chunked code blocks nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Text in simple pixel font: 'FRONTEND OPTIMIZED'. Emotionally warm, nostalgic but beautiful."
+  },
+  "date": "2026-03-15",
+  "generated_at": "2026-03-16T06:30:44.244975+00:00",
+  "platform": "reddit"
+}

@@ -3,7 +3,7 @@
 export const HELLO_PAGE = {
     pageTitle: "hello",
     pageDescription:
-        "Build AI apps with easy APIs, daily grants, and community support",
+        "Build AI apps with easy APIs, free compute, and community support",
     // Section 1 — Hero
     heroTitle: "Build an AI app.",
     heroBodyPrefix: "⚡ One API for text, image, audio, and video.",
@@ -23,7 +23,7 @@ export const HELLO_PAGE = {
     // How it works section
     howItWorksTitle: "How it works",
     howItWorksBuildDesc: "Use one API across models.",
-    howItWorksShipDesc: "Start free with daily compute.",
+    howItWorksShipDesc: "Start free with regular compute refills.",
     howItWorksGetPaidDesc: "Your users get their own compute.",
 
     // Start free section
@@ -32,7 +32,11 @@ export const HELLO_PAGE = {
         { pre: "🔌 Use ", bold: "one API", post: " across models" },
         { pre: "🚀 ", bold: "No setup", post: " required" },
         { pre: "🏢 No company needed", bold: "", post: "" },
-        { pre: "🌱 ", bold: "Free daily compute", post: " to build and ship" },
+        {
+            pre: "🌱 ",
+            bold: "Free compute with regular refills",
+            post: " to build and ship",
+        },
         {
             pre: "📈 As your app grows, you ",
             bold: "get more compute",
@@ -40,7 +44,7 @@ export const HELLO_PAGE = {
         },
         { pre: "⚡ Just ", bold: "sign up", post: " and go" },
     ],
-    freeDailyComputeTitle: "Free daily compute",
+    freeDailyComputeTitle: "Free compute",
 
     tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
     computeTiersTitle: "Compute tiers",
@@ -50,7 +54,7 @@ export const HELLO_PAGE = {
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
     tierSeedDescription: "You're building. Contributing, shipping apps.",
-    tierSeedGrant: "3 pollen / day",
+    tierSeedGrant: "0.15 pollen / hour",
     tierSeedPoints: "",
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
@@ -66,7 +70,7 @@ export const HELLO_PAGE = {
     // Section — For your users / BYOP
     usersTitle: "For your users",
     usersBody:
-        "Each user who signs in gets free weekly compute to try your app. When they need more, it just works — no Stripe setup on your end.",
+        "Each user who signs in gets free hourly compute to try your app. When they need more, it just works — no Stripe setup on your end.",
     usersPaymentsLink: "🔌 Set up for your app",
 
     // Section 8 — We Build in the Open

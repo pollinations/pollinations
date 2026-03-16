@@ -130,7 +130,7 @@ export const FAQ: FC = () => {
                         color="violet"
                         weight="light"
                     >
-                        View on GitHub
+                        🐙 View on GitHub
                     </Button>
                 </div>
             </div>

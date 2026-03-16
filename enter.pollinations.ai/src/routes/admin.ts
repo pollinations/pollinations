@@ -182,13 +182,13 @@ export async function runTierRefill(
     const hourlySkipped = lastHourlyMs >= currentHourMs;
 
     if (!hourlySkipped) {
-        // Reset balance to the hourly pollen amount (same pattern as daily tiers)
+        // Add hourly pollen, capped at the tier max (negative balances recover gradually)
         const hourlyResult = await db.run(sql`
             UPDATE user
             SET
                 tier_balance = CASE tier
-                    WHEN 'spore' THEN ${TIER_POLLEN.spore}
-                    WHEN 'seed' THEN ${TIER_POLLEN.seed}
+                    WHEN 'spore' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.spore}, ${TIER_POLLEN.spore})
+                    WHEN 'seed' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.seed}, ${TIER_POLLEN.seed})
                     ELSE tier_balance
                 END,
                 last_tier_grant = ${refillTimestamp}
@@ -205,13 +205,14 @@ export async function runTierRefill(
     const dailySkipped = lastDailyMs >= todayStartMs;
 
     if (!dailySkipped) {
+        // Add daily pollen, capped at the tier max (negative balances recover gradually)
         const dailyResult = await db.run(sql`
             UPDATE user
             SET
                 tier_balance = CASE tier
-                    WHEN 'flower' THEN ${TIER_POLLEN.flower}
-                    WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
-                    WHEN 'router' THEN ${TIER_POLLEN.router}
+                    WHEN 'flower' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.flower}, ${TIER_POLLEN.flower})
+                    WHEN 'nectar' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.nectar}, ${TIER_POLLEN.nectar})
+                    WHEN 'router' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.router}, ${TIER_POLLEN.router})
                     ELSE 0
                 END,
                 last_tier_grant = ${refillTimestamp}

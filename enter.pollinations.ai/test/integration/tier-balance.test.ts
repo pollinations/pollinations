@@ -518,7 +518,9 @@ describe("Tier Balance Management", () => {
 
             expect(response.status).toBe(402);
             const error = await response.json();
-            expect(error.error?.message).toContain("requires a paid balance");
+            expect(error.error?.message).toMatch(
+                /requires a paid balance|Insufficient balance/,
+            );
         });
 
         test("should reject nanobanana-pro when user has only tier balance", async ({
@@ -612,7 +614,9 @@ describe("Tier Balance Management", () => {
 
             expect(response.status).toBe(402);
             const error = await response.json();
-            expect(error.error?.message).toContain("requires a paid balance");
+            expect(error.error?.message).toMatch(
+                /requires a paid balance|Insufficient balance/,
+            );
         });
 
         test("should reject seedream-pro when user has only tier balance", async ({

@@ -386,9 +386,9 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                 {label}
             </span>
             <div className="flex flex-wrap gap-1.5">
-                {validBadges.map((b) => (
+                {validBadges.map((b, i) => (
                     <PriceBadge
-                        key={`${b.emoji}-${b.price}`}
+                        key={`${b.emoji}-${b.price}-${i}`}
                         prices={[b.price]}
                         emoji={b.emoji}
                         subEmojis={[b.emoji]}

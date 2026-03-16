@@ -90,7 +90,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
         totalPollen > 0 ? Math.min(100 - MIN_SEGMENT, rawFreePercentage) : 50;
 
     return (
-        <Panel color="purple" className="sm:p-8">
+        <Panel color="purple">
             <div className="flex flex-row justify-center text-center pb-1">
                 {/* Combined Pollen Gauge */}
                 <div className="flex flex-col items-center gap-4 w-full">
@@ -125,7 +125,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
             {/* Purchase info */}
-            <Card color="purple" className="mt-4">
+            <Card color="purple" className="mt-4 !border-transparent">
                 <p className="text-sm font-medium text-purple-900">
                     🎁 During beta, we double your pollen! ($5 → 10💎, $10 →
                     20💎, $20 → 40💎, $50 → 100💎)

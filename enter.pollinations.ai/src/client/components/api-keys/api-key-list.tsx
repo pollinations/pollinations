@@ -55,7 +55,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </div>
                 </div>
                 {apiKeys.length ? (
-                    <Panel color="blue" compact>
+                    <Panel color="blue">
                         <div className="flex flex-col gap-3">
                             {sortedKeys.map((apiKey) => {
                                 const isPublishable =
@@ -70,7 +70,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 return (
                                     <div
                                         key={apiKey.id}
-                                        className="bg-white/40 rounded-xl p-3 transition-colors hover:bg-white/60"
+                                        className="bg-white/80 rounded-xl p-4 transition-colors hover:bg-white/90"
                                     >
                                         {/* Row 1: Type, Name, Key, Actions */}
                                         <div className="flex items-center gap-2 mb-2">
@@ -223,12 +223,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         {apiKeys.some(
                             (k) => k.metadata?.keyType === "publishable",
                         ) && (
-                            <div className="flex justify-center mt-4">
-                                <p className="text-xs text-blue-700 bg-blue-100/60 px-4 py-2 rounded-full text-center">
-                                    ⚠️ <strong>Publishable keys</strong> are in
-                                    beta — for production apps, use secret keys.
-                                </p>
-                            </div>
+                            <p className="text-sm font-medium text-gray-900 mt-3">
+                                ⚠️ <strong>Publishable keys</strong> are in beta
+                                — for production apps, use secret keys.
+                            </p>
                         )}
                     </Panel>
                 ) : null}

@@ -62,6 +62,13 @@ const app = new Hono<Env>()
     )
     .use("*", requestId())
     .use("*", logger)
+    // Prevent search engines from indexing API responses (except docs)
+    .use("/api/*", async (c, next) => {
+        await next();
+        if (!c.req.path.startsWith("/api/docs")) {
+            c.header("X-Robots-Tag", "noindex, nofollow");
+        }
+    })
     .route("/api", api)
     .route("/api/docs", docsRoutes);
 

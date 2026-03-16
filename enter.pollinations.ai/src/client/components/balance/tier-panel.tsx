@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { getTierColor, getTierEmoji, type TierStatus } from "@/tier-config.ts";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
+import { InfoTip } from "../ui/info-tip.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { TierExplanation } from "./tier-explanation";
 
@@ -68,8 +69,7 @@ const cadenceLabel = (cadence: "daily" | "hourly") =>
     cadence === "hourly" ? "hour" : "day";
 
 const cadenceDescription = (cadence: "daily" | "hourly") => {
-    if (cadence === "hourly")
-        return "Resets every hour. Unused pollen does not carry over.";
+    if (cadence === "hourly") return "Pollen refills every hour";
     return "Resets daily at 00:00 UTC. Unused pollen does not carry over.";
 };
 
@@ -100,7 +100,10 @@ const TierScreen: FC<{
                 </div>
 
                 <p className="text-sm text-gray-500">
-                    {cadenceDescription(cadence)}
+                    {cadenceDescription(cadence)}{" "}
+                    {cadence === "hourly" && (
+                        <InfoTip text="If a request costs slightly more than estimated, your balance may go briefly negative — the next refill covers the difference automatically." />
+                    )}
                 </p>
 
                 <p className="text-sm">

@@ -33,7 +33,7 @@ Think: the tone of a well-written README, a CCC talk abstract, or a Phrack artic
 ## Tier System
 
 Contributors level up organically:
-- **Spore** 🍄 (1.5 pollen/week) — you showed up
-- **Seed** 🌱 (3 pollen/day) — auto-upgraded from GitHub activity
+- **Spore** 🍄 (0.01 pollen/hour) — you showed up
+- **Seed** 🌱 (0.15 pollen/hour) — auto-upgraded from GitHub activity
 - **Flower** 🌸 (10 pollen/day) — submit an app to the showcase
 - **Nectar** 🍯 (20 pollen/day) — maintainers and major contributors

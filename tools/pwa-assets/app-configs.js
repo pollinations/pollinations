@@ -32,7 +32,7 @@ export const APP_CONFIGS = {
         seo: {
             title: "pollinations.ai",
             description:
-                "Build AI apps with easy APIs, daily grants, and community support",
+                "Build AI apps with easy APIs, free compute, and community support",
             url: "https://pollinations.ai",
         },
     },

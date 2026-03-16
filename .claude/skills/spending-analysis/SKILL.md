@@ -159,7 +159,7 @@ Cross-references Polar pack purchasers with Tinybird tier data to show which tie
 
 # Notes
 
-- **Free tier spending** in Tinybird includes daily pollen allocation - not real revenue
+- **Free tier spending** in Tinybird includes tier pollen allocation - not real revenue
 - **Pack purchases** in Polar are actual paid revenue
 - Cross-reference by `external_id` (Polar) = `user_id` (Tinybird)
 - Polar API returns 307 redirects - use `curl -sL` to follow

@@ -195,6 +195,29 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "gemini-lite": {
+        aliases: ["gemini-3.1-flash-lite", "gemini-3.1-flash-lite-preview"],
+        modelId: "gemini-3.1-flash-lite-preview",
+        provider: "google",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.1),
+                promptCachedTokens: perMillion(0.01),
+                promptAudioTokens: perMillion(0.1),
+                completionTextTokens: perMillion(0.4),
+            },
+        ],
+        description:
+            "Google Gemini 3.1 Flash Lite - Fast & Cost-Effective with Latest Capabilities",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        search: true,
+        codeExecution: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-reasoning"],
         modelId: "accounts/fireworks/models/deepseek-v3p2",

@@ -94,7 +94,7 @@ describe("Tier Balance Management", () => {
                 TIER_POLLEN.seed, // 0.15
             );
 
-            // Daily tiers: hard reset to full amount
+            // Daily tiers: additive refill (capped at max)
             expect(users.find((u) => u.id === "user-flower")?.tierBalance).toBe(
                 TIER_POLLEN.flower,
             );
@@ -157,6 +157,78 @@ describe("Tier Balance Management", () => {
             expect(user[0]?.tierBalance).toBe(TIER_POLLEN.flower);
             expect(user[0]?.packBalance).toBe(50); // Unchanged
             expect(user[0]?.cryptoBalance).toBe(25); // Unchanged
+        });
+
+        test("should recover negative balances gradually via additive refill", async () => {
+            const db = drizzle(env.DB);
+
+            // Setup: users with negative balances
+            const testUsers = [
+                { id: "neg-spore", tier: "spore", tierBalance: -0.005 },
+                { id: "neg-seed", tier: "seed", tierBalance: -0.50 },
+                { id: "neg-flower", tier: "flower", tierBalance: -5 },
+                { id: "neg-nectar", tier: "nectar", tierBalance: -15 },
+            ];
+
+            for (const user of testUsers) {
+                await db
+                    .insert(userTable)
+                    .values({
+                        id: user.id,
+                        email: `${user.id}@test.com`,
+                        name: user.id,
+                        tier: user.tier,
+                        tierBalance: user.tierBalance,
+                        packBalance: 0,
+                        cryptoBalance: 0,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    })
+                    .onConflictDoUpdate({
+                        target: userTable.id,
+                        set: {
+                            tier: user.tier,
+                            tierBalance: user.tierBalance,
+                        },
+                    });
+            }
+
+            await triggerTierRefill();
+
+            const users = await db
+                .select({
+                    id: userTable.id,
+                    tierBalance: userTable.tierBalance,
+                })
+                .from(userTable)
+                .where(
+                    sql`${userTable.id} IN (${sql.join(
+                        testUsers.map((u) => sql`${u.id}`),
+                        sql`, `,
+                    )})`,
+                );
+
+            // Additive refill: MIN(balance + increment, cap)
+            // Spore: MIN(-0.005 + 0.01, 0.01) = 0.005
+            expect(users.find((u) => u.id === "neg-spore")?.tierBalance).toBeCloseTo(
+                -0.005 + TIER_POLLEN.spore,
+                4,
+            );
+            // Seed: MIN(-0.50 + 0.15, 0.15) = -0.35 (still negative, recovers over multiple refills)
+            expect(users.find((u) => u.id === "neg-seed")?.tierBalance).toBeCloseTo(
+                -0.50 + TIER_POLLEN.seed,
+                4,
+            );
+            // Flower: MIN(-5 + 10, 10) = 5 (recovers in one daily refill)
+            expect(users.find((u) => u.id === "neg-flower")?.tierBalance).toBeCloseTo(
+                -5 + TIER_POLLEN.flower,
+                4,
+            );
+            // Nectar: MIN(-15 + 20, 20) = 5 (recovers in one daily refill)
+            expect(users.find((u) => u.id === "neg-nectar")?.tierBalance).toBeCloseTo(
+                -15 + TIER_POLLEN.nectar,
+                4,
+            );
         });
     });
 

@@ -154,7 +154,7 @@ async function sendBulkTierRefillEvents(
  * Runs hourly and daily refills with separate idempotency checks.
  *
  * Hourly tiers (spore, seed): adds pollen increment each hour
- * Daily tiers (flower, nectar, router): resets pollen at midnight UTC
+ * Daily tiers (flower, nectar, router): adds pollen increment at midnight UTC
  */
 export async function runTierRefill(
     env: CloudflareBindings,

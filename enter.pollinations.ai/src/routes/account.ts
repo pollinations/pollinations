@@ -13,7 +13,7 @@ import { getTierCadence, tierNames } from "@/tier-config.ts";
 
 // Calculate next tier refill time based on cadence (null for tiers with no refill)
 function getNextRefillAt(tier?: string | null): string | null {
-    const cadence = tier ? getTierCadence(tier) : "daily";
+    const cadence = tier ? getTierCadence(tier) : "none";
     if (cadence === "none") return null;
     const now = new Date();
     if (cadence === "hourly") {

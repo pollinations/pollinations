@@ -503,6 +503,100 @@ export const sendMessage = async (
                 },
             },
         },
+        {
+            type: "function",
+            function: {
+                name: "generate_image",
+                description:
+                    "Generate an image from a text prompt and embed it in the response.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        prompt: {
+                            type: "string",
+                            description:
+                                "Detailed description of the image to generate.",
+                        },
+                        width: {
+                            type: "integer",
+                            description:
+                                "Image width in pixels (default 1024).",
+                        },
+                        height: {
+                            type: "integer",
+                            description:
+                                "Image height in pixels (default 1024).",
+                        },
+                    },
+                    required: ["prompt"],
+                },
+            },
+        },
+        {
+            type: "function",
+            function: {
+                name: "generate_video",
+                description:
+                    "Generate a short video clip from a text prompt and embed it in the response.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        prompt: {
+                            type: "string",
+                            description:
+                                "Detailed description of the video to generate.",
+                        },
+                        model: {
+                            type: "string",
+                            description:
+                                "Video model to use (e.g. veo, seedance). Defaults to veo.",
+                        },
+                    },
+                    required: ["prompt"],
+                },
+            },
+        },
+        {
+            type: "function",
+            function: {
+                name: "search_web",
+                description:
+                    "Search the web for up-to-date information on a topic.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        query: {
+                            type: "string",
+                            description: "The search query to look up.",
+                        },
+                    },
+                    required: ["query"],
+                },
+            },
+        },
+        {
+            type: "function",
+            function: {
+                name: "preview_html_app",
+                description:
+                    "Render a self-contained HTML application in a live preview panel inside the chat.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        title: {
+                            type: "string",
+                            description: "Short title for the preview panel.",
+                        },
+                        html: {
+                            type: "string",
+                            description:
+                                "Complete self-contained HTML (including any inline CSS/JS).",
+                        },
+                    },
+                    required: ["title", "html"],
+                },
+            },
+        },
     ];
 
     try {
@@ -795,6 +889,56 @@ export const sendMessage = async (
                     } catch (e) {
                         console.error(e);
                     }
+                } else if (call.name === "generate_image") {
+                    try {
+                        const args = call.arguments;
+                        const seed = Math.floor(Math.random() * 2147483647);
+                        const params = new URLSearchParams({
+                            seed,
+                            nologo: "true",
+                        });
+                        if (args.width) params.set("width", args.width);
+                        if (args.height) params.set("height", args.height);
+                        const url = `${BASE_IMAGE_URL}/${encodeURIComponent(args.prompt)}?${params.toString()}`;
+                        finalContent += `\n\n![${args.prompt.replace(/\]/g, "")}](${url})\n\n`;
+                    } catch (e) {
+                        console.error(
+                            "Failed to process generate_image call:",
+                            e,
+                        );
+                    }
+                } else if (call.name === "generate_video") {
+                    try {
+                        const args = call.arguments;
+                        const params = new URLSearchParams({
+                            model: args.model || "veo",
+                        });
+                        const url = `https://gen.pollinations.ai/video/${encodeURIComponent(args.prompt)}?${params.toString()}`;
+                        finalContent += `\n\n__VIDEO__${url}__VIDEO__\n\n`;
+                    } catch (e) {
+                        console.error(
+                            "Failed to process generate_video call:",
+                            e,
+                        );
+                    }
+                } else if (call.name === "search_web") {
+                    try {
+                        const args = call.arguments;
+                        finalContent += `\n\n__SEARCH__${encodeURIComponent(args.query)}__SEARCH__\n\n`;
+                    } catch (e) {
+                        console.error("Failed to process search_web call:", e);
+                    }
+                } else if (call.name === "preview_html_app") {
+                    try {
+                        const args = call.arguments;
+                        const output = { title: args.title, html: args.html };
+                        finalContent += `\n\n__HTML_PREVIEW__${JSON.stringify(output)}__HTML_PREVIEW__\n\n`;
+                    } catch (e) {
+                        console.error(
+                            "Failed to process preview_html_app call:",
+                            e,
+                        );
+                    }
                 }
             }
         }
@@ -989,28 +1133,10 @@ export const fetchPollenBalance = async (apiToken) => {
 };
 
 /**
- * Fetch the user's account profile (name, email, image, tier)
- * @param {string} apiToken - Secret key (sk_*)
- * @returns {Promise<{name: string, email: string, image: string, tier: string, displayTier: string} | null>}
- */
-export const fetchAccountProfile = async (apiToken) => {
-    try {
-        if (!apiToken || !apiToken.startsWith("sk_")) return null;
-        const response = await fetch(`${ACCOUNT_BASE}/profile`, {
-            headers: { Authorization: `Bearer ${apiToken}` },
-        });
-        if (!response.ok) return null;
-        return await response.json();
-    } catch {
-        return null;
-    }
-};
-
-/**
- * Generate a short chat title from the first exchange using nova-micro.
+ * Generate a short chat title from the first exchange using step-3.5-flash.
  * @param {string} userMessage - The first user message
  * @param {string} assistantReply - The first assistant reply (may be partial)
- * @returns {Promise<string|null>}
+ * @returns {Promise<string>} A short title for the conversation
  */
 export const generateChatTitle = async (userMessage, assistantReply) => {
     try {
@@ -1029,22 +1155,30 @@ export const generateChatTitle = async (userMessage, assistantReply) => {
                     model: "step-3.5-flash",
                     messages: [
                         {
+                            role: "system",
+                            content:
+                                "Generate a short, descriptive title (3-6 words) for a chat conversation based on the first exchange. Respond with only the title, no quotes or punctuation.",
+                        },
+                        {
                             role: "user",
-                            content: `Create a short, specific chat title (3-6 words, no quotes) for this conversation:\nUser: ${userMessage.slice(0, 200)}\nAssistant: ${snippet}`,
+                            content: `User: ${userMessage}\nAssistant: ${snippet}`,
                         },
                     ],
                     max_tokens: 20,
-                    temperature: 0.4,
+                    temperature: 0.7,
                 }),
             },
         );
-        if (!response.ok) return null;
+
+        if (!response.ok) {
+            return null;
+        }
+
         const data = await response.json();
-        const raw = data.choices?.[0]?.message?.content?.trim() || null;
-        if (!raw) return null;
-        // Strip surrounding quotes if model added them
-        return raw.replace(/^["']|["']$/g, "").trim();
-    } catch {
+        const title = data?.choices?.[0]?.message?.content?.trim();
+        return title || null;
+    } catch (error) {
+        console.error("Error generating chat title:", error);
         return null;
     }
 };

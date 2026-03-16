@@ -1,3 +1,7 @@
+- **2026-03-15** – **⚡ Frontend speed boost** We added lazy-loading and aggressive caching to the [main site](https://hello.pollinations.ai). Return visits now render near-instantly, because waiting for DOM elements is boring.
+- **2026-03-15** – **🤖 PromptPilot MCP Server** You can now generate images, video, and audio directly inside Claude, Cursor, or any other [MCP-compatible](https://mcp.sequa.ai/v1/pollinations/contribute) agent.
+- **2026-03-15** – **🎬 AI City Diorama Generator** New in the showcase: a fully automated n8n pipeline that hallucinates cinematic miniature cities and publishes them straight to YouTube Shorts.
+- **2026-03-15** – **📚 LoreLoom Storybooks** Also new in the community showcase: an interactive, narrated AI storybook generator for kids.
 - **2026-03-13** – **🎵 Voice acting via system prompt** Seraphyn joined as a community provider, bringing `qwen3-tts` to the [Unified API](https://gen.pollinations.ai). You can now style the voice output just by describing what you want in the system prompt.
 - **2026-03-13** – **🎨 Dirtberry Pro** Added `dirtberry-pro` to the image model roster. Pass it as your model parameter when you need high realism and complex scenes.
 - **2026-03-13** – **📊 Public user endpoint** We opened a restricted Tinybird pipe that safely exposes public profile and tier data. You can finally build those community leaderboards without leaking secrets.

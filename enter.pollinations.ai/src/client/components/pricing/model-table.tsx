@@ -186,76 +186,67 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                 isDisabled
                     ? "bg-transparent"
                     : expanded
-                      ? "bg-white/80"
-                      : "bg-white/60 hover:bg-white/80 transition-colors",
+                      ? "bg-white/90"
+                      : "bg-white/80 hover:bg-white/90 transition-colors",
             )}
         >
             {/* Clickable header */}
             <button
                 type="button"
-                className="w-full text-left px-3 py-2.5 cursor-pointer flex items-start justify-between gap-2"
+                className="w-full text-left p-4 cursor-pointer flex items-start justify-between gap-2"
                 onClick={() => setExpanded(!expanded)}
             >
-                <div className="flex flex-col gap-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                        <svg
-                            className={cn(
-                                "w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
-                                expanded && "rotate-180",
-                            )}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            aria-hidden="true"
-                        >
-                            <title>Expand model details</title>
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 9l-7 7-7-7"
-                            />
-                        </svg>
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                    <svg
+                        className={cn(
+                            "w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
+                            expanded && "rotate-180",
+                        )}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                    >
+                        <title>Expand model details</title>
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 9l-7 7-7-7"
+                        />
+                    </svg>
+                    <span
+                        className={cn(
+                            "text-sm",
+                            showNew ? "font-bold" : "font-medium",
+                            isDisabled && "opacity-50",
+                        )}
+                    >
+                        {displayName || model.name}
+                    </span>
+                    {(showNew || showAlpha || showPaidOnly) && (
                         <span
                             className={cn(
-                                "text-sm",
-                                showNew ? "font-bold" : "font-medium",
+                                "flex items-center gap-1.5",
                                 isDisabled && "opacity-50",
                             )}
                         >
-                            {displayName || model.name}
-                        </span>
-                    </div>
-                    {(showNew || showAlpha || showPaidOnly) && (
-                        <div className="flex items-center gap-2 pl-5">
                             {showNew && (
-                                <span
-                                    className={cn(isDisabled && "opacity-50")}
-                                >
-                                    <Badge color="green" size="md">
-                                        NEW
-                                    </Badge>
-                                </span>
+                                <Badge color="green" size="md">
+                                    NEW
+                                </Badge>
                             )}
                             {showAlpha && (
-                                <span
-                                    className={cn(isDisabled && "opacity-50")}
-                                >
-                                    <Badge color="amber" size="md">
-                                        ALPHA
-                                    </Badge>
-                                </span>
+                                <Badge color="amber" size="md">
+                                    ALPHA
+                                </Badge>
                             )}
                             {showPaidOnly && (
-                                <span
-                                    className={cn(isDisabled && "opacity-50")}
-                                >
-                                    <Badge color="purple" size="md">
-                                        PAID
-                                    </Badge>
-                                </span>
+                                <Badge color="purple" size="md">
+                                    PAID
+                                </Badge>
                             )}
-                        </div>
+                        </span>
                     )}
                 </div>
                 <span
@@ -272,7 +263,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
             {expanded && (
                 <div
                     className={cn(
-                        "px-3 pb-3 pt-0 space-y-3",
+                        "px-4 pb-4 pt-0 space-y-3",
                         isDisabled && "opacity-50",
                     )}
                 >
@@ -442,7 +433,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             size="small"
             className={cn(
                 "px-3",
-                activeTab !== section.type && "!bg-white/60 text-gray-500",
+                activeTab !== section.type && "!bg-white/80 text-gray-500",
             )}
             onClick={() => setActiveTab(section.type)}
         >
@@ -456,8 +447,8 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     return (
         <div>
             {/* Tabs + column headers - single responsive row */}
-            <div className="flex items-center px-3 py-2 gap-y-2">
-                <div className="grid grid-cols-2 min-[600px]:flex gap-1.5 min-w-0 shrink-0">
+            <div className="flex items-center py-2 gap-y-2">
+                <div className="grid grid-cols-2 min-[500px]:flex gap-1.5 min-w-0 shrink-0">
                     {tabButtons}
                 </div>
                 <div className="flex-1 min-w-6" />

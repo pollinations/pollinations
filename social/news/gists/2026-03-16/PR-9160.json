@@ -1,0 +1,34 @@
+{
+  "pr_number": 9160,
+  "title": "feat: pricing table tabs redesign",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9160",
+  "merged_at": "2026-03-16T18:09:11Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A tidier hive for models",
+    "blurb": "We've completely redesigned the models and pricing table to be sleeker, faster, and easier to read. Say goodbye to scroll-jumps and hello to crisp new tabs and colorful badges!",
+    "summary": "Redesigned the pricing and models table, replacing accordions with a clean tabbed interface and unifying badge designs for better readability.",
+    "impact": "Users will experience a smoother, jump-free navigation when browsing available models, with clearer visual indicators for new, alpha, and paid options.",
+    "keywords": [
+      "ui",
+      "pricing",
+      "models",
+      "frontend",
+      "design"
+    ],
+    "visual_concept": "Organizing a messy list into neat, colorful tabs. Polly the bee acting as an archivist or organizer, sorting glowing pixel-art cards (representing models) into neat, color-coded wooden bins or a retro filing system.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, carefully organizing glowing teal and purple cards into neat wooden sorting bins. A retro computer monitor nearby displays a clean, colorful tabbed interface. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-16T18:10:25.662977+00:00"
+}

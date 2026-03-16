@@ -224,8 +224,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             (k) => k.metadata?.keyType === "publishable",
                         ) && (
                             <p className="text-sm font-medium text-gray-900 mt-3">
-                                ⚠️ <strong>Publishable keys</strong> are in
-                                beta — for production apps, use secret keys.
+                                ⚠️ <strong>Publishable keys</strong> are in beta
+                                — for production apps, use secret keys.
                             </p>
                         )}
                     </Panel>

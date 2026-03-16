@@ -10,6 +10,28 @@ const IMAGE_TOKEN_ESTIMATE = 258;
 const AUDIO_TOKEN_ESTIMATE = 500;
 // Video: ~258 tokens/sec of video (visual frames) + audio tokens if present
 const VIDEO_TOKEN_ESTIMATE = 2580; // ~10 seconds worth as a rough default
+const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB max for fetched videos
+
+/**
+ * Block internal/metadata URLs to prevent SSRF.
+ * Throws if the URL points to a private or internal network address.
+ */
+function assertPublicUrl(url: string): URL {
+    const parsed = new URL(url);
+    const h = parsed.hostname;
+    if (
+        h === "localhost" ||
+        h.startsWith("127.") ||
+        h.startsWith("10.") ||
+        h.startsWith("192.168.") ||
+        h.startsWith("169.254.") ||
+        h === "metadata.google.internal" ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(h)
+    ) {
+        throw new Error(`Blocked request to private/internal URL: ${h}`);
+    }
+    return parsed;
+}
 
 // Gemini embedding task types (passed through if provided)
 type GeminiTaskType =
@@ -114,23 +136,7 @@ async function inputToGeminiParts(
                     inline_data: { mime_type: mimeType, data },
                 });
             } else {
-                // Block internal/metadata URLs to prevent SSRF
-                const parsed = new URL(url);
-                const hostname = parsed.hostname;
-                if (
-                    hostname === "localhost" ||
-                    hostname.startsWith("127.") ||
-                    hostname.startsWith("10.") ||
-                    hostname.startsWith("192.168.") ||
-                    hostname.startsWith("169.254.") ||
-                    hostname === "metadata.google.internal" ||
-                    /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
-                ) {
-                    throw new Error(
-                        `Blocked request to private/internal URL: ${hostname}`,
-                    );
-                }
-
+                assertPublicUrl(url);
                 const response = await fetch(url);
                 const buffer = await response.arrayBuffer();
                 const base64 = Buffer.from(buffer).toString("base64");
@@ -160,25 +166,23 @@ async function inputToGeminiParts(
                     inline_data: { mime_type: mimeType, data },
                 });
             } else {
-                // Block internal/metadata URLs to prevent SSRF
-                const parsed = new URL(url);
-                const hostname = parsed.hostname;
-                if (
-                    hostname === "localhost" ||
-                    hostname.startsWith("127.") ||
-                    hostname.startsWith("10.") ||
-                    hostname.startsWith("192.168.") ||
-                    hostname.startsWith("169.254.") ||
-                    hostname === "metadata.google.internal" ||
-                    /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
-                ) {
+                assertPublicUrl(url);
+                const response = await fetch(url);
+                const contentLength = parseInt(
+                    response.headers.get("content-length") || "0",
+                    10,
+                );
+                if (contentLength > MAX_VIDEO_SIZE) {
                     throw new Error(
-                        `Blocked request to private/internal URL: ${hostname}`,
+                        `Video too large: ${contentLength} bytes (max ${MAX_VIDEO_SIZE})`,
                     );
                 }
-
-                const response = await fetch(url);
                 const buffer = await response.arrayBuffer();
+                if (buffer.byteLength > MAX_VIDEO_SIZE) {
+                    throw new Error(
+                        `Video too large: ${buffer.byteLength} bytes (max ${MAX_VIDEO_SIZE})`,
+                    );
+                }
                 const base64 = Buffer.from(buffer).toString("base64");
                 const contentType =
                     mime_type ||

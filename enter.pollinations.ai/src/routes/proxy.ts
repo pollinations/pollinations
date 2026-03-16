@@ -465,9 +465,9 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🔢 Embeddings"],
             summary: "Create Embeddings",
             description: [
-                "Generate vector embeddings for text, images, or audio. Compatible with the OpenAI Embeddings API format, extended with multimodal content part support.",
+                "Generate vector embeddings for text, images, audio, or video. Compatible with the OpenAI Embeddings API format, extended with multimodal content part support.",
                 "",
-                "**Multimodal input:** Pass content parts (text, image_url, input_audio) in the `input` field — same format as chat completion messages.",
+                "**Multimodal input:** Pass content parts (text, image_url, input_audio, video_url) in the `input` field — same format as chat completion messages.",
                 "",
                 "**Task types:** Optionally specify `task_type` (e.g. `RETRIEVAL_QUERY`, `CLASSIFICATION`) to optimize embeddings for your use case.",
                 "",

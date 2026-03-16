@@ -1215,14 +1215,14 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                         {
                             name: "🔢 Embeddings",
                             description: [
-                                "Generate vector embeddings for text, images, or audio using Google's Gemini Embedding 2 model.",
+                                "Generate vector embeddings for text, images, audio, or video using Google's Gemini Embedding 2 model.",
                                 "",
                                 "| Endpoint | Description |",
                                 "|----------|-------------|",
                                 "| `POST /v1/embeddings` | OpenAI-compatible embeddings endpoint |",
                                 "| `GET /embeddings/models` | List available embedding models |",
                                 "",
-                                "**Features:** Multimodal input (text, images, audio), configurable dimensions (1–3072), task type hints for optimized results.",
+                                "**Features:** Multimodal input (text, images, audio, video), configurable dimensions (1–3072), task type hints for optimized results.",
                             ].join("\n"),
                         },
                         {

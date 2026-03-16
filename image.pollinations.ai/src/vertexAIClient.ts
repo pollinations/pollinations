@@ -130,8 +130,8 @@ export async function generateImageWithVertexAI(
         ) {
             const totalPixels = request.width * request.height;
             // Pick closest resolution tier based on pixel count
+            // Vertex AI only supports 1K, 2K, 4K (0.5K is not a valid value)
             const tiers = [
-                { name: "0.5K", pixels: 512 * 512 }, // ~0.26M
                 { name: "1K", pixels: 1024 * 1024 }, // ~1.0M
                 { name: "2K", pixels: 1920 * 1080 }, // ~2.1M
                 { name: "4K", pixels: 3840 * 2160 }, // ~8.3M

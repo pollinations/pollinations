@@ -1,0 +1,34 @@
+{
+  "pr_number": 9145,
+  "title": "feat: hourly pollen refills for spore/seed via Cloudflare Cron",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9145",
+  "merged_at": "2026-03-16T23:29:08Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Hourly pollen drops",
+    "blurb": "Spore and Seed tiers now get their pollen refilled every single hour instead of waiting for a daily reset. We've also added smart balance protections so your free usage never accidentally eats into your paid credits.",
+    "summary": "Implemented hourly pollen refills for Spore and Seed tiers via Cloudflare Cron, alongside new balance protections that prevent free tier overages from spilling into paid credits.",
+    "impact": "Free tier users will now see their pollen balance recover gradually every hour, and paid credits are strictly protected from free tier overages.",
+    "keywords": [
+      "billing",
+      "pollen",
+      "tiers",
+      "cron",
+      "balance"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot tracking hourly pollen refills. A glowing hourglass or clock motif representing the hourly cron job, with lime green pollen drops.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny worker's apron, watching glowing lime green (#ecf874) pollen drops fall from a retro hourglass into a glass jar. A chunky robot with a CRT monitor head sits nearby, happily tracking the hourly progress on its screen. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-16T23:29:59.216506+00:00"
+}

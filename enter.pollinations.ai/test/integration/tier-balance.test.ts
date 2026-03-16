@@ -165,7 +165,7 @@ describe("Tier Balance Management", () => {
             // Setup: users with negative balances
             const testUsers = [
                 { id: "neg-spore", tier: "spore", tierBalance: -0.005 },
-                { id: "neg-seed", tier: "seed", tierBalance: -0.50 },
+                { id: "neg-seed", tier: "seed", tierBalance: -0.5 },
                 { id: "neg-flower", tier: "flower", tierBalance: -5 },
                 { id: "neg-nectar", tier: "nectar", tierBalance: -15 },
             ];
@@ -210,25 +210,21 @@ describe("Tier Balance Management", () => {
 
             // Additive refill: MIN(balance + increment, cap)
             // Spore: MIN(-0.005 + 0.01, 0.01) = 0.005
-            expect(users.find((u) => u.id === "neg-spore")?.tierBalance).toBeCloseTo(
-                -0.005 + TIER_POLLEN.spore,
-                4,
-            );
+            expect(
+                users.find((u) => u.id === "neg-spore")?.tierBalance,
+            ).toBeCloseTo(-0.005 + TIER_POLLEN.spore, 4);
             // Seed: MIN(-0.50 + 0.15, 0.15) = -0.35 (still negative, recovers over multiple refills)
-            expect(users.find((u) => u.id === "neg-seed")?.tierBalance).toBeCloseTo(
-                -0.50 + TIER_POLLEN.seed,
-                4,
-            );
+            expect(
+                users.find((u) => u.id === "neg-seed")?.tierBalance,
+            ).toBeCloseTo(-0.5 + TIER_POLLEN.seed, 4);
             // Flower: MIN(-5 + 10, 10) = 5 (recovers in one daily refill)
-            expect(users.find((u) => u.id === "neg-flower")?.tierBalance).toBeCloseTo(
-                -5 + TIER_POLLEN.flower,
-                4,
-            );
+            expect(
+                users.find((u) => u.id === "neg-flower")?.tierBalance,
+            ).toBeCloseTo(-5 + TIER_POLLEN.flower, 4);
             // Nectar: MIN(-15 + 20, 20) = 5 (recovers in one daily refill)
-            expect(users.find((u) => u.id === "neg-nectar")?.tierBalance).toBeCloseTo(
-                -15 + TIER_POLLEN.nectar,
-                4,
-            );
+            expect(
+                users.find((u) => u.id === "neg-nectar")?.tierBalance,
+            ).toBeCloseTo(-15 + TIER_POLLEN.nectar, 4);
         });
     });
 

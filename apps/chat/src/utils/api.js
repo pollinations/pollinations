@@ -4,7 +4,7 @@ import { DEFAULT_API_KEY, isValidApiKey } from "../config/auth";
 const BASE_IMAGE_URL = "https://gen.pollinations.ai/image";
 const TEXT_MODELS_ENDPOINT = "https://gen.pollinations.ai/v1/models";
 const IMAGE_MODELS_ENDPOINT = "https://gen.pollinations.ai/image/models";
-const BALANCE_ENDPOINT = "https://enter.pollinations.ai/customer/d1-balance";
+const ACCOUNT_BASE = "https://gen.pollinations.ai/account";
 const FALLBACK_API_TOKEN =
     import.meta.env.VITE_POLLINATIONS_API_KEY || DEFAULT_API_KEY;
 
@@ -359,6 +359,31 @@ const containsChartRequest = (messages = []) => {
     );
 };
 
+const containsCodeRequest = (messages = []) => {
+    if (!Array.isArray(messages) || messages.length === 0) return false;
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || lastMessage.role !== "user") return false;
+    const content =
+        typeof lastMessage.content === "string" ? lastMessage.content : "";
+    return content.startsWith("/code ") || content === "/code";
+};
+
+// Strip /code prefix from messages before sending to API
+const stripCodePrefix = (messages = []) => {
+    if (!Array.isArray(messages) || messages.length === 0) return messages;
+    return messages.map((msg, idx) => {
+        if (
+            idx === messages.length - 1 &&
+            msg.role === "user" &&
+            typeof msg.content === "string"
+        ) {
+            const stripped = msg.content.replace(/^\/code\s*/, "");
+            return { ...msg, content: stripped };
+        }
+        return msg;
+    });
+};
+
 export const sendMessage = async (
     messages,
     onChunk,
@@ -377,6 +402,10 @@ export const sendMessage = async (
     const finalTemperature = isClaude ? 1 : temperature;
 
     const chartRequested = containsChartRequest(messages);
+    const codeRequested = containsCodeRequest(messages);
+    const effectiveMessages = codeRequested
+        ? stripCodePrefix(messages)
+        : messages;
 
     const tools = [
         {
@@ -392,56 +421,85 @@ export const sendMessage = async (
                             type: "string",
                             description: "Title displayed above the chart.",
                         },
-                        data: {
-                            type: "array",
-                            items: {
-                                type: "object",
-                                description:
-                                    "Data points where each object represents a row with keys for x/y values.",
-                            },
-                            description:
-                                "Array of data objects, each containing keys for the chart axes.",
-                        },
+                        data: { type: "array", items: { type: "object" } },
                         series: {
                             type: "array",
                             items: {
                                 type: "object",
                                 properties: {
-                                    key: {
-                                        type: "string",
-                                        description:
-                                            "The key in data objects for this series",
-                                    },
-                                    name: {
-                                        type: "string",
-                                        description:
-                                            "Display name for this series",
-                                    },
-                                    color: {
-                                        type: "string",
-                                        description:
-                                            "Hex color for this series",
-                                    },
+                                    key: { type: "string" },
+                                    name: { type: "string" },
+                                    color: { type: "string" },
                                 },
                                 required: ["key", "name"],
                             },
-                            description: "Series definitions for the chart.",
                         },
-                        xKey: {
-                            type: "string",
-                            description:
-                                "The key in data objects to use for x-axis values.",
-                        },
-                        xLabel: {
-                            type: "string",
-                            description: "Label for the x-axis.",
-                        },
-                        yLabel: {
-                            type: "string",
-                            description: "Label for the y-axis.",
-                        },
+                        xKey: { type: "string" },
+                        xLabel: { type: "string" },
+                        yLabel: { type: "string" },
                     },
                     required: ["title", "data", "series", "xKey"],
+                },
+            },
+        },
+        {
+            type: "function",
+            function: {
+                name: "preview_html_app",
+                description:
+                    "Create an interactive HTML/JS/CSS app or component that runs in a sandboxed preview iframe.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        html: {
+                            type: "string",
+                            description:
+                                "The complete HTML code including inline <style> and <script> tags for the app.",
+                        },
+                        title: {
+                            type: "string",
+                            description:
+                                "A short title for the preview window.",
+                        },
+                    },
+                    required: ["html", "title"],
+                },
+            },
+        },
+        {
+            type: "function",
+            function: {
+                name: "generate_image",
+                description:
+                    "Generate and display a high-quality image based on a prompt. Use this when the user asks for a picture or drawing.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        prompt: {
+                            type: "string",
+                            description:
+                                "A detailed visual description for the image to generate.",
+                        },
+                    },
+                    required: ["prompt"],
+                },
+            },
+        },
+        {
+            type: "function",
+            function: {
+                name: "search_web",
+                description:
+                    "Search the web for real-time information and return the results to the user.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        query: {
+                            type: "string",
+                            description: "The search query.",
+                        },
+                    },
+                    required: ["query"],
                 },
             },
         },
@@ -546,7 +604,7 @@ export const sendMessage = async (
         abortController = new AbortController();
 
         const formattedMessages = formatMessagesForAPI(
-            messages,
+            effectiveMessages,
             selectedModelId,
         );
 
@@ -561,7 +619,9 @@ export const sendMessage = async (
             tools,
             tool_choice: chartRequested
                 ? { type: "function", function: { name: "create_chart" } }
-                : "auto",
+                : codeRequested
+                  ? { type: "function", function: { name: "preview_html_app" } }
+                  : "auto",
             stream: true,
         };
 
@@ -713,12 +773,12 @@ export const sendMessage = async (
                 .replace(/\s+$/g, "")
                 .replace(/\n{3,}/g, "\n\n");
         }
+
         if (collectedFunctionCalls.length > 0) {
             for (const call of collectedFunctionCalls) {
                 if (call.name === "create_chart") {
                     try {
                         const args = call.arguments;
-                        // Use Nuxt-style format directly from function arguments
                         const chartData = {
                             type: "chart",
                             output: {
@@ -730,12 +790,104 @@ export const sendMessage = async (
                                 yLabel: args.yLabel || "Y Axis",
                             },
                         };
-                        finalContent += `\n\n__CHART__${JSON.stringify(chartData)}__CHART__`;
-                    } catch (chartError) {
-                        console.error(
-                            "Failed to parse chart arguments:",
-                            chartError,
+                        finalContent +=
+                            "\n\n__CHART__" +
+                            JSON.stringify(chartData) +
+                            "__CHART__";
+                    } catch (e) {
+                        console.error("Failed to parse chart arguments:", e);
+                    }
+                } else if (call.name === "generate_image") {
+                    try {
+                        const args = call.arguments;
+                        const seed = Math.floor(Math.random() * 2147483647);
+                        const url =
+                            "https://gen.pollinations.ai/image/" +
+                            encodeURIComponent(args.prompt) +
+                            "?seed=" +
+                            seed +
+                            "&nologo=true";
+                        finalContent +=
+                            "\n\n![" +
+                            args.prompt.replace(/\]/g, "") +
+                            "](" +
+                            url +
+                            ")\n\n";
+                    } catch (e) {
+                        console.error(e);
+                    }
+                } else if (call.name === "search_web") {
+                    try {
+                        const args = call.arguments;
+                        const query = args.query;
+                        // Use a web-search model to get real results
+                        const searchResponse = await fetch(
+                            "https://gen.pollinations.ai/v1/chat/completions",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${currentApiToken}`,
+                                },
+                                body: JSON.stringify({
+                                    model: "searchgpt",
+                                    messages: [
+                                        {
+                                            role: "user",
+                                            content: query,
+                                        },
+                                    ],
+                                    max_tokens: 1024,
+                                }),
+                            },
                         );
+                        if (searchResponse.ok) {
+                            const searchData = await searchResponse.json();
+                            const searchResult =
+                                searchData.choices?.[0]?.message?.content || "";
+                            if (searchResult) {
+                                finalContent +=
+                                    "\n\n**Web Search: " +
+                                    query +
+                                    "**\n\n" +
+                                    searchResult +
+                                    "\n\n";
+                            }
+                        } else {
+                            // Fallback to search link
+                            const qs = encodeURIComponent(query);
+                            finalContent +=
+                                "\n\n__SEARCH__" + qs + "__SEARCH__\n\n";
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        // Fallback to search link
+                        try {
+                            const qs = encodeURIComponent(call.arguments.query);
+                            finalContent +=
+                                "\n\n__SEARCH__" + qs + "__SEARCH__\n\n";
+                        } catch (_) {}
+                    }
+                } else if (call.name === "preview_html_app") {
+                    try {
+                        const args = call.arguments;
+                        const output = { title: args.title, html: args.html };
+                        finalContent +=
+                            "\n\n__HTML_PREVIEW__" +
+                            JSON.stringify(output) +
+                            "__HTML_PREVIEW__\n\n";
+                    } catch (e) {
+                        console.error(e);
+                    }
+                } else if (call.name === "generate_video") {
+                    try {
+                        const args = call.arguments;
+                        const url =
+                            "https://gen.pollinations.ai/image/" +
+                            encodeURIComponent(args.prompt);
+                        finalContent += "\n\n__VIDEO__" + url + "__VIDEO__\n\n";
+                    } catch (e) {
+                        console.error(e);
                     }
                 } else if (call.name === "generate_image") {
                     try {
@@ -957,20 +1109,14 @@ export const generateVideo = async (prompt, options = {}) => {
  * Fetch the user's pollen balance
  * Only works with user API keys (sk_), not publishable keys
  * @param {string} apiToken - The API token to use for fetching balance
- * @returns {Promise<{totalBalance: number, tierBalance: number, packBalance: number, cryptoBalance: number} | null>}
+ * @returns {Promise<{totalBalance: number} | null>}
  */
 export const fetchPollenBalance = async (apiToken) => {
     try {
-        // Only fetch balance if using a user key (secret key starting with sk_)
-        if (!apiToken || !apiToken.startsWith("sk_")) {
-            return null;
-        }
+        if (!apiToken || !apiToken.startsWith("sk_")) return null;
 
-        const response = await fetch(BALANCE_ENDPOINT, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${apiToken}`,
-            },
+        const response = await fetch(`${ACCOUNT_BASE}/balance`, {
+            headers: { Authorization: `Bearer ${apiToken}` },
         });
 
         if (!response.ok) {
@@ -979,15 +1125,7 @@ export const fetchPollenBalance = async (apiToken) => {
         }
 
         const data = await response.json();
-        const { tierBalance = 0, packBalance = 0, cryptoBalance = 0 } = data;
-        const totalBalance = tierBalance + packBalance + cryptoBalance;
-
-        return {
-            totalBalance,
-            tierBalance,
-            packBalance,
-            cryptoBalance,
-        };
+        return { totalBalance: data.balance ?? 0 };
     } catch (error) {
         console.error("Error fetching pollen balance:", error);
         return null;

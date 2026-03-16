@@ -49,7 +49,7 @@ const ThinkingProcess = ({ isThinking, content }) => {
   const toggleOpen = () => setIsOpen(!isOpen);
 
   return (
-    <div className={`thinking-process ${isThinking ? 'thinking' : 'done'}`}>
+    <div className={`thinking-process ${isThinking ? 'thinking' : 'done'} ${isOpen ? 'open' : ''}`}>
       <div className="thinking-header" onClick={toggleOpen}>
         <div className="thinking-icon-wrapper">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="thinking-icon">

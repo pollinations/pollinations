@@ -5,7 +5,7 @@ import {
     isValidApiKey,
     STORAGE_KEY,
 } from "../config/auth";
-import { fetchPollenBalance } from "../utils/api";
+import { fetchAccountProfile, fetchPollenBalance } from "../utils/api";
 
 /**
  * Hook for managing BYOP (Bring Your Own Pollen) authentication
@@ -22,6 +22,7 @@ export function useAuth() {
 
     const [pollenBalance, setPollenBalance] = useState(null);
     const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+    const [profile, setProfile] = useState(null);
 
     // Check URL fragment for API key on mount (redirect from enter.pollinations.ai)
     useEffect(() => {
@@ -66,12 +67,14 @@ export function useAuth() {
         localStorage.removeItem(STORAGE_KEY);
         setUserApiKey(null);
         setPollenBalance(null);
+        setProfile(null);
     }, []);
 
-    // Fetch balance when user logs in
+    // Fetch balance and profile when user logs in
     useEffect(() => {
         if (!userApiKey) {
             setPollenBalance(null);
+            setProfile(null);
             return;
         }
 
@@ -82,7 +85,13 @@ export function useAuth() {
             setIsLoadingBalance(false);
         };
 
+        const loadProfile = async () => {
+            const p = await fetchAccountProfile(userApiKey);
+            setProfile(p);
+        };
+
         loadBalance();
+        loadProfile();
     }, [userApiKey]);
 
     return {
@@ -90,6 +99,7 @@ export function useAuth() {
         isLoggedIn: !!userApiKey,
         pollenBalance,
         isLoadingBalance,
+        profile,
         login,
         logout,
     };

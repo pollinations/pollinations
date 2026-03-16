@@ -22,6 +22,7 @@ const ChatInput = ({
     onImageModelChange,
     onVideoModelChange,
     onOpenGenerationOptions,
+    onOpenCanvas,
 }) => {
     const [inputValue, setInputValue] = useState("");
     const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
@@ -29,6 +30,9 @@ const ChatInput = ({
     const [selectedAttachment, setSelectedAttachment] = useState(null);
     const [modelSearchTerm, setModelSearchTerm] = useState("");
     const [isDragging, setIsDragging] = useState(false);
+    const [showCommandPalette, setShowCommandPalette] = useState(false);
+    const [commandPaletteIndex, setCommandPaletteIndex] = useState(0);
+    const commandPaletteRef = useRef(null);
     const inputRef = useRef(null);
     const attachMenuRef = useRef(null);
     const modelDropdownRef = useRef(null);
@@ -40,6 +44,53 @@ const ChatInput = ({
     const isImagineMode = inputValue.includes("/imagine");
     const isCanvasMode = inputValue.includes("/code");
     const isVideoMode = inputValue.includes("/video");
+
+    const SLASH_COMMANDS = [
+        {
+            command: "/imagine",
+            label: "Image",
+            description: "Generate an image from a text prompt",
+            icon: "🖼️",
+        },
+        {
+            command: "/video",
+            label: "Video",
+            description: "Generate a video from a text prompt",
+            icon: "🎬",
+        },
+        {
+            command: "/code",
+            label: "Canvas",
+            description: "Generate an interactive HTML app",
+            icon: "💻",
+        },
+    ];
+
+    // Show command palette when user types "/" at the start
+    const filteredCommands = showCommandPalette
+        ? SLASH_COMMANDS.filter((cmd) =>
+              cmd.command.startsWith(inputValue.toLowerCase()),
+          )
+        : [];
+
+    useEffect(() => {
+        if (
+            inputValue.startsWith("/") &&
+            !inputValue.includes(" ") &&
+            inputValue.length <= 8
+        ) {
+            setShowCommandPalette(true);
+            setCommandPaletteIndex(0);
+        } else {
+            setShowCommandPalette(false);
+        }
+    }, [inputValue]);
+
+    const selectCommand = (command) => {
+        setInputValue(command + " ");
+        setShowCommandPalette(false);
+        inputRef.current?.focus();
+    };
 
     // Determine active model based on mode
     const getActiveModelId = () => {
@@ -156,6 +207,17 @@ const ChatInput = ({
                 }
             }
 
+            if (isCanvasMode && onOpenCanvas) {
+                const codePrompt = inputValue.trim().replace(/^\/code\s*/, "");
+                onOpenCanvas(codePrompt);
+                setInputValue("");
+                setSelectedAttachment(null);
+                setIsUserTyping(false);
+                if (onModeChange) onModeChange("chat");
+                setTimeout(() => inputRef.current?.focus(), 0);
+                return;
+            }
+
             // Pass both text and image data if present
             onSend({
                 text: inputValue,
@@ -180,6 +242,37 @@ const ChatInput = ({
     };
 
     const handleKeyDown = (event) => {
+        // Handle command palette navigation
+        if (showCommandPalette && filteredCommands.length > 0) {
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                setCommandPaletteIndex((prev) =>
+                    prev < filteredCommands.length - 1 ? prev + 1 : 0,
+                );
+                return;
+            }
+            if (event.key === "ArrowUp") {
+                event.preventDefault();
+                setCommandPaletteIndex((prev) =>
+                    prev > 0 ? prev - 1 : filteredCommands.length - 1,
+                );
+                return;
+            }
+            if (
+                event.key === "Tab" ||
+                (event.key === "Enter" && !event.shiftKey)
+            ) {
+                event.preventDefault();
+                selectCommand(filteredCommands[commandPaletteIndex].command);
+                return;
+            }
+            if (event.key === "Escape") {
+                event.preventDefault();
+                setShowCommandPalette(false);
+                return;
+            }
+        }
+
         if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
             handleSend();
@@ -340,12 +433,10 @@ const ChatInput = ({
     };
 
     const handleCanvas = () => {
-        setInputValue("/code ");
         setIsAttachMenuOpen(false);
-        if (onModeChange) {
-            onModeChange("code");
+        if (onOpenCanvas) {
+            onOpenCanvas();
         }
-        inputRef.current?.focus();
     };
 
     return (
@@ -436,6 +527,37 @@ const ChatInput = ({
                 )}
 
                 <div className="chat-input-wrapper-modern">
+                    {/* Slash Command Palette */}
+                    {showCommandPalette && filteredCommands.length > 0 && (
+                        <div
+                            className="command-palette"
+                            ref={commandPaletteRef}
+                        >
+                            {filteredCommands.map((cmd, index) => (
+                                <button
+                                    key={cmd.command}
+                                    type="button"
+                                    className={`command-palette-item ${index === commandPaletteIndex ? "active" : ""}`}
+                                    onClick={() => selectCommand(cmd.command)}
+                                    onMouseEnter={() =>
+                                        setCommandPaletteIndex(index)
+                                    }
+                                >
+                                    <span className="command-palette-icon">
+                                        {cmd.icon}
+                                    </span>
+                                    <div className="command-palette-text">
+                                        <span className="command-palette-cmd">
+                                            {cmd.command}
+                                        </span>
+                                        <span className="command-palette-desc">
+                                            {cmd.description}
+                                        </span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     <div className="chatbar-top">
                         {(isImagineMode || isCanvasMode || isVideoMode) && (
                             <div className="chatbar-tags">
@@ -460,6 +582,24 @@ const ChatInput = ({
                                             <path d="M21 15l-5-5L5 21" />
                                         </svg>
                                         <span>Image</span>
+                                        <button
+                                            className="tag-close-btn"
+                                            onClick={() =>
+                                                setInputValue(
+                                                    inputValue
+                                                        .replace(
+                                                            "/imagine ",
+                                                            "",
+                                                        )
+                                                        .replace(
+                                                            "/imagine",
+                                                            "",
+                                                        ),
+                                                )
+                                            }
+                                        >
+                                            ×
+                                        </button>
                                     </div>
                                 )}
                                 {isVideoMode && (
@@ -482,6 +622,18 @@ const ChatInput = ({
                                             <polygon points="10,9 16,12 10,15" />
                                         </svg>
                                         <span>Video</span>
+                                        <button
+                                            className="tag-close-btn"
+                                            onClick={() =>
+                                                setInputValue(
+                                                    inputValue
+                                                        .replace("/video ", "")
+                                                        .replace("/video", ""),
+                                                )
+                                            }
+                                        >
+                                            ×
+                                        </button>
                                     </div>
                                 )}
                                 {isCanvasMode && (
@@ -498,6 +650,18 @@ const ChatInput = ({
                                             <path d="M14 2v6h6M16 13H8m8 4H8m2-8H8" />
                                         </svg>
                                         <span>Canvas</span>
+                                        <button
+                                            className="tag-close-btn"
+                                            onClick={() =>
+                                                setInputValue(
+                                                    inputValue
+                                                        .replace("/code ", "")
+                                                        .replace("/code", ""),
+                                                )
+                                            }
+                                        >
+                                            ×
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -546,7 +710,15 @@ const ChatInput = ({
                             }}
                             onKeyDown={handleKeyDown}
                             onPaste={handlePaste}
-                            placeholder="Type your message here..."
+                            placeholder={
+                                isImagineMode
+                                    ? "Describe the image you want to create..."
+                                    : isVideoMode
+                                      ? "Describe the video you want to generate..."
+                                      : isCanvasMode
+                                        ? "What should we code?"
+                                        : "Type your message here..."
+                            }
                             rows="1"
                             className="chat-input-modern"
                             disabled={isGenerating || isListening}
@@ -555,6 +727,101 @@ const ChatInput = ({
 
                     <div className="chatbar-bottom">
                         <div className="chatbar-left">
+                            <div className="mode-quick-toggles">
+                                <button
+                                    type="button"
+                                    className={`mode-toggle-btn ${!isImagineMode && !isVideoMode && !isCanvasMode ? "active" : ""}`}
+                                    onClick={() => {
+                                        setInputValue(
+                                            inputValue.replace(
+                                                /\/(imagine|video|code)\s*/g,
+                                                "",
+                                            ),
+                                        );
+                                        if (onModeChange) onModeChange("chat");
+                                    }}
+                                    title="Chat Mode"
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`mode-toggle-btn ${isImagineMode ? "active" : ""}`}
+                                    onClick={() => {
+                                        handleImageGen();
+                                    }}
+                                    title="Image Mode"
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <rect
+                                            x="3"
+                                            y="3"
+                                            width="18"
+                                            height="18"
+                                            rx="2"
+                                        />
+                                        <circle cx="8.5" cy="8.5" r="1.5" />
+                                        <path d="M21 15l-5-5L5 21" />
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`mode-toggle-btn ${isVideoMode ? "active" : ""}`}
+                                    onClick={() => {
+                                        handleVideoGen();
+                                    }}
+                                    title="Video Mode"
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <rect
+                                            x="2"
+                                            y="4"
+                                            width="20"
+                                            height="16"
+                                            rx="2"
+                                        />
+                                        <polygon points="10,9 16,12 10,15" />
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`mode-toggle-btn ${isCanvasMode ? "active" : ""}`}
+                                    onClick={() => {
+                                        setInputValue("/code ");
+                                        if (onModeChange) onModeChange("code");
+                                        inputRef.current?.focus();
+                                    }}
+                                    title="Canvas Mode"
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                        <path d="M14 2v6h6M16 13H8m8 4H8m2-8H8" />
+                                    </svg>
+                                </button>
+                            </div>
+
                             <div
                                 className="model-selector-wrapper"
                                 ref={modelDropdownRef}

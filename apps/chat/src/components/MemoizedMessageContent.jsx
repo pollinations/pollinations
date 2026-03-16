@@ -7,6 +7,7 @@ const MemoizedMessageContent = memo(({ content }) => {
     const containerRef = useRef(null);
     const [charts, setCharts] = React.useState([]);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: content prop change triggers re-render and should re-run DOM mutation
     useEffect(() => {
         if (containerRef.current) {
             // Add copy buttons to code blocks
@@ -59,7 +60,7 @@ const MemoizedMessageContent = memo(({ content }) => {
                 }
             }
         }
-    }, []);
+    }, [content]);
 
     return (
         <>
@@ -69,7 +70,7 @@ const MemoizedMessageContent = memo(({ content }) => {
             />
             {charts.map((chartData, index) => (
                 <ChartRenderer
-                    key={chartData.output?.title ?? index}
+                    key={`${chartData.output?.title ?? "chart"}-${index}`}
                     chartData={chartData}
                 />
             ))}

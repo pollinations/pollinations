@@ -263,7 +263,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
             {expanded && (
                 <div
                     className={cn(
-                        "px-4 pb-4 pt-0 space-y-3",
+                        "px-4 pb-4 pt-0 space-y-2",
                         isDisabled && "opacity-50",
                     )}
                 >
@@ -284,13 +284,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                     </div>
 
                     <MobilePriceGroup
-                        label="Input"
+                        label="In"
                         model={model}
                         direction="input"
                     />
 
                     <MobilePriceGroup
-                        label="Output"
+                        label="Out"
                         model={model}
                         direction="output"
                     />
@@ -380,10 +380,10 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
     if (validBadges.length === 0) return null;
 
     return (
-        <div>
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+        <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide shrink-0 w-7">
                 {label}
-            </div>
+            </span>
             <div className="flex flex-wrap gap-1.5">
                 {validBadges.map((b) => (
                     <PriceBadge

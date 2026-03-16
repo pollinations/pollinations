@@ -92,7 +92,7 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
     return (
         <>
             {/* Desktop cards */}
-            <div className="hidden md:flex md:flex-col gap-2 py-1">
+            <div className="hidden md:flex md:flex-col gap-2 pb-1">
                 {regularModels.map((model) => (
                     <ModelRow
                         key={model.name}
@@ -119,7 +119,7 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
             </div>
 
             {/* Mobile list */}
-            <div className="md:hidden py-1">
+            <div className="md:hidden pb-1">
                 {regularModels.map((model) => (
                     <MobileModelRow
                         key={model.name}
@@ -182,7 +182,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
     return (
         <div
             className={cn(
-                "rounded-xl my-1 border",
+                "rounded-xl mb-1 border",
                 expanded ? "border-teal-200" : "border-transparent",
                 isDisabled
                     ? "bg-transparent"
@@ -439,16 +439,13 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             onClick={() => setActiveTab(section.type)}
         >
             <span className="font-bold">{sectionLabels[section.type]}</span>
-            <span className="ml-1.5 text-xs opacity-60 hidden md:inline">
-                {section.models.length}
-            </span>
         </Button>
     ));
 
     return (
         <div>
             {/* Tabs + column headers - single responsive row */}
-            <div className="flex items-center py-2 gap-y-2">
+            <div className="flex items-center py-2 pr-8 gap-y-2">
                 <div className="grid grid-cols-2 min-[500px]:flex gap-1.5 min-w-0 shrink-0">
                     {tabButtons}
                 </div>
@@ -483,7 +480,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
 
             {/* Tab content — scrollable */}
             {activeSection && (
-                <div className="max-h-[60vh] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-teal-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+                <div className="max-h-[calc(100vh-300px)] overflow-y-auto overscroll-contain pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-teal-200 [&::-webkit-scrollbar-thumb]:rounded-full">
                     <TabContent
                         type={activeSection.type}
                         models={activeSection.models}

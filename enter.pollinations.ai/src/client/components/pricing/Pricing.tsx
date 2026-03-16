@@ -46,7 +46,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                     </Button>
                 </div>
             </div>
-            <Panel color="teal" className="space-y-4">
+            <Panel color="teal" className="space-y-4 pt-3">
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable
                         imageModels={imageModels}

@@ -451,14 +451,16 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 </div>
                 <div className="flex-1 min-w-6" />
                 <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
-                    <div className="cursor-help text-right min-[480px]:text-center shrink-0 w-[90px]">
-                        <div className="text-sm font-bold text-gray-900">
-                            1 pollen ≈
-                        </div>
-                        <div className="text-xs font-normal text-gray-700 opacity-70 italic">
-                            {activeSection
-                                ? unitLabels[activeSection.type]
-                                : ""}
+                    <div className="cursor-help text-right min-[500px]:text-center shrink-0">
+                        <div className="min-[500px]:flex min-[500px]:items-baseline min-[500px]:gap-1.5 min-[500px]:justify-center">
+                            <span className="text-sm font-bold text-gray-900">
+                                1 pollen ≈
+                            </span>
+                            <span className="block min-[500px]:inline text-xs font-normal text-gray-700 opacity-70 italic">
+                                {activeSection
+                                    ? unitLabels[activeSection.type]
+                                    : ""}
+                            </span>
                         </div>
                     </div>
                 </Tooltip>

@@ -1,0 +1,36 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/prompt/a%20red%20apple?model=nanobanana-2&width=512&height=512&seed=99",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 500,
+    "statusText": "Internal Server Error",
+    "headers": {
+      "access-control-allow-headers": "Content-Type",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "Content-Length",
+      "connection": "keep-alive",
+      "content-type": "application/json",
+      "date": "Mon, 16 Mar 2026 21:35:43 GMT",
+      "keep-alive": "timeout=5",
+      "transfer-encoding": "chunked",
+      "x-error-type": "Internal Server Error"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "{\"error\":\"Internal Server Error\",\"message\":\"Vertex AI Gemini image generation failed: Vertex AI API error: 400 Bad Request - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 400,\\n    \\\"message\\\": \\\"Request contains an invalid argument.\\\",\\n    \\\"status\\\": \\\"INVALID_ARGUMENT\\\"\\n  }\\n}\\n\",\"timingInfo\":[{\"step\":\"Request received.\",\"timestamp\":0},{\"step\":\"Start generating job\",\"timestamp\":0},{\"step\":\"Start processing\",\"timestamp\":0},{\"step\":\"Start prompt normalization and translation\",\"timestamp\":0},{\"step\":\"End prompt normalization and translation\",\"timestamp\":0}],\"requestId\":\"267lcl\",\"requestParameters\":{\"prompt\":\"a red apple\",\"width\":512,\"height\":512,\"seed\":99,\"model\":\"nanobanana-2\",\"enhance\":false,\"negative_prompt\":\"undefined\",\"nofeed\":false,\"safe\":false,\"quality\":\"medium\",\"image\":[],\"transparent\":false,\"audio\":false},\"queueInfo\":null}",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

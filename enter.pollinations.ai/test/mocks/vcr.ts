@@ -61,6 +61,9 @@ async function getSnapshotHash(request: Request): Promise<string> {
         hash.update(`${body.stream}` || "");
         hash.update(`${body.tool_choice}` || "");
         hash.update(`${JSON.stringify(body.messages)}`);
+        // Embeddings requests use input/dimensions instead of messages
+        if (body.input) hash.update(`${JSON.stringify(body.input)}`);
+        if (body.dimensions) hash.update(`${body.dimensions}`);
     } catch (error) {
         log.warn("Failed to parse request body: {error}", { error });
     }

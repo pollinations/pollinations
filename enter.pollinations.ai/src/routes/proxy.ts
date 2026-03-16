@@ -75,6 +75,7 @@ const imageVideoHandlers = factory.createHandlers(
         const log = c.get("log").getChild("generate");
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
+        c.var.auth.requireFreeModel();
         c.var.auth.requireKeyBudget();
         await checkBalance(c.var);
 
@@ -125,6 +126,7 @@ const chatCompletionHandlers = factory.createHandlers(
         const log = c.get("log").getChild("generate");
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
+        c.var.auth.requireFreeModel();
         c.var.auth.requireKeyBudget();
 
         // Use resolved model from middleware for the backend request
@@ -211,11 +213,12 @@ function filterModelsByPermissions<
     models: T[],
     allowedModels: string[] | undefined,
     hasPaidBalance?: boolean,
+    freeOnly?: boolean,
 ): T[] {
     return models.filter((m) => {
         if (allowedModels?.length && !allowedModels.includes(m.name))
             return false;
-        if (m.paid_only && hasPaidBalance === false) return false;
+        if (m.paid_only && (hasPaidBalance === false || freeOnly)) return false;
         return true;
     });
 }
@@ -228,6 +231,12 @@ function hasPaidBalance(c: any): boolean | undefined {
     const user = c.var?.auth?.user;
     if (!user) return undefined;
     return (user.packBalance ?? 0) > 0 || (user.cryptoBalance ?? 0) > 0;
+}
+
+// Check if the API key has freeOnly restriction set
+// biome-ignore lint/suspicious/noExplicitAny: permissions type varies
+function isFreeOnly(c: any): boolean {
+    return !!c.var?.auth?.apiKey?.permissions?.freeOnly;
 }
 
 export const proxyRoutes = new Hono<Env>()
@@ -265,11 +274,13 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const freeOnly = isFreeOnly(c);
             const paidBalance = hasPaidBalance(c);
             const textModels = filterModelsByPermissions(
                 getTextModelsInfo(),
                 allowedModels,
                 paidBalance,
+                freeOnly,
             );
             const imageModels = filterModelsByPermissions(
                 getImageModelsInfo(),
@@ -350,11 +361,13 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             try {
                 const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+                const freeOnly = isFreeOnly(c);
                 const paidBalance = hasPaidBalance(c);
                 const models = filterModelsByPermissions(
                     getImageModelsInfo(),
                     allowedModels,
                     paidBalance,
+                    freeOnly,
                 );
                 return c.json(models);
             } catch (error) {
@@ -391,11 +404,13 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const freeOnly = isFreeOnly(c);
             const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getTextModelsInfo(),
                 allowedModels,
                 paidBalance,
+                freeOnly,
             );
             return c.json(models);
         },
@@ -426,11 +441,13 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const freeOnly = isFreeOnly(c);
             const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
                 getAudioModelsInfo(),
                 allowedModels,
                 paidBalance,
+                freeOnly,
             );
             return c.json(models);
         },
@@ -507,6 +524,7 @@ export const proxyRoutes = new Hono<Env>()
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
+            c.var.auth.requireFreeModel();
             c.var.auth.requireKeyBudget();
             await checkBalance(c.var);
 
@@ -729,6 +747,7 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
+            c.var.auth.requireFreeModel();
             await checkBalance(c.var);
 
             const text = decodeURIComponent(c.req.param("text"));

@@ -18,13 +18,25 @@ function buildUpdatedPermissions(
     existing: Record<string, string[]>,
     allowedModels?: string[] | null,
     accountPermissions?: string[] | null,
+    freeOnly?: boolean,
 ): Record<string, string[]> | undefined {
-    if (allowedModels === undefined && accountPermissions === undefined) {
+    if (
+        allowedModels === undefined &&
+        accountPermissions === undefined &&
+        freeOnly === undefined
+    ) {
         return undefined;
     }
     const updated = { ...existing };
     applyPermissionField(updated, "models", allowedModels);
     applyPermissionField(updated, "account", accountPermissions);
+    if (freeOnly !== undefined) {
+        if (freeOnly) {
+            updated.freeOnly = ["true"];
+        } else {
+            delete updated.freeOnly;
+        }
+    }
     return updated;
 }
 
@@ -116,6 +128,12 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe('Account permissions: ["balance", "usage"]. null = none'),
+    freeOnly: z
+        .boolean()
+        .optional()
+        .describe(
+            "Restrict this key to free models only. Paid models will be blocked.",
+        ),
     expiresAt: z
         .string()
         .datetime()
@@ -206,6 +224,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
+                freeOnly,
                 expiresAt,
             } = c.req.valid("json");
 
@@ -220,6 +239,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 existingPermissions,
                 allowedModels,
                 accountPermissions,
+                freeOnly,
             );
 
             if (updatedPermissions) {

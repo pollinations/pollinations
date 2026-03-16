@@ -182,12 +182,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
     return (
         <div
             className={cn(
-                "rounded-xl my-1",
+                "rounded-xl my-1 border",
                 isDisabled
-                    ? "bg-transparent"
+                    ? "bg-transparent border-transparent"
                     : expanded
-                      ? "bg-white/90"
-                      : "bg-white/80 hover:bg-white/90 transition-colors",
+                      ? "bg-white/90 border-teal-200"
+                      : "bg-white/80 hover:bg-white/90 transition-colors border-transparent",
             )}
         >
             {/* Clickable header */}

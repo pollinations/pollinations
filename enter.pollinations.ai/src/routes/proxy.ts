@@ -2,8 +2,13 @@ import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
-import { type BalanceVariables, balance } from "@/middleware/balance.ts";
+import {
+    type BalanceVariables,
+    balance,
+    getAvailableBalance,
+} from "@/middleware/balance.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
@@ -47,6 +52,7 @@ import {
 } from "@/schemas/openai.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
+import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
 import { generateMusic, generateSpeech, generateSunoMusic } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
@@ -76,7 +82,7 @@ const imageVideoHandlers = factory.createHandlers(
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
         c.var.auth.requireKeyBudget();
-        await checkBalance(c.var);
+        await checkBalance(c.var, c.env);
 
         // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
         const promptParam = c.req.param("prompt") || "";
@@ -130,7 +136,7 @@ const chatCompletionHandlers = factory.createHandlers(
         // Use resolved model from middleware for the backend request
         const requestBody = await c.req.json();
         requestBody.model = c.var.model.resolved;
-        await checkBalance(c.var);
+        await checkBalance(c.var, c.env);
 
         const textServiceUrl =
             c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
@@ -508,7 +514,7 @@ export const proxyRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
             c.var.auth.requireKeyBudget();
-            await checkBalance(c.var);
+            await checkBalance(c.var, c.env);
 
             // Use resolved model from middleware
             const model = c.var.model.resolved;
@@ -729,7 +735,7 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
-            await checkBalance(c.var);
+            await checkBalance(c.var, c.env);
 
             const text = decodeURIComponent(c.req.param("text"));
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
@@ -952,16 +958,33 @@ export function contentFilterResultsToHeaders(
     return headers;
 }
 
-async function checkBalance({
-    auth,
-    balance,
-    model,
-}: AuthVariables & BalanceVariables & ModelVariables): Promise<void> {
+async function checkBalance(
+    vars: AuthVariables & BalanceVariables & ModelVariables & LoggerVariables,
+    env: CloudflareBindings,
+): Promise<void> {
+    const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
     const serviceDefinition = getServiceDefinition(model.resolved);
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
 
+    // Pre-check: reject if balance < estimated cost for this model
+    // getModelStats is cached in KV for 1hr, so this is cheap
+    const stats = await getModelStats(env.KV, log);
+    const estimatedCost = getEstimatedPrice(stats, model.resolved);
+
+    if (estimatedCost > 0) {
+        const userBalance = await balance.getBalance(auth.user.id);
+        const available = getAvailableBalance(userBalance, isPaidOnly);
+
+        if (available < estimatedCost) {
+            throw new HTTPException(402, {
+                message: `Insufficient balance. This model costs ~${estimatedCost.toFixed(4)} pollen per request, but your available balance is ${available.toFixed(4)}.`,
+            });
+        }
+    }
+
+    // Existing check: sets balanceCheckResult for downstream cost deduction
     if (isPaidOnly) {
         await balance.requirePaidBalance(
             auth.user.id,

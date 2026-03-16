@@ -20,20 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [📚 LoreLoom  AI-Powered Interactive Storybook for Kid](loreloom.sprinthon.com) | LoreLoom  AI-Powered Interactive Storybook for Kid generates personalized, narrated interactive stories for children and offers character and setting customization with touch-based interactions. | [@web](https://github.com/web) |
-| [🤖 PromptPilot MCP Server](https://promptpilot.club/mcp) | Generate images, video, and audio directly in Claude, Code, Cursor, Windsurf, or any MCP-compatible AI agent. Powered by Pollinations API with 20 models including Flux GPT-Image-1 Imagen. | [@api](https://github.com/api) |
-| [🎬 AI City Diorama Generator](https://www.youtube.com/@WhatIF-KA/shorts) | Generates cinematic miniature city dioramas using the AI City Diorama Generator and automates an n8n workflow to publish the results to YouTube Shorts. | [@web](https://github.com/web) |
-| [🧭 Gratisfy](https://gratisfy.xyz/) | Gratisfy allows brings all the free AI inference providers including pollinations in to one place. Whether its a unified API access point Benchmark data or just finding new free providers Gratisfy is | [@web](https://github.com/web) |
-| [📚 NovelCraft AI](https://mrlearner1606.github.io/novelcraftai/) | Write novels in your browser using NovelCraft AI; it runs entirely on your device with no account, no installation, and no server. | [@web](https://github.com/web) |
-| [🎬 Generador y Editor de Imgenes y Videos con Pollina](https://juanrivera126.github.io/Generador-y-Editor-de-Im-genes-y-Videos-con-Pollinations/) | Genera y edita imágenes y videos con modelos y plantillas. Generador y Editor de Imgenes y Videos con Pollina exporta en PNG, JPG y MP4, ajusta resolución, recorta clips y aplica filtros. | [@web](https://github.com/web) |
-| [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@cli](https://github.com/cli) |
-| [🛡️ Skills-Sentinel-scan](176244378) | Scan using Skills-Sentinel-scan, a Dockerized security scanner that detects malicious patterns, supply chain risks, and permission overreach in AI skills and agents and exposes a web UI. | [@web](https://github.com/web) |
-| [🎨 junk journal Ai](https://junkjournalai.shop/) | Generate junk journal pages with junk journal Ai, creating printable, customizable layouts and collage-style elements for scrapbooking and mixed-media projects. | [@web](https://github.com/web) |
-| [🎨 AI img gen stant](https://jic-server.xo.je/?i=1) | Generate images from text prompts with control over style, resolution, and seeds, and export outputs for iteration. | [@web](https://github.com/web) |
-| [🤖 OpenLLM](https://randomcatuser.github.io/chat.openllm/) | Run OpenLLM to deploy, serve, and manage LLMs with a unified CLI and API, handling model loading, inference endpoints, and scaling for local or production environments. | [@web](https://github.com/web) |
-| [🖼️ Comics Explorer](https://juanrivera-boop.github.io/Pollinations-slides/) | Organiza y visualiza colecciones de cómics digitales y presentaciones interactivas en Comics Explorer mediante una interfaz web moderna. | [@web](https://github.com/web) |
+| [📚 LoreLoom  AI-Powered Interactive Storybook for Kid](loreloom.sprinthon.com) | LoreLoom  AI-Powered Interactive Storybook for Kid generates personalized, narrated interactive stories for children and offers character and setting customization with touch-based interactions. | [@abdul-basat](https://github.com/abdul-basat) |
+| [🤖 PromptPilot MCP Server](https://promptpilot.club/mcp) | Generate images, video, and audio directly in Claude, Code, Cursor, Windsurf, or any MCP-compatible AI agent. Powered by Pollinations API with 20 models including Flux GPT-Image-1 Imagen. | [@doctorm333](https://github.com/doctorm333) |
+| [🎬 AI City Diorama Generator](https://www.youtube.com/@WhatIF-KA/shorts) | Generates cinematic miniature city dioramas using the AI City Diorama Generator and automates an n8n workflow to publish the results to YouTube Shorts. | [@DrTechn](https://github.com/DrTechn) |
+| [🧭 Gratisfy](https://gratisfy.xyz/) | Gratisfy allows brings all the free AI inference providers including pollinations in to one place. Whether its a unified API access point Benchmark data or just finding new free providers Gratisfy is | [@LynxUnbanned](https://github.com/LynxUnbanned) |
+| [📚 NovelCraft AI](https://mrlearner1606.github.io/novelcraftai/) | Write novels in your browser using NovelCraft AI; it runs entirely on your device with no account, no installation, and no server. | [@mrlearner1606](https://github.com/mrlearner1606) |
+| [🎬 Generador y Editor de Imgenes y Videos con Pollina](https://juanrivera126.github.io/Generador-y-Editor-de-Im-genes-y-Videos-con-Pollinations/) | Genera y edita imágenes y videos con modelos y plantillas. Generador y Editor de Imgenes y Videos con Pollina exporta en PNG, JPG y MP4, ajusta resolución, recorta clips y aplica filtros. | [@Juanrivera126](https://github.com/Juanrivera126) |
+| [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@blueplaysgames3921](https://github.com/blueplaysgames3921) |
+| 🛡️ Skills-Sentinel-scan | Scan using Skills-Sentinel-scan, a Dockerized security scanner that detects malicious patterns, supply chain risks, and permission overreach in AI skills and agents and exposes a web UI. | [@Amine-SGM](https://github.com/Amine-SGM) |
+| [🎨 junk journal Ai](https://junkjournalai.shop/) | Generate junk journal pages with junk journal Ai, creating printable, customizable layouts and collage-style elements for scrapbooking and mixed-media projects. | [@nadiaa1987](https://github.com/nadiaa1987) |
+| [🎨 AI img gen stant](https://jic-server.xo.je/?i=1) | Generate images from text prompts with control over style, resolution, and seeds, and export outputs for iteration. | [@JIC-Jevgin](https://github.com/JIC-Jevgin) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -49,16 +47,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-03-15** – **⚡ Frontend speed boost** We added lazy-loading and aggressive caching to the [main site](https://hello.pollinations.ai). Return visits now render near-instantly, because waiting for DOM elements is boring.
+- **2026-03-15** – **🤖 PromptPilot MCP Server** You can now generate images, video, and audio directly inside Claude, Cursor, or any other [MCP-compatible](https://mcp.sequa.ai/v1/pollinations/contribute) agent.
+- **2026-03-15** – **🎬 AI City Diorama Generator** New in the showcase: a fully automated n8n pipeline that hallucinates cinematic miniature cities and publishes them straight to YouTube Shorts.
+- **2026-03-15** – **📚 LoreLoom Storybooks** Also new in the community showcase: an interactive, narrated AI storybook generator for kids.
 - **2026-03-13** – **🎵 Voice acting via system prompt** Seraphyn joined as a community provider, bringing `qwen3-tts` to the [Unified API](https://gen.pollinations.ai). You can now style the voice output just by describing what you want in the system prompt.
 - **2026-03-13** – **🎨 Dirtberry Pro** Added `dirtberry-pro` to the image model roster. Pass it as your model parameter when you need high realism and complex scenes.
 - **2026-03-13** – **📊 Public user endpoint** We opened a restricted Tinybird pipe that safely exposes public profile and tier data. You can finally build those community leaderboards without leaking secrets.
 - **2026-03-13** – **🔗 Gratisfy integration** Pollinations is now hooked up to Gratisfy, letting you access our endpoints alongside other free AI providers through a single unified API.
 - **2026-03-11** – **🎨 GPT Images Liberated** We relocated `gpt-image-1-mini` and `gpt-image-1.5` to a new region to sidestep some overly enthusiastic content filters. Reliable, block-free generation is back on the [Unified API](https://gen.pollinations.ai).
 - **2026-03-10** – **🧠 New Models: Claude & Dirtberry** Claude Sonnet 4.6 is now available via the `claude-airforce` text endpoint, alongside `dirtberry` for quick realistic image generation. Hit the [Unified API](https://gen.pollinations.ai) to try them out.
-- **2026-03-10** – **🔑 Bring Your Own Pollen** The Product Packaging Designer and AI Dungeon Master community apps now support Pollinations SSO. Log in, spend your own Pollen balance, and bypass third-party media hosts with our native upload service.
-- **2026-03-09** – **🤖 Polly V2** Our [Discord](https://discord.gg/pollinations-ai-885844321461485618) bot got a brain transplant. Rebuilt with native internals for speed, she now features an adaptive personality that matches your tone, skips the sycophancy, and points you to the docs instead of dumping massive code blocks.
-- **2026-03-09** – **🎨 Unfiltered nanobanana** We took the training wheels off the nanobanana image model. Passing `safe=false` to the [API](https://gen.pollinations.ai) now properly bypasses native safety settings instead of relying on clunky prompt injections, resulting in fewer false-positive blocks on your creative prompts.
-- **2026-03-08** – **🎨 Fresh coat of pixels** The [main website](https://hello.pollinations.ai) has a new look. We replaced the old theming engine with a cohesive color palette and dynamic retro pixel art backgrounds. Much cozier.
 ---
 
 ## 🌱 Introduction

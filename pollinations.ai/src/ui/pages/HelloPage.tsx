@@ -241,7 +241,7 @@ function HelloPage() {
                                 return (
                                     <div
                                         key={item.title}
-                                        className={`bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i % colors.length]}${item.linkUrl ? " md:col-span-2 w-fit" : ""}`}
+                                        className={`bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i % colors.length]}${item.linkUrl ? " md:col-span-2" : ""}`}
                                     >
                                         <div className="flex items-start gap-3">
                                             <span className="text-lg mt-0.5 w-6 text-center shrink-0">

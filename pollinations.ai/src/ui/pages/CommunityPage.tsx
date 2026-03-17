@@ -116,7 +116,9 @@ export default function CommunityPage() {
                         spacing="comfortable"
                         className="text-muted"
                     >
-                        {pageCopy.contributeNote}
+                        All activity feeds your tier:{" "}
+                        <a href={LINKS.enterTiersFaq} target="_blank" rel="noopener noreferrer" className="font-bold text-dark hover:underline">Seed → Flower → Nectar</a>
+                        . More you do, more compute you get.
                     </Body>
                     <a
                         href={LINKS.enterTiersFaq}
@@ -147,7 +149,9 @@ export default function CommunityPage() {
                                 {pageCopy.discordTitle}
                             </Heading>
                             <Body size="sm" spacing="comfortable">
-                                {pageCopy.discordSubtitle}
+                                Chat with builders, get help, share what you're working on. Start in{" "}
+                                <a href={LINKS.discordPollenBeta} target="_blank" rel="noopener noreferrer" className="font-bold text-dark hover:underline">#pollen-beta</a>
+                                {" "}if you're new.
                             </Body>
                             <div className="flex flex-wrap gap-2">
                                 <Button
@@ -188,7 +192,9 @@ export default function CommunityPage() {
                                     {pageCopy.githubTitle}
                                 </Heading>
                                 <Body size="sm" spacing="comfortable">
-                                    {pageCopy.githubSubtitle}
+                                    Contribute code, report bugs, review PRs, or just star us. New here? Check the{" "}
+                                    <a href={LINKS.githubGoodFirstIssue} target="_blank" rel="noopener noreferrer" className="font-bold text-dark hover:underline">"good first issue"</a>
+                                    {" "}label.
                                 </Body>
                                 <Button
                                     as="a"

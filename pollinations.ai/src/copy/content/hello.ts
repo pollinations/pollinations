@@ -138,31 +138,31 @@ export const HELLO_PAGE = {
     roadmapItems: [
         {
             emoji: "🧮",
-            title: "Scoring System",
+            title: "Scoring",
             description:
-                "Tiers will be based on a transparent score — GitHub activity, API usage, apps shipped, and community contributions.",
+                "Transparent score based on GitHub activity, API usage, and apps shipped. Determines your tier.",
         },
         {
             emoji: "🔑",
-            title: "Pollinations Login",
+            title: "Auth",
             description:
-                "OAuth sign-in for your users. Token handling and production-ready auth.",
+                "OAuth for your users. Token handling built in.",
         },
         {
             emoji: "🏠",
-            title: "App Hosting",
+            title: "Hosting",
             description:
-                "Ship your app on our infra. No deploy setup, no separate hosting bill.",
+                "Deploy on our infra. No setup, no separate bill.",
         },
         {
             emoji: "🌻",
-            title: "Creator Rewards",
-            description: "Get recognized for what people build with your app.",
+            title: "Payouts",
+            description: "People use your app, you earn pollen.",
         },
         {
             emoji: "🗺️",
-            title: "App Discovery",
-            description: "A marketplace where users find your app.",
+            title: "Discovery",
+            description: "A place where people find what you built.",
         },
     ],
     comingFooterEmoji: "",
@@ -171,7 +171,7 @@ export const HELLO_PAGE = {
 
     // Section 9 — CTA
     ctaTitle: "Get started",
-    ctaBody: "One API. Open source. Built in the open.",
+    ctaBody: "One API. Open source.",
     browseAppsLink: "Browse Apps",
     communityLink: "Community",
 };

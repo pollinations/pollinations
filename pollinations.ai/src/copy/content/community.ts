@@ -18,10 +18,10 @@ export const COMMUNITY_PAGE = {
     heroStat3: "500+",
     heroStat3Label: "new developers daily",
 
-    // Section 2 — Earn Pollen
-    contributeTitle: "Earn Pollen",
+    // Section 2 — Level up
+    contributeTitle: "Level up",
     contributeBody:
-        "Activity on the platform helps you level up your tier. Higher tier means bigger daily Pollen grants and more free compute.",
+        "Activity on the platform moves you up tiers. Higher tier, more daily compute.",
     contributeCard1Title: "Ship an app",
     contributeCard1Body:
         "Publish something to the ecosystem. Biggest tier boost.",
@@ -31,7 +31,7 @@ export const COMMUNITY_PAGE = {
     contributeCard3Body:
         "Answer a question, share what you built, help someone get unstuck.",
     contributeNote:
-        "All activity feeds your creator tier: Seed → Flower → Nectar. More you do, more daily compute you get.",
+        "All activity feeds your tier: Seed → Flower → Nectar. More you do, more compute you get.",
     learnAboutTiersButton: "Learn about tiers",
 
     // Section 3 — Jump In
@@ -44,7 +44,7 @@ export const COMMUNITY_PAGE = {
         'Contribute code, report bugs, review PRs, or just star us. New here? Check the "good first issue" label.',
     submitAppTitle: "Submit Your App",
     submitAppSubtitle:
-        "Built something? Get it in the showcase. Featured apps get visibility and help you level up.",
+        "Built something? Add it to the showcase.",
 
     // Buttons
     joinDiscordButton: "Join Discord",

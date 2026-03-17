@@ -69,6 +69,8 @@ export const LINKS = {
         "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md",
     githubFork:
         "https://github.com/pollinations/pollinations/fork",
+    githubGoodFirstIssue:
+        "https://github.com/pollinations/pollinations/labels/good%20first%20issue",
     docsText:
         "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-text-generation",
     docsStreaming:

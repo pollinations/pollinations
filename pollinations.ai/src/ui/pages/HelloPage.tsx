@@ -164,8 +164,8 @@ function HelloPage() {
                             </div>
                         </div>
                         {/* Right: tier ladder */}
-                        <div className="flex justify-end">
-                            <div className="border-r-2 border-b-2 border-dark p-4 bg-accent-light flex flex-col w-fit">
+                        <div>
+                            <div className="border-r-2 border-b-2 border-dark p-4 bg-accent-light flex flex-col">
                                 <Badge variant="highlight" className="mb-4">
                                     {pageCopy.computeTiersTitle}
                                 </Badge>
@@ -192,7 +192,7 @@ function HelloPage() {
                                                 <Body
                                                     size="sm"
                                                     spacing="none"
-                                                    className="text-muted mt-0.5 max-w-[180px]"
+                                                    className="text-muted mt-0.5 max-w-[240px]"
                                                 >
                                                     {tier.desc}
                                                 </Body>

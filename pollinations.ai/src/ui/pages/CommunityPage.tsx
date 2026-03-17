@@ -49,14 +49,24 @@ export default function CommunityPage() {
                     </Body>
                 </div>
                 <p className="font-body text-base text-subtle mb-4">
-                    <a href={SOCIAL_LINKS.discord.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    <a
+                        href={SOCIAL_LINKS.discord.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                    >
                         <span className="font-headline text-xs font-black text-muted">
                             {pageCopy.heroStat1}
                         </span>{" "}
                         {pageCopy.heroStat1Label}
                     </a>
                     <span className="mx-2 text-border-subtle">·</span>
-                    <a href={SOCIAL_LINKS.github.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    <a
+                        href={SOCIAL_LINKS.github.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                    >
                         <span className="font-headline text-xs font-black text-muted">
                             {pageCopy.heroStat2}
                         </span>{" "}
@@ -135,9 +145,16 @@ export default function CommunityPage() {
                         spacing="comfortable"
                         className="text-muted"
                     >
-                        All activity feeds your tier:{" "}
-                        <a href={LINKS.enterTiersFaq} target="_blank" rel="noopener noreferrer" className="font-bold text-dark hover:underline">Seed → Flower → Nectar</a>
-                        . More you do, more compute you get.
+                        {pageCopy.contributeNotePre}
+                        <a
+                            href={LINKS.enterTiersFaq}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold text-dark hover:underline"
+                        >
+                            {pageCopy.contributeNoteLink}
+                        </a>
+                        {pageCopy.contributeNotePost}
                     </Body>
                     <a
                         href={LINKS.enterTiersFaq}
@@ -167,37 +184,37 @@ export default function CommunityPage() {
                             >
                                 {pageCopy.discordTitle}
                             </Heading>
-                            <Body size="sm" spacing="comfortable">
-                                Chat with builders, get help, share what you're working on. Start in{" "}
-                                <a href={LINKS.discordPollenBeta} target="_blank" rel="noopener noreferrer" className="font-bold text-dark hover:underline">#pollen-beta</a>
-                                {" "}if you're new.
-                            </Body>
-                            <div className="flex flex-wrap gap-2">
-                                <Button
-                                    as="a"
-                                    href={SOCIAL_LINKS.discord.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="primary"
-                                    size="default"
-                                    className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
-                                >
-                                    {pageCopy.joinDiscordButton}
-                                    <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
-                                </Button>
-                                <Button
-                                    as="a"
-                                    href={LINKS.discordPollenBeta}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="secondary"
-                                    size="default"
-                                    className="bg-accent-strong text-dark hover:bg-accent-strong/80 hover:text-dark"
-                                >
-                                    {pageCopy.pollenBetaButton}
-                                    <ExternalLinkIcon className="w-3 h-3 text-dark" />
-                                </Button>
+                            <div className="bg-white border border-border-subtle rounded-sub-card px-4 py-3 mb-4 w-fit">
+                                <Body size="sm" spacing="none">
+                                    {pageCopy.discordEmoji}{" "}
+                                    {pageCopy.discordDesc1}
+                                    <em>{pageCopy.discordDesc1Em}</em>
+                                    {pageCopy.discordDesc1End}
+                                    <br />
+                                    {pageCopy.discordDesc2Pre}
+                                    <a
+                                        href={LINKS.discordPollenBeta}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-headline text-xs font-black text-dark bg-accent-strong px-2 py-0.5 hover:underline"
+                                    >
+                                        {pageCopy.discordDesc2Link}
+                                    </a>
+                                    {pageCopy.discordDesc2Post}
+                                </Body>
                             </div>
+                            <Button
+                                as="a"
+                                href={SOCIAL_LINKS.discord.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                            >
+                                {pageCopy.joinDiscordButton}
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                            </Button>
                         </SubCard>
 
                         {/* GitHub + Submit App — 2 columns on desktop */}
@@ -210,11 +227,16 @@ export default function CommunityPage() {
                                 >
                                     {pageCopy.githubTitle}
                                 </Heading>
-                                <Body size="sm" spacing="comfortable">
-                                    Contribute code, report bugs, review PRs, or just star us. New here? Check the{" "}
-                                    <a href={LINKS.githubGoodFirstIssue} target="_blank" rel="noopener noreferrer" className="font-bold text-dark hover:underline">"good first issue"</a>
-                                    {" "}label.
-                                </Body>
+                                <div className="bg-white border border-border-subtle rounded-sub-card px-4 py-3 mb-4 w-fit">
+                                    <Body size="sm" spacing="none">
+                                        {pageCopy.githubEmoji}{" "}
+                                        {pageCopy.githubDesc}
+                                        <strong>
+                                            {pageCopy.githubDescBold}
+                                        </strong>
+                                        {pageCopy.githubDescEnd}
+                                    </Body>
+                                </div>
                                 <Button
                                     as="a"
                                     href={SOCIAL_LINKS.github.url}
@@ -237,9 +259,15 @@ export default function CommunityPage() {
                                 >
                                     {pageCopy.submitAppTitle}
                                 </Heading>
-                                <Body size="sm" spacing="comfortable">
-                                    {pageCopy.submitAppSubtitle}
-                                </Body>
+                                <div className="bg-white border border-border-subtle rounded-sub-card px-4 py-3 mb-4 w-fit">
+                                    <Body size="sm" spacing="none">
+                                        {pageCopy.submitEmoji}{" "}
+                                        {pageCopy.submitDesc}
+                                        <strong>
+                                            {pageCopy.submitDescBold}
+                                        </strong>
+                                    </Body>
+                                </div>
                                 <Button
                                     as="a"
                                     href={LINKS.githubSubmitApp}

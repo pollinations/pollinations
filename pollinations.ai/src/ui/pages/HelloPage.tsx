@@ -110,10 +110,15 @@ function HelloPage() {
 
                 {/* Section 2 — How it works */}
                 <div className="mb-12">
-                    <Heading variant="section" spacing="comfortable">
-                        {pageCopy.howItWorksTitle}
-                    </Heading>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <Heading variant="section" spacing="comfortable">
+                            {pageCopy.howItWorksTitle}
+                        </Heading>
+                        <Heading variant="section" spacing="comfortable" className="hidden md:block">
+                            {pageCopy.computeTiersTitle}
+                        </Heading>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Left: heading + bullets */}
                         <div className="flex flex-col">
                             <div className="flex flex-col gap-3 mb-6">
@@ -165,7 +170,7 @@ function HelloPage() {
                         </div>
                         {/* Right: tier ladder */}
                         <div>
-                            <Heading variant="section" spacing="comfortable">
+                            <Heading variant="section" spacing="comfortable" className="md:hidden">
                                 {pageCopy.computeTiersTitle}
                             </Heading>
                             <div className="border-r-2 border-b-2 border-dark p-4 bg-accent-light flex flex-col">

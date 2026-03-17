@@ -1,0 +1,26 @@
+{
+  "pr_number": 9229,
+  "title": "fix(scripts): use millisecond timestamps in seed upgrade cron",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/9229",
+  "merged_at": "2026-03-17T20:38:13Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "fix(scripts): use millisecond timestamps in seed upgrade cron",
+    "blurb": "fix(scripts): use millisecond timestamps in seed upgrade cron",
+    "summary": "fix(scripts): use millisecond timestamps in seed upgrade cron",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-17T20:39:17.019796+00:00",
+  "_minimal": true
+}

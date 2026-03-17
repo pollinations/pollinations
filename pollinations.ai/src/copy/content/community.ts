@@ -30,20 +30,30 @@ export const COMMUNITY_PAGE = {
     contributeCard3Title: "Help in Discord",
     contributeCard3Body:
         "Answer a question, share what you built, help someone get unstuck.",
-    contributeNote:
-        "All activity feeds your tier: Seed → Flower → Nectar. More you do, more compute you get.",
+    contributeNotePre: "All activity feeds your tier: ",
+    contributeNoteLink: "Seed → Flower → Nectar",
+    contributeNotePost: ". More you do, more compute you get.",
     learnAboutTiersButton: "Learn about tiers",
 
     // Section 3 — Jump In
     jumpInTitle: "Where to start",
     discordTitle: "Discord",
-    discordSubtitle:
-        "Chat with builders, get help, share what you're working on. Start in #pollen-beta if you're new.",
+    discordEmoji: "💬",
+    discordDesc1: "Chat with builders, ",
+    discordDesc1Em: "get help",
+    discordDesc1End: ", share what you're working on.",
+    discordDesc2Pre: "Start in ",
+    discordDesc2Link: "#pollen-beta",
+    discordDesc2Post: " if you're new.",
     githubTitle: "GitHub",
-    githubSubtitle:
-        'Contribute code, report bugs, review PRs, or just star us. New here? Check the "good first issue" label.',
+    githubEmoji: "🛠️",
+    githubDesc: "Contribute code, report bugs, review PRs, or just ",
+    githubDescBold: "star us",
+    githubDescEnd: ".",
     submitAppTitle: "Submit Your App",
-    submitAppSubtitle: "Built something? Add it to the showcase.",
+    submitEmoji: "🚀",
+    submitDesc: "Built something? ",
+    submitDescBold: "Add it to the showcase.",
 
     // Buttons
     joinDiscordButton: "Join Discord",

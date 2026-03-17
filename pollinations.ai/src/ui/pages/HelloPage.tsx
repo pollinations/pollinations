@@ -4,6 +4,7 @@ import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useHighlights } from "../../hooks/useHighlights";
 import { usePageCopy } from "../../hooks/usePageCopy";
+import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -17,6 +18,15 @@ function HelloPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(HELLO_PAGE);
     const { highlights } = useHighlights();
     useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
+
+    const { translated: translatedWhatYouGet } = useTranslate(
+        HELLO_PAGE.whatYouGetItems,
+        "desc",
+    );
+    const { translated: translatedRoadmap } = useTranslate(
+        HELLO_PAGE.roadmapItems,
+        "description",
+    );
 
     const tiers = [
         {
@@ -222,7 +232,7 @@ function HelloPage() {
                         {pageCopy.whatYouGetTitle}
                     </Heading>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                        {pageCopy.whatYouGetItems.map(
+                        {translatedWhatYouGet.map(
                             (
                                 item: {
                                     emoji: string;
@@ -384,7 +394,7 @@ function HelloPage() {
                                 {pageCopy.roadmapLabel}
                             </Badge>
                             <div className="space-y-2">
-                                {pageCopy.roadmapItems.map(
+                                {translatedRoadmap.map(
                                     (item: {
                                         emoji: string;
                                         title: string;

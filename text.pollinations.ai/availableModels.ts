@@ -154,6 +154,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
     },
     {
+        name: "qwen",
+        config: portkeyConfig["accounts/fireworks/models/qwen3p5-397b-a17b"],
+    },
+    {
         name: "nomnom",
         config: portkeyConfig["nomnom"],
     },

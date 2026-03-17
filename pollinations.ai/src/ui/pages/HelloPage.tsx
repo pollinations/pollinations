@@ -165,10 +165,10 @@ function HelloPage() {
                         </div>
                         {/* Right: tier ladder */}
                         <div>
-                            <div className="border-r-2 border-b-2 border-dark p-4 bg-accent-light flex flex-col items-start">
-                                <Badge variant="highlight" className="mb-4">
-                                    {pageCopy.computeTiersTitle}
-                                </Badge>
+                            <Heading variant="section" spacing="comfortable">
+                                {pageCopy.computeTiersTitle}
+                            </Heading>
+                            <div className="border-r-2 border-b-2 border-dark p-4 bg-accent-light flex flex-col">
                                 {tiers.map((tier, i) => (
                                     <div key={tier.title}>
                                         {i > 0 && (

@@ -1,0 +1,26 @@
+{
+  "pr_number": 9239,
+  "title": "fix(scripts): use millisecond timestamps in detect-abuse script",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9239",
+  "merged_at": "2026-03-17T20:46:02Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "fix(scripts): use millisecond timestamps in detect-abuse script",
+    "blurb": "fix(scripts): use millisecond timestamps in detect-abuse script",
+    "summary": "fix(scripts): use millisecond timestamps in detect-abuse script",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-17T20:47:05.376378+00:00",
+  "_minimal": true
+}

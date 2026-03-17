@@ -21,7 +21,7 @@ export const COMMUNITY_PAGE = {
     // Section 2 — Level up
     contributeTitle: "Level up",
     contributeBody:
-        "Activity on the platform moves you up tiers. Higher tier, more daily compute.",
+        "Activity on the platform moves you up tiers. Higher tier, more compute.",
     contributeCard1Title: "Ship an app",
     contributeCard1Body:
         "Publish something to the ecosystem. Biggest tier boost.",
@@ -43,8 +43,7 @@ export const COMMUNITY_PAGE = {
     githubSubtitle:
         'Contribute code, report bugs, review PRs, or just star us. New here? Check the "good first issue" label.',
     submitAppTitle: "Submit Your App",
-    submitAppSubtitle:
-        "Built something? Add it to the showcase.",
+    submitAppSubtitle: "Built something? Add it to the showcase.",
 
     // Buttons
     joinDiscordButton: "Join Discord",

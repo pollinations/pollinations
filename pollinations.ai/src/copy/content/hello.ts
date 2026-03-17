@@ -3,7 +3,7 @@
 export const HELLO_PAGE = {
     pageTitle: "hello",
     pageDescription:
-        "Build AI apps with easy APIs, daily grants, and community support",
+        "Build AI apps with easy APIs, free compute, and community support",
     // Section 1 — Hero
     heroTitle: "Build an AI app.",
     heroBodyPrefix: "⚡ One API for text, image, audio, and video.",
@@ -23,7 +23,7 @@ export const HELLO_PAGE = {
     // How it works section
     howItWorksTitle: "How it works",
     howItWorksBuildDesc: "Use one API across models.",
-    howItWorksShipDesc: "Start free with daily compute.",
+    howItWorksShipDesc: "Start free with regular compute refills.",
     howItWorksGetPaidDesc: "Your users get their own compute.",
 
     // Start free section
@@ -45,7 +45,7 @@ export const HELLO_PAGE = {
         },
         {
             pre: "",
-            bold: "Free daily compute",
+            bold: "Free compute with regular refills",
             post: " to build and ship",
             emoji: "🌱",
             pillColor: "bg-tertiary-light",
@@ -58,7 +58,7 @@ export const HELLO_PAGE = {
             pillColor: "bg-secondary-light",
         },
     ],
-    freeDailyComputeTitle: "Free daily compute",
+    freeDailyComputeTitle: "Free compute",
 
     tiersBetaNote: "🧪 Beta — values may shift.",
     computeTiersTitle: "Tiers",
@@ -68,7 +68,7 @@ export const HELLO_PAGE = {
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
     tierSeedDescription: "You're building. Contributing, shipping apps.",
-    tierSeedGrant: "0.15 pollen / hr",
+    tierSeedGrant: "0.15 pollen / hour",
     tierSeedPoints: "",
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
@@ -121,7 +121,7 @@ export const HELLO_PAGE = {
         {
             emoji: "🤝",
             title: "For your users",
-            desc: "Each user who signs in gets free weekly compute to try your app.\nWhen they need more, it just works — no Stripe setup on your end.",
+            desc: "Each user who signs in gets free hourly compute to try your app.\nWhen they need more, it just works — no Stripe setup on your end.",
             linkText: "🔌 Set up for your app",
             linkUrl: "byopDocs",
             fullWidth: true,
@@ -145,14 +145,12 @@ export const HELLO_PAGE = {
         {
             emoji: "🔑",
             title: "Auth",
-            description:
-                "OAuth for your users. Token handling built in.",
+            description: "OAuth for your users. Token handling built in.",
         },
         {
             emoji: "🏠",
             title: "Hosting",
-            description:
-                "Deploy on our infra. No setup, no separate bill.",
+            description: "Deploy on our infra. No setup, no separate bill.",
         },
         {
             emoji: "🌻",

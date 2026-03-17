@@ -299,9 +299,9 @@ function HelloPage() {
                         {pageCopy.openTitle}
                     </Heading>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* What's New — 2/3 width */}
-                        <div className="md:col-span-2 bg-secondary-light border-r-2 border-b-2 border-dark p-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* What's New */}
+                        <div className="bg-secondary-light border-r-2 border-b-2 border-dark p-5">
                             <Badge variant="highlight" className="mb-4">
                                 {pageCopy.recentUpdatesTitle}
                             </Badge>
@@ -349,8 +349,8 @@ function HelloPage() {
                             </div>
                         </div>
 
-                        {/* What's Next — 1/3 width */}
-                        <div className="md:col-span-1 bg-tertiary-light border-r-2 border-b-2 border-dark p-5">
+                        {/* What's Next */}
+                        <div className="bg-tertiary-light border-r-2 border-b-2 border-dark p-5">
                             <Badge variant="highlight" className="mb-4">
                                 {pageCopy.roadmapLabel}
                             </Badge>

@@ -68,7 +68,7 @@ export const HELLO_PAGE = {
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
     tierSeedDescription: "You're building. Contributing, shipping apps.",
-    tierSeedGrant: "3 pollen / day",
+    tierSeedGrant: "0.15 pollen / hr",
     tierSeedPoints: "",
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",

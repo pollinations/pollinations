@@ -21,9 +21,6 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.2),
-                promptImageTokens: perMillion(0.45),
-                promptAudioTokens: perMillion(6.5),
-                promptVideoTokens: perMillion(0.45),
             },
         ],
         description:

@@ -61,7 +61,7 @@ export const HELLO_PAGE = {
     freeDailyComputeTitle: "Free daily compute",
 
     tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
-    computeTiersTitle: "Compute tiers",
+    computeTiersTitle: "Tiers",
     tierHowText: "Want to know more?",
     tierHowLink: "Check our FAQ",
 
@@ -126,8 +126,8 @@ export const HELLO_PAGE = {
 
     // Section 8 — We Build in the Open
     openTitle: "We build in the open",
-    recentUpdatesTitle: "What's New",
-    roadmapLabel: "What's Next",
+    recentUpdatesTitle: "New",
+    roadmapLabel: "Next",
     roadmapItems: [
         {
             emoji: "🧮",

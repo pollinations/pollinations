@@ -341,7 +341,7 @@ function HelloPage() {
                                                     ),
                                                 }}
                                             >
-                                                {item.description}
+                                                {item.description?.split(/(?<=[.!?])\s/)[0]}
                                             </LazyMarkdown>
                                         </div>
                                     </div>

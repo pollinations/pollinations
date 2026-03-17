@@ -196,27 +196,15 @@ const chatCompletionHandlers = factory.createHandlers(
             contentFilterHeaders =
                 contentFilterResultsToHeaders(parsedResponse);
 
-            // Fallback: if upstream didn't return usage (e.g. airforce), estimate tokens
-            // from message content length. Used for billing, so we extract only the text
-            // content (not JSON syntax) and use ~4 chars/token as a rough estimate.
+            // Fallback: if upstream didn't return usage (e.g. airforce), estimate from content
             const hasUsage =
                 parsedResponse.usage &&
                 (parsedResponse.usage.prompt_tokens > 0 ||
                     parsedResponse.usage.completion_tokens > 0);
             if (!hasUsage) {
-                const promptChars = (
-                    requestBody.messages as Array<{ content?: string }>
-                ).reduce(
-                    (sum, m) =>
-                        sum +
-                        (typeof m.content === "string" ? m.content.length : 0),
-                    0,
-                );
-                const completionChars = (parsedResponse.choices ?? []).reduce(
-                    (sum, choice) =>
-                        sum + (choice?.message?.content?.length ?? 0),
-                    0,
-                );
+                const promptChars = JSON.stringify(requestBody.messages).length;
+                const completionChars =
+                    parsedResponse.choices?.[0]?.message?.content?.length ?? 0;
                 estimatedUsageHeaders = buildUsageHeaders(
                     c.var.model.resolved,
                     {

@@ -122,8 +122,8 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-3-pro-preview",
-        config: portkeyConfig["gemini-3-pro-preview"],
+        name: "gemini-3-pro-legacy",
+        config: portkeyConfig["gemini-3-pro-legacy"],
         transform: pipe(
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
@@ -177,6 +177,10 @@ const models: ModelDefinition[] = [
     {
         name: "claude-airforce",
         config: portkeyConfig["claude-sonnet-4.6"],
+    },
+    {
+        name: "openai-seraphyn",
+        config: portkeyConfig["seraphyn-gpt-5.4"],
     },
 ];
 

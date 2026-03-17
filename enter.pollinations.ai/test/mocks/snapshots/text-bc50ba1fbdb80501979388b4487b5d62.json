@@ -1,0 +1,126 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sequential test 1773694496548"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2217",
+      "content-type": "application/json",
+      "date": "Mon, 16 Mar 2026 20:55:03 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-usage-completion-reasoning-tokens": "320",
+      "x-usage-completion-text-tokens": "260",
+      "x-usage-prompt-text-tokens": "14"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "I’m not sure what you mean by “Sequential test 1773694496548.” Do you want me to run or describe a sequential hypothesis test, look up a test with that ID, or something else?\n\nIf you want a sequential hypothesis test, tell me:\n- The data (or upload it), or summary (e.g., number of successes/trials at each look, or sample means/SDs).\n- The hypotheses (H0 and H1), or the effect size you care about.\n- Data type: binary, normal (means), time-to-event, etc.\n- Error rates or stopping rules: target α, power (1−β), maximum sample size, or type of sequential method (SPRT, group-sequential, Bayesian sequential).\n- Any pref­erences for one-sided vs two-sided, and whether you want an exact or approximate test.\n\nIf you don’t have data and want an example, I can:\n- Demonstrate an SPRT for binary data with chosen α, β, and p0/p1,\n- Or show a group-sequential (e.g., O’Brien–Fleming) example for means,\n- Or run a Bayesian sequential stopping simulation.\n\nWhich would you like me to do?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1773694496,
+        "id": "pllns_235070de159283d597fcb936e27553ff",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 580,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 320,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 14,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 594
+        }
+      }
+    }
+  }
+}

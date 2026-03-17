@@ -252,7 +252,7 @@ export default function CommunityPage() {
                                     href={issue.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`block bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i]} transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
+                                    className={`block bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i]} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
                                 >
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
@@ -314,7 +314,7 @@ export default function CommunityPage() {
                                         href={supporter.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className={`block w-16 h-16 overflow-hidden bg-white/60 rounded-sub-card border-r-2 border-b-2 ${borderColors[index % borderColors.length]} transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none mb-2`}
+                                        className={`block w-16 h-16 overflow-hidden bg-white/60 rounded-sub-card border-r-2 border-b-2 ${borderColors[index % borderColors.length]} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none mb-2`}
                                     >
                                         <ImageGenerator
                                             key={`${supporter.name}-logo`}

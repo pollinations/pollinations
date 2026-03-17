@@ -266,6 +266,7 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 - **Check `.testingtokens`** file for test API keys: `enter.pollinations.ai/.testingtokens`
 - **Confirm which branch you're on** before making changes — branch mix-ups are a recurring problem
 - **Don't reimplement existing logic** — search for existing functions before writing new ones (e.g. SSE parsing, retry wrappers, auth extraction)
+- **Request PR reviews by mentioning `polly`** — include lowercase `polly` in a PR comment (e.g. "polly please review") to trigger the Polly bot reviewer
 
 ## Development Guidelines
 
@@ -407,6 +408,16 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 3. **Track Progress**: Mark items complete as you go
 4. **Explain Changes**: High-level summary at each step
 5. **Capture Lessons**: When corrected, update this AGENTS.md with the pattern to prevent recurrence
+
+## Compact Instructions
+
+When compacting conversation context, preserve:
+- Full list of modified files with paths and line numbers
+- All code snippets, diffs, and implementation details
+- Test output, error messages, and command results
+- Complete task plan, progress, and pending items
+- User preferences and corrections from this session
+- Key architectural decisions and their rationale
 
 ## Core Principles
 

@@ -21,7 +21,7 @@ export interface VertexAIImageRequest {
     height?: number;
     referenceImages?: VertexAIImageData[];
     model?: string; // Model ID: gemini-2.5-flash-image-preview (default) or gemini-3-pro-image-preview
-    imageSize?: string; // "1K", "2K", "4K" - only supported by gemini-3-pro-image-preview
+    imageSize?: string; // "1K", "2K", "4K" - supported by gemini-3-pro-image-preview and gemini-3.1-flash-image-preview
     safe?: boolean; // When true, use stricter safety settings; when false, use BLOCK_ONLY_HIGH
 }
 
@@ -119,16 +119,18 @@ export async function generateImageWithVertexAI(
             );
         }
 
-        // Determine image size for nanobanana-pro based on pixel count
-        // Only gemini-3-pro-image-preview supports imageSize parameter
+        // Determine image size based on pixel count
+        // Both gemini-3-pro-image-preview and gemini-3.1-flash-image-preview support imageSize
         let imageSize: string | undefined;
         if (
-            modelId === "gemini-3-pro-image-preview" &&
+            (modelId === "gemini-3-pro-image-preview" ||
+                modelId === "gemini-3.1-flash-image-preview") &&
             request.width &&
             request.height
         ) {
             const totalPixels = request.width * request.height;
             // Pick closest resolution tier based on pixel count
+            // Vertex AI only supports 1K, 2K, 4K (0.5K is not a valid value)
             const tiers = [
                 { name: "1K", pixels: 1024 * 1024 }, // ~1.0M
                 { name: "2K", pixels: 1920 * 1080 }, // ~2.1M

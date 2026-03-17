@@ -62,6 +62,13 @@ const app = new Hono<Env>()
     )
     .use("*", requestId())
     .use("*", logger)
+    // Prevent search engines from indexing API responses (except docs)
+    .use("/api/*", async (c, next) => {
+        await next();
+        if (!c.req.path.startsWith("/api/docs")) {
+            c.header("X-Robots-Tag", "noindex, nofollow");
+        }
+    })
     .route("/api", api)
     .route("/api/docs", docsRoutes);
 
@@ -78,4 +85,12 @@ export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 export default {
     fetch: app.fetch,
+    async scheduled(
+        _event: ScheduledController,
+        env: CloudflareBindings,
+        ctx: ExecutionContext,
+    ) {
+        const { runTierRefill } = await import("./routes/admin.ts");
+        await runTierRefill(env, ctx);
+    },
 } satisfies ExportedHandler<CloudflareBindings>;

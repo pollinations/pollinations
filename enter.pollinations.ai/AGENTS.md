@@ -635,13 +635,13 @@ https://myapp.com/callback#api_key=sk_xxxxx
 
 ### Tier Levels
 
-| Tier   | Emoji | Pollen/Day | Criteria                 |
-| ------ | ----- | ---------- | ------------------------ |
-| microbe| 🦠    | 0.1        | Entry tier (auto-upgrades once verified) |
-| spore  | 🍄    | 1          | Verified accounts        |
-| seed   | 🌱    | 3          | GitHub engagement        |
-| flower | 🌸    | 10         | Contributor              |
-| nectar | 🍯    | 20         | Coming soon              |
+| Tier   | Emoji | Pollen   | Cadence | Criteria                 |
+| ------ | ----- | -------- | ------- | ------------------------ |
+| microbe| 🦠    | 0        | none    | Entry tier (auto-upgrades once verified) |
+| spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
+| seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
+| flower | 🌸    | 10       | daily   | Contributor              |
+| nectar | 🍯    | 20       | daily   | Coming soon              |
 
 ### Quick Tier Update
 

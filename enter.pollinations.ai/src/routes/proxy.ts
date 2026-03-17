@@ -2,8 +2,13 @@ import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
-import { type BalanceVariables, balance } from "@/middleware/balance.ts";
+import {
+    type BalanceVariables,
+    balance,
+    getAvailableBalance,
+} from "@/middleware/balance.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
@@ -12,6 +17,7 @@ import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import type { Env } from "../env.ts";
+import { handleImageEdit, handleImageGeneration } from "./images.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
@@ -47,10 +53,13 @@ import {
     CreateChatCompletionRequestSchema,
     type CreateChatCompletionResponse,
     CreateChatCompletionResponseSchema,
+    CreateImageRequestSchema,
+    CreateImageResponseSchema,
     GetModelsResponseSchema,
 } from "@/schemas/openai.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
+import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
 import { generateMusic, generateSpeech, generateSunoMusic } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
@@ -80,7 +89,7 @@ const imageVideoHandlers = factory.createHandlers(
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
         c.var.auth.requireKeyBudget();
-        await checkBalance(c.var);
+        await checkBalance(c.var, c.env);
 
         // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
         const promptParam = c.req.param("prompt") || "";
@@ -134,7 +143,7 @@ const chatCompletionHandlers = factory.createHandlers(
         // Use resolved model from middleware for the backend request
         const requestBody = await c.req.json();
         requestBody.model = c.var.model.resolved;
-        await checkBalance(c.var);
+        await checkBalance(c.var, c.env);
 
         const textServiceUrl =
             c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
@@ -173,6 +182,18 @@ const chatCompletionHandlers = factory.createHandlers(
                 message: errorMessage,
                 requestUrl: targetUrl,
             });
+        }
+
+        // Validate streaming responses: if client requested stream but upstream
+        // returned non-SSE, throw rather than forwarding broken data.
+        if (c.var.track.streamRequested) {
+            const contentType = response.headers.get("content-type") || "";
+            if (!contentType.includes("text/event-stream")) {
+                throw new UpstreamError(502, {
+                    message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
+                    requestUrl: targetUrl,
+                });
+            }
         }
 
         // add content filter headers if not streaming
@@ -244,9 +265,9 @@ export const proxyRoutes = new Hono<Env>()
         "/v1/models",
         describeRoute({
             tags: ["🤖 Models"],
-            summary: "List Text Models (OpenAI-compatible)",
+            summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available text models in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
+                'Returns available models (text, image, audio) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, or `/audio/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
             responses: {
                 200: {
                     description: "Success",
@@ -262,19 +283,60 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const models = filterModelsByPermissions(
+            const textModels = filterModelsByPermissions(
                 getTextModelsInfo(),
                 allowedModels,
                 paidBalance,
             );
+            const imageModels = filterModelsByPermissions(
+                getImageModelsInfo(),
+                allowedModels,
+                paidBalance,
+            );
+            const audioModels = filterModelsByPermissions(
+                getAudioModelsInfo(),
+                allowedModels,
+                paidBalance,
+            );
             const now = Date.now();
+
+            const toModelEntry = (
+                m: (typeof textModels)[number],
+                supportedEndpoints: string[],
+            ) => ({
+                id: m.name,
+                object: "model" as const,
+                created: now,
+                input_modalities: m.input_modalities,
+                output_modalities: m.output_modalities,
+                supported_endpoints: supportedEndpoints,
+                ...(m.tools && { tools: m.tools }),
+                ...(m.reasoning && { reasoning: m.reasoning }),
+                ...(m.context_length && {
+                    context_length: m.context_length,
+                }),
+            });
+
             return c.json({
                 object: "list" as const,
-                data: models.map((m) => ({
-                    id: m.name,
-                    object: "model" as const,
-                    created: now,
-                })),
+                data: [
+                    ...textModels.map((m) =>
+                        toModelEntry(m, [
+                            "/v1/chat/completions",
+                            "/text/{prompt}",
+                        ]),
+                    ),
+                    ...imageModels.map((m) =>
+                        toModelEntry(m, [
+                            "/v1/images/generations",
+                            "/v1/images/edits",
+                            "/image/{prompt}",
+                        ]),
+                    ),
+                    ...audioModels.map((m) =>
+                        toModelEntry(m, ["/audio/{text}"]),
+                    ),
+                ],
             });
         },
     )
@@ -566,7 +628,7 @@ export const proxyRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
             c.var.auth.requireKeyBudget();
-            await checkBalance(c.var);
+            await checkBalance(c.var, c.env);
 
             // Use resolved model from middleware
             const model = c.var.model.resolved;
@@ -787,7 +849,7 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
-            await checkBalance(c.var);
+            await checkBalance(c.var, c.env);
 
             const text = decodeURIComponent(c.req.param("text"));
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
@@ -835,6 +897,64 @@ export const proxyRoutes = new Hono<Env>()
                 log,
             });
         },
+    )
+    .post(
+        "/v1/images/generations",
+        describeRoute({
+            tags: ["🖼️ Image Generation"],
+            summary: "Generate Image (OpenAI-compatible)",
+            description: [
+                "OpenAI-compatible image generation endpoint.",
+                "",
+                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default).',
+                "",
+                "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateImageResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        validator("json", CreateImageRequestSchema),
+        resolveModel("generate.image"),
+        track("generate.image"),
+        handleImageGeneration(checkBalance, proxyHeaders),
+    )
+    .post(
+        "/v1/images/edits",
+        describeRoute({
+            tags: ["🖼️ Image Generation"],
+            summary: "Edit Image (OpenAI-compatible)",
+            description: [
+                "OpenAI-compatible image editing endpoint.",
+                "",
+                "Edit images using a text prompt and one or more source images.",
+                "Accepts JSON with image URLs or multipart/form-data with file uploads.",
+                "",
+                "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateImageResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.image"),
+        track("generate.image"),
+        handleImageEdit(checkBalance, proxyHeaders),
     );
 
 function proxyHeaders(c: Context): Record<string, string> {
@@ -952,16 +1072,33 @@ export function contentFilterResultsToHeaders(
     return headers;
 }
 
-async function checkBalance({
-    auth,
-    balance,
-    model,
-}: AuthVariables & BalanceVariables & ModelVariables): Promise<void> {
+async function checkBalance(
+    vars: AuthVariables & BalanceVariables & ModelVariables & LoggerVariables,
+    env: CloudflareBindings,
+): Promise<void> {
+    const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
     const serviceDefinition = getServiceDefinition(model.resolved);
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
 
+    // Pre-check: reject if balance < estimated cost for this model
+    // getModelStats is cached in KV for 1hr, so this is cheap
+    const stats = await getModelStats(env.KV, log);
+    const estimatedCost = getEstimatedPrice(stats, model.resolved);
+
+    if (estimatedCost > 0) {
+        const userBalance = await balance.getBalance(auth.user.id);
+        const available = getAvailableBalance(userBalance, isPaidOnly);
+
+        if (available < estimatedCost) {
+            throw new HTTPException(402, {
+                message: `Insufficient balance. This model costs ~${estimatedCost.toFixed(4)} pollen per request, but your available balance is ${available.toFixed(4)}.`,
+            });
+        }
+    }
+
+    // Existing check: sets balanceCheckResult for downstream cost deduction
     if (isPaidOnly) {
         await balance.requirePaidBalance(
             auth.user.id,

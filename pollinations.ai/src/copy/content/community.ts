@@ -21,7 +21,7 @@ export const COMMUNITY_PAGE = {
     // Section 2 — Earn Pollen
     contributeTitle: "Earn Pollen",
     contributeBody:
-        "Activity on the platform helps you level up your tier. Higher tier means bigger daily Pollen grants and more free compute.",
+        "Activity on the platform helps you level up your tier. Higher tier means more free compute.",
     contributeCard1Title: "Ship an app",
     contributeCard1Body:
         "Publish something to the ecosystem. Biggest tier boost.",
@@ -31,7 +31,7 @@ export const COMMUNITY_PAGE = {
     contributeCard3Body:
         "Answer a question, share what you built, help someone get unstuck.",
     contributeNote:
-        "All activity feeds your creator tier: Seed → Flower → Nectar. More you do, more daily compute you get.",
+        "All activity feeds your creator tier: Seed → Flower → Nectar. More you do, more compute you get.",
     learnAboutTiersButton: "Learn about tiers",
 
     // Section 3 — Jump In
@@ -155,6 +155,12 @@ export const COMMUNITY_PAGE = {
             url: "https://api.airforce/",
             description:
                 "AI API gateway — alpha models (imagen-4, grok-video, qwen-character)",
+        },
+        {
+            name: "Seraphyn",
+            url: "https://seraphyn.ai/",
+            description:
+                "AI API gateway — community models (gpt-5.4, qwen3-tts)",
         },
     ],
 };

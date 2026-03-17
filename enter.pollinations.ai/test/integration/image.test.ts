@@ -362,6 +362,392 @@ describe("Image Integration Tests", () => {
     );
 
     test(
+        "p-image should return image",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20red%20apple?model=p-image&width=512&height=512&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("p-image response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "p-image-edit should return edited image",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            // Use picsum.photos — Wikipedia returns 403 to Pruna's server
+            const referenceImageUrl = "https://picsum.photos/256/256";
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/make%20it%20blue?model=p-image-edit&seed=42&image=${encodeURIComponent(referenceImageUrl)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("p-image-edit response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "kontext should return image (FLUX.1 Kontext via Azure)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20beautiful%20sunset?model=kontext&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("kontext response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "nanobanana should return image (Gemini 2.5 Flash Image)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20beautiful%20sunset?model=nanobanana&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("nanobanana response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "nanobanana-pro should return image (Gemini 3 Pro Image)",
+        { timeout: 120000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20beautiful%20sunset?model=nanobanana-pro&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("nanobanana-pro response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "seedream5 should return image (ByteDance ARK Seedream 5.0)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20beautiful%20sunset?model=seedream5&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("seedream5 response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "zimage should return image (Z-Image Turbo)",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20beautiful%20sunset?model=zimage&width=512&height=512&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("zimage response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    // Will pass once image service is redeployed with the 0.5K→1K fix
+    test(
+        "nanobanana-2 at 512x512 should map to 1K (not invalid 0.5K)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20red%20apple?model=nanobanana-2&width=512&height=512&seed=99`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log(
+                    "nanobanana-2 512x512 response:",
+                    response.status,
+                    body,
+                );
+            }
+
+            expect(response.status).toBe(200);
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "nanobanana at 1024x768 should work (landscape aspect ratio)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20mountain%20landscape?model=nanobanana&width=1024&height=768&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log(
+                    "nanobanana 1024x768 response:",
+                    response.status,
+                    body,
+                );
+            }
+
+            expect(response.status).toBe(200);
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "nanobanana-pro at 1920x1080 should work (2K tier)",
+        { timeout: 120000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20city%20skyline?model=nanobanana-pro&width=1920&height=1080&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log(
+                    "nanobanana-pro 1920x1080 response:",
+                    response.status,
+                    body,
+                );
+            }
+
+            expect(response.status).toBe(200);
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "kontext img2img should return edited image",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const referenceImageUrl = "https://picsum.photos/256/256";
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/make%20it%20look%20like%20a%20painting?model=kontext&seed=42&image=${encodeURIComponent(referenceImageUrl)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("kontext img2img response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "nanobanana-2 img2img should return edited image",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const referenceImageUrl = "https://picsum.photos/256/256";
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/transform%20into%20a%20watercolor?model=nanobanana-2&seed=42&image=${encodeURIComponent(referenceImageUrl)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log(
+                    "nanobanana-2 img2img response:",
+                    response.status,
+                    body,
+                );
+            }
+
+            expect(response.status).toBe(200);
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
         "should use crypto balance when tier balance is exhausted",
         { timeout: 30000 },
         async ({ apiKey, mocks, sessionToken }) => {
@@ -410,6 +796,259 @@ describe("Image Integration Tests", () => {
 
             expect(response.status).toBe(200);
             await response.arrayBuffer();
+        },
+    );
+});
+
+describe("POST /v1/images/generations", () => {
+    test(
+        "returns b64_json response by default",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/images/generations`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        prompt: "a red circle on white background",
+                        model: "flux",
+                        size: "256x256",
+                        seed: 42,
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+
+            const data = (await response.json()) as {
+                created: number;
+                data: { b64_json?: string; revised_prompt?: string }[];
+            };
+            expect(data.created).toBeTypeOf("number");
+            expect(data.data).toHaveLength(1);
+            expect(data.data[0].b64_json).toBeDefined();
+            expect(data.data[0].b64_json?.length).toBeGreaterThan(100);
+            expect(data.data[0].revised_prompt).toBe(
+                "a red circle on white background",
+            );
+        },
+    );
+
+    test("requires authentication", { timeout: 10000 }, async ({ mocks }) => {
+        await mocks.enable("polar", "tinybird");
+
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/images/generations`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                    prompt: "test",
+                    model: "flux",
+                }),
+            },
+        );
+        expect(response.status).toBe(401);
+        await response.text();
+    });
+
+    test(
+        "forwards Pollinations-specific passthrough params",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/images/generations`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        prompt: "a green triangle",
+                        model: "flux",
+                        size: "256x256",
+                        seed: 42,
+                        nologo: true,
+                        enhance: false,
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+
+            const data = (await response.json()) as {
+                data: { b64_json?: string }[];
+            };
+            expect(data.data).toHaveLength(1);
+            expect(data.data[0].b64_json).toBeDefined();
+        },
+    );
+});
+
+describe("POST /v1/images/edits", () => {
+    const testImageUrl =
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png";
+
+    test(
+        "edits image with JSON body and image URL string",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/images/edits`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        prompt: "make it blue",
+                        model: "flux",
+                        image: testImageUrl,
+                        size: "256x256",
+                        seed: 42,
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+
+            const data = (await response.json()) as {
+                created: number;
+                data: { b64_json?: string; revised_prompt?: string }[];
+            };
+            expect(data.created).toBeTypeOf("number");
+            expect(data.data).toHaveLength(1);
+            expect(data.data[0].b64_json).toBeDefined();
+            expect(data.data[0].b64_json?.length).toBeGreaterThan(100);
+        },
+    );
+
+    test(
+        "edits image with JSON body and OpenAI image_url array format",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/images/edits`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        prompt: "add a red border",
+                        model: "flux",
+                        image: [{ image_url: testImageUrl }],
+                        size: "256x256",
+                        seed: 42,
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+
+            const data = (await response.json()) as {
+                data: { b64_json?: string }[];
+            };
+            expect(data.data).toHaveLength(1);
+            expect(data.data[0].b64_json).toBeDefined();
+        },
+    );
+
+    test(
+        "edits image with multipart form data file upload",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const imageResponse = await fetch(testImageUrl);
+            const imageBuffer = await imageResponse.arrayBuffer();
+
+            const formData = new FormData();
+            formData.append("prompt", "make it green");
+            formData.append("model", "flux");
+            formData.append("size", "256x256");
+            formData.append(
+                "image",
+                new Blob([imageBuffer], { type: "image/png" }),
+                "test.png",
+            );
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/images/edits`,
+                {
+                    method: "POST",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: formData,
+                },
+            );
+            expect(response.status).toBe(200);
+
+            const data = (await response.json()) as {
+                data: { b64_json?: string }[];
+            };
+            expect(data.data).toHaveLength(1);
+            expect(data.data[0].b64_json).toBeDefined();
+        },
+    );
+
+    test("requires authentication", { timeout: 10000 }, async ({ mocks }) => {
+        await mocks.enable("polar", "tinybird");
+
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/images/edits`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                    prompt: "test",
+                    model: "flux",
+                    image: testImageUrl,
+                }),
+            },
+        );
+        expect(response.status).toBe(401);
+        await response.text();
+    });
+
+    test(
+        "returns 400 when image is missing",
+        { timeout: 10000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/images/edits`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        prompt: "test",
+                        model: "flux",
+                    }),
+                },
+            );
+            expect(response.status).toBe(400);
+            await response.text();
         },
     );
 });

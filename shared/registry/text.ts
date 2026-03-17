@@ -440,9 +440,9 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-3-pro-preview": {
-        aliases: ["gemini-3-pro", "gemini-3"],
-        modelId: "gemini-3-pro-preview",
+    "gemini-3-pro-legacy": {
+        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
+        modelId: "gemini-3-pro-legacy",
         provider: "google",
         paidOnly: true,
         hidden: true,
@@ -454,8 +454,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(12.0),
             },
         ],
-        description:
-            "Google Gemini 3 Pro (deprecated Mar 9, 2026) - use gemini-large",
+        description: "Google Gemini 3 Pro",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         tools: true,
@@ -646,8 +645,8 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-09").getTime(),
-                promptTextTokens: perMillion(0.01), // via api.airforce
-                completionTextTokens: perMillion(0.01),
+                promptTextTokens: perMillion(1.0), // ~1/3 of official Sonnet 4.6 pricing
+                completionTextTokens: perMillion(5.0),
             },
         ],
         description:
@@ -656,6 +655,25 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         contextLength: 200000,
+        isSpecialized: false,
+        alpha: true,
+    },
+    "openai-seraphyn": {
+        aliases: ["gpt-5.4-seraphyn", "gpt-5.4"],
+        modelId: "gpt-5.4",
+        provider: "seraphyn",
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                promptTextTokens: perMillion(1.25), // Half of OpenAI's $2.50/M
+                completionTextTokens: perMillion(7.5), // Half of OpenAI's $15.00/M
+            },
+        ],
+        description:
+            "GPT-5.4 (seraphyn.ai) - OpenAI's latest model via community provider",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
         isSpecialized: false,
         alpha: true,
     },

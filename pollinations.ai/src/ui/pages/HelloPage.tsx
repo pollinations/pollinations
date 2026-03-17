@@ -177,8 +177,8 @@ function HelloPage() {
                                 {tiers.map((tier, i) => (
                                     <div key={tier.title}>
                                         {i > 0 && (
-                                            <div className="flex justify-start pl-7 py-0.5 text-subtle font-mono text-xs">
-                                                ▼
+                                            <div className="flex justify-center py-1 text-xs opacity-40">
+                                                ↓
                                             </div>
                                         )}
                                         <div className="flex items-start gap-3 py-1.5">

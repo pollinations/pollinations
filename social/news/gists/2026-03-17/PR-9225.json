@@ -1,0 +1,34 @@
+{
+  "pr_number": 9225,
+  "title": "feat: add Qwen3.5 397B via Fireworks",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9225",
+  "merged_at": "2026-03-17T23:13:41Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fireworks in the garden",
+    "blurb": "We just added Qwen3.5 397B to the text API via Fireworks. With a massive 262K context window and reasoning capabilities, this MoE giant is ready to chew through your heaviest prompts.",
+    "summary": "Added the Qwen3.5 397B A17B (MoE) model to the text generation API via Fireworks AI.",
+    "impact": "Users can now access Qwen3.5's massive 262K context window, vision, and reasoning capabilities through the standard text endpoint.",
+    "keywords": [
+      "models",
+      "qwen",
+      "fireworks",
+      "text-generation",
+      "llm"
+    ],
+    "visual_concept": "The PR adds a massive new model (Qwen) via the Fireworks AI provider. Visual metaphor: literal fireworks in a cozy night garden. Polly the bee and the Monitor Robot watching a beautiful, soft-glowing firework display over their digital garden.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot sitting on a grassy hill, watching soft pastel fireworks explode in the night sky. A glowing lime green (#ecf874) code-plant sprouts next to them. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-17/PR-9225.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot sitting on a grassy hill, watching soft pastel fireworks explode in the night sky. A glowing lime green (#ecf874) code-plant sprouts next to them. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-17T23:14:32.946248+00:00"
+}

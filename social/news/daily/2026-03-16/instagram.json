@@ -1,0 +1,44 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Translating backend updates into cozy visual metaphors. Hourly cron jobs become watering plants, UI fixes become organizing blocks, and rate limit bumps become feeding the Nomnom creature. This keeps the feed visually consistent and emotionally warm while communicating technical shipping velocity.",
+  "visual_style": "Cozy 8-bit pixel art with Stardew Valley / A Short Hike vibes. Soft pastel gradients, warm lighting, chunky sprites, and prominent use of lime green (#ecf874) alongside dark purple (#110518) accents.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy 8-bit pixel art scene of a cute bee mascot with yellow and brown stripes, tiny blue wings, and a little gardener's straw hat, watering a digital code-plant. Lime green (#ecf874) glowing pollen drops fall from her tiny watering can. Soft mint and warm cream pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm.",
+      "description": "Polly watering a code plant with glowing pollen drops, representing the new hourly pollen drips.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-16/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy 8-bit pixel art scene inside a retro hackerspace. A cute chunky pixel robot with a CRT monitor head and stubby arms is carefully organizing glowing lime green (#ecf874) data blocks on a desk, making them perfectly aligned. The cute bee mascot hovers nearby wearing tiny wizard glasses, inspecting the neat work. Soft peach and lavender pastel gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm.",
+      "description": "Robot and Polly organizing blocks neatly, representing the UI fix for the jumpy models page.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-16/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy 8-bit pixel art scene of a round tan mochi-ball creature with tiny dot eyes happily eating a massive stack of glowing lime green (#ecf874) API documents. Speech bubble in pixel font: 'NOMNOM'. The cute bee mascot hovers beside it with a tiny clipboard, looking amused. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like A Short Hike. Nostalgic, emotionally warm.",
+      "description": "Nomnom eating a huge stack of data while Polly takes notes, representing the bumped stats limit and test coverage.",
+      "text_in_image": "NOMNOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-16/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "shipped 4 PRs today. the big one: pollen now refills hourly for spore and seed tiers. no more waiting around for the daily reset. we also finally fixed the models page so it stops jumping around when you click tabs, bumped our tinybird stats tracking limits up to 200, and smoothed out some nanobanana generation quirks.\n\nall live on the site and github. go build something weird.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#buildinpublic",
+    "#webdev",
+    "#generativeai"
+  ],
+  "alt_text": "Carousel of 3 pixel art images: 1. A cute bee watering a glowing digital plant. 2. A robot with a monitor head neatly organizing glowing blocks while the bee watches. 3. A round mochi creature eating a large stack of documents while the bee takes notes on a clipboard.",
+  "date": "2026-03-16",
+  "generated_at": "2026-03-17T06:24:31.300128+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

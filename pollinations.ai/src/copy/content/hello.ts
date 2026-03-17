@@ -82,7 +82,7 @@ export const HELLO_PAGE = {
     tierNectarPoints: "",
 
     // Section — What you get
-    whatYouGetTitle: "What you get",
+    whatYouGetTitle: "What's inside",
     whatYouGetItems: [
         {
             emoji: "🔤",

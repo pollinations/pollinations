@@ -114,7 +114,11 @@ function HelloPage() {
                         <Heading variant="section" spacing="comfortable">
                             {pageCopy.howItWorksTitle}
                         </Heading>
-                        <Heading variant="section" spacing="comfortable" className="hidden md:block">
+                        <Heading
+                            variant="section"
+                            spacing="comfortable"
+                            className="hidden md:block"
+                        >
                             {pageCopy.computeTiersTitle}
                         </Heading>
                     </div>
@@ -170,15 +174,22 @@ function HelloPage() {
                         </div>
                         {/* Right: tier ladder */}
                         <div>
-                            <Heading variant="section" spacing="comfortable" className="md:hidden">
+                            <Heading
+                                variant="section"
+                                spacing="comfortable"
+                                className="md:hidden"
+                            >
                                 {pageCopy.computeTiersTitle}
                             </Heading>
                             <div className="border-r-2 border-b-2 border-dark p-4 bg-accent-light flex flex-col">
                                 {tiers.map((tier, i) => (
                                     <div key={tier.title}>
                                         {i > 0 && (
-                                            <div className="flex justify-center py-1 text-base opacity-60">
-                                                ↓
+                                            <div className="flex items-start gap-3 py-1">
+                                                <span className="text-lg w-[1.125rem] shrink-0" />
+                                                <span className="text-base text-dark">
+                                                    ↓
+                                                </span>
                                             </div>
                                         )}
                                         <div className="flex items-start gap-3 py-1.5">
@@ -229,7 +240,6 @@ function HelloPage() {
                                     desc: string;
                                     linkText?: string;
                                     linkUrl?: string;
-                                    docsUrl?: string;
                                     fullWidth?: boolean;
                                 },
                                 i: number,
@@ -252,17 +262,6 @@ function HelloPage() {
                                             <div className="flex-1">
                                                 <span className="font-headline text-xs font-black text-dark">
                                                     {item.title}
-                                                    {item.docsUrl && (
-                                                        <a
-                                                            href={LINKS[item.docsUrl as keyof typeof LINKS]}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="ml-1.5 inline-flex items-center gap-0.5 font-headline text-[9px] font-black text-dark bg-white border border-border-subtle rounded-full px-1.5 py-px hover:bg-accent-strong transition-colors"
-                                                        >
-                                                            docs
-                                                            <ExternalLinkIcon className="w-2 h-2" strokeWidth="3" />
-                                                        </a>
-                                                    )}
                                                 </span>
                                                 <p className="font-body text-sm text-muted leading-relaxed mt-0.5 whitespace-pre-line">
                                                     {item.desc}
@@ -301,6 +300,29 @@ function HelloPage() {
                                 );
                             },
                         )}
+                    </div>
+                    <div className="flex flex-col gap-1 mt-6">
+                        <span className="font-body text-sm text-muted">
+                            {pageCopy.whatYouGetFooter}
+                        </span>
+                        <div>
+                            <a
+                                href={
+                                    LINKS[
+                                        pageCopy.whatYouGetFooterUrl as keyof typeof LINKS
+                                    ]
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
+                            >
+                                {pageCopy.whatYouGetFooterLink}
+                                <ExternalLinkIcon
+                                    className="w-3 h-3"
+                                    strokeWidth="4"
+                                />
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -354,7 +376,11 @@ function HelloPage() {
                                                     ),
                                                 }}
                                             >
-                                                {item.description?.split(/(?<=[.!?])\s/)[0]}
+                                                {
+                                                    item.description?.split(
+                                                        /(?<=[.!?])\s/,
+                                                    )[0]
+                                                }
                                             </LazyMarkdown>
                                         </div>
                                     </div>
@@ -390,7 +416,6 @@ function HelloPage() {
                             </div>
                         </div>
                     </div>
-
                 </div>
 
                 <Divider />

@@ -49,15 +49,19 @@ export default function CommunityPage() {
                     </Body>
                 </div>
                 <p className="font-body text-base text-subtle mb-4">
-                    <span className="font-headline text-xs font-black text-muted">
-                        {pageCopy.heroStat1}
-                    </span>{" "}
-                    {pageCopy.heroStat1Label}
+                    <a href={SOCIAL_LINKS.discord.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        <span className="font-headline text-xs font-black text-muted">
+                            {pageCopy.heroStat1}
+                        </span>{" "}
+                        {pageCopy.heroStat1Label}
+                    </a>
                     <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-xs font-black text-muted">
-                        {pageCopy.heroStat2}
-                    </span>{" "}
-                    {pageCopy.heroStat2Label}
+                    <a href={SOCIAL_LINKS.github.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        <span className="font-headline text-xs font-black text-muted">
+                            {pageCopy.heroStat2}
+                        </span>{" "}
+                        {pageCopy.heroStat2Label}
+                    </a>
                     <span className="mx-2 text-border-subtle">·</span>
                     <span className="font-headline text-xs font-black text-muted">
                         {pageCopy.heroStat3}
@@ -74,7 +78,12 @@ export default function CommunityPage() {
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.contributeBody}</Body>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div className="p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                        <a
+                            href={LINKS.githubSubmitApp}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
+                        >
                             <Heading
                                 variant="subsection"
                                 as="h3"
@@ -85,8 +94,13 @@ export default function CommunityPage() {
                             <Body size="sm" spacing="none">
                                 {pageCopy.contributeCard1Body}
                             </Body>
-                        </div>
-                        <div className="p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                        </a>
+                        <a
+                            href={LINKS.githubNewIssue}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
+                        >
                             <Heading
                                 variant="subsection"
                                 as="h3"
@@ -97,8 +111,13 @@ export default function CommunityPage() {
                             <Body size="sm" spacing="none">
                                 {pageCopy.contributeCard2Body}
                             </Body>
-                        </div>
-                        <div className="p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                        </a>
+                        <a
+                            href={SOCIAL_LINKS.discord.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
+                        >
                             <Heading
                                 variant="subsection"
                                 as="h3"
@@ -109,7 +128,7 @@ export default function CommunityPage() {
                             <Body size="sm" spacing="none">
                                 {pageCopy.contributeCard3Body}
                             </Body>
-                        </div>
+                        </a>
                     </div>
                     <Body
                         size="sm"

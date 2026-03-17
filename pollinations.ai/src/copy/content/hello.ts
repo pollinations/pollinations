@@ -154,7 +154,7 @@ export const HELLO_PAGE = {
         },
         {
             emoji: "🌻",
-            title: "Payouts",
+            title: "Rewards",
             description: "People use your app, you earn pollen.",
         },
         {

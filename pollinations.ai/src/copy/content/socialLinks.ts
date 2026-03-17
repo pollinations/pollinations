@@ -71,6 +71,8 @@ export const LINKS = {
         "https://github.com/pollinations/pollinations/fork",
     githubGoodFirstIssue:
         "https://github.com/pollinations/pollinations/labels/good%20first%20issue",
+    githubNewIssue:
+        "https://github.com/pollinations/pollinations/issues/new",
     docsText:
         "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-text-generation",
     docsStreaming:

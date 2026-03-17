@@ -78,7 +78,8 @@ export const COMMUNITY_PAGE = {
     // Top Contributors
     topContributorsTitle: "Most active contributors",
     topContributorsDescription:
-        "These folks are actively building and improving the platform. Want to join them? Check out our",
+        "These folks are actively building and improving the platform.",
+    topContributorsCta: "Want to join them? Check out our",
     githubRepositoryLink: "GitHub repository",
     overThePastYear: "and get started.",
     commitsLabel: "commits",

@@ -71,7 +71,7 @@ const headingVariants = cva("font-headline font-black text-dark uppercase", {
         },
         spacing: {
             default: "mb-4", // Standard spacing
-            comfortable: "mb-6", // More breathing room
+            comfortable: "mb-8", // More breathing room
             tight: "mb-2", // Compact, close to content
         },
     },

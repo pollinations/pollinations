@@ -490,7 +490,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "nova-fast": {
-        aliases: ["amazon-nova-micro", "nova", "nova-micro"],
+        aliases: ["amazon-nova-micro", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
         provider: "aws",
         cost: [
@@ -505,6 +505,63 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         contextLength: 128000,
+        isSpecialized: false,
+    },
+    "nova": {
+        aliases: ["nova-pro", "amazon-nova-pro"],
+        modelId: "amazon.nova-pro-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.8),
+                completionTextTokens: perMillion(3.2),
+            },
+        ],
+        description: "Amazon Nova Pro - Multimodal (Text, Image, Video Input)",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 300000,
+        isSpecialized: false,
+    },
+    "nova-lite": {
+        aliases: ["amazon-nova-lite"],
+        modelId: "amazon.nova-lite-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.06),
+                completionTextTokens: perMillion(0.24),
+            },
+        ],
+        description:
+            "Amazon Nova Lite - Fast & Affordable Multimodal (Text, Image, Video Input)",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 300000,
+        isSpecialized: false,
+    },
+    "nova-2-lite": {
+        aliases: ["amazon-nova-2-lite", "nova-2"],
+        modelId: "us.amazon.nova-2-lite-v1:0",
+        provider: "aws",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.3),
+                completionTextTokens: perMillion(2.5),
+            },
+        ],
+        description: "Amazon Nova 2 Lite - 1M Context with Reasoning",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "glm": {

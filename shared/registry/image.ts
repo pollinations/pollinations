@@ -440,4 +440,34 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "nova-canvas": {
+        aliases: ["amazon-nova-canvas"],
+        modelId: "nova-canvas",
+        provider: "aws",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.04, // $0.04 per image
+            },
+        ],
+        description: "Amazon Nova Canvas - Bedrock Image Generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "nova-reel": {
+        aliases: ["amazon-nova-reel"],
+        modelId: "nova-reel",
+        provider: "aws",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.08, // $0.08 per second of video
+            },
+        ],
+        description: "Amazon Nova Reel - Bedrock Video Generation (6s, 720p)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

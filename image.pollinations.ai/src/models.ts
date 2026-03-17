@@ -228,6 +228,23 @@ export const IMAGE_CONFIG = {
         maxDuration: 10,
         defaultResolution: "720p",
     },
+
+    // Amazon Nova Canvas - Bedrock image generation
+    "nova-canvas": {
+        type: "nova-canvas",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Amazon Nova Reel - Bedrock video generation
+    "nova-reel": {
+        type: "nova-reel",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 6,
+        maxDuration: 6,
+        defaultResolution: "720p",
+    },
 } as const satisfies ImageModelsConfig;
 
 /**

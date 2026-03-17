@@ -10,6 +10,7 @@ import { HttpError } from "./httpError.ts";
 import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
+import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
@@ -1160,6 +1161,21 @@ const generateImage = async (
                     "Pruna p-image-edit generation failed:",
                     error.message,
                 );
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "nova-canvas": {
+            try {
+                return await callNovaCanvasAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Nova Canvas generation failed:", error.message);
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }

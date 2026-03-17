@@ -6,6 +6,7 @@
 import debug from "debug";
 import { callAirforceVideoAPI } from "./models/airforceModel.ts";
 import { callLtx2API } from "./models/ltx2VideoModel.ts";
+import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
 import {
     callSeedanceAPI,
@@ -77,6 +78,14 @@ export async function createAndReturnVideo(
             break;
         case "p-video":
             result = await callPrunaVideoAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+            break;
+        case "nova-reel":
+            result = await callNovaReelAPI(
                 prompt,
                 safeParams,
                 progress,

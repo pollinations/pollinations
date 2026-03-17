@@ -1,0 +1,35 @@
+{
+  "pr_number": 9216,
+  "title": "fix(ui): clarify seed tier dev points rules",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/9216",
+  "merged_at": "2026-03-17T13:10:40Z",
+  "labels": [
+    "WEB",
+    ".DOCS"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Demystifying the Seed tier",
+    "blurb": "We've updated the UI tooltips to clearly explain exactly how to qualify for the Seed tier. No more guessing—just pure, transparent dev points.",
+    "summary": "Updated the tier explanation tooltip in the UI to explicitly state the requirements for Seed tier dev points, including the 90-day commit constraint and repository rules.",
+    "impact": "Users can now easily understand exactly what GitHub activity qualifies them for the Seed tier directly from the billing dashboard.",
+    "keywords": [
+      "ui",
+      "tiers",
+      "seed",
+      "tooltips",
+      "billing"
+    ],
+    "visual_concept": "Polly the bee reading a tiny rulebook or looking at a glowing tooltip next to a little green sprout (representing the Seed tier) in a pot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at a glowing holographic tooltip above a small green seedling in a lime green (#ecf874) flower pot. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-17T13:11:34.568251+00:00"
+}

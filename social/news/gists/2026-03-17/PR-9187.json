@@ -1,0 +1,34 @@
+{
+  "pr_number": 9187,
+  "title": "feat: model monitor redesign",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9187",
+  "merged_at": "2026-03-17T00:32:41Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A brutalist makeover",
+    "blurb": "The model monitor just got a fresh redesign to match the main site's aesthetic. We've added audio and video models, squashed phantom model bugs, and made offline models much easier to spot.",
+    "summary": "The model monitor has been completely redesigned with a new UI, adding support for audio and video models while improving status visibility and sorting.",
+    "impact": "Users can now track the health of all model types—image, text, audio, and video—in a cleaner, color-coded interface that clearly highlights degraded or offline services.",
+    "keywords": [
+      "model-monitor",
+      "ui",
+      "redesign",
+      "audio",
+      "video"
+    ],
+    "visual_concept": "The Monitor Robot is the perfect fit for a 'model monitor' redesign. The robot's screen can display a colorful, organized grid representing the new color-coded modalities (lavender, periwinkle, mint, lime). Polly the bee can act as the 'designer' who just finished painting the UI.",
+    "image_prompt": "Cozy pixel art scene of the chunky Monitor Robot proudly displaying a newly organized, colorful grid on its CRT screen, featuring pastel lavender, periwinkle, mint, and lime green (#ecf874) blocks. Polly the bee mascot hovers nearby wearing a tiny painter's beret, holding a pixelated paintbrush. Soft warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-17T00:33:36.078736+00:00"
+}

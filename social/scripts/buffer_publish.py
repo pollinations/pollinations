@@ -12,7 +12,7 @@ import yaml
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 
-from common import get_env
+from common import LINKEDIN_MAX_CHARS, build_linkedin_post_text, get_env
 from buffer_utils import (
     get_channel_by_service,
     create_buffer_post,
@@ -94,6 +94,7 @@ def create_buffer_post_with_retry(
     channel_id: str,
     text: str,
     media: Optional[dict] = None,
+    metadata: Optional[dict] = None,
     scheduled_at: Optional[str] = None,
 ) -> dict:
     """Create a Buffer post with retry logic for rate limits.
@@ -106,6 +107,7 @@ def create_buffer_post_with_retry(
             channel_id=channel_id,
             text=text,
             media=media,
+            metadata=metadata,
             scheduled_at=scheduled_at,
             now=not scheduled_at,
         )
@@ -133,19 +135,22 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
     if not channel:
         return False
 
-    # Get the full post text
-    text = post_data.get("full_post", "")
+    text = (post_data.get("full_post") or "").strip()
     if not text:
-        # Build from parts
-        text = post_data.get("hook", "") + "\n\n" + post_data.get("body", "")
-        if post_data.get("cta"):
-            text += "\n\n" + post_data["cta"]
-        hashtags = post_data.get("hashtags", [])
-        if hashtags:
-            text += "\n\n" + " ".join(hashtags[:5])
+        text = build_linkedin_post_text(post_data)
+    if not text:
+        print("Failed to publish: LinkedIn post text is empty")
+        return False
+
+    char_count = len(text)
+    if char_count > LINKEDIN_MAX_CHARS:
+        print(
+            f"Failed to publish: LinkedIn post is {char_count} chars, exceeds Buffer limit of {LINKEDIN_MAX_CHARS}"
+        )
+        return False
 
     print(f"Publishing to LinkedIn ({channel.get('displayName', 'unknown')})...")
-    print(f"Post preview ({len(text)} chars):")
+    print(f"Post preview ({char_count} chars):")
     print(f"---\n{text[:500]}{'...' if len(text) > 500 else ''}\n---")
 
     # Get image URL if available
@@ -258,6 +263,21 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
         media = {"photos": image_urls}
         print(f"Including {len(image_urls)} image(s)")
 
+    stored_post_type = post_data.get("post_type")
+    if stored_post_type == "carousel" or len(image_urls) > 1:
+        instagram_type = "carousel"
+    else:
+        instagram_type = "post"
+    # Verified against Buffer GraphQL introspection: InstagramPostMetadataInput.type uses PostType,
+    # and PostType includes "post", "story", "reel", and "carousel".
+    metadata = {
+        "instagram": {
+            "type": instagram_type,
+            "shouldShareToFeed": True,
+        }
+    }
+    print(f"Instagram post type: {instagram_type}")
+
     # Verify image URLs are accessible (CDN propagation)
     if image_urls:
         verify_image_urls(image_urls)
@@ -270,6 +290,7 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
         channel_id=channel["id"],
         text=text,
         media=media,
+        metadata=metadata,
         scheduled_at=scheduled_at,
     )
 
@@ -301,5 +322,3 @@ def add_pr_comment(github_token: str, repo: str, pr_number: int, message: str):
         print(f"Added comment to PR #{pr_number}")
     else:
         print(f"Warning: Could not add PR comment: {response.status_code}")
-
-

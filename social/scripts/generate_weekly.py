@@ -24,6 +24,8 @@ from typing import Dict, List, Optional
 from collections import defaultdict
 
 from common import (
+    LINKEDIN_MAX_CHARS,
+    build_linkedin_post_text,
     load_prompt,
     load_format,
     get_env,
@@ -143,9 +145,40 @@ def generate_twitter_post(digest: Dict, token: str) -> Optional[Dict]:
         temperature=0.8, extra_context=_weekly_image_context())
 
 def generate_linkedin_post(digest: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("linkedin", digest, token,
-        "Create a LinkedIn post about this week's development work.",
-        extra_context=_weekly_image_context())
+    post = generate_platform_post(
+        "linkedin",
+        digest,
+        token,
+        (
+            "Create a LinkedIn post about this week's development work. "
+            f"The final assembled post including hashtags MUST be {LINKEDIN_MAX_CHARS} characters or fewer "
+            "because Buffer rejects anything longer."
+        ),
+        extra_context=_weekly_image_context(),
+    )
+    if not post:
+        return None
+
+    missing_fields = [field for field in ("hook", "body", "closing") if not post.get(field)]
+    if missing_fields:
+        print(f"  FATAL: Weekly LinkedIn post is missing required fields: {', '.join(missing_fields)}")
+        return None
+
+    full_post = build_linkedin_post_text(post)
+    if not full_post:
+        print("  FATAL: Weekly LinkedIn post text is empty")
+        return None
+
+    char_count = len(full_post)
+    post["full_post"] = full_post
+    post["char_count"] = char_count
+    if char_count > LINKEDIN_MAX_CHARS:
+        print(
+            f"  FATAL: Weekly LinkedIn post is {char_count} chars, exceeds Buffer limit of {LINKEDIN_MAX_CHARS}"
+        )
+        return None
+
+    return post
 
 def generate_instagram_post(digest: Dict, token: str) -> Optional[Dict]:
     return generate_platform_post("instagram", digest, token,
@@ -204,66 +237,87 @@ def generate_platform_images(
     if twitter_post and twitter_post.get("image_prompt"):
         print("  Generating Twitter image...")
         img_bytes, _ = generate_image(twitter_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/twitter.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
+        if not img_bytes:
+            print("  FATAL: Weekly Twitter image generation failed")
+            sys.exit(1)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/twitter.jpg", branch,
+            github_token, owner, repo
+        )
+        if not url:
+            print("  FATAL: Weekly Twitter image commit failed")
+            sys.exit(1)
+        twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
 
     # LinkedIn: 1 image
     if linkedin_post and linkedin_post.get("image_prompt"):
         print("  Generating LinkedIn image...")
         img_bytes, _ = generate_image(linkedin_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/linkedin.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                linkedin_post["image"] = {"url": url, "prompt": linkedin_post["image_prompt"]}
+        if not img_bytes:
+            print("  FATAL: Weekly LinkedIn image generation failed")
+            sys.exit(1)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/linkedin.jpg", branch,
+            github_token, owner, repo
+        )
+        if not url:
+            print("  FATAL: Weekly LinkedIn image commit failed")
+            sys.exit(1)
+        linkedin_post["image"] = {"url": url, "prompt": linkedin_post["image_prompt"]}
 
     # Instagram: up to 3 images (carousel)
     if instagram_post and instagram_post.get("images"):
         for i, img_info in enumerate(instagram_post["images"][:3]):
             prompt = img_info.get("prompt", "")
             if not prompt:
-                continue
+                print(f"  FATAL: Weekly Instagram image {i+1} is missing a prompt")
+                sys.exit(1)
             print(f"  Generating Instagram image {i+1}...")
             img_bytes, _ = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, i)
-            if img_bytes:
-                url = commit_image_to_branch(
-                    img_bytes, f"{image_dir}/instagram-{i+1}.jpg", branch,
-                    github_token, owner, repo
-                )
-                if url:
-                    img_info["url"] = url
+            if not img_bytes:
+                print(f"  FATAL: Weekly Instagram image {i+1} generation failed")
+                sys.exit(1)
+            url = commit_image_to_branch(
+                img_bytes, f"{image_dir}/instagram-{i+1}.jpg", branch,
+                github_token, owner, repo
+            )
+            if not url:
+                print(f"  FATAL: Weekly Instagram image {i+1} commit failed")
+                sys.exit(1)
+            img_info["url"] = url
             time.sleep(3)
 
     # Reddit: 1 image
     if reddit_post and reddit_post.get("image_prompt"):
         print("  Generating Reddit image...")
         img_bytes, _ = generate_image(reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/reddit.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
+        if not img_bytes:
+            print("  FATAL: Weekly Reddit image generation failed")
+            sys.exit(1)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/reddit.jpg", branch,
+            github_token, owner, repo
+        )
+        if not url:
+            print("  FATAL: Weekly Reddit image commit failed")
+            sys.exit(1)
+        reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
 
     # Discord: 1 image
     if discord_post and discord_post.get("image_prompt"):
         print("  Generating Discord image...")
         img_bytes, _ = generate_image(discord_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/discord.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                discord_post["image"] = {"url": url, "prompt": discord_post["image_prompt"]}
+        if not img_bytes:
+            print("  FATAL: Weekly Discord image generation failed")
+            sys.exit(1)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/discord.jpg", branch,
+            github_token, owner, repo
+        )
+        if not url:
+            print("  FATAL: Weekly Discord image commit failed")
+            sys.exit(1)
+        discord_post["image"] = {"url": url, "prompt": discord_post["image_prompt"]}
 
 
 # ── Step 4: Commit to news branch ─────────────────────────────────
@@ -309,14 +363,18 @@ def commit_weekly_to_news(
         post["generated_at"] = now_iso
         post["platform"] = platform
         if platform == "linkedin":
-            full = post.get("hook", "") + "\n\n" + post.get("body", "")
-            if post.get("cta"):
-                full += "\n\n" + post["cta"]
-            if post.get("hashtags"):
-                full += "\n\n" + " ".join(post["hashtags"][:5])
-            post["full_post"] = full
+            # Rebuild and recheck here as a final guard before committing news artifacts.
+            # This catches any future caller that bypasses generate_linkedin_post().
+            full_post = build_linkedin_post_text(post)
+            post["full_post"] = full_post
+            post["char_count"] = len(full_post)
+            if post["char_count"] > LINKEDIN_MAX_CHARS:
+                print(
+                    f"  FATAL: Weekly LinkedIn post is {post['char_count']} chars, exceeds Buffer limit of {LINKEDIN_MAX_CHARS}"
+                )
+                sys.exit(1)
         if platform == "instagram":
-            post["post_type"] = "carousel" if len(post.get("images", [])) > 1 else "single"
+            post["post_type"] = "carousel" if len(post.get("images", [])) > 1 else "post"
         files_to_commit.append((f"{base_path}/{filename}", post))
 
     if not files_to_commit:
@@ -367,18 +425,55 @@ def main():
 
     print("  Twitter...")
     twitter_post = generate_twitter_post(digest, pollinations_token)
+    if not twitter_post:
+        print("  FATAL: Weekly Twitter post generation failed")
+        sys.exit(1)
+    if not twitter_post.get("image_prompt"):
+        print("  FATAL: Weekly Twitter post is missing image_prompt")
+        sys.exit(1)
 
     print("  LinkedIn...")
     linkedin_post = generate_linkedin_post(digest, pollinations_token)
+    if not linkedin_post:
+        print("  FATAL: Weekly LinkedIn post generation failed")
+        sys.exit(1)
+    if not linkedin_post.get("image_prompt"):
+        print("  FATAL: Weekly LinkedIn post is missing image_prompt")
+        sys.exit(1)
 
     print("  Instagram...")
     instagram_post = generate_instagram_post(digest, pollinations_token)
+    if not instagram_post:
+        print("  FATAL: Weekly Instagram post generation failed")
+        sys.exit(1)
+    instagram_images = instagram_post.get("images", [])
+    if not instagram_images:
+        print("  FATAL: Weekly Instagram post is missing images")
+        sys.exit(1)
+    if any(not img.get("prompt") for img in instagram_images[:3]):
+        print("  FATAL: Weekly Instagram post has an image without a prompt")
+        sys.exit(1)
 
     print("  Reddit...")
     reddit_post = generate_reddit_post(digest, pollinations_token)
+    if not reddit_post:
+        print("  FATAL: Weekly Reddit post generation failed")
+        sys.exit(1)
+    if not reddit_post.get("image_prompt"):
+        print("  FATAL: Weekly Reddit post is missing image_prompt")
+        sys.exit(1)
 
     print("  Discord...")
     discord_post = generate_discord_post(digest, pollinations_token, week_end)
+    if not discord_post:
+        print("  FATAL: Weekly Discord post generation failed")
+        sys.exit(1)
+    if not discord_post.get("message"):
+        print("  FATAL: Weekly Discord post is missing message")
+        sys.exit(1)
+    if not discord_post.get("image_prompt"):
+        print("  FATAL: Weekly Discord post is missing image_prompt")
+        sys.exit(1)
 
     # ── Commit to news branch ────────────────────────────────────────
     print(f"\n[4/4] Committing weekly content to news branch...")

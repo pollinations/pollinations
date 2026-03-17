@@ -3,14 +3,13 @@
 Tier 1: PR Gist Generator
 
 On PR merge:
-  Step 1: AI analyzes PR → structured gist JSON → committed to news branch
-  Step 2: Generate pixel art image → update gist with image URL
+  Step 1: AI analyzes PR → structured gist JSON
+  Step 2: Generate pixel art image → commit image + gist to news branch
 
 Discord posting is handled separately by publish_realtime.py.
 See social/PIPELINE.md for full architecture.
 """
 
-import os
 import sys
 from datetime import datetime, timezone
 from typing import Dict, Optional
@@ -18,24 +17,17 @@ from typing import Dict, Optional
 from common import (
     load_prompt,
     get_env,
-    get_repo_root,
     call_pollinations_api,
     generate_image,
     commit_image_to_branch,
     validate_gist,
     apply_publish_tier_rules,
-    build_minimal_gist,
-    gist_path_for_pr,
     commit_gist,
     parse_json_response,
     github_api_request,
     GITHUB_API_BASE,
     GISTS_BRANCH,
-    IMAGE_MODEL_FALLBACK,
     MODEL,
-    MODEL_FALLBACK,
-    OWNER,
-    REPO,
 )
 
 
@@ -89,10 +81,7 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> str:
 # ── Step 1: AI analysis ─────────────────────────────────────────────
 
 def analyze_pr(pr_data: Dict, files_summary: str, token: str) -> Optional[Dict]:
-    """Call AI to analyze a PR and return structured gist JSON.
-
-    Returns parsed dict on success, None on failure (after retries).
-    """
+    """Call AI to analyze a PR and return structured gist JSON."""
     system_prompt = load_prompt("gist")
 
     # Build user prompt with PR context
@@ -116,18 +105,7 @@ Changed files:
         system_prompt, user_prompt, token,
         temperature=0.2, exit_on_failure=False
     )
-
-    if not response:
-        print(f"  Primary model ({MODEL}) failed — trying fallback ({MODEL_FALLBACK})...")
-        response = call_pollinations_api(
-            system_prompt, user_prompt, token,
-            temperature=0.2, model=MODEL_FALLBACK, exit_on_failure=False
-        )
-
-    if not response:
-        return None
-
-    return parse_json_response(response)
+    return parse_json_response(response) if response else None
 
 
 def build_full_gist(pr_data: Dict, ai_analysis: Dict) -> Dict:
@@ -160,18 +138,14 @@ def generate_gist_image(gist: Dict, pollinations_token: str,
     """Generate pixel art image for a gist. Returns image URL or None."""
     image_prompt = gist["gist"].get("image_prompt", "")
     if not image_prompt:
-        print("  No image prompt in gist")
+        print("  FATAL: No image prompt in gist")
         return None
 
     print(f"  Image prompt: {image_prompt[:100]}...")
 
-    # Generate the image (try primary model, then fallback)
     image_bytes, _ = generate_image(image_prompt, pollinations_token)
     if not image_bytes:
-        print(f"  Primary image model failed — trying fallback ({IMAGE_MODEL_FALLBACK})...")
-        image_bytes, _ = generate_image(image_prompt, pollinations_token, model=IMAGE_MODEL_FALLBACK)
-    if not image_bytes:
-        print("  Image generation failed on both models")
+        print("  FATAL: Image generation failed")
         return None
 
     # Commit image to repo on news branch
@@ -203,52 +177,39 @@ def main():
     pr_data = fetch_pr_data(repo_full_name, pr_number, github_token)
     files_summary = fetch_pr_files(repo_full_name, pr_number, github_token)
 
-    labels = [l["name"] for l in pr_data.get("labels", [])]
-    merged_at = pr_data.get("merged_at", datetime.now(timezone.utc).isoformat())
-    author = pr_data.get("user", {}).get("login", "unknown")
-
     # ── Step 1: AI analysis → gist JSON → commit ────────────────────
     ai_analysis = analyze_pr(pr_data, files_summary, pollinations_token)
+    if not ai_analysis:
+        print(f"  FATAL: PR analysis failed with model {MODEL}")
+        sys.exit(1)
 
-    if ai_analysis:
-        gist = build_full_gist(pr_data, ai_analysis)
+    gist = build_full_gist(pr_data, ai_analysis)
 
-        # Validate
-        errors = validate_gist(gist)
-        if errors:
-            print(f"  Schema validation warnings: {errors}")
-            # Fall back to minimal gist on validation failure
-            gist = build_minimal_gist(
-                int(pr_number), pr_data["title"], author,
-                pr_data["html_url"], merged_at, labels
-            )
-            print("  Using minimal gist due to validation errors")
-    else:
-        print("  AI analysis failed — using minimal gist")
-        gist = build_minimal_gist(
-            int(pr_number), pr_data["title"], author,
-            pr_data["html_url"], merged_at, labels
-        )
+    errors = validate_gist(gist)
+    if errors:
+        print(f"  FATAL: Schema validation failed: {errors}")
+        sys.exit(1)
 
-    # Commit gist to news branch
+    print(f"  Gist ready: publish_tier={gist['gist']['publish_tier']}, "
+          f"importance={gist['gist']['importance']}")
+
+    # ── Step 2: Generate image → update gist ─────────────────────────
+    print(f"\n[2/2] Generating image...")
+    image_url = generate_gist_image(gist, pollinations_token, github_token, owner, repo)
+    if not image_url:
+        print("  FATAL: Could not generate or commit gist image")
+        sys.exit(1)
+
+    gist["image"]["url"] = image_url
+    gist["image"]["prompt"] = gist["gist"].get("image_prompt")
+
     if not commit_gist(gist, github_token, owner, repo):
         print("  FATAL: Could not commit gist to news branch")
         sys.exit(1)
 
     print(f"  Gist committed: publish_tier={gist['gist']['publish_tier']}, "
           f"importance={gist['gist']['importance']}")
-
-    # ── Step 2: Generate image → update gist ─────────────────────────
-    print(f"\n[2/2] Generating image...")
-    image_url = generate_gist_image(gist, pollinations_token, github_token, owner, repo)
-
-    if image_url:
-        gist["image"]["url"] = image_url
-        # Re-commit gist with image URL
-        commit_gist(gist, github_token, owner, repo)
-        print(f"  Image URL: {image_url}")
-    else:
-        print("  No image generated — continuing without image")
+    print(f"  Image URL: {image_url}")
 
     print("\n=== Done ===")
 

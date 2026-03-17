@@ -114,6 +114,8 @@ export const HELLO_PAGE = {
             emoji: "🌐",
             title: "Open source & transparent",
             desc: "The whole stack. Fork it, self-host, contribute.",
+            linkText: "Fork on GitHub",
+            linkUrl: "githubFork",
         },
         {
             emoji: "👥",
@@ -121,6 +123,7 @@ export const HELLO_PAGE = {
             desc: "Each user who signs in gets free weekly compute to try your app.\nWhen they need more, it just works — no Stripe setup on your end.",
             linkText: "🔌 Set up for your app",
             linkUrl: "byopDocs",
+            fullWidth: true,
         },
     ],
 

@@ -67,4 +67,12 @@ export const LINKS = {
         "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
     byopDocs:
         "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md",
+    githubFork:
+        "https://github.com/pollinations/pollinations/fork",
+    docsStreaming:
+        "https://enter.pollinations.ai/api/docs#tag/text/POST/v1/chat/completions",
+    docsVision:
+        "https://enter.pollinations.ai/api/docs#tag/text/POST/v1/chat/completions",
+    docsMedia:
+        "https://enter.pollinations.ai/api/docs#tag/media",
 };

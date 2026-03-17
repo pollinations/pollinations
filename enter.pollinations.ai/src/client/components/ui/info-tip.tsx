@@ -15,7 +15,7 @@ export const InfoTip: FC<InfoTipProps> = ({ text, label = "More info" }) => {
     return (
         <button
             type="button"
-            className="relative inline-flex items-center"
+            className="relative inline-flex items-center ml-1"
             onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -29,7 +29,7 @@ export const InfoTip: FC<InfoTipProps> = ({ text, label = "More info" }) => {
                 i
             </span>
             <span
-                className={`${show ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs font-normal rounded-lg shadow-lg border border-pink-200 w-max max-w-[200px] sm:max-w-none z-50 pointer-events-none`}
+                className={`${show ? "visible" : "invisible"} absolute right-0 sm:left-0 sm:right-auto top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs font-normal rounded-lg shadow-lg border border-pink-200 w-[200px] sm:w-[280px] z-50 pointer-events-none`}
             >
                 {text}
             </span>

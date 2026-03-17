@@ -1,7 +1,40 @@
 import { useEffect, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
-// Helper to format percentage
+// ── Modality color map ──────────────────────────────────────────────
+// primary (lavender) = image, secondary (periwinkle) = text,
+// tertiary (mint) = audio, accent (lime) = video
+const TYPE_COLORS = {
+    image: {
+        badge: "bg-primary-light text-dark border border-primary-strong",
+        card: "bg-primary-light border-primary-strong",
+        dot: "bg-primary-strong",
+    },
+    text: {
+        badge: "bg-secondary-light text-dark border border-secondary-strong",
+        card: "bg-secondary-light border-secondary-strong",
+        dot: "bg-secondary-strong",
+    },
+    audio: {
+        badge: "bg-tertiary-light text-dark border border-tertiary-strong",
+        card: "bg-tertiary-light border-tertiary-strong",
+        dot: "bg-tertiary-strong",
+    },
+    video: {
+        badge: "bg-accent-light text-dark border border-accent-strong",
+        card: "bg-accent-light border-accent-strong",
+        dot: "bg-accent-strong",
+    },
+};
+
+const fallbackColors = TYPE_COLORS.text;
+
+function typeColor(type) {
+    return TYPE_COLORS[type] || fallbackColors;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
 function formatPercent(count, total, showZero = false) {
     if (!total || total === 0) return "—";
     const pct = (count / total) * 100;
@@ -9,60 +42,43 @@ function formatPercent(count, total, showZero = false) {
     return `${pct.toFixed(1)}%`;
 }
 
-// Helper to get 2xx color (excludes all 4xx from total since those are user errors)
 function get2xxColor(ok2xx, total, excludedUserErrors = 0) {
     const adjustedTotal = total - excludedUserErrors;
-    if (!adjustedTotal || adjustedTotal <= 0) return "text-gray-300";
-    if (ok2xx === 0) return "text-red-600 font-medium"; // 0% success = red
+    if (!adjustedTotal || adjustedTotal <= 0) return "text-border";
+    if (ok2xx === 0) return "text-dark font-medium";
     const pct = (ok2xx / adjustedTotal) * 100;
-    if (pct > 95) return "text-green-600 font-medium";
-    if (pct > 80) return "text-green-500";
-    if (pct > 50) return "text-yellow-500";
-    return "text-red-500";
+    if (pct > 95) return "text-tertiary-strong font-medium";
+    if (pct > 80) return "text-tertiary-strong";
+    if (pct > 50) return "text-muted";
+    return "text-dark font-medium";
 }
 
-// Helper to extract 2xx count from stats (used for sorting)
 function get2xx(stats) {
     return stats?.status_2xx || 0;
 }
 
-// Helper to get latency color
 function getLatencyColor(latencySec) {
-    if (latencySec < 2) return "text-blue-600";
-    if (latencySec < 5) return "text-green-600";
-    if (latencySec < 10) return "text-yellow-600";
-    return "text-red-600";
+    if (latencySec < 2) return "text-secondary-strong";
+    if (latencySec < 5) return "text-tertiary-strong";
+    if (latencySec < 10) return "text-muted";
+    return "text-dark font-medium";
 }
 
-// Compute health status from stats
-// Based on 5xx error rate against model requests (4xx are user errors, not model failures)
 function computeHealthStatus(stats) {
     if (!stats || !stats.total_requests) return "on";
-
     const success = stats.status_2xx || 0;
     const total5xx = stats.total_5xx || 0;
     const modelRequests = success + total5xx;
-
     if (modelRequests < 3) return "on";
-
     const pct5xx = (total5xx / modelRequests) * 100;
-
-    // OFF: 5xx >= 50% of total requests (model is mostly broken)
     if (pct5xx >= 50) return "off";
-
-    // DEGRADED: 5xx 10-50%
     if (pct5xx >= 10) return "degraded";
-
     return "on";
 }
 
-// Global health summary component
-function GlobalHealthSummary({ models }) {
-    // Separate by type
-    const textModels = models.filter((m) => m.type === "text");
-    const imageModels = models.filter((m) => m.type === "image");
+// ── Health summary cards ─────────────────────────────────────────────
 
-    // Calculate aggregate stats for a group of models
+function GlobalHealthSummary({ models }) {
     const calcGroupStats = (group) => {
         let total2xx = 0;
         let total5xx = 0;
@@ -70,25 +86,21 @@ function GlobalHealthSummary({ models }) {
         let countDegraded = 0;
         let countOff = 0;
 
-        group.forEach((m) => {
+        for (const m of group) {
             const stats = m.stats;
-            if (!stats) return;
-
+            if (!stats) continue;
             total2xx += stats.status_2xx || 0;
             total5xx += stats.total_5xx || 0;
-
             const status = computeHealthStatus(stats);
             if (status === "on") countOn++;
             else if (status === "degraded") countDegraded++;
             else countOff++;
-        });
+        }
 
-        // Success rate = 2xx / (2xx + 5xx), excluding 4xx user errors from denominator
         const modelRequests = total2xx + total5xx;
         const successRate =
             modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
 
-        // Determine aggregate status based on success rate (traffic-weighted)
         let status = "healthy";
         if (successRate < 75) status = "critical";
         else if (successRate < 95) status = "degraded";
@@ -103,61 +115,41 @@ function GlobalHealthSummary({ models }) {
         };
     };
 
-    const textStats = calcGroupStats(textModels);
-    const imageStats = calcGroupStats(imageModels);
-
-    const statusStyles = {
-        healthy: {
-            bg: "bg-green-50",
-            border: "border-green-200",
-            dot: "bg-green-500",
-            text: "text-green-700",
-            label: "Healthy",
-        },
-        degraded: {
-            bg: "bg-yellow-50",
-            border: "border-yellow-200",
-            dot: "bg-yellow-500",
-            text: "text-yellow-700",
-            label: "Degraded",
-        },
-        critical: {
-            bg: "bg-red-50",
-            border: "border-red-200",
-            dot: "bg-red-500 animate-pulse",
-            text: "text-red-700",
-            label: "Critical",
-        },
+    const statusLabel = {
+        healthy: "Healthy",
+        degraded: "Degraded",
+        critical: "Critical",
     };
 
-    const HealthCard = ({ title, emoji, stats }) => {
-        const style = statusStyles[stats.status];
+    const HealthCard = ({ title, type, stats }) => {
+        const colors = typeColor(type);
         return (
             <div
-                className={`flex-1 min-w-[140px] ${style.bg} ${style.border} border rounded-lg p-3`}
+                className={`flex-1 min-w-[140px] ${colors.card} border-r-4 border-b-4 p-3`}
             >
                 <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm">{emoji}</span>
-                    <span className="text-xs font-medium text-gray-700">
+                    <span className="text-xs font-bold uppercase tracking-wider text-dark">
                         {title}
                     </span>
                 </div>
                 <div className="flex items-center gap-1.5 mb-1">
-                    <span className={`w-2 h-2 rounded-full ${style.dot}`} />
-                    <span className={`text-sm font-semibold ${style.text}`}>
-                        {style.label}
+                    <span
+                        className={`w-2 h-2 ${colors.dot} ${stats.status === "critical" ? "animate-pulse" : ""}`}
+                    />
+                    <span className="text-sm font-bold text-dark">
+                        {statusLabel[stats.status]}
                     </span>
                 </div>
-                <div className="text-xs text-gray-600">
+                <div className="text-xs text-muted">
                     {stats.successRate.toFixed(1)}% success
                 </div>
-                <div className="text-[10px] text-gray-500 mt-1">
+                <div className="text-[10px] text-subtle mt-1">
                     {stats.totalModels} models
                     {(stats.countDegraded > 0 || stats.countOff > 0) && (
                         <span className="ml-1">
                             (
                             {stats.countOff > 0 && (
-                                <span className="text-red-600">
+                                <span className="font-bold text-dark">
                                     {stats.countOff} off
                                 </span>
                             )}
@@ -165,7 +157,7 @@ function GlobalHealthSummary({ models }) {
                                 stats.countDegraded > 0 &&
                                 ", "}
                             {stats.countDegraded > 0 && (
-                                <span className="text-yellow-600">
+                                <span className="font-bold text-muted">
                                     {stats.countDegraded} degraded
                                 </span>
                             )}
@@ -179,41 +171,53 @@ function GlobalHealthSummary({ models }) {
 
     if (models.length === 0) return null;
 
+    const types = [
+        { key: "text", title: "Text" },
+        { key: "image", title: "Image" },
+        { key: "video", title: "Video" },
+        { key: "audio", title: "Audio" },
+    ];
+
     return (
         <div className="flex flex-wrap gap-3">
-            <HealthCard title="Text" emoji="📝" stats={textStats} />
-            <HealthCard title="Image" emoji="🖼️" stats={imageStats} />
+            {types.map(({ key, title }) => {
+                const group = models.filter((m) => m.type === key);
+                if (group.length === 0) return null;
+                return (
+                    <HealthCard
+                        key={key}
+                        title={title}
+                        type={key}
+                        stats={calcGroupStats(group)}
+                    />
+                );
+            })}
         </div>
     );
 }
 
-// Status badge for model health (off/degraded/on)
+// ── Status badge ─────────────────────────────────────────────────────
+
 function StatusBadge({ stats }) {
     const status = computeHealthStatus(stats);
     if (status === "on") return null;
 
     const styles = {
-        off: "bg-red-100 text-red-700 border-red-300",
-        degraded: "bg-yellow-100 text-yellow-700 border-yellow-300",
-    };
-
-    const labels = {
-        off: "OFF",
-        degraded: "DEGRADED",
+        off: "bg-status-off text-white border-status-off",
+        degraded: "bg-status-degraded text-white border-status-degraded",
     };
 
     return (
         <span
-            className={`inline-flex items-center px-1 py-0.5 rounded text-[8px] font-bold border ${
-                styles[status]
-            } ${status === "off" ? "animate-pulse" : ""}`}
+            className={`inline-flex items-center px-1.5 py-0.5 text-[8px] border font-bold ${styles[status]} ${status === "off" ? "animate-pulse" : ""} uppercase tracking-wider`}
         >
-            {labels[status]}
+            {status === "off" ? "OFF" : "DEGRADED"}
         </span>
     );
 }
 
-// Sortable table header
+// ── Sortable header ──────────────────────────────────────────────────
+
 function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
     const isActive = currentSort.key === sortKey;
     const arrow = isActive ? (currentSort.asc ? " ↑" : " ↓") : "";
@@ -226,7 +230,7 @@ function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
 
     return (
         <th
-            className={`px-3 py-2 font-medium cursor-pointer hover:text-gray-700 select-none ${alignClass}`}
+            className={`px-3 py-2 font-bold cursor-pointer hover:text-dark select-none uppercase tracking-wider ${alignClass}`}
             onClick={() => onSort(sortKey)}
         >
             {label}
@@ -235,11 +239,11 @@ function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
     );
 }
 
-// Gateway health summary (requests that failed before reaching a model)
+// ── Gateway health ───────────────────────────────────────────────────
+
 function GatewayHealth({ stats }) {
     if (!stats || stats.length === 0) return null;
 
-    // Aggregate across image and text - only 4xx (gateway/auth errors)
     const totals = stats.reduce(
         (acc, s) => ({
             requests: acc.requests + (s.total_requests || 0),
@@ -272,14 +276,12 @@ function GatewayHealth({ stats }) {
         totals.err4xxOther;
     if (total4xx === 0) return null;
 
-    const pct = (n) => (totals.requests > 0 ? (n / totals.requests) * 100 : 0);
     const fmtPct = (n) => {
-        const p = pct(n);
+        const p = totals.requests > 0 ? (n / totals.requests) * 100 : 0;
         if (p === 0) return "0%";
         return p < 1 ? `${p.toFixed(1)}%` : `${Math.round(p)}%`;
     };
 
-    // Only 4xx errors - these are auth/billing/validation failures
     const errors = [
         { code: "400", count: totals.err400, label: "Bad Request" },
         { code: "401", count: totals.err401, label: "No API Key" },
@@ -290,19 +292,19 @@ function GatewayHealth({ stats }) {
     ].filter((e) => e.count > 0);
 
     return (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg overflow-hidden">
-            <div className="px-4 py-2 bg-amber-100 border-b border-amber-200">
+        <div className="bg-tan border-r-4 border-b-4 border-border overflow-hidden">
+            <div className="px-4 py-2 bg-border/50 border-b border-border">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-amber-800">
-                            🔐 Auth & Validation
+                        <span className="text-xs font-bold uppercase tracking-wider text-dark">
+                            Auth & Validation
                         </span>
-                        <span className="text-[10px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded font-medium">
+                        <span className="text-[10px] text-dark bg-cream px-1.5 py-0.5 border border-dark font-bold">
                             {fmtPct(total4xx)} rejected
                         </span>
                     </div>
-                    <span className="text-xs text-amber-600">
-                        {totals.requests} unresolved requests
+                    <span className="text-xs text-muted">
+                        {totals.requests} unresolved
                     </span>
                 </div>
             </div>
@@ -310,17 +312,15 @@ function GatewayHealth({ stats }) {
                 {errors.map(({ code, count, label }) => (
                     <div
                         key={code}
-                        className="flex items-center gap-2 bg-white border border-amber-200 rounded px-2 py-1"
+                        className="flex items-center gap-2 bg-cream border border-border px-2 py-1"
                     >
-                        <span className="text-xs font-mono font-bold text-amber-700">
+                        <span className="text-xs font-mono font-bold text-dark">
                             {code}
                         </span>
-                        <span className="text-xs font-medium text-amber-700">
+                        <span className="text-xs font-bold text-muted">
                             {fmtPct(count)}
                         </span>
-                        <span className="text-[10px] text-gray-500">
-                            {label}
-                        </span>
+                        <span className="text-[10px] text-subtle">{label}</span>
                     </div>
                 ))}
             </div>
@@ -328,8 +328,10 @@ function GatewayHealth({ stats }) {
     );
 }
 
+// ── Main app ─────────────────────────────────────────────────────────
+
 function App() {
-    const [aggregationWindow, setAggregationWindow] = useState("60m"); // Default: 60m (stable)
+    const [aggregationWindow, setAggregationWindow] = useState("60m");
     const isLiveMode = aggregationWindow === "5m";
 
     const {
@@ -343,18 +345,14 @@ function App() {
         endpointStatus,
     } = useModelMonitor(aggregationWindow);
 
-    const [sort, setSort] = useState({ key: "requests", asc: false }); // Default: highest request count first
+    const [sort, setSort] = useState({ key: "requests", asc: false });
     const [countdown, setCountdown] = useState(pollInterval / 1000);
 
-    // Countdown timer for auto-refresh
     useEffect(() => {
-        // Reset countdown when data refreshes
         setCountdown(pollInterval / 1000);
-
         const timer = setInterval(() => {
             setCountdown((prev) => (prev > 0 ? prev - 1 : pollInterval / 1000));
         }, 1000);
-
         return () => clearInterval(timer);
     }, [pollInterval]);
 
@@ -365,8 +363,12 @@ function App() {
         }));
     };
 
-    // Sort models
     const sortedModels = [...models].sort((a, b) => {
+        // Models with no traffic at all always sink to the bottom
+        const aHasData = (a.stats?.total_requests || 0) > 0;
+        const bHasData = (b.stats?.total_requests || 0) > 0;
+        if (aHasData !== bHasData) return aHasData ? -1 : 1;
+
         const dir = sort.asc ? 1 : -1;
         switch (sort.key) {
             case "type":
@@ -379,6 +381,14 @@ function App() {
                     (a.stats?.total_requests || 0) - (a.stats?.total_4xx || 0);
                 const bReqs =
                     (b.stats?.total_requests || 0) - (b.stats?.total_4xx || 0);
+                // Tiebreak: if both have 0 non-4xx, rank by total requests
+                if (aReqs === bReqs) {
+                    return (
+                        dir *
+                        ((a.stats?.total_requests || 0) -
+                            (b.stats?.total_requests || 0))
+                    );
+                }
                 return dir * (aReqs - bReqs);
             }
             case "ok2xx":
@@ -390,7 +400,6 @@ function App() {
                         (b.stats?.total_errors || 0))
                 );
             case "lastError": {
-                // Sort by timestamp, most recent first
                 const aTime =
                     a.stats?.last_error_at &&
                     a.stats.last_error_at !== "1970-01-01 00:00:00"
@@ -433,64 +442,66 @@ function App() {
         }
     });
 
+    // Endpoint status indicators
+    const endpoints = [
+        { key: "text", label: "text" },
+        { key: "image", label: "image" },
+        { key: "audio", label: "audio" },
+    ];
+
     return (
-        <div className="min-h-screen p-4 md:p-6 bg-gray-50">
+        <div className="min-h-screen p-4 md:p-6 bg-cream">
             <div className="max-w-5xl mx-auto space-y-4">
                 {/* Header */}
                 <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-lg font-bold text-gray-900 tracking-tight">
-                                pollinations.ai model monitor
-                            </h1>
+                            <img
+                                src="/bee-text-black.svg"
+                                alt="pollinations.ai"
+                                className="h-[7.5rem]"
+                            />
+                            <span className="text-lg font-bold text-dark uppercase tracking-wider">
+                                model monitor
+                            </span>
                             {isLiveMode && (
                                 <span
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 border border-amber-200"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold bg-accent-light text-dark border border-accent-strong uppercase tracking-wider"
                                     title="Live mode shows 5-minute data. More volatile than standard view."
                                 >
-                                    <span>⚡</span>
-                                    <span>Live (noisy)</span>
+                                    Live (noisy)
                                 </span>
                             )}
                         </div>
-                        <p className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-subtle flex items-center gap-2 flex-wrap mt-1">
                             <span>
                                 {isLiveMode ? "5-minute" : "60-minute"} window
                             </span>
-                            <span className="flex items-center gap-1">
+                            {endpoints.map(({ key, label }) => (
                                 <span
-                                    className={`inline-block w-2 h-2 rounded-full ${
-                                        endpointStatus.image === true
-                                            ? "bg-green-500"
-                                            : endpointStatus.image === false
-                                              ? "bg-red-500"
-                                              : "bg-gray-300"
-                                    }`}
-                                />
-                                image:{" "}
-                                {
-                                    sortedModels.filter(
-                                        (m) => m.type === "image",
-                                    ).length
-                                }
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <span
-                                    className={`inline-block w-2 h-2 rounded-full ${
-                                        endpointStatus.text === true
-                                            ? "bg-green-500"
-                                            : endpointStatus.text === false
-                                              ? "bg-red-500"
-                                              : "bg-gray-300"
-                                    }`}
-                                />
-                                text:{" "}
-                                {
-                                    sortedModels.filter(
-                                        (m) => m.type === "text",
-                                    ).length
-                                }
-                            </span>
+                                    key={key}
+                                    className="flex items-center gap-1"
+                                >
+                                    <span
+                                        className={`inline-block w-2 h-2 ${
+                                            endpointStatus[key] === true
+                                                ? typeColor(key).dot
+                                                : endpointStatus[key] === false
+                                                  ? "bg-dark"
+                                                  : "bg-border"
+                                        }`}
+                                    />
+                                    {label}:{" "}
+                                    {
+                                        sortedModels.filter(
+                                            (m) =>
+                                                m.type === key ||
+                                                (key === "image" &&
+                                                    m.type === "video"),
+                                        ).length
+                                    }
+                                </span>
+                            ))}
                             <span>
                                 Updated:{" "}
                                 {lastUpdated?.toLocaleTimeString() || "—"}
@@ -499,18 +510,18 @@ function App() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        {/* Aggregation Window Segmented Control */}
+                        {/* Aggregation toggle */}
                         <div
-                            className="inline-flex rounded border border-gray-300 overflow-hidden"
+                            className="inline-flex border border-dark overflow-hidden"
                             title="60m is more stable. 5m is faster but noisier."
                         >
                             <button
                                 type="button"
                                 onClick={() => setAggregationWindow("60m")}
-                                className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                                className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors ${
                                     !isLiveMode
-                                        ? "bg-gray-700 text-white"
-                                        : "bg-white text-gray-600 hover:bg-gray-50"
+                                        ? "bg-dark text-white"
+                                        : "bg-cream text-muted hover:bg-tan"
                                 }`}
                             >
                                 60m
@@ -518,31 +529,30 @@ function App() {
                             <button
                                 type="button"
                                 onClick={() => setAggregationWindow("5m")}
-                                className={`px-2.5 py-1 text-[11px] font-medium transition-colors border-l border-gray-300 ${
+                                className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors border-l border-dark ${
                                     isLiveMode
-                                        ? "bg-amber-500 text-white"
-                                        : "bg-white text-gray-600 hover:bg-gray-50"
+                                        ? "bg-accent-strong text-dark"
+                                        : "bg-cream text-muted hover:bg-tan"
                                 }`}
                             >
-                                ⚡ 5m
+                                5m
                             </button>
                         </div>
 
                         {!tinybirdConfigured && (
-                            <span className="text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+                            <span className="text-xs text-dark bg-accent-light px-2 py-1 border border-accent-strong font-bold">
                                 Tinybird not configured
                             </span>
                         )}
 
-                        {/* Countdown indicator */}
-                        <span className="text-[10px] text-gray-400 tabular-nums font-mono">
+                        <span className="text-[10px] text-subtle tabular-nums font-mono">
                             {countdown}s
                         </span>
 
                         <button
                             type="button"
                             onClick={refresh}
-                            className="px-3 py-1.5 text-xs font-medium rounded border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+                            className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2"
                         >
                             Refresh
                         </button>
@@ -551,7 +561,7 @@ function App() {
 
                 {/* Error banner */}
                 {error && (
-                    <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
+                    <div className="px-3 py-2 bg-cream border-r-4 border-b-4 border-dark text-xs text-dark font-bold">
                         {error}
                     </div>
                 )}
@@ -563,9 +573,9 @@ function App() {
                 <GatewayHealth stats={gatewayStats} />
 
                 {/* Model Table */}
-                <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-x-auto">
+                <div className="border border-dark bg-white border-r-4 border-b-4 overflow-x-auto shadow-sm">
                     <table className="w-full text-sm">
-                        <thead className="bg-gray-50 text-[10px] text-gray-500 uppercase tracking-wide">
+                        <thead className="bg-tan text-[10px] text-muted">
                             <tr>
                                 <SortableTh
                                     label="Model"
@@ -574,7 +584,7 @@ function App() {
                                     onSort={handleSort}
                                 />
                                 <SortableTh
-                                    label="Reqs"
+                                    label="Reqs (+4xx)"
                                     sortKey="requests"
                                     currentSort={sort}
                                     onSort={handleSort}
@@ -595,7 +605,7 @@ function App() {
                                     align="right"
                                 />
                                 <SortableTh
-                                    label="4xx%"
+                                    label="4xx"
                                     sortKey="user4xx"
                                     currentSort={sort}
                                     onSort={handleSort}
@@ -617,12 +627,12 @@ function App() {
                                 />
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-tan">
                             {sortedModels.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan={7}
-                                        className="p-8 text-center text-gray-400"
+                                        className="p-8 text-center text-subtle"
                                     >
                                         {lastUpdated
                                             ? "No models found"
@@ -645,26 +655,28 @@ function App() {
                                     const p95Sec = stats?.latency_p95_ms
                                         ? stats.latency_p95_ms / 1000
                                         : null;
+                                    const colors = typeColor(model.type);
+                                    const health = computeHealthStatus(stats);
+                                    const rowBg =
+                                        health === "off"
+                                            ? "bg-status-off-light"
+                                            : health === "degraded"
+                                              ? "bg-status-degraded-light"
+                                              : "";
 
                                     return (
                                         <tr
                                             key={`${model.type}-${model.name}`}
-                                            className="hover:bg-gray-50"
+                                            className={`hover:bg-cream/50 ${rowBg}`}
                                         >
-                                            {/* Model name with type badge */}
                                             <td className="px-3 py-2">
                                                 <div className="flex items-center gap-2">
                                                     <span
-                                                        className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
-                                                            model.type ===
-                                                            "image"
-                                                                ? "bg-purple-100 text-purple-700"
-                                                                : "bg-blue-100 text-blue-700"
-                                                        }`}
+                                                        className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${colors.badge}`}
                                                     >
                                                         {model.type}
                                                     </span>
-                                                    <span className="text-gray-900 font-medium">
+                                                    <span className="text-dark font-medium">
                                                         {model.name}
                                                     </span>
                                                     <StatusBadge
@@ -672,15 +684,14 @@ function App() {
                                                     />
                                                 </div>
                                             </td>
-                                            {/* Requests - non-4xx as primary, total in parentheses */}
-                                            <td className="px-3 py-2 text-right tabular-nums text-gray-600">
+                                            <td className="px-3 py-2 text-right tabular-nums text-muted">
                                                 {total > 0 ? (
                                                     <>
                                                         {(
                                                             total - total4xx
                                                         ).toLocaleString()}
                                                         {total4xx > 0 && (
-                                                            <span className="text-gray-400 text-xs ml-1">
+                                                            <span className="text-subtle text-xs ml-1">
                                                                 (
                                                                 {total.toLocaleString()}
                                                                 )
@@ -691,7 +702,6 @@ function App() {
                                                     "—"
                                                 )}
                                             </td>
-                                            {/* Success = 2xx / (total - 4xx), so only 2xx vs 5xx */}
                                             <td
                                                 className={`px-3 py-2 text-right tabular-nums ${get2xxColor(
                                                     stats?.status_2xx || 0,
@@ -705,48 +715,44 @@ function App() {
                                                     true,
                                                 )}
                                             </td>
-                                            {/* 5xx Errors - simple count */}
                                             <td className="px-3 py-2 text-right tabular-nums">
                                                 {total5xx > 0 ? (
-                                                    <span className="text-red-600">
+                                                    <span className="text-dark font-bold">
                                                         {total5xx}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-gray-300">
+                                                    <span className="text-border">
                                                         —
                                                     </span>
                                                 )}
                                             </td>
-                                            {/* 4xx % - user errors, informational */}
-                                            <td className="px-3 py-2 text-right tabular-nums text-gray-400">
+                                            <td className="px-3 py-2 text-right tabular-nums text-subtle">
                                                 {pct4xx > 0
                                                     ? pct4xx < 1
                                                         ? `${pct4xx.toFixed(1)}%`
                                                         : `${Math.round(pct4xx)}%`
                                                     : "—"}
                                             </td>
-                                            {/* Avg */}
                                             <td
                                                 className={`px-3 py-2 text-right tabular-nums ${
                                                     avgSec
                                                         ? getLatencyColor(
                                                               avgSec,
                                                           )
-                                                        : "text-gray-300"
+                                                        : "text-border"
                                                 }`}
                                             >
                                                 {avgSec
                                                     ? `${avgSec.toFixed(1)}s`
                                                     : "—"}
                                             </td>
-                                            {/* P95 */}
                                             <td
                                                 className={`px-3 py-2 text-right tabular-nums ${
                                                     p95Sec
                                                         ? getLatencyColor(
                                                               p95Sec,
                                                           )
-                                                        : "text-gray-300"
+                                                        : "text-border"
                                                 }`}
                                             >
                                                 {p95Sec
@@ -761,14 +767,14 @@ function App() {
                     </table>
                 </div>
 
-                {/* Simple Legend */}
-                <div className="text-[10px] text-gray-400 text-center">
-                    <span className="inline-block px-1 py-0.5 rounded text-[8px] font-bold bg-red-100 text-red-700 border border-red-300 mr-1">
+                {/* Legend */}
+                <div className="text-[10px] text-subtle text-center">
+                    <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold bg-status-off text-white border border-status-off mr-1 uppercase tracking-wider">
                         OFF
                     </span>
                     5xx ≥ 50%
-                    <span className="mx-3">•</span>
-                    <span className="inline-block px-1 py-0.5 rounded text-[8px] font-bold bg-yellow-100 text-yellow-700 border border-yellow-300 mr-1">
+                    <span className="mx-3">·</span>
+                    <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold bg-status-degraded text-white border border-status-degraded mr-1 uppercase tracking-wider">
                         DEGRADED
                     </span>
                     5xx ≥ 10%

@@ -1,0 +1,126 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Different message 1 - 1773694484786"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2282",
+      "content-type": "application/json",
+      "date": "Mon, 16 Mar 2026 20:54:49 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-usage-completion-reasoning-tokens": "256",
+      "x-usage-completion-text-tokens": "231",
+      "x-usage-prompt-text-tokens": "17"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "I’m not sure what you need—do you want alternate versions of a message, a filename change, or something else? If you want alternate message texts, here are six short variants in different tones. Tell me which tone and where it will be used so I can tailor them.\n\n1) Friendly, casual: \"Hey! Just a quick update — everything’s on track. Let me know if you need anything else.\"\n\n2) Professional, concise: \"Update: Progress is proceeding as planned. Please advise if further action is required.\"\n\n3) Formal: \"This is to inform you that the current task is progressing according to schedule. Kindly notify me of any additional instructions.\"\n\n4) Urgent/action-oriented: \"Immediate attention needed: progress requires your approval to proceed. Please respond ASAP.\"\n\n5) Brief/status-only: \"Status: On schedule. No issues to report.\"\n\n6) Collaborative/inclusive: \"Quick check-in: we’re making steady progress. Any feedback or concerns before we move forward?\"\n\nWhich of these fits your need, or tell me the context and I’ll create tailored versions.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1773694485,
+        "id": "pllns_048ee12988f52edfcfa2d951f014b8a5",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 487,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 256,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 17,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 504
+        }
+      }
+    }
+  }
+}

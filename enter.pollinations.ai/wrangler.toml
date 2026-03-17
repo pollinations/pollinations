@@ -106,6 +106,9 @@ POLLEN_REFILL_PER_HOUR = 1
 
 [env.production]
 
+[env.production.triggers]
+crons = ["0 * * * *"]
+
 [env.production.observability]
 enabled = true
 head_sampling_rate = 1
@@ -170,6 +173,9 @@ STRIPE_MODE = "live"
 STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
 
 [env.staging]
+
+[env.staging.triggers]
+crons = ["0 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.enter.pollinations.ai"

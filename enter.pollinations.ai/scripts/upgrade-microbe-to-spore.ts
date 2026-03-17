@@ -166,7 +166,7 @@ print(json.dumps(results))
         );
 
         const results = JSON.parse(output.trim());
-        const now = Math.floor(Date.now() / 1000);
+        const now = Date.now(); // milliseconds to match D1 timestamp columns
         let upgraded = 0;
 
         for (const result of results) {

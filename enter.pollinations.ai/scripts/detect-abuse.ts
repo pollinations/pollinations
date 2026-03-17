@@ -106,11 +106,11 @@ function parseSinceTimestamp(
         }
         const amount = parseInt(match[1], 10);
         const ms = match[2] === "h" ? amount * 3600_000 : amount * 86400_000;
-        return Math.floor((Date.now() - ms) / 1000);
+        return Date.now() - ms; // milliseconds to match D1 created_at
     }
 
     if (sinceDate) {
-        const timestamp = Math.floor(new Date(sinceDate).getTime() / 1000);
+        const timestamp = new Date(sinceDate).getTime(); // milliseconds to match D1 created_at
         if (Number.isNaN(timestamp)) {
             console.error(`Invalid --since date: ${sinceDate}`);
             process.exit(1);
@@ -149,7 +149,7 @@ function fetchUsers(
     const label = unchecked
         ? " with trust_score IS NULL"
         : sinceTimestamp
-          ? ` created after ${new Date(sinceTimestamp * 1000).toISOString().split("T")[0]}`
+          ? ` created after ${new Date(sinceTimestamp).toISOString().split("T")[0]}`
           : "";
     console.log(`📊 Fetching ${limit} most recent users${label}...`);
 
@@ -568,7 +568,7 @@ async function main(): Promise<void> {
     if (config.storeStatus) labels.push("store-status");
     if (config.sinceTimestamp)
         labels.push(
-            `since ${new Date(config.sinceTimestamp * 1000).toISOString().split("T")[0]}`,
+            `since ${new Date(config.sinceTimestamp).toISOString().split("T")[0]}`,
         );
     const extra = labels.length > 0 ? `, ${labels.join(", ")}` : "";
     console.log(

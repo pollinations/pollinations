@@ -86,8 +86,8 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
     """
     weekday = datetime.now(timezone.utc).weekday()
     yesterday = int(
-        datetime.now(timezone.utc).timestamp() - 86400
-    )  # Unix timestamp in seconds
+        (datetime.now(timezone.utc).timestamp() - 86400) * 1000
+    )  # Unix timestamp in milliseconds (matches D1 schema)
 
     # Get new users (created in last 24h)
     new_query = f"""

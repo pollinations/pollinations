@@ -559,7 +559,7 @@ export const proxyRoutes = new Hono<Env>()
             const serviceId = c.var.model.resolved;
             const serviceDef = getServiceDefinition(serviceId);
             requestBody.model = serviceDef.modelId;
-            await checkBalance(c.var);
+            await checkBalance(c.var, c.env);
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";

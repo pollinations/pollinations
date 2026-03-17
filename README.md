@@ -47,6 +47,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-03-16** – **✨ Hourly Pollen Refills** Spore and Seed tier balances now regenerate every hour. Your free tier credits grow back naturally while you figure out why your code isn't working.
+- **2026-03-16** – **📱 Full Model Roster** The [models table](https://hello.pollinations.ai) now correctly fetches stats for all 200+ available models instead of giving up at 50. We also cleaned up the UI so you can easily spot new and alpha models.
+- **2026-03-16** – **🎨 Nanobanana Image Sizes** Requesting smaller images from nanobanana models now returns actual pixels instead of Vertex AI errors.
 - **2026-03-15** – **⚡ Frontend speed boost** We added lazy-loading and aggressive caching to the [main site](https://hello.pollinations.ai). Return visits now render near-instantly, because waiting for DOM elements is boring.
 - **2026-03-15** – **🤖 PromptPilot MCP Server** You can now generate images, video, and audio directly inside Claude, Cursor, or any other [MCP-compatible](https://mcp.sequa.ai/v1/pollinations/contribute) agent.
 - **2026-03-15** – **🎬 AI City Diorama Generator** New in the showcase: a fully automated n8n pipeline that hallucinates cinematic miniature cities and publishes them straight to YouTube Shorts.
@@ -54,9 +57,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-03-13** – **🎵 Voice acting via system prompt** Seraphyn joined as a community provider, bringing `qwen3-tts` to the [Unified API](https://gen.pollinations.ai). You can now style the voice output just by describing what you want in the system prompt.
 - **2026-03-13** – **🎨 Dirtberry Pro** Added `dirtberry-pro` to the image model roster. Pass it as your model parameter when you need high realism and complex scenes.
 - **2026-03-13** – **📊 Public user endpoint** We opened a restricted Tinybird pipe that safely exposes public profile and tier data. You can finally build those community leaderboards without leaking secrets.
-- **2026-03-13** – **🔗 Gratisfy integration** Pollinations is now hooked up to Gratisfy, letting you access our endpoints alongside other free AI providers through a single unified API.
-- **2026-03-11** – **🎨 GPT Images Liberated** We relocated `gpt-image-1-mini` and `gpt-image-1.5` to a new region to sidestep some overly enthusiastic content filters. Reliable, block-free generation is back on the [Unified API](https://gen.pollinations.ai).
-- **2026-03-10** – **🧠 New Models: Claude & Dirtberry** Claude Sonnet 4.6 is now available via the `claude-airforce` text endpoint, alongside `dirtberry` for quick realistic image generation. Hit the [Unified API](https://gen.pollinations.ai) to try them out.
 ---
 
 ## 🌱 Introduction

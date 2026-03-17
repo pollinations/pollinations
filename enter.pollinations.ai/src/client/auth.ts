@@ -1,9 +1,11 @@
-import { config } from "./config.ts";
-import { apiKeyClient } from "better-auth/client/plugins";
-import { createAuthClient } from "better-auth/react";
-import { createAuth } from "@/auth.ts";
-import { inferAdditionalFields } from "better-auth/client/plugins";
 import { redirect } from "@tanstack/react-router";
+import {
+    apiKeyClient,
+    inferAdditionalFields,
+} from "better-auth/client/plugins";
+import { createAuthClient } from "better-auth/react";
+import type { createAuth } from "@/auth.ts";
+import { config } from "./config.ts";
 
 export const authClient = createAuthClient({
     baseURL: config.baseUrl,
@@ -21,6 +23,10 @@ export type User = ClientSession["user"];
 export async function getUserOrRedirect() {
     const result = await authClient.getSession();
     if (result.error) throw new Error("Authentication failed.");
-    else if (!result.data?.user) throw redirect({ to: "/sign-in" });
+    else if (!result.data?.user)
+        throw redirect({
+            to: "/sign-in",
+            hash: window.location.hash || undefined,
+        });
     else return { user: result.data.user };
 }

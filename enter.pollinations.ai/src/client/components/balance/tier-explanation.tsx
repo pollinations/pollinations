@@ -26,14 +26,16 @@ const SeedTooltipContent = () => (
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">Commits</td>
+                    <td className="py-1 text-gray-600">
+                        Public commits (last 90 days)
+                    </td>
                     <td className="py-1 text-right text-gray-800">
                         0.1pt each (max 2)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
                     <td className="py-1 text-gray-600">
-                        Public repos (with code)
+                        Original repos (public, non-empty)
                     </td>
                     <td className="py-1 text-right text-gray-800">
                         0.5pt each (max 1)
@@ -41,7 +43,7 @@ const SeedTooltipContent = () => (
                 </tr>
                 <tr>
                     <td className="py-1 text-gray-600">
-                        Stars (on repos with code)
+                        Stars (on original non-empty repos)
                     </td>
                     <td className="py-1 text-right text-gray-800">
                         0.1pt each (max 5)

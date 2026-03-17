@@ -18,10 +18,10 @@ export const COMMUNITY_PAGE = {
     heroStat3: "500+",
     heroStat3Label: "new developers daily",
 
-    // Section 2 — Earn Pollen
-    contributeTitle: "Earn Pollen",
+    // Section 2 — Level up
+    contributeTitle: "Level up",
     contributeBody:
-        "Activity on the platform helps you level up your tier. Higher tier means more free compute.",
+        "Activity on the platform moves you up tiers. Higher tier, more compute.",
     contributeCard1Title: "Ship an app",
     contributeCard1Body:
         "Publish something to the ecosystem. Biggest tier boost.",
@@ -30,21 +30,30 @@ export const COMMUNITY_PAGE = {
     contributeCard3Title: "Help in Discord",
     contributeCard3Body:
         "Answer a question, share what you built, help someone get unstuck.",
-    contributeNote:
-        "All activity feeds your creator tier: Seed → Flower → Nectar. More you do, more compute you get.",
+    contributeNotePre: "All activity feeds your tier: ",
+    contributeNoteLink: "Seed → Flower → Nectar",
+    contributeNotePost: ". More you do, more compute you get.",
     learnAboutTiersButton: "Learn about tiers",
 
     // Section 3 — Jump In
     jumpInTitle: "Where to start",
     discordTitle: "Discord",
-    discordSubtitle:
-        "Chat with builders, get help, share what you're working on. Start in #pollen-beta if you're new.",
+    discordEmoji: "💬",
+    discordDesc1: "Chat with builders, ",
+    discordDesc1Em: "get help",
+    discordDesc1End: ", share what you're working on.",
+    discordDesc2Pre: "Start in ",
+    discordDesc2Link: "#pollen-beta",
+    discordDesc2Post: " if you're new.",
     githubTitle: "GitHub",
-    githubSubtitle:
-        'Contribute code, report bugs, review PRs, or just star us. New here? Check the "good first issue" label.',
+    githubEmoji: "🛠️",
+    githubDesc: "Contribute code, report bugs, review PRs, or just ",
+    githubDescBold: "star us",
+    githubDescEnd: ".",
     submitAppTitle: "Submit Your App",
-    submitAppSubtitle:
-        "Built something? Get it in the showcase. Featured apps get visibility and help you level up.",
+    submitEmoji: "🚀",
+    submitDesc: "Built something? ",
+    submitDescBold: "Add it to the showcase.",
 
     // Buttons
     joinDiscordButton: "Join Discord",
@@ -79,7 +88,8 @@ export const COMMUNITY_PAGE = {
     // Top Contributors
     topContributorsTitle: "Most active contributors",
     topContributorsDescription:
-        "These folks are actively building and improving the platform. Want to join them? Check out our",
+        "These folks are actively building and improving the platform.",
+    topContributorsCta: "Want to join them? Check out our",
     githubRepositoryLink: "GitHub repository",
     overThePastYear: "and get started.",
     commitsLabel: "commits",

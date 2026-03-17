@@ -58,6 +58,7 @@ export const LINKS = {
     enterDocs: "https://enter.pollinations.ai/api/docs",
     enterApiDocs: "https://enter.pollinations.ai/api/docs",
     enterTiersFaq: "https://enter.pollinations.ai#what-are-tiers",
+    enterModels: "https://enter.pollinations.ai#models",
     apidocsRaw:
         "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
     discordPollenBeta:
@@ -66,4 +67,17 @@ export const LINKS = {
         "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
     byopDocs:
         "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md",
+    githubFork: "https://github.com/pollinations/pollinations/fork",
+    githubGoodFirstIssue:
+        "https://github.com/pollinations/pollinations/labels/good%20first%20issue",
+    githubNewIssue: "https://github.com/pollinations/pollinations/issues/new",
+    docsText:
+        "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-text-generation",
+    docsStreaming:
+        "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-text-generation/POST/v1/chat/completions",
+    docsImage:
+        "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-image-generation",
+    docsAudio: "https://enter.pollinations.ai/api/docs#tag/-audio-generation",
+    docsAuth:
+        "https://enter.pollinations.ai/api/docs#description/-authentication",
 };

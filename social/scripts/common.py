@@ -22,9 +22,7 @@ POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
 # Models - single source of truth for all social scripts
 MODEL = "gemini-large"  # Text generation model
-MODEL_FALLBACK = "gemini-fast"  # Text fallback when primary model fails
-IMAGE_MODEL = "nanobanana-pro"  # Image generation model
-IMAGE_MODEL_FALLBACK = "zimage"  # Image fallback when primary model fails
+IMAGE_MODEL = "nanobanana-2"  # Image generation model
 WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
 
 # Limits and retry settings
@@ -32,6 +30,7 @@ MAX_SEED = 2147483647
 MAX_RETRIES = 3
 INITIAL_RETRY_DELAY = 2
 DEFAULT_TIMEOUT = 30  # seconds for GitHub API / general requests
+LINKEDIN_MAX_CHARS = 1248
 
 # Repository constants
 OWNER = "pollinations"
@@ -816,6 +815,22 @@ def generate_platform_post(
     if not response:
         return None
     return parse_json_response(response)
+
+
+def build_linkedin_post_text(post_data: Dict) -> str:
+    """Build the final LinkedIn post text from structured fields."""
+    parts = []
+
+    for field in ("hook", "body", "closing"):
+        value = (post_data.get(field) or "").strip()
+        if value:
+            parts.append(value)
+
+    hashtags = [tag.strip() for tag in post_data.get("hashtags", []) if tag.strip()]
+    if hashtags:
+        parts.append(" ".join(hashtags[:5]))
+
+    return "\n\n".join(parts)
 
 
 # ── PR creation helpers ──────────────────────────────────────────────

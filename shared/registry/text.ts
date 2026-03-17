@@ -440,9 +440,9 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-3-pro-preview": {
-        aliases: ["gemini-3-pro", "gemini-3"],
-        modelId: "gemini-3-pro-preview",
+    "gemini-3-pro-legacy": {
+        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
+        modelId: "gemini-3-pro-legacy",
         provider: "google",
         paidOnly: true,
         hidden: true,
@@ -454,8 +454,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(12.0),
             },
         ],
-        description:
-            "Google Gemini 3 Pro (deprecated Mar 9, 2026) - use gemini-large",
+        description: "Google Gemini 3 Pro",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         tools: true,

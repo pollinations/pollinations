@@ -9,11 +9,19 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
-import { tierNames } from "@/tier-config.ts";
+import { getTierCadence, tierNames } from "@/tier-config.ts";
 
-// Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
-function getNextRefillAt(): string {
+// Calculate next tier refill time based on cadence (null for tiers with no refill)
+function getNextRefillAt(tier?: string | null): string | null {
+    const cadence = tier ? getTierCadence(tier) : "none";
+    if (cadence === "none") return null;
     const now = new Date();
+    if (cadence === "hourly") {
+        const nextHour = new Date(now);
+        nextHour.setUTCMinutes(0, 0, 0);
+        nextHour.setUTCHours(nextHour.getUTCHours() + 1);
+        return nextHour.toISOString();
+    }
     const tomorrow = new Date(now);
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     tomorrow.setUTCHours(0, 0, 0, 0);
@@ -94,7 +102,7 @@ const profileResponseSchema = z.object({
     nextResetAt: z.iso
         .datetime()
         .nullable()
-        .describe("Next daily pollen reset timestamp (ISO 8601)"),
+        .describe("Next pollen refill timestamp (ISO 8601)"),
 });
 
 const balanceResponseSchema = z.object({
@@ -211,8 +219,7 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
-            // Next reset is always midnight UTC (cron runs daily)
-            const nextResetAt = getNextRefillAt();
+            const nextResetAt = getNextRefillAt(profile.tier);
 
             return c.json({
                 name: profile.name,

@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { getTierColor, getTierEmoji, type TierStatus } from "@/tier-config.ts";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
+import { InfoTip } from "../ui/info-tip.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { TierExplanation } from "./tier-explanation";
 
@@ -64,16 +65,23 @@ const MicrobeLimitedPanel: FC = () => (
 
 // ─── Tier screen (spore + creator tiers) ─────────────────────
 
+const cadenceLabel = (cadence: "daily" | "hourly") =>
+    cadence === "hourly" ? "hour" : "day";
+
+const cadenceDescription = (cadence: "daily" | "hourly") => {
+    if (cadence === "hourly") return "Pollen refills every hour";
+    return "Resets daily at 00:00 UTC. Unused pollen does not carry over.";
+};
+
 const TierScreen: FC<{
     tier: TierStatus;
     active_tier_name: string;
     pollen: number;
-    cadence: "daily" | "weekly";
+    cadence: "daily" | "hourly";
 }> = ({ tier, active_tier_name, pollen, cadence }) => {
     const tierEmoji = getTierEmoji(tier);
     const panelColor = getPanelColor(tier);
     const cardColor = panelColor;
-    const isWeekly = cadence === "weekly";
 
     return (
         <Panel color={panelColor}>
@@ -87,14 +95,15 @@ const TierScreen: FC<{
                         size="lg"
                         className="font-semibold"
                     >
-                        {pollen} pollen/{isWeekly ? "week" : "day"}
+                        {pollen} pollen/{cadenceLabel(cadence)}
                     </Badge>
                 </div>
 
                 <p className="text-sm text-gray-500">
-                    {isWeekly
-                        ? "Refreshes every Monday at 00:00 UTC. Unused pollen does not carry over."
-                        : "Refills daily at 00:00 UTC. Unused pollen does not carry over."}
+                    {cadenceDescription(cadence)}{" "}
+                    {cadence === "hourly" && (
+                        <InfoTip text="If a request costs slightly more than estimated, your balance may go briefly negative — the next refill covers the difference automatically." />
+                    )}
                 </p>
 
                 <p className="text-sm">
@@ -124,7 +133,7 @@ type TierPanelProps = {
         tier: TierStatus;
         displayName: string;
         pollen?: number;
-        cadence?: "daily" | "weekly";
+        cadence?: "daily" | "hourly" | "none";
     };
 };
 
@@ -140,7 +149,7 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
             tier={tier}
             active_tier_name={active.displayName}
             pollen={pollen ?? 0}
-            cadence={cadence ?? "daily"}
+            cadence={(cadence === "none" ? "daily" : cadence) ?? "daily"}
         />
     );
 };

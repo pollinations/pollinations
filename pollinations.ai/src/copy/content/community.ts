@@ -21,7 +21,7 @@ export const COMMUNITY_PAGE = {
     // Section 2 — Earn Pollen
     contributeTitle: "Earn Pollen",
     contributeBody:
-        "Activity on the platform helps you level up your tier. Higher tier means bigger daily Pollen grants and more free compute.",
+        "Activity on the platform helps you level up your tier. Higher tier means more free compute.",
     contributeCard1Title: "Ship an app",
     contributeCard1Body:
         "Publish something to the ecosystem. Biggest tier boost.",
@@ -31,7 +31,7 @@ export const COMMUNITY_PAGE = {
     contributeCard3Body:
         "Answer a question, share what you built, help someone get unstuck.",
     contributeNote:
-        "All activity feeds your creator tier: Seed → Flower → Nectar. More you do, more daily compute you get.",
+        "All activity feeds your creator tier: Seed → Flower → Nectar. More you do, more compute you get.",
     learnAboutTiersButton: "Learn about tiers",
 
     // Section 3 — Jump In

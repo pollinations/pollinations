@@ -4,8 +4,8 @@
   "description": "Real-time health monitoring for Pollinations AI models",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#a3e635",
-  "background_color": "#110518",
+  "theme_color": "#E8F372",
+  "background_color": "#F3EBDE",
   "icons": [
     {
       "src": "/icon-192.png",

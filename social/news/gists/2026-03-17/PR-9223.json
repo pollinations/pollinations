@@ -1,0 +1,28 @@
+{
+  "pr_number": 9223,
+  "title": "docs: add architecture diagrams",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9223",
+  "merged_at": "2026-03-17T21:16:19Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "docs: add architecture diagrams",
+    "blurb": "docs: add architecture diagrams",
+    "summary": "docs: add architecture diagrams",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-17T21:17:22.010024+00:00",
+  "_minimal": true
+}

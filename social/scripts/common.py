@@ -592,36 +592,6 @@ def apply_publish_tier_rules(gist: Dict) -> str:
 
     return ai_tier
 
-
-def build_minimal_gist(pr_number: int, title: str, author: str, url: str,
-                       merged_at: str, labels: List[str]) -> Dict:
-    """Build a minimal gist with PR metadata only (no AI fields).
-    Used as fallback when AI analysis fails."""
-    return {
-        "pr_number": pr_number,
-        "title": title,
-        "author": author,
-        "url": url,
-        "merged_at": merged_at,
-        "labels": labels,
-        "gist": {
-            "category": "infrastructure",
-            "user_facing": False,
-            "publish_tier": "discord_only",
-            "importance": "minor",
-            "headline": title,
-            "blurb": title,
-            "summary": title,
-            "impact": "",
-            "keywords": [],
-            "image_prompt": "",
-        },
-        "image": {"url": None, "prompt": None},
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "_minimal": True,
-    }
-
-
 def gist_path_for_pr(pr_number: int, merged_at: str) -> str:
     """Return the repo-relative path for a gist file: social/news/gists/YYYY-MM-DD/PR-{n}.json"""
     date_str = merged_at[:10]  # YYYY-MM-DD from ISO timestamp

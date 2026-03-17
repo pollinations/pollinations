@@ -363,6 +363,8 @@ def commit_weekly_to_news(
         post["generated_at"] = now_iso
         post["platform"] = platform
         if platform == "linkedin":
+            # Rebuild and recheck here as a final guard before committing news artifacts.
+            # This catches any future caller that bypasses generate_linkedin_post().
             full_post = build_linkedin_post_text(post)
             post["full_post"] = full_post
             post["char_count"] = len(full_post)

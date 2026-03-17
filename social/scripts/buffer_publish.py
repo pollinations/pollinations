@@ -268,6 +268,8 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
         instagram_type = "carousel"
     else:
         instagram_type = "post"
+    # Verified against Buffer GraphQL introspection: InstagramPostMetadataInput.type uses PostType,
+    # and PostType includes "post", "story", "reel", and "carousel".
     metadata = {
         "instagram": {
             "type": instagram_type,
@@ -320,4 +322,3 @@ def add_pr_comment(github_token: str, repo: str, pr_number: int, message: str):
         print(f"Added comment to PR #{pr_number}")
     else:
         print(f"Warning: Could not add PR comment: {response.status_code}")
-

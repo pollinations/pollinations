@@ -27,7 +27,6 @@ import {
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
 import { getServiceDefinition } from "@shared/registry/registry.ts";
-import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -184,9 +183,8 @@ const chatCompletionHandlers = factory.createHandlers(
             }
         }
 
-        // add content filter headers and estimate usage if missing (non-streaming only)
+        // add content filter headers if not streaming
         let contentFilterHeaders = {};
-        let estimatedUsageHeaders = {};
         if (!c.var.track.streamRequested) {
             const responseJson = await response.clone().json();
             const parsedResponse = CreateChatCompletionResponseSchema.parse(
@@ -195,31 +193,12 @@ const chatCompletionHandlers = factory.createHandlers(
             );
             contentFilterHeaders =
                 contentFilterResultsToHeaders(parsedResponse);
-
-            // Fallback: if upstream didn't return usage (e.g. airforce), estimate from content
-            const hasUsage =
-                parsedResponse.usage &&
-                (parsedResponse.usage.prompt_tokens > 0 ||
-                    parsedResponse.usage.completion_tokens > 0);
-            if (!hasUsage) {
-                const promptChars = JSON.stringify(requestBody.messages).length;
-                const completionChars =
-                    parsedResponse.choices?.[0]?.message?.content?.length ?? 0;
-                estimatedUsageHeaders = buildUsageHeaders(
-                    c.var.model.resolved,
-                    {
-                        promptTextTokens: Math.ceil(promptChars / 4),
-                        completionTextTokens: Math.ceil(completionChars / 4),
-                    },
-                );
-            }
         }
 
         return new Response(response.body, {
             headers: {
                 ...Object.fromEntries(response.headers),
                 ...contentFilterHeaders,
-                ...estimatedUsageHeaders,
             },
         });
     },

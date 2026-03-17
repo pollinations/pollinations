@@ -1,0 +1,33 @@
+{
+  "pr_number": 9219,
+  "title": "fix: invalidate KV cache when API key permissions change",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9219",
+  "merged_at": "2026-03-17T14:11:37Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh keys, fresh cache",
+    "blurb": "Fixed a sneaky bug where updating API key permissions wouldn't immediately take effect. Now, when you restrict a key to specific models, the hive instantly respects your boundaries.",
+    "summary": "Fixed an issue where updating an API key's allowed models did not invalidate the KV cache, causing the API to serve stale permission data.",
+    "impact": "Developers will now see API key permission changes take effect immediately, ensuring model restrictions are strictly enforced.",
+    "keywords": [
+      "api-keys",
+      "cache",
+      "security",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee acting as a security guard with a new key, while Nomnom eats the old stale cache data. Represents refreshing permissions and clearing out the old cache.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat holding a shiny golden key, while the round Nomnom creature happily eats a dusty box labeled 'CACHE'. Background features cozy server racks glowing with soft lime green (#ecf874) lights. Soft pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-17T14:12:31.424328+00:00"
+}

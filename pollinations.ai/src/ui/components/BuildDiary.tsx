@@ -1,6 +1,6 @@
 // biome-ignore-all lint/a11y/useKeyWithClickEvents: Component has global keyboard navigation via arrow keys
 // biome-ignore-all lint/a11y/noStaticElementInteractions: Interactive elements handled via global keydown
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LAYOUT } from "../../copy/content/layout";
 import { useAuth } from "../../hooks/useAuth";
 import {
@@ -107,21 +107,19 @@ export function BuildDiary() {
         setImgError(false);
     }, [x, y]);
 
-    // Auto-cycle through day overview + PRs
-    const [autoCycling, setAutoCycling] = useState(true);
+    // Auto-cycle through day overview + PRs, pause 15s on user click
+    const pauseUntil = useRef(0);
+    const pauseAutoCycle = useCallback(() => {
+        pauseUntil.current = Date.now() + 15000;
+    }, []);
     useEffect(() => {
-        if (!autoCycling || maxY === 0) return;
+        if (maxY === 0) return;
         const interval = setInterval(() => {
+            if (Date.now() < pauseUntil.current) return;
             setY((prev) => (prev + 1) % (maxY + 1));
         }, 5000);
         return () => clearInterval(interval);
-    }, [autoCycling, maxY]);
-
-    // Stop auto-cycling on manual interaction, restart on day change
-    // biome-ignore lint/correctness/useExhaustiveDependencies: restart auto-cycle when day changes
-    useEffect(() => {
-        setAutoCycling(true);
-    }, [x]);
+    }, [maxY]);
 
     // Navigation — only left/right now
     const go = useCallback(
@@ -257,7 +255,7 @@ export function BuildDiary() {
                     className={`font-headline inline-flex items-center justify-center py-2 text-sm font-black uppercase tracking-wider rounded-tag cursor-pointer transition duration-300 ease-in-out min-w-[220px] ${!onPR ? `${chipActiveColors[x % chipActiveColors.length]} font-black` : chipInactiveDefault}`}
                     onClick={() => {
                         setY(0);
-                        setAutoCycling(false);
+                        pauseAutoCycle();
                     }}
                 >
                     {dateLabel}
@@ -283,7 +281,7 @@ export function BuildDiary() {
                             className={`${chipBase} ${y === i + 1 ? chipActiveColors[i % chipActiveColors.length] : `${chipInactive} ${chipColors[i % chipColors.length]}`}`}
                             onClick={() => {
                                 setY(i + 1);
-                                setAutoCycling(false);
+                                pauseAutoCycle();
                             }}
                         >
                             #{pr}

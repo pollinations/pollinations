@@ -129,7 +129,9 @@ export function TopContributors() {
             <div className="mb-12">
                 <Heading variant="section">{copy.topContributorsTitle}</Heading>
                 <Body size="sm" spacing="comfortable">
-                    {copy.topContributorsDescription}{" "}
+                    {copy.topContributorsDescription}
+                    <br />
+                    {copy.topContributorsCta}{" "}
                     <a
                         href="https://github.com/pollinations/pollinations"
                         target="_blank"

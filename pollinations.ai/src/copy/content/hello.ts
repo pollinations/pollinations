@@ -112,7 +112,7 @@ export const HELLO_PAGE = {
         },
         {
             emoji: "🌐",
-            title: "Open source",
+            title: "Open source & transparent",
             desc: "The whole stack. Fork it, self-host, contribute.",
         },
         {

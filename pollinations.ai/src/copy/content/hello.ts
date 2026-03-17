@@ -60,7 +60,7 @@ export const HELLO_PAGE = {
     ],
     freeDailyComputeTitle: "Free daily compute",
 
-    tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
+    tiersBetaNote: "🧪 Beta — values may shift.",
     computeTiersTitle: "Tiers",
     tierHowText: "Want to know more?",
     tierHowLink: "Check our FAQ",

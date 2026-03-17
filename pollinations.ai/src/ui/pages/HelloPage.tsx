@@ -110,13 +110,13 @@ function HelloPage() {
 
                 {/* Section 2 — How it works */}
                 <div className="mb-12">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Heading variant="section" spacing="comfortable">
+                        {pageCopy.howItWorksTitle}
+                    </Heading>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
                         {/* Left: heading + bullets */}
                         <div className="flex flex-col">
-                            <Heading variant="section" spacing="comfortable">
-                                {pageCopy.howItWorksTitle}
-                            </Heading>
-                            <div className="flex flex-col gap-3 mb-6 mt-10">
+                            <div className="flex flex-col gap-3 mb-6">
                                 {pageCopy.startFreeLines.map(
                                     (line: {
                                         pre: string;

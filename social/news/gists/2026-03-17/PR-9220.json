@@ -1,0 +1,29 @@
+{
+  "pr_number": 9220,
+  "title": "fix(enter): prevent wrapping in dev points tooltip",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/9220",
+  "merged_at": "2026-03-17T20:50:44Z",
+  "labels": [
+    "WEB",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "fix(enter): prevent wrapping in dev points tooltip",
+    "blurb": "fix(enter): prevent wrapping in dev points tooltip",
+    "summary": "fix(enter): prevent wrapping in dev points tooltip",
+    "impact": "",
+    "keywords": [],
+    "image_prompt": ""
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-03-17T20:51:50.795379+00:00",
+  "_minimal": true
+}

@@ -10,6 +10,7 @@ const TINYBIRD_TOKEN =
 const MODEL_ENDPOINTS = {
     image: "https://gen.pollinations.ai/image/models",
     text: "https://gen.pollinations.ai/text/models",
+    audio: "https://gen.pollinations.ai/audio/models",
 };
 
 // Tinybird pipes for different aggregation windows
@@ -113,37 +114,47 @@ export function useModelMonitor(aggregationWindow = "60m") {
 
     // Fetch model list from gen.pollinations.ai
     const fetchModels = useCallback(async () => {
-        let imageOk = false;
-        let textOk = false;
-        let imageModels = [];
-        let textModels = [];
-
-        try {
-            const imageRes = await fetch(MODEL_ENDPOINTS.image);
-            imageOk = imageRes.ok;
-            if (imageOk) imageModels = await imageRes.json();
-        } catch (err) {
-            console.error("Failed to fetch image models:", err);
+        const results = {};
+        for (const [type, url] of Object.entries(MODEL_ENDPOINTS)) {
+            try {
+                const res = await fetch(url);
+                results[type] = {
+                    ok: res.ok,
+                    models: res.ok ? await res.json() : [],
+                };
+            } catch (err) {
+                console.error(`Failed to fetch ${type} models:`, err);
+                results[type] = { ok: false, models: [] };
+            }
         }
 
-        try {
-            const textRes = await fetch(MODEL_ENDPOINTS.text);
-            textOk = textRes.ok;
-            if (textOk) textModels = await textRes.json();
-        } catch (err) {
-            console.error("Failed to fetch text models:", err);
-        }
+        setEndpointStatus({
+            image: results.image?.ok ?? null,
+            text: results.text?.ok ?? null,
+            audio: results.audio?.ok ?? null,
+        });
 
-        setEndpointStatus({ image: imageOk, text: textOk });
+        // Derive display type from output_modalities when available
+        // (e.g. veo/wan/seedance are served from /image/models but output video)
+        const resolveType = (m, endpointType) => {
+            const out = m.output_modalities;
+            if (out?.includes("video")) return "video";
+            return endpointType;
+        };
 
-        const allModels = [
-            ...imageModels.map((m) => ({ ...m, type: "image" })),
-            ...textModels.map((m) => ({ ...m, type: "text" })),
-        ].sort((a, b) => a.name.localeCompare(b.name));
+        const allModels = Object.entries(results)
+            .flatMap(([type, { models }]) =>
+                models.map((m) => ({
+                    ...m,
+                    type: resolveType(m, type),
+                    endpointType: type, // original endpoint for Tinybird stats matching
+                })),
+            )
+            .sort((a, b) => a.name.localeCompare(b.name));
 
         setModels(allModels);
 
-        if (!imageOk && !textOk) {
+        if (Object.values(results).every((r) => !r.ok)) {
             setError("Failed to fetch model list");
         } else {
             setError(null);
@@ -234,12 +245,15 @@ export function useModelMonitor(aggregationWindow = "60m") {
     }, [healthStats, lastUpdated]);
 
     // Merge models with health stats, trends, and sparklines
+    // Use endpointType (original API endpoint) for Tinybird matching since
+    // Tinybird reports e.g. generate.image for video models served from /image/models
     const mergedModels = models.map((model) => {
         const modelKey = `${model.type}-${model.name}`;
+        const statsType = model.endpointType || model.type;
         const rawStats = modelStats.find(
             (s) =>
                 s.model === model.name &&
-                s.event_type === `generate.${model.type}`,
+                s.event_type === `generate.${statsType}`,
         );
         const stats = enrichStats(rawStats);
         const { trend, sparkline } = getModelTrend(modelKey, stats);
@@ -247,12 +261,16 @@ export function useModelMonitor(aggregationWindow = "60m") {
     });
 
     // Add models from health stats that aren't in the registered model list (but not "undefined")
+    // Skip cross-type noise: if a model name exists in ANY registered type, don't show it
+    // as "unregistered" under a different type (e.g. flux hitting generate.text)
+    const allRegisteredNames = new Set(models.map((m) => m.name));
     const unmatchedStats = modelStats.filter(
         (s) =>
             !models.some(
                 (m) =>
-                    m.name === s.model && `generate.${m.type}` === s.event_type,
-            ),
+                    m.name === s.model &&
+                    `generate.${m.endpointType || m.type}` === s.event_type,
+            ) && !allRegisteredNames.has(s.model),
     );
     const extraModels = unmatchedStats.map((s) => {
         const modelKey = `${s.event_type?.replace("generate.", "") || "unknown"}-${s.model}`;

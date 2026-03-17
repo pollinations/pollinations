@@ -245,30 +245,23 @@ export const apiKeysRoutes = new Hono<Env>()
                     .where(eq(schema.apikey.id, id));
             }
 
-            // Invalidate better-auth's KV cache whenever permissions or D1 fields change
-            if (updatedPermissions || Object.keys(d1Updates).length > 0) {
-                const keyForCache = await db.query.apikey.findFirst({
-                    where: eq(schema.apikey.id, id),
-                });
-
-                await c.env.KV.delete(`auth:api-key:${id}`);
-
-                if (keyForCache?.key) {
-                    await c.env.KV.delete(`auth:api-key:${keyForCache.key}`);
-                }
-            }
-
-            // Fetch updated key to return current state
-            const finalKey = await db.query.apikey.findFirst({
+            // Always invalidate KV cache on any update
+            const keyForCache = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, id),
             });
 
+            await c.env.KV.delete(`auth:api-key:${id}`);
+
+            if (keyForCache?.key) {
+                await c.env.KV.delete(`auth:api-key:${keyForCache.key}`);
+            }
+
             return c.json({
-                id: finalKey?.id ?? id,
-                name: finalKey?.name,
-                permissions: finalKey?.permissions,
-                pollenBalance: finalKey?.pollenBalance ?? null,
-                expiresAt: finalKey?.expiresAt ?? null,
+                id: keyForCache?.id ?? id,
+                name: keyForCache?.name,
+                permissions: keyForCache?.permissions,
+                pollenBalance: keyForCache?.pollenBalance ?? null,
+                expiresAt: keyForCache?.expiresAt ?? null,
             });
         },
     )

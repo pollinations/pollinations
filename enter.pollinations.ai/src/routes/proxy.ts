@@ -53,7 +53,12 @@ import {
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
-import { generateMusic, generateSeraphynTTS, generateSpeech, generateSunoMusic } from "./audio.ts";
+import {
+    generateMusic,
+    generateSeraphynTTS,
+    generateSpeech,
+    generateSunoMusic,
+} from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)

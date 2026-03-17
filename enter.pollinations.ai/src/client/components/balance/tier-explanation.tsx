@@ -15,37 +15,39 @@ const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
 };
 
 const SeedTooltipContent = () => (
-    <div className="w-56">
+    <div className="w-72">
         <p className="font-semibold text-gray-900 mb-2">Dev Points (need 8+)</p>
         <table className="w-full text-left text-[11px]">
             <tbody>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">Account age</td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
+                        Account age
+                    </td>
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.5pt/month (max 6)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
                         Public commits (last 90 days)
                     </td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.1pt each (max 2)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
                         Original repos (public, non-empty)
                     </td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.5pt each (max 1)
                     </td>
                 </tr>
                 <tr>
-                    <td className="py-1 text-gray-600">
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
                         Stars (on original non-empty repos)
                     </td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.1pt each (max 5)
                     </td>
                 </tr>

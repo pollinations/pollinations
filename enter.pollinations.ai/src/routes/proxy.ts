@@ -53,7 +53,12 @@ import {
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
-import { generateMusic, generateSpeech, generateSunoMusic } from "./audio.ts";
+import {
+    generateMusic,
+    generateSeraphynTTS,
+    generateSpeech,
+    generateSunoMusic,
+} from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
@@ -740,6 +745,21 @@ export const proxyRoutes = new Hono<Env>()
             const text = decodeURIComponent(c.req.param("text"));
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "qwen3-tts") {
+                const seraphynApiKey = (
+                    c.env as unknown as { SERAPHYN_API_KEY: string }
+                ).SERAPHYN_API_KEY;
+                const { voice } = c.req.valid("query" as never) as {
+                    voice: string;
+                };
+                return generateSeraphynTTS({
+                    text,
+                    voice: voice || "alloy",
+                    apiKey: seraphynApiKey,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "suno") {
                 const airforceApiKey = (

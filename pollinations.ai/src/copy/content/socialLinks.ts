@@ -69,10 +69,14 @@ export const LINKS = {
         "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md",
     githubFork:
         "https://github.com/pollinations/pollinations/fork",
+    docsText:
+        "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-text-generation",
     docsStreaming:
-        "https://enter.pollinations.ai/api/docs#tag/text/POST/v1/chat/completions",
-    docsVision:
-        "https://enter.pollinations.ai/api/docs#tag/text/POST/v1/chat/completions",
-    docsMedia:
-        "https://enter.pollinations.ai/api/docs#tag/media",
+        "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-text-generation/POST/v1/chat/completions",
+    docsImage:
+        "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-image-generation",
+    docsAudio:
+        "https://enter.pollinations.ai/api/docs#tag/-audio-generation",
+    docsAuth:
+        "https://enter.pollinations.ai/api/docs#description/-authentication",
 };

@@ -89,11 +89,13 @@ export const HELLO_PAGE = {
             title: "Text, image, video, audio",
             desc: "All modalities, one endpoint.",
             linkText: "Browse the model list",
+            docsUrl: "enterModels",
         },
         {
             emoji: "🔌",
             title: "OpenAI-compatible",
             desc: "Change one line. Your existing SDK code just works.",
+            docsUrl: "enterApiDocs",
         },
         {
             emoji: "📎",
@@ -102,13 +104,15 @@ export const HELLO_PAGE = {
         },
         {
             emoji: "⚡",
-            title: "Streaming & function calling",
+            title: "Streaming & tools",
             desc: "Real-time responses, tool use, structured output.",
+            docsUrl: "docsStreaming",
         },
         {
             emoji: "👁",
             title: "Vision & web search",
             desc: "Models that see images and search the live web.",
+            docsUrl: "docsText",
         },
         {
             emoji: "🌐",
@@ -161,9 +165,9 @@ export const HELLO_PAGE = {
             description: "A marketplace where users find your app.",
         },
     ],
-    comingFooterEmoji: "🌱",
-    comingFooterLine1: "The platform gives you runway.",
-    comingFooterLine2: "We're shaping the rest together, in the open.",
+    comingFooterEmoji: "",
+    comingFooterLine1: "",
+    comingFooterLine2: "",
 
     // Section 9 — CTA
     ctaTitle: "Get started",

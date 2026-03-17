@@ -229,6 +229,7 @@ function HelloPage() {
                                     desc: string;
                                     linkText?: string;
                                     linkUrl?: string;
+                                    docsUrl?: string;
                                     fullWidth?: boolean;
                                 },
                                 i: number,
@@ -251,6 +252,17 @@ function HelloPage() {
                                             <div className="flex-1">
                                                 <span className="font-headline text-xs font-black text-dark">
                                                     {item.title}
+                                                    {item.docsUrl && (
+                                                        <a
+                                                            href={LINKS[item.docsUrl as keyof typeof LINKS]}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="ml-1.5 inline-flex items-center gap-0.5 font-headline text-[9px] font-black text-dark bg-white border border-border-subtle rounded-full px-1.5 py-px hover:bg-accent-strong transition-colors"
+                                                        >
+                                                            docs
+                                                            <ExternalLinkIcon className="w-2 h-2" strokeWidth="3" />
+                                                        </a>
+                                                    )}
                                                 </span>
                                                 <p className="font-body text-sm text-muted leading-relaxed mt-0.5 whitespace-pre-line">
                                                     {item.desc}
@@ -377,22 +389,11 @@ function HelloPage() {
                                 )}
                             </div>
                             <p className="font-body text-xs text-subtle italic mt-4 pt-3 border-t border-border-subtle">
-                                🌱 Plans change. We build in the open and figure
-                                it out as we go.
+                                🌱 Plans change. We figure it out as we go.
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 mt-10">
-                        <span className="text-3xl">
-                            {pageCopy.comingFooterEmoji}
-                        </span>
-                        <p className="font-headline text-xs leading-loose text-dark">
-                            {pageCopy.comingFooterLine1}
-                            <br />
-                            {pageCopy.comingFooterLine2}
-                        </p>
-                    </div>
                 </div>
 
                 <Divider />

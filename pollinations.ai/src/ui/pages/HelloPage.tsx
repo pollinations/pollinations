@@ -143,9 +143,28 @@ function HelloPage() {
                                     ),
                                 )}
                             </div>
+                            <div className="flex flex-col gap-1 mt-auto">
+                                <span className="font-body text-sm text-muted">
+                                    {pageCopy.tierHowText}
+                                </span>
+                                <div>
+                                    <a
+                                        href={LINKS.enterTiersFaq}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
+                                    >
+                                        {pageCopy.tierHowLink}
+                                        <ExternalLinkIcon
+                                            className="w-3 h-3"
+                                            strokeWidth="4"
+                                        />
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                         {/* Right: tier ladder */}
-                        <div className="md:max-w-[280px]">
+                        <div>
                             <div className="border-2 border-dark border-r-4 border-b-4 p-4 bg-accent-light flex flex-col">
                                 <Heading
                                     variant="subsection"
@@ -188,25 +207,6 @@ function HelloPage() {
                                     {pageCopy.tiersBetaNote}
                                 </span>
                             </div>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-1 mt-6">
-                        <span className="font-body text-sm text-muted">
-                            {pageCopy.tierHowText}
-                        </span>
-                        <div>
-                            <a
-                                href={LINKS.enterTiersFaq}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
-                            >
-                                {pageCopy.tierHowLink}
-                                <ExternalLinkIcon
-                                    className="w-3 h-3"
-                                    strokeWidth="4"
-                                />
-                            </a>
                         </div>
                     </div>
                 </div>

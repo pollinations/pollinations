@@ -236,8 +236,10 @@ export function BuildDiary() {
         </div>
     );
 
-    // Date heading label — same format for both day and week entries
-    const dateLabel = `${entry.dayName} \u00B7 ${entry.dateLabel}`;
+    const dateLabel =
+        entry.type === "week"
+            ? `Week \u00B7 ${entry.dateLabel}`
+            : `${entry.dayName} \u00B7 ${entry.dateLabel}`;
 
     const TextPanel = (
         <div

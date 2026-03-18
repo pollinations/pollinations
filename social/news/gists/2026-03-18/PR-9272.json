@@ -1,0 +1,35 @@
+{
+  "pr_number": 9272,
+  "title": "Add SRTAudio  Video IA Pro to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9272",
+  "merged_at": "2026-03-18T18:01:41Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive goes Hollywood",
+    "blurb": "A new community app just dropped! SRTAudio Video IA Pro turns your MP3s and SRT files into browser-based videos using our Audio API and Whisper.",
+    "summary": "Added SRTAudio Video IA Pro to the community app showcase under the video and audio category.",
+    "impact": "Users can now discover and use a new community-built tool that generates browser-based videos from audio files and subtitles.",
+    "keywords": [
+      "community",
+      "app",
+      "video",
+      "audio",
+      "whisper",
+      "transcription"
+    ],
+    "visual_concept": "The PR is about an app that combines audio (MP3/WAV), subtitles (SRT), and video generation. Visual symbols: a retro TV or film projector, audio waveforms, musical notes, a clapperboard. Characters: Polly the bee wearing a director's beret or holding a clapperboard.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny director's beret, holding a pixelated movie clapperboard next to a retro TV screen showing colorful audio waveforms. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9272.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny director's beret, holding a pixelated movie clapperboard next to a retro TV screen showing colorful audio waveforms. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-18T18:02:38.816316+00:00"
+}

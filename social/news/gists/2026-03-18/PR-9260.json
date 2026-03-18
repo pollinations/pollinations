@@ -1,0 +1,35 @@
+{
+  "pr_number": 9260,
+  "title": "fix(auth): harden github username sync on login",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/9260",
+  "merged_at": "2026-03-18T10:14:22Z",
+  "labels": [
+    "ACCOUNT",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Hello, my new name is...",
+    "blurb": "Fixed a quiet little bug that was ignoring your shiny new GitHub username. The hive now properly respects your rebrand.",
+    "summary": "Hardened the authentication sync logic to reliably detect and update GitHub username changes upon login.",
+    "impact": "If you rename your GitHub account, your new handle will now correctly sync to your pollinations profile the next time you log in.",
+    "keywords": [
+      "auth",
+      "github",
+      "sync",
+      "bugfix",
+      "login"
+    ],
+    "visual_concept": "Identity and name syncing. Polly the bee updating a name tag or checking a guest list, with the Nomnom creature disposing of the old names.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security badge, carefully writing a new name on a glowing lime green (#ecf874) digital clipboard. The round tan nomnom creature sits nearby happily eating a stack of old pixelated name tags. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9260.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security badge, carefully writing a new name on a glowing lime green (#ecf874) digital clipboard. The round tan nomnom creature sits nearby happily eating a stack of old pixelated name tags. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-03-18T10:15:28.668314+00:00"
+}

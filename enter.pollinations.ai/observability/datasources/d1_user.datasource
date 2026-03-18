@@ -18,7 +18,7 @@ SCHEMA >
     `ban_expires` Nullable(Int64) `json:$.ban_expires`,
     `github_id` Nullable(Int32) `json:$.github_id`,
     `github_username` Nullable(String) `json:$.github_username`,
-    `tier` String `json:$.tier` DEFAULT 'spore',
+    `tier` String `json:$.tier` DEFAULT 'microbe',
     `tier_balance` Nullable(Float64) `json:$.tier_balance`,
     `pack_balance` Nullable(Float64) `json:$.pack_balance`,
     `crypto_balance` Nullable(Float64) `json:$.crypto_balance`,

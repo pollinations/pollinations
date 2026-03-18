@@ -78,28 +78,23 @@ export function BuildDiary() {
     const onPR = y > 0 && y <= maxY;
 
     // Fetch entry content when x changes
-    const entryDate = entry?.date;
-    const entryType = entry?.type;
-    const entryPrNumbers = entry?.prNumbers;
     useEffect(() => {
-        if (!entryDate || !entryType || !entryPrNumbers) return;
+        if (!entry) return;
         setEntryContent(null);
         setPrContent(null);
-        getEntryContent(entryDate, entryType, entryPrNumbers).then(
-            setEntryContent,
-        );
-    }, [entryDate, entryType, entryPrNumbers, getEntryContent]);
+        getEntryContent(entry).then(setEntryContent);
+    }, [entry, getEntryContent]);
 
     // Fetch PR content when y changes
-    const currentPrNum = entry?.prNumbers[y - 1];
+    const currentPrRef = entry?.prRefs[y - 1];
     useEffect(() => {
-        if (!entryDate || !onPR || !currentPrNum) {
+        if (!onPR || !currentPrRef) {
             setPrContent(null);
             return;
         }
         setPrContent(null);
-        getPRContent(entryDate, currentPrNum).then(setPrContent);
-    }, [entryDate, currentPrNum, onPR, getPRContent]);
+        getPRContent(currentPrRef.date, currentPrRef.number).then(setPrContent);
+    }, [currentPrRef, onPR, getPRContent]);
 
     // Reset image error on navigation
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run when x/y change
@@ -347,13 +342,6 @@ export function BuildDiary() {
                     <div className="text-xs text-subtle mt-3.5">
                         {impactEmoji[prContent.impact] || "\u{1F4E6}"}{" "}
                         {prContent.impact} &middot; @{prContent.author}
-                    </div>
-                )}
-
-                {/* Weekly DNA quote */}
-                {entry.type === "week" && entryContent?.dna && !onPR && (
-                    <div className="mt-4 px-3 py-2 border-l-2 border-tan text-muted text-[13px] italic leading-normal">
-                        &ldquo;{entryContent.dna}&rdquo;
                     </div>
                 )}
             </div>

@@ -803,6 +803,143 @@ def build_linkedin_post_text(post_data: Dict) -> str:
     return "\n\n".join(parts)
 
 
+def build_instagram_post_text(post_data: Dict) -> str:
+    """Build the final Instagram caption text from structured fields."""
+    caption = (post_data.get("caption") or "").strip()
+    hashtags = [tag.strip() for tag in post_data.get("hashtags", []) if tag.strip()]
+
+    parts = []
+    if caption:
+        parts.append(caption)
+    if hashtags:
+        parts.append(" ".join(hashtags))
+
+    return "\n\n".join(parts)
+
+
+def extract_generated_post_image_urls(post_data: Dict) -> List[str]:
+    """Extract image URLs from in-memory generated post data before normalization."""
+    urls = []
+
+    for image in post_data.get("images", []) or []:
+        url = str(image.get("url") or "").strip()
+        if url and url not in urls:
+            urls.append(url)
+
+    single_image = post_data.get("image") or {}
+    url = str(single_image.get("url") or "").strip()
+    if url and url not in urls:
+        urls.append(url)
+
+    return urls
+
+
+def get_post_image_urls(post_data: Dict) -> List[str]:
+    """Return image URLs from the simplified persisted post shape."""
+    urls = []
+    for image in post_data.get("images", []) or []:
+        url = str(image.get("url") or "").strip()
+        if url and url not in urls:
+            urls.append(url)
+    return urls
+
+
+def normalize_platform_post(
+    *,
+    platform: str,
+    scope: str,
+    date: str,
+    period_start: str,
+    period_end: str,
+    generated_at: str,
+    raw_post: Dict,
+) -> Dict:
+    """Normalize a generated platform post to the minimal persisted envelope."""
+    text = ""
+    title = ""
+    metadata = {}
+
+    if platform == "twitter":
+        text = (raw_post.get("tweet") or "").strip()
+    elif platform == "linkedin":
+        text = (raw_post.get("full_post") or build_linkedin_post_text(raw_post)).strip()
+    elif platform == "instagram":
+        text = build_instagram_post_text(raw_post)
+        metadata["post_type"] = (
+            "carousel" if len(extract_generated_post_image_urls(raw_post)) > 1 else "post"
+        )
+    elif platform == "reddit":
+        title = (raw_post.get("title") or "").strip()
+    elif platform == "discord":
+        text = (raw_post.get("message") or "").strip()
+    else:
+        text = (raw_post.get("text") or "").strip()
+        title = (raw_post.get("title") or "").strip()
+
+    result = {
+        "platform": platform,
+        "scope": scope,
+        "date": date,
+        "period_start": period_start,
+        "period_end": period_end,
+        "generated_at": generated_at,
+        "images": [{"url": url} for url in extract_generated_post_image_urls(raw_post)],
+    }
+
+    if title:
+        result["title"] = title
+    if text:
+        result["text"] = text
+    if metadata:
+        result["metadata"] = metadata
+
+    return result
+
+
+def build_canonical_summary(
+    *,
+    date: str,
+    period_start: str,
+    period_end: str,
+    title: str,
+    summary: str,
+    prs: List[Dict],
+    generated_at: str,
+) -> Dict:
+    """Build the minimal persisted summary shape shared by daily and weekly."""
+    canonical_prs = []
+    seen = set()
+
+    for pr in prs:
+        try:
+            number = int(pr.get("number"))
+        except (TypeError, ValueError):
+            continue
+        pr_date = str(pr.get("date") or "").strip()
+        if not pr_date:
+            continue
+        key = (number, pr_date)
+        if key in seen:
+            continue
+        seen.add(key)
+        canonical_prs.append({"number": number, "date": pr_date})
+
+    canonical_prs.sort(key=lambda item: (item["date"], item["number"]))
+
+    result = {
+        "date": date,
+        "period_start": period_start,
+        "period_end": period_end,
+        "title": title.strip(),
+        "summary": summary.strip(),
+        "pr_count": len(canonical_prs),
+        "prs": canonical_prs,
+        "generated_at": generated_at,
+    }
+
+    return result
+
+
 # ── PR creation helpers ──────────────────────────────────────────────
 
 def create_branch_from_main(
@@ -975,7 +1112,8 @@ def deploy_reddit_post(
     import paramiko
 
     title = reddit_data.get("title", "")
-    image_url = reddit_data.get("image", {}).get("url", "")
+    image_urls = get_post_image_urls(reddit_data)
+    image_url = image_urls[0] if image_urls else ""
 
     if not all([title, image_url, vps_host, vps_user, pkey]):
         print("  VPS: Missing required arguments")

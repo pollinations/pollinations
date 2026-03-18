@@ -25,7 +25,7 @@ TIER 2: DAILY (Mon-Sat 06:00 UTC)
 
 TIER 3: WEEKLY (Sunday 06:00 UTC)
   Read week's gists directly (Sun→Sat) → synthesize weekly themes → platform posts (X, IG, LI, Reddit, Discord)
-  → commit to news branch → Buffer stages X + LI + IG immediately
+  → commit to news branch under the Sunday publish date → Buffer stages X + LI + IG immediately
   Reddit + Discord publish via cron at 18:00 UTC Sunday.
 ```
 
@@ -191,19 +191,42 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 ### Daily Posts: `social/news/daily/YYYY-MM-DD/`
 
-- `twitter.json` — platform post JSON
-- `instagram.json` — same schema
-- `reddit.json` — same schema (LinkedIn is weekly-only, no daily file)
+- `summary.json` — canonical daily summary used by the website
+- `twitter.json` — simplified platform envelope
+- `instagram.json` — simplified platform envelope
+- `reddit.json` — simplified platform envelope (LinkedIn is weekly-only, no daily file)
 - `images/` — all generated images
 
 ### Weekly: `social/news/weekly/YYYY-MM-DD/`
 
-- `twitter.json` — weekly recap tweet (1 image)
-- `linkedin.json` — weekly recap post (1 image)
-- `instagram.json` — weekly recap carousel (3 images)
-- `reddit.json` — weekly Reddit post (1 image)
-- `discord.json` — weekly Discord digest
+`YYYY-MM-DD` is the Sunday publish date. The content still covers the previous Sun→Sat window.
+
+- `summary.json` — canonical weekly summary used by the website
+- `twitter.json` — simplified platform envelope
+- `linkedin.json` — simplified platform envelope
+- `instagram.json` — simplified platform envelope
+- `reddit.json` — simplified platform envelope
+- `discord.json` — simplified platform envelope
 - `images/` — all generated images
+
+### Platform Envelope
+
+Daily and weekly platform JSON now share one persisted shape:
+
+```json
+{
+  "platform": "twitter|linkedin|instagram|reddit|discord",
+  "scope": "daily|weekly",
+  "date": "YYYY-MM-DD",
+  "period_start": "YYYY-MM-DD",
+  "period_end": "YYYY-MM-DD",
+  "generated_at": "ISO-8601 timestamp",
+  "title": "optional, used by Reddit",
+  "text": "optional, final publish-ready text",
+  "images": [{"url": "https://..."}],
+  "metadata": {"post_type": "post|carousel"}
+}
+```
 
 ---
 

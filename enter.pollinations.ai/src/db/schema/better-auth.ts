@@ -29,7 +29,7 @@ export const user = sqliteTable("user", {
   banExpires: integer("ban_expires", { mode: "timestamp" }),
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
-  tier: text("tier").default("spore").notNull(),
+  tier: text("tier").default("microbe").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
   cryptoBalance: real("crypto_balance"),

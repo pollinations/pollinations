@@ -217,7 +217,7 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                                     {stats.totalPollen.toFixed(2)}
                                 </span>
                                 <span className="text-xs text-gray-400 ml-1">
-                                    ({TIER_EMOJIS[tier || "spore"]}{" "}
+                                    ({TIER_EMOJIS[tier || "microbe"]}{" "}
                                     {stats.tierPollen.toFixed(2)} + 💎{" "}
                                     {stats.paidPollen.toFixed(2)})
                                 </span>

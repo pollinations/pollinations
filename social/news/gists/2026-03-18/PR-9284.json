@@ -1,0 +1,34 @@
+{
+  "pr_number": 9284,
+  "title": "fix: use original folder dates for diary image URLs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9284",
+  "merged_at": "2026-03-18T21:38:59Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Restoring the photo albums",
+    "blurb": "Fixed a temporal glitch where diary images were getting lost in the wrong time zones. The build diary is back to showing off our daily pixel memories perfectly!",
+    "summary": "Resolved an issue where build diary images were returning 404 errors due to date shifting mismatches.",
+    "impact": "Users can now reliably view all historical images in the build diary without encountering broken links or infinite loading loops.",
+    "keywords": [
+      "bug_fix",
+      "frontend",
+      "diary",
+      "images",
+      "ui"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot looking at a glowing digital photo album or calendar. The robot is holding a fixed picture frame, representing the restored diary images.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky robot with a CRT monitor head looking through a glowing digital photo album. The robot holds up a small picture frame showing a generated landscape, its square pixel eyes looking happy. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9284.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky robot with a CRT monitor head looking through a glowing digital photo album. The robot holds up a small picture frame showing a generated landscape, its square pixel eyes looking happy. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-18T21:39:56.418107+00:00"
+}

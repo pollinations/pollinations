@@ -16,6 +16,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import threading
 import time
 import urllib.error
@@ -142,7 +143,8 @@ def get_github_token() -> str:
             _APP_TOKEN, _APP_TOKEN_EXPIRES_AT = _fetch_app_token(app_id, key_path)
             if _AUTH_MODE != "app":
                 print(
-                    f"🔑 Using GitHub App auth via {os.path.basename(key_path)}"
+                    f"🔑 Using GitHub App auth via {os.path.basename(key_path)}",
+                    file=sys.stderr,
                 )
                 _AUTH_MODE = "app"
             return _APP_TOKEN
@@ -153,7 +155,7 @@ def get_github_token() -> str:
             "Set GITHUB_APP_ID + GITHUB_APP_PRIVATE_KEY_PATH or GITHUB_TOKEN"
         )
     if _AUTH_MODE != "pat":
-        print("🔑 Using GITHUB_TOKEN auth")
+        print("🔑 Using GITHUB_TOKEN auth", file=sys.stderr)
         _AUTH_MODE = "pat"
     return token
 

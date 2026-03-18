@@ -87,6 +87,13 @@ function parseArguments(): ParsedArgs {
         );
         process.exit(1);
     }
+    const chunkSize = getNum("--chunk-size", 100);
+    if (chunkSize <= OVERLAP_SIZE) {
+        console.error(
+            `Invalid --chunk-size ${chunkSize}. It must be greater than the overlap size (${OVERLAP_SIZE}).`,
+        );
+        process.exit(1);
+    }
 
     const sinceTimestamp = parseSinceTimestamp(
         getStr("--since", ""),
@@ -107,7 +114,7 @@ function parseArguments(): ParsedArgs {
     return {
         env: "staging",
         userLimit: getNum("--limit", 5000),
-        chunkSize: getNum("--chunk-size", 100),
+        chunkSize,
         modelName: getStr("--model", "gemini"),
         parallelism: getNum("--parallel", 1),
         singleChunk: args.includes("--single-chunk"),

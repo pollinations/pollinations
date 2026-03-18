@@ -82,7 +82,7 @@ export function BuildDiary() {
     const entrySummaryUrl = entry?.summaryUrl;
 
     // Fetch entry content when the selected entry changes
-    // biome-ignore lint/correctness/useExhaustiveDependencies: prRefs excluded intentionally — it's an object ref that changes when timeline is enriched by getEntryContent, causing an infinite loop
+    // biome-ignore lint/correctness/useExhaustiveDependencies: prRefs excluded — it changes when getEntryContent enriches the timeline, which would cause an infinite loop
     useEffect(() => {
         if (!entryDate || !entryType) return;
         const request: EntryContentRequest = {

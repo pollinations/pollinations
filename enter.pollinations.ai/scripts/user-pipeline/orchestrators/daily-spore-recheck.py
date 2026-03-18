@@ -1,28 +1,16 @@
 #!/usr/bin/env python3
 """Daily spore recheck for seed tier eligibility.
 
-Fetches spore users from D1, validates GitHub profiles, and upgrades eligible users.
-Can be run locally or via GitHub Actions.
-
-Strategy (stateless, day-based slicing):
-    1. Always check users created in the last 24 hours (new users)
-    2. For older users, use LIMIT/OFFSET with day-of-week slicing
-       This ensures all users are checked once per week without tracking state.
-    3. Fetches 10 repos per user for quality filtering
-
-Usage:
-    python scripts/user-pipeline/orchestrators/daily-spore-recheck.py           # Full run on staging
-    python scripts/user-pipeline/orchestrators/daily-spore-recheck.py --dry-run # Validate only, no upgrades
-    python scripts/user-pipeline/orchestrators/daily-spore-recheck.py --env staging
-    python scripts/user-pipeline/orchestrators/daily-spore-recheck.py --emails-file /tmp/replay-emails.txt
-
-Environment variables:
-    GITHUB_TOKEN           - Required for GitHub API
-    CLOUDFLARE_API_TOKEN   - Required for wrangler D1 access
-    CLOUDFLARE_ACCOUNT_ID  - Required for wrangler D1 access
+This is the steady-state weekly rotation job:
+  - select unbanned spore users
+  - order by oldest score_checked_at
+  - recheck the oldest ceil(total_spores / 7)
+  - persist score and score_checked_at
+  - upgrade qualified users to seed immediately
 """
 
 import argparse
+import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,13 +24,13 @@ from github_account_state import (
     D1_BATCH_SIZE,
     GITHUB_USERNAME_RE,
     ban_github_users,
+    ban_users_by_emails,
     extract_deleted_github_usernames,
 )
 from score_users import validate_users
 
-# Max users to process per run (stay well under 1000 point/hour GitHub API limit)
-# With repos(first:10), each batch of 50 costs ~6 points, so 166 batches = 8,300 users
-MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
+MAX_USERS_PER_RUN = 8000
+SQL_BATCH_SIZE = 200
 
 
 def load_email_cohort(file_path: str | None) -> list[str] | None:
@@ -75,260 +63,280 @@ def build_email_filter(emails: list[str] | None) -> str:
     return f" AND email IN ({values})"
 
 
-def fetch_spore_users(
-    env: str = "staging", cohort_emails: list[str] | None = None
-) -> tuple[list[str], list[str], int]:
-    """Fetch spore users using day-based slicing strategy.
+def fetch_spore_count(env: str, cohort_emails: list[str] | None = None) -> int:
+    email_filter = build_email_filter(cohort_emails)
+    results = run_d1_query(
+        f"""
+        SELECT COUNT(*) as count
+        FROM user
+        WHERE tier = 'spore'
+        AND COALESCE(banned, 0) = 0
+        {email_filter}
+        """,
+        env,
+    )
+    if results is None:
+        raise RuntimeError("Failed to fetch current spore count from D1")
+    if not results:
+        return 0
+    return int(results[0]["count"])
 
-    Returns (new_users, slice_users, total_old) where:
-    - new_users: users created in the last 24 hours
-    - slice_users: today's slice of older users (1/7th, using LIMIT/OFFSET)
-    - total_old: total count of older spore users
-    """
-    weekday = datetime.now(timezone.utc).weekday()
-    yesterday = int(
-        (datetime.now(timezone.utc).timestamp() - 86400) * 1000
-    )  # Unix timestamp in milliseconds (matches D1 schema)
+
+def fetch_spore_slice(
+    env: str, cohort_emails: list[str] | None = None
+) -> tuple[list[dict], int, int]:
+    total_spores = fetch_spore_count(env, cohort_emails)
+    if total_spores == 0:
+        return [], 0, 0
+
+    slice_size = math.ceil(total_spores / 7)
+    slice_size = min(slice_size, MAX_USERS_PER_RUN)
     email_filter = build_email_filter(cohort_emails)
 
-    # Get new users (created in last 24h)
-    new_query = f"""
-        SELECT github_username FROM user
+    results = run_d1_query(
+        f"""
+        SELECT email, github_username
+        FROM user
         WHERE tier = 'spore'
-        AND github_username IS NOT NULL
         AND COALESCE(banned, 0) = 0
-        AND created_at > {yesterday}
         {email_filter}
-    """
-    new_results = run_d1_query(new_query, env)
-    new_users = [r["github_username"] for r in new_results] if new_results else []
-
-    # Count total older users
-    count_query = f"""
-        SELECT COUNT(*) as count FROM user
-        WHERE tier = 'spore'
-        AND github_username IS NOT NULL
-        AND COALESCE(banned, 0) = 0
-        AND created_at <= {yesterday}
-        {email_filter}
-    """
-    count_results = run_d1_query(count_query, env)
-    total_old = count_results[0]["count"] if count_results else 0
-
-    # Get today's slice using LIMIT/OFFSET (equal partitions)
-    slice_size = (total_old + 6) // 7  # Ceiling division for 7 equal parts
-    offset = weekday * slice_size
-
-    slice_query = f"""
-        SELECT github_username FROM user
-        WHERE tier = 'spore'
-        AND github_username IS NOT NULL
-        AND COALESCE(banned, 0) = 0
-        AND created_at <= {yesterday}
-        {email_filter}
-        ORDER BY created_at ASC
-        LIMIT {slice_size} OFFSET {offset}
-    """
-    slice_results = run_d1_query(slice_query, env)
-    slice_users = [r["github_username"] for r in slice_results] if slice_results else []
-
-    return new_users, slice_users, total_old
+        ORDER BY score_checked_at ASC, created_at ASC, email ASC
+        LIMIT {slice_size}
+        """,
+        env,
+    )
+    if results is None:
+        raise RuntimeError("Failed to fetch spore recheck slice from D1")
+    return results or [], total_spores, slice_size
 
 
-def batch_upgrade_users(
-    usernames: list[str], env: str = "staging"
-) -> tuple[int, int, bool]:
-    """Upgrade users to seed tier in batch SQL. Returns (upgraded, skipped, failed)."""
+def store_scores(results: list[dict], env: str) -> tuple[int, int]:
+    now = int(datetime.now(timezone.utc).timestamp() * 1000)
+    stored = 0
+    skipped = 0
+
+    for index in range(0, len(results), SQL_BATCH_SIZE):
+        batch = results[index : index + SQL_BATCH_SIZE]
+        sanitized_batch = []
+        for result in batch:
+            username = result.get("username")
+            if not isinstance(username, str) or not GITHUB_USERNAME_RE.match(username):
+                skipped += 1
+                continue
+
+            raw_score = (result.get("details") or {}).get("total", 0)
+            total_score = float(raw_score) if raw_score is not None else 0.0
+            sanitized_batch.append((username, total_score))
+
+        if not sanitized_batch:
+            continue
+
+        score_cases = " ".join(
+            f"WHEN '{username}' THEN {score}" for username, score in sanitized_batch
+        )
+        username_list = ", ".join(
+            f"'{username}'" for username, _score in sanitized_batch
+        )
+        update_query = f"""
+            UPDATE user
+            SET
+                score = CASE github_username {score_cases} END,
+                score_checked_at = {now}
+            WHERE github_username IN ({username_list})
+            AND tier = 'spore'
+        """
+
+        update_result = run_d1_query(update_query, env)
+        if update_result is None:
+            print(
+                f"❌ Failed to store batch {index // SQL_BATCH_SIZE + 1}",
+                file=sys.stderr,
+            )
+            continue
+
+        stored += len(sanitized_batch)
+
+    return stored, skipped
+
+
+def upgrade_users(usernames: list[str], env: str) -> tuple[int, bool]:
     total_upgraded = 0
-    total_skipped = 0
-
     failed = False
 
     for i in range(0, len(usernames), D1_BATCH_SIZE):
         batch = usernames[i : i + D1_BATCH_SIZE]
-        # Sanitize: GitHub usernames are [a-zA-Z0-9-] only
-        safe_batch = [u for u in batch if GITHUB_USERNAME_RE.match(u)]
-        if len(safe_batch) != len(batch):
-            print(f"   ⚠️  Skipped {len(batch) - len(safe_batch)} invalid usernames")
+        safe_batch = [username for username in batch if GITHUB_USERNAME_RE.match(username)]
         if not safe_batch:
             continue
-        username_list = ", ".join(f"'{u}'" for u in safe_batch)
 
-        # Count users that will be skipped (already at higher tier)
-        count_query = f"""
-            SELECT COUNT(*) as count FROM user
-            WHERE github_username IN ({username_list})
-            AND tier NOT IN ('spore', 'microbe')
-            AND tier IS NOT NULL
-        """
-        skip_results = run_d1_query(count_query, env)
-        skipped = skip_results[0]["count"] if skip_results else 0
-        total_skipped += skipped
-
-        # Batch update - only upgrade spore/microbe users
-        # tier_balance is NOT set here — the daily cron refill at midnight UTC handles it
+        username_list = ", ".join(f"'{username}'" for username in safe_batch)
         update_query = f"""
-            UPDATE user SET tier = 'seed'
+            UPDATE user
+            SET tier = 'seed', tier_balance = 0.15
             WHERE github_username IN ({username_list})
-            AND (tier IN ('spore', 'microbe') OR tier IS NULL)
+            AND tier = 'spore'
         """
         result = run_d1_query(update_query, env)
-
-        # run_d1_query returns None on failure
-        if result is not None:
-            total_upgraded += len(safe_batch) - skipped
-        else:
+        if result is None:
             failed = True
             print(f"   ❌ Batch {i // D1_BATCH_SIZE + 1} failed")
             continue
 
-        print(
-            f"   Batch {i // D1_BATCH_SIZE + 1}: {len(safe_batch) - skipped} upgraded, {skipped} skipped (higher tier)"
-        )
+        total_upgraded += len(safe_batch)
 
-    return total_upgraded, total_skipped, failed
+    return total_upgraded, failed
+
+
+def summarize(results: list[dict]) -> None:
+    approved = [result for result in results if result.get("approved")]
+    rejected = [result for result in results if not result.get("approved")]
+
+    print("\n📊 Validation summary:")
+    print(f"   Approved: {len(approved)}")
+    print(f"   Rejected: {len(rejected)}")
+
+    if results:
+        average_score = sum(
+            float((result.get("details") or {}).get("total", 0)) for result in results
+        ) / len(results)
+        print(f"   Average score: {average_score:.2f}")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Upgrade spore users to seed tier")
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Validate only, no upgrades"
-    )
-    parser.add_argument(
-        "--env",
-        choices=["staging"],
-        default="staging",
-        help="Environment",
-    )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Show detailed score breakdowns"
-    )
-    parser.add_argument(
-        "--emails-file",
-        help="Only process emails listed in a newline-separated file",
-    )
-    args = parser.parse_args()
-    cohort_emails = load_email_cohort(args.emails_file)
-
-    weekday = datetime.now(timezone.utc).weekday()
-    weekday_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-
-    print("🌱 Spore → Seed Upgrade Script")
-    print(f"   Environment: {args.env}")
-    print(f"   Mode: {'DRY RUN' if args.dry_run else 'LIVE'}")
-    print(f"   Day slice: {weekday_names[weekday]} (slice {weekday + 1}/7)")
-    if cohort_emails:
-        print(f"   Email cohort: {len(cohort_emails)} users")
-    print()
-
-    # Fetch spore users (new + today's slice)
-    print("📥 Fetching spore users from D1...")
-    new_users, slice_users, total_old = fetch_spore_users(args.env, cohort_emails)
-    print(f"   New users (last 24h): {len(new_users)}")
-    print(f"   Today's slice: {len(slice_users)} (of {total_old} total older users)")
-
-    # Combine: new users first (priority), then slice
-    users = new_users + slice_users
-
-    # Apply max limit
-    if len(users) > MAX_USERS_PER_RUN:
-        print(f"   ⚠️  Limiting to {MAX_USERS_PER_RUN} users (was {len(users)})")
-        users = users[:MAX_USERS_PER_RUN]
-
-    print(f"   Total to process: {len(users)}")
-
-    if not new_users and not slice_users:
-        print("✅ No spore users to process")
-        return 0
-
-    # Phase 1: Validate new users (last 24h)
-    new_results = []
-    if new_users:
-        print(f"\n🔍 Phase 1: Validating {len(new_users)} NEW users (last 24h)...")
-        new_results = validate_users(new_users)
-        new_approved = sum(1 for r in new_results if r["approved"])
-        print(
-            f"   ✅ Approved: {new_approved}/{len(new_results)} ({100 * new_approved / len(new_results):.0f}%)"
+    try:
+        parser = argparse.ArgumentParser(description="Daily spore recheck for seed tier")
+        parser.add_argument(
+            "--dry-run", action="store_true", help="Validate only, no writes"
         )
-
-    # Phase 2: Validate slice of older users
-    slice_results = []
-    if slice_users:
-        print(
-            f"\n🔍 Phase 2: Validating {len(slice_users)} SLICE users (day {weekday + 1}/7)..."
+        parser.add_argument(
+            "--env",
+            choices=["staging"],
+            default="staging",
+            help="Environment",
         )
-        slice_results = validate_users(slice_users)
-        slice_approved = sum(1 for r in slice_results if r["approved"])
-        print(
-            f"   ✅ Approved: {slice_approved}/{len(slice_results)} ({100 * slice_approved / len(slice_results):.0f}%)"
+        parser.add_argument(
+            "--verbose", "-v", action="store_true", help="Show detailed score breakdowns"
         )
-
-    # Combine results
-    results = new_results + slice_results
-    deleted_usernames = extract_deleted_github_usernames(results)
-    if deleted_usernames:
-        if args.dry_run:
-            print(
-                f"\n🚫 DRY RUN - would ban {len(deleted_usernames)} users with deleted/invalid GitHub accounts"
-            )
-        else:
-            banned = ban_github_users(deleted_usernames, args.env)
-            print(
-                f"\n🚫 Banned {banned} users with deleted/invalid GitHub accounts"
-            )
-
-    approved = [r["username"] for r in results if r["approved"]]
-    rejected = [r for r in results if not r["approved"]]
-
-    print(f"\n📊 Total: {len(approved)} approved, {len(rejected)} rejected")
-
-    if rejected:
-        print("\n   Rejected users:")
-        for r in rejected[:10]:
-            print(f"      {r['username']}: {r['reason']}")
-        if len(rejected) > 10:
-            print(f"      ... and {len(rejected) - 10} more")
-
-    # Verbose: show score breakdown samples
-    if args.verbose:
-        print("\n📊 Score breakdown samples (first 20):")
-        print(
-            f"   {'Username':<25} {'Age':<12} {'Repos':<12} {'Commits':<12} {'Stars':<12} {'Total':<8}"
+        parser.add_argument(
+            "--emails-file",
+            help="Only process emails listed in a newline-separated file",
         )
-        print(f"   {'-' * 25} {'-' * 12} {'-' * 12} {'-' * 12} {'-' * 12} {'-' * 8}")
-        for r in results[:20]:
-            d = r.get("details")
-            if d:
-                status = "✅" if r["approved"] else "❌"
+        args = parser.parse_args()
+
+        env = ensure_safe_env(args.env)
+        cohort_emails = load_email_cohort(args.emails_file)
+
+        print("🌱 Daily Spore Recheck")
+        print(f"   Environment: {env}")
+        print(f"   Mode: {'DRY RUN' if args.dry_run else 'LIVE'}")
+        if cohort_emails:
+            print(f"   Email cohort: {len(cohort_emails)} users")
+
+        rows, total_spores, slice_size = fetch_spore_slice(env, cohort_emails)
+        print(f"   Total spores: {total_spores}")
+        print(f"   Daily target: {slice_size}")
+        print(f"   Selected users: {len(rows)}")
+
+        if not rows:
+            print("✅ No spore users to process")
+            return 0
+
+        invalid_email_rows = [
+            row
+            for row in rows
+            if not isinstance(row.get("github_username"), str)
+            or not GITHUB_USERNAME_RE.match(row["github_username"])
+        ]
+        valid_usernames = [
+            row["github_username"]
+            for row in rows
+            if isinstance(row.get("github_username"), str)
+            and GITHUB_USERNAME_RE.match(row["github_username"])
+        ]
+
+        if invalid_email_rows:
+            if args.dry_run:
                 print(
-                    f"   {r['username']:<25} {d['age_days']:>4}d={d['age_pts']:.1f}pt  {d['repos']:>3}={d['repos_pts']:.1f}pt    {d['commits']:>4}={d['commits_pts']:.1f}pt   {d['stars']:>4}={d['stars_pts']:.1f}pt   {status}{d['total']:.1f}"
+                    f"🚫 Dry run would ban {len(invalid_email_rows)} spore users with missing/invalid GitHub usernames"
                 )
             else:
-                print(f"   {r['username']:<25} (not found)")
+                banned = ban_users_by_emails(
+                    [
+                        row["email"]
+                        for row in invalid_email_rows
+                        if isinstance(row.get("email"), str)
+                    ],
+                    env,
+                )
+                print(
+                    f"🚫 Banned {banned} spore users with missing/invalid GitHub usernames"
+                )
 
-    if not approved:
-        print("\n✅ No users approved for upgrade")
-        return 0
+        if not valid_usernames:
+            print("✅ No valid spore users left for GitHub scoring")
+            return 0
 
-    # Upgrade approved users
-    if args.dry_run:
-        print(f"\n🔍 DRY RUN - would upgrade {len(approved)} users:")
-        for username in approved[:20]:
-            print(f"   • {username}")
-        if len(approved) > 20:
-            print(f"   ... and {len(approved) - 20} more")
-        return 0
+        results = validate_users(valid_usernames)
+        results_by_username = {
+            result["username"]: result
+            for result in results
+            if isinstance(result.get("username"), str)
+        }
+        ordered_results = [
+            results_by_username[username]
+            for username in valid_usernames
+            if username in results_by_username
+        ]
 
-    print(f"\n⬆️  Upgrading {len(approved)} users via batch SQL...")
-    upgraded, skipped, had_failures = batch_upgrade_users(approved, args.env)
+        deleted_usernames = extract_deleted_github_usernames(ordered_results)
+        deleted_username_set = set(deleted_usernames)
+        scoreable_results = [
+            result
+            for result in ordered_results
+            if isinstance(result.get("username"), str)
+            and result["username"] not in deleted_username_set
+        ]
+        approved_usernames = [
+            result["username"]
+            for result in scoreable_results
+            if result.get("approved") and isinstance(result.get("username"), str)
+        ]
 
-    print("\n📊 Results:")
-    print(f"   ✅ Upgraded: {upgraded}")
-    print(f"   ⏭️  Skipped (higher tier): {skipped}")
-    if had_failures:
-        print("   ❌ Some batches failed — check logs above")
+        summarize(ordered_results)
 
-    return 1 if had_failures else 0
+        if args.verbose:
+            print("\n📊 Score breakdown samples (first 20):")
+            for result in ordered_results[:20]:
+                score = float((result.get("details") or {}).get("total", 0))
+                print(f"   {result['username']}: {score:.1f} ({result['reason']})")
+
+        if args.dry_run:
+            if deleted_usernames:
+                print(
+                    f"\n🚫 Dry run would ban {len(deleted_usernames)} users with deleted/invalid GitHub accounts"
+                )
+            print(f"🌱 Dry run would upgrade {len(approved_usernames)} users to seed")
+            return 0
+
+        if deleted_usernames:
+            banned = ban_github_users(deleted_usernames, env)
+            print(f"\n🚫 Banned {banned} users with deleted/invalid GitHub accounts")
+
+        stored, skipped = store_scores(scoreable_results, env)
+        upgraded, had_failures = upgrade_users(approved_usernames, env)
+
+        print("\n📊 Results:")
+        print(f"   Scores stored: {stored}")
+        print(f"   Upgraded to seed: {upgraded}")
+        if skipped:
+            print(f"   Skipped invalid usernames: {skipped}")
+        if had_failures:
+            print("   ❌ Some upgrade batches failed")
+
+        return 1 if had_failures else 0
+    except Exception as error:
+        print(f"❌ {error}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

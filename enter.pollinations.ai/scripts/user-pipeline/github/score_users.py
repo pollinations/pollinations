@@ -181,6 +181,64 @@ def build_query(usernames: list[str]) -> str:
     return f"query {{ {''.join(fragments)} }}"
 
 
+def build_account_status_query(usernames: list[str]) -> str:
+    """Build a minimal GraphQL query to check account existence."""
+    fragments = []
+    for i, username in enumerate(usernames):
+        safe_username = username.replace("\\", "\\\\").replace('"', '\\"')
+        fragments.append(
+            f'''
+    u{i}: user(login: "{safe_username}") {{
+        login
+    }}'''
+        )
+    return f"query {{ {''.join(fragments)} }}"
+
+
+def run_graphql_query(query: str, retries: int = 3) -> tuple[dict, int | None]:
+    request = urllib.request.Request(
+        GITHUB_GRAPHQL,
+        data=json.dumps({"query": query}).encode(),
+        headers={
+            "Authorization": f"Bearer {get_github_token()}",
+            "Content-Type": "application/json",
+        },
+    )
+
+    rate_remaining = None
+    data = None
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                data = json.loads(response.read())
+                rate_remaining_header = response.headers.get("X-RateLimit-Remaining")
+                if rate_remaining_header:
+                    rate_remaining = int(rate_remaining_header)
+            break
+        except urllib.error.HTTPError as error:
+            if attempt < retries - 1 and error.code in (502, 503, 504):
+                time.sleep(5 * (attempt + 1))
+                continue
+            if attempt < retries - 1 and error.code in (403, 429):
+                retry_after = error.headers.get("Retry-After")
+                reset_at = error.headers.get("X-RateLimit-Reset")
+                if retry_after:
+                    wait = int(retry_after) + 1
+                elif reset_at:
+                    wait = max(int(reset_at) - int(time.time()), 0) + 1
+                else:
+                    wait = 60
+                print(f"   ⏳ Rate limited (HTTP {error.code}), waiting {wait}s...")
+                time.sleep(wait)
+                continue
+            raise
+
+    if data is None:
+        raise RuntimeError("GitHub GraphQL request failed without a response")
+
+    return data, rate_remaining
+
+
 def score_user(data: dict | None, username: str) -> dict:
     """Calculate score for a single user. Returns dict with username, approved, reason."""
     if not data:
@@ -247,47 +305,33 @@ def fetch_batch(
     usernames: list[str], retries: int = 3
 ) -> tuple[list[dict], int | None]:
     """Fetch and score a batch of users with retry logic. Returns (results, rate_limit_remaining)."""
-    query = build_query(usernames)
-    request = urllib.request.Request(
-        GITHUB_GRAPHQL,
-        data=json.dumps({"query": query}).encode(),
-        headers={
-            "Authorization": f"Bearer {get_github_token()}",
-            "Content-Type": "application/json",
-        },
-    )
-
-    rate_remaining = None
-    for attempt in range(retries):
-        try:
-            with urllib.request.urlopen(request, timeout=30) as response:
-                data = json.loads(response.read())
-                rate_remaining_header = response.headers.get("X-RateLimit-Remaining")
-                if rate_remaining_header:
-                    rate_remaining = int(rate_remaining_header)
-            break
-        except urllib.error.HTTPError as error:
-            if attempt < retries - 1 and error.code in (502, 503, 504):
-                time.sleep(5 * (attempt + 1))
-                continue
-            if attempt < retries - 1 and error.code in (403, 429):
-                retry_after = error.headers.get("Retry-After")
-                reset_at = error.headers.get("X-RateLimit-Reset")
-                if retry_after:
-                    wait = int(retry_after) + 1
-                elif reset_at:
-                    wait = max(int(reset_at) - int(time.time()), 0) + 1
-                else:
-                    wait = 60
-                print(f"   ⏳ Rate limited (HTTP {error.code}), waiting {wait}s...")
-                time.sleep(wait)
-                continue
-            raise
+    data, rate_remaining = run_graphql_query(build_query(usernames), retries)
 
     results = []
     for i, username in enumerate(usernames):
         user_data = data.get("data", {}).get(f"u{i}")
         results.append(score_user(user_data, username))
+    return results, rate_remaining
+
+
+def fetch_account_batch(
+    usernames: list[str], retries: int = 3
+) -> tuple[list[dict], int | None]:
+    """Fetch account existence for a batch of usernames."""
+    data, rate_remaining = run_graphql_query(
+        build_account_status_query(usernames),
+        retries,
+    )
+
+    results = []
+    for i, username in enumerate(usernames):
+        user_data = data.get("data", {}).get(f"u{i}")
+        results.append(
+            {
+                "username": username,
+                "status": "ok" if user_data else "github_account_deleted",
+            }
+        )
     return results, rate_remaining
 
 
@@ -348,6 +392,66 @@ def validate_users(usernames: list[str]) -> list[dict]:
                 time.sleep(1 if rate_remaining > 50 else 2)
             elif rate_remaining is None:
                 time.sleep(2)  # Conservative fallback
+
+    progress_bar.close()
+    return results
+
+
+def validate_accounts(usernames: list[str]) -> list[dict]:
+    """Validate GitHub account existence in concurrent batches."""
+    if not usernames:
+        return []
+
+    get_github_token()
+
+    invalid_results = [
+        {
+            "username": username,
+            "status": "github_account_deleted",
+        }
+        for username in usernames
+        if not GITHUB_USERNAME_RE.match(username)
+    ]
+    valid_usernames = [
+        username for username in usernames if GITHUB_USERNAME_RE.match(username)
+    ]
+
+    if not valid_usernames:
+        return invalid_results
+
+    batches = [
+        valid_usernames[i : i + BATCH_SIZE]
+        for i in range(0, len(valid_usernames), BATCH_SIZE)
+    ]
+    if MAX_BATCHES:
+        batches = batches[:MAX_BATCHES]
+
+    results = invalid_results.copy()
+    progress_bar = tqdm(
+        total=len(batches),
+        desc="Checking accounts",
+        unit="batch",
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}] {postfix}",
+    )
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {
+            executor.submit(fetch_account_batch, batch): i
+            for i, batch in enumerate(batches)
+        }
+
+        for future in as_completed(futures):
+            batch_results, rate_remaining = future.result()
+            results.extend(batch_results)
+            progress_bar.set_postfix(
+                quota=rate_remaining if rate_remaining is not None else "?"
+            )
+            progress_bar.update(1)
+
+            if rate_remaining is not None and rate_remaining <= 100:
+                time.sleep(1 if rate_remaining > 50 else 2)
+            elif rate_remaining is None:
+                time.sleep(2)
 
     progress_bar.close()
     return results

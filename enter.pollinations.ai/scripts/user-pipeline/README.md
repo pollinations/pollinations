@@ -1,0 +1,106 @@
+# User Pipeline
+
+This document is the intended steady-state contract for the user pipeline on this branch.
+
+It describes the ongoing hourly and daily flows only.
+
+One-time backfills are separate operational jobs and are not part of the steady-state pipeline.
+
+Manual emergency tools are also separate and live outside the steady-state flow under `scripts/user-pipeline/manual/`.
+
+The one-time `trust_score = 0/100` bootstrap remains migration-only in `drizzle/0017_add_score_and_trust_score.sql`; it is not part of steady-state code.
+
+## Hourly New-User Pipeline
+
+- Runs on users where `trust_score IS NULL` and `banned = 0`
+- Validates that the GitHub account still exists before any other checks
+- Uses trust scoring to decide whether the user can leave `microbe`
+- Scores developer activity immediately for trusted users
+- Allows a direct `microbe -> seed` upgrade for users who already qualify
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent'}}}%%
+flowchart TD
+    A["User Signs Up"] --> B["Initialize user
+tier = microbe
+tier_balance = 0
+trust_score = NULL
+score = NULL
+score_checked_at = NULL"]
+
+    B --> C["Hourly New-User Pipeline
+Select users where:
+trust_score IS NULL
+AND banned = 0"]
+
+    C --> D{"Any new users?"}
+    D -->|No| E["Exit"]
+    D -->|Yes| F["GitHub Account Validation
+Confirm account still exists"]
+
+    F --> G{"GitHub account valid?"}
+    G -->|No| H["Ban user
+banned = 1
+ban_reason = github_account_deleted"]
+    G -->|Yes| I["Trust Evaluation
+Analyze abuse signals
+Write trust_score"]
+
+    I --> J{"trust_score >= 60?"}
+    J -->|No| K["Stay Microbe
+No automatic re-check"]
+    J -->|Yes| L["GitHub Developer Scoring
+Write score
+Write score_checked_at"]
+
+    L --> M{"score >= 8?"}
+    M -->|Yes| N["Promote directly to Seed
+tier = seed"]
+    M -->|No| O["Promote to Spore
+tier = spore"]
+
+    style H fill:#833,color:#fff
+    style K fill:#c44,color:#fff
+    style O fill:#47a,color:#fff
+    style N fill:#4a4,color:#fff
+```
+
+## Daily Spore Recheck Pipeline
+
+- Runs only on unbanned `spore` users
+- Rechecks the users who have waited the longest since their last GitHub score check
+- Daily slice size is `ceil(current_spore_count / 7)`
+- This keeps the full `spore` pool rotating over roughly one week, even as the pool grows
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent'}}}%%
+flowchart TD
+    A["Daily Spore Recheck Pipeline"] --> B["Select users where:
+tier = spore
+AND banned = 0
+Order by score_checked_at ASC
+Take oldest ceil(total_spores / 7) users"]
+
+    B --> C{"Any spore users to check?"}
+    C -->|No| D["Exit"]
+    C -->|Yes| E["GitHub Account Validation
+Confirm account still exists"]
+
+    E --> F{"GitHub account valid?"}
+    F -->|No| G["Ban user
+banned = 1
+ban_reason = github_account_deleted"]
+    F -->|Yes| H["GitHub Developer Scoring
+Write score
+Write score_checked_at"]
+
+    H --> I{"score >= 8?"}
+    I -->|Yes| J["Promote to Seed
+tier = seed"]
+    I -->|No| K["Stay Spore
+Checked again later"]
+
+    style G fill:#833,color:#fff
+    style K fill:#47a,color:#fff
+    style J fill:#4a4,color:#fff
+```

@@ -1,31 +1,29 @@
 #!/usr/bin/env npx tsx
 /**
- * Abuse Detection using Pollinations AI
+ * New-user trust scoring for the hourly pipeline.
  *
- * LLM-based scoring (0-100 points) with overlapping chunks for pattern detection.
+ * This script only operates on users who have not yet been trust-scored.
+ * It validates GitHub account existence first, bans deleted/invalid accounts,
+ * then runs LLM trust scoring on the remaining users.
  *
- * USAGE:
+ * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --limit 2000   # Analyze 2000 users
- *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --single-chunk  # Test with first chunk only
- *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --model claude  # Use specific model
+ *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --store-status
+ *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --emails-file /tmp/replay-emails.txt
+ *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --single-chunk
  *
- * OPTIONS:
+ * Options:
  *   --limit N         Max users to analyze (default: 5000)
  *   --chunk-size N    Users per API call (default: 100)
  *   --model NAME      LLM model to use (default: gemini)
  *   --single-chunk    Only process first chunk (for testing)
  *   --parallel N      Process N chunks in parallel (default: 1)
- *   --since DATE      Only scan users created after this date (YYYY-MM-DD)
- *   --last DURATION   Only scan users from the last N hours/days (e.g. 24h, 7d)
- *   --auto-apply      Automatically apply blocks after scanning (no dry-run)
- *   --unchecked       Only scan users with trust_score IS NULL (new user verification)
- *   --store-status    Write trust_score (inverted abuse score) back to D1
+ *   --store-status    Write trust_score and account bans back to D1
  *   --emails-file     Only process emails listed in a newline-separated file
  *   --env staging     D1 environment to use (staging only on this branch)
  *
- * OUTPUT:
- *   abuse-report.csv - All users sorted by score (action, score, email, github, signals, date)
+ * Output:
+ *   abuse-report.csv - Successfully scored users sorted by abuse score
  */
 
 import { execSync } from "node:child_process";
@@ -37,14 +35,17 @@ const SCORE_THRESHOLDS = {
     review: 40,
 } as const;
 
+const DB_BATCH_SIZE = 200;
+const GITHUB_ACCOUNT_DELETED_REASON = "github_account_deleted";
+const GITHUB_USERNAME_RE = /^[A-Za-z0-9-]+$/;
 const OVERLAP_SIZE = 20;
+
 type Environment = "staging";
 
 interface User {
     email: string;
     github_username: string | null;
     created_at: number;
-    tier: string;
 }
 
 interface ScoredUser extends User {
@@ -60,11 +61,18 @@ interface ParsedArgs {
     modelName: string;
     parallelism: number;
     singleChunk: boolean;
-    sinceTimestamp: number | null;
-    autoApply: boolean;
-    unchecked: boolean;
     storeStatus: boolean;
     cohortEmails: string[] | null;
+}
+
+interface GithubValidationResult {
+    username?: string;
+    status?: string;
+}
+
+interface ScoreUsersResult {
+    scoredUsers: ScoredUser[];
+    failedUsers: User[];
 }
 
 function parseArguments(): ParsedArgs {
@@ -87,6 +95,7 @@ function parseArguments(): ParsedArgs {
         );
         process.exit(1);
     }
+
     const chunkSize = getNum("--chunk-size", 100);
     if (chunkSize <= OVERLAP_SIZE) {
         console.error(
@@ -95,10 +104,6 @@ function parseArguments(): ParsedArgs {
         process.exit(1);
     }
 
-    const sinceTimestamp = parseSinceTimestamp(
-        getStr("--since", ""),
-        getStr("--last", ""),
-    );
     const emailsFile = getStr("--emails-file", "");
 
     let cohortEmails: string[] | null = null;
@@ -118,41 +123,13 @@ function parseArguments(): ParsedArgs {
         modelName: getStr("--model", "gemini"),
         parallelism: getNum("--parallel", 1),
         singleChunk: args.includes("--single-chunk"),
-        sinceTimestamp,
-        autoApply: args.includes("--auto-apply"),
-        unchecked: args.includes("--unchecked"),
         storeStatus: args.includes("--store-status"),
         cohortEmails,
     };
 }
 
-function parseSinceTimestamp(
-    sinceDate: string,
-    lastDuration: string,
-): number | null {
-    if (lastDuration) {
-        const match = lastDuration.match(/^(\d+)(h|d)$/);
-        if (!match) {
-            console.error(
-                `Invalid --last format: ${lastDuration} (use e.g. 24h or 7d)`,
-            );
-            process.exit(1);
-        }
-        const amount = parseInt(match[1], 10);
-        const ms = match[2] === "h" ? amount * 3600_000 : amount * 86400_000;
-        return Date.now() - ms; // milliseconds to match D1 created_at
-    }
-
-    if (sinceDate) {
-        const timestamp = new Date(sinceDate).getTime(); // milliseconds to match D1 created_at
-        if (Number.isNaN(timestamp)) {
-            console.error(`Invalid --since date: ${sinceDate}`);
-            process.exit(1);
-        }
-        return timestamp;
-    }
-
-    return null;
+function escapeSqlString(value: string): string {
+    return value.replace(/'/g, "''");
 }
 
 function loadApiKey(): string {
@@ -178,62 +155,193 @@ function loadApiKey(): string {
 function fetchUsers(
     env: Environment,
     limit: number,
-    sinceTimestamp: number | null,
-    unchecked: boolean,
     cohortEmails: string[] | null,
 ): User[] {
-    const label = unchecked
-        ? " with trust_score IS NULL"
-        : sinceTimestamp
-          ? ` created after ${new Date(sinceTimestamp).toISOString().split("T")[0]}`
-          : "";
     const cohortLabel = cohortEmails
         ? ` from email cohort (${cohortEmails.length})`
         : "";
     console.log(
-        `📊 Fetching ${limit} most recent users${label}${cohortLabel}...`,
+        `📊 Fetching ${limit} most recent unprocessed users${cohortLabel}...`,
     );
 
-    const conditions: string[] = [];
-    conditions.push("COALESCE(banned, 0) = 0");
-    if (unchecked) {
-        conditions.push("trust_score IS NULL");
-    } else {
-        // Skip users already scored (avoids double-scan with --unchecked step)
-        conditions.push("trust_score IS NOT NULL");
-    }
-    if (sinceTimestamp) conditions.push(`created_at > ${sinceTimestamp}`);
-    const whereClause =
-        conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const emailFilter = buildEmailFilter("email", cohortEmails);
-
     const query = `
-        SELECT email, github_username, created_at, tier
+        SELECT email, github_username, created_at
         FROM user
-        ${whereClause}${emailFilter}
+        WHERE COALESCE(banned, 0) = 0
+        AND trust_score IS NULL
+        ${emailFilter}
         ORDER BY created_at DESC
         LIMIT ${limit}
     `.replace(/\n/g, " ");
 
-    try {
-        const result = execSync(
-            `npx wrangler d1 execute DB --remote --env ${env} --json --command "${query}"`,
-            { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
-        );
-
-        const data = JSON.parse(result);
-        const users = data[0]?.results || [];
-        console.log(`✅ Fetched ${users.length} users`);
-        return users;
-    } catch (error) {
-        console.error("❌ Failed to fetch users:", error);
-        return [];
-    }
+    const result = execSync(
+        `npx wrangler d1 execute DB --remote --env ${env} --json --command "${query}"`,
+        { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
+    );
+    const data = JSON.parse(result);
+    const users = data[0]?.results || [];
+    console.log(`✅ Fetched ${users.length} users`);
+    return users;
 }
 
 function formatDate(timestamp: number): string {
-    const d = new Date(Number(timestamp) * 1000);
+    const d = new Date(Number(timestamp));
     return d.toISOString().slice(0, 16).replace("T", " ");
+}
+
+function executeD1(env: Environment, sql: string): boolean {
+    try {
+        execSync(
+            `npx wrangler d1 execute DB --remote --env ${env} --command "${sql}"`,
+            {
+                encoding: "utf-8",
+                stdio: ["pipe", "pipe", "pipe"],
+                maxBuffer: 20 * 1024 * 1024,
+            },
+        );
+        return true;
+    } catch (error) {
+        console.error(
+            "❌ D1 mutation failed:",
+            error instanceof Error ? error.message : String(error),
+        );
+        return false;
+    }
+}
+
+function banUsersByEmails(env: Environment, emails: string[]): number {
+    const uniqueEmails = Array.from(new Set(emails));
+    let banned = 0;
+
+    for (let i = 0; i < uniqueEmails.length; i += DB_BATCH_SIZE) {
+        const batch = uniqueEmails.slice(i, i + DB_BATCH_SIZE);
+        if (batch.length === 0) continue;
+        const emailList = batch
+            .map((email) => `'${escapeSqlString(email)}'`)
+            .join(", ");
+        const ok = executeD1(
+            env,
+            `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE email IN (${emailList})`,
+        );
+        if (ok) banned += batch.length;
+    }
+
+    return banned;
+}
+
+function banUsersByGithubUsernames(
+    env: Environment,
+    usernames: string[],
+): number {
+    const uniqueUsernames = Array.from(new Set(usernames));
+    let banned = 0;
+
+    for (let i = 0; i < uniqueUsernames.length; i += DB_BATCH_SIZE) {
+        const batch = uniqueUsernames.slice(i, i + DB_BATCH_SIZE);
+        if (batch.length === 0) continue;
+        const usernameList = batch
+            .map((username) => `'${escapeSqlString(username)}'`)
+            .join(", ");
+        const ok = executeD1(
+            env,
+            `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE github_username IN (${usernameList})`,
+        );
+        if (ok) banned += batch.length;
+    }
+
+    return banned;
+}
+
+function runGithubValidation(usernames: string[]): GithubValidationResult[] {
+    if (usernames.length === 0) return [];
+
+    const scriptPath = `${import.meta.dirname}/../github`;
+    const pythonScript = `
+import sys, json
+sys.path.insert(0, "${scriptPath}")
+from score_users import validate_accounts
+results = validate_accounts(${JSON.stringify(usernames)})
+print(json.dumps(results))
+`;
+
+    const output = execSync(
+        `python3 -c '${pythonScript.replace(/'/g, "'\\''")}'`,
+        { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
+    );
+
+    return JSON.parse(output.trim()) as GithubValidationResult[];
+}
+
+function validateGithubAccounts(
+    users: User[],
+    env: Environment,
+    applyChanges: boolean,
+): User[] {
+    if (users.length === 0) return [];
+
+    const missingOrInvalidUsers = users.filter(
+        (user) =>
+            typeof user.github_username !== "string" ||
+            !GITHUB_USERNAME_RE.test(user.github_username),
+    );
+    const usersWithGithub = users.filter(
+        (user): user is User & { github_username: string } =>
+            typeof user.github_username === "string" &&
+            GITHUB_USERNAME_RE.test(user.github_username),
+    );
+
+    if (missingOrInvalidUsers.length > 0) {
+        if (applyChanges) {
+            const banned = banUsersByEmails(
+                env,
+                missingOrInvalidUsers.map((user) => user.email),
+            );
+            console.log(
+                `🚫 Banned ${banned} new users with missing/invalid GitHub usernames`,
+            );
+        } else {
+            console.log(
+                `🚫 Detected ${missingOrInvalidUsers.length} users with missing/invalid GitHub usernames`,
+            );
+        }
+    }
+
+    if (usersWithGithub.length === 0) {
+        return [];
+    }
+
+    const results = runGithubValidation(
+        usersWithGithub.map((user) => user.github_username),
+    );
+    const deletedUsernames = Array.from(
+        new Set(
+            results.flatMap((result) =>
+                result.status === GITHUB_ACCOUNT_DELETED_REASON &&
+                typeof result.username === "string"
+                    ? [result.username]
+                    : [],
+            ),
+        ),
+    );
+
+    if (deletedUsernames.length > 0) {
+        if (applyChanges) {
+            const banned = banUsersByGithubUsernames(env, deletedUsernames);
+            console.log(
+                `🚫 Banned ${banned} new users with deleted GitHub accounts`,
+            );
+        } else {
+            console.log(
+                `🚫 Detected ${deletedUsernames.length} users with deleted GitHub accounts`,
+            );
+        }
+    }
+
+    const deletedSet = new Set(deletedUsernames);
+    return usersWithGithub.filter(
+        (user) => !deletedSet.has(user.github_username),
+    );
 }
 
 function buildChunkRanges(
@@ -257,14 +365,11 @@ function prepareChunkData(chunk: User[]): {
     githubToIndex: Map<string, number>;
 } {
     const githubToIndex = new Map<string, number>();
-
     const csvRows = chunk.map((user, idx) => {
         const github = user.github_username || `user_${idx}`;
         const humanDate = formatDate(user.created_at);
-        const upgraded = user.tier !== "spore" && user.tier !== "microbe";
-
         githubToIndex.set(github, idx);
-        return `${github},${user.email},${humanDate},${upgraded}`;
+        return `${github},${user.email},${humanDate}`;
     });
 
     return { csvRows, githubToIndex };
@@ -286,8 +391,6 @@ cluster=3+ users share pattern like similar usernames, same suffix template, etc
 burst=5+ registrations close together (+40)
 rand=random/gibberish email username like "qvgimmqbt223", "yklvayco9712" (+10) - only matters in groups
 disp=disposable/temp email domain (+20)
-upgraded=already verified/upgraded tier (-30) - trust bonus
-
 IMPORTANT: cluster+burst alone = 90 (block). Add rand/disp for extra confidence.
 Score 0 for users with normal emails AND normal usernames.
 
@@ -298,7 +401,7 @@ tempuser,20,disp
 
 Use + to combine. Empty if clean. Focus on GROUPS, not individuals.
 
-Data (github,email,registered,upgraded):
+Data (github,email,registered):
 ${csvRows.join("\n")}`;
 }
 
@@ -307,37 +410,39 @@ function parseLLMResponse(
     githubToIndex: Map<string, number>,
     chunkLength: number,
 ): Array<{ score: number; signals: string[] }> {
-    const results = Array.from({ length: chunkLength }, () => ({
-        score: 0,
-        signals: [] as string[],
-    }));
+    const results: Array<{ score: number; signals: string[] } | null> =
+        Array.from({ length: chunkLength }, () => null);
 
     for (const line of content.split("\n")) {
-        if (!line.trim() || line.startsWith("github,") || !line.includes(","))
+        if (!line.trim() || line.startsWith("github,") || !line.includes(",")) {
             continue;
+        }
 
         const parts = line.split(",");
         if (parts.length < 2) continue;
 
         const github = parts[0]?.trim();
-        const score = parseInt(parts[1], 10) || 0;
+        const score = parseInt(parts[1], 10);
         const reason = parts[2]?.trim() || "";
-
-        const idx = githubToIndex.get(github);
-        if (idx === undefined) continue;
-
-        const signals =
-            reason === "ok" || reason === ""
-                ? []
-                : reason.split("+").filter((s) => s.trim());
+        const idx = github ? githubToIndex.get(github) : undefined;
+        if (idx === undefined || Number.isNaN(score)) continue;
 
         results[idx] = {
             score: Math.min(100, Math.max(0, score)),
-            signals,
+            signals:
+                reason === "ok" || reason === ""
+                    ? []
+                    : reason.split("+").filter((signal) => signal.trim()),
         };
     }
 
-    return results;
+    if (results.some((result) => result === null)) {
+        throw new Error(
+            "LLM response omitted one or more users from the chunk",
+        );
+    }
+
+    return results as Array<{ score: number; signals: string[] }>;
 }
 
 async function callScoringAPI(
@@ -348,36 +453,29 @@ async function callScoringAPI(
     const { csvRows, githubToIndex } = prepareChunkData(chunk);
     const prompt = buildScoringPrompt(csvRows);
 
-    try {
-        const response = await fetch(
-            "https://gen.pollinations.ai/v1/chat/completions",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`,
-                },
-                body: JSON.stringify({
-                    model: modelName,
-                    messages: [{ role: "user", content: prompt }],
-                    temperature: 0.1,
-                }),
+    const response = await fetch(
+        "https://gen.pollinations.ai/v1/chat/completions",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`,
             },
-        );
+            body: JSON.stringify({
+                model: modelName,
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.1,
+            }),
+        },
+    );
 
-        if (!response.ok) {
-            console.error(`\n⚠️  API error: ${response.status}`);
-            return chunk.map(() => ({ score: 0, signals: [] }));
-        }
-
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content || "";
-
-        return parseLLMResponse(content, githubToIndex, chunk.length);
-    } catch (error) {
-        console.error("\n⚠️  API call failed:", error);
-        return chunk.map(() => ({ score: 0, signals: [] }));
+    if (!response.ok) {
+        throw new Error(`LLM API returned HTTP ${response.status}`);
     }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+    return parseLLMResponse(content, githubToIndex, chunk.length);
 }
 
 async function processBatch(
@@ -391,7 +489,8 @@ async function processBatch(
     Array<{
         range: { start: number; end: number };
         chunk: User[];
-        scores: Array<{ score: number; signals: string[] }>;
+        scores: Array<{ score: number; signals: string[] }> | null;
+        error: string | null;
     }>
 > {
     console.log(
@@ -403,8 +502,17 @@ async function processBatch(
         console.log(
             `   🤖 Chunk ${range.start + 1}-${range.end} of ${users.length}`,
         );
-        const scores = await callScoringAPI(chunk, apiKey, modelName);
-        return { range, chunk, scores };
+        try {
+            const scores = await callScoringAPI(chunk, apiKey, modelName);
+            return { range, chunk, scores, error: null };
+        } catch (error) {
+            const message =
+                error instanceof Error ? error.message : String(error);
+            console.error(
+                `   ❌ Chunk ${range.start + 1}-${range.end} failed: ${message}`,
+            );
+            return { range, chunk, scores: null, error: message };
+        }
     });
 
     return Promise.all(promises);
@@ -414,6 +522,7 @@ function printProgress(
     completedChunks: number,
     totalChunks: number,
     allScores: Map<string, { score: number; signals: string[] }>,
+    failedUsers: number,
 ): void {
     let block = 0;
     let review = 0;
@@ -426,15 +535,14 @@ function printProgress(
     }
 
     console.log(
-        `   Progress: ${completedChunks}/${totalChunks} chunks (${allScores.size} users) | ` +
-            `block: ${block} | review: ${review} | ok: ${ok}`,
+        `   Progress: ${completedChunks}/${totalChunks} chunks (${allScores.size} scored, ${failedUsers} failed) | block: ${block} | review: ${review} | ok: ${ok}`,
     );
 }
 
 async function scoreUsers(
     users: User[],
     config: ParsedArgs,
-): Promise<ScoredUser[]> {
+): Promise<ScoreUsersResult> {
     const apiKey = loadApiKey();
     const mode =
         config.parallelism > 1
@@ -445,6 +553,7 @@ async function scoreUsers(
     );
 
     const allScores = new Map<string, { score: number; signals: string[] }>();
+    const failedEmails = new Set<string>();
     const chunkRanges = buildChunkRanges(
         users.length,
         config.chunkSize,
@@ -454,7 +563,6 @@ async function scoreUsers(
     let completedChunks = 0;
     const totalBatches = Math.ceil(chunkRanges.length / config.parallelism);
 
-    // Process chunks in parallel batches
     for (
         let batchStart = 0;
         batchStart < chunkRanges.length;
@@ -475,8 +583,13 @@ async function scoreUsers(
             totalBatches,
         );
 
-        // Merge results from this batch
         for (const { chunk, scores } of results) {
+            if (!scores) {
+                for (const user of chunk) failedEmails.add(user.email);
+                completedChunks++;
+                continue;
+            }
+
             for (let j = 0; j < chunk.length && j < scores.length; j++) {
                 const user = chunk[j];
                 const existing = allScores.get(user.email);
@@ -487,25 +600,33 @@ async function scoreUsers(
             completedChunks++;
         }
 
-        printProgress(completedChunks, chunkRanges.length, allScores);
+        printProgress(
+            completedChunks,
+            chunkRanges.length,
+            allScores,
+            failedEmails.size,
+        );
     }
 
-    // Build final scored users list
-    const scoredUsers: ScoredUser[] = users.map((user) => {
-        const scoreData = allScores.get(user.email) || {
-            score: 0,
-            signals: [],
-        };
-        return {
-            ...user,
-            score: scoreData.score,
-            signals: scoreData.signals,
-            action: getAction(scoreData.score),
-        };
+    const scoredUsers = users.flatMap((user) => {
+        const scoreData = allScores.get(user.email);
+        if (!scoreData) return [];
+        return [
+            {
+                ...user,
+                score: scoreData.score,
+                signals: scoreData.signals,
+                action: getAction(scoreData.score),
+            } satisfies ScoredUser,
+        ];
     });
 
-    console.log(`\n✅ Scoring complete`);
-    return scoredUsers;
+    const failedUsers = users.filter((user) => failedEmails.has(user.email));
+    console.log(
+        `\n✅ Scoring complete: ${scoredUsers.length} scored, ${failedUsers.length} deferred`,
+    );
+
+    return { scoredUsers, failedUsers };
 }
 
 function getAction(score: number): "block" | "review" | "ok" {
@@ -518,10 +639,10 @@ function exportResults(users: ScoredUser[]): void {
     const sorted = [...users].sort((a, b) => b.score - a.score);
 
     const csv = [
-        "action,score,email,github_username,signals,tier,registered",
+        "action,score,email,github_username,signals,registered",
         ...sorted.map(
-            (u) =>
-                `"${u.action}",${u.score},"${u.email}","${u.github_username || ""}","${u.signals.join("; ")}","${u.tier}","${formatDate(u.created_at)}"`,
+            (user) =>
+                `"${user.action}",${user.score},"${user.email}","${user.github_username || ""}","${user.signals.join("; ")}","${formatDate(user.created_at)}"`,
         ),
     ].join("\n");
 
@@ -529,73 +650,44 @@ function exportResults(users: ScoredUser[]): void {
     console.log("\nResults: abuse-report.csv");
 
     const counts = { block: 0, review: 0, ok: 0 };
-    for (const u of sorted) counts[u.action]++;
+    for (const user of sorted) counts[user.action]++;
 
     console.log("\nSummary:");
     console.log(`   Block (>=${SCORE_THRESHOLDS.block}): ${counts.block}`);
     console.log(`   Review (>=${SCORE_THRESHOLDS.review}): ${counts.review}`);
     console.log(`   OK (<${SCORE_THRESHOLDS.review}): ${counts.ok}`);
-
-    const topSuspicious = sorted
-        .filter((u) => u.score >= SCORE_THRESHOLDS.review)
-        .slice(0, 10);
-
-    if (topSuspicious.length > 0) {
-        console.log("\nTop suspicious accounts:");
-        for (const u of topSuspicious) {
-            console.log(
-                `   ${u.email} | ${u.github_username || "-"} | ${formatDate(u.created_at)}`,
-            );
-        }
-    }
 }
 
 function storeTrustScores(env: Environment, scored: ScoredUser[]): void {
     console.log("\n📝 Storing trust scores in D1...");
-
-    // Trust score = 100 - abuse score (invert so higher = more trusted)
-    // Batch into single SQL using CASE to avoid one subprocess per user
-    const BATCH_SIZE = 50;
     let stored = 0;
 
-    for (let i = 0; i < scored.length; i += BATCH_SIZE) {
-        const batch = scored.slice(i, i + BATCH_SIZE);
-        // Safe: emails come from D1 query results, not user input
+    for (let i = 0; i < scored.length; i += DB_BATCH_SIZE) {
+        const batch = scored.slice(i, i + DB_BATCH_SIZE);
+        if (batch.length === 0) continue;
+
         const cases = batch
-            .map((u) => {
-                const trustScore = 100 - u.score;
-                const safeEmail = u.email.replace(/'/g, "''");
-                return `WHEN '${safeEmail}' THEN ${trustScore}`;
+            .map((user) => {
+                const trustScore = 100 - user.score;
+                return `WHEN '${escapeSqlString(user.email)}' THEN ${trustScore}`;
             })
             .join(" ");
         const emailList = batch
-            .map((u) => `'${u.email.replace(/'/g, "''")}'`)
+            .map((user) => `'${escapeSqlString(user.email)}'`)
             .join(", ");
         const query = `UPDATE user SET trust_score = CASE email ${cases} END WHERE email IN (${emailList})`;
 
-        try {
-            execSync(
-                `npx wrangler d1 execute DB --remote --env ${env} --command "${query}"`,
-                {
-                    encoding: "utf-8",
-                    stdio: ["pipe", "pipe", "pipe"],
-                    maxBuffer: 10 * 1024 * 1024,
-                },
-            );
+        if (executeD1(env, query)) {
             stored += batch.length;
-        } catch {
-            console.error(
-                `   ❌ Failed to store batch ${Math.floor(i / BATCH_SIZE) + 1}`,
-            );
         }
 
         console.log(
-            `   📊 ${Math.min(i + BATCH_SIZE, scored.length)}/${scored.length} trust scores stored`,
+            `   📊 ${Math.min(i + DB_BATCH_SIZE, scored.length)}/${scored.length} trust scores stored`,
         );
     }
 
-    const passed = scored.filter((u) => 100 - u.score >= 60).length;
-    const failed = scored.filter((u) => 100 - u.score < 60).length;
+    const passed = scored.filter((user) => 100 - user.score >= 60).length;
+    const failed = scored.filter((user) => 100 - user.score < 60).length;
     console.log(
         `✅ Stored ${stored} trust scores (${passed} passed, ${failed} failed)`,
     );
@@ -604,59 +696,57 @@ function storeTrustScores(env: Environment, scored: ScoredUser[]): void {
 async function main(): Promise<void> {
     const config = parseArguments();
 
-    console.log("🚀 Abuse Detection");
+    console.log("🚀 New-User Trust Gate");
     console.log("=".repeat(50));
     const labels: string[] = [];
-    if (config.unchecked) labels.push("unchecked only");
     if (config.storeStatus) labels.push("store-status");
-    if (config.cohortEmails)
+    if (config.cohortEmails) {
         labels.push(`email cohort (${config.cohortEmails.length})`);
-    if (config.sinceTimestamp)
-        labels.push(
-            `since ${new Date(config.sinceTimestamp).toISOString().split("T")[0]}`,
-        );
+    }
     const extra = labels.length > 0 ? `, ${labels.join(", ")}` : "";
     console.log(
         `📋 Config: env=${config.env}, ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}${extra}`,
     );
 
-    const users = fetchUsers(
+    const fetchedUsers = fetchUsers(
         config.env,
         config.userLimit,
-        config.sinceTimestamp,
-        config.unchecked,
         config.cohortEmails,
     );
-    if (users.length === 0) {
+    if (fetchedUsers.length === 0) {
         console.log("⚠️  No users found");
         return;
     }
 
-    const scored = await scoreUsers(users, config);
-    exportResults(scored);
-
-    // Store trust scores in D1 if --store-status is set
-    if (config.storeStatus) {
-        storeTrustScores(config.env, scored);
+    const validUsers = validateGithubAccounts(
+        fetchedUsers,
+        config.env,
+        config.storeStatus,
+    );
+    if (validUsers.length === 0) {
+        console.log("✅ No valid new users left for trust scoring");
+        return;
     }
 
-    if (config.autoApply) {
-        const blockCount = scored.filter((u) => u.action === "block").length;
-        if (blockCount === 0) {
-            console.log("\n✅ No users to block, skipping apply step");
-            return;
+    const { scoredUsers, failedUsers } = await scoreUsers(validUsers, config);
+    if (scoredUsers.length > 0) {
+        exportResults(scoredUsers);
+        if (config.storeStatus) {
+            storeTrustScores(config.env, scoredUsers);
         }
-        console.log(`\n🚫 Auto-applying blocks to ${blockCount} users...`);
-        try {
-            execSync(
-                "npx tsx scripts/user-pipeline/trust/apply-abuse-blocks.ts apply-blocks --env staging --batch-size 50",
-                { encoding: "utf-8", stdio: "inherit" },
-            );
-        } catch (error) {
-            console.error("❌ Failed to apply blocks:", error);
-            process.exit(1);
-        }
+    } else {
+        console.log("⚠️  No users were successfully trust-scored");
+    }
+
+    if (failedUsers.length > 0) {
+        console.error(
+            `❌ Deferred ${failedUsers.length} users because one or more scoring chunks failed. Their trust_score remains NULL and they will retry on the next run.`,
+        );
+        process.exit(1);
     }
 }
 
-main().catch(console.error);
+main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+});

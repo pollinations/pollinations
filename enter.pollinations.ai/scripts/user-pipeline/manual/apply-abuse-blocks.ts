@@ -1,13 +1,14 @@
 /**
- * Apply Abuse Blocks Script
+ * Manual Abuse Blocks Script
  *
- * Reads abuse-report.csv and downgrades all users with "block" action to microbe tier.
- * Processes in batches with rate limiting to avoid D1 overload.
+ * Emergency/manual tool only. This script is not part of the steady-state
+ * user pipeline. It reads abuse-report.csv and downgrades all users with
+ * "block" action to microbe tier.
  *
  * Usage:
- *   npx tsx scripts/user-pipeline/trust/apply-abuse-blocks.ts --env staging
- *   npx tsx scripts/user-pipeline/trust/apply-abuse-blocks.ts --env staging --dry-run
- *   npx tsx scripts/user-pipeline/trust/apply-abuse-blocks.ts --env staging --batch-size 50 --delay 1000
+ *   npx tsx scripts/user-pipeline/manual/apply-abuse-blocks.ts --env staging
+ *   npx tsx scripts/user-pipeline/manual/apply-abuse-blocks.ts --env staging --dry-run
+ *   npx tsx scripts/user-pipeline/manual/apply-abuse-blocks.ts --env staging --batch-size 50 --delay 1000
  *
  * Options:
  *   --env          Environment (staging only on this branch)
@@ -113,7 +114,7 @@ function validateEmail(email: string): boolean {
 
 const applyBlocksCommand = command({
     name: "apply-blocks",
-    desc: "Downgrade blocked users to microbe tier",
+    desc: "Manually downgrade blocked users to microbe tier",
     options: {
         env: string().alias("e").enum("staging").default("staging"),
         "dry-run": boolean()

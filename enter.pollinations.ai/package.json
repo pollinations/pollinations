@@ -31,9 +31,11 @@
         "tail:json": "wrangler tail --env production | jq '.logs[].message[] | fromjson'",
         "docs:generate": "tsx scripts/generate-apidocs.ts",
         "user-pipeline:detect-abuse": "tsx scripts/user-pipeline/trust/detect-abuse.ts",
-        "user-pipeline:apply-abuse-blocks": "tsx scripts/user-pipeline/trust/apply-abuse-blocks.ts",
+        "user-pipeline:apply-abuse-blocks": "tsx scripts/user-pipeline/manual/apply-abuse-blocks.ts",
         "user-pipeline:hourly-new-users": "tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts",
         "user-pipeline:daily-spore-recheck": "python3 scripts/user-pipeline/orchestrators/daily-spore-recheck.py",
+        "user-pipeline:replay-hourly": "python3 scripts/user-pipeline/manual/replay_hourly_new_users.py",
+        "user-pipeline:replay-daily": "python3 scripts/user-pipeline/manual/replay_daily_spore_recheck.py",
         "user-pipeline:backfill-spore-scores": "python3 scripts/user-pipeline/backfills/backfill_spore_scores.py",
         "user-pipeline:cleanup-github-users": "tsx scripts/user-pipeline/github/cleanup-github-users.ts"
     },

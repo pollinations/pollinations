@@ -21,6 +21,7 @@
  *   --auto-apply      Automatically apply blocks after scanning (no dry-run)
  *   --unchecked       Only scan users with trust_score IS NULL (new user verification)
  *   --store-status    Write trust_score (inverted abuse score) back to D1
+ *   --emails-file     Only process emails listed in a newline-separated file
  *   --env staging     D1 environment to use (staging only on this branch)
  *
  * OUTPUT:
@@ -29,6 +30,7 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
 
 const SCORE_THRESHOLDS = {
     block: 70,
@@ -62,6 +64,7 @@ interface ParsedArgs {
     autoApply: boolean;
     unchecked: boolean;
     storeStatus: boolean;
+    cohortEmails: string[] | null;
 }
 
 function parseArguments(): ParsedArgs {
@@ -89,6 +92,17 @@ function parseArguments(): ParsedArgs {
         getStr("--since", ""),
         getStr("--last", ""),
     );
+    const emailsFile = getStr("--emails-file", "");
+
+    let cohortEmails: string[] | null = null;
+    try {
+        cohortEmails = loadEmailCohort(emailsFile || undefined);
+    } catch (error) {
+        console.error(
+            `❌ ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+    }
 
     return {
         env: "staging",
@@ -101,6 +115,7 @@ function parseArguments(): ParsedArgs {
         autoApply: args.includes("--auto-apply"),
         unchecked: args.includes("--unchecked"),
         storeStatus: args.includes("--store-status"),
+        cohortEmails,
     };
 }
 
@@ -158,13 +173,19 @@ function fetchUsers(
     limit: number,
     sinceTimestamp: number | null,
     unchecked: boolean,
+    cohortEmails: string[] | null,
 ): User[] {
     const label = unchecked
         ? " with trust_score IS NULL"
         : sinceTimestamp
           ? ` created after ${new Date(sinceTimestamp).toISOString().split("T")[0]}`
           : "";
-    console.log(`📊 Fetching ${limit} most recent users${label}...`);
+    const cohortLabel = cohortEmails
+        ? ` from email cohort (${cohortEmails.length})`
+        : "";
+    console.log(
+        `📊 Fetching ${limit} most recent users${label}${cohortLabel}...`,
+    );
 
     const conditions: string[] = [];
     conditions.push("COALESCE(banned, 0) = 0");
@@ -177,11 +198,12 @@ function fetchUsers(
     if (sinceTimestamp) conditions.push(`created_at > ${sinceTimestamp}`);
     const whereClause =
         conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const emailFilter = buildEmailFilter("email", cohortEmails);
 
     const query = `
         SELECT email, github_username, created_at, tier
         FROM user
-        ${whereClause}
+        ${whereClause}${emailFilter}
         ORDER BY created_at DESC
         LIMIT ${limit}
     `.replace(/\n/g, " ");
@@ -580,6 +602,8 @@ async function main(): Promise<void> {
     const labels: string[] = [];
     if (config.unchecked) labels.push("unchecked only");
     if (config.storeStatus) labels.push("store-status");
+    if (config.cohortEmails)
+        labels.push(`email cohort (${config.cohortEmails.length})`);
     if (config.sinceTimestamp)
         labels.push(
             `since ${new Date(config.sinceTimestamp).toISOString().split("T")[0]}`,
@@ -594,6 +618,7 @@ async function main(): Promise<void> {
         config.userLimit,
         config.sinceTimestamp,
         config.unchecked,
+        config.cohortEmails,
     );
     if (users.length === 0) {
         console.log("⚠️  No users found");

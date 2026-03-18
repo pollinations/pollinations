@@ -14,6 +14,7 @@ Usage:
     python scripts/user-pipeline/orchestrators/daily-spore-recheck.py           # Full run on staging
     python scripts/user-pipeline/orchestrators/daily-spore-recheck.py --dry-run # Validate only, no upgrades
     python scripts/user-pipeline/orchestrators/daily-spore-recheck.py --env staging
+    python scripts/user-pipeline/orchestrators/daily-spore-recheck.py --emails-file /tmp/replay-emails.txt
 
 Environment variables:
     GITHUB_TOKEN           - Required for GitHub API
@@ -44,7 +45,39 @@ from score_users import validate_users
 MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
 
 
-def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
+def load_email_cohort(file_path: str | None) -> list[str] | None:
+    if not file_path:
+        return None
+
+    try:
+        content = Path(file_path).read_text(encoding="utf-8")
+    except OSError as error:
+        print(f"❌ Failed to read --emails-file {file_path}: {error}", file=sys.stderr)
+        sys.exit(1)
+
+    emails = list(
+        dict.fromkeys(
+            line.strip()
+            for line in content.splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        )
+    )
+    if not emails:
+        print(f"❌ --emails-file {file_path} did not contain any emails.", file=sys.stderr)
+        sys.exit(1)
+    return emails
+
+
+def build_email_filter(emails: list[str] | None) -> str:
+    if not emails:
+        return ""
+    values = ", ".join("'" + email.replace("'", "''") + "'" for email in emails)
+    return f" AND email IN ({values})"
+
+
+def fetch_spore_users(
+    env: str = "staging", cohort_emails: list[str] | None = None
+) -> tuple[list[str], list[str], int]:
     """Fetch spore users using day-based slicing strategy.
 
     Returns (new_users, slice_users, total_old) where:
@@ -56,6 +89,7 @@ def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
     yesterday = int(
         (datetime.now(timezone.utc).timestamp() - 86400) * 1000
     )  # Unix timestamp in milliseconds (matches D1 schema)
+    email_filter = build_email_filter(cohort_emails)
 
     # Get new users (created in last 24h)
     new_query = f"""
@@ -64,6 +98,7 @@ def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
         AND github_username IS NOT NULL
         AND COALESCE(banned, 0) = 0
         AND created_at > {yesterday}
+        {email_filter}
     """
     new_results = run_d1_query(new_query, env)
     new_users = [r["github_username"] for r in new_results] if new_results else []
@@ -75,6 +110,7 @@ def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
         AND github_username IS NOT NULL
         AND COALESCE(banned, 0) = 0
         AND created_at <= {yesterday}
+        {email_filter}
     """
     count_results = run_d1_query(count_query, env)
     total_old = count_results[0]["count"] if count_results else 0
@@ -89,6 +125,7 @@ def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
         AND github_username IS NOT NULL
         AND COALESCE(banned, 0) = 0
         AND created_at <= {yesterday}
+        {email_filter}
         ORDER BY created_at ASC
         LIMIT {slice_size} OFFSET {offset}
     """
@@ -166,7 +203,12 @@ def main() -> int:
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Show detailed score breakdowns"
     )
+    parser.add_argument(
+        "--emails-file",
+        help="Only process emails listed in a newline-separated file",
+    )
     args = parser.parse_args()
+    cohort_emails = load_email_cohort(args.emails_file)
 
     weekday = datetime.now(timezone.utc).weekday()
     weekday_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -175,11 +217,13 @@ def main() -> int:
     print(f"   Environment: {args.env}")
     print(f"   Mode: {'DRY RUN' if args.dry_run else 'LIVE'}")
     print(f"   Day slice: {weekday_names[weekday]} (slice {weekday + 1}/7)")
+    if cohort_emails:
+        print(f"   Email cohort: {len(cohort_emails)} users")
     print()
 
     # Fetch spore users (new + today's slice)
     print("📥 Fetching spore users from D1...")
-    new_users, slice_users, total_old = fetch_spore_users(args.env)
+    new_users, slice_users, total_old = fetch_spore_users(args.env, cohort_emails)
     print(f"   New users (last 24h): {len(new_users)}")
     print(f"   Today's slice: {len(slice_users)} (of {total_old} total older users)")
 

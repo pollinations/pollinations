@@ -10,9 +10,11 @@
  *   npx tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts               # Staging
  *   npx tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts --env staging # Staging
  *   npx tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts --dry-run     # Preview only
+ *   npx tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts --emails-file /tmp/replay-emails.txt
  */
 
 import { execSync } from "node:child_process";
+import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
 
 type Environment = "staging";
 
@@ -21,6 +23,7 @@ interface ParsedArgs {
     dryRun: boolean;
     allowBacklog: boolean;
     backlogThreshold: number;
+    cohortEmails: string[] | null;
 }
 
 type D1Row = Record<string, string | number | null>;
@@ -46,6 +49,11 @@ function parseArguments(): ParsedArgs {
         thresholdIndex >= 0 && args[thresholdIndex + 1]
             ? Number(args[thresholdIndex + 1])
             : DEFAULT_BACKLOG_THRESHOLD;
+    const emailsFileIndex = args.indexOf("--emails-file");
+    const emailsFile =
+        emailsFileIndex >= 0 && args[emailsFileIndex + 1]
+            ? args[emailsFileIndex + 1]
+            : undefined;
 
     if (env !== "staging") {
         console.error(
@@ -58,11 +66,22 @@ function parseArguments(): ParsedArgs {
         process.exit(1);
     }
 
+    let cohortEmails: string[] | null = null;
+    try {
+        cohortEmails = loadEmailCohort(emailsFile);
+    } catch (error) {
+        console.error(
+            `❌ ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+    }
+
     return {
         env: "staging",
         dryRun: args.includes("--dry-run"),
         allowBacklog: args.includes("--allow-backlog"),
         backlogThreshold,
+        cohortEmails,
     };
 }
 
@@ -150,13 +169,18 @@ function banGithubUsers(env: Environment, usernames: string[]): number {
  * Phase 1: Microbe → Spore
  * Promote all microbe users who passed the abuse check (trust_score >= 60)
  */
-function promoteMicrobeToSpore(env: Environment, dryRun: boolean): number {
+function promoteMicrobeToSpore(
+    env: Environment,
+    dryRun: boolean,
+    cohortEmails: string[] | null,
+): number {
     console.log("\n🔄 Phase 1: Microbe → Spore");
+    const emailFilter = buildEmailFilter("email", cohortEmails);
 
     // Find eligible users
     const eligible = queryD1(
         env,
-        "SELECT email, github_username FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0",
+        `SELECT email, github_username FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0${emailFilter}`,
     );
 
     if (eligible.length === 0) {
@@ -178,7 +202,7 @@ function promoteMicrobeToSpore(env: Environment, dryRun: boolean): number {
     // Batch promote — set tier_balance so they can use API immediately
     const ok = executeD1(
         env,
-        "UPDATE user SET tier = 'spore', tier_balance = 0.01 WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0",
+        `UPDATE user SET tier = 'spore', tier_balance = 0.01 WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0${emailFilter}`,
     );
 
     if (ok) {
@@ -199,12 +223,14 @@ function checkSporeForSeed(
     dryRun: boolean,
     allowBacklog: boolean,
     backlogThreshold: number,
+    cohortEmails: string[] | null,
 ): { upgraded: number; checked: number } {
     console.log("\n🔄 Phase 2: Spore → Seed (just-promoted users)");
+    const emailFilter = buildEmailFilter("email", cohortEmails);
 
     const backlogCount = queryCount(
         env,
-        "SELECT COUNT(*) AS count FROM user WHERE tier = 'spore' AND github_username IS NOT NULL AND COALESCE(banned, 0) = 0 AND score IS NULL",
+        `SELECT COUNT(*) AS count FROM user WHERE tier = 'spore' AND github_username IS NOT NULL AND COALESCE(banned, 0) = 0 AND score IS NULL${emailFilter}`,
     );
 
     if (backlogCount === 0) {
@@ -221,7 +247,7 @@ function checkSporeForSeed(
     // Find spore users with GitHub who haven't been scored yet (score IS NULL)
     const sporeUsers = queryD1(
         env,
-        "SELECT github_username FROM user WHERE tier = 'spore' AND github_username IS NOT NULL AND COALESCE(banned, 0) = 0 AND score IS NULL",
+        `SELECT github_username FROM user WHERE tier = 'spore' AND github_username IS NOT NULL AND COALESCE(banned, 0) = 0 AND score IS NULL${emailFilter}`,
     );
 
     const usernames = sporeUsers
@@ -318,19 +344,27 @@ async function main(): Promise<void> {
     console.log("=".repeat(50));
     console.log(`📋 Environment: ${config.env}`);
     if (config.dryRun) console.log("🔍 Mode: DRY RUN");
+    if (config.cohortEmails) {
+        console.log(`🎯 Email cohort: ${config.cohortEmails.length} users`);
+    }
     if (config.allowBacklog) {
         console.log(
             `⚠️  Backlog override enabled (threshold=${config.backlogThreshold})`,
         );
     }
 
-    const promoted = promoteMicrobeToSpore(config.env, config.dryRun);
+    const promoted = promoteMicrobeToSpore(
+        config.env,
+        config.dryRun,
+        config.cohortEmails,
+    );
 
     const { upgraded, checked } = checkSporeForSeed(
         config.env,
         config.dryRun,
         config.allowBacklog,
         config.backlogThreshold,
+        config.cohortEmails,
     );
 
     console.log(`\n${"=".repeat(50)}`);

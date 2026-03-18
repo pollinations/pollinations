@@ -1,0 +1,34 @@
+{
+  "pr_number": 9271,
+  "title": "Add NEURGenerator for ESP32-S3 to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9271",
+  "merged_at": "2026-03-18T17:50:27Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pollinations on a microchip",
+    "blurb": "The NEURGenerator brings Pollinations to the ESP32-S3 microcontroller. Proof that you don't need a massive server rack to make AI magic happen—just a tiny chip and some good vibes.",
+    "summary": "Added the NEURGenerator project to the community showcase, demonstrating Pollinations API integration on an ESP32-S3 microcontroller with PSRAM support.",
+    "impact": "Hardware hackers and IoT tinkerers now have a reference implementation for bringing AI generation to physical devices.",
+    "keywords": [
+      "esp32",
+      "hardware",
+      "microcontroller",
+      "community-app",
+      "iot"
+    ],
+    "visual_concept": "Hardware tinkering and microcontrollers. Polly the bee acting as an electrical engineer, working on a tiny glowing microchip (ESP32). The robot companion assisting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny safety goggles, soldering wires onto a glowing microcontroller chip. A chunky pixel robot with a CRT monitor head watches excitedly, holding a tiny blueprint. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9271.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny safety goggles, soldering wires onto a glowing microcontroller chip. A chunky pixel robot with a CRT monitor head watches excitedly, holding a tiny blueprint. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-18T17:51:23.236604+00:00"
+}

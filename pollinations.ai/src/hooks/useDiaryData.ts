@@ -271,6 +271,12 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
         // If it also has daily content, create both (day first, then week).
         const hasDailyContent = data.dailyImages.length > 0 || data.hasDaily;
 
+        // Weekly entries show only the PRs that merged on the display date (Sunday),
+        // not all PRs from the entire week — the weekly summary covers the full week
+        // but the PR chips should only show that day's work
+        const weekPrRefs = prRefs.filter((ref) => ref.date === date);
+        const weekPrNumbers = weekPrRefs.map((ref) => ref.number);
+
         if (hasDailyContent && data.hasWeekly) {
             timeline.push({
                 date,
@@ -285,8 +291,8 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
                 date,
                 type: "week",
                 ...info,
-                prNumbers,
-                prRefs,
+                prNumbers: weekPrNumbers,
+                prRefs: weekPrRefs,
                 images: buildImageVariants(data.weeklyImages, data.prImages),
                 summaryUrl: data.weeklySummaryUrl,
             });
@@ -295,8 +301,8 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
                 date,
                 type: "week",
                 ...info,
-                prNumbers,
-                prRefs,
+                prNumbers: weekPrNumbers,
+                prRefs: weekPrRefs,
                 images: buildImageVariants(data.weeklyImages, data.prImages),
                 summaryUrl: data.weeklySummaryUrl,
             });

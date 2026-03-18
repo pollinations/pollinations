@@ -15,6 +15,7 @@ from d1 import ensure_safe_env, run_d1_query
 WORKDIR = Path(__file__).resolve().parents[3]
 REPO_ROOT = WORKDIR.parent
 DOTENV_PATH = REPO_ROOT / ".env"
+SPORE_TIER_BALANCE = 1.5
 
 
 def load_email_cohort(file_path: str) -> list[str]:
@@ -58,7 +59,7 @@ def prepare_cohort(env: str, emails: list[str]) -> None:
         UPDATE user
         SET
             tier = 'spore',
-            tier_balance = 0.01,
+            tier_balance = {SPORE_TIER_BALANCE},
             score = NULL,
             score_checked_at = 0,
             banned = 0,

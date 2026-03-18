@@ -31,6 +31,7 @@ from score_users import validate_users
 
 MAX_USERS_PER_RUN = 8000
 SQL_BATCH_SIZE = 200
+SEED_TIER_BALANCE = 3.0
 
 
 def load_email_cohort(file_path: str | None) -> list[str] | None:
@@ -172,7 +173,7 @@ def upgrade_users(usernames: list[str], env: str) -> tuple[int, bool]:
         username_list = ", ".join(f"'{username}'" for username in safe_batch)
         update_query = f"""
             UPDATE user
-            SET tier = 'seed', tier_balance = 0.15
+            SET tier = 'seed', tier_balance = {SEED_TIER_BALANCE}
             WHERE github_username IN ({username_list})
             AND tier = 'spore'
         """

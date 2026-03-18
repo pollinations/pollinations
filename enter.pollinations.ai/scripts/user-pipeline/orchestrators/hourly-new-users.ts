@@ -15,6 +15,8 @@
  */
 
 import { execSync } from "node:child_process";
+import { TIER_POLLEN } from "../../../src/tier-config.ts";
+import { executeD1, queryD1 } from "../shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
 
 type Environment = "staging";
@@ -24,8 +26,6 @@ interface ParsedArgs {
     dryRun: boolean;
     cohortEmails: string[] | null;
 }
-
-type D1Row = Record<string, string | number | null>;
 
 interface TrustedUser {
     email: string;
@@ -82,37 +82,6 @@ function parseArguments(): ParsedArgs {
 
 function escapeSqlString(value: string): string {
     return value.replace(/'/g, "''");
-}
-
-function queryD1(env: Environment, sql: string): D1Row[] {
-    const cmd = `npx wrangler d1 execute DB --remote --env ${env} --command "${sql}" --json`;
-    const result = execSync(cmd, {
-        encoding: "utf-8",
-        stdio: ["pipe", "pipe", "pipe"],
-        maxBuffer: 100 * 1024 * 1024,
-        cwd: process.cwd(),
-    });
-    const data = JSON.parse(result);
-    return data[0]?.results || [];
-}
-
-function executeD1(env: Environment, sql: string): boolean {
-    const cmd = `npx wrangler d1 execute DB --remote --env ${env} --command "${sql}" --json`;
-    try {
-        execSync(cmd, {
-            encoding: "utf-8",
-            stdio: ["pipe", "pipe", "pipe"],
-            maxBuffer: 20 * 1024 * 1024,
-            cwd: process.cwd(),
-        });
-        return true;
-    } catch (error) {
-        console.error(
-            "❌ D1 mutation failed:",
-            error instanceof Error ? error.message : String(error),
-        );
-        return false;
-    }
 }
 
 function fetchTrustedMicrobeUsers(
@@ -369,9 +338,14 @@ async function main(): Promise<void> {
         config.env,
         approvedUsernames,
         "seed",
-        0.15,
+        TIER_POLLEN.seed,
     );
-    const spored = applyTierUpdates(config.env, sporeUsernames, "spore", 0.01);
+    const spored = applyTierUpdates(
+        config.env,
+        sporeUsernames,
+        "spore",
+        TIER_POLLEN.spore,
+    );
 
     console.log("\n📊 Summary:");
     console.log(`   Scores stored: ${stored}`);

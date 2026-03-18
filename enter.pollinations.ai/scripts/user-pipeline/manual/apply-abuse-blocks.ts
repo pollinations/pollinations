@@ -18,9 +18,9 @@
  *   --report       Path to abuse report CSV (default: ./abuse-report.csv)
  */
 
-import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
+import { queryD1 } from "../shared/d1.ts";
 
 type Environment = "staging";
 
@@ -82,24 +82,6 @@ function parseCSV(content: string): AbuseReportRow[] {
             registered: row.registered || "",
         };
     });
-}
-
-function queryD1(env: Environment, sql: string): string {
-    const cmd = `npx wrangler d1 execute DB --remote --env ${env} --command "${sql}" --json`;
-
-    try {
-        return execSync(cmd, {
-            encoding: "utf-8",
-            stdio: ["pipe", "pipe", "pipe"],
-            maxBuffer: 100 * 1024 * 1024,
-        });
-    } catch (error) {
-        console.error(
-            "D1 query failed:",
-            error instanceof Error ? error.message : String(error),
-        );
-        throw error;
-    }
 }
 
 function sleep(ms: number): Promise<void> {

@@ -28,6 +28,7 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { executeD1, queryD1 } from "../shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
 
 const SCORE_THRESHOLDS = {
@@ -175,12 +176,7 @@ function fetchUsers(
         LIMIT ${limit}
     `.replace(/\n/g, " ");
 
-    const result = execSync(
-        `npx wrangler d1 execute DB --remote --env ${env} --json --command "${query}"`,
-        { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
-    );
-    const data = JSON.parse(result);
-    const users = data[0]?.results || [];
+    const users = queryD1(env, query);
     console.log(`✅ Fetched ${users.length} users`);
     return users;
 }
@@ -188,26 +184,6 @@ function fetchUsers(
 function formatDate(timestamp: number): string {
     const d = new Date(Number(timestamp));
     return d.toISOString().slice(0, 16).replace("T", " ");
-}
-
-function executeD1(env: Environment, sql: string): boolean {
-    try {
-        execSync(
-            `npx wrangler d1 execute DB --remote --env ${env} --command "${sql}"`,
-            {
-                encoding: "utf-8",
-                stdio: ["pipe", "pipe", "pipe"],
-                maxBuffer: 20 * 1024 * 1024,
-            },
-        );
-        return true;
-    } catch (error) {
-        console.error(
-            "❌ D1 mutation failed:",
-            error instanceof Error ? error.message : String(error),
-        );
-        return false;
-    }
 }
 
 function banUsersByEmails(env: Environment, emails: string[]): number {

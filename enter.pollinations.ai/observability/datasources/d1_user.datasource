@@ -23,6 +23,9 @@ SCHEMA >
     `pack_balance` Nullable(Float64) `json:$.pack_balance`,
     `crypto_balance` Nullable(Float64) `json:$.crypto_balance`,
     `last_tier_grant` Nullable(Int64) `json:$.last_tier_grant`,
+    `trust_score` Nullable(Int32) `json:$.trust_score`,
+    `score` Nullable(Float64) `json:$.score`,
+    `score_checked_at` Nullable(Int64) `json:$.score_checked_at`,
     `synced_at` DateTime `json:$.synced_at`
 
 ENGINE "MergeTree"

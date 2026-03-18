@@ -120,6 +120,20 @@
       "when": 1769255535655,
       "tag": "0016_migrate-temporary-keytype-to-secret",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1769255535656,
+      "tag": "0017_add_score_and_trust_score",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1773848123928,
+      "tag": "0018_add_user_github_id_index",
+      "breakpoints": true
     }
   ]
 }

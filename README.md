@@ -21,6 +21,7 @@
 | Name | Description | Author |
 |------|-------------|--------|
 | [🤖 NEURGenerator for ESP32-S3](113021062) | Uses Pollinations.aihttpspollinations.ai API on ESP32-S3 with PSRAM and WDT support in NEURGenerator for ESP32-S3. | [@library](https://github.com/library) |
+| [⚗️ Alchemica](217957462) | Mix elements in Alchemica to craft and discover new combinations using Pollinations AI to generate the results. | [@web](https://github.com/web) |
 | [🖌️ House Painter](https://konsumer.js.org/housepainter/) | Generate paint color schemes for your house using pollinations.ai with House Painter to visualize exterior options and combinations. | [@web](https://github.com/web) |
 | [📚 LoreLoom  AI-Powered Interactive Storybook for Kid](loreloom.sprinthon.com) | LoreLoom  AI-Powered Interactive Storybook for Kid generates personalized, narrated interactive stories for children and offers character and setting customization with touch-based interactions. | [@web](https://github.com/web) |
 | [🤖 PromptPilot MCP Server](https://promptpilot.club/mcp) | Generate images, video, and audio directly in Claude, Code, Cursor, Windsurf, or any MCP-compatible AI agent. Powered by Pollinations API with 20 models including Flux GPT-Image-1 Imagen. | [@api](https://github.com/api) |

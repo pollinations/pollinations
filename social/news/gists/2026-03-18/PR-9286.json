@@ -1,0 +1,33 @@
+{
+  "pr_number": 9286,
+  "title": "fix: migrate nanobanana to gemini-2.5-flash-image GA endpoint",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9286",
+  "merged_at": "2026-03-18T22:14:22Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Stable Bananas",
+    "blurb": "We've migrated our nanobanana image model to the stable Gemini 2.5 Flash endpoint. Smooth sailing and pixel-perfect generation ahead!",
+    "summary": "Migrated the nanobanana image generation model from the retiring preview endpoint to the stable Gemini 2.5 Flash GA endpoint.",
+    "impact": "Ensures continued reliability for nanobanana image generation without any interruption to service.",
+    "keywords": [
+      "nanobanana",
+      "gemini",
+      "vertex-ai",
+      "maintenance"
+    ],
+    "visual_concept": "The PR is about 'nanobanana' (an image model) graduating from 'preview' to 'stable/GA'. The pollinations bee (Polly) and the Monitor Robot admiring a glowing, stable banana.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot admiring a perfectly glowing, stable pixel-art banana on a pedestal. Soft lime green (#ecf874) and lavender gradient background. The robot's screen shows a green checkmark. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9286.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot admiring a perfectly glowing, stable pixel-art banana on a pedestal. Soft lime green (#ecf874) and lavender gradient background. The robot's screen shows a green checkmark. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-18T22:15:15.376872+00:00"
+}

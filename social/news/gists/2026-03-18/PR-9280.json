@@ -1,0 +1,32 @@
+{
+  "pr_number": 9280,
+  "title": "Add Luna to chat",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9280",
+  "merged_at": "2026-03-18T20:05:29Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New friend in the hive: Luna",
+    "blurb": "Say hello to Luna, a new Chinese AI companion with an ENFJ personality and deep Pollinations integration. She's got a memory system and taps into dozens of our text and image models to keep the conversation lively!",
+    "summary": "Added Luna, a self-hosted Chinese AI companion with memory and multi-model support, to the community apps showcase.",
+    "impact": "Users can now discover Luna in the apps directory, showcasing a deep integration of Pollinations' text and image models.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "ai-companion",
+      "luna"
+    ],
+    "visual_concept": "Luna means moon, and it's a Chinese AI companion. Depict Polly the bee making friends with a glowing moon-themed AI character or hologram in a cozy setting with subtle Chinese motifs like a paper lantern. Represents community, friendship, and the new app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot having tea with a friendly glowing moon-shaped hologram character. A lime green (#ecf874) paper lantern hangs above them in a serene digital garden. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9280.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot having tea with a friendly glowing moon-shaped hologram character. A lime green (#ecf874) paper lantern hangs above them in a serene digital garden. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-18T20:09:10.672464+00:00"
+}

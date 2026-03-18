@@ -100,11 +100,11 @@ function parseSinceTimestamp(
         }
         const amount = parseInt(match[1], 10);
         const ms = match[2] === "h" ? amount * 3600_000 : amount * 86400_000;
-        return Math.floor((Date.now() - ms) / 1000);
+        return Date.now() - ms;
     }
 
     if (sinceDate) {
-        const timestamp = Math.floor(new Date(sinceDate).getTime() / 1000);
+        const timestamp = new Date(sinceDate).getTime();
         if (Number.isNaN(timestamp)) {
             console.error(`Invalid --since date: ${sinceDate}`);
             process.exit(1);
@@ -137,7 +137,7 @@ function loadApiKey(): string {
 
 function fetchUsers(limit: number, sinceTimestamp: number | null): User[] {
     const sinceLabel = sinceTimestamp
-        ? ` created after ${new Date(sinceTimestamp * 1000).toISOString().split("T")[0]}`
+        ? ` created after ${new Date(sinceTimestamp).toISOString().split("T")[0]}`
         : "";
     console.log(`📊 Fetching ${limit} most recent users${sinceLabel}...`);
 
@@ -169,7 +169,7 @@ function fetchUsers(limit: number, sinceTimestamp: number | null): User[] {
 }
 
 function formatDate(timestamp: number): string {
-    const d = new Date(Number(timestamp) * 1000);
+    const d = new Date(Number(timestamp));
     return d.toISOString().slice(0, 16).replace("T", " ");
 }
 

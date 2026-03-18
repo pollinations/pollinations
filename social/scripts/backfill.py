@@ -119,24 +119,16 @@ def generate_gist_for_pr(
     # AI analysis
     print(f"  Analyzing PR #{pr_number}...")
     ai_analysis = analyze_pr(pr_data, files_summary, pollinations_token)
+    if not ai_analysis:
+        print("  FATAL: AI analysis failed")
+        return None
 
-    if ai_analysis:
-        gist = build_full_gist(pr_data, ai_analysis)
-        gist["gist"]["publish_tier"] = apply_publish_tier_rules(gist)
-        errors = validate_gist(gist)
-        if errors:
-            print(f"  Schema warnings: {errors}")
-    else:
-        print(f"  AI analysis failed — using minimal gist")
-        from common import build_minimal_gist
-        labels = [l["name"] for l in pr_data.get("labels", [])]
-        gist = build_minimal_gist(
-            pr_number, pr_data["title"],
-            pr_data.get("user", {}).get("login", "unknown"),
-            pr_data["html_url"],
-            pr_data.get("merged_at", datetime.now(timezone.utc).isoformat()),
-            labels,
-        )
+    gist = build_full_gist(pr_data, ai_analysis)
+    gist["gist"]["publish_tier"] = apply_publish_tier_rules(gist)
+    errors = validate_gist(gist)
+    if errors:
+        print(f"  FATAL: Schema validation failed: {errors}")
+        return None
 
     # Save gist JSON locally
     with open(gist_file, "w", encoding="utf-8") as f:
@@ -146,25 +138,27 @@ def generate_gist_for_pr(
     # Generate image
     if not skip_images:
         image_prompt = gist.get("gist", {}).get("image_prompt", "")
-        if image_prompt:
-            print(f"  Generating image...")
-            image_bytes, _ = generate_image(image_prompt, pollinations_token)
-            if image_bytes:
-                image_file = gist_dir / f"PR-{pr_number}.jpg"
-                with open(image_file, "wb") as f:
-                    f.write(image_bytes)
-                kb = len(image_bytes) / 1024
-                print(f"  Saved {image_file.name} ({kb:.0f} KB)")
+        if not image_prompt:
+            print("  FATAL: Gist is missing image_prompt")
+            return None
+        print(f"  Generating image...")
+        image_bytes, _ = generate_image(image_prompt, pollinations_token)
+        if not image_bytes:
+            print("  FATAL: Image generation failed")
+            return None
+        image_file = gist_dir / f"PR-{pr_number}.jpg"
+        with open(image_file, "wb") as f:
+            f.write(image_bytes)
+        kb = len(image_bytes) / 1024
+        print(f"  Saved {image_file.name} ({kb:.0f} KB)")
 
-                # Update gist with local image path
-                gist["image"] = {
-                    "url": f"social/news/gists/{date_str}/PR-{pr_number}.jpg",
-                    "prompt": image_prompt,
-                }
-                with open(gist_file, "w", encoding="utf-8") as f:
-                    json.dump(gist, f, indent=2, ensure_ascii=False)
-            else:
-                print(f"  Image generation failed — continuing without")
+        # Update gist with local image path
+        gist["image"] = {
+            "url": f"social/news/gists/{date_str}/PR-{pr_number}.jpg",
+            "prompt": image_prompt,
+        }
+        with open(gist_file, "w", encoding="utf-8") as f:
+            json.dump(gist, f, indent=2, ensure_ascii=False)
 
     tier = gist.get("gist", {}).get("publish_tier", "?")
     importance = gist.get("gist", {}).get("importance", "?")
@@ -251,26 +245,33 @@ def backfill_daily(
         "twitter", summary, pollinations_token,
         "Write a tweet about today's shipped work.", temperature=0.8
     )
-    if twitter_post:
-        tweet = twitter_post.get("tweet", "")
-        print(f"  Tweet ({len(tweet)} chars): {tweet[:80]}...")
+    if not twitter_post or not twitter_post.get("image_prompt"):
+        print("  FATAL: Twitter post generation failed")
+        return False
+    tweet = twitter_post.get("tweet", "")
+    print(f"  Tweet ({len(tweet)} chars): {tweet[:80]}...")
 
     print("\n  [3/4] Generating Instagram post...")
     instagram_post = generate_platform_post(
         "instagram", summary, pollinations_token,
         "Create a cozy pixel art post about these updates."
     )
-    if instagram_post:
-        img_count = len(instagram_post.get("images", []))
-        print(f"  Instagram: {img_count} images")
+    instagram_images = instagram_post.get("images", []) if instagram_post else []
+    if not instagram_post or not instagram_images or any(not img.get("prompt") for img in instagram_images[:3]):
+        print("  FATAL: Instagram post generation failed")
+        return False
+    img_count = len(instagram_images)
+    print(f"  Instagram: {img_count} images")
 
     print("\n  [4/4] Generating Reddit post...")
     reddit_post = generate_platform_post(
         "reddit", summary, pollinations_token,
         "Create a Reddit post for today's update."
     )
-    if reddit_post:
-        print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
+    if not reddit_post or not reddit_post.get("image_prompt"):
+        print("  FATAL: Reddit post generation failed")
+        return False
+    print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
 
     # Save daily output
     daily_dir = REPO_ROOT / "social" / "news" / "daily" / date_str
@@ -296,33 +297,40 @@ def backfill_daily(
         if twitter_post and twitter_post.get("image_prompt"):
             print("  Generating Twitter image...")
             img_bytes, _ = generate_image(twitter_post["image_prompt"], pollinations_token)
-            if img_bytes:
-                with open(images_dir / "twitter.jpg", "wb") as f:
-                    f.write(img_bytes)
-                print(f"  Saved twitter.jpg ({len(img_bytes)/1024:.0f} KB)")
+            if not img_bytes:
+                print("  FATAL: Twitter image generation failed")
+                return False
+            with open(images_dir / "twitter.jpg", "wb") as f:
+                f.write(img_bytes)
+            print(f"  Saved twitter.jpg ({len(img_bytes)/1024:.0f} KB)")
 
         # Instagram images (carousel)
         if instagram_post and instagram_post.get("images"):
             for i, img_info in enumerate(instagram_post["images"][:3]):
                 prompt = img_info.get("prompt", "")
                 if not prompt:
-                    continue
+                    print(f"  FATAL: Instagram image {i+1} is missing prompt")
+                    return False
                 print(f"  Generating Instagram image {i+1}...")
                 img_bytes, _ = generate_image(prompt, pollinations_token, index=i)
-                if img_bytes:
-                    with open(images_dir / f"instagram-{i+1}.jpg", "wb") as f:
-                        f.write(img_bytes)
-                    print(f"  Saved instagram-{i+1}.jpg ({len(img_bytes)/1024:.0f} KB)")
+                if not img_bytes:
+                    print(f"  FATAL: Instagram image {i+1} generation failed")
+                    return False
+                with open(images_dir / f"instagram-{i+1}.jpg", "wb") as f:
+                    f.write(img_bytes)
+                print(f"  Saved instagram-{i+1}.jpg ({len(img_bytes)/1024:.0f} KB)")
                 time.sleep(3)
 
         # Reddit image
         if reddit_post and reddit_post.get("image_prompt"):
             print("  Generating Reddit image...")
             img_bytes, _ = generate_image(reddit_post["image_prompt"], pollinations_token)
-            if img_bytes:
-                with open(images_dir / "reddit.jpg", "wb") as f:
-                    f.write(img_bytes)
-                print(f"  Saved reddit.jpg ({len(img_bytes)/1024:.0f} KB)")
+            if not img_bytes:
+                print("  FATAL: Reddit image generation failed")
+                return False
+            with open(images_dir / "reddit.jpg", "wb") as f:
+                f.write(img_bytes)
+            print(f"  Saved reddit.jpg ({len(img_bytes)/1024:.0f} KB)")
 
     print(f"\n  Daily output saved to {daily_dir}")
     return True

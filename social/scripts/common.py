@@ -22,9 +22,7 @@ POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
 # Models - single source of truth for all social scripts
 MODEL = "gemini-large"  # Text generation model
-MODEL_FALLBACK = "gemini-fast"  # Text fallback when primary model fails
-IMAGE_MODEL = "nanobanana-pro"  # Image generation model
-IMAGE_MODEL_FALLBACK = "zimage"  # Image fallback when primary model fails
+IMAGE_MODEL = "nanobanana-2"  # Image generation model
 WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
 
 # Limits and retry settings
@@ -32,6 +30,7 @@ MAX_SEED = 2147483647
 MAX_RETRIES = 3
 INITIAL_RETRY_DELAY = 2
 DEFAULT_TIMEOUT = 30  # seconds for GitHub API / general requests
+LINKEDIN_MAX_CHARS = 1248
 
 # Repository constants
 OWNER = "pollinations"
@@ -593,36 +592,6 @@ def apply_publish_tier_rules(gist: Dict) -> str:
 
     return ai_tier
 
-
-def build_minimal_gist(pr_number: int, title: str, author: str, url: str,
-                       merged_at: str, labels: List[str]) -> Dict:
-    """Build a minimal gist with PR metadata only (no AI fields).
-    Used as fallback when AI analysis fails."""
-    return {
-        "pr_number": pr_number,
-        "title": title,
-        "author": author,
-        "url": url,
-        "merged_at": merged_at,
-        "labels": labels,
-        "gist": {
-            "category": "infrastructure",
-            "user_facing": False,
-            "publish_tier": "discord_only",
-            "importance": "minor",
-            "headline": title,
-            "blurb": title,
-            "summary": title,
-            "impact": "",
-            "keywords": [],
-            "image_prompt": "",
-        },
-        "image": {"url": None, "prompt": None},
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "_minimal": True,
-    }
-
-
 def gist_path_for_pr(pr_number: int, merged_at: str) -> str:
     """Return the repo-relative path for a gist file: social/news/gists/YYYY-MM-DD/PR-{n}.json"""
     date_str = merged_at[:10]  # YYYY-MM-DD from ISO timestamp
@@ -816,6 +785,22 @@ def generate_platform_post(
     if not response:
         return None
     return parse_json_response(response)
+
+
+def build_linkedin_post_text(post_data: Dict) -> str:
+    """Build the final LinkedIn post text from structured fields."""
+    parts = []
+
+    for field in ("hook", "body", "closing"):
+        value = (post_data.get(field) or "").strip()
+        if value:
+            parts.append(value)
+
+    hashtags = [tag.strip() for tag in post_data.get("hashtags", []) if tag.strip()]
+    if hashtags:
+        parts.append(" ".join(hashtags[:5]))
+
+    return "\n\n".join(parts)
 
 
 # ── PR creation helpers ──────────────────────────────────────────────

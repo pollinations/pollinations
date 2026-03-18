@@ -1,0 +1,34 @@
+{
+  "pr_number": 9250,
+  "title": "revert: remove Qwen3.5 — not available on Fireworks serverless",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9250",
+  "merged_at": "2026-03-18T02:26:01Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the model garden",
+    "blurb": "We've removed the Qwen3.5 model from our text endpoints to keep your generations fast and reliable while we sort out upstream availability.",
+    "summary": "Reverted the addition of the Qwen3.5 397B model to resolve generation failures caused by upstream serverless availability issues.",
+    "impact": "Improves overall text endpoint reliability by removing an unstable model from the registry.",
+    "keywords": [
+      "models",
+      "bugfix",
+      "text-generation",
+      "reliability",
+      "revert"
+    ],
+    "visual_concept": "The Nomnom creature eating deprecated code snippets and error logs to clean up the system, while Polly the bee watches happily. Represents removing broken code to improve health.",
+    "image_prompt": "Cozy pixel art scene of the round tan nomnom creature happily eating a stack of deprecated API logs and error messages while the cute bee mascot watches amused. A retro terminal nearby glows lime green (#ecf874). Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9250.jpg",
+    "prompt": "Cozy pixel art scene of the round tan nomnom creature happily eating a stack of deprecated API logs and error messages while the cute bee mascot watches amused. A retro terminal nearby glows lime green (#ecf874). Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "generated_at": "2026-03-18T02:27:04.369451+00:00"
+}

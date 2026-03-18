@@ -14,6 +14,7 @@ and star totals.
 import base64
 import json
 import os
+import re
 import subprocess
 import threading
 import time
@@ -27,6 +28,7 @@ from tqdm import tqdm
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 BATCH_SIZE = 50
 MAX_BATCHES = None  # Set to a number to limit batches for testing
+GITHUB_USERNAME_RE = re.compile(r"^[A-Za-z0-9-]+$")
 _AUTH_MODE = None
 _APP_TOKEN = None
 _APP_TOKEN_EXPIRES_AT = 0
@@ -182,8 +184,9 @@ def score_user(data: dict | None, username: str) -> dict:
     if not data:
         return {
             "username": username,
+            "status": "github_account_deleted",
             "approved": False,
-            "reason": "User not found",
+            "reason": "GitHub account deleted",
             "details": None,
         }
 
@@ -231,6 +234,7 @@ def score_user(data: dict | None, username: str) -> dict:
 
     return {
         "username": username,
+        "status": "ok",
         "approved": approved,
         "reason": reason,
         "details": details,
@@ -292,13 +296,26 @@ def validate_users(usernames: list[str]) -> list[dict]:
 
     get_github_token()
 
+    invalid_results = [
+        score_user(None, username)
+        for username in usernames
+        if not GITHUB_USERNAME_RE.match(username)
+    ]
+    valid_usernames = [
+        username for username in usernames if GITHUB_USERNAME_RE.match(username)
+    ]
+
+    if not valid_usernames:
+        return invalid_results
+
     batches = [
-        usernames[i : i + BATCH_SIZE] for i in range(0, len(usernames), BATCH_SIZE)
+        valid_usernames[i : i + BATCH_SIZE]
+        for i in range(0, len(valid_usernames), BATCH_SIZE)
     ]
     if MAX_BATCHES:
         batches = batches[:MAX_BATCHES]
 
-    results = []
+    results = invalid_results.copy()
     approved_count = 0
 
     progress_bar = tqdm(

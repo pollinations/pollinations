@@ -34,6 +34,9 @@ from user_validate_github_profile import validate_users
 # Max users to process per run (stay well under 1000 point/hour GitHub API limit)
 # With repos(first:10), each batch of 50 costs ~6 points, so 166 batches = 8,300 users
 MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
+GITHUB_USERNAME_RE = re.compile(r"^[A-Za-z0-9-]+$")
+GITHUB_ACCOUNT_DELETED_REASON = "github_account_deleted"
+D1_BATCH_SIZE = 500
 
 
 def ensure_safe_env(env: str) -> str:
@@ -87,6 +90,43 @@ def run_d1_query(query: str, env: str = "staging") -> list[dict] | None:
         return None
 
 
+def extract_deleted_github_usernames(results: list[dict]) -> list[str]:
+    usernames = []
+    for result in results:
+        username = result.get("username")
+        if not isinstance(username, str):
+            continue
+        if not GITHUB_USERNAME_RE.match(username):
+            usernames.append(username)
+            continue
+        if result.get("status") == GITHUB_ACCOUNT_DELETED_REASON:
+            usernames.append(username)
+    return usernames
+
+
+def ban_github_users(usernames: list[str], env: str = "staging") -> int:
+    unique_usernames = list(dict.fromkeys(usernames))
+    if not unique_usernames:
+        return 0
+
+    banned = 0
+    for i in range(0, len(unique_usernames), D1_BATCH_SIZE):
+        batch = unique_usernames[i : i + D1_BATCH_SIZE]
+        username_list = ", ".join(
+            "'" + username.replace("'", "''") + "'" for username in batch
+        )
+        update_query = f"""
+            UPDATE user
+            SET banned = 1, ban_reason = '{GITHUB_ACCOUNT_DELETED_REASON}'
+            WHERE github_username IN ({username_list})
+        """
+        result = run_d1_query(update_query, env)
+        if result is not None:
+            banned += len(batch)
+
+    return banned
+
+
 def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
     """Fetch spore users using day-based slicing strategy.
 
@@ -105,6 +145,7 @@ def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
         SELECT github_username FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
+        AND COALESCE(banned, 0) = 0
         AND created_at > {yesterday}
     """
     new_results = run_d1_query(new_query, env)
@@ -115,6 +156,7 @@ def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
         SELECT COUNT(*) as count FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
+        AND COALESCE(banned, 0) = 0
         AND created_at <= {yesterday}
     """
     count_results = run_d1_query(count_query, env)
@@ -128,6 +170,7 @@ def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
         SELECT github_username FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
+        AND COALESCE(banned, 0) = 0
         AND created_at <= {yesterday}
         ORDER BY created_at ASC
         LIMIT {slice_size} OFFSET {offset}
@@ -142,16 +185,15 @@ def batch_upgrade_users(
     usernames: list[str], env: str = "staging"
 ) -> tuple[int, int, bool]:
     """Upgrade users to seed tier in batch SQL. Returns (upgraded, skipped, failed)."""
-    BATCH_SQL_SIZE = 500
     total_upgraded = 0
     total_skipped = 0
 
     failed = False
 
-    for i in range(0, len(usernames), BATCH_SQL_SIZE):
-        batch = usernames[i : i + BATCH_SQL_SIZE]
+    for i in range(0, len(usernames), D1_BATCH_SIZE):
+        batch = usernames[i : i + D1_BATCH_SIZE]
         # Sanitize: GitHub usernames are [a-zA-Z0-9-] only
-        safe_batch = [u for u in batch if re.match(r"^[a-zA-Z0-9-]+$", u)]
+        safe_batch = [u for u in batch if GITHUB_USERNAME_RE.match(u)]
         if len(safe_batch) != len(batch):
             print(f"   ⚠️  Skipped {len(batch) - len(safe_batch)} invalid usernames")
         if not safe_batch:
@@ -183,11 +225,11 @@ def batch_upgrade_users(
             total_upgraded += len(safe_batch) - skipped
         else:
             failed = True
-            print(f"   ❌ Batch {i // BATCH_SQL_SIZE + 1} failed")
+            print(f"   ❌ Batch {i // D1_BATCH_SIZE + 1} failed")
             continue
 
         print(
-            f"   Batch {i // BATCH_SQL_SIZE + 1}: {len(safe_batch) - skipped} upgraded, {skipped} skipped (higher tier)"
+            f"   Batch {i // D1_BATCH_SIZE + 1}: {len(safe_batch) - skipped} upgraded, {skipped} skipped (higher tier)"
         )
 
     return total_upgraded, total_skipped, failed
@@ -262,6 +304,18 @@ def main():
 
     # Combine results
     results = new_results + slice_results
+    deleted_usernames = extract_deleted_github_usernames(results)
+    if deleted_usernames:
+        if args.dry_run:
+            print(
+                f"\n🚫 DRY RUN - would ban {len(deleted_usernames)} users with deleted/invalid GitHub accounts"
+            )
+        else:
+            banned = ban_github_users(deleted_usernames, args.env)
+            print(
+                f"\n🚫 Banned {banned} users with deleted/invalid GitHub accounts"
+            )
+
     approved = [r["username"] for r in results if r["approved"]]
     rejected = [r for r in results if not r["approved"]]
 

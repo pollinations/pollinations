@@ -18,7 +18,12 @@ import re
 import sys
 from datetime import datetime, timezone
 
-from user_upgrade_spore_to_seed import ensure_safe_env, run_d1_query
+from user_upgrade_spore_to_seed import (
+    ban_github_users,
+    ensure_safe_env,
+    extract_deleted_github_usernames,
+    run_d1_query,
+)
 from user_validate_github_profile import validate_users
 
 DEFAULT_LIMIT = 1000
@@ -33,6 +38,7 @@ def fetch_backlog_count(env: str) -> int:
         FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
+        AND COALESCE(banned, 0) = 0
         AND score IS NULL
         """,
         env,
@@ -49,6 +55,7 @@ def fetch_backlog_users(env: str, limit: int, offset: int) -> list[str]:
         FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
+        AND COALESCE(banned, 0) = 0
         AND score IS NULL
         ORDER BY created_at ASC, github_username ASC
         LIMIT {limit} OFFSET {offset}
@@ -205,8 +212,27 @@ def main() -> int:
         for username in usernames
         if username in results_by_username
     ]
+    deleted_usernames = extract_deleted_github_usernames(ordered_results)
+    deleted_username_set = set(deleted_usernames)
+    scoreable_results = [
+        result
+        for result in ordered_results
+        if isinstance(result.get("username"), str)
+        and result["username"] not in deleted_username_set
+    ]
 
     summarize(ordered_results)
+
+    if deleted_usernames:
+        if args.dry_run:
+            print(
+                f"\n🚫 Dry run would ban {len(deleted_usernames)} users with deleted/invalid GitHub accounts"
+            )
+        else:
+            banned = ban_github_users(deleted_usernames, env)
+            print(
+                f"\n🚫 Banned {banned} users with deleted/invalid GitHub accounts"
+            )
 
     if args.dry_run:
         print("\n🔍 Dry run sample:")
@@ -217,7 +243,7 @@ def main() -> int:
             print(f"   ... and {len(ordered_results) - 20} more")
         return 0
 
-    stored, skipped = store_scores(ordered_results, env)
+    stored, skipped = store_scores(scoreable_results, env)
 
     print("\n✅ Backfill complete:")
     print(f"   Stored: {stored}")

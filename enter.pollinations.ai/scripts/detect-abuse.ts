@@ -167,6 +167,7 @@ function fetchUsers(
     console.log(`📊 Fetching ${limit} most recent users${label}...`);
 
     const conditions: string[] = [];
+    conditions.push("COALESCE(banned, 0) = 0");
     if (unchecked) {
         conditions.push("trust_score IS NULL");
     } else {

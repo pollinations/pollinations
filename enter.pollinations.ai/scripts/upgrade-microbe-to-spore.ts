@@ -24,7 +24,17 @@ interface ParsedArgs {
 }
 
 type D1Row = Record<string, string | number | null>;
+interface ValidationResult {
+    username?: string;
+    status?: string;
+    approved?: boolean;
+    details?: {
+        total?: number;
+    } | null;
+}
 const DEFAULT_BACKLOG_THRESHOLD = 500;
+const GITHUB_ACCOUNT_DELETED_REASON = "github_account_deleted";
+const GITHUB_USERNAME_RE = /^[A-Za-z0-9-]+$/;
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
@@ -103,6 +113,39 @@ function queryCount(env: Environment, sql: string): number {
           : 0;
 }
 
+function escapeSqlString(value: string): string {
+    return value.replace(/'/g, "''");
+}
+
+function extractDeletedGithubUsers(results: ValidationResult[]): string[] {
+    const usernames: string[] = [];
+    for (const result of results) {
+        const username = result?.username;
+        if (typeof username !== "string") continue;
+        if (!GITHUB_USERNAME_RE.test(username)) {
+            usernames.push(username);
+            continue;
+        }
+        if (result?.status === GITHUB_ACCOUNT_DELETED_REASON) {
+            usernames.push(username);
+        }
+    }
+    return Array.from(new Set(usernames));
+}
+
+function banGithubUsers(env: Environment, usernames: string[]): number {
+    if (usernames.length === 0) return 0;
+
+    const usernameList = usernames
+        .map((username) => `'${escapeSqlString(username)}'`)
+        .join(", ");
+    const ok = executeD1(
+        env,
+        `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE github_username IN (${usernameList})`,
+    );
+    return ok ? usernames.length : 0;
+}
+
 /**
  * Phase 1: Microbe → Spore
  * Promote all microbe users who passed the abuse check (trust_score >= 60)
@@ -113,7 +156,7 @@ function promoteMicrobeToSpore(env: Environment, dryRun: boolean): number {
     // Find eligible users
     const eligible = queryD1(
         env,
-        "SELECT email, github_username FROM user WHERE tier = 'microbe' AND trust_score >= 60",
+        "SELECT email, github_username FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0",
     );
 
     if (eligible.length === 0) {
@@ -135,7 +178,7 @@ function promoteMicrobeToSpore(env: Environment, dryRun: boolean): number {
     // Batch promote — set tier_balance so they can use API immediately
     const ok = executeD1(
         env,
-        "UPDATE user SET tier = 'spore', tier_balance = 0.01 WHERE tier = 'microbe' AND trust_score >= 60",
+        "UPDATE user SET tier = 'spore', tier_balance = 0.01 WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0",
     );
 
     if (ok) {
@@ -161,7 +204,7 @@ function checkSporeForSeed(
 
     const backlogCount = queryCount(
         env,
-        "SELECT COUNT(*) AS count FROM user WHERE tier = 'spore' AND github_username IS NOT NULL AND score IS NULL",
+        "SELECT COUNT(*) AS count FROM user WHERE tier = 'spore' AND github_username IS NOT NULL AND COALESCE(banned, 0) = 0 AND score IS NULL",
     );
 
     if (backlogCount === 0) {
@@ -178,7 +221,7 @@ function checkSporeForSeed(
     // Find spore users with GitHub who haven't been scored yet (score IS NULL)
     const sporeUsers = queryD1(
         env,
-        "SELECT github_username FROM user WHERE tier = 'spore' AND github_username IS NOT NULL AND score IS NULL",
+        "SELECT github_username FROM user WHERE tier = 'spore' AND github_username IS NOT NULL AND COALESCE(banned, 0) = 0 AND score IS NULL",
     );
 
     const usernames = sporeUsers
@@ -214,15 +257,30 @@ print(json.dumps(results))
             { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
         );
 
-        const results = JSON.parse(output.trim());
+        const results = JSON.parse(output.trim()) as ValidationResult[];
         const now = Date.now(); // milliseconds to match D1 timestamp columns
         let upgraded = 0;
+        const deletedUsernames = extractDeletedGithubUsers(results);
+        const deletedUsernameSet = new Set(deletedUsernames);
+
+        if (deletedUsernames.length > 0) {
+            const banned = banGithubUsers(env, deletedUsernames);
+            console.log(
+                `   🚫 Banned ${banned} users with deleted/invalid GitHub accounts`,
+            );
+        }
 
         for (const result of results) {
             const username = result.username;
+            if (
+                typeof username !== "string" ||
+                deletedUsernameSet.has(username)
+            ) {
+                continue;
+            }
             const rawScore = Number(result.details?.total ?? 0);
             const totalScore = Number.isFinite(rawScore) ? rawScore : 0;
-            const safeUsername = username.replace(/'/g, "''");
+            const safeUsername = escapeSqlString(username);
 
             // Store score and score_checked_at for all checked users
             executeD1(

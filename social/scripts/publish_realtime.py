@@ -158,9 +158,17 @@ def main():
         except Exception:
             pass
 
-    pr_link = f"[PR #{pr_number}](<{pr_url}>)"
     author_link = f"[{author}](<https://github.com/{author}>)"
-    footer = f"\n\n{pr_link} | By {author_link}{timestamp_str}"
+
+    # App submission PRs: link to the app instead of the PR
+    app_url = gist.get("app_url")
+    app_name = gist.get("app_name")
+    if app_url and app_name:
+        source_link = f"🔗 [{app_name}](<{app_url}>)"
+    else:
+        source_link = f"[PR #{pr_number}](<{pr_url}>)"
+
+    footer = f"\n\n{source_link} | By {author_link}{timestamp_str}"
 
     message = snippet + footer
 

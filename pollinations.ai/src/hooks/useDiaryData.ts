@@ -271,12 +271,6 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
         // If it also has daily content, create both (day first, then week).
         const hasDailyContent = data.dailyImages.length > 0 || data.hasDaily;
 
-        // Weekly entries show only the PRs that merged on the display date (Sunday),
-        // not all PRs from the entire week — the weekly summary covers the full week
-        // but the PR chips should only show that day's work
-        const weekPrRefs = prRefs.filter((ref) => ref.date === date);
-        const weekPrNumbers = weekPrRefs.map((ref) => ref.number);
-
         if (hasDailyContent && data.hasWeekly) {
             timeline.push({
                 date,
@@ -287,12 +281,13 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
                 images: buildImageVariants(data.dailyImages, data.prImages),
                 summaryUrl: data.dailySummaryUrl,
             });
+            // Weekly entries don't show individual PR chips — it's a digest
             timeline.push({
                 date,
                 type: "week",
                 ...info,
-                prNumbers: weekPrNumbers,
-                prRefs: weekPrRefs,
+                prNumbers: [],
+                prRefs: [],
                 images: buildImageVariants(data.weeklyImages, data.prImages),
                 summaryUrl: data.weeklySummaryUrl,
             });
@@ -301,8 +296,8 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
                 date,
                 type: "week",
                 ...info,
-                prNumbers: weekPrNumbers,
-                prRefs: weekPrRefs,
+                prNumbers: [],
+                prRefs: [],
                 images: buildImageVariants(data.weeklyImages, data.prImages),
                 summaryUrl: data.weeklySummaryUrl,
             });
@@ -426,11 +421,10 @@ async function enrichEntryFromSummary(
     const summary = await fetchJSON<CanonicalSummaryJson>(entry.summaryUrl);
     if (!summary?.prs?.length) return entry;
 
-    let prRefs = sortPrRefs(summary.prs);
-    // Weekly entries only show PRs from the display date, not the full week
-    if (entry.type === "week") {
-        prRefs = prRefs.filter((ref) => ref.date === entry.date);
-    }
+    // Weekly entries don't show PR chips — skip enrichment
+    if (entry.type === "week") return entry;
+
+    const prRefs = sortPrRefs(summary.prs);
     if (prRefs.length === 0) return entry;
 
     return {
@@ -544,14 +538,9 @@ export function useDiaryData() {
                     summary = (canonical.summary || "").trim();
 
                     // Lazily update prRefs for older entries not enriched at load time
-                    if (canonical.prs?.length) {
-                        let prRefs = sortPrRefs(canonical.prs);
-                        // Weekly entries only show PRs from the display date
-                        if (entry.type === "week") {
-                            prRefs = prRefs.filter(
-                                (ref) => ref.date === entry.date,
-                            );
-                        }
+                    // Weekly entries don't show PR chips, so skip
+                    if (canonical.prs?.length && entry.type !== "week") {
+                        const prRefs = sortPrRefs(canonical.prs);
                         if (prRefs.length > 0) {
                             setTimeline((prev) =>
                                 prev.map((e) =>

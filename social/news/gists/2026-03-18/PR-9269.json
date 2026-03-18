@@ -1,0 +1,34 @@
+{
+  "pr_number": 9269,
+  "title": "Add House Painter to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9269",
+  "merged_at": "2026-03-18T17:44:37Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh coat of paint",
+    "blurb": "The community just shipped House Painter! Now you can visualize exterior color schemes for your home before committing to that neon pink trim.",
+    "summary": "Added the community-built House Painter app to the project showcase, which uses the image API to visualize exterior home color schemes.",
+    "impact": "Users can now discover House Painter in the gallery to easily test out new home aesthetics using AI image generation.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "image-generation",
+      "house-painter"
+    ],
+    "visual_concept": "The pollinations bee mascot wearing a tiny painter's beret and holding a paintbrush, painting a cozy pixel art house. A chunky robot companion holding up a color swatch palette.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a paintbrush and painting a small pixelated house. A chunky robot companion with a CRT monitor head holds up a color swatch palette. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9269.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a paintbrush and painting a small pixelated house. A chunky robot companion with a CRT monitor head holds up a color swatch palette. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-03-18T17:45:28.354773+00:00"
+}

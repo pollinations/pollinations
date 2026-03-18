@@ -426,7 +426,11 @@ async function enrichEntryFromSummary(
     const summary = await fetchJSON<CanonicalSummaryJson>(entry.summaryUrl);
     if (!summary?.prs?.length) return entry;
 
-    const prRefs = sortPrRefs(summary.prs);
+    let prRefs = sortPrRefs(summary.prs);
+    // Weekly entries only show PRs from the display date, not the full week
+    if (entry.type === "week") {
+        prRefs = prRefs.filter((ref) => ref.date === entry.date);
+    }
     if (prRefs.length === 0) return entry;
 
     return {
@@ -541,7 +545,13 @@ export function useDiaryData() {
 
                     // Lazily update prRefs for older entries not enriched at load time
                     if (canonical.prs?.length) {
-                        const prRefs = sortPrRefs(canonical.prs);
+                        let prRefs = sortPrRefs(canonical.prs);
+                        // Weekly entries only show PRs from the display date
+                        if (entry.type === "week") {
+                            prRefs = prRefs.filter(
+                                (ref) => ref.date === entry.date,
+                            );
+                        }
                         if (prRefs.length > 0) {
                             setTimeline((prev) =>
                                 prev.map((e) =>

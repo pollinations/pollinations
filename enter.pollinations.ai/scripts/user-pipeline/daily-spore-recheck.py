@@ -28,11 +28,11 @@ from d1 import ensure_safe_env, run_d1_query
 from github_account_state import (
     D1_BATCH_SIZE,
     GITHUB_USERNAME_RE,
-    ban_github_users,
+    ban_github_ids,
     ban_users_by_emails,
-    extract_deleted_github_usernames,
+    extract_deleted_github_ids,
 )
-from github_score import validate_users
+from github_score import validate_user_records
 
 MAX_USERS_PER_RUN = 8000
 SQL_BATCH_SIZE = 200
@@ -101,7 +101,7 @@ def fetch_spore_slice(
 
     results = run_d1_query(
         f"""
-        SELECT email, github_username
+        SELECT email, github_id, github_username
         FROM user
         WHERE tier = 'spore'
         AND COALESCE(banned, 0) = 0
@@ -126,29 +126,37 @@ def store_scores(results: list[dict], env: str) -> tuple[int, int]:
         sanitized_batch = []
         for result in batch:
             username = result.get("username")
+            github_id = result.get("github_id")
             if not isinstance(username, str) or not GITHUB_USERNAME_RE.match(username):
+                skipped += 1
+                continue
+            if not isinstance(github_id, int) or github_id <= 0:
                 skipped += 1
                 continue
 
             raw_score = (result.get("details") or {}).get("total", 0)
             total_score = float(raw_score) if raw_score is not None else 0.0
-            sanitized_batch.append((username, total_score))
+            sanitized_batch.append((github_id, username, total_score))
 
         if not sanitized_batch:
             continue
 
         score_cases = " ".join(
-            f"WHEN '{username}' THEN {score}" for username, score in sanitized_batch
+            f"WHEN {github_id} THEN {score}"
+            for github_id, _username, score in sanitized_batch
         )
-        username_list = ", ".join(
-            f"'{username}'" for username, _score in sanitized_batch
+        username_cases = " ".join(
+            f"WHEN {github_id} THEN '{username}'"
+            for github_id, username, _score in sanitized_batch
         )
+        id_list = ", ".join(str(github_id) for github_id, _username, _score in sanitized_batch)
         update_query = f"""
             UPDATE user
             SET
-                score = CASE github_username {score_cases} END,
+                score = CASE github_id {score_cases} END,
+                github_username = CASE github_id {username_cases} END,
                 score_checked_at = {now}
-            WHERE github_username IN ({username_list})
+            WHERE github_id IN ({id_list})
             AND tier = 'spore'
         """
 
@@ -165,32 +173,36 @@ def store_scores(results: list[dict], env: str) -> tuple[int, int]:
     return stored, skipped
 
 
-def extract_risk_blocked_usernames(results: list[dict]) -> list[str]:
+def extract_risk_blocked_usernames(results: list[dict]) -> list[int]:
     return list(
         dict.fromkeys(
-            result["username"]
+            result["github_id"]
             for result in results
             if result.get("risk_status") == "suspicious"
-            and isinstance(result.get("username"), str)
+            and isinstance(result.get("github_id"), int)
         )
     )
 
 
-def upgrade_users(usernames: list[str], env: str) -> tuple[int, bool]:
+def upgrade_users(github_ids: list[int], env: str) -> tuple[int, bool]:
     total_upgraded = 0
     failed = False
 
-    for i in range(0, len(usernames), D1_BATCH_SIZE):
-        batch = usernames[i : i + D1_BATCH_SIZE]
-        safe_batch = [username for username in batch if GITHUB_USERNAME_RE.match(username)]
+    for i in range(0, len(github_ids), D1_BATCH_SIZE):
+        batch = github_ids[i : i + D1_BATCH_SIZE]
+        safe_batch = [
+            github_id
+            for github_id in batch
+            if isinstance(github_id, int) and not isinstance(github_id, bool) and github_id > 0
+        ]
         if not safe_batch:
             continue
 
-        username_list = ", ".join(f"'{username}'" for username in safe_batch)
+        id_list = ", ".join(str(github_id) for github_id in safe_batch)
         update_query = f"""
             UPDATE user
             SET tier = 'seed', tier_balance = {SEED_TIER_BALANCE}
-            WHERE github_username IN ({username_list})
+            WHERE github_id IN ({id_list})
             AND tier = 'spore'
         """
         result = run_d1_query(update_query, env)
@@ -263,22 +275,14 @@ def main() -> int:
             return 0
 
         invalid_email_rows = [
-            row
-            for row in rows
-            if not isinstance(row.get("github_username"), str)
-            or not GITHUB_USERNAME_RE.match(row["github_username"])
+            row for row in rows if not isinstance(row.get("github_id"), int)
         ]
-        valid_usernames = [
-            row["github_username"]
-            for row in rows
-            if isinstance(row.get("github_username"), str)
-            and GITHUB_USERNAME_RE.match(row["github_username"])
-        ]
+        valid_rows = [row for row in rows if isinstance(row.get("github_id"), int)]
 
         if invalid_email_rows:
             if args.dry_run:
                 print(
-                    f"🚫 Dry run would ban {len(invalid_email_rows)} spore users with missing/invalid GitHub usernames"
+                    f"🚫 Dry run would ban {len(invalid_email_rows)} spore users with missing/invalid GitHub IDs"
                 )
             else:
                 banned = ban_users_by_emails(
@@ -290,41 +294,41 @@ def main() -> int:
                     env,
                 )
                 print(
-                    f"🚫 Banned {banned} spore users with missing/invalid GitHub usernames"
+                    f"🚫 Banned {banned} spore users with missing/invalid GitHub IDs"
                 )
 
-        if not valid_usernames:
+        if not valid_rows:
             print("✅ No valid spore users left for GitHub scoring")
             return 0
 
-        results = validate_users(valid_usernames)
-        results_by_username = {
-            result["username"]: result
+        results = validate_user_records(valid_rows)
+        results_by_github_id = {
+            result["github_id"]: result
             for result in results
-            if isinstance(result.get("username"), str)
+            if isinstance(result.get("github_id"), int)
         }
         ordered_results = [
-            results_by_username[username]
-            for username in valid_usernames
-            if username in results_by_username
+            results_by_github_id[row["github_id"]]
+            for row in valid_rows
+            if row["github_id"] in results_by_github_id
         ]
 
-        deleted_usernames = extract_deleted_github_usernames(ordered_results)
-        deleted_username_set = set(deleted_usernames)
+        deleted_github_ids = extract_deleted_github_ids(ordered_results)
+        deleted_github_id_set = set(deleted_github_ids)
         scoreable_results = [
             result
             for result in ordered_results
-            if isinstance(result.get("username"), str)
-            and result["username"] not in deleted_username_set
+            if isinstance(result.get("github_id"), int)
+            and result["github_id"] not in deleted_github_id_set
         ]
-        risk_blocked_usernames = extract_risk_blocked_usernames(scoreable_results)
-        risk_blocked_set = set(risk_blocked_usernames)
-        approved_usernames = [
-            result["username"]
+        risk_blocked_github_ids = extract_risk_blocked_usernames(scoreable_results)
+        risk_blocked_set = set(risk_blocked_github_ids)
+        approved_github_ids = [
+            result["github_id"]
             for result in scoreable_results
             if result.get("approved")
-            and isinstance(result.get("username"), str)
-            and result["username"] not in risk_blocked_set
+            and isinstance(result.get("github_id"), int)
+            and result["github_id"] not in risk_blocked_set
         ]
 
         summarize(ordered_results)
@@ -338,27 +342,27 @@ def main() -> int:
                 print(f"   {result['username']}: {score:.1f} ({result['reason']}){suffix}")
 
         if args.dry_run:
-            if deleted_usernames:
+            if deleted_github_ids:
                 print(
-                    f"\n🚫 Dry run would ban {len(deleted_usernames)} users with deleted/invalid GitHub accounts"
+                    f"\n🚫 Dry run would ban {len(deleted_github_ids)} users with deleted/invalid GitHub accounts"
                 )
-            if risk_blocked_usernames:
+            if risk_blocked_github_ids:
                 print(
-                    f"🚩 Dry run would keep {len(risk_blocked_usernames)} users at spore due to suspicious GitHub profiles"
+                    f"🚩 Dry run would keep {len(risk_blocked_github_ids)} users at spore due to suspicious GitHub profiles"
                 )
-            print(f"🌱 Dry run would upgrade {len(approved_usernames)} users to seed")
+            print(f"🌱 Dry run would upgrade {len(approved_github_ids)} users to seed")
             return 0
 
-        if deleted_usernames:
-            banned = ban_github_users(deleted_usernames, env)
+        if deleted_github_ids:
+            banned = ban_github_ids(deleted_github_ids, env)
             print(f"\n🚫 Banned {banned} users with deleted/invalid GitHub accounts")
 
         stored, skipped = store_scores(scoreable_results, env)
-        upgraded, had_failures = upgrade_users(approved_usernames, env)
+        upgraded, had_failures = upgrade_users(approved_github_ids, env)
 
         print("\n📊 Results:")
         print(f"   Scores stored: {stored}")
-        print(f"   Risk-blocked from seed: {len(risk_blocked_usernames)}")
+        print(f"   Risk-blocked from seed: {len(risk_blocked_github_ids)}")
         print(f"   Upgraded to seed: {upgraded}")
         if skipped:
             print(f"   Skipped invalid usernames: {skipped}")

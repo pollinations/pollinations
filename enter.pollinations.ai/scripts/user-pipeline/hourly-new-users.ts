@@ -29,10 +29,12 @@ interface ParsedArgs {
 
 interface TrustedUser {
     email: string;
+    github_id: number | null;
     github_username: string | null;
 }
 
 interface ValidationResult {
+    github_id?: number | null;
     username?: string;
     status?: string;
     approved?: boolean;
@@ -93,19 +95,19 @@ function fetchTrustedMicrobeUsers(
     const emailFilter = buildEmailFilter("email", cohortEmails);
     return queryD1(
         env,
-        `SELECT email, github_username FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0${emailFilter}`,
+        `SELECT email, github_id, github_username FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0${emailFilter}`,
     ) as TrustedUser[];
 }
 
-function runGithubScoring(usernames: string[]): ValidationResult[] {
-    if (usernames.length === 0) return [];
+function runGithubScoring(users: TrustedUser[]): ValidationResult[] {
+    if (users.length === 0) return [];
 
     const scriptPath = `${import.meta.dirname}/scoring`;
     const pythonScript = `
 import sys, json
 sys.path.insert(0, "${scriptPath}")
-from github_score import validate_users
-results = validate_users(${JSON.stringify(usernames)})
+from github_score import validate_user_records
+results = validate_user_records(${JSON.stringify(users)})
 print(json.dumps(results))
 `;
     const output = runInlinePython(pythonScript);
@@ -134,23 +136,25 @@ function banUsersByEmails(env: Environment, emails: string[]): number {
     return banned;
 }
 
-function banUsersByGithubUsernames(
-    env: Environment,
-    usernames: string[],
-): number {
-    const uniqueUsernames = Array.from(new Set(usernames));
+function banUsersByGithubIds(env: Environment, githubIds: number[]): number {
+    const uniqueIds = Array.from(
+        new Set(
+            githubIds.filter(
+                (githubId): githubId is number =>
+                    Number.isInteger(githubId) && githubId > 0,
+            ),
+        ),
+    );
     let banned = 0;
 
-    for (let i = 0; i < uniqueUsernames.length; i += DB_BATCH_SIZE) {
-        const batch = uniqueUsernames.slice(i, i + DB_BATCH_SIZE);
+    for (let i = 0; i < uniqueIds.length; i += DB_BATCH_SIZE) {
+        const batch = uniqueIds.slice(i, i + DB_BATCH_SIZE);
         if (batch.length === 0) continue;
 
-        const usernameList = batch
-            .map((username) => `'${escapeSqlString(username)}'`)
-            .join(", ");
+        const idList = batch.join(", ");
         const ok = executeD1(
             env,
-            `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE github_username IN (${usernameList})`,
+            `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE github_id IN (${idList})`,
         );
         if (ok) banned += batch.length;
     }
@@ -158,29 +162,26 @@ function banUsersByGithubUsernames(
     return banned;
 }
 
-function extractDeletedGithubUsers(results: ValidationResult[]): string[] {
-    const usernames: string[] = [];
-    for (const result of results) {
-        const username = result.username;
-        if (typeof username !== "string") continue;
-        if (!GITHUB_USERNAME_RE.test(username)) {
-            usernames.push(username);
-            continue;
-        }
-        if (result.status === GITHUB_ACCOUNT_DELETED_REASON) {
-            usernames.push(username);
-        }
-    }
-    return Array.from(new Set(usernames));
+function extractDeletedGithubUsers(results: ValidationResult[]): number[] {
+    return Array.from(
+        new Set(
+            results.flatMap((result) =>
+                result.status === GITHUB_ACCOUNT_DELETED_REASON &&
+                Number.isInteger(result.github_id)
+                    ? [result.github_id]
+                    : [],
+            ),
+        ),
+    );
 }
 
-function extractRiskBlockedGithubUsers(results: ValidationResult[]): string[] {
+function extractRiskBlockedGithubUsers(results: ValidationResult[]): number[] {
     return Array.from(
         new Set(
             results.flatMap((result) =>
                 result.risk_status === "suspicious" &&
-                typeof result.username === "string"
-                    ? [result.username]
+                Number.isInteger(result.github_id)
+                    ? [result.github_id]
                     : [],
             ),
         ),
@@ -196,8 +197,11 @@ function storeScores(
 
     for (let i = 0; i < results.length; i += DB_BATCH_SIZE) {
         const batch = results.slice(i, i + DB_BATCH_SIZE).flatMap((result) => {
+            const githubId = result.github_id;
             const username = result.username;
             if (
+                !Number.isInteger(githubId) ||
+                githubId <= 0 ||
                 typeof username !== "string" ||
                 !GITHUB_USERNAME_RE.test(username)
             ) {
@@ -205,22 +209,26 @@ function storeScores(
             }
             const rawScore = Number(result.details?.total ?? 0);
             const totalScore = Number.isFinite(rawScore) ? rawScore : 0;
-            return [{ username, totalScore }];
+            return [{ githubId, username, totalScore }];
         });
         if (batch.length === 0) continue;
 
         const scoreCases = batch
             .map(
-                ({ username, totalScore }) =>
-                    `WHEN '${escapeSqlString(username)}' THEN ${totalScore}`,
+                ({ githubId, totalScore }) =>
+                    `WHEN ${githubId} THEN ${totalScore}`,
             )
             .join(" ");
-        const usernameList = batch
-            .map(({ username }) => `'${escapeSqlString(username)}'`)
-            .join(", ");
+        const usernameCases = batch
+            .map(
+                ({ githubId, username }) =>
+                    `WHEN ${githubId} THEN '${escapeSqlString(username)}'`,
+            )
+            .join(" ");
+        const idList = batch.map(({ githubId }) => githubId).join(", ");
         const ok = executeD1(
             env,
-            `UPDATE user SET score = CASE github_username ${scoreCases} END, score_checked_at = ${timestamp} WHERE github_username IN (${usernameList}) AND tier = 'microbe'`,
+            `UPDATE user SET score = CASE github_id ${scoreCases} END, github_username = CASE github_id ${usernameCases} END, score_checked_at = ${timestamp} WHERE github_id IN (${idList}) AND tier = 'microbe'`,
         );
         if (ok) stored += batch.length;
     }
@@ -230,23 +238,28 @@ function storeScores(
 
 function applyTierUpdates(
     env: Environment,
-    usernames: string[],
+    githubIds: number[],
     tier: "spore" | "seed",
     tierBalance: number,
 ): number {
-    const uniqueUsernames = Array.from(new Set(usernames));
+    const uniqueIds = Array.from(
+        new Set(
+            githubIds.filter(
+                (githubId): githubId is number =>
+                    Number.isInteger(githubId) && githubId > 0,
+            ),
+        ),
+    );
     let updated = 0;
 
-    for (let i = 0; i < uniqueUsernames.length; i += DB_BATCH_SIZE) {
-        const batch = uniqueUsernames.slice(i, i + DB_BATCH_SIZE);
+    for (let i = 0; i < uniqueIds.length; i += DB_BATCH_SIZE) {
+        const batch = uniqueIds.slice(i, i + DB_BATCH_SIZE);
         if (batch.length === 0) continue;
 
-        const usernameList = batch
-            .map((username) => `'${escapeSqlString(username)}'`)
-            .join(", ");
+        const idList = batch.join(", ");
         const ok = executeD1(
             env,
-            `UPDATE user SET tier = '${tier}', tier_balance = ${tierBalance} WHERE github_username IN (${usernameList}) AND tier = 'microbe'`,
+            `UPDATE user SET tier = '${tier}', tier_balance = ${tierBalance} WHERE github_id IN (${idList}) AND tier = 'microbe'`,
         );
         if (ok) updated += batch.length;
     }
@@ -275,14 +288,11 @@ async function main(): Promise<void> {
     }
 
     const missingOrInvalidGithubUsers = trustedUsers.filter(
-        (user) =>
-            typeof user.github_username !== "string" ||
-            !GITHUB_USERNAME_RE.test(user.github_username),
+        (user) => !Number.isInteger(user.github_id) || user.github_id === null,
     );
     const scoreableUsers = trustedUsers.filter(
-        (user): user is TrustedUser & { github_username: string } =>
-            typeof user.github_username === "string" &&
-            GITHUB_USERNAME_RE.test(user.github_username),
+        (user): user is TrustedUser & { github_id: number } =>
+            Number.isInteger(user.github_id) && user.github_id !== null,
     );
 
     console.log(`📊 Trusted microbe users: ${trustedUsers.length}`);
@@ -290,7 +300,7 @@ async function main(): Promise<void> {
     if (config.dryRun) {
         if (missingOrInvalidGithubUsers.length > 0) {
             console.log(
-                `🚫 Would ban ${missingOrInvalidGithubUsers.length} users with missing/invalid GitHub usernames`,
+                `🚫 Would ban ${missingOrInvalidGithubUsers.length} users with missing/invalid GitHub IDs`,
             );
         }
     } else if (missingOrInvalidGithubUsers.length > 0) {
@@ -299,7 +309,7 @@ async function main(): Promise<void> {
             missingOrInvalidGithubUsers.map((user) => user.email),
         );
         console.log(
-            `🚫 Banned ${banned} users with missing/invalid GitHub usernames`,
+            `🚫 Banned ${banned} users with missing/invalid GitHub IDs`,
         );
     }
 
@@ -308,50 +318,48 @@ async function main(): Promise<void> {
         return;
     }
 
-    const results = runGithubScoring(
-        scoreableUsers.map((user) => user.github_username),
-    );
-    const deletedUsernames = extractDeletedGithubUsers(results);
-    const deletedSet = new Set(deletedUsernames);
+    const results = runGithubScoring(scoreableUsers);
+    const deletedGithubIds = extractDeletedGithubUsers(results);
+    const deletedSet = new Set(deletedGithubIds);
     const scoreableResults = results.filter((result) => {
-        const username = result.username;
-        return typeof username === "string" && !deletedSet.has(username);
+        const githubId = result.github_id;
+        return Number.isInteger(githubId) && !deletedSet.has(githubId);
     });
-    const riskBlockedUsernames =
+    const riskBlockedGithubIds =
         extractRiskBlockedGithubUsers(scoreableResults);
-    const riskBlockedSet = new Set(riskBlockedUsernames);
-    const approvedUsernames = scoreableResults.flatMap((result) =>
+    const riskBlockedSet = new Set(riskBlockedGithubIds);
+    const approvedGithubIds = scoreableResults.flatMap((result) =>
         result.approved &&
-        typeof result.username === "string" &&
-        !riskBlockedSet.has(result.username)
-            ? [result.username]
+        Number.isInteger(result.github_id) &&
+        !riskBlockedSet.has(result.github_id)
+            ? [result.github_id]
             : [],
     );
-    const sporeUsernames = scoreableResults.flatMap((result) =>
-        typeof result.username === "string" &&
-        (!result.approved || riskBlockedSet.has(result.username))
-            ? [result.username]
+    const sporeGithubIds = scoreableResults.flatMap((result) =>
+        Number.isInteger(result.github_id) &&
+        (!result.approved || riskBlockedSet.has(result.github_id))
+            ? [result.github_id]
             : [],
     );
 
     if (config.dryRun) {
-        if (deletedUsernames.length > 0) {
+        if (deletedGithubIds.length > 0) {
             console.log(
-                `🚫 Would ban ${deletedUsernames.length} users with deleted GitHub accounts`,
+                `🚫 Would ban ${deletedGithubIds.length} users with deleted GitHub accounts`,
             );
         }
-        if (riskBlockedUsernames.length > 0) {
+        if (riskBlockedGithubIds.length > 0) {
             console.log(
-                `🚩 Would keep ${riskBlockedUsernames.length} trusted users at spore due to suspicious GitHub profiles`,
+                `🚩 Would keep ${riskBlockedGithubIds.length} trusted users at spore due to suspicious GitHub profiles`,
             );
         }
-        console.log(`🌱 Would promote to seed: ${approvedUsernames.length}`);
-        console.log(`🍄 Would promote to spore: ${sporeUsernames.length}`);
+        console.log(`🌱 Would promote to seed: ${approvedGithubIds.length}`);
+        console.log(`🍄 Would promote to spore: ${sporeGithubIds.length}`);
         return;
     }
 
-    if (deletedUsernames.length > 0) {
-        const banned = banUsersByGithubUsernames(config.env, deletedUsernames);
+    if (deletedGithubIds.length > 0) {
+        const banned = banUsersByGithubIds(config.env, deletedGithubIds);
         console.log(`🚫 Banned ${banned} users with deleted GitHub accounts`);
     }
 
@@ -359,20 +367,20 @@ async function main(): Promise<void> {
     const stored = storeScores(config.env, scoreableResults, now);
     const seeded = applyTierUpdates(
         config.env,
-        approvedUsernames,
+        approvedGithubIds,
         "seed",
         TIER_POLLEN.seed,
     );
     const spored = applyTierUpdates(
         config.env,
-        sporeUsernames,
+        sporeGithubIds,
         "spore",
         TIER_POLLEN.spore,
     );
 
     console.log("\n📊 Summary:");
     console.log(`   Scores stored: ${stored}`);
-    console.log(`   Risk-blocked from seed: ${riskBlockedUsernames.length}`);
+    console.log(`   Risk-blocked from seed: ${riskBlockedGithubIds.length}`);
     console.log(`   Microbe -> Seed: ${seeded}`);
     console.log(`   Microbe -> Spore: ${spored}`);
 }

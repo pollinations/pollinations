@@ -45,6 +45,7 @@ type Environment = "staging";
 
 interface User {
     email: string;
+    github_id: number | null;
     github_username: string | null;
     created_at: number;
 }
@@ -67,6 +68,7 @@ interface ParsedArgs {
 }
 
 interface GithubValidationResult {
+    github_id?: number | null;
     username?: string;
     status?: string;
 }
@@ -167,7 +169,7 @@ function fetchUsers(
 
     const emailFilter = buildEmailFilter("email", cohortEmails);
     const query = `
-        SELECT email, github_username, created_at
+        SELECT email, github_id, github_username, created_at
         FROM user
         WHERE COALESCE(banned, 0) = 0
         AND trust_score IS NULL
@@ -206,22 +208,24 @@ function banUsersByEmails(env: Environment, emails: string[]): number {
     return banned;
 }
 
-function banUsersByGithubUsernames(
-    env: Environment,
-    usernames: string[],
-): number {
-    const uniqueUsernames = Array.from(new Set(usernames));
+function banUsersByGithubIds(env: Environment, githubIds: number[]): number {
+    const uniqueIds = Array.from(
+        new Set(
+            githubIds.filter(
+                (githubId): githubId is number =>
+                    Number.isInteger(githubId) && githubId > 0,
+            ),
+        ),
+    );
     let banned = 0;
 
-    for (let i = 0; i < uniqueUsernames.length; i += DB_BATCH_SIZE) {
-        const batch = uniqueUsernames.slice(i, i + DB_BATCH_SIZE);
+    for (let i = 0; i < uniqueIds.length; i += DB_BATCH_SIZE) {
+        const batch = uniqueIds.slice(i, i + DB_BATCH_SIZE);
         if (batch.length === 0) continue;
-        const usernameList = batch
-            .map((username) => `'${escapeSqlString(username)}'`)
-            .join(", ");
+        const idList = batch.join(", ");
         const ok = executeD1(
             env,
-            `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE github_username IN (${usernameList})`,
+            `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE github_id IN (${idList})`,
         );
         if (ok) banned += batch.length;
     }
@@ -229,15 +233,55 @@ function banUsersByGithubUsernames(
     return banned;
 }
 
-function runGithubValidation(usernames: string[]): GithubValidationResult[] {
-    if (usernames.length === 0) return [];
+function syncGithubUsernames(
+    env: Environment,
+    users: Array<{ github_id: number; github_username: string }>,
+): number {
+    const uniqueUsers = Array.from(
+        new Map(
+            users
+                .filter(
+                    (user) =>
+                        Number.isInteger(user.github_id) &&
+                        user.github_id > 0 &&
+                        typeof user.github_username === "string" &&
+                        GITHUB_USERNAME_RE.test(user.github_username),
+                )
+                .map((user) => [user.github_id, user]),
+        ).values(),
+    );
+    let updated = 0;
+
+    for (let i = 0; i < uniqueUsers.length; i += DB_BATCH_SIZE) {
+        const batch = uniqueUsers.slice(i, i + DB_BATCH_SIZE);
+        if (batch.length === 0) continue;
+
+        const usernameCases = batch
+            .map(
+                ({ github_id, github_username }) =>
+                    `WHEN ${github_id} THEN '${escapeSqlString(github_username)}'`,
+            )
+            .join(" ");
+        const idList = batch.map(({ github_id }) => github_id).join(", ");
+        const ok = executeD1(
+            env,
+            `UPDATE user SET github_username = CASE github_id ${usernameCases} END WHERE github_id IN (${idList})`,
+        );
+        if (ok) updated += batch.length;
+    }
+
+    return updated;
+}
+
+function runGithubValidation(users: User[]): GithubValidationResult[] {
+    if (users.length === 0) return [];
 
     const scriptPath = import.meta.dirname;
     const pythonScript = `
 import sys, json
 sys.path.insert(0, "${scriptPath}")
-from github_score import validate_accounts
-results = validate_accounts(${JSON.stringify(usernames)})
+from github_score import validate_account_records
+results = validate_account_records(${JSON.stringify(users)})
 print(json.dumps(results))
 `;
 
@@ -254,14 +298,11 @@ function validateGithubAccounts(
     if (users.length === 0) return [];
 
     const missingOrInvalidUsers = users.filter(
-        (user) =>
-            typeof user.github_username !== "string" ||
-            !GITHUB_USERNAME_RE.test(user.github_username),
+        (user) => !Number.isInteger(user.github_id) || user.github_id === null,
     );
     const usersWithGithub = users.filter(
-        (user): user is User & { github_username: string } =>
-            typeof user.github_username === "string" &&
-            GITHUB_USERNAME_RE.test(user.github_username),
+        (user): user is User & { github_id: number } =>
+            Number.isInteger(user.github_id) && user.github_id !== null,
     );
 
     if (missingOrInvalidUsers.length > 0) {
@@ -271,11 +312,11 @@ function validateGithubAccounts(
                 missingOrInvalidUsers.map((user) => user.email),
             );
             console.log(
-                `🚫 Banned ${banned} new users with missing/invalid GitHub usernames`,
+                `🚫 Banned ${banned} new users with missing/invalid GitHub IDs`,
             );
         } else {
             console.log(
-                `🚫 Detected ${missingOrInvalidUsers.length} users with missing/invalid GitHub usernames`,
+                `🚫 Detected ${missingOrInvalidUsers.length} users with missing/invalid GitHub IDs`,
             );
         }
     }
@@ -284,37 +325,86 @@ function validateGithubAccounts(
         return [];
     }
 
-    const results = runGithubValidation(
-        usersWithGithub.map((user) => user.github_username),
-    );
-    const deletedUsernames = Array.from(
+    const results = runGithubValidation(usersWithGithub);
+    const deletedGithubIds = Array.from(
         new Set(
             results.flatMap((result) =>
                 result.status === GITHUB_ACCOUNT_DELETED_REASON &&
-                typeof result.username === "string"
-                    ? [result.username]
+                Number.isInteger(result.github_id)
+                    ? [result.github_id]
                     : [],
             ),
         ),
     );
+    const resolvedUsers = results.flatMap((result) =>
+        Number.isInteger(result.github_id) &&
+        typeof result.username === "string" &&
+        GITHUB_USERNAME_RE.test(result.username)
+            ? [
+                  {
+                      github_id: result.github_id,
+                      github_username: result.username,
+                  },
+              ]
+            : [],
+    );
 
-    if (deletedUsernames.length > 0) {
+    if (resolvedUsers.length > 0) {
         if (applyChanges) {
-            const banned = banUsersByGithubUsernames(env, deletedUsernames);
+            const updated = syncGithubUsernames(env, resolvedUsers);
+            if (updated > 0) {
+                console.log(
+                    `🔄 Synced ${updated} GitHub usernames from GitHub IDs`,
+                );
+            }
+        } else {
+            console.log(
+                `🔄 Resolved ${resolvedUsers.length} GitHub identities by GitHub ID`,
+            );
+        }
+    }
+
+    if (deletedGithubIds.length > 0) {
+        if (applyChanges) {
+            const banned = banUsersByGithubIds(env, deletedGithubIds);
             console.log(
                 `🚫 Banned ${banned} new users with deleted GitHub accounts`,
             );
         } else {
             console.log(
-                `🚫 Detected ${deletedUsernames.length} users with deleted GitHub accounts`,
+                `🚫 Detected ${deletedGithubIds.length} users with deleted GitHub accounts`,
             );
         }
     }
 
-    const deletedSet = new Set(deletedUsernames);
-    return usersWithGithub.filter(
-        (user) => !deletedSet.has(user.github_username),
+    const resultsByGithubId = new Map(
+        results.flatMap((result) =>
+            Number.isInteger(result.github_id)
+                ? [[result.github_id, result] as const]
+                : [],
+        ),
     );
+    const deletedSet = new Set(deletedGithubIds);
+    return usersWithGithub.flatMap((user) => {
+        if (deletedSet.has(user.github_id)) {
+            return [];
+        }
+
+        const result = resultsByGithubId.get(user.github_id);
+        const github_username =
+            typeof result?.username === "string" &&
+            GITHUB_USERNAME_RE.test(result.username)
+                ? result.username
+                : user.github_username;
+        if (
+            typeof github_username !== "string" ||
+            !GITHUB_USERNAME_RE.test(github_username)
+        ) {
+            return [];
+        }
+
+        return [{ ...user, github_username }];
+    });
 }
 
 function buildChunkRanges(

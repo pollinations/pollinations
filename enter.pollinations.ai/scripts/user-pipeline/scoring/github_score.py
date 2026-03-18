@@ -32,6 +32,7 @@ from tqdm import tqdm
 from github_risk import assess_profile_risk
 
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
+GITHUB_REST_USER = "https://api.github.com/user/{}"
 BATCH_SIZE = 50
 MAX_BATCHES = None  # Set to a number to limit batches for testing
 GITHUB_USERNAME_RE = re.compile(r"^[A-Za-z0-9-]+$")
@@ -165,6 +166,34 @@ def get_github_token() -> str:
     return token
 
 
+def _parse_github_id(value) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, float):
+        if value.is_integer() and value > 0:
+            return int(value)
+        return None
+    if isinstance(value, str) and value.strip().isdigit():
+        parsed = int(value.strip())
+        return parsed if parsed > 0 else None
+    return None
+
+
+def _normalize_record(record: dict) -> dict:
+    username = record.get("github_username")
+    if not isinstance(username, str) or not username.strip():
+        username = record.get("username")
+    if not isinstance(username, str) or not username.strip():
+        username = None
+
+    return {
+        "github_id": _parse_github_id(record.get("github_id")),
+        "github_username": username.strip() if isinstance(username, str) else None,
+    }
+
+
 def build_query(usernames: list[str]) -> str:
     """Build GraphQL query for multiple users."""
     from_date = (datetime.now(timezone.utc) - timedelta(days=90)).strftime(
@@ -242,6 +271,48 @@ def run_graphql_query(query: str, retries: int = 3) -> tuple[dict, int | None]:
         raise RuntimeError("GitHub GraphQL request failed without a response")
 
     return data, rate_remaining
+
+
+def run_rest_request(url: str, retries: int = 3) -> tuple[dict | None, int | None, int]:
+    request = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {get_github_token()}",
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "pollinations-github-validator",
+        },
+    )
+
+    rate_remaining = None
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                data = json.loads(response.read())
+                rate_remaining_header = response.headers.get("X-RateLimit-Remaining")
+                if rate_remaining_header:
+                    rate_remaining = int(rate_remaining_header)
+                return data, rate_remaining, response.status
+        except urllib.error.HTTPError as error:
+            if error.code == 404:
+                return None, rate_remaining, 404
+            if attempt < retries - 1 and error.code in (502, 503, 504):
+                time.sleep(5 * (attempt + 1))
+                continue
+            if attempt < retries - 1 and error.code in (403, 429):
+                retry_after = error.headers.get("Retry-After")
+                reset_at = error.headers.get("X-RateLimit-Reset")
+                if retry_after:
+                    wait = int(retry_after) + 1
+                elif reset_at:
+                    wait = max(int(reset_at) - int(time.time()), 0) + 1
+                else:
+                    wait = 60
+                print(f"   ⏳ Rate limited (HTTP {error.code}), waiting {wait}s...")
+                time.sleep(wait)
+                continue
+            return None, rate_remaining, error.code
+
+    raise RuntimeError("GitHub REST request failed without a response")
 
 
 def score_user(data: dict | None, username: str) -> dict:
@@ -347,6 +418,12 @@ def fetch_account_batch(
     return results, rate_remaining
 
 
+def fetch_account_by_id(
+    github_id: int, retries: int = 3
+) -> tuple[dict | None, int | None, int]:
+    return run_rest_request(GITHUB_REST_USER.format(github_id), retries)
+
+
 def validate_users(usernames: list[str]) -> list[dict]:
     """Validate users in concurrent batches."""
     if not usernames:
@@ -407,6 +484,144 @@ def validate_users(usernames: list[str]) -> list[dict]:
 
     progress_bar.close()
     return results
+
+
+def validate_account_records(records: list[dict]) -> list[dict]:
+    if not records:
+        return []
+
+    get_github_token()
+
+    normalized = [_normalize_record(record) for record in records]
+    results: list[dict | None] = [None] * len(normalized)
+    username_only: list[tuple[int, str]] = []
+    id_jobs: list[tuple[int, int, str | None]] = []
+
+    for index, record in enumerate(normalized):
+        github_id = record["github_id"]
+        github_username = record["github_username"]
+
+        if github_id is not None:
+            id_jobs.append((index, github_id, github_username))
+            continue
+
+        if isinstance(github_username, str) and GITHUB_USERNAME_RE.match(github_username):
+            username_only.append((index, github_username))
+            continue
+
+        results[index] = {
+            "github_id": github_id,
+            "username": github_username,
+            "status": "github_account_deleted",
+        }
+
+    if id_jobs:
+        progress_bar = tqdm(
+            total=len(id_jobs),
+            desc="Resolving IDs",
+            unit="user",
+            bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}] {postfix}",
+        )
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {
+                executor.submit(fetch_account_by_id, github_id): (index, github_id)
+                for index, github_id, _github_username in id_jobs
+            }
+            for future in as_completed(futures):
+                index, github_id = futures[future]
+                data, rate_remaining, status = future.result()
+                if status == 200 and isinstance(data, dict):
+                    login = data.get("login")
+                    results[index] = {
+                        "github_id": github_id,
+                        "username": login if isinstance(login, str) else None,
+                        "status": "ok" if isinstance(login, str) else "github_account_deleted",
+                    }
+                else:
+                    results[index] = {
+                        "github_id": github_id,
+                        "username": normalized[index]["github_username"],
+                        "status": "github_account_deleted",
+                    }
+
+                progress_bar.set_postfix(
+                    quota=rate_remaining if rate_remaining is not None else "?"
+                )
+                progress_bar.update(1)
+
+                if rate_remaining is not None and rate_remaining <= 100:
+                    time.sleep(1 if rate_remaining > 50 else 2)
+                elif rate_remaining is None:
+                    time.sleep(1)
+
+        progress_bar.close()
+
+    if username_only:
+        usernames = [username for _index, username in username_only]
+        fallback_results = validate_accounts(usernames)
+        by_username = {
+            result["username"]: result
+            for result in fallback_results
+            if isinstance(result.get("username"), str)
+        }
+        for index, username in username_only:
+            result = by_username.get(
+                username,
+                {"username": username, "status": "github_account_deleted"},
+            )
+            results[index] = {
+                "github_id": None,
+                "username": result.get("username"),
+                "status": result.get("status", "github_account_deleted"),
+            }
+
+    return [result for result in results if result is not None]
+
+
+def validate_user_records(records: list[dict]) -> list[dict]:
+    if not records:
+        return []
+
+    account_results = validate_account_records(records)
+    score_targets = [
+        result["username"]
+        for result in account_results
+        if result.get("status") == "ok" and isinstance(result.get("username"), str)
+    ]
+    score_results = validate_users(score_targets)
+    score_results_by_username = {
+        result["username"]: result
+        for result in score_results
+        if isinstance(result.get("username"), str)
+    }
+
+    merged_results = []
+    for account_result in account_results:
+        username = account_result.get("username")
+        github_id = account_result.get("github_id")
+        if account_result.get("status") != "ok" or not isinstance(username, str):
+            deleted_result = score_user(None, username or "")
+            deleted_result["github_id"] = github_id
+            deleted_result["username"] = username
+            merged_results.append(deleted_result)
+            continue
+
+        scored = score_results_by_username.get(username)
+        if scored is None:
+            unavailable_result = score_user(None, username)
+            unavailable_result["github_id"] = github_id
+            unavailable_result["username"] = username
+            merged_results.append(unavailable_result)
+            continue
+
+        merged_results.append(
+            {
+                **scored,
+                "github_id": github_id,
+            }
+        )
+
+    return merged_results
 
 
 def validate_accounts(usernames: list[str]) -> list[dict]:

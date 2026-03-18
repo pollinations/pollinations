@@ -3,7 +3,7 @@
 
 Scores users with:
   - tier = 'spore'
-  - github_username IS NOT NULL
+  - github_id IS NOT NULL
   - score IS NULL
 
 This script stores `score` and `score_checked_at` only. It does not upgrade tiers.
@@ -29,10 +29,10 @@ sys.path.insert(0, str(SCRIPT_ROOT / "scoring"))
 
 from d1 import ensure_safe_env, run_d1_query
 from github_account_state import (
-    ban_github_users,
-    extract_deleted_github_usernames,
+    ban_github_ids,
+    extract_deleted_github_ids,
 )
-from github_score import validate_users
+from github_score import validate_user_records
 
 DEFAULT_LIMIT = 1000
 SQL_BATCH_SIZE = 200
@@ -45,7 +45,7 @@ def fetch_backlog_count(env: str) -> int:
         SELECT COUNT(*) AS count
         FROM user
         WHERE tier = 'spore'
-        AND github_username IS NOT NULL
+        AND github_id IS NOT NULL
         AND COALESCE(banned, 0) = 0
         AND score IS NULL
         """,
@@ -56,27 +56,23 @@ def fetch_backlog_count(env: str) -> int:
     return int(results[0]["count"])
 
 
-def fetch_backlog_users(env: str, limit: int, offset: int) -> list[str]:
+def fetch_backlog_users(env: str, limit: int, offset: int) -> list[dict]:
     results = run_d1_query(
         f"""
-        SELECT github_username
+        SELECT github_id, github_username
         FROM user
         WHERE tier = 'spore'
-        AND github_username IS NOT NULL
+        AND github_id IS NOT NULL
         AND COALESCE(banned, 0) = 0
         AND score IS NULL
-        ORDER BY created_at ASC, github_username ASC
+        ORDER BY created_at ASC, github_id ASC
         LIMIT {limit} OFFSET {offset}
         """,
         env,
     )
     if not results:
         return []
-    return [
-        row["github_username"]
-        for row in results
-        if isinstance(row.get("github_username"), str)
-    ]
+    return results
 
 
 def store_scores(results: list[dict], env: str) -> tuple[int, int]:
@@ -88,31 +84,40 @@ def store_scores(results: list[dict], env: str) -> tuple[int, int]:
         batch = results[index : index + SQL_BATCH_SIZE]
         sanitized_batch = []
         for result in batch:
+            github_id = result.get("github_id")
             username = result.get("username")
+            if not isinstance(github_id, int) or github_id <= 0:
+                skipped += 1
+                continue
             if not isinstance(username, str) or not USERNAME_RE.match(username):
                 skipped += 1
                 continue
 
             raw_score = (result.get("details") or {}).get("total", 0)
             total_score = float(raw_score) if raw_score is not None else 0.0
-            sanitized_batch.append((username, total_score))
+            sanitized_batch.append((github_id, username, total_score))
 
         if not sanitized_batch:
             continue
 
         score_cases = " ".join(
-            f"WHEN '{username}' THEN {score}"
-            for username, score in sanitized_batch
+            f"WHEN {github_id} THEN {score}"
+            for github_id, _username, score in sanitized_batch
         )
-        username_list = ", ".join(
-            f"'{username}'" for username, _score in sanitized_batch
+        username_cases = " ".join(
+            f"WHEN {github_id} THEN '{username}'"
+            for github_id, username, _score in sanitized_batch
+        )
+        id_list = ", ".join(
+            str(github_id) for github_id, _username, _score in sanitized_batch
         )
         update_query = f"""
             UPDATE user
             SET
-                score = CASE github_username {score_cases} END,
+                score = CASE github_id {score_cases} END,
+                github_username = CASE github_id {username_cases} END,
                 score_checked_at = {now}
-            WHERE github_username IN ({username_list})
+            WHERE github_id IN ({id_list})
             AND tier = 'spore'
         """
 
@@ -204,40 +209,42 @@ def main() -> int:
         print("✅ No spore backlog to score")
         return 0
 
-    usernames = fetch_backlog_users(env, args.limit, args.offset)
-    print(f"   Selected users: {len(usernames)}")
+    user_records = fetch_backlog_users(env, args.limit, args.offset)
+    print(f"   Selected users: {len(user_records)}")
 
-    if not usernames:
+    if not user_records:
         print("✅ No users found in this slice")
         return 0
 
-    results = validate_users(usernames)
-    results_by_username = {
-        result["username"]: result for result in results if isinstance(result.get("username"), str)
+    results = validate_user_records(user_records)
+    results_by_github_id = {
+        result["github_id"]: result
+        for result in results
+        if isinstance(result.get("github_id"), int)
     }
     ordered_results = [
-        results_by_username[username]
-        for username in usernames
-        if username in results_by_username
+        results_by_github_id[row["github_id"]]
+        for row in user_records
+        if isinstance(row.get("github_id"), int) and row["github_id"] in results_by_github_id
     ]
-    deleted_usernames = extract_deleted_github_usernames(ordered_results)
-    deleted_username_set = set(deleted_usernames)
+    deleted_github_ids = extract_deleted_github_ids(ordered_results)
+    deleted_github_id_set = set(deleted_github_ids)
     scoreable_results = [
         result
         for result in ordered_results
-        if isinstance(result.get("username"), str)
-        and result["username"] not in deleted_username_set
+        if isinstance(result.get("github_id"), int)
+        and result["github_id"] not in deleted_github_id_set
     ]
 
     summarize(ordered_results)
 
-    if deleted_usernames:
+    if deleted_github_ids:
         if args.dry_run:
             print(
-                f"\n🚫 Dry run would ban {len(deleted_usernames)} users with deleted/invalid GitHub accounts"
+                f"\n🚫 Dry run would ban {len(deleted_github_ids)} users with deleted/invalid GitHub accounts"
             )
         else:
-            banned = ban_github_users(deleted_usernames, env)
+            banned = ban_github_ids(deleted_github_ids, env)
             print(
                 f"\n🚫 Banned {banned} users with deleted/invalid GitHub accounts"
             )

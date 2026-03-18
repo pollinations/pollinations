@@ -1,0 +1,34 @@
+{
+  "pr_number": 9276,
+  "title": "Add Vibe DB to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9276",
+  "merged_at": "2026-03-18T18:50:53Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Good vibes only",
+    "blurb": "A fresh community app just landed in the greenhouse! Vibe DB lets you manage and query your datasets with style.",
+    "summary": "Added Vibe DB, a new community-built app for managing and querying datasets, to the app showcase.",
+    "impact": "Users can now explore Vibe DB in the community greenhouse, marking this developer's second app submission to the ecosystem.",
+    "keywords": [
+      "community",
+      "app",
+      "database",
+      "showcase",
+      "greenhouse"
+    ],
+    "visual_concept": "Vibe DB suggests a relaxed, cool atmosphere mixed with data storage. Polly the bee wearing cool retro sunglasses, chilling next to a friendly, chunky database server that's playing music or radiating 'good vibes'.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny retro sunglasses, chilling next to a chunky pixel database server that is glowing with soft lime green (#ecf874) light. The server has a tiny pixel art boombox on top. Soft pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9276.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny retro sunglasses, chilling next to a chunky pixel database server that is glowing with soft lime green (#ecf874) light. The server has a tiny pixel art boombox on top. Soft pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-03-18T18:51:45.245042+00:00"
+}

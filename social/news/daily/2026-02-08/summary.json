@@ -1,0 +1,67 @@
+{
+  "date": "2026-02-08",
+  "period_start": "2026-02-08",
+  "period_end": "2026-02-08",
+  "title": "audio stack just leveled up 🔊 shipped Whisper transcription, ElevenMusic generation, and v3 TTS",
+  "summary": "all live. also: just open sourced Polly, our discord agent. grab the code and build your own. 14 PRs merged today. we move. 🐝🌸",
+  "pr_count": 14,
+  "prs": [
+    {
+      "number": 8029,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8068,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8072,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8073,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8076,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8078,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8087,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8090,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8091,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8095,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8097,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8102,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8103,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8104,
+      "date": "2026-02-08"
+    }
+  ],
+  "generated_at": "2026-03-18T19:58:13.613508+00:00"
+}

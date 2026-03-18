@@ -1,0 +1,27 @@
+{
+  "date": "2026-02-10",
+  "period_start": "2026-02-10",
+  "period_end": "2026-02-10",
+  "title": "just merged docs directly into the play page",
+  "summary": "no more tab switching while testing endpoints. ⚡️ also dropped qwen-character for better roleplay & hardened polly against prompt injection. shipping daily. 🌸🐝",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 8124,
+      "date": "2026-02-10"
+    },
+    {
+      "number": 8130,
+      "date": "2026-02-10"
+    },
+    {
+      "number": 8131,
+      "date": "2026-02-10"
+    },
+    {
+      "number": 8141,
+      "date": "2026-02-10"
+    }
+  ],
+  "generated_at": "2026-03-18T19:58:13.617187+00:00"
+}

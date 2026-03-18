@@ -1,0 +1,91 @@
+{
+  "date": "2026-02-16",
+  "period_start": "2026-02-16",
+  "period_end": "2026-02-16",
+  "title": "20 PRs merged",
+  "summary": "biggest update: the new 'Pollen' badge system is live across all apps. 🌸 making credits transparent for the open source ecosystem. also shipped:\n- video consistency tools\n- character design personas\n- new AI router for devs shipping daily. build with us. 🐝",
+  "pr_count": 20,
+  "prs": [
+    {
+      "number": 7358,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7370,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7381,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7442,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7482,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7612,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7727,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7883,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7892,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8094,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8192,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8284,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8291,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8292,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8293,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8324,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8325,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8327,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8328,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8330,
+      "date": "2026-02-16"
+    }
+  ],
+  "generated_at": "2026-02-17T06:20:26.526015+00:00"
+}

@@ -1,0 +1,23 @@
+{
+  "date": "2026-02-11",
+  "period_start": "2026-02-11",
+  "period_end": "2026-02-11",
+  "title": "one-command AI agents are here",
+  "summary": "just merged the OpenClaw integration. ⚡️ auto-install script handles the environment setup, you handle the logic. docs are live. go build something weird. 🌸🐝",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 8165,
+      "date": "2026-02-11"
+    },
+    {
+      "number": 8167,
+      "date": "2026-02-11"
+    },
+    {
+      "number": 8168,
+      "date": "2026-02-11"
+    }
+  ],
+  "generated_at": "2026-03-18T19:58:13.618882+00:00"
+}

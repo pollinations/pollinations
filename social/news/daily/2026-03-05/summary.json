@@ -1,0 +1,83 @@
+{
+  "date": "2026-03-05",
+  "period_start": "2026-03-05",
+  "period_end": "2026-03-05",
+  "title": "just shipped 18 PRs",
+  "summary": "added an ai video generator, a carl jung bot, and a browser extension for images. on the infra side, we stopped counting 4xx errors as successful requests in the model monitor, because reality matters. docs are updated too. 🐝",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 8491,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8531,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8545,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8548,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8573,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8591,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8616,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8631,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8642,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8714,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8753,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8762,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8771,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8785,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8793,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8859,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8865,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8869,
+      "date": "2026-03-05"
+    }
+  ],
+  "generated_at": "2026-03-06T06:15:02.776516+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-03-08",
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-07",
+  "generated_at": "2026-03-08T06:19:52.781661+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-08/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.41 — new models, sdk upgrades & normalized schemas\n\n41 PRs merged this week. We added new models, upgraded the SDK, and finally stopped letting your 4xx client errors tank our internal success rate monitors.\n\n───\n\n→ THE MODEL ROSTER EXPANDS\nWe wired up suno-v5, step-3.5-flash, and flux-2-dev via api.airforce. We also added image input support for flux-2-dev and put in a fix to snap its dimensions to supported sizes. Turns out sending arbitrary pixel dimensions to an API that expects very specific boxes ends exactly how you'd expect.\n\n→ SDK & INFRASTRUCTURE\nThe NPM package (@pollinations_ai/sdk) just got a major update with STT (Speech-to-Text), Media Upload, and Account Endpoints.\n\nOn the backend, we normalized the finish_reason output to match the OpenAI format because everyone expects that schema now. We also added abuse detection crons, started banning deleted GitHub accounts, and tweaked the media service to add Content-Disposition headers.\n\n→ THE COMMUNITY APP AVALANCHE\nOver 15 new apps hit the showcase this week, including Pollinations CLI, PromptLab Studio, and an AI Image Gallery. To handle the volume, we added a step to approve apps before PR creation so the repo doesn't turn into the wild west.\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

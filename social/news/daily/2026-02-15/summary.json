@@ -1,0 +1,35 @@
+{
+  "date": "2026-02-15",
+  "period_start": "2026-02-15",
+  "period_end": "2026-02-15",
+  "title": "polly-api is live",
+  "summary": "🚀 drop-in OpenAI compatibility means you can run our open models with your existing stack. zero friction—just change the base URL. also shipped: Qwen3Guard 8B safety + fixed grok video ratios. open source moves fast. 🐝✨",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 7978,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8234,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8248,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8258,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8279,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8288,
+      "date": "2026-02-15"
+    }
+  ],
+  "generated_at": "2026-02-16T06:23:03.082727+00:00"
+}

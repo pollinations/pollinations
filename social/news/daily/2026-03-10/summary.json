@@ -1,0 +1,31 @@
+{
+  "date": "2026-03-10",
+  "period_start": "2026-03-10",
+  "period_end": "2026-03-10",
+  "title": "shipped 5 PRs",
+  "summary": "wired BYOP and media uploads into the ai dungeon master and product packaging apps. added dirtberry & claude to the model roster. changelogs now load dynamically from the news branch, so you can watch us ship in real time",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 8971,
+      "date": "2026-03-10"
+    },
+    {
+      "number": 8998,
+      "date": "2026-03-10"
+    },
+    {
+      "number": 9007,
+      "date": "2026-03-10"
+    },
+    {
+      "number": 9017,
+      "date": "2026-03-10"
+    },
+    {
+      "number": 9026,
+      "date": "2026-03-10"
+    }
+  ],
+  "generated_at": "2026-03-11T06:20:15.692471+00:00"
+}

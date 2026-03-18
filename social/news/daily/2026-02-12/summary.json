@@ -1,0 +1,19 @@
+{
+  "date": "2026-02-12",
+  "period_start": "2026-02-12",
+  "period_end": "2026-02-12",
+  "title": "OpenClaw now connects to the real world",
+  "summary": "🌍 just shipped web search models & tool config. agents without internet are just fancy autocompletes. we fixed that. plus a new tabbed UI for smoother onboarding. ship faster. 🌸",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 8179,
+      "date": "2026-02-12"
+    },
+    {
+      "number": 8187,
+      "date": "2026-02-12"
+    }
+  ],
+  "generated_at": "2026-02-13T10:57:38.492088+00:00"
+}

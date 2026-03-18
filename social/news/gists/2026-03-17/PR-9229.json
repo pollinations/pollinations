@@ -6,21 +6,27 @@
   "merged_at": "2026-03-17T20:38:13Z",
   "labels": [],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
-    "importance": "minor",
-    "headline": "fix(scripts): use millisecond timestamps in seed upgrade cron",
-    "blurb": "fix(scripts): use millisecond timestamps in seed upgrade cron",
-    "summary": "fix(scripts): use millisecond timestamps in seed upgrade cron",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Time to sprout",
+    "blurb": "Fixed a tiny time-travel bug that was keeping our newest users from automatically upgrading to the Seed tier. If you've been waiting for your upgrade, your pollen is on the way!",
+    "summary": "Fixed a timestamp mismatch in the auto-upgrade script that prevented eligible Spore users from being upgraded to the Seed tier.",
+    "impact": "Users who meet the GitHub activity requirements will now correctly and automatically receive their Seed tier upgrades and increased pollen allowances.",
+    "keywords": [
+      "seed tier",
+      "upgrade",
+      "bug fix",
+      "cron",
+      "billing"
+    ],
+    "visual_concept": "The PR is about fixing a time/timestamp issue that prevented 'Spore' users from upgrading to 'Seed' tier. Visuals: The bee mascot (Polly) fixing a giant glowing clock or hourglass in a garden, while little pixelated seeds sprout into small plants. The Monitor Robot is holding a stopwatch or calendar.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, fixing a glowing retro clock in a digital garden where tiny seeds are sprouting into lime green (#ecf874) plants. A chunky robot with a CRT monitor head holds a stopwatch nearby. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-17/PR-9229.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, fixing a glowing retro clock in a digital garden where tiny seeds are sprouting into lime green (#ecf874) plants. A chunky robot with a CRT monitor head holds a stopwatch nearby. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
-  "generated_at": "2026-03-17T20:39:17.019796+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-18T20:09:10.774570+00:00"
 }

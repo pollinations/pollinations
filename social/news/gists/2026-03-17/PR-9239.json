@@ -10,17 +10,23 @@
     "user_facing": false,
     "publish_tier": "discord_only",
     "importance": "minor",
-    "headline": "fix(scripts): use millisecond timestamps in detect-abuse script",
-    "blurb": "fix(scripts): use millisecond timestamps in detect-abuse script",
-    "summary": "fix(scripts): use millisecond timestamps in detect-abuse script",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Millisecond precision",
+    "blurb": "Fixed a tiny time-travel bug in our internal moderation scripts. Timestamps are now correctly speaking in milliseconds instead of seconds.",
+    "summary": "Fixed a timestamp conversion bug in the internal abuse detection script to correctly use milliseconds when querying the database.",
+    "impact": "Internal moderation tools now correctly filter users by date range instead of accidentally matching the entire database.",
+    "keywords": [
+      "scripts",
+      "database",
+      "timestamps",
+      "bugfix",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee acting as a detective (referencing 'detect-abuse'), inspecting a glowing digital clock or hourglass to represent the timestamp fix.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny detective hat, inspecting a glowing digital clock that displays milliseconds. A chunky retro computer monitor in the background shows a green checkmark. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-17/PR-9239.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny detective hat, inspecting a glowing digital clock that displays milliseconds. A chunky retro computer monitor in the background shows a green checkmark. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
-  "generated_at": "2026-03-17T20:47:05.376378+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-18T20:10:12.662800+00:00"
 }

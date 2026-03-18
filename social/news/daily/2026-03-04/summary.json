@@ -1,0 +1,55 @@
+{
+  "date": "2026-03-04",
+  "period_start": "2026-03-04",
+  "period_end": "2026-03-04",
+  "title": "shipped image inputs for flux-2-dev and fixed a routing quirk where suno forgot how to make music",
+  "summary": "plus better app attribution and 6 new community apps hitting the showcase. 11 PRs merged today",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 8564,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8760,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8769,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8781,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8800,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8802,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8803,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8808,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8819,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8824,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8827,
+      "date": "2026-03-04"
+    }
+  ],
+  "generated_at": "2026-03-05T06:16:31.436274+00:00"
+}

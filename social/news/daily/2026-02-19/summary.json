@@ -1,0 +1,35 @@
+{
+  "date": "2026-02-19",
+  "period_start": "2026-02-19",
+  "period_end": "2026-02-19",
+  "title": "shipped auto-polly: the platform now tries to fix its own bugs before bothering us",
+  "summary": "also cleaned up the sdk packages and wrote actual docs for api errors. guessing stack traces is only fun for the first hour. 6 prs merged today",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 7920,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 7939,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 7942,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 8364,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 8398,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 8421,
+      "date": "2026-02-19"
+    }
+  ],
+  "generated_at": "2026-02-20T06:17:59.715281+00:00"
+}

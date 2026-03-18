@@ -9,21 +9,27 @@
     ".BUG"
   ],
   "gist": {
-    "category": "infrastructure",
-    "user_facing": false,
-    "publish_tier": "discord_only",
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
     "importance": "minor",
-    "headline": "fix(enter): prevent wrapping in dev points tooltip",
-    "blurb": "fix(enter): prevent wrapping in dev points tooltip",
-    "summary": "fix(enter): prevent wrapping in dev points tooltip",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Room to breathe",
+    "blurb": "We ironed out a visual wrinkle in the tier explanation tooltip. No more awkwardly squished text when checking your pollen balance!",
+    "summary": "Fixed a UI layout issue in the tier explanation tooltip by increasing its width and preventing text wrapping in table cells.",
+    "impact": "Users will now see a cleanly formatted, easy-to-read table when hovering over their tier status.",
+    "keywords": [
+      "ui",
+      "tooltip",
+      "frontend",
+      "bugfix",
+      "billing"
+    ],
+    "visual_concept": "Polly the bee fixing a squished UI element. She could be using a tiny rolling pin to flatten and stretch out a squished digital text box or sign, making it wide and readable. The Monitor Robot watches happily.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot using a tiny wooden rolling pin to flatten and stretch out a squished digital text box on a wooden table. A chunky retro monitor robot watches happily, its screen glowing with soft lime green (#ecf874). Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-17/PR-9220.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot using a tiny wooden rolling pin to flatten and stretch out a squished digital text box on a wooden table. A chunky retro monitor robot watches happily, its screen glowing with soft lime green (#ecf874). Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
-  "generated_at": "2026-03-17T20:51:50.795379+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-18T20:05:30.675845+00:00"
 }

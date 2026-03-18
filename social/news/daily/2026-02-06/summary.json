@@ -1,0 +1,47 @@
+{
+  "date": "2026-02-06",
+  "period_start": "2026-02-06",
+  "period_end": "2026-02-06",
+  "title": "fresh engines on the api: - LTX-2 (video generation)\n- Imagen 3 (via api.airforce)\n- Claude Opus 4.6 shipped, merged, and live",
+  "summary": "no waitlists. just open source tools for people who build. go make something weird. 🌸",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 7903,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 7922,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 7994,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8000,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8001,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8004,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8015,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8016,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8023,
+      "date": "2026-02-06"
+    }
+  ],
+  "generated_at": "2026-03-18T19:58:13.608088+00:00"
+}

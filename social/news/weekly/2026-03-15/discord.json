@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-03-15",
+  "period_start": "2026-03-08",
+  "period_end": "2026-03-14",
+  "generated_at": "2026-03-15T06:25:52.957902+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-15/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>, 31 PRs merged this week. Here's what actually matters:\n\n## Weekly Update - 2026-03-14\n\n🔌 **OpenAI Compatibility & New Models**\n- You can now use standard OpenAI-compatible formats for our image generation endpoints.\n- Added a pile of new models: `dirtberry`, `dirtberry-pro`, `claude-airforce`, and Pruna's image/video stack.\n- Shoutout to community provider Seraphyn for bringing `qwen3-tts` online.\n\n⚡ **Infra & Pollen**\n- The Seed tier upgrade workflow used to take 25 hours. We optimized it down to a few seconds.\n- Pollen refills now happen hourly. Less waiting, more generating.\n\n🔑 **BYOP Everywhere**\n- Bring Your Own Provider (BYOP) is becoming the default. It's now wired directly into `catgpt` (which also got a light theme), `ai-dungeon-master`, and `product-packaging-designer`.\n- Shipped a new media upload service so apps can handle user assets without the headache.\n\n🎨 **Frontend & Vibes**\n- The main site got a visual overhaul: new scene backgrounds, a dynamic palette system, and refreshed logos.\n- Fixed `nanobanana` so it actually respects `safe=false` when you ask it to.\n\nBuild something weird this weekend."
+}

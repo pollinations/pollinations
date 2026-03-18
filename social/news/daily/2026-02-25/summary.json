@@ -1,0 +1,67 @@
+{
+  "date": "2026-02-25",
+  "period_start": "2026-02-25",
+  "period_end": "2026-02-25",
+  "title": "shipped a website refresh and a new media upload service",
+  "summary": "added grok-imagine support and custom voice IDs for elevenlabs. also taught the video pipeline to handle rejection (better rate limit fallbacks). 14 PRs merged",
+  "pr_count": 14,
+  "prs": [
+    {
+      "number": 5684,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8329,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8438,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8488,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8551,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8565,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8566,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8568,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8569,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8571,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8575,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8577,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8579,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8598,
+      "date": "2026-02-25"
+    }
+  ],
+  "generated_at": "2026-02-26T06:21:39.244819+00:00"
+}

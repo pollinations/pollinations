@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-03-15",
+  "period_start": "2026-03-08",
+  "period_end": "2026-03-14",
+  "generated_at": "2026-03-15T06:25:52.957902+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-15/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 31 PRs this week. added OpenAI-compatible image endpoints, wired up a bunch of new models (pruna, seraphyn, dirtberry), and optimized the seed upgrade job from 25 hours down to seconds. pollen also refills hourly now."
+}

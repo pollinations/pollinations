@@ -1,0 +1,31 @@
+{
+  "date": "2026-02-17",
+  "period_start": "2026-02-17",
+  "period_end": "2026-02-17",
+  "title": "shipped SlidePainter and markdown support for app descriptions",
+  "summary": "the markdown feature uses an llm to format text. had to patch it because it started hallucinating creative new names for user apps. it is now strictly forbidden from renaming things",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 8334,
+      "date": "2026-02-17"
+    },
+    {
+      "number": 8341,
+      "date": "2026-02-17"
+    },
+    {
+      "number": 8343,
+      "date": "2026-02-17"
+    },
+    {
+      "number": 8360,
+      "date": "2026-02-17"
+    },
+    {
+      "number": 8362,
+      "date": "2026-02-17"
+    }
+  ],
+  "generated_at": "2026-02-18T06:22:11.715445+00:00"
+}

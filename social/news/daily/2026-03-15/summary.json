@@ -1,0 +1,47 @@
+{
+  "date": "2026-03-15",
+  "period_start": "2026-03-15",
+  "period_end": "2026-03-15",
+  "title": "shipped 9 prs",
+  "summary": "mostly plumbing and frontend speed runs (lazy-loading markdown, chunk splitting). fixed some streaming edge cases. also three new apps hit the showcase, including an ai city diorama generator and an mcp server. code is open",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 8901,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9128,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9144,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9147,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9150,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9151,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9153,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9154,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9155,
+      "date": "2026-03-15"
+    }
+  ],
+  "generated_at": "2026-03-16T06:30:44.244975+00:00"
+}

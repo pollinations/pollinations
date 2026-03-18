@@ -1,0 +1,31 @@
+{
+  "date": "2026-02-18",
+  "period_start": "2026-02-18",
+  "period_end": "2026-02-18",
+  "title": "added an interactive build diary to the community page",
+  "summary": "transparency means seeing the messy parts too. also remapped upstream 429s to 502s. if the provider is choked, that's a bad gateway, not you spamming. clarity helps",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 8366,
+      "date": "2026-02-18"
+    },
+    {
+      "number": 8378,
+      "date": "2026-02-18"
+    },
+    {
+      "number": 8379,
+      "date": "2026-02-18"
+    },
+    {
+      "number": 8385,
+      "date": "2026-02-18"
+    },
+    {
+      "number": 8404,
+      "date": "2026-02-18"
+    }
+  ],
+  "generated_at": "2026-02-19T06:21:56.260376+00:00"
+}

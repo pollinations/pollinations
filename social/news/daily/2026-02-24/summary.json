@@ -1,0 +1,107 @@
+{
+  "date": "2026-02-24",
+  "period_start": "2026-02-24",
+  "period_end": "2026-02-24",
+  "title": "restored 18 missing apps and reorganized the registry into 15 categories",
+  "summary": "migrated claude to direct api. also shipped an obsidian plugin and a tattoo designer. 24 prs merged. keeping the garden tidy",
+  "pr_count": 24,
+  "prs": [
+    {
+      "number": 7242,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7259,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7262,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7272,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7274,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7293,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7299,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7301,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7305,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7307,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7319,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7326,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7331,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7336,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7347,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7374,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7376,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7532,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8476,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8527,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8532,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8537,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8538,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8543,
+      "date": "2026-02-24"
+    }
+  ],
+  "generated_at": "2026-02-25T06:24:11.538351+00:00"
+}

@@ -1,13 +1,15 @@
 {
-  "title": "Added Qwen3.5 397B, file uploads, and fixed KV caching",
-  "image_prompt": "Cozy pixel art scene of the cute bee mascot (yellow body, dark brown horizontal stripes, small black legs, black antennae, black vertical oval eyes, bright pink rectangular blush marks, small happy smile, small rounded light blue translucent wings) wearing a tiny construction hardhat. She is working at a retro terminal alongside a chunky pixel robot with a CRT monitor head. The robot's screen glows with lime green (#ecf874) text showing 'QWEN'. Soft lime green (#ecf874) and warm cream pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Minimal text in pixel font: 'SYS UPDATE'. Nostalgic but beautiful, emotionally warm. Cozy 8-bit pixel art aesthetic.",
-  "body": "Merged 6 PRs today. The main updates are a new model, file upload support, and a caching fix that was causing stale permission states.\n\nFirst, we added Qwen3.5 397B via Fireworks (PR #9225). It is live on the text endpoint now.\n\nOn the frontend, the Play page finally supports file uploads (PR #9156). We also pushed a redesign for the homepage and the model monitor (PR #9187) to make tracking model uptime slightly less of an eyesore.\n\nFor the infrastructure side, we fixed a bug where the KV cache wasn't invalidating properly when API key permissions changed (PR #9219). If your key felt stuck or ignored recent permission updates, this was the culprit. We also added some missing API keys to prod secrets to unbreak a few endpoints (PR #9179).\n\nFinally, we updated the UI to clarify the rules for Seed tier dev points (PR #9216). As a reminder, Seed tier gives you 0.15 pollen/hour and triggers automatically based on your GitHub activity.\n\nEverything is running on the main endpoints. Code and open roadmap are on our GitHub.\n\nRepo: https://github.com/pollinations/pollinations\nDocs: https://docs.pollinations.ai",
-  "reasoning": "Reddit hates marketing. This reads like a standard changelog from a developer. It clearly states what was added (Qwen3.5), what was fixed (KV cache), and links to the repo without asking for stars or upvotes.",
-  "image": {
-    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-17/images/reddit.jpg",
-    "prompt": "Cozy pixel art scene of the cute bee mascot (yellow body, dark brown horizontal stripes, small black legs, black antennae, black vertical oval eyes, bright pink rectangular blush marks, small happy smile, small rounded light blue translucent wings) wearing a tiny construction hardhat. She is working at a retro terminal alongside a chunky pixel robot with a CRT monitor head. The robot's screen glows with lime green (#ecf874) text showing 'QWEN'. Soft lime green (#ecf874) and warm cream pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Minimal text in pixel font: 'SYS UPDATE'. Nostalgic but beautiful, emotionally warm. Cozy 8-bit pixel art aesthetic."
-  },
+  "platform": "reddit",
+  "scope": "daily",
   "date": "2026-03-17",
+  "period_start": "2026-03-17",
+  "period_end": "2026-03-17",
   "generated_at": "2026-03-18T06:23:31.721923+00:00",
-  "platform": "reddit"
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-17/images/reddit.jpg"
+    }
+  ],
+  "title": "Added Qwen3.5 397B, file uploads, and fixed KV caching",
+  "text": "Merged 6 PRs today. The main updates are a new model, file upload support, and a caching fix that was causing stale permission states.\n\nFirst, we added Qwen3.5 397B via Fireworks (PR #9225). It is live on the text endpoint now.\n\nOn the frontend, the Play page finally supports file uploads (PR #9156). We also pushed a redesign for the homepage and the model monitor (PR #9187) to make tracking model uptime slightly less of an eyesore.\n\nFor the infrastructure side, we fixed a bug where the KV cache wasn't invalidating properly when API key permissions changed (PR #9219). If your key felt stuck or ignored recent permission updates, this was the culprit. We also added some missing API keys to prod secrets to unbreak a few endpoints (PR #9179).\n\nFinally, we updated the UI to clarify the rules for Seed tier dev points (PR #9216). As a reminder, Seed tier gives you 0.15 pollen/hour and triggers automatically based on your GitHub activity.\n\nEverything is running on the main endpoints. Code and open roadmap are on our GitHub.\n\nRepo: https://github.com/pollinations/pollinations\nDocs: https://docs.pollinations.ai"
 }

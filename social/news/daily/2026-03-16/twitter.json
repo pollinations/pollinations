@@ -1,19 +1,14 @@
 {
-  "tweet_type": "shipped",
-  "tweet": "shipped some infrastructure today.\n\n- spores & seeds now get hourly pollen drips via cloudflare cron\n- fixed nanobanana generation (vertex ai had invalid image sizes)\n- bumped tinybird limits so the models page stopped jumping around",
-  "alt_tweet": "set up a cloudflare cron to drip pollen hourly to spores and seeds. much better than waiting all day. also fixed some vertex ai image generation bugs and made the models page stop jumping around.",
-  "hashtags": [
-    "#buildinpublic",
-    "#opensource"
-  ],
-  "image_prompt": "Dynamic pixel art scene of the cute bee mascot (yellow body, dark brown horizontal stripes, small black legs, pink rectangular blush, small happy smile, light blue translucent wings) wearing a tiny tool belt, adjusting a glowing lime green (#ecf874) mechanical pipe that is dripping golden pixel pollen onto a small code-plant. Chunky retro robot with a CRT monitor head stands nearby holding a wrench. High contrast within the brand palette. Soft pastel lavender background, cozy 8-bit aesthetic, large visible pixels, warm lighting, Stardew Valley vibes.",
-  "reasoning": "Leads with the concrete updates using bullet points for readability. Dry tone, lowercase, highlights the actual technical fixes (Cloudflare cron, Vertex AI, Tinybird).",
-  "char_count": 236,
-  "image": {
-    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-16/images/twitter.jpg",
-    "prompt": "Dynamic pixel art scene of the cute bee mascot (yellow body, dark brown horizontal stripes, small black legs, pink rectangular blush, small happy smile, light blue translucent wings) wearing a tiny tool belt, adjusting a glowing lime green (#ecf874) mechanical pipe that is dripping golden pixel pollen onto a small code-plant. Chunky retro robot with a CRT monitor head stands nearby holding a wrench. High contrast within the brand palette. Soft pastel lavender background, cozy 8-bit aesthetic, large visible pixels, warm lighting, Stardew Valley vibes."
-  },
+  "platform": "twitter",
+  "scope": "daily",
   "date": "2026-03-16",
+  "period_start": "2026-03-16",
+  "period_end": "2026-03-16",
   "generated_at": "2026-03-17T06:24:31.300128+00:00",
-  "platform": "twitter"
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-16/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped some infrastructure today.\n\n- spores & seeds now get hourly pollen drips via cloudflare cron\n- fixed nanobanana generation (vertex ai had invalid image sizes)\n- bumped tinybird limits so the models page stopped jumping around"
 }

@@ -12,23 +12,23 @@
     "user_facing": false,
     "publish_tier": "discord_only",
     "importance": "minor",
-    "headline": "Polly's secret stash",
-    "blurb": "Polly the bot just got a new hidden compartment! We've added a safe way to load private, VPS-only extensions without tangling up the open-source codebase.",
-    "summary": "Implemented a generic plugin loader for Polly and updated deployment scripts to safely preserve private, VPS-only extensions.",
-    "impact": "Maintainers can now deploy the bot safely without rsync accidentally deleting local data or closed-source plugins.",
+    "headline": "Secret compartments",
+    "blurb": "Polly just got a new hidden pocket! We've added a safe way to load private extensions without mixing them into the public codebase.",
+    "summary": "Implemented a private extension loader for the Polly bot and updated the rsync deployment script to prevent accidental deletion of VPS-only files.",
+    "impact": "Maintainers can now safely deploy and run closed-source plugins on the bot's server without altering the public repository.",
     "keywords": [
       "polly",
       "bot",
-      "plugins",
+      "extensions",
       "deployment",
-      "infrastructure"
+      "plugins"
     ],
-    "visual_concept": "Polly the bee mascot organizing a secret, glowing drawer or inserting a hidden cartridge into a retro server, representing the private extension loader.",
-    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat, carefully sliding a glowing purple cartridge into a chunky retro server. A small code-plant sprouts nearby from a lime green (#ecf874) pot. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "Polly the bee wearing a tiny detective hat or holding a secret folder, standing next to a server rack or a locked garden gate. The robot companion could be holding a 'top secret' floppy disk.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat, holding a small glowing folder next to a retro server rack. A chunky robot with a CRT monitor head holds a floppy disk labeled 'plugins'. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-10/PR-9021.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat, holding a small glowing folder next to a retro server rack. A chunky robot with a CRT monitor head holds a floppy disk labeled 'plugins'. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
-  "generated_at": "2026-03-10T18:23:13.551041+00:00"
+  "generated_at": "2026-03-18T20:02:51.908674+00:00"
 }

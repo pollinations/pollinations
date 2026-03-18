@@ -1,0 +1,19 @@
+{
+  "date": "2026-02-05",
+  "period_start": "2026-02-05",
+  "period_end": "2026-02-05",
+  "title": "open source is built by people, not just code",
+  "summary": "🌸 prepping for Google Summer of Code to welcome the next wave of builders. docs updated, mentorship ready. come ship real AI tools with us. 🐝💻",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 7877,
+      "date": "2026-02-05"
+    },
+    {
+      "number": 7959,
+      "date": "2026-02-05"
+    }
+  ],
+  "generated_at": "2026-03-18T19:58:13.604901+00:00"
+}

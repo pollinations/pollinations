@@ -1,0 +1,15 @@
+{
+  "date": "2026-03-08",
+  "period_start": "2026-03-08",
+  "period_end": "2026-03-08",
+  "title": "shipped a redesign",
+  "summary": "we now have a proper palette system, new scene backgrounds, and updated colors across the board. turns out having an actual color system is easier than guessing hex codes every time",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 8902,
+      "date": "2026-03-08"
+    }
+  ],
+  "generated_at": "2026-03-09T06:21:52.145499+00:00"
+}

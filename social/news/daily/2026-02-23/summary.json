@@ -1,0 +1,59 @@
+{
+  "date": "2026-02-23",
+  "period_start": "2026-02-23",
+  "period_end": "2026-02-23",
+  "title": "12 PRs merged",
+  "summary": "Claude upgraded to Sonnet 4.6. Showcase grew by 5 apps—from legal helpers to Big O explainers. Polly's API and bot logic are finally one process. She thinks faster now. Also fixed tool call validation. Please send valid JSON",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 7912,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8135,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8152,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8313,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8461,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8484,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8494,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8496,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8502,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8515,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8517,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8520,
+      "date": "2026-02-23"
+    }
+  ],
+  "generated_at": "2026-02-24T06:21:08.385361+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-02-22",
+  "period_start": "2026-02-15",
+  "period_end": "2026-02-21",
+  "generated_at": "2026-02-22T06:21:53.563202+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-22/images/twitter.jpg"
+    }
+  ],
+  "text": "48 PRs merged.\n\nPolly now speaks OpenAI-compatible API — swap the URL, keep your client.\n\nApp Showcase got a pixel-perfect renovation with proper metrics and badges. And we shipped \"BrainrotMaker\", because the internet clearly wasn't weird enough yet. 🐝"
+}

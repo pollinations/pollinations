@@ -1,0 +1,15 @@
+{
+  "date": "2026-02-20",
+  "period_start": "2026-02-20",
+  "period_end": "2026-02-20",
+  "title": "added Genexus AI to the dev tools",
+  "summary": "just another sharp object for the drawer. go build something weird with it",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 7236,
+      "date": "2026-02-20"
+    }
+  ],
+  "generated_at": "2026-02-21T06:11:43.579784+00:00"
+}

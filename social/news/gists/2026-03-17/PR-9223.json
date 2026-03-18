@@ -8,21 +8,27 @@
     "DEV-DOCS"
   ],
   "gist": {
-    "category": "infrastructure",
+    "category": "docs",
     "user_facing": false,
     "publish_tier": "discord_only",
     "importance": "minor",
-    "headline": "docs: add architecture diagrams",
-    "blurb": "docs: add architecture diagrams",
-    "summary": "docs: add architecture diagrams",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Mapping the hive",
+    "blurb": "We just dropped comprehensive architecture diagrams into our developer docs. From GPU fleets to Cloudflare workers, see exactly how the hive operates under the hood.",
+    "summary": "Added detailed Mermaid architecture diagrams to the developer documentation, mapping out all models, providers, and infrastructure services.",
+    "impact": "Contributors can now easily visualize the entire pollinations.ai stack, making it easier to understand how our global fleet of GPUs and serverless workers fit together.",
+    "keywords": [
+      "architecture",
+      "documentation",
+      "infrastructure",
+      "mermaid",
+      "open-source"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot examining a large, glowing architectural blueprint. The blueprint depicts a network of servers, clouds, and flowers connected by lines, representing the newly documented system architecture.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a large glowing blueprint map spread on a wooden table. The blueprint shows a network of tiny servers, clouds, and flowers connected by glowing lines. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-17/PR-9223.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a large glowing blueprint map spread on a wooden table. The blueprint shows a network of tiny servers, clouds, and flowers connected by glowing lines. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
   },
-  "generated_at": "2026-03-17T21:17:22.010024+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-18T20:06:49.473275+00:00"
 }

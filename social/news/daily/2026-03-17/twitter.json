@@ -1,19 +1,14 @@
 {
-  "tweet_type": "shipped",
-  "tweet": "shipped 6 PRs today. qwen3.5 397b is now live. you can finally upload files on the play page. also fixed a stubborn kv caching bug that was ignoring api key permission changes, which was a great time. homepage got some fresh paint too.",
-  "alt_tweet": "added qwen3.5 397b to the text endpoints. you can also upload files on the play page now. spent the rest of the day redesigning the model monitor and explaining to the kv cache that api key permissions actually matter. 6 PRs merged.",
-  "hashtags": [
-    "#opensource",
-    "#ai"
-  ],
-  "image_prompt": "Dynamic cozy 8-bit pixel art scene. The cute pixel bee mascot (yellow/brown stripes, pink blush, tiny construction hardhat) is dramatically plugging a glowing lime green (#ecf874) cable into a retro server rack to wire up a new model. Nearby, the round tan Nomnom creature is happily eating old stale cache files. Soft pastel lavender and cream gradient background. High contrast for scroll-stopping impact, chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley.",
-  "reasoning": "Lists concrete features shipped (Qwen, files, UI) and frames the KV cache bug fix with dry sarcasm.",
-  "char_count": 238,
-  "image": {
-    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-17/images/twitter.jpg",
-    "prompt": "Dynamic cozy 8-bit pixel art scene. The cute pixel bee mascot (yellow/brown stripes, pink blush, tiny construction hardhat) is dramatically plugging a glowing lime green (#ecf874) cable into a retro server rack to wire up a new model. Nearby, the round tan Nomnom creature is happily eating old stale cache files. Soft pastel lavender and cream gradient background. High contrast for scroll-stopping impact, chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley."
-  },
+  "platform": "twitter",
+  "scope": "daily",
   "date": "2026-03-17",
+  "period_start": "2026-03-17",
+  "period_end": "2026-03-17",
   "generated_at": "2026-03-18T06:23:31.721923+00:00",
-  "platform": "twitter"
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-17/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 6 PRs today. qwen3.5 397b is now live. you can finally upload files on the play page. also fixed a stubborn kv caching bug that was ignoring api key permission changes, which was a great time. homepage got some fresh paint too."
 }

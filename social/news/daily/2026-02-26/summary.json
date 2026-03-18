@@ -1,0 +1,35 @@
+{
+  "date": "2026-02-26",
+  "period_start": "2026-02-26",
+  "period_end": "2026-02-26",
+  "title": "automated the pruning shears",
+  "summary": "the app showcase now runs daily health checks. if an app breaks, it vanishes until fixed. keeping the ecosystem distinct from the graveyard. also: API docs now have actual code samples. you're welcome",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 8546,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8597,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8599,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8607,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8635,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8636,
+      "date": "2026-02-26"
+    }
+  ],
+  "generated_at": "2026-02-27T06:17:09.686070+00:00"
+}

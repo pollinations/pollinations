@@ -1,19 +1,14 @@
 {
-  "tweet_type": "shipped",
-  "tweet": "shipped 9 prs. mostly plumbing and frontend speed runs (lazy-loading markdown, chunk splitting). fixed some streaming edge cases. also three new apps hit the showcase, including an ai city diorama generator and an mcp server. code is open.",
-  "alt_tweet": "spent the morning splitting frontend chunks so the site loads faster and fixing image url parsing. spent the afternoon looking at a new mcp server and ai city dioramas someone built. 9 prs merged today.",
-  "hashtags": [
-    "#opensource",
-    "#buildinpublic"
-  ],
-  "image_prompt": "Dynamic pixel art scene of the cute bee mascot and a chunky CRT monitor robot looking excitedly at a tiny, glowing 8-bit city diorama sprouting from a circuit board. High contrast scroll-stopping energy. Lime green (#ecf874) and dark purple (#110518) palette with soft pastel gradients. The bee wears tiny safety goggles. Cozy 8-bit pixel art aesthetic, warm lighting, chunky sprites, lo-fi retro gaming vibes.",
-  "reasoning": "Leads directly with what shipped. Pairs tedious maintenance tasks (chunk splitting) with visually interesting community builds (dioramas) to show the duality of open source work. Lowercase, dry tone.",
-  "char_count": 246,
-  "image": {
-    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-15/images/twitter.jpg",
-    "prompt": "Dynamic pixel art scene of the cute bee mascot and a chunky CRT monitor robot looking excitedly at a tiny, glowing 8-bit city diorama sprouting from a circuit board. High contrast scroll-stopping energy. Lime green (#ecf874) and dark purple (#110518) palette with soft pastel gradients. The bee wears tiny safety goggles. Cozy 8-bit pixel art aesthetic, warm lighting, chunky sprites, lo-fi retro gaming vibes."
-  },
+  "platform": "twitter",
+  "scope": "daily",
   "date": "2026-03-15",
+  "period_start": "2026-03-15",
+  "period_end": "2026-03-15",
   "generated_at": "2026-03-16T06:30:44.244975+00:00",
-  "platform": "twitter"
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-15/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 9 prs. mostly plumbing and frontend speed runs (lazy-loading markdown, chunk splitting). fixed some streaming edge cases. also three new apps hit the showcase, including an ai city diorama generator and an mcp server. code is open."
 }

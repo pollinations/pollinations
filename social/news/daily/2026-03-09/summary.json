@@ -1,0 +1,39 @@
+{
+  "date": "2026-03-09",
+  "period_start": "2026-03-09",
+  "period_end": "2026-03-09",
+  "title": "shipped polly v2",
+  "summary": "rewrote internals in rust for speed, and dropped the sycophancy so she stops agreeing with your bad code. nanobanana now actually respects `safe=false`, and we hardened the tier system to stop bots farming pollen. 7 PRs merged today",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 8899,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8949,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8969,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8973,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8974,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8982,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8987,
+      "date": "2026-03-09"
+    }
+  ],
+  "generated_at": "2026-03-10T06:14:28.126870+00:00"
+}

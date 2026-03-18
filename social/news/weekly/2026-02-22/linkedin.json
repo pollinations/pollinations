@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-02-22",
+  "period_start": "2026-02-15",
+  "period_end": "2026-02-21",
+  "generated_at": "2026-02-22T06:21:53.563202+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-22/images/linkedin.jpg"
+    }
+  ],
+  "text": "48 PRs merged this week. The robots are getting smarter, and the apps are getting stranger.\n\n·˚✿ POLLINATIONS WEEKLY ✿˚·\n    vol.48 — agents & brainrot\n\n→ POLLY API & OPENAI COMPATIBILITY\nPolly now speaks fluent OpenAI. If you have existing tooling, you can point it at our endpoint and it should just work. We did this because learning new API specs is nobody's hobby.\n\n───\n\n→ SHOWCASE RENOVATION\nThe apps page got a facelift. Markdown descriptions, proper metrics, and a new badge system. It looks less like a directory and more like a gallery now.\n\n───\n\n→ AUTO POLLY\nWe shipped a self-healing repo agent. It finds issues and fixes them. Ideally, it puts us out of a job, but for now, it just saves us time.\n\n───\n\n→ NEW IN THE GARDEN\nCommunity submissions included SlidePainter, Nova Defense, and something called BrainrotMaker. We provide the infrastructure; you provide the chaos.\n\n───\n\n→ HOUSEKEEPING\nNPM packages moved to the @pollinations_ai scope. Please update your package.json before it yells at you.\n\n#OpenSource #AI #GenerativeAI #DevTools"
+}

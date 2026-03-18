@@ -1,12 +1,14 @@
 {
-  "tweet_type": "shipped",
-  "tweet": "Polly just got a major IQ upgrade. 🧠\n\nMerged OpenAI embeddings + a tighter system prompt. Context retrieval is sharper, responses are cleaner.\n\nAlso refactored credit logic—single bucket balance, no more splitting headaches.\n\nShipping daily. 🌸🐝\n#OpenSource #AI",
-  "alt_tweet": "big merge day. 🚢\n\n- OpenAI embeddings for better context\n- smarter system prompt\n- single-bucket balance logic\n\nPolly is smarter and the payments are smoother. open source is the way. 🌸\n#BuildInPublic #AI",
-  "hashtags": [
-    "#OpenSource",
-    "#AI"
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-02-09",
+  "period_start": "2026-02-09",
+  "period_end": "2026-02-09",
+  "generated_at": "2026-03-18T19:58:13.615251+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-09/images/twitter.jpg"
+    }
   ],
-  "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing high-tech goggles, plugging a glowing lime green (#ecf874) cartridge into a retro server. Background has floating pixel data streams and soft pastel gradients. Text in pixel font: 'BRAIN BOOST'. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
-  "reasoning": "Focuses on the technical 'IQ upgrade' (embeddings) which resonates with AI builders, while mentioning the UX improvement (credits) to show attention to detail. Short, punchy, and uses the builder voice.",
-  "char_count": 242
+  "text": "Polly just got a major IQ upgrade. 🧠\n\nMerged OpenAI embeddings + a tighter system prompt. Context retrieval is sharper, responses are cleaner.\n\nAlso refactored credit logic—single bucket balance, no more splitting headaches.\n\nShipping daily. 🌸🐝\n#OpenSource #AI"
 }

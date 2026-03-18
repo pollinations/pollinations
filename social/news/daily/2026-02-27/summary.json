@@ -1,0 +1,31 @@
+{
+  "date": "2026-02-27",
+  "period_start": "2026-02-27",
+  "period_end": "2026-02-27",
+  "title": "shipped seedream 5.0 lite and gemini 3.1 flash",
+  "summary": "models are faster today. also moved our pitch deck to slidev. if we have to explain the business, it's happening in markdown and getting committed to git",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 8622,
+      "date": "2026-02-27"
+    },
+    {
+      "number": 8634,
+      "date": "2026-02-27"
+    },
+    {
+      "number": 8648,
+      "date": "2026-02-27"
+    },
+    {
+      "number": 8651,
+      "date": "2026-02-27"
+    },
+    {
+      "number": 8658,
+      "date": "2026-02-27"
+    }
+  ],
+  "generated_at": "2026-02-28T06:07:32.604075+00:00"
+}

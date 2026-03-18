@@ -1,0 +1,15 @@
+{
+  "date": "2026-03-11",
+  "period_start": "2026-03-11",
+  "period_end": "2026-03-11",
+  "title": "gpt image generation was blocked",
+  "summary": "we moved the endpoints to west us 3 and now it works again. sometimes fixing infrastructure just means finding a data center that feels like cooperating today. your pixels are flowing again. 🖼️",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 9032,
+      "date": "2026-03-11"
+    }
+  ],
+  "generated_at": "2026-03-12T06:17:49.772580+00:00"
+}

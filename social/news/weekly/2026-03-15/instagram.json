@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-03-15",
+  "period_start": "2026-03-08",
+  "period_end": "2026-03-14",
+  "generated_at": "2026-03-15T06:25:52.957902+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-15/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-15/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-15/images/instagram-3.jpg"
+    }
+  ],
+  "text": "31 PRs merged this week. The infrastructure got faster and the frontend got a lot cozier.\n\nSeed upgrades used to take 25 hours; now they take seconds. Pollen refills are now hourly, so you don't have to wait as long to keep building. We completely redesigned the site's background and palette system, shipped Polly v2 with a more adaptive personality, and rolled out OpenAI-compatible image endpoints.\n\nOh, and a mountain of new models: dirtberry, claude-airforce, Seraphyn qwen3-tts, and Pruna. \n\nBYOP (Bring Your Own Prompt/Provider) is becoming the standard across our apps. Check the repo for the full changelog. Grab an endpoint and make something weird. 🌸🐝\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #api",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

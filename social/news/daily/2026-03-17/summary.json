@@ -1,0 +1,35 @@
+{
+  "date": "2026-03-17",
+  "period_start": "2026-03-17",
+  "period_end": "2026-03-17",
+  "title": "shipped 6 PRs today",
+  "summary": "qwen3.5 397b is now live. you can finally upload files on the play page. also fixed a stubborn kv caching bug that was ignoring api key permission changes, which was a great time. homepage got some fresh paint too",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 9156,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9179,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9187,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9216,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9219,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9225,
+      "date": "2026-03-17"
+    }
+  ],
+  "generated_at": "2026-03-18T06:23:31.721923+00:00"
+}

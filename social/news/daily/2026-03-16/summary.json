@@ -1,0 +1,27 @@
+{
+  "date": "2026-03-16",
+  "period_start": "2026-03-16",
+  "period_end": "2026-03-16",
+  "title": "shipped some infrastructure today",
+  "summary": "- spores & seeds now get hourly pollen drips via cloudflare cron\n- fixed nanobanana generation (vertex ai had invalid image sizes)\n- bumped tinybird limits so the models page stopped jumping around",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 9145,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9160,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9178,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9182,
+      "date": "2026-03-16"
+    }
+  ],
+  "generated_at": "2026-03-17T06:24:31.300128+00:00"
+}

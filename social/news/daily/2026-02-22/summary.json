@@ -1,0 +1,151 @@
+{
+  "date": "2026-02-22",
+  "period_start": "2026-02-22",
+  "period_end": "2026-02-22",
+  "title": "shipped 35 updates today",
+  "summary": "the spectrum ranges from 'langchain integration' and 'transport document OCR' to 'd&d dungeon generator' and 'nail art creator'. open source is a strange, wonderful place. come build weird stuff",
+  "pr_count": 35,
+  "prs": [
+    {
+      "number": 7224,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7232,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7244,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7248,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7250,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7257,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7627,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7636,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7658,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7662,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7664,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7682,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7695,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7699,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7811,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7849,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7885,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7909,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7919,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7937,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7988,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8047,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8050,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8146,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8297,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8374,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8396,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8416,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8442,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8445,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8469,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8471,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8481,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8482,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8486,
+      "date": "2026-02-22"
+    }
+  ],
+  "generated_at": "2026-02-23T06:23:14.047060+00:00"
+}

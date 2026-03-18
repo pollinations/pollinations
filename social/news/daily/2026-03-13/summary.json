@@ -1,0 +1,43 @@
+{
+  "date": "2026-03-13",
+  "period_start": "2026-03-13",
+  "period_end": "2026-03-13",
+  "title": "shipped 8 PRs today",
+  "summary": "the seed upgrade workflow used to take 25 hours. rewrote it, now it takes seconds. also added dirtberry-pro for images, qwen3-tts for audio, and moved klein 4b to a dedicated pipeline. open source ai infrastructure continues. 🐝",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 8985,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9035,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9073,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9076,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9078,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9080,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9082,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9088,
+      "date": "2026-03-13"
+    }
+  ],
+  "generated_at": "2026-03-14T06:14:34.829767+00:00"
+}

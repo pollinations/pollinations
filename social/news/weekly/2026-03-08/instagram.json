@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-03-08",
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-07",
+  "generated_at": "2026-03-08T06:19:52.781661+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-08/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-08/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-08/images/instagram-3.jpg"
+    }
+  ],
+  "text": "41 PRs merged this week. The community showcase is officially overflowing—we merged over 20 new apps, ranging from fitness companions to Jungian chat bots.\n\nUnder the hood, we wired up Suno-v5, Flux-2-dev, and Step-3.5-flash via api.airforce. The NPM SDK got a solid QoL bump with new STT and media upload features.\n\nPlus the usual housekeeping: better abuse detection, normalizing finish reasons, and stopping the model monitor from counting 4xx errors against success rates. The garden is growing. 🌱\n\nFull changelog on GitHub.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #buildinpublic #javascript #openmodels",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

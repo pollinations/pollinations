@@ -12,17 +12,23 @@
     "user_facing": false,
     "publish_tier": "discord_only",
     "importance": "minor",
-    "headline": "fix: add missing API keys to staging secrets",
-    "blurb": "fix: add missing API keys to staging secrets",
-    "summary": "fix: add missing API keys to staging secrets",
-    "impact": "",
-    "keywords": [],
-    "image_prompt": ""
+    "headline": "Keys to the staging kingdom",
+    "blurb": "Polly found some missing keys under the doormat! Staging environments are now fully equipped with the right API credentials for testing.",
+    "summary": "Added missing API keys for audio and community provider models to the staging environment configuration.",
+    "impact": "Developers testing on the staging environment will no longer encounter 500 errors when accessing audio and community models.",
+    "keywords": [
+      "infrastructure",
+      "staging",
+      "secrets",
+      "api-keys",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee finding or holding glowing keys in a cozy server room or garden shed. The keys represent the API keys. A robot companion could be looking relieved.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot holding a glowing golden key in a cozy garden shed filled with retro servers. A chunky monitor-head robot looks relieved, screen glowing lime green (#ecf874). Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-17/PR-9227.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot holding a glowing golden key in a cozy garden shed filled with retro servers. A chunky monitor-head robot looks relieved, screen glowing lime green (#ecf874). Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
   },
-  "generated_at": "2026-03-17T18:34:35.782512+00:00",
-  "_minimal": true
+  "generated_at": "2026-03-18T20:07:51.211012+00:00"
 }

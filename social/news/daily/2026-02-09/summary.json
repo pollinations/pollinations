@@ -1,0 +1,27 @@
+{
+  "date": "2026-02-09",
+  "period_start": "2026-02-09",
+  "period_end": "2026-02-09",
+  "title": "Polly just got a major IQ upgrade",
+  "summary": "🧠 Merged OpenAI embeddings + a tighter system prompt. Context retrieval is sharper, responses are cleaner. Also refactored credit logic—single bucket balance, no more splitting headaches. Shipping daily. 🌸🐝",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 8101,
+      "date": "2026-02-09"
+    },
+    {
+      "number": 8111,
+      "date": "2026-02-09"
+    },
+    {
+      "number": 8117,
+      "date": "2026-02-09"
+    },
+    {
+      "number": 8123,
+      "date": "2026-02-09"
+    }
+  ],
+  "generated_at": "2026-03-18T19:58:13.615251+00:00"
+}

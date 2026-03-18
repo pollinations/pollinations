@@ -6,9 +6,9 @@
  *
  * USAGE:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/detect-abuse.ts --limit 2000   # Analyze 2000 users
- *   npx tsx scripts/detect-abuse.ts --single-chunk  # Test with first chunk only
- *   npx tsx scripts/detect-abuse.ts --model claude  # Use specific model
+ *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --limit 2000   # Analyze 2000 users
+ *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --single-chunk  # Test with first chunk only
+ *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --model claude  # Use specific model
  *
  * OPTIONS:
  *   --limit N         Max users to analyze (default: 5000)
@@ -617,7 +617,7 @@ async function main(): Promise<void> {
         console.log(`\n🚫 Auto-applying blocks to ${blockCount} users...`);
         try {
             execSync(
-                "npx tsx scripts/apply-abuse-blocks.ts apply-blocks --env staging --batch-size 50",
+                "npx tsx scripts/user-pipeline/trust/apply-abuse-blocks.ts apply-blocks --env staging --batch-size 50",
                 { encoding: "utf-8", stdio: "inherit" },
             );
         } catch (error) {

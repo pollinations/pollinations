@@ -9,22 +9,26 @@ Scores users with:
 This script stores `score` and `score_checked_at` only. It does not upgrade tiers.
 
 Usage:
-    python backfill_spore_scores.py --dry-run
-    python backfill_spore_scores.py --env staging --limit 1000 --offset 0
+    python scripts/user-pipeline/backfills/backfill_spore_scores.py --dry-run
+    python scripts/user-pipeline/backfills/backfill_spore_scores.py --env staging --limit 1000 --offset 0
 """
 
 import argparse
 import re
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
-from user_upgrade_spore_to_seed import (
+SCRIPT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SCRIPT_ROOT / "github"))
+sys.path.insert(0, str(SCRIPT_ROOT / "shared"))
+
+from d1 import ensure_safe_env, run_d1_query
+from github_account_state import (
     ban_github_users,
-    ensure_safe_env,
     extract_deleted_github_usernames,
-    run_d1_query,
 )
-from user_validate_github_profile import validate_users
+from score_users import validate_users
 
 DEFAULT_LIMIT = 1000
 SQL_BATCH_SIZE = 200

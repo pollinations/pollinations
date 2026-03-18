@@ -6,11 +6,11 @@
  * Optionally updates APPS.md with corrected usernames.
  *
  * Usage:
- *   npx tsx scripts/cleanup-github-users.ts audit --env production
- *   npx tsx scripts/cleanup-github-users.ts audit --env production --resume
- *   npx tsx scripts/cleanup-github-users.ts audit --env production --limit 50
- *   npx tsx scripts/cleanup-github-users.ts apply --env production
- *   npx tsx scripts/cleanup-github-users.ts apply --env production --no-dryRun
+ *   npx tsx scripts/user-pipeline/github/cleanup-github-users.ts audit --env production
+ *   npx tsx scripts/user-pipeline/github/cleanup-github-users.ts audit --env production --resume
+ *   npx tsx scripts/user-pipeline/github/cleanup-github-users.ts audit --env production --limit 50
+ *   npx tsx scripts/user-pipeline/github/cleanup-github-users.ts apply --env production
+ *   npx tsx scripts/user-pipeline/github/cleanup-github-users.ts apply --env production --no-dryRun
  *
  * Environment variables:
  *   CLOUDFLARE_API_TOKEN  - Required for D1 access via wrangler

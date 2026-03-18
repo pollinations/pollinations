@@ -5,9 +5,9 @@
  * Processes in batches with rate limiting to avoid D1 overload.
  *
  * Usage:
- *   npx tsx scripts/apply-abuse-blocks.ts --env staging
- *   npx tsx scripts/apply-abuse-blocks.ts --env staging --dry-run
- *   npx tsx scripts/apply-abuse-blocks.ts --env staging --batch-size 50 --delay 1000
+ *   npx tsx scripts/user-pipeline/trust/apply-abuse-blocks.ts --env staging
+ *   npx tsx scripts/user-pipeline/trust/apply-abuse-blocks.ts --env staging --dry-run
+ *   npx tsx scripts/user-pipeline/trust/apply-abuse-blocks.ts --env staging --batch-size 50 --delay 1000
  *
  * Options:
  *   --env          Environment (staging only on this branch)

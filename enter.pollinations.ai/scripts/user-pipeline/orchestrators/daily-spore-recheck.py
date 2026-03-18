@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Upgrade spore users to seed tier.
+"""Daily spore recheck for seed tier eligibility.
 
 Fetches spore users from D1, validates GitHub profiles, and upgrades eligible users.
 Can be run locally or via GitHub Actions.
@@ -11,9 +11,9 @@ Strategy (stateless, day-based slicing):
     3. Fetches 10 repos per user for quality filtering
 
 Usage:
-    python user_upgrade_spore_to_seed.py              # Full run on staging
-    python user_upgrade_spore_to_seed.py --dry-run    # Validate only, no upgrades
-    python user_upgrade_spore_to_seed.py --env staging  # Use staging environment
+    python scripts/user-pipeline/orchestrators/daily-spore-recheck.py           # Full run on staging
+    python scripts/user-pipeline/orchestrators/daily-spore-recheck.py --dry-run # Validate only, no upgrades
+    python scripts/user-pipeline/orchestrators/daily-spore-recheck.py --env staging
 
 Environment variables:
     GITHUB_TOKEN           - Required for GitHub API
@@ -22,109 +22,26 @@ Environment variables:
 """
 
 import argparse
-import json
-import os
-import re
-import subprocess
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
-from user_validate_github_profile import validate_users
+SCRIPT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SCRIPT_ROOT / "github"))
+sys.path.insert(0, str(SCRIPT_ROOT / "shared"))
+
+from d1 import ensure_safe_env, run_d1_query
+from github_account_state import (
+    D1_BATCH_SIZE,
+    GITHUB_USERNAME_RE,
+    ban_github_users,
+    extract_deleted_github_usernames,
+)
+from score_users import validate_users
 
 # Max users to process per run (stay well under 1000 point/hour GitHub API limit)
 # With repos(first:10), each batch of 50 costs ~6 points, so 166 batches = 8,300 users
 MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
-GITHUB_USERNAME_RE = re.compile(r"^[A-Za-z0-9-]+$")
-GITHUB_ACCOUNT_DELETED_REASON = "github_account_deleted"
-D1_BATCH_SIZE = 500
-
-
-def ensure_safe_env(env: str) -> str:
-    if env != "staging":
-        print(
-            f"❌ Unsupported env: {env}. This branch is locked to staging and cannot write to production.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    return env
-
-
-def run_d1_query(query: str, env: str = "staging") -> list[dict] | None:
-    """Run a D1 query and return results."""
-    env = ensure_safe_env(env)
-    cmd = [
-        "npx",
-        "wrangler",
-        "d1",
-        "execute",
-        "DB",
-        "--remote",
-        "--env",
-        env,
-        "--command",
-        query,
-        "--json",
-    ]
-
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            cwd=os.path.join(os.path.dirname(__file__), "../../enter.pollinations.ai"),
-            timeout=60,
-        )
-
-        if result.returncode != 0:
-            print(f"❌ D1 query failed: {result.stderr}", file=sys.stderr)
-            return None
-
-        data = json.loads(result.stdout)
-        return data[0].get("results", [])
-
-    except subprocess.TimeoutExpired:
-        print("❌ D1 query timed out", file=sys.stderr)
-        return None
-    except (json.JSONDecodeError, KeyError, IndexError) as e:
-        print(f"❌ Failed to parse D1 response: {e}", file=sys.stderr)
-        return None
-
-
-def extract_deleted_github_usernames(results: list[dict]) -> list[str]:
-    usernames = []
-    for result in results:
-        username = result.get("username")
-        if not isinstance(username, str):
-            continue
-        if not GITHUB_USERNAME_RE.match(username):
-            usernames.append(username)
-            continue
-        if result.get("status") == GITHUB_ACCOUNT_DELETED_REASON:
-            usernames.append(username)
-    return usernames
-
-
-def ban_github_users(usernames: list[str], env: str = "staging") -> int:
-    unique_usernames = list(dict.fromkeys(usernames))
-    if not unique_usernames:
-        return 0
-
-    banned = 0
-    for i in range(0, len(unique_usernames), D1_BATCH_SIZE):
-        batch = unique_usernames[i : i + D1_BATCH_SIZE]
-        username_list = ", ".join(
-            "'" + username.replace("'", "''") + "'" for username in batch
-        )
-        update_query = f"""
-            UPDATE user
-            SET banned = 1, ban_reason = '{GITHUB_ACCOUNT_DELETED_REASON}'
-            WHERE github_username IN ({username_list})
-        """
-        result = run_d1_query(update_query, env)
-        if result is not None:
-            banned += len(batch)
-
-    return banned
 
 
 def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
@@ -235,7 +152,7 @@ def batch_upgrade_users(
     return total_upgraded, total_skipped, failed
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(description="Upgrade spore users to seed tier")
     parser.add_argument(
         "--dry-run", action="store_true", help="Validate only, no upgrades"

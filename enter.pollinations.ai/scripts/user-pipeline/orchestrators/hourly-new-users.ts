@@ -1,15 +1,15 @@
 #!/usr/bin/env npx tsx
 /**
- * Upgrade Pipeline: Microbe → Spore → Seed
+ * Hourly New-User Pipeline: Microbe → Spore → Seed
  *
  * Phase 1: Promote microbe users who passed abuse check (trust_score >= 60) to spore
  * Phase 2: Check GitHub profiles for just-upgraded spore users → seed if eligible
  *
  * USAGE:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/upgrade-microbe-to-spore.ts                    # Staging
- *   npx tsx scripts/upgrade-microbe-to-spore.ts --env staging      # Staging
- *   npx tsx scripts/upgrade-microbe-to-spore.ts --dry-run          # Preview only
+ *   npx tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts               # Staging
+ *   npx tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts --env staging # Staging
+ *   npx tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts --dry-run     # Preview only
  */
 
 import { execSync } from "node:child_process";
@@ -192,7 +192,7 @@ function promoteMicrobeToSpore(env: Environment, dryRun: boolean): number {
 
 /**
  * Phase 2: Spore → Seed (for just-promoted users with GitHub accounts)
- * Calls user_validate_github_profile.py for GitHub scoring
+ * Calls score_users.py for GitHub scoring
  */
 function checkSporeForSeed(
     env: Environment,
@@ -214,7 +214,7 @@ function checkSporeForSeed(
 
     if (backlogCount > backlogThreshold && !allowBacklog) {
         throw new Error(
-            `Refusing to process ${backlogCount} scoreless spore users in the steady-state pipeline. Run .github/scripts/backfill_spore_scores.py first, or pass --allow-backlog to override.`,
+            `Refusing to process ${backlogCount} scoreless spore users in the steady-state pipeline. Run scripts/user-pipeline/backfills/backfill_spore_scores.py first, or pass --allow-backlog to override.`,
         );
     }
 
@@ -242,13 +242,13 @@ function checkSporeForSeed(
 
     // Call the Python GitHub validation script
     try {
-        const scriptPath = `${import.meta.dirname}/../../.github/scripts`;
+        const scriptPath = `${import.meta.dirname}/../github`;
 
         // Use the Python script's validate_users function via a wrapper
         const pythonScript = `
 import sys, json
 sys.path.insert(0, "${scriptPath}")
-from user_validate_github_profile import validate_users
+from score_users import validate_users
 results = validate_users(${JSON.stringify(usernames)})
 print(json.dumps(results))
 `;
@@ -314,7 +314,7 @@ print(json.dumps(results))
 async function main(): Promise<void> {
     const config = parseArguments();
 
-    console.log("🚀 Upgrade Pipeline: Microbe → Spore → Seed");
+    console.log("🚀 Hourly New-User Pipeline: Microbe → Spore → Seed");
     console.log("=".repeat(50));
     console.log(`📋 Environment: ${config.env}`);
     if (config.dryRun) console.log("🔍 Mode: DRY RUN");

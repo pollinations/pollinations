@@ -1,0 +1,32 @@
+{
+  "pr_number": 9281,
+  "title": "Add Parallel to chat",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9281",
+  "merged_at": "2026-03-18T20:13:46Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The timeline branches",
+    "blurb": "Ever wonder what would happen if you took that other path? A new community app called Parallel uses our text API to simulate alternate timelines of your life.",
+    "summary": "Added 'Parallel', an alternate-life timeline simulator built by voodoohop, to the community apps showcase.",
+    "impact": "Users can now discover and play with a new text-based simulation app that explores alternate life paths using the Pollinations API.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "text-api",
+      "simulator"
+    ],
+    "visual_concept": "The PR is about 'Parallel', an alternate-life timeline simulator. Visual metaphors: branching paths, multiple timelines, mirrors showing different reflections. The bee (Polly) looking at two different versions of herself in glowing portals or mirrors.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot looking into two glowing lime green (#ecf874) magical mirrors, each showing a different alternate-timeline version of herself—one wearing a tiny wizard hat and the other a painter's beret. Soft pastel gradient background with branching glowing paths. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9281.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot looking into two glowing lime green (#ecf874) magical mirrors, each showing a different alternate-timeline version of herself—one wearing a tiny wizard hat and the other a painter's beret. Soft pastel gradient background with branching glowing paths. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-18T20:14:39.836508+00:00"
+}

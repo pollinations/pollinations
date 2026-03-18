@@ -23,9 +23,9 @@ The last pre-merge commit should do only two things:
 
 - `/Users/comsom/Github/pollinations/.github/workflows/user-pipeline-hourly-new-users.yml`
 - `/Users/comsom/Github/pollinations/.github/workflows/user-pipeline-daily-spore-recheck.yml`
-- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/trust/detect-abuse.ts`
-- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/orchestrators/hourly-new-users.ts`
-- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/orchestrators/daily-spore-recheck.py`
+- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/scoring/trust-score.ts`
+- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/hourly-new-users.ts`
+- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/daily-spore-recheck.py`
 - `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/shared/d1.py`
 
 ## First Post-Merge Run Must Be Dry
@@ -43,7 +43,7 @@ In `/Users/comsom/Github/pollinations/.github/workflows/user-pipeline-hourly-new
 Target commands for the first merged run:
 
 ```yaml
-run: npm run user-pipeline:detect-abuse -- --env production --parallel 3
+run: npm run user-pipeline:trust-score -- --env production --parallel 3
 ```
 
 ```yaml
@@ -65,7 +65,7 @@ run: npm run user-pipeline:daily-spore-recheck -- --env production --dry-run
 
 ## What Dry Mode Means
 
-- `detect-abuse.ts` without `--store-status` does not write `trust_score` and does not ban users.
+- `trust-score.ts` without `--store-status` does not write `trust_score` and does not ban users.
 - `hourly-new-users.ts --dry-run` prints would-be `microbe -> spore/seed` outcomes without changing tiers.
 - `daily-spore-recheck.py --dry-run` prints would-be `spore -> seed` outcomes without changing tiers or scores.
 

@@ -8,9 +8,9 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --store-status
- *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --emails-file /tmp/replay-emails.txt
- *   npx tsx scripts/user-pipeline/trust/detect-abuse.ts --single-chunk
+ *   npx tsx scripts/user-pipeline/scoring/trust-score.ts --store-status
+ *   npx tsx scripts/user-pipeline/scoring/trust-score.ts --emails-file /tmp/replay-emails.txt
+ *   npx tsx scripts/user-pipeline/scoring/trust-score.ts --single-chunk
  *
  * Options:
  *   --limit N         Max users to analyze (default: 5000)
@@ -26,10 +26,10 @@
  *   abuse-report.csv - Successfully scored users sorted by abuse score
  */
 
-import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { executeD1, queryD1 } from "../shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
+import { runInlinePython } from "../shared/python.ts";
 
 const SCORE_THRESHOLDS = {
     block: 70,
@@ -232,19 +232,16 @@ function banUsersByGithubUsernames(
 function runGithubValidation(usernames: string[]): GithubValidationResult[] {
     if (usernames.length === 0) return [];
 
-    const scriptPath = `${import.meta.dirname}/../github`;
+    const scriptPath = import.meta.dirname;
     const pythonScript = `
 import sys, json
 sys.path.insert(0, "${scriptPath}")
-from score_users import validate_accounts
+from github_score import validate_accounts
 results = validate_accounts(${JSON.stringify(usernames)})
 print(json.dumps(results))
 `;
 
-    const output = execSync(
-        `python3 -c '${pythonScript.replace(/'/g, "'\\''")}'`,
-        { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
-    );
+    const output = runInlinePython(pythonScript);
 
     return JSON.parse(output.trim()) as GithubValidationResult[];
 }

@@ -9,15 +9,15 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts
- *   npx tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts --dry-run
- *   npx tsx scripts/user-pipeline/orchestrators/hourly-new-users.ts --emails-file /tmp/replay-emails.txt
+ *   npx tsx scripts/user-pipeline/hourly-new-users.ts
+ *   npx tsx scripts/user-pipeline/hourly-new-users.ts --dry-run
+ *   npx tsx scripts/user-pipeline/hourly-new-users.ts --emails-file /tmp/replay-emails.txt
  */
 
-import { execSync } from "node:child_process";
-import { TIER_POLLEN } from "../../../src/tier-config.ts";
-import { executeD1, queryD1 } from "../shared/d1.ts";
-import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
+import { TIER_POLLEN } from "../../src/tier-config.ts";
+import { executeD1, queryD1 } from "./shared/d1.ts";
+import { buildEmailFilter, loadEmailCohort } from "./shared/email-cohort.ts";
+import { runInlinePython } from "./shared/python.ts";
 
 type Environment = "staging";
 
@@ -100,18 +100,15 @@ function fetchTrustedMicrobeUsers(
 function runGithubScoring(usernames: string[]): ValidationResult[] {
     if (usernames.length === 0) return [];
 
-    const scriptPath = `${import.meta.dirname}/../github`;
+    const scriptPath = `${import.meta.dirname}/scoring`;
     const pythonScript = `
 import sys, json
 sys.path.insert(0, "${scriptPath}")
-from score_users import validate_users
+from github_score import validate_users
 results = validate_users(${JSON.stringify(usernames)})
 print(json.dumps(results))
 `;
-    const output = execSync(
-        `python3 -c '${pythonScript.replace(/'/g, "'\\''")}'`,
-        { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
-    );
+    const output = runInlinePython(pythonScript);
 
     return JSON.parse(output.trim()) as ValidationResult[];
 }

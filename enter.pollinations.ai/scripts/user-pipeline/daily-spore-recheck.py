@@ -16,9 +16,13 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(SCRIPT_ROOT / "github"))
+SCRIPT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_ROOT / "shared"))
+from python_runtime import ensure_python_bin
+
+ensure_python_bin()
+
+sys.path.insert(0, str(SCRIPT_ROOT / "scoring"))
 
 from d1 import ensure_safe_env, run_d1_query
 from github_account_state import (
@@ -28,7 +32,7 @@ from github_account_state import (
     ban_users_by_emails,
     extract_deleted_github_usernames,
 )
-from score_users import validate_users
+from github_score import validate_users
 
 MAX_USERS_PER_RUN = 8000
 SQL_BATCH_SIZE = 200

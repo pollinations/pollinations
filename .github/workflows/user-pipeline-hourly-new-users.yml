@@ -39,12 +39,12 @@ jobs:
       - name: Create API token file
         run: echo "ENTER_API_TOKEN_REMOTE=${{ secrets.ENTER_API_TOKEN }}" > .testingtokens
 
-      - name: New-user trust gate (staging)
+      - name: New-user trust scoring (staging)
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npm run user-pipeline:detect-abuse -- --env staging --parallel 3 --store-status
+        run: npm run user-pipeline:trust-score -- --env staging --parallel 3 --store-status
 
       - name: Hourly new-user pipeline (staging)
         env:

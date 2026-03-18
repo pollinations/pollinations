@@ -29,7 +29,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 
 from tqdm import tqdm
-from assess_github_risk import assess_profile_risk
+from github_risk import assess_profile_risk
 
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 BATCH_SIZE = 50

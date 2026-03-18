@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare a staging cohort and replay the daily spore recheck pipeline on it."""
+"""Prepare a staging cohort and replay the hourly new-user pipeline on it."""
 
 import argparse
 import os
@@ -9,13 +9,15 @@ from pathlib import Path
 
 SCRIPT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPT_ROOT / "shared"))
+from python_runtime import ensure_python_bin
+
+ensure_python_bin()
 
 from d1 import ensure_safe_env, run_d1_query
 
 WORKDIR = Path(__file__).resolve().parents[3]
 REPO_ROOT = WORKDIR.parent
 DOTENV_PATH = REPO_ROOT / ".env"
-SPORE_TIER_BALANCE = 1.5
 
 
 def load_email_cohort(file_path: str) -> list[str]:
@@ -58,10 +60,11 @@ def prepare_cohort(env: str, emails: list[str]) -> None:
         f"""
         UPDATE user
         SET
-            tier = 'spore',
-            tier_balance = {SPORE_TIER_BALANCE},
+            tier = 'microbe',
+            tier_balance = 0,
+            trust_score = NULL,
             score = NULL,
-            score_checked_at = 0,
+            score_checked_at = NULL,
             banned = 0,
             ban_reason = NULL,
             ban_expires = NULL
@@ -70,35 +73,19 @@ def prepare_cohort(env: str, emails: list[str]) -> None:
         env,
     )
     if result is None:
-        raise RuntimeError("Failed to prepare daily replay cohort in D1")
-
-
-def count_unchecked_users(env: str, emails: list[str]) -> int:
-    results = run_d1_query(
-        f"""
-        SELECT COUNT(*) AS count
-        FROM user
-        WHERE {build_email_filter(emails)}
-        AND COALESCE(banned, 0) = 0
-        AND (score_checked_at IS NULL OR score_checked_at = 0)
-        """,
-        env,
-    )
-    if results is None:
-        raise RuntimeError("Failed to count unchecked replay users in D1")
-    if not results:
-        return 0
-    return int(results[0]["count"])
+        raise RuntimeError("Failed to prepare hourly replay cohort in D1")
 
 
 def print_summary(env: str, emails: list[str]) -> None:
     results = run_d1_query(
         f"""
         SELECT
+            SUM(CASE WHEN tier = 'microbe' THEN 1 ELSE 0 END) AS microbe_count,
             SUM(CASE WHEN tier = 'spore' THEN 1 ELSE 0 END) AS spore_count,
             SUM(CASE WHEN tier = 'seed' THEN 1 ELSE 0 END) AS seed_count,
             SUM(CASE WHEN COALESCE(banned, 0) = 1 THEN 1 ELSE 0 END) AS banned_count,
-            SUM(CASE WHEN score_checked_at IS NOT NULL AND score_checked_at > 0 THEN 1 ELSE 0 END) AS checked_count
+            SUM(CASE WHEN trust_score >= 60 THEN 1 ELSE 0 END) AS trusted_count,
+            SUM(CASE WHEN trust_score < 60 AND trust_score IS NOT NULL THEN 1 ELSE 0 END) AS blocked_count
         FROM user
         WHERE {build_email_filter(emails)}
         """,
@@ -110,10 +97,12 @@ def print_summary(env: str, emails: list[str]) -> None:
 
     row = results[0]
     print("\n📊 Cohort summary:")
+    print(f"   Microbe: {row.get('microbe_count', 0)}")
     print(f"   Spore: {row.get('spore_count', 0)}")
     print(f"   Seed: {row.get('seed_count', 0)}")
     print(f"   Banned: {row.get('banned_count', 0)}")
-    print(f"   Checked: {row.get('checked_count', 0)}")
+    print(f"   Trust >= 60: {row.get('trusted_count', 0)}")
+    print(f"   Trust < 60: {row.get('blocked_count', 0)}")
 
 
 def load_dotenv_env() -> dict[str, str]:
@@ -149,7 +138,7 @@ def run_command(command: list[str], env: dict[str, str]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Prepare a staging cohort and replay the daily spore recheck pipeline"
+        description="Prepare a staging cohort and replay the hourly new-user pipeline"
     )
     parser.add_argument(
         "--env",
@@ -165,17 +154,12 @@ def main() -> int:
     parser.add_argument(
         "--skip-prepare",
         action="store_true",
-        help="Skip resetting the cohort before replaying the daily pipeline",
+        help="Skip resetting the cohort before replaying the pipeline",
     )
     parser.add_argument(
-        "--passes",
-        type=int,
-        help="Number of daily passes to run. Defaults to running until the full cohort has been checked once.",
-    )
-    parser.add_argument(
-        "--dry-run",
+        "--hourly-dry-run",
         action="store_true",
-        help="Run a single dry-run pass without mutating the daily pipeline state",
+        help="Run the hourly tier step in dry-run mode after the live trust gate",
     )
     args = parser.parse_args()
 
@@ -183,7 +167,7 @@ def main() -> int:
     emails = load_email_cohort(args.emails_file)
     cohort_size = count_cohort_users(env, emails)
 
-    print("🧪 Replay Daily Spore Recheck")
+    print("🧪 Replay Hourly New-User Pipeline")
     print(f"   Environment: {env}")
     print(f"   Cohort file: {args.emails_file}")
     print(f"   Cohort size: {cohort_size}")
@@ -195,56 +179,43 @@ def main() -> int:
     child_env = load_dotenv_env()
 
     if not args.skip_prepare:
-        print("\n🛠️ Preparing cohort for daily replay...")
+        print("\n🛠️ Preparing cohort for hourly replay...")
         prepare_cohort(env, emails)
     else:
         print("\n⏭️ Skipping cohort preparation")
 
-    if args.dry_run:
-        print("\n🌱 Running one dry-run daily pass...")
-        run_command(
-            [
-                "npm",
-                "run",
-                "user-pipeline:daily-spore-recheck",
-                "--",
-                "--env",
-                env,
-                "--dry-run",
-                "--emails-file",
-                args.emails_file,
-            ],
-            child_env,
-        )
-        return 0
+    print("\n🔍 Running trust gate...")
+    run_command(
+        [
+            "npm",
+            "run",
+            "user-pipeline:trust-score",
+            "--",
+            "--env",
+            env,
+            "--parallel",
+            "3",
+            "--store-status",
+            "--emails-file",
+            args.emails_file,
+        ],
+        child_env,
+    )
 
-    total_passes = args.passes or cohort_size
-    print(f"\n🌱 Running up to {total_passes} daily pass(es)...")
-
-    for index in range(total_passes):
-        remaining_unchecked = count_unchecked_users(env, emails)
-        if remaining_unchecked == 0:
-            print(f"\n✅ Cohort fully checked after {index} pass(es)")
-            break
-        print(f"\n   Pass {index + 1}/{total_passes}")
-        run_command(
-            [
-                "npm",
-                "run",
-                "user-pipeline:daily-spore-recheck",
-                "--",
-                "--env",
-                env,
-                "--emails-file",
-                args.emails_file,
-            ],
-            child_env,
-        )
-    else:
-        remaining_unchecked = count_unchecked_users(env, emails)
-        print(
-            f"\n⚠️ Replay stopped after {total_passes} pass(es) with {remaining_unchecked} unchecked users remaining"
-        )
+    print("\n🌱 Running hourly new-user pipeline...")
+    command = [
+        "npm",
+        "run",
+        "user-pipeline:hourly-new-users",
+        "--",
+        "--env",
+        env,
+        "--emails-file",
+        args.emails_file,
+    ]
+    if args.hourly_dry_run:
+        command.append("--dry-run")
+    run_command(command, child_env)
 
     print_summary(env, emails)
     return 0

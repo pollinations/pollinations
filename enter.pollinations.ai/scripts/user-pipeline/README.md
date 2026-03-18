@@ -14,6 +14,38 @@ See also:
 
 - [`PRODUCTION_ROLLOUT.md`](/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/PRODUCTION_ROLLOUT.md) for the final pre-merge productionization checklist and the initial dry-run rollout plan.
 
+## Layout
+
+```text
+scripts/user-pipeline/
+├── hourly-new-users.ts
+├── daily-spore-recheck.py
+├── scoring/
+│   ├── trust-score.ts
+│   ├── github_score.py
+│   └── github_risk.py
+├── shared/
+│   ├── d1.ts
+│   ├── d1.py
+│   ├── email-cohort.ts
+│   ├── github_account_state.py
+│   ├── python.ts
+│   └── python_runtime.py
+├── manual/
+│   ├── apply-abuse-blocks.ts
+│   ├── cleanup-github-users.ts
+│   ├── replay-hourly-new-users.py
+│   └── replay-daily-spore-recheck.py
+└── backfills/
+    └── backfill-spore-scores.py
+```
+
+## Local Python
+
+- Python package scripts honor `PYTHON_BIN` if it is set.
+- If `PYTHON_BIN` is not set, the launcher prefers `python3.11`, then falls back to `python3`.
+- This keeps local replay and backfill commands stable even when the machine default `python3` is not the interpreter that has the required SSL certificates or Python packages.
+
 ## Hourly New-User Pipeline
 
 - Runs on users where `trust_score IS NULL` and `banned = 0`

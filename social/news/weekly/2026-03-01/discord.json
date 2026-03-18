@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-03-01",
+  "period_start": "2026-02-22",
+  "period_end": "2026-02-28",
+  "generated_at": "2026-03-18T22:36:47.246410+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-01/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>.\n\n## Weekly Update - 2026-03-01\n\nWe merged 105 PRs this week. A lot of backend plumbing, several model bumps, and we finally added persistent media storage. Here's the rundown:\n\n💾 **Media Storage**\n- `media.pollinations.ai` is live. Cloudflare R2-backed upload service to persist your files.\n- Hardened with binary validation so it actually behaves.\n\n🧠 **Models & API**\n- **Text:** Upgraded to Claude Sonnet 4.6 (now using direct Anthropic API for caching), Gemini 3.1 Pro, and Minimax M2.5. Added `context_window` to all text models.\n- **Image/Video:** Added `grok-imagine` (alpha), Seedream 5.0 Lite, and Gemini 3.1 Flash Image. Wan video now safely falls back to DashScope during rate limits.\n- **Audio:** You can now pass custom ElevenLabs voice IDs.\n- **Under the hood:** The text service was completely rewritten in Hono + TypeScript. Polly is now fully OpenAI-compatible, and we restored burst accumulation in the rate limiter.\n\n🌍 **Ecosystem & Docs**\n- **Showcase reboot:** Added 15 new categories, platform badges, and daily health checks. Stale apps get pruned automatically now.\n- 50+ new community apps added to the showcase this week.\n- **Docs:** Major restructure with actual usable code samples. The main site got a redesign with updated tier cards.\n\nGo build something weird."
+}

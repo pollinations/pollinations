@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-07",
+  "period_start": "2026-03-07",
+  "period_end": "2026-03-07",
+  "generated_at": "2026-03-18T22:08:12.640749+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-07/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-07/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-07/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Six PRs merged this week. Flux-2-dev finally learned how rectangles work (dimensions now automatically snap to supported sizes). We also normalized the `finish_reason` output to keep OpenAI compliance happy, without breaking Gemini tool calls in the process. A delicate balancing act.\n\nPlus, the ecosystem keeps growing: Pollinations CLI, NovelCraft AI, and a new media editor just hit the showcase. Building is fun. Check them out in the repo.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #aiagents",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

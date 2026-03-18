@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-02",
+  "period_start": "2026-03-02",
+  "period_end": "2026-03-02",
+  "generated_at": "2026-03-18T22:02:15.687943+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-02/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-02/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-02/images/instagram-3.jpg"
+    }
+  ],
+  "text": "17 PRs merged this week. mostly a massive community harvest—we added a ton of new apps built by you all to the showcase (homework solvers, roleplay companions, infinite yield games).\n\non the infra side: we cured vision API blindness (no more [object Object] staring back at you), sanitized Vertex schemas, and removed default system prompts from general models. they can just be themselves now.\n\noh, and the playground selector finally shows actual human-readable model names. small wins.\n\neverything's live at pollinations.ai 🌸\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #codinglife #openweight",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

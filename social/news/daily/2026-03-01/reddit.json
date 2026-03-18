@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-01",
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-01",
+  "generated_at": "2026-03-18T21:55:46.428517+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-01/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged 21 PRs: ComfyUI nodes, API bridges, and a dotenv fix",
+  "text": "Merged 21 PRs today. Most of the queue was community apps hitting the showcase, but there are a few infrastructure and tooling updates worth calling out.\n\nFirst, the text generation reliability issue is resolved (#8702). Turns out we were importing server modules before loading dotenv. Classic order-of-operations oversight. If you were seeing intermittent config drops or weird behavior on the text endpoints, this was why. It is patched and deployed.\n\nOn the tooling side, we merged a few useful bridges. #8720 adds ComfyUI-Pollinations-BYOP, which lets you drop our image generation directly into your ComfyUI workflows as a custom node. #8219 (pollinations2openai) is a wrapper that translates OpenAI-formatted API calls into our endpoints. It works as a drop-in replacement if you want to test prompts locally without burning OpenAI credits.\n\nAlso merged DecoyNet (#8349), which is a terminal agent acting as a scammer honeypot, and GeoCitAIes.com (#8286) for generating 90s-style web layouts.\n\nThe rest of the updates are a massive wave of single-purpose generators (StickerForge, CINESONICS, AnimePollen, etc).\n\nAll code and the full PR list is open on the GitHub repo. If you are building something that hits the API, feel free to submit a PR to the showcase."
+}

@@ -1,0 +1,47 @@
+{
+  "date": "2026-03-14",
+  "period_start": "2026-03-14",
+  "period_end": "2026-03-14",
+  "title": "Drop-in OpenAI compatibility and new Pruna models",
+  "summary": "OpenAI SDK compatibility for images, new Pruna models, and a massive sweep of API key and generation fixes.\n\nYou can now swap out your OpenAI base URL for ours and keep using standard SDKs for image generation. We also wired up Pruna's image, edit, and video models directly to the core API.\n\nWe fixed a version mismatch causing 404s on gptimage edits, stopped the klein model from throwing 429s, and unlocked custom resolutions for nanobanana-2 (including a new 0.5K tier).\n\nGenerating API keys works smoothly again after expanding trusted origins. We also fixed dashboard permission resets, allowed browser extension URLs for App Keys, and stopped returning pollen costs in scientific notation because nobody wants to parse 1.5e-2 on a Saturday.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 9001,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9044,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9065,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9077,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9087,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9091,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9105,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9113,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9117,
+      "date": "2026-03-14"
+    }
+  ],
+  "generated_at": "2026-03-18T22:13:38.553614+00:00"
+}

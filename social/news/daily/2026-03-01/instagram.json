@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-01",
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-01",
+  "generated_at": "2026-03-18T21:55:46.428517+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-01/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-01/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-01/images/instagram-3.jpg"
+    }
+  ],
+  "text": "21 PRs merged this week. The ecosystem is growing some weird and wonderful branches. We've got ComfyUI nodes for custom pipelines, terminal agents, and a massive wave of single-purpose generators. Someone even built a 90s GeoCities-style site generator and a scammer honeypot (DecoyNet). Also fixed a sneaky dotenv loading bug, so text generation is rock solid again. It's cool seeing what everyone builds when the infra is just sitting there open. Check out the showcase to see them all. 🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #comfyui #buildinpublic #retroweb #openAI",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

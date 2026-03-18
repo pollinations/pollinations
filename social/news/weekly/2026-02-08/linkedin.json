@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-02-08",
+  "period_start": "2026-02-01",
+  "period_end": "2026-02-07",
+  "generated_at": "2026-03-18T22:22:09.582030+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-08/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.42 — new video models, elevenlabs tts, and surviving 524 timeouts.\n\n───\n\n→ MEDIA AND AUDIO\nWe added LTX-2, Imagen 3, Imagen 4, Flux-2-dev, and Grok Video (alpha). If it generates pixels, it is probably on the endpoint now. We also wired up an ElevenLabs TTS endpoint for audio.\n\n→ TEXT AND INFRASTRUCTURE\nUpgraded Claude to Opus 4.6 on Bedrock. We moved our Portkey gateway to a custom domain to stop 524 timeouts from ruining your day. Migrated Mistral to OVHcloud, immediately broke it via a config key case mismatch, and then fixed it.\n\n→ USAGE TIERS\nTo keep the servers from melting, 5 heavy models are now paid-only. The free tier remains generous. We also added usage-by-tier panels to the dashboard so you can actually see what is happening.\n\n→ GSOC\nCleaned up the READMEs and routing for Google Summer of Code contributors preparing for the season.\n\n15 PRs merged this week. Code is open.\ngithub.com/pollinations/pollinations\n\n#OpenSource #AI #WebDev #GSoC"
+}

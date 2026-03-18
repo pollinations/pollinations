@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-02-13",
+  "period_start": "2026-02-13",
+  "period_end": "2026-02-13",
+  "generated_at": "2026-03-18T21:29:41.035981+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-13/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-13/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-13/images/instagram-3.jpg"
+    }
+  ],
+  "text": "A little housekeeping, a little heavy lifting. Shipped a few things this week to make the infrastructure hum a bit better.\n\n- Video resolutions finally behave. We unified the system so your pixels actually resolve exactly how you want them to.\n- Bumped GLM up to 5 and added ElevenLabs Scribe v2 for STT. Heavier models for text and audio, handled quietly in the background.\n- Fixed the dashboard tier panels so the colors actually match your active tier. Aesthetic harmony restored.\n\nAll live via the API. Go build something weird.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #generativeai #developerlife",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

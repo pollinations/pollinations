@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-02-21",
+  "period_start": "2026-02-21",
+  "period_end": "2026-02-21",
+  "generated_at": "2026-03-18T21:42:43.883190+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-21/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-21/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-21/images/instagram-3.jpg"
+    }
+  ],
+  "text": "5 PRs merged this week. mostly, we gave the polly bot a massive brain upgrade. overhauled the embeddings, fixed batching, and made her significantly faster. she reads good now. 📚🐝\n\nwe also added some new community apps: ppo to Chat, and BrainrotMaker to Creative (yes, BrainrotMaker. don't ask, just try it). finally, we fed some old kpi tracking code to the void where it belongs. \n\nall live in the repo now. go build something weird.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #github #botdevelopment #aiagents #codinglife",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

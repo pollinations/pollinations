@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-02-08",
+  "period_start": "2026-02-01",
+  "period_end": "2026-02-07",
+  "generated_at": "2026-03-18T22:22:09.582030+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-08/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-08/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-08/images/instagram-3.jpg"
+    }
+  ],
+  "text": "15 PRs merged this week. We added ElevenLabs text-to-speech, so your apps can finally talk back to you. Also plugged in a bunch of new visual models (Imagen 3 & 4, LTX-2, Grok Video) because we like when the pixels move.\n\nUpgraded Claude to Opus 4.6, squashed some pesky 524 timeouts by moving the Portkey gateway, and prepped the repo garden for Google Summer of Code contributors. 🌱\n\nBuild something weird with it. Everything is in the open.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #gsoc2024 #generativeai #elevenlabs",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

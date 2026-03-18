@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-03-07",
+  "period_start": "2026-03-07",
+  "period_end": "2026-03-07",
+  "generated_at": "2026-03-18T22:08:12.640749+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-07/images/twitter.jpg"
+    }
+  ],
+  "text": "six updates today. taught flux-2-dev how to snap to actual supported rectangles. normalized `finish_reason` to openai format (ignored portkey strictness so gemini tool calls don't break). added a new cli, media editor, and ai novelist to the showcase."
+}

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-14",
+  "period_start": "2026-03-14",
+  "period_end": "2026-03-14",
+  "generated_at": "2026-03-18T22:13:38.553614+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-14/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped OpenAI-compatible image endpoints, Pruna models, and unblocked API keys.",
+  "text": "Just merged 9 PRs today. The main thing is that we added OpenAI-compatible image generation endpoints (#9105). If you already have tooling built around the OpenAI spec, you can just swap the base URL to point to pollinations.ai and use our models instead without rewriting your integration.\n\nWe also added a few new models from Pruna (#9077): p-image, p-image-edit, and p-video. If you're doing img2img, we fixed the API versioning for gptimage edits (#9065) so that actually works properly now.\n\nA few other things that shipped to fix developer friction:\n\n- Custom dimensions: Enabled the imageSize parameter for nanobanana-2 (#9087).\n- API key generation: Expanded trustedOrigins to unblock key generation (#9117) and allowed browser extension URLs in App Key appUrl (#9113). If you were trying to generate a key from an extension and getting blocked, try it now.\n- Rate limits: Added auth for klein 4B to bypass the 429 errors we were seeing under load (#9091).\n- Dashboard: Fixed the model permissions resetting randomly on the edit modal (#9044).\n- Pricing readouts: Pollen costs now output in fixed-point notation instead of scientific notation so you can actually read them without doing mental math (#9001).\n\nCode and roadmap are open as always: https://github.com/pollinations/pollinations"
+}

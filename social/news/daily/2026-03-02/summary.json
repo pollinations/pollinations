@@ -1,0 +1,79 @@
+{
+  "date": "2026-03-02",
+  "period_start": "2026-03-02",
+  "period_end": "2026-03-02",
+  "title": "Letting models be themselves",
+  "summary": "We let text models drop their forced personalities, fixed a vision API blindspot, and welcomed 13 new community apps including a bot running in 40,000 Discord servers.\n\nWe stopped injecting default conversational system prompts into general-purpose text models. They will no longer confidently claim to be an outdated version of themselves or adopt a forced personality unless you explicitly ask them to. Enjoy the purer, native outputs.\n\nA recent TypeScript migration accidentally coerced multimodal image arrays into the dreaded '[object Object]' string, which is surprisingly hard for an AI to look at. That's fixed. We also swapped tool schema sanitization to an allowlist so Gemini and Vertex AI stop choking on unsupported JSON properties during function calling.\n\n13 new apps hit the showcase today. The heavy hitter is Techno Bot, currently running in over 40,000 Discord servers. The rest of the haul includes a Roblox admin script that translates plain text into commands, a Persian-language chat PWA, and a highly specific wave of EdTech tools ranging from calculus tutors to diploma exam prep.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 7501,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 7577,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 7643,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 7745,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 7757,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8028,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8450,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8504,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8536,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8621,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8638,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8643,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8660,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8669,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8672,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8729,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8733,
+      "date": "2026-03-02"
+    }
+  ],
+  "generated_at": "2026-03-18T22:02:15.687943+00:00"
+}

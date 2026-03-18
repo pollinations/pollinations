@@ -1,0 +1,47 @@
+{
+  "date": "2026-02-28",
+  "period_start": "2026-02-28",
+  "period_end": "2026-02-28",
+  "title": "A faster text API and smarter model routing",
+  "summary": "A heavy day for the text API with a Hono rewrite, smarter model endpoints, and two new community apps hitting the showcase.\n\nWe rewrote the text generation backend in Hono and TypeScript, resulting in noticeably faster response times and rock-solid streaming. We also upgraded MiniMax to M2.5, exposed `context_window` limits for all models so you can programmatically avoid token overflow, and made the `/models` endpoint automatically filter out models you don't have access to. Less guessing, more building.\n\nThe community showcase continues to grow. We've added PollenPages, a dedicated tool for generating fully illustrated narratives and children's books. Meanwhile, the beloved CatGPT got a frontend refactor and some deployment polish to keep your feline AI chats running smoothly.\n\nWe fixed a regression in the PollenRateLimiter—if you idle between requests, you actually get your burst capacity back now instead of being immediately throttled. We also hardened the media upload system to handle binary data more reliably and added a secure DELETE endpoint so you can programmatically wipe your files when you're done with them.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 7493,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8526,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8580,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8594,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8617,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8654,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8655,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8684,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8688,
+      "date": "2026-02-28"
+    }
+  ],
+  "generated_at": "2026-03-18T21:49:26.746532+00:00"
+}

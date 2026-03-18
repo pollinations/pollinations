@@ -1,0 +1,31 @@
+{
+  "date": "2026-02-21",
+  "period_start": "2026-02-21",
+  "period_end": "2026-02-21",
+  "title": "Polly bot gets a massive brain upgrade",
+  "summary": "A massive brain upgrade for our Discord bot, Polly, plus new AI assistants and meme generators hitting the community showcase.\n\nWe completely overhauled the embedding system for our Discord bot, Polly. By implementing token-aware request batching and optimizing message handling, we've drastically reduced latency and improved context retrieval. We also migrated the bot's source into the monorepo with an automated deployment workflow, ensuring faster and more reliable updates. Expect much faster, highly accurate answers when asking about documentation or code.\n\nThe community showcase continues to expand with two new additions. We've added 'ppo', a powerful new AI assistant, to the Chat directory, alongside 'BrainrotMaker' in the Creative section for all your rapid-fire internet-culture image generation needs.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 7328,
+      "date": "2026-02-21"
+    },
+    {
+      "number": 8432,
+      "date": "2026-02-21"
+    },
+    {
+      "number": 8467,
+      "date": "2026-02-21"
+    },
+    {
+      "number": 8473,
+      "date": "2026-02-21"
+    },
+    {
+      "number": 8474,
+      "date": "2026-02-21"
+    }
+  ],
+  "generated_at": "2026-03-18T21:42:43.883190+00:00"
+}

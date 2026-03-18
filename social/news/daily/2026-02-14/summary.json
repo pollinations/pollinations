@@ -1,0 +1,27 @@
+{
+  "date": "2026-02-14",
+  "period_start": "2026-02-14",
+  "period_end": "2026-02-14",
+  "title": "Video models: Grok learns image-to-video, Wan gets a safety net",
+  "summary": "A solid day for video generation with new image-to-video support for Grok, better reliability for Wan, and a fix for GPT image editing.\n\nEnabled image-to-video for grok-video, so you can now animate static images instead of just typing at them. We also wired up an automatic fallback to Alibaba DashScope for the Wan video model. If the primary API chokes under load, the fallback catches it, keeping generations reliable.\n\nBumped the Azure API version for the gptimage model to restore support for the /images/edits endpoint. Inpainting and editing workflows are back online.\n\nThe OpenClaw page started as a temporary hackathon site. We've rewritten it into a permanent integration guide and added it to the news/apps section, so developers actually have a reference to build against.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 8229,
+      "date": "2026-02-14"
+    },
+    {
+      "number": 8239,
+      "date": "2026-02-14"
+    },
+    {
+      "number": 8247,
+      "date": "2026-02-14"
+    },
+    {
+      "number": 8249,
+      "date": "2026-02-14"
+    }
+  ],
+  "generated_at": "2026-03-18T21:36:09.859613+00:00"
+}

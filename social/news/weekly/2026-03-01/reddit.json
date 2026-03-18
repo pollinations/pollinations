@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-03-01",
+  "period_start": "2026-02-22",
+  "period_end": "2026-02-28",
+  "generated_at": "2026-03-18T22:36:47.246410+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-01/images/reddit.jpg"
+    }
+  ],
+  "title": "105 PRs merged: R2 media storage, Hono rewrite, and Claude caching",
+  "text": "We merged 105 PRs this week. About half were new community apps being added to the showcase, and the rest was infrastructure and model updates.\n\n**Infrastructure & Backend**\nWe finally rewrote the text service in Hono and TypeScript. We also spun up a persistent media storage service (media.pollinations.ai) backed by Cloudflare R2, complete with binary validation and DELETE endpoints so it doesn't immediately turn into a dumping ground.\n\n**Models & API**\nWe migrated our Claude implementation directly to the Anthropic API to take advantage of prompt caching, and bumped it to Sonnet 4.6. Other model additions: Gemini 3.1 Pro and Flash Image, Seedream 5.0 Lite, and Grok-imagine (in alpha). \n\nFor video, Wan was hitting rate limits hard, so we added an automatic fallback to DashScope. For audio, you can now pass custom ElevenLabs voice IDs. We also finally exposed `context_window` sizes for all text models in the API so you don't have to guess.\n\n**Ecosystem**\nWith 50+ new apps added this week (Obsidian plugins, Discord bots, Android clients), the showcase was getting unwieldy. We added a 15-category dashboard and, more importantly, daily health checks. If an app breaks or goes offline, it gets automatically unlisted so the directory doesn't turn into a graveyard.\n\nDocs got a restructure with better code samples. Code is open as always at github.com/pollinations/pollinations."
+}

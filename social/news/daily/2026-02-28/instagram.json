@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-02-28",
+  "period_start": "2026-02-28",
+  "period_end": "2026-02-28",
+  "generated_at": "2026-03-18T21:49:26.746532+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-28/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-28/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-28/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Shipped 9 updates this week to make the infrastructure a little smarter and a lot faster.\n\nWe rewrote the text service in Hono + TypeScript, so your prompts are now zooming through the tubes. CatGPT is back online (don't ask), and we added PollenPages for generating illustrated books.\n\nAlso hardened the media upload endpoints and brought back burst rate limits so your apps don't randomly timeout when things get busy.\n\nCode is in the repo. Go build something weird. 🐝✨\n\ngithub.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #typescript #buildinpublic #webdev #generativeai",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

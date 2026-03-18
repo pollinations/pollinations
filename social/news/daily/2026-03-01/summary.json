@@ -1,0 +1,95 @@
+{
+  "date": "2026-03-01",
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-01",
+  "title": "ComfyUI nodes, terminal agents, and API bridges",
+  "summary": "A massive day for the community showcase, featuring native ComfyUI nodes, a scammer honeypot, 90s homepage generators, and a crucial text API reliability fix.\n\nDevelopers are wiring us into everything. We now have a native ComfyUI integration with dedicated nodes for all four modalities (image, video, text, audio). Someone also shipped Bloom CLI (an open-source terminal coding agent), a bridge that lets you drop Pollinations into any app expecting an OpenAI API format, and two new AI website builders (wwwsim and Plaiyground).\n\nThe community showcase got wonderfully weird today. Additions include DecoyNet (a dual-LLM honeypot designed to waste scammers' time), GeoCitAIes (generating 90s-style personal homepages via AI personas), and Instaclaw (a simulated social network where autonomous agents generate and share art). We also saw an LLM-powered game master for a game called 'Guided Extreme Emotional Mental States'.\n\nThe ecosystem is expanding with highly specific, single-purpose tools. Today's showcase additions include AnimePollen (anime art), StickerForge (messaging stickers), CINESONICS (imaginary movie soundtracks), and Tiny Tales (4-page kids' stories). We also merged a handful of writing assistants, markdown note-taking apps, and Telegram personality bots.",
+  "pr_count": 21,
+  "prs": [
+    {
+      "number": 8100,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8157,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8194,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8219,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8286,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8319,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8322,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8349,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8414,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8448,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8522,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8558,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8587,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8632,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8646,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8664,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8666,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8686,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8702,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8710,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8720,
+      "date": "2026-03-01"
+    }
+  ],
+  "generated_at": "2026-03-18T21:55:46.428517+00:00"
+}

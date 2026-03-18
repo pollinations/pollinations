@@ -548,26 +548,6 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "qwen": {
-        aliases: ["qwen3.5", "qwen3p5", "qwen3p5-397b-a17b"],
-        modelId: "accounts/fireworks/models/qwen3p5-397b-a17b",
-        provider: "fireworks",
-        cost: [
-            {
-                date: new Date("2026-03-17").getTime(),
-                promptTextTokens: perMillion(0.6),
-                promptCachedTokens: perMillion(0.3),
-                completionTextTokens: perMillion(3.6),
-            },
-        ],
-        description: "Qwen3.5 397B A17B - Large MoE with Vision & Reasoning",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
-        contextLength: 262144,
-        isSpecialized: false,
-    },
     "nomnom": {
         aliases: ["web-scrape", "web-research"],
         modelId: "nomnom",

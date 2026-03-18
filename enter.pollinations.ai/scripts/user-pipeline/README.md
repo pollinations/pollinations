@@ -50,7 +50,6 @@ scripts/user-pipeline/
 │   ├── python.ts
 │   └── python_runtime.py
 ├── manual/
-│   ├── apply-abuse-blocks.ts
 │   ├── cleanup-github-users.ts
 │   ├── replay-hourly-new-users.py
 │   └── replay-daily-spore-recheck.py

@@ -31,7 +31,6 @@
         "tail:json": "wrangler tail --env production | jq '.logs[].message[] | fromjson'",
         "docs:generate": "tsx scripts/generate-apidocs.ts",
         "user-pipeline:trust-score": "tsx scripts/user-pipeline/scoring/trust-score.ts",
-        "user-pipeline:apply-abuse-blocks": "tsx scripts/user-pipeline/manual/apply-abuse-blocks.ts",
         "user-pipeline:hourly-new-users": "tsx scripts/user-pipeline/hourly-new-users.ts",
         "user-pipeline:daily-spore-recheck": "tsx scripts/run-python.ts scripts/user-pipeline/daily-spore-recheck.py",
         "user-pipeline:replay-hourly": "tsx scripts/run-python.ts scripts/user-pipeline/manual/replay-hourly-new-users.py",

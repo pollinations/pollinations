@@ -27,6 +27,7 @@ from common import (
     LINKEDIN_MAX_CHARS,
     build_canonical_summary,
     build_linkedin_post_text,
+    join_summary_parts,
     normalize_platform_post,
     load_prompt,
     load_format,
@@ -80,21 +81,6 @@ def get_week_dates(override_start: Optional[str] = None):
     )
 
 
-def _join_summary_parts(parts: List[str]) -> str:
-    """Join non-empty summary sections without repeating the same sentence twice."""
-    unique_parts = []
-    seen = set()
-    for part in parts:
-        text = (part or "").strip()
-        if not text:
-            continue
-        key = text.casefold()
-        if key in seen:
-            continue
-        seen.add(key)
-        unique_parts.append(text)
-    return "\n\n".join(unique_parts)
-
 
 def build_weekly_summary_artifact(
     digest: Dict,
@@ -117,7 +103,7 @@ def build_weekly_summary_artifact(
         for arc in arcs[:4]
         if (arc.get("summary") or "").strip()
     ]
-    summary_text = _join_summary_parts(
+    summary_text = join_summary_parts(
         ([theme] if theme and theme != title else []) + arc_summaries
     )
     if not summary_text:

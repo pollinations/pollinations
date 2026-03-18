@@ -46,7 +46,10 @@ IMAGE_STYLE_SUFFIX = (
     "soft pastel gradients, warm ambient glow lighting, CRT glow effects. "
     "Lime green #ecf874 used BOLDLY. "
     "Tiny pixel sparkles and glowing particles floating in the air. Magical warm atmosphere. "
-    "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike."
+    "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike. "
+    "The attached image is a CHARACTER REFERENCE SHEET only — use it for character design, "
+    "proportions, and art style consistency. Do NOT copy the layout or background from it. "
+    "Only draw the characters mentioned in the prompt above, not all characters from the sheet."
 )
 
 # Discord-specific
@@ -404,7 +407,8 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
             "private": "true",
             "nofeed": "true",
             "seed": seed,
-            "key": token
+            "key": token,
+            "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/prompts/brand/characters-ref.jpg",
         }
 
         if attempt == 0:
@@ -895,6 +899,22 @@ def normalize_platform_post(
         result["metadata"] = metadata
 
     return result
+
+
+def join_summary_parts(parts: List[str]) -> str:
+    """Join non-empty summary sections without repeating the same sentence twice."""
+    unique_parts = []
+    seen = set()
+    for part in parts:
+        text = (part or "").strip()
+        if not text:
+            continue
+        key = text.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_parts.append(text)
+    return "\n\n".join(unique_parts)
 
 
 def build_canonical_summary(

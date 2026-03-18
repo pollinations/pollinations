@@ -25,6 +25,7 @@ from typing import Dict, List, Optional
 
 from common import (
     build_canonical_summary,
+    join_summary_parts,
     normalize_platform_post,
     load_prompt,
     get_env,
@@ -181,21 +182,6 @@ def get_target_date(override: Optional[str] = None) -> str:
     return yesterday.strftime("%Y-%m-%d")
 
 
-def _join_summary_parts(parts: List[str]) -> str:
-    """Join non-empty summary sections without repeating the same sentence twice."""
-    unique_parts = []
-    seen = set()
-    for part in parts:
-        text = (part or "").strip()
-        if not text:
-            continue
-        key = text.casefold()
-        if key in seen:
-            continue
-        seen.add(key)
-        unique_parts.append(text)
-    return "\n\n".join(unique_parts)
-
 
 def build_daily_summary_artifact(
     summary: Dict, gists: List[Dict], date_str: str, generated_at: str
@@ -213,7 +199,7 @@ def build_daily_summary_artifact(
         for arc in arcs[:3]
         if (arc.get("summary") or "").strip()
     ]
-    summary_text = _join_summary_parts(
+    summary_text = join_summary_parts(
         ([one_liner] if one_liner and one_liner != title else []) + arc_summaries
     )
     if not summary_text:

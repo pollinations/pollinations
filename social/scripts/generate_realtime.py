@@ -10,6 +10,7 @@ Discord posting is handled separately by publish_realtime.py.
 See social/PIPELINE.md for full architecture.
 """
 
+import re
 import sys
 from datetime import datetime, timezone
 from typing import Dict, Optional
@@ -127,6 +128,15 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict) -> Dict:
 
     # Apply hard rules for publish_tier
     gist["gist"]["publish_tier"] = apply_publish_tier_rules(gist)
+
+    # Extract app URL for app submission PRs
+    if "TIER-APP-REVIEW-PR" in labels:
+        body = pr_data.get("body") or ""
+        # PR body format: "- Adds [AppName](https://...) to category"
+        link_match = re.search(r"\[([^\]]+)\]\(([^)]+)\)", body)
+        if link_match:
+            gist["app_name"] = link_match.group(1)
+            gist["app_url"] = link_match.group(2)
 
     return gist
 

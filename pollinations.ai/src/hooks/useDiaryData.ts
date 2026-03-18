@@ -434,27 +434,36 @@ function extractTitle(text: string): string {
     return (sentences[0] || cleaned).trim();
 }
 
-async function enrichTimelineWithSummaries(
+async function enrichEntryFromSummary(
+    entry: TimelineEntry,
+): Promise<TimelineEntry> {
+    if (!entry.summaryUrl) return entry;
+
+    const summary = await fetchJSON<CanonicalSummaryJson>(entry.summaryUrl);
+    if (!summary?.prs?.length) return entry;
+
+    const prRefs = sortPrRefs(summary.prs);
+    if (prRefs.length === 0) return entry;
+
+    return {
+        ...entry,
+        prRefs,
+        prNumbers: prRefs.map((ref) => ref.number),
+    };
+}
+
+async function enrichRecentEntries(
     entries: TimelineEntry[],
+    days: number,
 ): Promise<TimelineEntry[]> {
+    const cutoff = new Date();
+    cutoff.setUTCDate(cutoff.getUTCDate() - days);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+
     return Promise.all(
-        entries.map(async (entry) => {
-            if (!entry.summaryUrl) return entry;
-
-            const summary = await fetchJSON<CanonicalSummaryJson>(
-                entry.summaryUrl,
-            );
-            if (!summary?.prs?.length) return entry;
-
-            const prRefs = sortPrRefs(summary.prs);
-            if (prRefs.length === 0) return entry;
-
-            return {
-                ...entry,
-                prRefs,
-                prNumbers: prRefs.map((ref) => ref.number),
-            };
-        }),
+        entries.map((entry) =>
+            entry.date >= cutoffStr ? enrichEntryFromSummary(entry) : entry,
+        ),
     );
 }
 
@@ -513,11 +522,13 @@ export function useDiaryData() {
                 if (controller.signal.aborted) return;
 
                 const tl = buildTimeline(paths);
-                const enrichedTimeline = await enrichTimelineWithSummaries(tl);
-                if (controller.signal.aborted) return;
-
-                setTimeline(enrichedTimeline);
+                // Render immediately, then enrich only the last 7 days
+                setTimeline(tl);
                 setLoading(false);
+
+                const enriched = await enrichRecentEntries(tl, 7);
+                if (controller.signal.aborted) return;
+                setTimeline(enriched);
             } catch (err) {
                 if ((err as Error).name === "AbortError") return;
                 console.error("Diary data load error:", err);
@@ -543,6 +554,27 @@ export function useDiaryData() {
                 if (canonical) {
                     title = (canonical.title || "").trim();
                     summary = (canonical.summary || "").trim();
+
+                    // Lazily update prRefs for older entries not enriched at load time
+                    if (canonical.prs?.length) {
+                        const prRefs = sortPrRefs(canonical.prs);
+                        if (prRefs.length > 0) {
+                            setTimeline((prev) =>
+                                prev.map((e) =>
+                                    e.date === entry.date &&
+                                    e.type === entry.type
+                                        ? {
+                                              ...e,
+                                              prRefs,
+                                              prNumbers: prRefs.map(
+                                                  (r) => r.number,
+                                              ),
+                                          }
+                                        : e,
+                                ),
+                            );
+                        }
+                    }
                 }
             }
 

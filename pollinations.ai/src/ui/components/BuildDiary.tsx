@@ -54,6 +54,10 @@ export function BuildDiary() {
     const [entryContent, setEntryContent] = useState<EntryContent | null>(null);
     const [prContent, setPrContent] = useState<PRContent | null>(null);
     const [imgError, setImgError] = useState(false);
+    // Crossfade image state
+    const [shownImageUrl, setShownImageUrl] = useState("");
+    const [prevImageUrl, setPrevImageUrl] = useState("");
+    const [imgFading, setImgFading] = useState(false);
     // Smooth text transition state
     const [textVisible, setTextVisible] = useState(true);
     const [shownTitle, setShownTitle] = useState("");
@@ -77,6 +81,16 @@ export function BuildDiary() {
     const entry: TimelineEntry | undefined = timeline[x];
     const maxY = entry ? entry.prNumbers.length : 0;
     const onPR = y > 0 && y <= maxY;
+
+    // Compute image URL early so the crossfade effect (a hook) can reference it unconditionally
+    const currentImageUrl = onPR
+        ? prContent?.imageUrl || ""
+        : entry && entry.images.length > 0
+          ? entry.images[
+                entry.date.charCodeAt(entry.date.length - 1) %
+                    entry.images.length
+            ]?.url || ""
+          : "";
     const entryDate = entry?.date;
     const entryType = entry?.type;
     const entrySummaryUrl = entry?.summaryUrl;
@@ -112,6 +126,24 @@ export function BuildDiary() {
     useEffect(() => {
         setImgError(false);
     }, [x, y]);
+
+    // Crossfade: when image URL changes, keep old one underneath while new fades in
+    const FADE_MS = 600;
+    useEffect(() => {
+        if (!currentImageUrl || currentImageUrl === shownImageUrl) return;
+        setPrevImageUrl(shownImageUrl);
+        setShownImageUrl(currentImageUrl);
+        setImgFading(false); // new image starts transparent
+        // next frame: trigger transition to opaque
+        const raf = requestAnimationFrame(() => setImgFading(true));
+        const t = setTimeout(() => {
+            setPrevImageUrl("");
+        }, FADE_MS);
+        return () => {
+            cancelAnimationFrame(raf);
+            clearTimeout(t);
+        };
+    }, [currentImageUrl, shownImageUrl]);
 
     // Auto-cycle through day overview + PRs, pause 15s on user click
     const pauseUntil = useRef(0);
@@ -181,7 +213,8 @@ export function BuildDiary() {
         : entryContent?.title || LAYOUT.loadingEllipsis;
     const displaySummary = prettifiedSummary[0]?.text || rawSummary;
 
-    // Smooth text transition: fade out → swap content → fade in
+    // Smooth text transition: fade+slide out → swap content → fade+slide in
+    const TEXT_FADE_MS = 400;
     useEffect(() => {
         if (!displayTitle && !displaySummary) return;
         setTextVisible(false);
@@ -189,7 +222,7 @@ export function BuildDiary() {
             setShownTitle(displayTitle);
             setShownSummary(displaySummary);
             setTextVisible(true);
-        }, 180);
+        }, TEXT_FADE_MS);
         return () => clearTimeout(t);
     }, [displayTitle, displaySummary]);
 
@@ -206,38 +239,48 @@ export function BuildDiary() {
         return null;
     }
 
-    // Current image
-    const currentImageUrl = onPR
-        ? prContent?.imageUrl || ""
-        : entry.images.length > 0
-          ? entry.images[
-                entry.date.charCodeAt(entry.date.length - 1) %
-                    entry.images.length
-            ]?.url || ""
-          : "";
-
     // Image alt text
     const imageAlt = onPR
         ? `PR #${entry.prNumbers[y - 1]}`
         : `${entry.dayName} ${entry.dateLabel}`;
 
-    // Image area — crossfade: new image fades in on top, old stays underneath
+    // Image area — true crossfade: old fades out while new fades in
     const ImageBox = (
         <div className="w-full aspect-square bg-white shrink-0 relative overflow-hidden">
-            {currentImageUrl && !imgError && (
+            {/* Previous image fades out */}
+            {prevImageUrl && !imgError && (
                 <img
-                    key={currentImageUrl}
-                    src={currentImageUrl}
+                    key={`prev-${prevImageUrl}`}
+                    src={prevImageUrl}
+                    alt={imageAlt}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{
+                        opacity: 1,
+                        transition: `opacity ${FADE_MS}ms ease-in-out`,
+                    }}
+                />
+            )}
+            {/* Current image fades in */}
+            {shownImageUrl && !imgError && (
+                <img
+                    key={`curr-${shownImageUrl}`}
+                    src={shownImageUrl}
                     alt={imageAlt}
                     onError={() => setImgError(true)}
-                    className="absolute inset-0 w-full h-full object-cover animate-[fade-in_0.7s_ease-in-out]"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{
+                        opacity: imgFading ? 1 : 0,
+                        transition: `opacity ${FADE_MS}ms ease-in-out`,
+                    }}
                 />
             )}
         </div>
     );
 
-    // Date heading label — same format for both day and week entries
-    const dateLabel = `${entry.dayName} \u00B7 ${entry.dateLabel}`;
+    const dateLabel =
+        entry.type === "week"
+            ? `Week \u00B7 ${entry.dateLabel}`
+            : `${entry.dayName} \u00B7 ${entry.dateLabel}`;
 
     const TextPanel = (
         <div
@@ -298,10 +341,15 @@ export function BuildDiary() {
 
             <div className="mb-3.5" />
 
-            {/* Title + Summary + metadata — smooth fade transition */}
+            {/* Title + Summary + metadata — smooth fade+slide transition */}
             <div
-                className="transition-opacity duration-200 ease-in-out"
-                style={{ opacity: textVisible ? 1 : 0 }}
+                style={{
+                    opacity: textVisible ? 1 : 0,
+                    transform: textVisible
+                        ? "translateY(0)"
+                        : "translateY(6px)",
+                    transition: `opacity ${TEXT_FADE_MS}ms ease-in-out, transform ${TEXT_FADE_MS}ms ease-in-out`,
+                }}
             >
                 {/* Title */}
                 <div className="font-headline text-xs text-dark leading-tight mb-3 font-bold">

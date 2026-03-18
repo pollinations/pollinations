@@ -1,0 +1,33 @@
+{
+  "pr_number": 9246,
+  "title": "feat: simplify social artifact storage",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9246",
+  "merged_at": "2026-03-18T19:46:02Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Cleaning up the newsroom",
+    "blurb": "We've reorganized how our social media updates are stored behind the scenes. The diary will keep flowing smoothly, just with a tidier backend.",
+    "summary": "Refactored the social artifact storage to use canonical summary.json files and updated the website's diary reader to support the new format.",
+    "impact": "Internal pipelines are cleaner and weekly updates now officially roll out on Sundays.",
+    "keywords": [
+      "infrastructure",
+      "social",
+      "pipeline",
+      "refactor"
+    ],
+    "visual_concept": "The bee organizing files or cleaning up a messy newsroom/printing press. Nomnom eating old leaked artifacts.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, organizing glowing lime green (#ecf874) folders in a retro filing cabinet. The round tan nomnom creature happily eats a stack of old paper documents nearby. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9246.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, organizing glowing lime green (#ecf874) folders in a retro filing cabinet. The round tan nomnom creature happily eats a stack of old paper documents nearby. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-03-18T20:06:08.573316+00:00"
+}

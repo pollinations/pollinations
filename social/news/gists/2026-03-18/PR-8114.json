@@ -1,0 +1,35 @@
+{
+  "pr_number": 8114,
+  "title": "Add NovelSeek-Pro-PC to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8114",
+  "merged_at": "2026-03-18T19:33:25Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive writes a novel",
+    "blurb": "NovelSeek-Pro-PC is now in the showcase. It turns out writing a novel is slightly easier when a desktop app handles the outlines, chapters, cover art, and ebook export for you.",
+    "summary": "Added NovelSeek-Pro-PC to the creative apps directory, introducing a comprehensive desktop tool for end-to-end novel generation.",
+    "impact": "Writers can now discover and use a single interface to go from a blank page to a fully formatted ebook with generated cover art.",
+    "keywords": [
+      "app",
+      "creative",
+      "writing",
+      "novel",
+      "ebook",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee as an author. She's at a cozy wooden desk with a retro PC (referencing the desktop app), surrounded by stacks of books. The Monitor Robot is helping by holding a freshly printed book. Warm library vibes.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, sitting at a wooden desk typing on a retro PC. A cute chunky pixel robot with a CRT monitor head stands nearby holding a freshly bound book. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-8114.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, sitting at a wooden desk typing on a retro PC. A cute chunky pixel robot with a CRT monitor head stands nearby holding a freshly bound book. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-18T19:34:25.110119+00:00"
+}

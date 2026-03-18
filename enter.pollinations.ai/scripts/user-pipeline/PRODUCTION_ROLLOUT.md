@@ -12,11 +12,12 @@ The current branch stays staging-only until the last pre-merge commit.
 4. Let the first production workflow runs be dry.
 5. Open a small follow-up PR that removes dry mode and enables live writes.
 
-The intended steady-state workflow order is:
+The implemented steady-state workflow order on this branch is:
 
 1. hourly onboarding
-2. daily global abuse scan
-3. daily spore recheck
+2. daily spore recheck
+
+The daily global abuse scan is planned follow-up work. It is not implemented on this branch and is not part of the current rollout.
 
 ## Final Pre-Merge Commit
 
@@ -27,14 +28,12 @@ The last pre-merge commit should do only two things:
 
 ### Files To Change
 
-- `/Users/comsom/Github/pollinations/.github/workflows/user-pipeline-hourly-new-users.yml`
-- `/Users/comsom/Github/pollinations/.github/workflows/user-pipeline-daily-global-abuse-scan.yml`
-- `/Users/comsom/Github/pollinations/.github/workflows/user-pipeline-daily-spore-recheck.yml`
-- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/scoring/trust-score.ts`
-- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/daily-global-abuse-scan.ts`
-- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/hourly-new-users.ts`
-- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/daily-spore-recheck.py`
-- `/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/shared/d1.py`
+- `.github/workflows/user-pipeline-hourly-new-users.yml`
+- `.github/workflows/user-pipeline-daily-spore-recheck.yml`
+- `enter.pollinations.ai/scripts/user-pipeline/scoring/trust-score.ts`
+- `enter.pollinations.ai/scripts/user-pipeline/hourly-new-users.ts`
+- `enter.pollinations.ai/scripts/user-pipeline/daily-spore-recheck.py`
+- `enter.pollinations.ai/scripts/user-pipeline/shared/d1.py`
 
 ## First Post-Merge Run Must Be Dry
 
@@ -42,7 +41,7 @@ The first production runs after merge should not write to production.
 
 ### Hourly Workflow
 
-In `/Users/comsom/Github/pollinations/.github/workflows/user-pipeline-hourly-new-users.yml`:
+In `.github/workflows/user-pipeline-hourly-new-users.yml`:
 
 - Change `--env staging` to `--env production`
 - Keep the trust gate dry by removing `--store-status`
@@ -58,22 +57,9 @@ run: npm run user-pipeline:trust-score -- --env production --parallel 3
 run: npm run user-pipeline:hourly-new-users -- --env production --dry-run
 ```
 
-### Daily Global Abuse Workflow
-
-In `/Users/comsom/Github/pollinations/.github/workflows/user-pipeline-daily-global-abuse-scan.yml`:
-
-- Change `--env staging` to `--env production`
-- Add `--dry-run`
-
-Target command for the first merged run:
-
-```yaml
-run: npm run user-pipeline:daily-global-abuse-scan -- --env production --dry-run
-```
-
 ### Daily Workflow
 
-In `/Users/comsom/Github/pollinations/.github/workflows/user-pipeline-daily-spore-recheck.yml`:
+In `.github/workflows/user-pipeline-daily-spore-recheck.yml`:
 
 - Change `--env staging` to `--env production`
 - Add `--dry-run`
@@ -88,7 +74,6 @@ run: npm run user-pipeline:daily-spore-recheck -- --env production --dry-run
 
 - `trust-score.ts` without `--store-status` does not write `trust_score` and does not ban users.
 - `hourly-new-users.ts --dry-run` prints would-be `microbe -> spore/seed` outcomes without changing tiers.
-- `daily-global-abuse-scan.ts --dry-run` prints would-be trust updates and `spore+ -> microbe` downgrades without changing users.
 - `daily-spore-recheck.py --dry-run` prints would-be `spore -> seed` outcomes without changing tiers or scores.
 
 So the first merged production runs are safe observation runs.
@@ -99,7 +84,6 @@ Once the dry production runs look correct, open a very small follow-up PR that r
 
 - add `--store-status` back to the hourly trust gate
 - remove `--dry-run` from the hourly new-user step
-- remove `--dry-run` from the daily global abuse scan step
 - remove `--dry-run` from the daily spore recheck step
 
 That PR should not include refactors. It should only turn on live writes.

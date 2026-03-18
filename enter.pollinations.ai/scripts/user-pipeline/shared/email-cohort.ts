@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-function escapeSqlString(value: string): string {
+export function escapeSqlString(value: string): string {
     return value.replace(/'/g, "''");
 }
 

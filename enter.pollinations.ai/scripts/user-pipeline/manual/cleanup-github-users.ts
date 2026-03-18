@@ -20,10 +20,10 @@
  *   GITHUB_APP_PRIVATE_KEY_PATH - Path to .pem private key
  */
 
-import { execSync } from "node:child_process";
 import * as crypto from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
+import { executeD1, queryD1 } from "../shared/d1.ts";
 
 type Environment = "staging" | "production";
 
@@ -55,45 +55,6 @@ const D1_BATCH_SIZE = 500;
 
 function getReportPath(env: string): string {
     return `/tmp/github-users-audit-${env}.json`;
-}
-
-function queryD1(env: Environment, sql: string): string {
-    const envFlag = env === "production" ? "--env production" : "--env staging";
-    const cmd = `npx wrangler d1 execute DB --remote ${envFlag} --command "${sql}" --json`;
-
-    try {
-        return execSync(cmd, {
-            cwd: process.cwd(),
-            encoding: "utf-8",
-            stdio: ["pipe", "pipe", "inherit"],
-        });
-    } catch (error) {
-        console.error(
-            "D1 query failed:",
-            error instanceof Error ? error.message : String(error),
-        );
-        throw error;
-    }
-}
-
-function parseD1Results(result: string): D1User[] {
-    try {
-        const parsed = JSON.parse(result);
-        return (parsed[0]?.results || parsed.results || []) as D1User[];
-    } catch {
-        console.error("Failed to parse D1 response");
-        return [];
-    }
-}
-
-function parseD1Count(result: string): number {
-    try {
-        const parsed = JSON.parse(result);
-        const results = parsed[0]?.results || parsed.results || [];
-        return results[0]?.count || 0;
-    } catch {
-        return 0;
-    }
 }
 
 interface GitHubResult {
@@ -316,11 +277,11 @@ const auditCommand = command({
                 `📋 Resuming audit: ${report.processedCount}/${report.totalUsers} already processed`,
             );
         } else {
-            const countResult = queryD1(
+            const countRows = queryD1(
                 env,
                 "SELECT COUNT(*) as count FROM user WHERE github_id IS NOT NULL;",
             );
-            const totalUsers = parseD1Count(countResult);
+            const totalUsers = Number(countRows[0]?.count) || 0;
             console.log(`📊 Total D1 users with github_id: ${totalUsers}`);
 
             report = {
@@ -352,7 +313,7 @@ const auditCommand = command({
 
         while (newlyProcessed < maxToProcess) {
             const sql = `SELECT id, github_id, github_username FROM user WHERE github_id IS NOT NULL ORDER BY github_id LIMIT ${D1_BATCH_SIZE} OFFSET ${offset};`;
-            const users = parseD1Results(queryD1(env, sql));
+            const users = queryD1(env, sql) as D1User[];
 
             if (users.length === 0) break;
             offset += users.length;
@@ -532,21 +493,28 @@ const applyCommand = command({
             for (let i = 0; i < renamed.length; i += D1_WRITE_BATCH_SIZE) {
                 const batch = renamed.slice(i, i + D1_WRITE_BATCH_SIZE);
                 for (const entry of batch) {
-                    const safeName = sanitizeUsername(entry.currentUsername!);
+                    const currentUsername = entry.currentUsername;
+                    if (typeof currentUsername !== "string") {
+                        console.error(
+                            `   ❌ Missing current username for ${entry.d1Username}`,
+                        );
+                        continue;
+                    }
+                    const safeName = sanitizeUsername(currentUsername);
                     if (opts.dryRun) {
                         console.log(
                             `   [dry] ${entry.d1Username} → ${safeName} (${entry.userId})`,
                         );
                     } else {
-                        try {
-                            queryD1(
-                                env,
-                                `UPDATE user SET github_username = '${safeName}' WHERE id = '${sanitizeId(entry.userId)}';`,
-                            );
+                        const ok = executeD1(
+                            env,
+                            `UPDATE user SET github_username = '${safeName}' WHERE id = '${sanitizeId(entry.userId)}';`,
+                        );
+                        if (ok) {
                             console.log(
                                 `   ✅ ${entry.d1Username} → ${safeName}`,
                             );
-                        } catch {
+                        } else {
                             console.error(
                                 `   ❌ Failed: ${entry.d1Username} → ${safeName}`,
                             );
@@ -576,13 +544,13 @@ const applyCommand = command({
                             `   [dry] Would ban: ${entry.d1Username} (github_id: ${entry.githubId})`,
                         );
                     } else {
-                        try {
-                            queryD1(
-                                env,
-                                `UPDATE user SET banned = 1, ban_reason = 'github_account_deleted' WHERE id = '${sanitizeId(entry.userId)}';`,
-                            );
+                        const ok = executeD1(
+                            env,
+                            `UPDATE user SET banned = 1, ban_reason = 'github_account_deleted' WHERE id = '${sanitizeId(entry.userId)}';`,
+                        );
+                        if (ok) {
                             banned++;
-                        } catch {
+                        } else {
                             console.error(
                                 `   ❌ Failed to ban: ${entry.d1Username}`,
                             );
@@ -621,9 +589,12 @@ const applyCommand = command({
                     { old: string; current: string }
                 >();
                 for (const entry of renamed) {
+                    if (typeof entry.currentUsername !== "string") {
+                        continue;
+                    }
                     renamedById.set(entry.githubId, {
                         old: entry.d1Username,
-                        current: entry.currentUsername!,
+                        current: entry.currentUsername,
                     });
                 }
 

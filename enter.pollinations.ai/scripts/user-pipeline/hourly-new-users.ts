@@ -16,7 +16,11 @@
 
 import { TIER_POLLEN } from "../../src/tier-config.ts";
 import { executeD1, queryD1 } from "./shared/d1.ts";
-import { buildEmailFilter, loadEmailCohort } from "./shared/email-cohort.ts";
+import {
+    buildEmailFilter,
+    escapeSqlString,
+    loadEmailCohort,
+} from "./shared/email-cohort.ts";
 import { runInlinePython } from "./shared/python.ts";
 
 type Environment = "staging";
@@ -82,10 +86,6 @@ function parseArguments(): ParsedArgs {
         dryRun: args.includes("--dry-run"),
         cohortEmails,
     };
-}
-
-function escapeSqlString(value: string): string {
-    return value.replace(/'/g, "''");
 }
 
 function fetchTrustedMicrobeUsers(

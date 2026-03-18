@@ -28,7 +28,11 @@
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { executeD1, queryD1 } from "../shared/d1.ts";
-import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
+import {
+    buildEmailFilter,
+    escapeSqlString,
+    loadEmailCohort,
+} from "../shared/email-cohort.ts";
 import { runInlinePython } from "../shared/python.ts";
 
 const SCORE_THRESHOLDS = {
@@ -129,10 +133,6 @@ function parseArguments(): ParsedArgs {
         storeStatus: args.includes("--store-status"),
         cohortEmails,
     };
-}
-
-function escapeSqlString(value: string): string {
-    return value.replace(/'/g, "''");
 }
 
 function loadApiKey(): string {

@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 
-type Environment = "staging";
+type Environment = "staging" | "production";
 type D1Row = Record<string, string | number | null>;
 
 interface D1JsonResponse {

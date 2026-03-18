@@ -14,4 +14,5 @@ def ensure_python_bin() -> None:
     if current == target:
         return
 
+    # Re-exec under the requested interpreter before the rest of the script runs.
     os.execv(target, [target, *sys.argv])

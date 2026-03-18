@@ -34,6 +34,7 @@ from github_risk import assess_profile_risk
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 GITHUB_REST_USER = "https://api.github.com/user/{}"
 BATCH_SIZE = 50
+ACCOUNT_LOOKUP_MAX_WORKERS = 3
 MAX_BATCHES = None  # Set to a number to limit batches for testing
 GITHUB_USERNAME_RE = re.compile(r"^[A-Za-z0-9-]+$")
 _AUTH_MODE = None
@@ -522,7 +523,9 @@ def validate_account_records(records: list[dict]) -> list[dict]:
             unit="user",
             bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}] {postfix}",
         )
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        # Keep REST account lookups aligned with the GraphQL scorer's worker count
+        # so we do not front-load too many requests before rate-limit feedback lands.
+        with ThreadPoolExecutor(max_workers=ACCOUNT_LOOKUP_MAX_WORKERS) as executor:
             futures = {
                 executor.submit(fetch_account_by_id, github_id): (index, github_id)
                 for index, github_id, _github_username in id_jobs

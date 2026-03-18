@@ -44,6 +44,8 @@ def ban_github_ids(github_ids: list[int], env: str = "staging") -> int:
             banned += len(batch)
 
     return banned
+
+
 def ban_users_by_emails(emails: list[str], env: str = "staging") -> int:
     unique_emails = [
         email for email in dict.fromkeys(emails) if isinstance(email, str) and email

@@ -37,7 +37,7 @@ def run_d1_query(query: str, env: str = "staging") -> list[dict] | None:
             capture_output=True,
             text=True,
             cwd=Path(__file__).resolve().parents[3],
-            timeout=60,
+            timeout=120,
         )
 
         if result.returncode != 0:

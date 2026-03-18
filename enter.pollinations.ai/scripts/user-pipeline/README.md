@@ -10,6 +10,10 @@ Manual emergency tools are also separate and live outside the steady-state flow 
 
 The one-time `trust_score = 0/100` bootstrap remains migration-only in `drizzle/0017_add_score_and_trust_score.sql`; it is not part of steady-state code.
 
+See also:
+
+- [`PRODUCTION_ROLLOUT.md`](/Users/comsom/Github/pollinations/enter.pollinations.ai/scripts/user-pipeline/PRODUCTION_ROLLOUT.md) for the final pre-merge productionization checklist and the initial dry-run rollout plan.
+
 ## Hourly New-User Pipeline
 
 - Runs on users where `trust_score IS NULL` and `banned = 0`

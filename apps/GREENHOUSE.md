@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **622** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **624** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -14,15 +14,14 @@
 |-----|-------------|--------|---:|---|
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@cli](https://github.com/cli) |  | 🫧 |
 | [🖌️ House Painter](https://konsumer.js.org/housepainter/) | Generate paint color schemes for your house using pollinations.ai with House Painter to visualize exterior options and combinations. | [@web](https://github.com/web) |  | 🫧 |
-| [🤖 NEURGenerator for ESP32-S3](113021062) | Uses Pollinations.aihttpspollinations.ai API on ESP32-S3 with PSRAM and WDT support in NEURGenerator for ESP32-S3. | [@library](https://github.com/library) |  | 🫧 |
 | [⚗️ Alchemica](217957462) | Mix elements in Alchemica to craft and discover new combinations using Pollinations AI to generate the results. | [@web](https://github.com/web) |  | 🫧 |
+| [🤖 NEURGenerator for ESP32-S3](113021062) | Uses Pollinations.aihttpspollinations.ai API on ESP32-S3 with PSRAM and WDT support in NEURGenerator for ESP32-S3. | [@library](https://github.com/library) |  | 🫧 |
+| [🎬 SRTAudio  Video IA Pro](https://spiffy-licorice-92706f.netlify.app) | SRTAudio  Video IA Pro generates browser-based videos from uploaded MP3/WAV audio or SRT files and uses Pollinations Audio API and Whisper for transcription and timing. | [@web](https://github.com/web) |  | 🫧 |
 | [🧭 Gratisfy](https://gratisfy.xyz/) | Gratisfy allows brings all the free AI inference providers including pollinations in to one place. Whether its a unified API access point Benchmark data or just finding new free providers Gratisfy is | [@web](https://github.com/web) |  | 🫧 |
 | [📚 LoreLoom  AI-Powered Interactive Storybook for Kid](loreloom.sprinthon.com) | LoreLoom  AI-Powered Interactive Storybook for Kid generates personalized, narrated interactive stories for children and offers character and setting customization with touch-based interactions. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 PromptPilot MCP Server](https://promptpilot.club/mcp) | Generate images, video, and audio directly in Claude, Code, Cursor, Windsurf, or any MCP-compatible AI agent. Powered by Pollinations API with 20 models including Flux GPT-Image-1 Imagen. | [@api](https://github.com/api) |  | 🫧 |
 | [🎬 AI City Diorama Generator](https://www.youtube.com/@WhatIF-KA/shorts) | Generates cinematic miniature city dioramas using the AI City Diorama Generator and automates an n8n workflow to publish the results to YouTube Shorts. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 Generador y Editor de Imgenes y Videos con Pollina](https://juanrivera126.github.io/Generador-y-Editor-de-Im-genes-y-Videos-con-Pollinations/) | Genera y edita imágenes y videos con modelos y plantillas. Generador y Editor de Imgenes y Videos con Pollina exporta en PNG, JPG y MP4, ajusta resolución, recorta clips y aplica filtros. | [@web](https://github.com/web) |  | 🫧 |
-| [📚 NovelCraft AI](https://mrlearner1606.github.io/novelcraftai/) | Write novels in your browser using NovelCraft AI; it runs entirely on your device with no account, no installation, and no server. | [@web](https://github.com/web) |  | 🫧 |
-| [🏃 Spix - Personal Fitness Companion](85549951) | Track workouts, activity, and health metrics with Spix - Personal Fitness Companion, built with React Native 0.81 Expo TypeScript and designed to keep your data local and private. | [@android](https://github.com/android) |  | 🫧 |
 
 ---
 
@@ -180,6 +179,7 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🎬 SRTAudio  Video IA Pro](https://spiffy-licorice-92706f.netlify.app) | SRTAudio  Video IA Pro generates browser-based videos from uploaded MP3/WAV audio or SRT files and uses Pollinations Audio API and Whisper for transcription and timing. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 AI City Diorama Generator](https://www.youtube.com/@WhatIF-KA/shorts) | Generates cinematic miniature city dioramas using the AI City Diorama Generator and automates an n8n workflow to publish the results to YouTube Shorts. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 Generador y Editor de Imgenes y Videos con Pollina](https://juanrivera126.github.io/Generador-y-Editor-de-Im-genes-y-Videos-con-Pollinations/) | Genera y edita imágenes y videos con modelos y plantillas. Generador y Editor de Imgenes y Videos con Pollina exporta en PNG, JPG y MP4, ajusta resolución, recorta clips y aplica filtros. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 CINESONICS](https://cinesonics.vercel.app/) | Generate cinematic soundtrack concepts by describing a movie vibe to get AI tracklist and album cover. | [@web](https://github.com/web) |  | 🫧 |
@@ -189,12 +189,12 @@
 | [🎬 AI TikTok Video Generator](https://tiktok.pixpal.chat) | AI tool that generates catchy hooks and applies trending effects in-browser. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 AvaTube](https://avatube.ai/) | AI-powered social media where avatars create content without cameras. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 Anime AI Studio](https://www.animeaistudio.com/) | AI short drama platform with 5-stage pipeline from script to video | [@web](https://github.com/web) |  | 🫧 |
-| [🎬 YT SHORTSs](https://ytai.com) | Tool for creating and managing YouTube Shorts | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 22 apps</summary>
+<details><summary>Show all 23 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🎬 YT SHORTSs](https://ytai.com) | Tool for creating and managing YouTube Shorts | [@web](https://github.com/web) |  | 🫧 |
 | [🎞️ Onyx - The AI Storyboard Engine.](https://onyx-noir-storyboarder-qzfn3h1fe-eneryut.vercel.app/) | Dark AI storyboard engine turning scripts into noir visual sequences | [@web](https://github.com/web) |  | 🫧 |
 | [🗣️ Realistic Text To Speech](https://huggingface.co/spaces/NihalGazi/Text-To-Speech-Unlimited) | Unlimited high-quality TTS with prompt-level emotion control | [@web](https://github.com/web) |  | 🫧 |
 | [⛽ TuffMeter](https://tuffmeter.netlify.app/) | Humorous AI tool that analyzes uploaded videos to rate your aura. Based on visua... | [@web](https://github.com/web) |  | 🫧 |

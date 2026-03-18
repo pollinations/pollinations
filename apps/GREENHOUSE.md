@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **618** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **621** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -13,6 +13,7 @@
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@cli](https://github.com/cli) |  | 🫧 |
+| [🖌️ House Painter](https://konsumer.js.org/housepainter/) | Generate paint color schemes for your house using pollinations.ai with House Painter to visualize exterior options and combinations. | [@web](https://github.com/web) |  | 🫧 |
 | [🧭 Gratisfy](https://gratisfy.xyz/) | Gratisfy allows brings all the free AI inference providers including pollinations in to one place. Whether its a unified API access point Benchmark data or just finding new free providers Gratisfy is | [@web](https://github.com/web) |  | 🫧 |
 | [📚 LoreLoom  AI-Powered Interactive Storybook for Kid](loreloom.sprinthon.com) | LoreLoom  AI-Powered Interactive Storybook for Kid generates personalized, narrated interactive stories for children and offers character and setting customization with touch-based interactions. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 PromptPilot MCP Server](https://promptpilot.club/mcp) | Generate images, video, and audio directly in Claude, Code, Cursor, Windsurf, or any MCP-compatible AI agent. Powered by Pollinations API with 20 models including Flux GPT-Image-1 Imagen. | [@api](https://github.com/api) |  | 🫧 |
@@ -21,9 +22,6 @@
 | [📚 NovelCraft AI](https://mrlearner1606.github.io/novelcraftai/) | Write novels in your browser using NovelCraft AI; it runs entirely on your device with no account, no installation, and no server. | [@web](https://github.com/web) |  | 🫧 |
 | [🏃 Spix - Personal Fitness Companion](85549951) | Track workouts, activity, and health metrics with Spix - Personal Fitness Companion, built with React Native 0.81 Expo TypeScript and designed to keep your data local and private. | [@android](https://github.com/android) |  | 🫧 |
 | [📖 Fantasy Story Generator](https://bringtone.github.io/ChildrenStory/) | Generate fantasy stories by specifying characters, settings, themes, and length with Fantasy Story Generator. Export story text for editing, saving, or sharing. | [@web](https://github.com/web) |  | 🫧 |
-| [🤖 AiApps](https://connor.ct.ws/aiapps/) | Generates projects in the browser from a few prompts using AiApps and pollinations.ai, provides a virtual project workspace and lets users download project files. | [@web](https://github.com/web) |  | 🫧 |
-| [🖼️ AI Image Gallery](#) | Browse and organize images with AI Image Gallery, add tags, filter and preview metadata, and group images into collections for easy retrieval. | [@web](https://github.com/web) |  | 🫧 |
-| [📚 StudyCcc](https://mddecn.github.io/Studing-site-by-Dannzss.-/) | Provides study tools in beta as StudyCcc; created by Dannszz. | [@web](https://github.com/web) |  | 🫧 |
 
 ---
 
@@ -31,6 +29,7 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖌️ House Painter](https://konsumer.js.org/housepainter/) | Generate paint color schemes for your house using pollinations.ai with House Painter to visualize exterior options and combinations. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ AI Image Gallery](#) | Browse and organize images with AI Image Gallery, add tags, filter and preview metadata, and group images into collections for easy retrieval. | [@web](https://github.com/web) |  | 🫧 |
 | [🐝 Pollinations Extension](251772531) | Provides Pollinations Extension as a Bring Your Own Pollen (BYOP) browser extension for Pollinations.ai. | [@browser-ext](https://github.com/browser-ext) |  | 🫧 |
 | [🧑‍🎨 Pollinations Avatar Gen](48694850) | An extension for SillyTavern that generates character avatars based on their text descriptions using the Pollinations.ai API. Everything is done at the click of a button. | [@browser-ext](https://github.com/browser-ext) |  | 🫧 |
@@ -40,12 +39,12 @@
 | [🖼️ Comics Explorer](https://juanrivera-boop.github.io/Pollinations-slides/) | Organiza y visualiza colecciones de cómics digitales y presentaciones interactivas en Comics Explorer mediante una interfaz web moderna. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 AI img gen stant](https://jic-server.xo.je/?i=1) | Generate images from text prompts with control over style, resolution, and seeds, and export outputs for iteration. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 junk journal Ai](https://junkjournalai.shop/) | Generate junk journal pages with junk journal Ai, creating printable, customizable layouts and collage-style elements for scrapbooking and mixed-media projects. | [@web](https://github.com/web) |  | 🫧 |
-| [🖼️ ImageGenAI Pro](https://imgimg-two.vercel.app/) | Generate images in any aspect ratio with ImageGenAI Pro. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 135 apps</summary>
+<details><summary>Show all 136 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ ImageGenAI Pro](https://imgimg-two.vercel.app/) | Generate images in any aspect ratio with ImageGenAI Pro. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@android](https://github.com/android) |  | 🫧 |
 | [🖌️ Viso](https://viso-l.netlify.app/) | Clean brutalist AI image generator with multiple art styles and aspect ratios. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 BrainrotMaker](http://host.lualearnings.com:2256) | Generate brainrot images in seconds with BrainrotMaker Image Generator. | [@web](https://github.com/web) |  | 🫧 |
@@ -180,7 +179,6 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
-| [🤖 PromptPilot MCP Server](https://promptpilot.club/mcp) | Generate images, video, and audio directly in Claude, Code, Cursor, Windsurf, or any MCP-compatible AI agent. Powered by Pollinations API with 20 models including Flux GPT-Image-1 Imagen. | [@api](https://github.com/api) |  | 🫧 |
 | [🎬 AI City Diorama Generator](https://www.youtube.com/@WhatIF-KA/shorts) | Generates cinematic miniature city dioramas using the AI City Diorama Generator and automates an n8n workflow to publish the results to YouTube Shorts. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 Generador y Editor de Imgenes y Videos con Pollina](https://juanrivera126.github.io/Generador-y-Editor-de-Im-genes-y-Videos-con-Pollinations/) | Genera y edita imágenes y videos con modelos y plantillas. Generador y Editor de Imgenes y Videos con Pollina exporta en PNG, JPG y MP4, ajusta resolución, recorta clips y aplica filtros. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 CINESONICS](https://cinesonics.vercel.app/) | Generate cinematic soundtrack concepts by describing a movie vibe to get AI tracklist and album cover. | [@web](https://github.com/web) |  | 🫧 |
@@ -189,18 +187,13 @@
 | [🎬 P2S](https://github.com/Rakesh-ada/P2S) | Image consistency engine for AI filmmaking with scene memory and auto-repair. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 AI TikTok Video Generator](https://tiktok.pixpal.chat) | AI tool that generates catchy hooks and applies trending effects in-browser. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 AvaTube](https://avatube.ai/) | AI-powered social media where avatars create content without cameras. | [@web](https://github.com/web) |  | 🫧 |
-| [🎬 AI YOUTUBE AUTOMATION](147908475) | Python workflow to generate AI videos and automatically upload to YouTube. | [@api](https://github.com/api) |  | 🫧 |
 | [🎬 Anime AI Studio](https://www.animeaistudio.com/) | AI short drama platform with 5-stage pipeline from script to video | [@web](https://github.com/web) |  | 🫧 |
+| [🎬 YT SHORTSs](https://ytai.com) | Tool for creating and managing YouTube Shorts | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 29 apps</summary>
+<details><summary>Show all 22 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
-| [🎙️ Faster Vox](23549587) | Transcribe audio using Faster Whisper with AI post-processing and custom prompts | [@api](https://github.com/api) |  | 🫧 |
-| [🎵 KioKuu](84654298) | Drag & drop song importer with AI metadata fetching | [@api](https://github.com/api) |  | 🫧 |
-| [🦉 OWL Maker](49927529) | All-in-one shorts maker to create, edit, and share short-form videos. | [@api](https://github.com/api) |  | 🫧 |
-| [🎬 YT SHORTSs](https://ytai.com) | Tool for creating and managing YouTube Shorts | [@web](https://github.com/web) |  | 🫧 |
-| [🎬 pollaris-AI-Shorts-Generator](128488087) | Python pipeline converting text or PDF/DOCX into fully edited short videos | [@api](https://github.com/api) |  | 🫧 |
 | [🎞️ Onyx - The AI Storyboard Engine.](https://onyx-noir-storyboarder-qzfn3h1fe-eneryut.vercel.app/) | Dark AI storyboard engine turning scripts into noir visual sequences | [@web](https://github.com/web) |  | 🫧 |
 | [🗣️ Realistic Text To Speech](https://huggingface.co/spaces/NihalGazi/Text-To-Speech-Unlimited) | Unlimited high-quality TTS with prompt-level emotion control | [@web](https://github.com/web) |  | 🫧 |
 | [⛽ TuffMeter](https://tuffmeter.netlify.app/) | Humorous AI tool that analyzes uploaded videos to rate your aura. Based on visua... | [@web](https://github.com/web) |  | 🫧 |
@@ -210,10 +203,8 @@
 | [🔍 Polli YT Search](https://replit.com/@nojeheg897/VideoFind5) | Search YouTube using multimodal analysis of thumbnails, visuals, transcripts, and metrics to locate relevant videos beyond title keywords, leveraging Pollinations for deep video analysis. | [@web](https://github.com/web) |  | 🫧 |
 | [🎧 Argent Script](https://perchance.org/ai-text-to-audio) | Convert text to audio using GPT-4o Audio with unlimited conversions and natural-sounding voices. | [@web](https://github.com/web) |  | 🫧 |
 | [🌐 Yo el director](https://yoeldirector.dpana.com.ve) | Create films and YouTube content using Pollinations, export projects to YouTube, generate illustrated books, and import or export project files. | [@web](https://github.com/web) |  | 🫧 |
-| [🎬 Match-cut video ai](83734728) | Generate match-cut style videos from text prompts, use a Pollinations LLM for context expansion, and provide API access for integration. | [@api](https://github.com/api) |  |  |
 | [🎬 FastStoryboard](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | [@web](https://github.com/web) |  |  |
 | [🎵 Strudel AI REPL](https://strudel-ai-repl.pages.dev) | AI-powered live-coding music environment for generating and performing algorithmic compositions. | [@web](https://github.com/web) |  |  |
-| [⚡ AI YouTube Shorts Generator](128488087) | Generate short vertical videos for YouTube Shorts from prompts using AI-driven image, video, and audio tools. | [@api](https://github.com/api) |  |  |
 | [🎬 TurboReel](https://turboreel.framer.ai/) | Provide creative generators for short video and image content, presentation tools, and design helpers driven by text prompts. | [@web](https://github.com/web) |  |  |
 
 </details>
@@ -611,6 +602,7 @@
 |-----|-------------|--------|---:|---|
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@cli](https://github.com/cli) |  | 🫧 |
 | [🧭 Gratisfy](https://gratisfy.xyz/) | Gratisfy allows brings all the free AI inference providers including pollinations in to one place. Whether its a unified API access point Benchmark data or just finding new free providers Gratisfy is | [@web](https://github.com/web) |  | 🫧 |
+| [🤖 PromptPilot MCP Server](https://promptpilot.club/mcp) | Generate images, video, and audio directly in Claude, Code, Cursor, Windsurf, or any MCP-compatible AI agent. Powered by Pollinations API with 20 models including Flux GPT-Image-1 Imagen. | [@api](https://github.com/api) |  | 🫧 |
 | [🤖 AiApps](https://connor.ct.ws/aiapps/) | Generates projects in the browser from a few prompts using AiApps and pollinations.ai, provides a virtual project workspace and lets users download project files. | [@web](https://github.com/web) |  | 🫧 |
 | [🧪 PromptLab Studio](https://promptlabstudio.vercel.app/) | Generate images and text with PromptLab Studio, a structured prompt engineering workspace that uses the Pollinations API. | [@web](https://github.com/web) |  | 🫧 |
 | [🧩 ComfyUI-Pollinations-BYOP](https://github.com/ChunkyPanda29/ComfyUI-Pollinations-BYOP) | ComfyUI integration with BYOP support — four nodes for Image, Video, Text, and Audio generation with auto-syncing model dropdowns. | [@library](https://github.com/library) |  | 🫧 |
@@ -618,12 +610,12 @@
 | [🛡️ Skills-Sentinel-scan](176244378) | Scan using Skills-Sentinel-scan, a Dockerized security scanner that detects malicious patterns, supply chain risks, and permission overreach in AI skills and agents and exposes a web UI. | [@web](https://github.com/web) |  | 🫧 |
 | [🎮 Plaiyground](https://playground.endoxi.dev) | BYOP vibe coding tool using multiple Pollinations AI models to generate web apps. | [@web](https://github.com/web) |  | 🫧 |
 | [🧪 BotForgeX Laboratories](https://botforgex-labs.vercel.app) | Build secure, multimodal Discord chatbots effortlessly powered by Pollinations with zero data logging. Includes 100+ templates, live in-browser previews, and advanced toggles for Vision, TTS, and Image Gen. Features intelligent model routing and adjustable natural messaging ranges—all while keeping your private tokens/keys 100% on your device. | [@web](https://github.com/web) |  | 🫧 |
-| [🔌 langchain-pollinations](https://pypi.org/project/langchain-pollinations/) | LangChain integration for pollinations.ai — build agents, RAGs, and AI applications. | [@library](https://github.com/library) |  | 🫧 |
 
-<details><summary>Show all 105 apps</summary>
+<details><summary>Show all 113 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🔌 langchain-pollinations](https://pypi.org/project/langchain-pollinations/) | LangChain integration for pollinations.ai — build agents, RAGs, and AI applications. | [@library](https://github.com/library) |  | 🫧 |
 | [🛠️ LLM Client](80639411) | Minimal stdlib-only Go client with a unified API for OpenAI-compatible LLM endpoints. | [@api](https://github.com/api) |  | 🫧 |
 | [🛡️ DecoyNet](https://decoy-net-production-1c08.up.railway.app/) | Intelligent honeypot that detects scammers using dual-LLM architecture for fraud prevention. | [@web](https://github.com/web) |  | 🫧 |
 | [🌱 Bloom CLI](https://pypi.org/project/bloom-cli/) | Open-source terminal coding agent using Pollinations API with multi-tool agent workflows. | [@cli](https://github.com/cli) |  | 🫧 |
@@ -648,9 +640,14 @@
 | [🧰 n8n-nodes-pollinations-ai](https://www.npmjs.com/package/n8n-nodes-pollinations-ai) | n8n nodes for Pollinations AI: image and text generation API access. | [@library](https://github.com/library) |  | 🫧 |
 | [⌨️ LiberKey](https://liberkeyboard.com/) | MacOS keyboard app for multilingual typing and chat input. | [@web](https://github.com/web) |  | 🫧 |
 | [📱 pollinations_ai](https://pub.dev/packages/pollinations_ai) | Dart/Flutter package for integrating the Pollinations API. | [@web](https://github.com/web) |  | 🫧 |
+| [🎬 AI YOUTUBE AUTOMATION](147908475) | Python workflow to generate AI videos and automatically upload to YouTube. | [@api](https://github.com/api) |  | 🫧 |
 | [💻 Editor](80639411) | Console code editor with multi-language support and built-in LLM tools | [@api](https://github.com/api) |  | 🫧 |
 | [🎵 Pixoo64 Album Art](19820046) | AI-generated album art for Divoom Pixoo64 displays via Home Assistant | [@api](https://github.com/api) |  | 🫧 |
+| [🎙️ Faster Vox](23549587) | Transcribe audio using Faster Whisper with AI post-processing and custom prompts | [@api](https://github.com/api) |  | 🫧 |
 | [✨ PolliPrompt](https://labsdigital.github.io/PolliPrompt/) | AI prompt enhancer for clearer, more effective image/video generation | [@web](https://github.com/web) |  | 🫧 |
+| [🎵 KioKuu](84654298) | Drag & drop song importer with AI metadata fetching | [@api](https://github.com/api) |  | 🫧 |
+| [🦉 OWL Maker](49927529) | All-in-one shorts maker to create, edit, and share short-form videos. | [@api](https://github.com/api) |  | 🫧 |
+| [🎬 pollaris-AI-Shorts-Generator](128488087) | Python pipeline converting text or PDF/DOCX into fully edited short videos | [@api](https://github.com/api) |  | 🫧 |
 | [🖼️ Pollinations AI Free API](https://pollinations-ai-free-api.vercel.app/) | Expose a free Pollinations.ai image generation API used for on-demand text-to-image and dynamic visual responses, including companion creation and chat integration. | [@web](https://github.com/web) |  | 🫧 |
 | [🔌 tgpt](66430340) | Use AI from the terminal with a cross-platform command-line interface for local or remote model access. | [@cli](https://github.com/cli) |  | 🫧 |
 | [🔌 limnoria plugin](91419945) | Limnoria IRC plugin integrating the Pollinations API | [@api](https://github.com/api) |  | 🫧 |
@@ -690,6 +687,7 @@
 | [💻 AI Code Generator](https://codegen.on.websim.com/) | Generate source code from natural-language descriptions and selected languages, with modes for generation, explanation, and review and multiple model choices. | [@web](https://github.com/web) |  | 🫧 |
 | [💻 ️ Windows Walker](40638837) | Control Windows via natural language or voice commands translated into PowerShell actions, using a ChatGPT-backed engine and Electron UI. | [@windows](https://github.com/windows) |  | 🫧 |
 | [💻 Pollin-Coder](https://pollin-coder.megavault.in) | Build websites by describing them, generating content and layout with Pollinations AI for quick pages, portfolios, and landing sites without coding. | [@web](https://github.com/web) |  |  |
+| [🎬 Match-cut video ai](83734728) | Generate match-cut style videos from text prompts, use a Pollinations LLM for context expansion, and provide API access for integration. | [@api](https://github.com/api) |  |  |
 | [✨ Pollinations Task Master](197344995) | Offer a fork of Task Master that uses Pollinations, with CLI and MCP interfaces, distributed as the npm package 'pollinations-taskmaster'. | [@cli](https://github.com/cli) |  |  |
 | [🛠️ Mimir AIP](https://mimir-aip.github.io/) | Provide an open-source modular AI pipeline framework for orchestrating models and services with plugin support, multi-provider integration, and testing tools. | [@web](https://github.com/web) |  |  |
 | [💬 CoNavic](148573993) | Provides a browser extension that uses natural language to access AI assistance, automate browsing tasks, and manage tabs and bookmarks. | [@browser-ext](https://github.com/browser-ext) |  |  |
@@ -711,6 +709,7 @@
 | [✨ PairFusion](https://pair-fusion.vercel.app/) | A real-time AI powered, scalable and feature-rich collaborative IDE built for mo... | [@web](https://github.com/web) |  |  |
 | [🖼️ Unfoldtech](https://studio.unfoldtech.online/) | Generate Pexels-inspired images with embedded IPTC metadata for stock use | [@web](https://github.com/web) |  |  |
 | [💻 FoldaScan](https://fs.wen.bar) | Browser-based AI Q&A tool for asking natural language questions about your codebase with local privacy | [@web](https://github.com/web) |  |  |
+| [⚡ AI YouTube Shorts Generator](128488087) | Generate short vertical videos for YouTube Shorts from prompts using AI-driven image, video, and audio tools. | [@api](https://github.com/api) |  |  |
 | [📈 Server Status Dashboards](102143503) | Server metrics dashboards with AI-assisted natural language insights. | [@api](https://github.com/api) |  |  |
 | 💬 VibeCoder | Build apps by chatting—natural-language driven conversational coding | [@api](https://github.com/api) |  |  |
 | [🔌 Pollinations MCP Server (Official)](https://www.npmjs.com/package/@pollinations_ai/model-context-protocol) | Official MCP server for Pollinations: generate text, images, and audio. | [@library](https://github.com/library) |  |  |

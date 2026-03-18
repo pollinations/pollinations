@@ -4,7 +4,7 @@ const RAW_BASE =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news";
 const TREE_API =
     "https://api.github.com/repos/pollinations/pollinations/git/trees/news?recursive=1";
-const TREE_CACHE_KEY = "diary_tree_v1";
+const TREE_CACHE_KEY = "diary_tree_v2";
 
 // --- Types ---
 

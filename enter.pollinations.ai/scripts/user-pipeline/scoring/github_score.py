@@ -424,7 +424,7 @@ def fetch_account_by_id(
     return run_rest_request(GITHUB_REST_USER.format(github_id), retries)
 
 
-def validate_users(usernames: list[str]) -> list[dict]:
+def _score_usernames(usernames: list[str]) -> list[dict]:
     """Validate users in concurrent batches."""
     if not usernames:
         return []
@@ -558,7 +558,7 @@ def validate_account_records(records: list[dict]) -> list[dict]:
 
     if username_only:
         usernames = [username for _index, username in username_only]
-        fallback_results = validate_accounts(usernames)
+        fallback_results = _validate_account_usernames(usernames)
         by_username = {
             result["username"]: result
             for result in fallback_results
@@ -588,7 +588,7 @@ def validate_user_records(records: list[dict]) -> list[dict]:
         for result in account_results
         if result.get("status") == "ok" and isinstance(result.get("username"), str)
     ]
-    score_results = validate_users(score_targets)
+    score_results = _score_usernames(score_targets)
     score_results_by_username = {
         result["username"]: result
         for result in score_results
@@ -624,7 +624,7 @@ def validate_user_records(records: list[dict]) -> list[dict]:
     return merged_results
 
 
-def validate_accounts(usernames: list[str]) -> list[dict]:
+def _validate_account_usernames(usernames: list[str]) -> list[dict]:
     """Validate GitHub account existence in concurrent batches."""
     if not usernames:
         return []

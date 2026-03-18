@@ -39,6 +39,7 @@ export const user = sqliteTable("user", {
   scoreCheckedAt: integer("score_checked_at"),
 }, (table) => [
   index("idx_user_email").on(table.email),
+  index("idx_user_github_id").on(table.githubId),
 ]);
 
 export const session = sqliteTable("session", {

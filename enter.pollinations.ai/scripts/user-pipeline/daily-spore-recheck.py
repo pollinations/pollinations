@@ -173,7 +173,7 @@ def store_scores(results: list[dict], env: str) -> tuple[int, int]:
     return stored, skipped
 
 
-def extract_risk_blocked_usernames(results: list[dict]) -> list[int]:
+def extract_risk_blocked_github_ids(results: list[dict]) -> list[int]:
     return list(
         dict.fromkeys(
             result["github_id"]
@@ -321,7 +321,7 @@ def main() -> int:
             if isinstance(result.get("github_id"), int)
             and result["github_id"] not in deleted_github_id_set
         ]
-        risk_blocked_github_ids = extract_risk_blocked_usernames(scoreable_results)
+        risk_blocked_github_ids = extract_risk_blocked_github_ids(scoreable_results)
         risk_blocked_set = set(risk_blocked_github_ids)
         approved_github_ids = [
             result["github_id"]

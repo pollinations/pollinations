@@ -1,0 +1,34 @@
+{
+  "pr_number": 9274,
+  "title": "Add OpenRelay to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9274",
+  "merged_at": "2026-03-18T18:10:28Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive's new postmaster",
+    "blurb": "OpenRelay has joined the bots directory. It routes outgoing mail through configurable SMTP relays, giving you total control over delivery paths and headers without the usual email headaches.",
+    "summary": "Added OpenRelay to the community bots directory, providing a tool for routing outgoing mail through configurable SMTP relays.",
+    "impact": "Users can now easily manage email delivery paths, headers, and authentication settings using the new OpenRelay bot.",
+    "keywords": [
+      "community",
+      "bots",
+      "openrelay",
+      "email",
+      "smtp"
+    ],
+    "visual_concept": "The PR is about OpenRelay, an email routing and SMTP bot. Visual symbols include envelopes, mailboxes, and routing pipes. Polly the bee can act as a mail carrier sorting digital letters.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny mail carrier hat, happily sorting pixelated envelopes into glowing lime green (#ecf874) routing tubes. A retro computer monitor nearby displays SMTP routing paths. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9274.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny mail carrier hat, happily sorting pixelated envelopes into glowing lime green (#ecf874) routing tubes. A retro computer monitor nearby displays SMTP routing paths. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-18T18:11:43.186714+00:00"
+}

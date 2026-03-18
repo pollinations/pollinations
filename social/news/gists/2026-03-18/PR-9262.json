@@ -1,0 +1,32 @@
+{
+  "pr_number": 9262,
+  "title": "Add OtakuBox Bot to APPS.md",
+  "author": "badamchuk",
+  "url": "https://github.com/pollinations/pollinations/pull/9262",
+  "merged_at": "2026-03-18T18:57:16Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "OtakuBox joins the swarm",
+    "blurb": "Another awesome community creation has landed! OtakuBox Bot just got added to our growing showcase of apps built on Pollinations.",
+    "summary": "Added the community-built OtakuBox Bot to the official apps showcase in APPS.md.",
+    "impact": "Users can now discover OtakuBox Bot in our community showcase, highlighting another creative way developers are using the Pollinations API.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "bot",
+      "otakubox"
+    ],
+    "visual_concept": "OtakuBox Bot implies anime/manga (Otaku) and a bot/box. The Pollinations bee (Polly) welcoming a cute little robot box with anime-style glasses or a headband. They are in a cozy pixel art garden.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot welcoming a small, friendly robot box wearing an anime-style headband into a glowing digital garden. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9262.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot welcoming a small, friendly robot box wearing an anime-style headband into a glowing digital garden. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-18T18:58:35.884180+00:00"
+}

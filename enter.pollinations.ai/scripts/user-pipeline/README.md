@@ -20,6 +20,7 @@ See also:
 - Validates that the GitHub account still exists before any other checks
 - Uses trust scoring to decide whether the user can leave `microbe`
 - Scores developer activity immediately for trusted users
+- Applies a separate GitHub risk check before allowing `seed`
 - Allows a direct `microbe -> seed` upgrade for users who already qualify
 
 ```mermaid
@@ -57,16 +58,20 @@ No automatic re-check"]
 Write score
 Write score_checked_at"]
 
-    L --> M{"score >= 8?"}
-    M -->|Yes| N["Promote directly to Seed
+    L --> M["GitHub Risk Check
+Block suspicious seed upgrades"]
+
+    M --> N{"score >= 8
+AND risk is ok?"}
+    N -->|Yes| O["Promote directly to Seed
 tier = seed"]
-    M -->|No| O["Promote to Spore
+    N -->|No| P["Promote to Spore
 tier = spore"]
 
     style H fill:#833,color:#fff
     style K fill:#c44,color:#fff
-    style O fill:#47a,color:#fff
-    style N fill:#4a4,color:#fff
+    style P fill:#47a,color:#fff
+    style O fill:#4a4,color:#fff
 ```
 
 ## Daily Spore Recheck Pipeline
@@ -74,6 +79,7 @@ tier = spore"]
 - Runs only on unbanned `spore` users
 - Rechecks the users who have waited the longest since their last GitHub score check
 - Daily slice size is `ceil(current_spore_count / 7)`
+- Applies the same GitHub risk check before allowing `seed`
 - This keeps the full `spore` pool rotating over roughly one week, even as the pool grows
 
 ```mermaid
@@ -98,13 +104,17 @@ ban_reason = github_account_deleted"]
 Write score
 Write score_checked_at"]
 
-    H --> I{"score >= 8?"}
-    I -->|Yes| J["Promote to Seed
+    H --> I["GitHub Risk Check
+Block suspicious seed upgrades"]
+
+    I --> J{"score >= 8
+AND risk is ok?"}
+    J -->|Yes| K["Promote to Seed
 tier = seed"]
-    I -->|No| K["Stay Spore
+    J -->|No| L["Stay Spore
 Checked again later"]
 
     style G fill:#833,color:#fff
-    style K fill:#47a,color:#fff
-    style J fill:#4a4,color:#fff
+    style L fill:#47a,color:#fff
+    style K fill:#4a4,color:#fff
 ```

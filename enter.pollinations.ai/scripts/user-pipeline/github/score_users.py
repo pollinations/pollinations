@@ -9,6 +9,10 @@ Points-based validation formula with quality filtering:
 
 Quality filtering: empty repos (diskUsage == 0) are excluded from repo count
 and star totals.
+
+Risk assessment is tracked separately from the numeric score:
+  - suspicious GitHub profile patterns do not change the score
+  - they are exposed as risk_status / risk_flags for the orchestrators
 """
 
 import base64
@@ -25,6 +29,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 
 from tqdm import tqdm
+from assess_github_risk import assess_profile_risk
 
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 BATCH_SIZE = 50
@@ -248,6 +253,9 @@ def score_user(data: dict | None, username: str) -> dict:
             "approved": False,
             "reason": "GitHub account deleted",
             "details": None,
+            "risk_status": "unavailable",
+            "risk_flags": [],
+            "risk_details": None,
         }
 
     created = datetime.fromisoformat(data["createdAt"].replace("Z", "+00:00"))
@@ -291,6 +299,7 @@ def score_user(data: dict | None, username: str) -> dict:
     }
 
     reason = f"{total_score:.1f} pts"
+    risk = assess_profile_risk(data, username)
 
     return {
         "username": username,
@@ -298,6 +307,9 @@ def score_user(data: dict | None, username: str) -> dict:
         "approved": approved,
         "reason": reason,
         "details": details,
+        "risk_status": risk["risk_status"],
+        "risk_flags": risk["risk_flags"],
+        "risk_details": risk["risk_details"],
     }
 
 

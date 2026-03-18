@@ -6,7 +6,8 @@ This is the steady-state weekly rotation job:
   - order by oldest score_checked_at
   - recheck the oldest ceil(total_spores / 7)
   - persist score and score_checked_at
-  - upgrade qualified users to seed immediately
+  - keep suspicious GitHub profiles at spore
+  - upgrade qualified non-suspicious users to seed immediately
 """
 
 import argparse
@@ -160,6 +161,17 @@ def store_scores(results: list[dict], env: str) -> tuple[int, int]:
     return stored, skipped
 
 
+def extract_risk_blocked_usernames(results: list[dict]) -> list[str]:
+    return list(
+        dict.fromkeys(
+            result["username"]
+            for result in results
+            if result.get("risk_status") == "suspicious"
+            and isinstance(result.get("username"), str)
+        )
+    )
+
+
 def upgrade_users(usernames: list[str], env: str) -> tuple[int, bool]:
     total_upgraded = 0
     failed = False
@@ -191,10 +203,14 @@ def upgrade_users(usernames: list[str], env: str) -> tuple[int, bool]:
 def summarize(results: list[dict]) -> None:
     approved = [result for result in results if result.get("approved")]
     rejected = [result for result in results if not result.get("approved")]
+    suspicious = [
+        result for result in results if result.get("risk_status") == "suspicious"
+    ]
 
     print("\n📊 Validation summary:")
-    print(f"   Approved: {len(approved)}")
-    print(f"   Rejected: {len(rejected)}")
+    print(f"   Approved by score: {len(approved)}")
+    print(f"   Rejected by score: {len(rejected)}")
+    print(f"   Suspicious GitHub profiles: {len(suspicious)}")
 
     if results:
         average_score = sum(
@@ -297,10 +313,14 @@ def main() -> int:
             if isinstance(result.get("username"), str)
             and result["username"] not in deleted_username_set
         ]
+        risk_blocked_usernames = extract_risk_blocked_usernames(scoreable_results)
+        risk_blocked_set = set(risk_blocked_usernames)
         approved_usernames = [
             result["username"]
             for result in scoreable_results
-            if result.get("approved") and isinstance(result.get("username"), str)
+            if result.get("approved")
+            and isinstance(result.get("username"), str)
+            and result["username"] not in risk_blocked_set
         ]
 
         summarize(ordered_results)
@@ -309,12 +329,18 @@ def main() -> int:
             print("\n📊 Score breakdown samples (first 20):")
             for result in ordered_results[:20]:
                 score = float((result.get("details") or {}).get("total", 0))
-                print(f"   {result['username']}: {score:.1f} ({result['reason']})")
+                flags = ", ".join(result.get("risk_flags") or [])
+                suffix = f" | risk: {flags}" if flags else ""
+                print(f"   {result['username']}: {score:.1f} ({result['reason']}){suffix}")
 
         if args.dry_run:
             if deleted_usernames:
                 print(
                     f"\n🚫 Dry run would ban {len(deleted_usernames)} users with deleted/invalid GitHub accounts"
+                )
+            if risk_blocked_usernames:
+                print(
+                    f"🚩 Dry run would keep {len(risk_blocked_usernames)} users at spore due to suspicious GitHub profiles"
                 )
             print(f"🌱 Dry run would upgrade {len(approved_usernames)} users to seed")
             return 0
@@ -328,6 +354,7 @@ def main() -> int:
 
         print("\n📊 Results:")
         print(f"   Scores stored: {stored}")
+        print(f"   Risk-blocked from seed: {len(risk_blocked_usernames)}")
         print(f"   Upgraded to seed: {upgraded}")
         if skipped:
             print(f"   Skipped invalid usernames: {skipped}")

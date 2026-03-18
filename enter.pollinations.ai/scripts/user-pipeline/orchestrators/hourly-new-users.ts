@@ -3,9 +3,9 @@
  * Hourly new-user pipeline.
  *
  * This script processes trusted microbe users after the trust gate has already
- * run. It scores developer activity for the trusted cohort only, then moves
- * each user directly to seed or spore and grants the new tier balance
- * immediately.
+ * run. It scores developer activity for the trusted cohort only, applies a
+ * separate GitHub risk check for seed eligibility, then moves each user
+ * directly to seed or spore and grants the new tier balance immediately.
  *
  * Usage:
  *   cd enter.pollinations.ai
@@ -36,6 +36,8 @@ interface ValidationResult {
     username?: string;
     status?: string;
     approved?: boolean;
+    risk_status?: "ok" | "suspicious" | "unavailable";
+    risk_flags?: string[];
     details?: {
         total?: number;
     } | null;
@@ -175,6 +177,19 @@ function extractDeletedGithubUsers(results: ValidationResult[]): string[] {
     return Array.from(new Set(usernames));
 }
 
+function extractRiskBlockedGithubUsers(results: ValidationResult[]): string[] {
+    return Array.from(
+        new Set(
+            results.flatMap((result) =>
+                result.risk_status === "suspicious" &&
+                typeof result.username === "string"
+                    ? [result.username]
+                    : [],
+            ),
+        ),
+    );
+}
+
 function storeScores(
     env: Environment,
     results: ValidationResult[],
@@ -305,13 +320,19 @@ async function main(): Promise<void> {
         const username = result.username;
         return typeof username === "string" && !deletedSet.has(username);
     });
+    const riskBlockedUsernames =
+        extractRiskBlockedGithubUsers(scoreableResults);
+    const riskBlockedSet = new Set(riskBlockedUsernames);
     const approvedUsernames = scoreableResults.flatMap((result) =>
-        result.approved && typeof result.username === "string"
+        result.approved &&
+        typeof result.username === "string" &&
+        !riskBlockedSet.has(result.username)
             ? [result.username]
             : [],
     );
     const sporeUsernames = scoreableResults.flatMap((result) =>
-        !result.approved && typeof result.username === "string"
+        typeof result.username === "string" &&
+        (!result.approved || riskBlockedSet.has(result.username))
             ? [result.username]
             : [],
     );
@@ -320,6 +341,11 @@ async function main(): Promise<void> {
         if (deletedUsernames.length > 0) {
             console.log(
                 `🚫 Would ban ${deletedUsernames.length} users with deleted GitHub accounts`,
+            );
+        }
+        if (riskBlockedUsernames.length > 0) {
+            console.log(
+                `🚩 Would keep ${riskBlockedUsernames.length} trusted users at spore due to suspicious GitHub profiles`,
             );
         }
         console.log(`🌱 Would promote to seed: ${approvedUsernames.length}`);
@@ -349,6 +375,7 @@ async function main(): Promise<void> {
 
     console.log("\n📊 Summary:");
     console.log(`   Scores stored: ${stored}`);
+    console.log(`   Risk-blocked from seed: ${riskBlockedUsernames.length}`);
     console.log(`   Microbe -> Seed: ${seeded}`);
     console.log(`   Microbe -> Spore: ${spored}`);
 }

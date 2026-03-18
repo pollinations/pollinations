@@ -32,7 +32,6 @@
         "docs:generate": "tsx scripts/generate-apidocs.ts",
         "user-pipeline:trust-score": "tsx scripts/user-pipeline/scoring/trust-score.ts",
         "user-pipeline:hourly-new-users": "tsx scripts/user-pipeline/hourly-new-users.ts",
-        "user-pipeline:daily-global-abuse-scan": "tsx scripts/user-pipeline/daily-global-abuse-scan.ts",
         "user-pipeline:daily-spore-recheck": "tsx scripts/run-python.ts scripts/user-pipeline/daily-spore-recheck.py",
         "user-pipeline:replay-hourly": "tsx scripts/run-python.ts scripts/user-pipeline/manual/replay-hourly-new-users.py",
         "user-pipeline:replay-daily": "tsx scripts/run-python.ts scripts/user-pipeline/manual/replay-daily-spore-recheck.py",

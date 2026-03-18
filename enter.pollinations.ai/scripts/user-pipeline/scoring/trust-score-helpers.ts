@@ -3,31 +3,26 @@ export const SCORE_THRESHOLDS = {
     review: 40,
 } as const;
 
-export function parseScoreCsvResponse(
+export function parseLLMResponse(
     content: string,
-    keyToIndex: Map<string, number>,
+    githubToIndex: Map<string, number>,
     chunkLength: number,
-    headerKeys: string[] = ["github"],
 ): Array<{ score: number; signals: string[] }> {
     const results: Array<{ score: number; signals: string[] } | null> =
         Array.from({ length: chunkLength }, () => null);
 
     for (const line of content.split("\n")) {
-        if (
-            !line.trim() ||
-            headerKeys.some((headerKey) => line.startsWith(`${headerKey},`)) ||
-            !line.includes(",")
-        ) {
+        if (!line.trim() || line.startsWith("github,") || !line.includes(",")) {
             continue;
         }
 
         const parts = line.split(",");
         if (parts.length < 2) continue;
 
-        const key = parts[0]?.trim();
+        const github = parts[0]?.trim();
         const score = Number.parseInt(parts[1], 10);
         const reason = parts[2]?.trim() || "";
-        const idx = key ? keyToIndex.get(key) : undefined;
+        const idx = github ? githubToIndex.get(github) : undefined;
         if (idx === undefined || Number.isNaN(score)) continue;
 
         results[idx] = {
@@ -46,14 +41,4 @@ export function parseScoreCsvResponse(
     }
 
     return results as Array<{ score: number; signals: string[] }>;
-}
-
-export function parseLLMResponse(
-    content: string,
-    githubToIndex: Map<string, number>,
-    chunkLength: number,
-): Array<{ score: number; signals: string[] }> {
-    return parseScoreCsvResponse(content, githubToIndex, chunkLength, [
-        "github",
-    ]);
 }

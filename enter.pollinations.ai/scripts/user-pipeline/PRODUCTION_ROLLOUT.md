@@ -15,8 +15,9 @@ The current branch stays staging-only until the last pre-merge commit.
 The implemented steady-state workflow order on this branch is:
 
 1. hourly onboarding
-2. daily global abuse scan (report-only)
-3. daily spore recheck
+2. daily spore recheck
+
+The daily global abuse scan is planned follow-up work. It is not implemented on this branch and is not part of the current rollout.
 
 ## Final Pre-Merge Commit
 
@@ -28,10 +29,8 @@ The last pre-merge commit should do only two things:
 ### Files To Change
 
 - `.github/workflows/user-pipeline-hourly-new-users.yml`
-- `.github/workflows/user-pipeline-daily-global-abuse-scan.yml`
 - `.github/workflows/user-pipeline-daily-spore-recheck.yml`
 - `enter.pollinations.ai/scripts/user-pipeline/scoring/trust-score.ts`
-- `enter.pollinations.ai/scripts/user-pipeline/daily-global-abuse-scan.ts`
 - `enter.pollinations.ai/scripts/user-pipeline/hourly-new-users.ts`
 - `enter.pollinations.ai/scripts/user-pipeline/daily-spore-recheck.py`
 - `enter.pollinations.ai/scripts/user-pipeline/shared/d1.py`
@@ -60,17 +59,6 @@ run: npm run user-pipeline:hourly-new-users -- --env production --dry-run
 
 ### Daily Workflow
 
-In `.github/workflows/user-pipeline-daily-global-abuse-scan.yml`:
-
-- Change `--env staging` to `--env production`
-- Keep it report-only on the first production runs
-
-Target command for the first merged run:
-
-```yaml
-run: npm run user-pipeline:daily-global-abuse-scan -- --env production
-```
-
 In `.github/workflows/user-pipeline-daily-spore-recheck.yml`:
 
 - Change `--env staging` to `--env production`
@@ -85,7 +73,6 @@ run: npm run user-pipeline:daily-spore-recheck -- --env production --dry-run
 ## What Dry Mode Means
 
 - `trust-score.ts` without `--store-status` does not write `trust_score` and does not ban users.
-- `daily-global-abuse-scan.ts` is already report-only on this branch and does not write `trust_score`, bans, or tier changes.
 - `hourly-new-users.ts --dry-run` prints would-be `microbe -> spore/seed` outcomes without changing tiers.
 - `daily-spore-recheck.py --dry-run` prints would-be `spore -> seed` outcomes without changing tiers or scores.
 
@@ -96,7 +83,6 @@ So the first merged production runs are safe observation runs.
 Once the dry production runs look correct, open a very small follow-up PR that removes dry mode:
 
 - add `--store-status` back to the hourly trust gate
-- decide separately when to let the global abuse scan start writing `trust_score` and downgrades
 - remove `--dry-run` from the hourly new-user step
 - remove `--dry-run` from the daily spore recheck step
 

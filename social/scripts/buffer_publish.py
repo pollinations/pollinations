@@ -12,7 +12,11 @@ import yaml
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 
-from common import LINKEDIN_MAX_CHARS, build_linkedin_post_text, get_env
+from common import (
+    LINKEDIN_MAX_CHARS,
+    get_env,
+    get_post_image_urls,
+)
 from buffer_utils import (
     get_channel_by_service,
     create_buffer_post,
@@ -135,9 +139,7 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
     if not channel:
         return False
 
-    text = (post_data.get("full_post") or "").strip()
-    if not text:
-        text = build_linkedin_post_text(post_data)
+    text = (post_data.get("text") or "").strip()
     if not text:
         print("Failed to publish: LinkedIn post text is empty")
         return False
@@ -155,10 +157,10 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
 
     # Get image URL if available
     media = None
-    image_data = post_data.get("image")
-    if image_data and image_data.get("url"):
-        media = {"photo": image_data["url"]}
-        print(f"Including image: {image_data['url'][:100]}...")
+    image_urls = get_post_image_urls(post_data)
+    if image_urls:
+        media = {"photo": image_urls[0]}
+        print(f"Including image: {image_urls[0][:100]}...")
 
     # Verify image URLs are accessible (CDN propagation)
     if media:
@@ -192,8 +194,10 @@ def publish_twitter_post(post_data: dict, access_token: str) -> bool:
     if not channel:
         return False
 
-    # Get the tweet text
-    text = post_data.get("full_tweet", post_data.get("tweet", ""))
+    text = (post_data.get("text") or "").strip()
+    if not text:
+        print("Failed to publish: Twitter/X post text is empty")
+        return False
 
     # Ensure under 280 chars
     if len(text) > 280:
@@ -206,10 +210,10 @@ def publish_twitter_post(post_data: dict, access_token: str) -> bool:
 
     # Get image URL if available
     media = None
-    image_data = post_data.get("image")
-    if image_data and image_data.get("url"):
-        media = {"photo": image_data["url"]}
-        print(f"Including image: {image_data['url'][:100]}...")
+    image_urls = get_post_image_urls(post_data)
+    if image_urls:
+        media = {"photo": image_urls[0]}
+        print(f"Including image: {image_urls[0][:100]}...")
 
     # Verify image URLs are accessible (CDN propagation)
     if media:
@@ -240,12 +244,10 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
     if not channel:
         return False
 
-    # Build caption from caption + hashtags
-    caption = post_data.get("caption", "")
-    hashtags = post_data.get("hashtags", [])
-    text = caption
-    if hashtags:
-        text += "\n\n" + " ".join(hashtags)
+    text = (post_data.get("text") or "").strip()
+    if not text:
+        print("Failed to publish: Instagram caption is empty")
+        return False
 
     # Instagram caption limit is 2200 chars
     if len(text) > 2200:
@@ -257,13 +259,13 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
 
     # Get image URLs from images array
     media = None
-    images = post_data.get("images", [])
-    image_urls = [img.get("url") for img in images if img.get("url")]
+    image_urls = get_post_image_urls(post_data)
     if image_urls:
         media = {"photos": image_urls}
         print(f"Including {len(image_urls)} image(s)")
 
-    stored_post_type = post_data.get("post_type")
+    metadata_block = post_data.get("metadata") or {}
+    stored_post_type = metadata_block.get("post_type")
     if stored_post_type == "carousel" or len(image_urls) > 1:
         instagram_type = "carousel"
     else:

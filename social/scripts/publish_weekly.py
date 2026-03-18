@@ -29,6 +29,7 @@ from common import (
     DISCORD_CHUNK_SIZE,
     deploy_reddit_post,
     get_env,
+    get_post_image_urls,
     read_news_file,
 )
 
@@ -40,22 +41,24 @@ WEEKLY_REL_DIR = "social/news/weekly"
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
-def get_week_end() -> str:
-    """Get the week_end date from env var or compute from WEEK_START_DATE.
-    Matches generate_weekly.py which uses start + 6 days (Sun→Sat window).
-    Falls back to most recent Saturday UTC if neither override is set."""
-    override = get_env("WEEK_END_DATE", required=False)
+def get_weekly_date() -> str:
+    """Get the Sunday publish date from env vars or current UTC date.
+
+    If WEEK_START_DATE is provided, weekly artifacts live under start + 7 days.
+    Otherwise use the most recent Sunday UTC.
+    """
+    override = get_env("WEEKLY_DATE", required=False)
     if override:
         return override
-    # Match generate_weekly.py's logic: start + 6 days
+    # Match generate_weekly.py's logic: publish_date = week_start + 7 days
     week_start = get_env("WEEK_START_DATE", required=False)
     if week_start:
         start = datetime.strptime(week_start, "%Y-%m-%d").date()
-        return (start + timedelta(days=6)).strftime("%Y-%m-%d")
+        return (start + timedelta(days=7)).strftime("%Y-%m-%d")
     today = datetime.now(timezone.utc).date()
-    days_since_saturday = (today.weekday() - 5) % 7
-    saturday = today - timedelta(days=days_since_saturday)
-    return saturday.strftime("%Y-%m-%d")
+    days_since_sunday = (today.weekday() + 1) % 7
+    sunday = today - timedelta(days=days_since_sunday)
+    return sunday.strftime("%Y-%m-%d")
 
 
 def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
@@ -194,12 +197,12 @@ def main():
     publish_mode = get_env("PUBLISH_MODE", required=False) or "all"
 
     owner, repo = repo_full.split("/")
-    week_end = get_week_end()
+    weekly_date = get_weekly_date()
 
-    print(f"  Week ending: {week_end}")
+    print(f"  Weekly publish date: {weekly_date}")
     print(f"  Mode: {publish_mode}")
 
-    weekly_dir = os.path.join("social", "news", "weekly", week_end)
+    weekly_dir = os.path.join("social", "news", "weekly", weekly_date)
     results = {}
 
     # ── Buffer staging (Twitter + LinkedIn + Instagram) ───────────
@@ -250,11 +253,16 @@ def main():
             discord_path = os.path.join(weekly_dir, "discord.json")
             discord_data = read_news_file(discord_path, github_token, owner, repo)
 
-            if discord_data and discord_data.get("message"):
+            discord_text = ""
+            if discord_data:
+                discord_text = (discord_data.get("text") or "").strip()
+
+            if discord_data and discord_text:
                 print("  Discord...")
-                discord_image = discord_data.get("image", {}).get("url")
+                image_urls = get_post_image_urls(discord_data)
+                discord_image = image_urls[0] if image_urls else None
                 results["discord"] = post_to_discord(
-                    discord_webhook, discord_data["message"], discord_image
+                    discord_webhook, discord_text, discord_image
                 )
             else:
                 print("  No discord.json — skipping")

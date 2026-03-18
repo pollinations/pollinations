@@ -13,6 +13,11 @@ export interface ImageVariant {
     url: string;
 }
 
+export interface PRReference {
+    number: number;
+    date: string;
+}
+
 export interface TimelineEntry {
     date: string; // "2026-02-15"
     type: "day" | "week";
@@ -20,14 +25,20 @@ export interface TimelineEntry {
     dateLabel: string; // "Feb 15"
     weekNum: number;
     prNumbers: number[];
+    prRefs: PRReference[];
     images: ImageVariant[];
+    summaryUrl?: string;
 }
 
 export interface EntryContent {
     title: string;
     summary: string;
-    dna?: string;
 }
+
+export type EntryContentRequest = Pick<
+    TimelineEntry,
+    "date" | "type" | "summaryUrl" | "prRefs"
+>;
 
 export interface PRContent {
     prNumber: number;
@@ -116,19 +127,21 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
     const dateMap = new Map<
         string,
         {
-            prNumbers: number[];
+            prRefs: PRReference[];
             dailyImages: string[];
             weeklyImages: string[];
             prImages: string[];
             hasWeekly: boolean;
             hasDaily: boolean;
+            dailySummaryUrl?: string;
+            weeklySummaryUrl?: string;
         }
     >();
 
     const ensure = (date: string) => {
         if (!dateMap.has(date)) {
             dateMap.set(date, {
-                prNumbers: [],
+                prRefs: [],
                 dailyImages: [],
                 weeklyImages: [],
                 prImages: [],
@@ -147,7 +160,10 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
         );
         if (gistMatch) {
             const entry = ensure(gistMatch[1]);
-            entry.prNumbers.push(Number(gistMatch[2]));
+            entry.prRefs.push({
+                number: Number(gistMatch[2]),
+                date: gistMatch[1],
+            });
             continue;
         }
 
@@ -168,6 +184,17 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
         if (dailyImgMatch) {
             const shiftedDate = subtractOneDay(dailyImgMatch[1]);
             ensure(shiftedDate).dailyImages.push(dailyImgMatch[2]);
+            continue;
+        }
+
+        const dailySummaryMatch = p.match(
+            /^social\/news\/daily\/(\d{4}-\d{2}-\d{2})\/summary\.json$/,
+        );
+        if (dailySummaryMatch) {
+            const shiftedDate = subtractOneDay(dailySummaryMatch[1]);
+            const entry = ensure(shiftedDate);
+            entry.hasDaily = true;
+            entry.dailySummaryUrl = `${RAW_BASE}/daily/${dailySummaryMatch[1]}/summary.json`;
             continue;
         }
 
@@ -192,6 +219,16 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
             continue;
         }
 
+        const weeklySummaryMatch = p.match(
+            /^social\/news\/weekly\/(\d{4}-\d{2}-\d{2})\/summary\.json$/,
+        );
+        if (weeklySummaryMatch) {
+            const entry = ensure(weeklySummaryMatch[1]);
+            entry.hasWeekly = true;
+            entry.weeklySummaryUrl = `${RAW_BASE}/weekly/${weeklySummaryMatch[1]}/summary.json`;
+            continue;
+        }
+
         // Weekly JSON (marks date as weekly even without images)
         const weeklyJsonMatch = p.match(
             /^social\/news\/weekly\/(\d{4}-\d{2}-\d{2})\/.+\.json$/,
@@ -209,6 +246,8 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
     for (const date of dates) {
         const data = dateMap.get(date);
         if (!data) continue;
+        const prRefs = sortPrRefs(data.prRefs);
+        const prNumbers = prRefs.map((ref) => ref.number);
 
         // Only show entries that have a daily or weekly summary.
         // Gist-only entries (today's PRs before the daily runs) are hidden.
@@ -234,8 +273,10 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
                 date,
                 type: "day",
                 ...info,
-                prNumbers: data.prNumbers.sort((a, b) => a - b),
+                prNumbers,
+                prRefs,
                 images: dayImages,
+                summaryUrl: data.dailySummaryUrl,
             });
 
             const weekImages = buildImageVariants(
@@ -248,8 +289,10 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
                 date,
                 type: "week",
                 ...info,
-                prNumbers: data.prNumbers.sort((a, b) => a - b),
+                prNumbers,
+                prRefs,
                 images: weekImages,
+                summaryUrl: data.weeklySummaryUrl,
             });
         } else if (data.hasWeekly) {
             const images = buildImageVariants(
@@ -262,8 +305,10 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
                 date,
                 type: "week",
                 ...info,
-                prNumbers: data.prNumbers.sort((a, b) => a - b),
+                prNumbers,
+                prRefs,
                 images,
+                summaryUrl: data.weeklySummaryUrl,
             });
         } else {
             const images = buildImageVariants(
@@ -276,13 +321,26 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
                 date,
                 type: "day",
                 ...info,
-                prNumbers: data.prNumbers.sort((a, b) => a - b),
+                prNumbers,
+                prRefs,
                 images,
+                summaryUrl: data.dailySummaryUrl,
             });
         }
     }
 
     return timeline;
+}
+
+function sortPrRefs(refs: PRReference[]): PRReference[] {
+    const deduped = new Map<string, PRReference>();
+    for (const ref of refs) {
+        if (!ref?.date || !Number.isFinite(ref?.number)) continue;
+        deduped.set(`${ref.date}:${ref.number}`, ref);
+    }
+    return [...deduped.values()].sort(
+        (a, b) => a.number - b.number || a.date.localeCompare(b.date),
+    );
 }
 
 function buildImageVariants(
@@ -354,6 +412,12 @@ interface GistJson {
     };
 }
 
+interface CanonicalSummaryJson {
+    title: string;
+    summary: string;
+    prs?: PRReference[];
+}
+
 // Strip [Tag] category markers, hashtags, and URLs from social copy
 function cleanSocialText(text: string): string {
     return text
@@ -370,19 +434,37 @@ function extractTitle(text: string): string {
     return (sentences[0] || cleaned).trim();
 }
 
-// Extract a clean DNA quote from the LinkedIn hook by stripping decorative-only lines
-function cleanHookForDNA(hook: string): string | undefined {
-    const meaningful = hook
-        .split("\n")
-        .filter(
-            (line) =>
-                line.trim().length > 0 &&
-                /[a-zA-Z]{4,}/.test(line) &&
-                !/^[\s·˚✿─→\-#]+$/.test(line),
-        );
-    const last = meaningful.pop();
-    if (!last) return undefined;
-    return cleanSocialText(last) || undefined;
+async function enrichEntryFromSummary(
+    entry: TimelineEntry,
+): Promise<TimelineEntry> {
+    if (!entry.summaryUrl) return entry;
+
+    const summary = await fetchJSON<CanonicalSummaryJson>(entry.summaryUrl);
+    if (!summary?.prs?.length) return entry;
+
+    const prRefs = sortPrRefs(summary.prs);
+    if (prRefs.length === 0) return entry;
+
+    return {
+        ...entry,
+        prRefs,
+        prNumbers: prRefs.map((ref) => ref.number),
+    };
+}
+
+async function enrichRecentEntries(
+    entries: TimelineEntry[],
+    days: number,
+): Promise<TimelineEntry[]> {
+    const cutoff = new Date();
+    cutoff.setUTCDate(cutoff.getUTCDate() - days);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+    return Promise.all(
+        entries.map((entry) =>
+            entry.date >= cutoffStr ? enrichEntryFromSummary(entry) : entry,
+        ),
+    );
 }
 
 async function fetchTreePaths(signal: AbortSignal): Promise<string[]> {
@@ -440,8 +522,13 @@ export function useDiaryData() {
                 if (controller.signal.aborted) return;
 
                 const tl = buildTimeline(paths);
+                // Render immediately, then enrich only the last 7 days
                 setTimeline(tl);
                 setLoading(false);
+
+                const enriched = await enrichRecentEntries(tl, 7);
+                if (controller.signal.aborted) return;
+                setTimeline(enriched);
             } catch (err) {
                 if ((err as Error).name === "AbortError") return;
                 console.error("Diary data load error:", err);
@@ -456,21 +543,46 @@ export function useDiaryData() {
     }, []);
 
     const getEntryContent = useCallback(
-        async (
-            date: string,
-            type: "day" | "week",
-            prNumbers: number[],
-        ): Promise<EntryContent | null> => {
+        async (entry: EntryContentRequest): Promise<EntryContent | null> => {
             let title = "";
             let summary = "";
-            let dna: string | undefined;
 
-            if (type === "week") {
+            if (entry.summaryUrl) {
+                const canonical = await fetchJSON<CanonicalSummaryJson>(
+                    entry.summaryUrl,
+                );
+                if (canonical) {
+                    title = (canonical.title || "").trim();
+                    summary = (canonical.summary || "").trim();
+
+                    // Lazily update prRefs for older entries not enriched at load time
+                    if (canonical.prs?.length) {
+                        const prRefs = sortPrRefs(canonical.prs);
+                        if (prRefs.length > 0) {
+                            setTimeline((prev) =>
+                                prev.map((e) =>
+                                    e.date === entry.date &&
+                                    e.type === entry.type
+                                        ? {
+                                              ...e,
+                                              prRefs,
+                                              prNumbers: prRefs.map(
+                                                  (r) => r.number,
+                                              ),
+                                          }
+                                        : e,
+                                ),
+                            );
+                        }
+                    }
+                }
+            }
+
+            if (!title && entry.type === "week") {
                 const linkedin = await fetchJSON<LinkedInJson>(
-                    `${RAW_BASE}/weekly/${date}/linkedin.json`,
+                    `${RAW_BASE}/weekly/${entry.date}/linkedin.json`,
                 );
                 if (linkedin) {
-                    dna = cleanHookForDNA(linkedin.hook);
                     if (linkedin.body) {
                         const cleanedBody = cleanSocialText(linkedin.body);
                         title = extractTitle(linkedin.body);
@@ -482,10 +594,10 @@ export function useDiaryData() {
                     }
                     if (!title) title = extractTitle(linkedin.hook);
                 }
-            } else {
+            } else if (!title) {
                 // Daily: fetch twitter.json (note: stored at the shifted date + 1 day in the repo)
                 // We need to fetch from the original file date (date + 1 day)
-                const nextDay = new Date(`${date}T12:00:00Z`);
+                const nextDay = new Date(`${entry.date}T12:00:00Z`);
                 nextDay.setUTCDate(nextDay.getUTCDate() + 1);
                 const fileDate = nextDay.toISOString().slice(0, 10);
 
@@ -503,9 +615,10 @@ export function useDiaryData() {
             }
 
             // Fallback: try first gist
-            if (!title && prNumbers.length > 0) {
+            const firstPrRef = entry.prRefs[0];
+            if (!title && firstPrRef) {
                 const gist = await fetchJSON<GistJson>(
-                    `${RAW_BASE}/gists/${date}/PR-${prNumbers[0]}.json`,
+                    `${RAW_BASE}/gists/${firstPrRef.date}/PR-${firstPrRef.number}.json`,
                 );
                 if (gist) {
                     title = gist.gist.headline;
@@ -515,7 +628,7 @@ export function useDiaryData() {
 
             if (!title) return null;
 
-            return { title, summary, dna };
+            return { title, summary };
         },
         [],
     );

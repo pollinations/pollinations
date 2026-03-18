@@ -870,6 +870,7 @@ def normalize_platform_post(
         )
     elif platform == "reddit":
         title = (raw_post.get("title") or "").strip()
+        text = (raw_post.get("body") or raw_post.get("text") or "").strip()
     elif platform == "discord":
         text = (raw_post.get("message") or "").strip()
     else:

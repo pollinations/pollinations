@@ -5,6 +5,7 @@ import { LAYOUT } from "../../copy/content/layout";
 import { useAuth } from "../../hooks/useAuth";
 import {
     type EntryContent,
+    type EntryContentRequest,
     type PRContent,
     type TimelineEntry,
     useDiaryData,
@@ -76,14 +77,24 @@ export function BuildDiary() {
     const entry: TimelineEntry | undefined = timeline[x];
     const maxY = entry ? entry.prNumbers.length : 0;
     const onPR = y > 0 && y <= maxY;
+    const entryDate = entry?.date;
+    const entryType = entry?.type;
+    const entrySummaryUrl = entry?.summaryUrl;
+    const entryPrRefs = entry?.prRefs ?? [];
 
     // Fetch entry content when x changes
     useEffect(() => {
-        if (!entry) return;
+        if (!entryDate || !entryType) return;
+        const request: EntryContentRequest = {
+            date: entryDate,
+            type: entryType,
+            summaryUrl: entrySummaryUrl,
+            prRefs: entryPrRefs,
+        };
         setEntryContent(null);
         setPrContent(null);
-        getEntryContent(entry).then(setEntryContent);
-    }, [entry, getEntryContent]);
+        getEntryContent(request).then(setEntryContent);
+    }, [entryDate, entryType, entrySummaryUrl, entryPrRefs, getEntryContent]);
 
     // Fetch PR content when y changes
     const currentPrRef = entry?.prRefs[y - 1];

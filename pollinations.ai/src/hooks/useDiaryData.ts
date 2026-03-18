@@ -35,6 +35,11 @@ export interface EntryContent {
     summary: string;
 }
 
+export type EntryContentRequest = Pick<
+    TimelineEntry,
+    "date" | "type" | "summaryUrl" | "prRefs"
+>;
+
 export interface PRContent {
     prNumber: number;
     title: string;
@@ -527,7 +532,7 @@ export function useDiaryData() {
     }, []);
 
     const getEntryContent = useCallback(
-        async (entry: TimelineEntry): Promise<EntryContent | null> => {
+        async (entry: EntryContentRequest): Promise<EntryContent | null> => {
             let title = "";
             let summary = "";
 

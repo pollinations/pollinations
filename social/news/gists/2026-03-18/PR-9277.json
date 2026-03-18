@@ -1,0 +1,32 @@
+{
+  "pr_number": 9277,
+  "title": "Add Nova.ai to chat",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9277",
+  "merged_at": "2026-03-18T19:26:08Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pocket-sized intelligence",
+    "blurb": "Nova.ai just landed in the community showcase. It's an iOS assistant that wires up our text and image APIs so you can generate things straight from your pocket.",
+    "summary": "Added Nova.ai, an iOS AI assistant featuring streaming chat and image generation, to the community apps directory.",
+    "impact": "The community showcase now features a new example of a full-fledged mobile app built on top of Pollinations infrastructure.",
+    "keywords": [
+      "community",
+      "showcase",
+      "ios",
+      "app",
+      "nova.ai"
+    ],
+    "visual_concept": "An iOS mobile app being added to the ecosystem. Visuals: a retro smartphone or pocket device, the bee mascot interacting with it, maybe a tiny AI face on the screen.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot hovering next to a glowing retro smartphone that displays a tiny friendly AI face on its screen. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9277.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot hovering next to a glowing retro smartphone that displays a tiny friendly AI face on its screen. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-18T19:27:02.011031+00:00"
+}

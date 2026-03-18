@@ -127,55 +127,72 @@ tier = spore"]
 ## Planned Follow-Up: Daily Global Abuse Scan
 
 - This job is planned, but not implemented on this branch yet
+- Recommended cadence is daily, not weekly
 - It would run separately from onboarding and separately from the daily spore recheck
-- Targets unbanned users where `tier != 'microbe'`
+- Planned workflow file: `.github/workflows/user-pipeline-daily-global-abuse-scan.yml`
+- Planned runtime entrypoint: `scripts/user-pipeline/daily-global-abuse-scan.ts`
+- Planned scorer: `scripts/user-pipeline/scoring/global-abuse-score.ts`
+- Uses D1 directly, not Tinybird, because IP and session signals matter
+- Uses the whole unbanned user table as reference context
+- Uses recent session data as signals, starting with the last 30 days of `session.ip_address` and `session.user_agent`
 - Validates GitHub account existence by `github_id` before broader abuse analysis
-- Builds suspicious cohorts from D1 signals before using the LLM
+- Syncs `github_username` if the current GitHub login changed
+- Builds deterministic suspicious cohorts before using the LLM
+- Sends only suspicious cohorts to the LLM, not the whole database raw
 - Reuses `trust_score` as the current trust field
-- Downgrades to `microbe` when `trust_score < 60`
-- Does not ban users in this pipeline
+- Reuses the LLM plumbing from `scoring/trust-score.ts`, but not the onboarding prompt
+- First version should be report-only / dry-run with no writes and no downgrades
+- Later live mode can overwrite `trust_score` and downgrade to `microbe` when `trust_score < 60`
+- Does not ban users for LLM suspicion in this pipeline
+- Only bans deleted GitHub accounts after `github_id` validation
 
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent'}}}%%
 flowchart TD
-    A["Daily Global Abuse Scan"] --> B["Select users where:
-tier != microbe
-AND banned = 0"]
+    A["Daily Global Abuse Scan"] --> B["Select unbanned users
+from the whole DB as context"]
 
-    B --> C{"Any spore+ users?"}
-    C -->|No| D["Exit"]
-    C -->|Yes| E["GitHub Account Validation
+    B --> C["Use recent session signals
+starting with last 30 days
+of IPs and user agents"]
+
+    C --> D["GitHub Account Validation
 Validate by github_id
 Sync current github_username"]
 
-    E --> F{"GitHub account valid?"}
-    F -->|No| G["Ban user
+    D --> E{"GitHub account valid?"}
+    E -->|No| F["Ban user
 banned = 1
 ban_reason = github_account_deleted"]
-    F -->|Yes| H["Build suspicious cohorts from D1:
+    E -->|Yes| G["Build suspicious cohorts from D1:
 shared IPs
 shared user agents
 email/domain patterns
 GitHub naming patterns
 creation-time clusters"]
 
-    H --> I{"Any suspicious cohorts?"}
-    I -->|No| J["Exit
+    G --> H{"Any suspicious cohorts?"}
+    H -->|No| I["Exit
 No trust_score changes"]
-    I -->|Yes| K["LLM Abuse Review
-Score only the suspicious cohorts"]
+    H -->|Yes| J["LLM Abuse Review
+Score only suspicious cohorts"]
 
-    K --> L["Overwrite trust_score
+    J --> K{"Report-only mode?"}
+    K -->|Yes| L["Emit report only
+No writes
+No downgrades"]
+    K -->|No| M["Overwrite trust_score
 for evaluated users"]
 
-    L --> M{"trust_score < 60?"}
-    M -->|Yes| N["Downgrade to Microbe
+    M --> N{"trust_score < 60?"}
+    N -->|Yes| O["Downgrade to Microbe
 tier = microbe"]
-    M -->|No| O["Keep current tier"]
+    N -->|No| P["Keep current tier"]
 
-    style G fill:#833,color:#fff
-    style N fill:#c44,color:#fff
-    style O fill:#47a,color:#fff
+    style F fill:#833,color:#fff
+    style L fill:#666,color:#fff
+    style O fill:#c44,color:#fff
+    style P fill:#47a,color:#fff
 ```
 
 ## Daily Spore Recheck Pipeline

@@ -19,6 +19,12 @@ The implemented steady-state workflow order on this branch is:
 
 The daily global abuse scan is planned follow-up work. It is not implemented on this branch and is not part of the current rollout.
 
+Once it exists, the intended future order is:
+
+1. hourly onboarding
+2. daily global abuse scan
+3. daily spore recheck
+
 ## Final Pre-Merge Commit
 
 The last pre-merge commit should do only two things:

@@ -27,22 +27,23 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import { executeD1, queryD1 } from "../shared/d1.ts";
 import {
     buildEmailFilter,
     escapeSqlString,
     loadEmailCohort,
 } from "../shared/email-cohort.ts";
+import {
+    banUsersByEmails,
+    banUsersByGithubIds,
+    GITHUB_ACCOUNT_DELETED_REASON,
+    GITHUB_USERNAME_RE,
+    PIPELINE_DB_BATCH_SIZE,
+} from "../shared/github-identity.ts";
 import { runInlinePython } from "../shared/python.ts";
+import { parseLLMResponse, SCORE_THRESHOLDS } from "./trust-score-helpers.ts";
 
-const SCORE_THRESHOLDS = {
-    block: 70,
-    review: 40,
-} as const;
-
-const DB_BATCH_SIZE = 200;
-const GITHUB_ACCOUNT_DELETED_REASON = "github_account_deleted";
-const GITHUB_USERNAME_RE = /^[A-Za-z0-9-]+$/;
 const OVERLAP_SIZE = 20;
 
 type Environment = "staging";
@@ -188,51 +189,6 @@ function formatDate(timestamp: number): string {
     return d.toISOString().slice(0, 16).replace("T", " ");
 }
 
-function banUsersByEmails(env: Environment, emails: string[]): number {
-    const uniqueEmails = Array.from(new Set(emails));
-    let banned = 0;
-
-    for (let i = 0; i < uniqueEmails.length; i += DB_BATCH_SIZE) {
-        const batch = uniqueEmails.slice(i, i + DB_BATCH_SIZE);
-        if (batch.length === 0) continue;
-        const emailList = batch
-            .map((email) => `'${escapeSqlString(email)}'`)
-            .join(", ");
-        const ok = executeD1(
-            env,
-            `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE email IN (${emailList})`,
-        );
-        if (ok) banned += batch.length;
-    }
-
-    return banned;
-}
-
-function banUsersByGithubIds(env: Environment, githubIds: number[]): number {
-    const uniqueIds = Array.from(
-        new Set(
-            githubIds.filter(
-                (githubId): githubId is number =>
-                    Number.isInteger(githubId) && githubId > 0,
-            ),
-        ),
-    );
-    let banned = 0;
-
-    for (let i = 0; i < uniqueIds.length; i += DB_BATCH_SIZE) {
-        const batch = uniqueIds.slice(i, i + DB_BATCH_SIZE);
-        if (batch.length === 0) continue;
-        const idList = batch.join(", ");
-        const ok = executeD1(
-            env,
-            `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE github_id IN (${idList})`,
-        );
-        if (ok) banned += batch.length;
-    }
-
-    return banned;
-}
-
 function syncGithubUsernames(
     env: Environment,
     users: Array<{ github_id: number; github_username: string }>,
@@ -252,8 +208,8 @@ function syncGithubUsernames(
     );
     let updated = 0;
 
-    for (let i = 0; i < uniqueUsers.length; i += DB_BATCH_SIZE) {
-        const batch = uniqueUsers.slice(i, i + DB_BATCH_SIZE);
+    for (let i = 0; i < uniqueUsers.length; i += PIPELINE_DB_BATCH_SIZE) {
+        const batch = uniqueUsers.slice(i, i + PIPELINE_DB_BATCH_SIZE);
         if (batch.length === 0) continue;
 
         const usernameCases = batch
@@ -466,46 +422,6 @@ Use + to combine. Empty if clean. Focus on GROUPS, not individuals.
 
 Data (github,email,registered):
 ${csvRows.join("\n")}`;
-}
-
-function parseLLMResponse(
-    content: string,
-    githubToIndex: Map<string, number>,
-    chunkLength: number,
-): Array<{ score: number; signals: string[] }> {
-    const results: Array<{ score: number; signals: string[] } | null> =
-        Array.from({ length: chunkLength }, () => null);
-
-    for (const line of content.split("\n")) {
-        if (!line.trim() || line.startsWith("github,") || !line.includes(",")) {
-            continue;
-        }
-
-        const parts = line.split(",");
-        if (parts.length < 2) continue;
-
-        const github = parts[0]?.trim();
-        const score = parseInt(parts[1], 10);
-        const reason = parts[2]?.trim() || "";
-        const idx = github ? githubToIndex.get(github) : undefined;
-        if (idx === undefined || Number.isNaN(score)) continue;
-
-        results[idx] = {
-            score: Math.min(100, Math.max(0, score)),
-            signals:
-                reason === "ok" || reason === ""
-                    ? []
-                    : reason.split("+").filter((signal) => signal.trim()),
-        };
-    }
-
-    if (results.some((result) => result === null)) {
-        throw new Error(
-            "LLM response omitted one or more users from the chunk",
-        );
-    }
-
-    return results as Array<{ score: number; signals: string[] }>;
 }
 
 async function callScoringAPI(
@@ -725,8 +641,8 @@ function storeTrustScores(env: Environment, scored: ScoredUser[]): void {
     console.log("\n📝 Storing trust scores in D1...");
     let stored = 0;
 
-    for (let i = 0; i < scored.length; i += DB_BATCH_SIZE) {
-        const batch = scored.slice(i, i + DB_BATCH_SIZE);
+    for (let i = 0; i < scored.length; i += PIPELINE_DB_BATCH_SIZE) {
+        const batch = scored.slice(i, i + PIPELINE_DB_BATCH_SIZE);
         if (batch.length === 0) continue;
 
         const cases = batch
@@ -745,7 +661,7 @@ function storeTrustScores(env: Environment, scored: ScoredUser[]): void {
         }
 
         console.log(
-            `   📊 ${Math.min(i + DB_BATCH_SIZE, scored.length)}/${scored.length} trust scores stored`,
+            `   📊 ${Math.min(i + PIPELINE_DB_BATCH_SIZE, scored.length)}/${scored.length} trust scores stored`,
         );
     }
 
@@ -809,7 +725,13 @@ async function main(): Promise<void> {
     }
 }
 
-main().catch((error) => {
-    console.error(error);
-    process.exit(1);
-});
+const isMain =
+    Boolean(process.argv[1]) &&
+    import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isMain) {
+    main().catch((error) => {
+        console.error(error);
+        process.exit(1);
+    });
+}

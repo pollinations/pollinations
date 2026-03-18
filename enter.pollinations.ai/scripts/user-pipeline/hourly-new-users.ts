@@ -16,11 +16,11 @@
 
 import { TIER_POLLEN } from "../../src/tier-config.ts";
 import { executeD1, queryD1 } from "./shared/d1.ts";
+import { buildEmailFilter, loadEmailCohort } from "./shared/email-cohort.ts";
 import {
-    buildEmailFilter,
-    escapeSqlString,
-    loadEmailCohort,
-} from "./shared/email-cohort.ts";
+    banUsersByGithubIds,
+    GITHUB_USERNAME_RE,
+} from "./shared/github-identity.ts";
 import { runInlinePython } from "./shared/python.ts";
 
 type Environment = "staging";
@@ -48,10 +48,6 @@ interface ValidationResult {
         total?: number;
     } | null;
 }
-
-const DB_BATCH_SIZE = 200;
-const GITHUB_ACCOUNT_DELETED_REASON = "github_account_deleted";
-const GITHUB_USERNAME_RE = /^[A-Za-z0-9-]+$/;
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
@@ -113,53 +109,6 @@ print(json.dumps(results))
     const output = runInlinePython(pythonScript);
 
     return JSON.parse(output.trim()) as ValidationResult[];
-}
-
-function banUsersByEmails(env: Environment, emails: string[]): number {
-    const uniqueEmails = Array.from(new Set(emails));
-    let banned = 0;
-
-    for (let i = 0; i < uniqueEmails.length; i += DB_BATCH_SIZE) {
-        const batch = uniqueEmails.slice(i, i + DB_BATCH_SIZE);
-        if (batch.length === 0) continue;
-
-        const emailList = batch
-            .map((email) => `'${escapeSqlString(email)}'`)
-            .join(", ");
-        const ok = executeD1(
-            env,
-            `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE email IN (${emailList})`,
-        );
-        if (ok) banned += batch.length;
-    }
-
-    return banned;
-}
-
-function banUsersByGithubIds(env: Environment, githubIds: number[]): number {
-    const uniqueIds = Array.from(
-        new Set(
-            githubIds.filter(
-                (githubId): githubId is number =>
-                    Number.isInteger(githubId) && githubId > 0,
-            ),
-        ),
-    );
-    let banned = 0;
-
-    for (let i = 0; i < uniqueIds.length; i += DB_BATCH_SIZE) {
-        const batch = uniqueIds.slice(i, i + DB_BATCH_SIZE);
-        if (batch.length === 0) continue;
-
-        const idList = batch.join(", ");
-        const ok = executeD1(
-            env,
-            `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE github_id IN (${idList})`,
-        );
-        if (ok) banned += batch.length;
-    }
-
-    return banned;
 }
 
 function extractDeletedGithubUsers(results: ValidationResult[]): number[] {

@@ -36,6 +36,9 @@ from github_score import validate_user_records
 
 MAX_USERS_PER_RUN = 8000
 SQL_BATCH_SIZE = 200
+# Keep this in sync with src/tier-config.ts -> TIER_POLLEN.seed.
+# This script runs under Python, so we currently document the linkage instead
+# of adding a cross-language config layer just for one constant.
 SEED_TIER_BALANCE = 3.0
 
 

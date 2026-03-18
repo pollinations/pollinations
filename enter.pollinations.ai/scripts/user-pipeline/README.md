@@ -33,12 +33,15 @@ scripts/user-pipeline/
 ├── daily-spore-recheck.py
 ├── scoring/
 │   ├── trust-score.ts
+│   ├── trust-score-helpers.ts
 │   ├── github_score.py
-│   └── github_risk.py
+│   ├── github_risk.py
+│   └── test_github_risk.py
 ├── shared/
 │   ├── d1.ts
 │   ├── d1.py
 │   ├── email-cohort.ts
+│   ├── github-identity.ts
 │   ├── github_account_state.py
 │   ├── python.ts
 │   └── python_runtime.py

@@ -141,13 +141,13 @@ def generate_highlights(pollinations_token: str, date_str: str) -> str | None:
         temperature=0.3, exit_on_failure=False,
     )
     if not ai_response:
-        print("  Highlights: AI generation failed")
-        return None
+        print("  FATAL: Highlights AI generation failed")
+        sys.exit(1)
 
     new_highlights = parse_highlights_response(ai_response)
     if not new_highlights.strip():
-        print("  Highlights: empty response from AI")
-        return None
+        print("  FATAL: Highlights AI returned empty content")
+        sys.exit(1)
 
     print(f"  Highlights: generated new entries")
 
@@ -254,45 +254,58 @@ def generate_platform_images(
     if twitter_post and twitter_post.get("image_prompt"):
         print("  Generating Twitter image...")
         img_bytes, _ = generate_image(twitter_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/twitter.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                urls["twitter"].append(url)
-                twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
+        if not img_bytes:
+            print("  FATAL: Daily Twitter image generation failed")
+            sys.exit(1)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/twitter.jpg", branch,
+            github_token, owner, repo
+        )
+        if not url:
+            print("  FATAL: Daily Twitter image commit failed")
+            sys.exit(1)
+        urls["twitter"].append(url)
+        twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
 
     # Instagram: up to 3 images (carousel)
     if instagram_post and instagram_post.get("images"):
         for i, img_info in enumerate(instagram_post["images"][:3]):
             prompt = img_info.get("prompt", "")
             if not prompt:
-                continue
+                print(f"  FATAL: Daily Instagram image {i+1} is missing a prompt")
+                sys.exit(1)
             print(f"  Generating Instagram image {i+1}...")
             img_bytes, _ = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, i)
-            if img_bytes:
-                url = commit_image_to_branch(
-                    img_bytes, f"{image_dir}/instagram-{i+1}.jpg", branch,
-                    github_token, owner, repo
-                )
-                if url:
-                    urls["instagram"].append(url)
-                    img_info["url"] = url
+            if not img_bytes:
+                print(f"  FATAL: Daily Instagram image {i+1} generation failed")
+                sys.exit(1)
+            url = commit_image_to_branch(
+                img_bytes, f"{image_dir}/instagram-{i+1}.jpg", branch,
+                github_token, owner, repo
+            )
+            if not url:
+                print(f"  FATAL: Daily Instagram image {i+1} commit failed")
+                sys.exit(1)
+            urls["instagram"].append(url)
+            img_info["url"] = url
             time.sleep(3)  # Rate limiting
 
     # Reddit: 1 image
     if reddit_post and reddit_post.get("image_prompt"):
         print("  Generating Reddit image...")
         img_bytes, _ = generate_image(reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/reddit.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                urls["reddit"].append(url)
-                reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
+        if not img_bytes:
+            print("  FATAL: Daily Reddit image generation failed")
+            sys.exit(1)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/reddit.jpg", branch,
+            github_token, owner, repo
+        )
+        if not url:
+            print("  FATAL: Daily Reddit image commit failed")
+            sys.exit(1)
+        urls["reddit"].append(url)
+        reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
 
     return urls
 
@@ -330,7 +343,7 @@ def commit_daily_to_news(
     if instagram_post:
         instagram_post.update({
             "date": date_str, "generated_at": now_iso, "platform": "instagram",
-            "post_type": "carousel" if len(instagram_post.get("images", [])) > 1 else "single",
+            "post_type": "carousel" if len(instagram_post.get("images", [])) > 1 else "post",
         })
         files_to_commit.append((f"{base_path}/instagram.json", instagram_post))
     if reddit_post:
@@ -420,20 +433,39 @@ def main():
 
     print("  Twitter...")
     twitter_post = generate_twitter_post(summary, pollinations_token)
-    if twitter_post:
-        tweet = twitter_post.get("tweet", "")
-        print(f"  Twitter: {tweet[:80]}... ({len(tweet)} chars)")
+    if not twitter_post:
+        print("  FATAL: Daily Twitter post generation failed")
+        sys.exit(1)
+    if not twitter_post.get("image_prompt"):
+        print("  FATAL: Daily Twitter post is missing image_prompt")
+        sys.exit(1)
+    tweet = twitter_post.get("tweet", "")
+    print(f"  Twitter: {tweet[:80]}... ({len(tweet)} chars)")
 
     print("  Instagram...")
     instagram_post = generate_instagram_post(summary, pollinations_token)
-    if instagram_post:
-        img_count = len(instagram_post.get("images", []))
-        print(f"  Instagram: {img_count} images")
+    if not instagram_post:
+        print("  FATAL: Daily Instagram post generation failed")
+        sys.exit(1)
+    instagram_images = instagram_post.get("images", [])
+    if not instagram_images:
+        print("  FATAL: Daily Instagram post is missing images")
+        sys.exit(1)
+    if any(not img.get("prompt") for img in instagram_images[:3]):
+        print("  FATAL: Daily Instagram post has an image without a prompt")
+        sys.exit(1)
+    img_count = len(instagram_images)
+    print(f"  Instagram: {img_count} images")
 
     print("  Reddit...")
     reddit_post = generate_reddit_post(summary, pollinations_token)
-    if reddit_post:
-        print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
+    if not reddit_post:
+        print("  FATAL: Daily Reddit post generation failed")
+        sys.exit(1)
+    if not reddit_post.get("image_prompt"):
+        print("  FATAL: Daily Reddit post is missing image_prompt")
+        sys.exit(1)
+    print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
 
     # ── Generate highlights ──────────────────────────────────────────
     print(f"\n[4/5] Generating highlights...")

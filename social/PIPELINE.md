@@ -259,23 +259,18 @@ This makes all generated content available locally for scripts that read files (
 The gist is the anchor for everything downstream. The 2 steps run sequentially:
 
 ```
-Step 1: AI analysis → gist JSON → validate schema → commit to news branch
+Step 1: AI analysis → validate schema
   ├── Success: proceed to Step 2
-  ├── Schema validation failure: log warning, commit MINIMAL gist (PR metadata only)
-  │   (prevents malformed JSON from reaching downstream tiers)
-  └── AI failure: RETRY up to 3x with exponential backoff
-        └── Still fails: commit a MINIMAL gist (PR metadata only, no AI fields)
-            + log error + open GitHub issue tagged "news-pipeline-failure"
-            (daily summary sees the PR exists but skips it for narrative)
+  └── Any failure: fail the workflow run
+      (no minimal gist is committed, no Discord post is attempted)
 
-Step 2: Image generation → update gist with image URL
+Step 2: Image generation → commit image → commit gist to news branch
   ├── Success: done (gist fully committed)
-  └── Failure (5xx): RETRY up to 3x with exponential backoff + different seed each attempt
-        └── Still fails: gist.image.url = null, continue without image
-            (Discord posts text-only)
+  └── Any failure: fail the workflow run
+      (prevents partial gists or text-only realtime posts)
 ```
 
-Discord posting (`publish_realtime.py`) runs as a **separate workflow step** after the gist generator. If Discord posting fails, the gist is already committed (source of truth preserved). Discord is best-effort notification.
+Discord posting (`publish_realtime.py`) runs as a **separate workflow step** after the gist generator. It is fail-fast: if message generation, image fetch, or webhook delivery fails, the workflow run fails and the post is not degraded.
 
 ### Tier 2: `generate_daily.py`
 
@@ -324,7 +319,7 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 5. **Importance is binary** — `major/minor` chosen by AI. Headline-worthy or not. Prominence is implicit in narrative structure, not serialized as extra fields.
 
-6. **2 sequential steps in Tier 1** — gist commit, then image gen. Gist (the anchor) commits first; image gen retries 3x on 5xx (different seed each time). Discord posting is a separate workflow step (`publish_realtime.py`) — best-effort, decoupled from the source of truth.
+6. **Tier 1 fails loud instead of degrading** — if PR analysis, validation, image generation, or Discord delivery breaks, the realtime workflow goes red. That keeps problems visible and makes manual re-triggering explicit.
 
 7. **Buffer staging immediately after generation** — `NEWS_summary.yml` generates content and immediately stages to Buffer (`PUBLISH_MODE=buffer`). Buffer handles delivery scheduling. Direct channels (Reddit, Discord) use separate cron.
 
@@ -377,7 +372,7 @@ AI calls scale as N+1 (N per-PR gists + 1 daily summary), not N×platforms. Imag
 ## Verification
 
 1. **Tier 1 — happy path**: Merge a test PR → verify gist JSON committed to `news` branch `social/news/gists/` + image generated + Discord post sent (separate step)
-2. **Tier 1 — AI failure**: Mock AI to fail → verify minimal gist (metadata only) committed + GitHub issue opened
+2. **Tier 1 — AI failure**: Mock AI to fail → verify workflow fails, no gist is committed, and Discord does not post
 3. **Tier 2 — happy path**: Manually trigger daily workflow → verify platform posts + images committed to `news` branch + README PR to main
 4. **Tier 2 — zero PRs**: Run daily workflow on a day with 0 gists → verify workflow exits cleanly with no content generated
 5. **Tier 3 — happy path**: Manually trigger weekly workflow → verify all 5 platform posts + images committed to `news` branch

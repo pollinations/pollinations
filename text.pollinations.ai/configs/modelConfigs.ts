@@ -179,6 +179,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v3p2",
         }),
+    "accounts/fireworks/models/qwen3p5-397b-a17b": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3p5-397b-a17b",
+        }),
 
     // -- Community Models -----------------------------------------------------
     "nomnom": () =>

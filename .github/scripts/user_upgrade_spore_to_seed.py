@@ -8,10 +8,10 @@ Strategy (stateless, day-based slicing):
     1. Always check users created in the last 24 hours (new users)
     2. For older users, use LIMIT/OFFSET with day-of-week slicing
        This ensures all users are checked once per week without tracking state.
-    3. Fetches 10 repos per user for quality filtering and fraud detection
+    3. Fetches 10 repos per user for quality filtering
 
 Usage:
-    python user_upgrade_spore_to_seed.py              # Full run
+    python user_upgrade_spore_to_seed.py              # Full run on staging
     python user_upgrade_spore_to_seed.py --dry-run    # Validate only, no upgrades
     python user_upgrade_spore_to_seed.py --env staging  # Use staging environment
 
@@ -36,8 +36,19 @@ from user_validate_github_profile import validate_users
 MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
 
 
-def run_d1_query(query: str, env: str = "production") -> list[dict] | None:
+def ensure_safe_env(env: str) -> str:
+    if env != "staging":
+        print(
+            f"❌ Unsupported env: {env}. This branch is locked to staging and cannot write to production.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return env
+
+
+def run_d1_query(query: str, env: str = "staging") -> list[dict] | None:
     """Run a D1 query and return results."""
+    env = ensure_safe_env(env)
     cmd = [
         "npx",
         "wrangler",
@@ -76,7 +87,7 @@ def run_d1_query(query: str, env: str = "production") -> list[dict] | None:
         return None
 
 
-def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], int]:
+def fetch_spore_users(env: str = "staging") -> tuple[list[str], list[str], int]:
     """Fetch spore users using day-based slicing strategy.
 
     Returns (new_users, slice_users, total_old) where:
@@ -128,7 +139,7 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
 
 
 def batch_upgrade_users(
-    usernames: list[str], env: str = "production"
+    usernames: list[str], env: str = "staging"
 ) -> tuple[int, int, bool]:
     """Upgrade users to seed tier in batch SQL. Returns (upgraded, skipped, failed)."""
     BATCH_SQL_SIZE = 500
@@ -189,8 +200,8 @@ def main():
     )
     parser.add_argument(
         "--env",
-        choices=["staging", "production"],
-        default="production",
+        choices=["staging"],
+        default="staging",
         help="Environment",
     )
     parser.add_argument(
@@ -254,10 +265,7 @@ def main():
     approved = [r["username"] for r in results if r["approved"]]
     rejected = [r for r in results if not r["approved"]]
 
-    fraud_rejected = [r for r in results if (r.get("details") or {}).get("fraud_flags")]
     print(f"\n📊 Total: {len(approved)} approved, {len(rejected)} rejected")
-    if fraud_rejected:
-        print(f"   🚨 Fraud-flagged: {len(fraud_rejected)}")
 
     if rejected:
         print("\n   Rejected users:")
@@ -277,13 +285,9 @@ def main():
             d = r.get("details")
             if d:
                 status = "✅" if r["approved"] else "❌"
-                fraud = " 🚨FRAUD" if d.get("fraud_flags") else ""
                 print(
-                    f"   {r['username']:<25} {d['age_days']:>4}d={d['age_pts']:.1f}pt  {d['repos']:>3}={d['repos_pts']:.1f}pt    {d['commits']:>4}={d['commits_pts']:.1f}pt   {d['stars']:>4}={d['stars_pts']:.1f}pt   {status}{d['total']:.1f}{fraud}"
+                    f"   {r['username']:<25} {d['age_days']:>4}d={d['age_pts']:.1f}pt  {d['repos']:>3}={d['repos_pts']:.1f}pt    {d['commits']:>4}={d['commits_pts']:.1f}pt   {d['stars']:>4}={d['stars_pts']:.1f}pt   {status}{d['total']:.1f}"
                 )
-                if d.get("fraud_flags"):
-                    for flag in d["fraud_flags"]:
-                        print(f"      🚨 {flag}")
             else:
                 print(f"   {r['username']:<25} (not found)")
 

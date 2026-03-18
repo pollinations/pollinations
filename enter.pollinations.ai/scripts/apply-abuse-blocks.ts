@@ -5,12 +5,12 @@
  * Processes in batches with rate limiting to avoid D1 overload.
  *
  * Usage:
- *   npx tsx scripts/apply-abuse-blocks.ts --env production
- *   npx tsx scripts/apply-abuse-blocks.ts --env production --dry-run
- *   npx tsx scripts/apply-abuse-blocks.ts --env production --batch-size 50 --delay 1000
+ *   npx tsx scripts/apply-abuse-blocks.ts --env staging
+ *   npx tsx scripts/apply-abuse-blocks.ts --env staging --dry-run
+ *   npx tsx scripts/apply-abuse-blocks.ts --env staging --batch-size 50 --delay 1000
  *
  * Options:
- *   --env          Environment (staging|production), default: production
+ *   --env          Environment (staging only on this branch)
  *   --dry-run      Show what would be done without making changes
  *   --batch-size   Number of users to process per batch (default: 100)
  *   --delay        Delay in ms between batches (default: 500)
@@ -19,10 +19,9 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { createInterface } from "node:readline";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
 
-type Environment = "staging" | "production";
+type Environment = "staging";
 
 interface AbuseReportRow {
     action: string;
@@ -106,19 +105,6 @@ function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function confirm(message: string): Promise<boolean> {
-    const rl = createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
-    return new Promise((resolve) => {
-        rl.question(`${message} (y/N) `, (answer) => {
-            rl.close();
-            resolve(answer.toLowerCase() === "y");
-        });
-    });
-}
-
 const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 function validateEmail(email: string): boolean {
@@ -129,10 +115,7 @@ const applyBlocksCommand = command({
     name: "apply-blocks",
     desc: "Downgrade blocked users to microbe tier",
     options: {
-        env: string()
-            .alias("e")
-            .enum("staging", "production")
-            .default("production"),
+        env: string().alias("e").enum("staging").default("staging"),
         "dry-run": boolean()
             .alias("d")
             .default(false)
@@ -205,16 +188,6 @@ const applyBlocksCommand = command({
         if (usersToDowngrade.length === 0) {
             console.log(`\n✅ No users to downgrade!`);
             return;
-        }
-
-        if (!opts["dry-run"] && env === "production") {
-            const ok = await confirm(
-                `\n⚠️  About to downgrade ${usersToDowngrade.length} users to microbe in PRODUCTION. Continue?`,
-            );
-            if (!ok) {
-                console.log("❌ Aborted.");
-                return;
-            }
         }
 
         const batches = Math.ceil(usersToDowngrade.length / opts["batch-size"]);

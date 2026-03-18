@@ -7,32 +7,56 @@
  *
  * USAGE:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/upgrade-microbe-to-spore.ts                    # Production
+ *   npx tsx scripts/upgrade-microbe-to-spore.ts                    # Staging
  *   npx tsx scripts/upgrade-microbe-to-spore.ts --env staging      # Staging
  *   npx tsx scripts/upgrade-microbe-to-spore.ts --dry-run          # Preview only
  */
 
 import { execSync } from "node:child_process";
 
+type Environment = "staging";
+
 interface ParsedArgs {
-    env: "staging" | "production";
+    env: Environment;
     dryRun: boolean;
+    allowBacklog: boolean;
+    backlogThreshold: number;
 }
+
+type D1Row = Record<string, string | number | null>;
+const DEFAULT_BACKLOG_THRESHOLD = 500;
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
     const envIndex = args.indexOf("--env");
     const env =
-        envIndex >= 0 && args[envIndex + 1]
-            ? (args[envIndex + 1] as "staging" | "production")
-            : "production";
+        envIndex >= 0 && args[envIndex + 1] ? args[envIndex + 1] : "staging";
+    const thresholdIndex = args.indexOf("--backlog-threshold");
+    const backlogThreshold =
+        thresholdIndex >= 0 && args[thresholdIndex + 1]
+            ? Number(args[thresholdIndex + 1])
+            : DEFAULT_BACKLOG_THRESHOLD;
+
+    if (env !== "staging") {
+        console.error(
+            `❌ Unsupported --env ${env}. This branch is locked to staging and cannot write to production.`,
+        );
+        process.exit(1);
+    }
+    if (!Number.isFinite(backlogThreshold) || backlogThreshold < 0) {
+        console.error("❌ --backlog-threshold must be a non-negative number.");
+        process.exit(1);
+    }
+
     return {
-        env,
+        env: "staging",
         dryRun: args.includes("--dry-run"),
+        allowBacklog: args.includes("--allow-backlog"),
+        backlogThreshold,
     };
 }
 
-function queryD1(env: string, sql: string): any[] {
+function queryD1(env: Environment, sql: string): D1Row[] {
     // Safe: sql is constructed from trusted internal values, not user input
     const cmd = `npx wrangler d1 execute DB --remote --env ${env} --command "${sql}" --json`;
     try {
@@ -53,7 +77,7 @@ function queryD1(env: string, sql: string): any[] {
     }
 }
 
-function executeD1(env: string, sql: string): boolean {
+function executeD1(env: Environment, sql: string): boolean {
     // Safe: sql is constructed from trusted internal values, not user input
     const cmd = `npx wrangler d1 execute DB --remote --env ${env} --command "${sql}" --json`;
     try {
@@ -69,11 +93,21 @@ function executeD1(env: string, sql: string): boolean {
     }
 }
 
+function queryCount(env: Environment, sql: string): number {
+    const results = queryD1(env, sql);
+    const count = results[0]?.count;
+    return typeof count === "number"
+        ? count
+        : typeof count === "string"
+          ? Number(count)
+          : 0;
+}
+
 /**
  * Phase 1: Microbe → Spore
  * Promote all microbe users who passed the abuse check (trust_score >= 60)
  */
-function promoteMicrobeToSpore(env: string, dryRun: boolean): number {
+function promoteMicrobeToSpore(env: Environment, dryRun: boolean): number {
     console.log("\n🔄 Phase 1: Microbe → Spore");
 
     // Find eligible users
@@ -118,10 +152,28 @@ function promoteMicrobeToSpore(env: string, dryRun: boolean): number {
  * Calls user_validate_github_profile.py for GitHub scoring
  */
 function checkSporeForSeed(
-    env: string,
+    env: Environment,
     dryRun: boolean,
+    allowBacklog: boolean,
+    backlogThreshold: number,
 ): { upgraded: number; checked: number } {
     console.log("\n🔄 Phase 2: Spore → Seed (just-promoted users)");
+
+    const backlogCount = queryCount(
+        env,
+        "SELECT COUNT(*) AS count FROM user WHERE tier = 'spore' AND github_username IS NOT NULL AND score IS NULL",
+    );
+
+    if (backlogCount === 0) {
+        console.log("   ✅ No new spore users with GitHub to check");
+        return { upgraded: 0, checked: 0 };
+    }
+
+    if (backlogCount > backlogThreshold && !allowBacklog) {
+        throw new Error(
+            `Refusing to process ${backlogCount} scoreless spore users in the steady-state pipeline. Run .github/scripts/backfill_spore_scores.py first, or pass --allow-backlog to override.`,
+        );
+    }
 
     // Find spore users with GitHub who haven't been scored yet (score IS NULL)
     const sporeUsers = queryD1(
@@ -129,14 +181,11 @@ function checkSporeForSeed(
         "SELECT github_username FROM user WHERE tier = 'spore' AND github_username IS NOT NULL AND score IS NULL",
     );
 
-    if (sporeUsers.length === 0) {
-        console.log("   ✅ No new spore users with GitHub to check");
-        return { upgraded: 0, checked: 0 };
-    }
-
     const usernames = sporeUsers
-        .map((u: any) => u.github_username)
-        .filter(Boolean);
+        .map((u) =>
+            typeof u.github_username === "string" ? u.github_username : null,
+        )
+        .filter((username): username is string => Boolean(username));
     console.log(`   📊 ${usernames.length} spore users with GitHub to check`);
 
     if (dryRun) {
@@ -181,7 +230,7 @@ print(json.dumps(results))
                 `UPDATE user SET score = ${totalScore}, score_checked_at = ${now} WHERE github_username = '${safeUsername}'`,
             );
 
-            // Upgrade to seed if approved (>= 8 pts, no fraud)
+            // Upgrade to seed if approved (>= 8 pts)
             if (result.approved) {
                 const ok = executeD1(
                     env,
@@ -211,12 +260,22 @@ async function main(): Promise<void> {
     console.log("=".repeat(50));
     console.log(`📋 Environment: ${config.env}`);
     if (config.dryRun) console.log("🔍 Mode: DRY RUN");
+    if (config.allowBacklog) {
+        console.log(
+            `⚠️  Backlog override enabled (threshold=${config.backlogThreshold})`,
+        );
+    }
 
     const promoted = promoteMicrobeToSpore(config.env, config.dryRun);
 
-    const { upgraded, checked } = checkSporeForSeed(config.env, config.dryRun);
+    const { upgraded, checked } = checkSporeForSeed(
+        config.env,
+        config.dryRun,
+        config.allowBacklog,
+        config.backlogThreshold,
+    );
 
-    console.log("\n" + "=".repeat(50));
+    console.log(`\n${"=".repeat(50)}`);
     console.log("📊 Summary:");
     console.log(`   Microbe → Spore: ${promoted}`);
     console.log(`   Spore → Seed: ${upgraded} (of ${checked} checked)`);

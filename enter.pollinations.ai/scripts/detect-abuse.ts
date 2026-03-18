@@ -21,6 +21,7 @@
  *   --auto-apply      Automatically apply blocks after scanning (no dry-run)
  *   --unchecked       Only scan users with trust_score IS NULL (new user verification)
  *   --store-status    Write trust_score (inverted abuse score) back to D1
+ *   --env staging     D1 environment to use (staging only on this branch)
  *
  * OUTPUT:
  *   abuse-report.csv - All users sorted by score (action, score, email, github, signals, date)
@@ -35,6 +36,7 @@ const SCORE_THRESHOLDS = {
 } as const;
 
 const OVERLAP_SIZE = 20;
+type Environment = "staging";
 
 interface User {
     email: string;
@@ -50,6 +52,7 @@ interface ScoredUser extends User {
 }
 
 interface ParsedArgs {
+    env: Environment;
     userLimit: number;
     chunkSize: number;
     modelName: string;
@@ -74,12 +77,21 @@ function parseArguments(): ParsedArgs {
         return value ? parseInt(value, 10) : defaultValue;
     }
 
+    const env = getStr("--env", "staging");
+    if (env !== "staging") {
+        console.error(
+            `Unsupported --env ${env}. This branch is locked to staging and cannot write to production.`,
+        );
+        process.exit(1);
+    }
+
     const sinceTimestamp = parseSinceTimestamp(
         getStr("--since", ""),
         getStr("--last", ""),
     );
 
     return {
+        env: "staging",
         userLimit: getNum("--limit", 5000),
         chunkSize: getNum("--chunk-size", 100),
         modelName: getStr("--model", "gemini"),
@@ -142,6 +154,7 @@ function loadApiKey(): string {
 }
 
 function fetchUsers(
+    env: Environment,
     limit: number,
     sinceTimestamp: number | null,
     unchecked: boolean,
@@ -174,7 +187,7 @@ function fetchUsers(
 
     try {
         const result = execSync(
-            `npx wrangler d1 execute DB --remote --env production --json --command "${query}"`,
+            `npx wrangler d1 execute DB --remote --env ${env} --json --command "${query}"`,
             { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
         );
 
@@ -507,7 +520,7 @@ function exportResults(users: ScoredUser[]): void {
     }
 }
 
-function storeTrustScores(scored: ScoredUser[]): void {
+function storeTrustScores(env: Environment, scored: ScoredUser[]): void {
     console.log("\n📝 Storing trust scores in D1...");
 
     // Trust score = 100 - abuse score (invert so higher = more trusted)
@@ -532,7 +545,7 @@ function storeTrustScores(scored: ScoredUser[]): void {
 
         try {
             execSync(
-                `npx wrangler d1 execute DB --remote --env production --command "${query}"`,
+                `npx wrangler d1 execute DB --remote --env ${env} --command "${query}"`,
                 {
                     encoding: "utf-8",
                     stdio: ["pipe", "pipe", "pipe"],
@@ -572,10 +585,11 @@ async function main(): Promise<void> {
         );
     const extra = labels.length > 0 ? `, ${labels.join(", ")}` : "";
     console.log(
-        `📋 Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}${extra}`,
+        `📋 Config: env=${config.env}, ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}${extra}`,
     );
 
     const users = fetchUsers(
+        config.env,
         config.userLimit,
         config.sinceTimestamp,
         config.unchecked,
@@ -590,7 +604,7 @@ async function main(): Promise<void> {
 
     // Store trust scores in D1 if --store-status is set
     if (config.storeStatus) {
-        storeTrustScores(scored);
+        storeTrustScores(config.env, scored);
     }
 
     if (config.autoApply) {
@@ -602,7 +616,7 @@ async function main(): Promise<void> {
         console.log(`\n🚫 Auto-applying blocks to ${blockCount} users...`);
         try {
             execSync(
-                "npx tsx scripts/apply-abuse-blocks.ts apply-blocks --env production --batch-size 50",
+                "npx tsx scripts/apply-abuse-blocks.ts apply-blocks --env staging --batch-size 50",
                 { encoding: "utf-8", stdio: "inherit" },
             );
         } catch (error) {

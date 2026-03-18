@@ -8,25 +8,29 @@ Points-based validation formula with quality filtering:
   - Threshold: >= 8 pts
 
 Quality filtering: empty repos (diskUsage == 0) are excluded from repo count
-and star totals. Fraud detection flags burst-created empty repos, suspicious
-star uniformity, and accounts dominated by empty repos.
+and star totals.
 """
 
+import base64
 import json
 import os
+import subprocess
+import threading
 import time
 import urllib.error
 import urllib.request
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 
 from tqdm import tqdm
 
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 BATCH_SIZE = 50
 MAX_BATCHES = None  # Set to a number to limit batches for testing
+_AUTH_MODE = None
+_APP_TOKEN = None
+_APP_TOKEN_EXPIRES_AT = 0
+_APP_TOKEN_LOCK = threading.Lock()
 
 # Quality filtering: repos and stars are counted from quality repos only (diskUsage > 0).
 # Scoring config: each metric has a multiplier and max points
@@ -52,6 +56,106 @@ SCORING = [
 THRESHOLD = 8.0
 
 
+def _base64url_encode(value: bytes) -> str:
+    return base64.urlsafe_b64encode(value).rstrip(b"=").decode()
+
+
+def _generate_app_jwt(app_id: str, key_path: str) -> str:
+    now = int(time.time())
+    header = _base64url_encode(json.dumps({"alg": "RS256", "typ": "JWT"}).encode())
+    payload = _base64url_encode(
+        json.dumps(
+            {
+                "iat": now - 60,
+                "exp": now + 10 * 60,
+                "iss": app_id,
+            }
+        ).encode()
+    )
+    signing_input = f"{header}.{payload}".encode()
+    signature = subprocess.run(
+        ["openssl", "dgst", "-binary", "-sha256", "-sign", key_path],
+        input=signing_input,
+        capture_output=True,
+        check=True,
+    ).stdout
+    return f"{header}.{payload}.{_base64url_encode(signature)}"
+
+
+def _fetch_app_token(app_id: str, key_path: str) -> tuple[str, int]:
+    jwt = _generate_app_jwt(app_id, key_path)
+
+    installations_request = urllib.request.Request(
+        "https://api.github.com/app/installations",
+        headers={
+            "Authorization": f"Bearer {jwt}",
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "pollinations-github-validator",
+        },
+    )
+    with urllib.request.urlopen(installations_request, timeout=30) as response:
+        installations = json.loads(response.read())
+
+    if not installations:
+        raise RuntimeError("No GitHub App installations found")
+
+    installation_id = installations[0]["id"]
+    token_request = urllib.request.Request(
+        f"https://api.github.com/app/installations/{installation_id}/access_tokens",
+        data=b"{}",
+        headers={
+            "Authorization": f"Bearer {jwt}",
+            "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json",
+            "User-Agent": "pollinations-github-validator",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(token_request, timeout=30) as response:
+        token_data = json.loads(response.read())
+
+    expires_at = int(
+        datetime.fromisoformat(token_data["expires_at"].replace("Z", "+00:00")).timestamp()
+    )
+    return token_data["token"], expires_at - 5 * 60
+
+
+def get_github_token() -> str:
+    global _AUTH_MODE, _APP_TOKEN, _APP_TOKEN_EXPIRES_AT
+
+    app_id = os.environ.get("GITHUB_APP_ID")
+    key_path = os.environ.get("GITHUB_APP_PRIVATE_KEY_PATH")
+    if app_id or key_path:
+        if not app_id or not key_path:
+            raise RuntimeError(
+                "Set both GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY_PATH for GitHub App auth"
+            )
+        if not os.path.exists(key_path):
+            raise RuntimeError(f"GitHub App private key not found: {key_path}")
+
+        with _APP_TOKEN_LOCK:
+            if _APP_TOKEN and time.time() < _APP_TOKEN_EXPIRES_AT:
+                return _APP_TOKEN
+
+            _APP_TOKEN, _APP_TOKEN_EXPIRES_AT = _fetch_app_token(app_id, key_path)
+            if _AUTH_MODE != "app":
+                print(
+                    f"🔑 Using GitHub App auth via {os.path.basename(key_path)}"
+                )
+                _AUTH_MODE = "app"
+            return _APP_TOKEN
+
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        raise RuntimeError(
+            "Set GITHUB_APP_ID + GITHUB_APP_PRIVATE_KEY_PATH or GITHUB_TOKEN"
+        )
+    if _AUTH_MODE != "pat":
+        print("🔑 Using GITHUB_TOKEN auth")
+        _AUTH_MODE = "pat"
+    return token
+
+
 def build_query(usernames: list[str]) -> str:
     """Build GraphQL query for multiple users."""
     from_date = (datetime.now(timezone.utc) - timedelta(days=90)).strftime(
@@ -71,46 +175,6 @@ def build_query(usernames: list[str]) -> str:
         contributionsCollection(from: "{from_date}") {{ totalCommitContributions }}
     }}''')
     return f"query {{ {''.join(fragments)} }}"
-
-
-def detect_fraud(all_nodes: list[dict], total_count: int) -> list[str]:
-    """Detect gaming signals from repo data. Returns list of fraud flag strings."""
-    flags = []
-    cutoff = datetime.now(timezone.utc) - timedelta(days=7)
-
-    # 1. Burst empty repos: >= 5 repos created in last 7 days with diskUsage == 0
-    burst_empty = 0
-    for node in all_nodes:
-        created = datetime.fromisoformat(node["createdAt"].replace("Z", "+00:00"))
-        if created >= cutoff and node.get("diskUsage", 0) == 0:
-            burst_empty += 1
-    if burst_empty >= 5:
-        flags.append("burst_empty_repos")
-
-    # 2. Star uniformity: if 5+ starred repos share the same star count at > 60%
-    #    Exclude star count of 1 (too common naturally for small legit projects)
-    starred_counts = [
-        node["stargazerCount"] for node in all_nodes if node["stargazerCount"] > 1
-    ]
-    if len(starred_counts) >= 5:
-        counter = Counter(starred_counts)
-        _, most_common_freq = counter.most_common(1)[0]
-        if most_common_freq >= 5 and most_common_freq / len(starred_counts) > 0.6:
-            flags.append("star_uniformity")
-
-    # 3. Empty repo dominance: >= 5 fetched repos, > 80% empty, totalCount > 20
-    quality_count = sum(1 for node in all_nodes if node.get("diskUsage", 0) > 0)
-    if len(all_nodes) >= 5:
-        empty_count = len(all_nodes) - quality_count
-        if empty_count / len(all_nodes) > 0.8 and total_count > 20:
-            flags.append("empty_repo_dominance")
-
-    # 4. Repo quality gap: many total repos but almost none with code
-    #    Catches gaming even when empty repos don't appear in top-by-stars
-    if total_count > 20 and quality_count < 3:
-        flags.append("repo_quality_gap")
-
-    return flags
 
 
 def score_user(data: dict | None, username: str) -> dict:
@@ -148,11 +212,6 @@ def score_user(data: dict | None, username: str) -> dict:
     total_score = sum(scores.values())
     approved = total_score >= THRESHOLD
 
-    # Fraud detection: reject if gaming signals found, regardless of score
-    fraud_flags = detect_fraud(all_nodes, data["repositories"]["totalCount"])
-    if fraud_flags:
-        approved = False
-
     details = {
         "age_days": age_days,
         "age_pts": scores["age_days"],
@@ -168,12 +227,7 @@ def score_user(data: dict | None, username: str) -> dict:
         "total": total_score,
     }
 
-    if fraud_flags:
-        details["fraud_flags"] = fraud_flags
-
     reason = f"{total_score:.1f} pts"
-    if fraud_flags:
-        reason += f" [FRAUD: {', '.join(fraud_flags)}]"
 
     return {
         "username": username,
@@ -192,7 +246,7 @@ def fetch_batch(
         GITHUB_GRAPHQL,
         data=json.dumps({"query": query}).encode(),
         headers={
-            "Authorization": f"Bearer {GITHUB_TOKEN}",
+            "Authorization": f"Bearer {get_github_token()}",
             "Content-Type": "application/json",
         },
     )
@@ -235,6 +289,8 @@ def validate_users(usernames: list[str]) -> list[dict]:
     """Validate users in concurrent batches."""
     if not usernames:
         return []
+
+    get_github_token()
 
     batches = [
         usernames[i : i + BATCH_SIZE] for i in range(0, len(usernames), BATCH_SIZE)

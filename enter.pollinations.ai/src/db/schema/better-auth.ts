@@ -34,8 +34,12 @@ export const user = sqliteTable("user", {
   packBalance: real("pack_balance"),
   cryptoBalance: real("crypto_balance"),
   lastTierGrant: integer("last_tier_grant"),
+  trustScore: integer("trust_score"),
+  score: real("score"),
+  scoreCheckedAt: integer("score_checked_at"),
 }, (table) => [
   index("idx_user_email").on(table.email),
+  index("idx_user_github_id").on(table.githubId),
 ]);
 
 export const session = sqliteTable("session", {

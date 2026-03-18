@@ -7,8 +7,8 @@ import {
     atomicDeductApiKeyBalance,
     atomicDeductPaidBalance,
     atomicDeductUserBalance,
-    calculateDeductionSplit,
     getUserBalances,
+    identifyDeductionSource,
 } from "./balance-deduction.ts";
 
 const log = getLogger(["track", "helpers"]);
@@ -99,12 +99,15 @@ async function deductUserBalance(
         }
 
         // Regular deduction flow
+        // Note: TOCTOU — balances may shift between this read and the UPDATE in
+        // atomicDeductUserBalance due to concurrent requests.  The SQL CASE always
+        // picks the correct bucket; only the logged split below may mismatch.
         const balancesBefore = await getUserBalances(db, userId);
-        const deductionSplit = calculateDeductionSplit(
+        const deductionSource = identifyDeductionSource(
             balancesBefore.tierBalance,
             balancesBefore.cryptoBalance,
-            balancesBefore.packBalance,
             amount,
+            balancesBefore.packBalance,
         );
 
         await atomicDeductUserBalance(db, userId, amount);
@@ -114,7 +117,7 @@ async function deductUserBalance(
             {
                 price: amount,
                 userId,
-                ...deductionSplit,
+                ...deductionSource,
             },
         );
     } catch (error) {

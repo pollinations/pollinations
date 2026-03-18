@@ -1,0 +1,36 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/prompt/make%20it%20blue?model=p-image-edit&seed=42&image=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2F4%2F47%2FPNG_transparency_demonstration_1.png%2F280px-PNG_transparency_demonstration_1.png",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 500,
+    "statusText": "Internal Server Error",
+    "headers": {
+      "access-control-allow-headers": "Content-Type",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "Content-Length",
+      "connection": "keep-alive",
+      "content-type": "application/json",
+      "date": "Mon, 16 Mar 2026 21:17:50 GMT",
+      "keep-alive": "timeout=5",
+      "transfer-encoding": "chunked",
+      "x-error-type": "Internal Server Error"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "{\"error\":\"Internal Server Error\",\"message\":\"Pruna generation failed: 403 Client Error: Forbidden for url: https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png\",\"timingInfo\":[{\"step\":\"Request received.\",\"timestamp\":0},{\"step\":\"Start generating job\",\"timestamp\":0},{\"step\":\"Start processing\",\"timestamp\":0},{\"step\":\"Start prompt normalization and translation\",\"timestamp\":0},{\"step\":\"End prompt normalization and translation\",\"timestamp\":0}],\"requestId\":\"ljg7e\",\"requestParameters\":{\"prompt\":\"make it blue\",\"seed\":42,\"model\":\"p-image-edit\",\"enhance\":false,\"negative_prompt\":\"undefined\",\"nofeed\":false,\"safe\":false,\"quality\":\"medium\",\"image\":[\"https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png\"],\"transparent\":false,\"audio\":false,\"width\":1024,\"height\":1024},\"queueInfo\":null}",
+          "delay": 1
+        }
+      ]
+    }
+  }
+}

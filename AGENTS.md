@@ -2,17 +2,30 @@
 
 ## App Submission Handling
 
-App submissions are now **fully automated** via the `app-review-submission.yml` workflow.
+App submissions use a **two-phase review** via `app-review-submission.yml`: AI review + human approval.
 
 **Source of truth:** `apps/APPS.md` - A single markdown table with all apps.
 
 **How it works:**
 
-1. User opens issue with `tier:review` label
-2. Workflow parses issue with AI, checks Enter registration
-3. If valid: fetches GitHub stars, AI generates emoji + description
-4. Prepends new row to `apps/APPS.md`, updates README with last 10 apps
-5. Creates PR automatically
+1. User opens issue with `TIER-APP` label
+2. Workflow validates (Enter registration, duplicates), AI generates emoji + description
+3. Bot posts preview comment with `APP_REVIEW_DATA` JSON block, labels `TIER-APP-REVIEW`
+4. Maintainer reviews preview, adds `TIER-APP-APPROVED` label
+5. Workflow creates branch, prepends row to `apps/APPS.md`, creates PR with auto-merge
+6. After checks pass, PR merges automatically, issue closed with `TIER-APP-COMPLETE`
+
+**Label state machine:**
+
+```
+TIER-APP (new issue)
+  → TIER-APP-REJECTED (validation failed: duplicate/spore)
+  → TIER-APP-INCOMPLETE (not registered, user needs to fix)
+  → TIER-APP-REVIEW (AI review passed, preview posted, awaiting human)
+    → TIER-APP-APPROVED (maintainer approves → PR created + auto-merged)
+      → TIER-APP-COMPLETE (PR merged, tier upgraded, issue closed)
+    → TIER-APP-REJECTED (maintainer closes issue)
+```
 
 **Manual edits (if needed):**
 
@@ -22,24 +35,48 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 **Table format in APPS.md:**
 
 ```markdown
-| Emoji | Name     | Web_URL | Description                   | Language | Category | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted_Date | Issue_URL | Approved_Date |
-| ----- | -------- | ------- | ----------------------------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | -------------- | --------- | ------------- |
-| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01     | #1234     | 2025-01-02    |
+| Emoji | Name     | Web_URL | Description                   | Language | Category | Platform | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted_Date | Issue_URL | Approved_Date |
+| ----- | -------- | ------- | ----------------------------- | -------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | -------------- | --------- | ------------- |
+| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | web      | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01     | #1234     | 2025-01-02    |
 ```
 
 - **Submitted_Date**: Issue creation date (when user submitted)
 - **Issue_URL**: Link to original GitHub issue
 - **Approved_Date**: PR merge date (when app was approved)
 
+**Platform values** (auto-detected from URL + description):
+
+| Value | When to use |
+|-------|-------------|
+| `web` | Browser-based app (default when URL exists) |
+| `android` | Google Play Store app |
+| `ios` | App Store or Apple Shortcuts (routinehub.co) |
+| `windows` | Windows desktop / .exe |
+| `macos` | macOS native app |
+| `desktop` | Cross-platform desktop (Python/Qt, Electron, etc.) |
+| `cli` | Command-line tool |
+| `discord` | Discord bot or app |
+| `telegram` | Telegram bot |
+| `whatsapp` | WhatsApp bot |
+| `library` | npm/PyPI/Go package, SDK, API wrapper |
+| `browser-ext` | Browser extension (Firefox, Chrome) |
+| `roblox` | Roblox game |
+| `wordpress` | WordPress plugin |
+| `api` | Backend/server with no public UI (default when no URL) |
+
+Multiple platforms: comma-separated, e.g. `telegram,whatsapp`
+
 **Categories:**
 
-- Vibes ✨ (`Vibes`): No-code / describe-to-code playgrounds and builders
-- Creative 🎨 (`Creative`): Turn prompts into images, video, music, design, slides
-- Games 🎲 (`Games`): AI-powered play, interactive fiction, puzzle & agent worlds
-- Dev_Tools 🛠️ (`Dev_Tools`): SDKs, integration libs, extensions, dashboards, MCP servers
-- Chat 💬 (`Chat`): Standalone chat UIs / multi-model playgrounds
-- Social_Bots 🤖 (`Social_Bots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
-- Learn 📚 (`Learn`): Tutorials, guides, style books & educational demos
+- 🖼️ Image (`image`): Image gen, editing, design, avatars, stickers
+- 🎬 Video & Audio (`video_audio`): Video gen, animation, music, TTS
+- ✍️ Write (`writing`): Content creation, storytelling, copy, slides
+- 💬 Chat (`chat`): Assistants, companions, AI studio, multi-modal chat
+- 🎮 Play (`games`): AI games, interactive fiction, Roblox worlds
+- 📚 Learn (`learn`): Education, tutoring, language learning
+- 🤖 Bots (`bots`): Discord, Telegram, WhatsApp bots
+- 🛠️ Build (`build`): Dev tools, SDKs, integrations, vibe coding
+- 💼 Business (`business`): Productivity, finance, marketing, health, food
 
 ## Non-English Apps
 
@@ -61,14 +98,18 @@ Key directories and their purposes:
 
 ```
 pollinations/
-├── image.pollinations.ai/     # Image generation backend service
-├── text.pollinations.ai/      # Text generation backend service
-├── pollinations.ai/           # Main React frontend application
-├── packages/                  # Publishable npm packages
-│   ├── sdk/                   # @pollinations/sdk - Client library with React hooks
-│   └── mcp/                   # @pollinations/model-context-protocol - MCP server
-├── enter.pollinations.ai/     # Centralized auth gateway (ACTIVE)
-└── operations/                # Documentation and operations
+├── enter.pollinations.ai/     # Auth gateway + billing (Cloudflare Worker)
+├── gen.pollinations.ai/       # Edge router → enter gateway
+├── image.pollinations.ai/     # Image generation backend (EC2 + Vast.ai)
+├── text.pollinations.ai/      # Text generation backend (EC2)
+├── pollinations.ai/           # Main React frontend
+├── packages/
+│   ├── sdk/                   # @pollinations_ai/sdk - Client library with React hooks
+│   └── mcp/                   # @pollinations_ai/model-context-protocol - MCP server
+├── shared/                    # Shared utilities (auth, registry, IP queue)
+│   └── registry/              # Model registries (image.ts, text.ts, audio.ts, video.ts)
+├── apps/                      # Community apps + APPS.md showcase
+└── social/                    # Social media automation (Discord, Reddit, GitHub)
 ```
 
 ## API Gateway
@@ -81,6 +122,13 @@ All API requests go through `gen.pollinations.ai`, which routes to the `enter.po
 - **Billing**: Pollen credits ($1 ≈ 1 Pollen)
 - **Get API keys**: [enter.pollinations.ai](https://enter.pollinations.ai)
 - **Full API docs**: [APIDOCS.md](./APIDOCS.md)
+
+**Services behind enter gateway:**
+- **Text**: OpenAI-compatible API via Portkey (multi-provider: OpenAI, Google, Anthropic, DeepSeek, etc.)
+- **Image**: Flux, Turbo, and other models on EC2/Vast.ai/io.net GPU instances
+- **Video**: Wan (via Airforce/Alibaba), Veo, LTX on GPU instances
+- **Audio**: ElevenLabs TTS/STT, text-to-music
+- **Tier system**: microbe → spore → seed → flower → nectar → router (see `enter.pollinations.ai/src/tier-config.ts`)
 
 ### Local Development
 
@@ -169,6 +217,7 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 - **No "just in case" helpers** - Don't create test utilities or wrappers preemptively
 - **Keep the codebase minimal** - Less code = fewer bugs = easier maintenance
 - **No fallbacks for backward compatibility** - Clean breaks are better than complexity bloat. When changing tokens, headers, or APIs, update all consumers at once rather than supporting both old and new patterns
+- **When user says "keep it simple" — they mean it** - Don't add layers, wrappers, or abstractions. One function, one price, one config. The simplest thing that works.
 
 ## Code Style
 
@@ -184,10 +233,26 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 - **Verify assumptions on the web** - APIs, libraries, and patterns change frequently
 - **Read related files into context** - Get the full picture before making changes
 - **Check existing implementations** - Don't reinvent what already exists in the codebase
+- **Check which branch you're on** - Run `git branch --show-current` before starting work
+- **Check related PRs and issues** - Use GitHub MCP tools to find context before implementing
+- **Look for existing utility functions** in `shared/` before writing new ones (auth, queue, registry)
+
+## Tinybird Deployment Safety
+
+**CRITICAL — These rules apply whenever deploying to Tinybird:**
+
+- **Always validate first**: `tb --cloud deploy --check --wait` before any deploy
+- **Never use `--allow-destructive-operations`** without explicit user permission
+- **Never use `tb push`** — it's deprecated; use `tb --cloud deploy --wait`
+- **Always use `--cloud`** — without it, CLI tries Tinybird Local (Docker)
+- **Run from `enter.pollinations.ai/observability`** — not from repo root
+- **Pipes are shared** — multiple apps/dashboards may consume the same pipe. Verify all consumers before modifying any pipe
+- **Timeout mitigation**: Use `uniq()` over `uniqExact()`, avoid CTE+JOIN, prefer single-pass queries. For large time ranges, use `start_date` parameter pattern for week-by-week querying
+- Full deploy procedure: see `.claude/skills/tinybird-deploy/SKILL.md`
 
 ## Common Mistakes to Avoid
 
-**IMPORTANT - Claude often makes these mistakes:**
+**IMPORTANT - Agents often make these mistakes (learned from session history):**
 
 - **Don't use `cd` in bash commands** - Use the `cwd` parameter instead
 - **Don't run `pytest`** - Use `npm run test` or `npx vitest run`
@@ -199,6 +264,9 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 - **Don't modify test files to make tests pass** - Fix the actual code instead
 - **Run `npm run decrypt-vars`** before running tests in enter.pollinations.ai
 - **Check `.testingtokens`** file for test API keys: `enter.pollinations.ai/.testingtokens`
+- **Confirm which branch you're on** before making changes — branch mix-ups are a recurring problem
+- **Don't reimplement existing logic** — search for existing functions before writing new ones (e.g. SSE parsing, retry wrappers, auth extraction)
+- **Request PR reviews by mentioning `polly`** — include lowercase `polly` in a PR comment (e.g. "polly please review") to trigger the Polly bot reviewer
 
 ## Development Guidelines
 
@@ -269,9 +337,10 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 
 1. Adding New Models:
 
-   - Update models list in respective service
-   - Add model configuration
-   - Update API documentation
+   - **Text models**: Add config in `text.pollinations.ai/configs/modelConfigs.ts`, add entry in `availableModels.ts`
+   - **Image models**: Add handler in `image.pollinations.ai/src/`, register in `shared/registry/image.ts`
+   - Provider configs (Portkey, Bedrock, OpenAI-compatible) go in `text.pollinations.ai/configs/providerConfigs.js`
+   - Update API documentation and model registry
 
 2. Frontend Updates:
 
@@ -309,10 +378,10 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 - One task per subagent for focused execution
 
 ### 3. Self-Improvement Loop
-- After ANY correction from the user: update `tasks/lessons.md` with the pattern
+- After ANY correction from the user: propose an update to this `AGENTS.md` with the learned pattern
 - Write rules for yourself that prevent the same mistake
 - Ruthlessly iterate on these lessons until mistake rate drops
-- Review lessons at session start for relevant project
+- Review AGENTS.md at session start for relevant project
 
 ### 4. Verification Before Done
 - Never mark a task complete without proving it works
@@ -334,12 +403,21 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 
 ## Task Management
 
-1. **Plan First**: Write plan to `tasks/todo.md` with checkable items
+1. **Plan First**: Outline steps before implementing (use todo tools or plan mode)
 2. **Verify Plan**: Check in before starting implementation
 3. **Track Progress**: Mark items complete as you go
 4. **Explain Changes**: High-level summary at each step
-5. **Document Results**: Add review section to `tasks/todo.md`
-6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
+5. **Capture Lessons**: When corrected, update this AGENTS.md with the pattern to prevent recurrence
+
+## Compact Instructions
+
+When compacting conversation context, preserve:
+- Full list of modified files with paths and line numbers
+- All code snippets, diffs, and implementation details
+- Test output, error messages, and command results
+- Complete task plan, progress, and pending items
+- User preferences and corrections from this session
+- Key architectural decisions and their rationale
 
 ## Core Principles
 
@@ -351,8 +429,10 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 
 - If the user asks to send to git or something similar do all these steps:
 - Git status, diff, create branch, commit all, push and write a PR description
+- **Verify branch before committing**: Run `git branch --show-current` and confirm with user if unsure — branch mix-ups have caused wasted work multiple times
 - **Avoid force pushes**: Prefer follow-up commits over `git push --force` or `--force-with-lease`. Force pushes rewrite history and can cause issues for others working on the same branch.
 - **Run biome check before committing**: `npx biome check --write <file>` to fix formatting/linting issues
+- **If PR was already merged**: Open a new branch/PR for follow-up changes, don't try to push to merged branches
 
 ## Communication Style
 

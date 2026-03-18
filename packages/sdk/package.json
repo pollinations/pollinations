@@ -1,6 +1,6 @@
 {
-  "name": "@pollinations/sdk",
-  "version": "4.0.1",
+  "name": "@pollinations_ai/sdk",
+  "version": "4.1.1",
   "description": "Official SDK for pollinations.ai - Generate images, videos, audio, and text with ease",
   "type": "module",
   "main": "./dist/index.js",
@@ -63,15 +63,22 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pollinations/pollinations",
+    "url": "https://github.com/pollinations/pollinations.git",
     "directory": "packages/sdk"
   },
   "homepage": "https://pollinations.ai",
   "bugs": {
     "url": "https://github.com/pollinations/pollinations/issues"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "funding": {
+  "type": "github",
+  "url": "https://github.com/sponsors/pollinations"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

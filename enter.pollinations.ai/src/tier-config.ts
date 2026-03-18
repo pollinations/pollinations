@@ -1,10 +1,10 @@
 export const TIERS = {
-    microbe: { pollen: 0.1, emoji: "🦠" },
-    spore: { pollen: 1, emoji: "🍄" },
-    seed: { pollen: 3, emoji: "🌱" },
-    flower: { pollen: 10, emoji: "🌸" },
-    nectar: { pollen: 20, emoji: "🍯" },
-    router: { pollen: 500, emoji: "🐝" },
+    microbe: { pollen: 0, emoji: "🦠", color: "gray", cadence: "none" },
+    spore: { pollen: 0.01, emoji: "🍄", color: "blue", cadence: "hourly" },
+    seed: { pollen: 0.15, emoji: "🌱", color: "green", cadence: "hourly" },
+    flower: { pollen: 10, emoji: "🌸", color: "pink", cadence: "daily" },
+    nectar: { pollen: 20, emoji: "🍯", color: "amber", cadence: "daily" },
+    router: { pollen: 500, emoji: "🐝", color: "red", cadence: "daily" },
 } as const;
 
 export type TierName = keyof typeof TIERS;
@@ -32,6 +32,25 @@ export function getTierPollen(tier: string): number {
 
 export function getTierEmoji(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].emoji : TIERS[DEFAULT_TIER].emoji;
+}
+
+// Tier colors derived from TIERS.color
+export const TIER_COLORS = Object.fromEntries(
+    Object.entries(TIERS).map(([tier, c]) => [tier, c.color]),
+) as Record<TierName, string>;
+
+export function getTierColor(tier: TierName): string;
+export function getTierColor(tier: string): string;
+export function getTierColor(tier: string): string {
+    return isValidTier(tier) ? TIERS[tier].color : TIERS[DEFAULT_TIER].color;
+}
+
+export function getTierCadence(tier: TierName): "daily" | "hourly" | "none";
+export function getTierCadence(tier: string): "daily" | "hourly" | "none";
+export function getTierCadence(tier: string): "daily" | "hourly" | "none" {
+    return isValidTier(tier)
+        ? TIERS[tier].cadence
+        : TIERS[DEFAULT_TIER].cadence;
 }
 
 // ── Scoring ─────────────────────────────────────────────────────────────
@@ -192,14 +211,6 @@ export function bestTierForMetrics(metrics: Record<string, number>): TierName {
 }
 
 // ── Frontend display helpers ────────────────────────────────────────────
-
-export const TIER_COLORS: Record<string, string> = {
-    microbe: "bg-gray-100/60",
-    spore: "bg-teal-100/60",
-    seed: "bg-amber-100/60",
-    flower: "bg-pink-100/60",
-    nectar: "bg-purple-100/60",
-};
 
 /** Display tiers - excludes router (internal only) */
 export const DISPLAY_TIERS = ["spore", "seed", "flower", "nectar"] as const;

@@ -1,0 +1,36 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/prompt/a%20cat%20playing%20piano?model=grok-video",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 500,
+    "statusText": "Internal Server Error",
+    "headers": {
+      "access-control-allow-headers": "Content-Type",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "Content-Length",
+      "connection": "keep-alive",
+      "content-type": "application/json",
+      "date": "Tue, 03 Mar 2026 09:38:09 GMT",
+      "keep-alive": "timeout=5",
+      "transfer-encoding": "chunked",
+      "x-error-type": "Internal Server Error"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "{\"error\":\"Internal Server Error\",\"message\":\"api.airforce grok-imagine-video error: Provider error (400 Bad Request)\",\"timingInfo\":[{\"step\":\"Request received.\",\"timestamp\":0}],\"requestId\":\"8nje2e\",\"requestParameters\":{\"prompt\":\"a cat playing piano\",\"seed\":42,\"model\":\"grok-video\",\"enhance\":false,\"negative_prompt\":\"undefined\",\"nofeed\":false,\"safe\":false,\"quality\":\"medium\",\"image\":[],\"transparent\":false,\"audio\":false,\"width\":1024,\"height\":1024},\"queueInfo\":null}",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

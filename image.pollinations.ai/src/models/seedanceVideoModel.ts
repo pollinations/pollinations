@@ -1,10 +1,11 @@
 import debug from "debug";
-import sleep from "await-sleep";
+import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
+import { sleep } from "../util.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 // Logger
 const logOps = debug("pollinations:seedance:ops");
@@ -107,11 +108,21 @@ async function generateSeedanceVideo(
 
     // Video parameters
     const durationSeconds = safeParams.duration || 2;
-    const resolution = "720p";
+
+    // Calculate resolution and aspect ratio from width/height or aspectRatio
+    const { aspectRatio, resolution: resolutionUpper } =
+        calculateVideoResolution({
+            width: safeParams.width,
+            height: safeParams.height,
+            aspectRatio: safeParams.aspectRatio,
+            defaultResolution: "720P",
+        });
+    const resolution = resolutionUpper.toLowerCase() as
+        | "480p"
+        | "720p"
+        | "1080p";
     // Map aspectRatio to Seedance format: "16:9" -> "16_9", "9:16" -> "9_16"
-    const aspectRatio = safeParams.aspectRatio 
-        ? safeParams.aspectRatio.replace(":", "_") 
-        : "16_9"; // Default to 16:9
+    const aspectRatioFormatted = aspectRatio.replace(":", "_");
 
     // Select model based on whether we have an input image
     const hasImage = safeParams.image && safeParams.image.length > 0;
@@ -120,14 +131,14 @@ async function generateSeedanceVideo(
     logOps("Video params:", {
         durationSeconds,
         resolution,
-        aspectRatio,
+        aspectRatio: aspectRatioFormatted,
         model: selectedModel,
         hasImage,
     });
 
     // Build text command with parameters (BytePlus format)
     // Include aspectratio parameter for proper video dimensions
-    let textCommand = `${prompt} --resolution ${resolution} --duration ${durationSeconds} --aspectratio ${aspectRatio} --watermark false`;
+    let textCommand = `${prompt} --resolution ${resolution} --duration ${durationSeconds} --aspectratio ${aspectRatioFormatted} --watermark false`;
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         textCommand += ` --seed ${safeParams.seed}`;
     }

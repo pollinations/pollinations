@@ -18,6 +18,28 @@ export type UserBalance = {
     cryptoBalance: number;
 };
 
+/**
+ * Get the total available balance across relevant buckets.
+ * For paid-only models: crypto + pack only.
+ * For regular models: tier + crypto + pack (only positive buckets).
+ */
+export function getAvailableBalance(
+    balances: UserBalance,
+    isPaidOnly = false,
+): number {
+    if (isPaidOnly) {
+        return (
+            Math.max(0, balances.cryptoBalance) +
+            Math.max(0, balances.packBalance)
+        );
+    }
+    return (
+        Math.max(0, balances.tierBalance) +
+        Math.max(0, balances.cryptoBalance) +
+        Math.max(0, balances.packBalance)
+    );
+}
+
 export type BalanceVariables = {
     balance: {
         requirePositiveBalance: (
@@ -40,7 +62,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const db = drizzle(c.env.DB);
 
     // Get balance from D1 only
-    // Pack balance is updated via webhooks, tier balance via daily cron
+    // Pack balance is updated via webhooks, tier balance via cron (hourly for spore/seed, daily for others)
     const getBalance = async (userId: string): Promise<UserBalance> => {
         const users = await db
             .select({
@@ -102,23 +124,23 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
-        const totalBalance =
-            balances.tierBalance +
-            balances.packBalance +
-            balances.cryptoBalance;
+        // Check if any individual bucket is positive (don't sum — negative buckets shouldn't cancel out positive ones)
+        const hasPositiveBalance =
+            balances.tierBalance > 0 ||
+            balances.cryptoBalance > 0 ||
+            balances.packBalance > 0;
 
         log.debug(
-            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}, crypto={cryptoBalance}, total={totalBalance}",
+            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}, crypto={cryptoBalance}",
             {
                 userId,
                 tierBalance: balances.tierBalance,
                 packBalance: balances.packBalance,
                 cryptoBalance: balances.cryptoBalance,
-                totalBalance,
             },
         );
 
-        if (totalBalance > 0) {
+        if (hasPositiveBalance) {
             const { source, slug } = determineBalanceSource(balances);
             c.var.balance.balanceCheckResult = {
                 selectedMeterId: `local:${source}`,
@@ -141,20 +163,20 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const requirePaidBalance = async (userId: string, message?: string) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
 
-        // For paid-only models, only consider crypto + pack balance
-        const paidBalance = balances.cryptoBalance + balances.packBalance;
+        // Check if any paid bucket is positive (don't sum — negative buckets shouldn't cancel out positive ones)
+        const hasPositivePaidBalance =
+            balances.cryptoBalance > 0 || balances.packBalance > 0;
 
         log.debug(
-            "Paid balance check for user {userId}: crypto={cryptoBalance}, pack={packBalance}, paid={paidBalance}",
+            "Paid balance check for user {userId}: crypto={cryptoBalance}, pack={packBalance}",
             {
                 userId,
                 cryptoBalance: balances.cryptoBalance,
                 packBalance: balances.packBalance,
-                paidBalance,
             },
         );
 
-        if (paidBalance > 0) {
+        if (hasPositivePaidBalance) {
             const { source, slug } = determineBalanceSource(balances, true);
             c.var.balance.balanceCheckResult = {
                 selectedMeterId: `local:${source}`,

@@ -25,83 +25,59 @@ interface SeedreamResponse {
 }
 
 // Seedream model versions
-const SEEDREAM_4_0 = "seedream-4-0-250828"; // 4.0 - better quality
-const SEEDREAM_4_5 = "seedream-4-5-251128"; // 4.5 - 4K, multi-image
+const SEEDREAM_4_0 = "seedream-4-0-250828"; // 4.0 - legacy (hidden)
+const SEEDREAM_4_5 = "seedream-4-5-251128"; // 4.5 - legacy (hidden)
+const SEEDREAM_5_0 = "seedream-5-0-260128"; // 5.0 Lite - web search, reasoning
 
-/**
- * Calls the ByteDance ARK Seedream 4.0 API for image generation (default, better quality)
- * Supports both text-to-image and image-to-image generation
- * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - The parameters for image generation (supports image array for image-to-image)
- * @param {ProgressManager} progress - Progress manager for updates
- * @param {string} requestId - Request ID for progress tracking
- * @returns {Promise<ImageGenerationResult>}
- */
-export const callSeedreamAPI = async (
-    prompt: string,
-    safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<ImageGenerationResult> => {
-    try {
-        logOps("Calling Seedream 4.0 API with prompt:", prompt);
+interface SeedreamModelConfig {
+    version: string;
+    maxImages: number;
+    /** Model key for getScaledDimensions, or null to use raw dimensions */
+    scaleKey: string | null;
+    displayName: string;
+    modelName: string;
+}
 
-        const apiKey = process.env.BYTEDANCE_API_KEY;
-        if (!apiKey) {
-            throw new Error(
-                "BYTEDANCE_API_KEY environment variable is required",
-            );
-        }
-
-        // Update progress
-        progress.updateBar(
-            requestId,
-            35,
-            "Processing",
-            "Generating with Seedream 4.0...",
-        );
-
-        const sizeParam = `${safeParams.width}x${safeParams.height}`;
-        logOps("Using pixel dimensions:", sizeParam);
-
-        return await generateWithSeedream(
-            SEEDREAM_4_0,
-            10, // max images for 4.0
-            prompt,
-            safeParams,
-            sizeParam,
-            progress,
-            requestId,
-            apiKey,
-            "seedream",
-        );
-    } catch (error) {
-        logError("Error calling Seedream 4.0 API:", error);
-        // Preserve HttpError status codes (e.g., 400 for content policy violations)
-        if (error instanceof HttpError) {
-            throw error;
-        }
-        throw new Error(`Seedream 4.0 API generation failed: ${error.message}`);
-    }
+const SEEDREAM_CONFIGS: Record<string, SeedreamModelConfig> = {
+    seedream5: {
+        version: SEEDREAM_5_0,
+        maxImages: 14,
+        scaleKey: "seedream5",
+        displayName: "Seedream 5.0",
+        modelName: "seedream5",
+    },
+    seedream: {
+        version: SEEDREAM_4_0,
+        maxImages: 10,
+        scaleKey: null,
+        displayName: "Seedream 4.0",
+        modelName: "seedream",
+    },
+    "seedream-pro": {
+        version: SEEDREAM_4_5,
+        maxImages: 14,
+        scaleKey: "seedream-pro",
+        displayName: "Seedream 4.5 Pro",
+        modelName: "seedream-pro",
+    },
 };
 
 /**
- * Calls the ByteDance ARK Seedream 4.5 Pro API for image generation (4K, multi-image)
- * Supports both text-to-image and image-to-image generation
- * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - The parameters for image generation (supports image array for image-to-image)
- * @param {ProgressManager} progress - Progress manager for updates
- * @param {string} requestId - Request ID for progress tracking
- * @returns {Promise<ImageGenerationResult>}
+ * Shared implementation for all Seedream model variants.
+ * Validates the API key, computes dimensions, calls the generation API,
+ * and handles errors with consistent logging and HttpError preservation.
  */
-export const callSeedreamProAPI = async (
+async function callSeedreamModelAPI(
+    configKey: string,
     prompt: string,
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
-): Promise<ImageGenerationResult> => {
+): Promise<ImageGenerationResult> {
+    const config = SEEDREAM_CONFIGS[configKey];
+
     try {
-        logOps("Calling Seedream 4.5 Pro API with prompt:", prompt);
+        logOps(`Calling ${config.displayName} API with prompt:`, prompt);
 
         const apiKey = process.env.BYTEDANCE_API_KEY;
         if (!apiKey) {
@@ -110,53 +86,95 @@ export const callSeedreamProAPI = async (
             );
         }
 
-        // Update progress
         progress.updateBar(
             requestId,
             35,
             "Processing",
-            "Generating with Seedream 4.5 Pro...",
+            `Generating with ${config.displayName}...`,
         );
 
-        // Scale up dimensions if needed to meet Seedream 4.5's minimum pixel requirement
-        const scaled = getScaledDimensions(
-            "seedream-pro",
-            safeParams.width,
-            safeParams.height,
-        );
-        if (
-            scaled.width !== safeParams.width ||
-            scaled.height !== safeParams.height
-        ) {
-            logOps(
-                `Scaling up from ${safeParams.width}x${safeParams.height} to ${scaled.width}x${scaled.height} to meet minimum pixel requirement`,
+        let sizeParam: string;
+        if (config.scaleKey) {
+            const scaled = getScaledDimensions(
+                config.scaleKey,
+                safeParams.width,
+                safeParams.height,
             );
+            sizeParam = `${scaled.width}x${scaled.height}`;
+            logOps("Using pixel dimensions:", sizeParam);
+        } else {
+            sizeParam = `${safeParams.width}x${safeParams.height}`;
         }
-        const sizeParam = `${scaled.width}x${scaled.height}`;
-        logOps("Using pixel dimensions:", sizeParam);
 
         return await generateWithSeedream(
-            SEEDREAM_4_5,
-            14, // max images for 4.5
+            config.version,
+            config.maxImages,
             prompt,
             safeParams,
             sizeParam,
             progress,
             requestId,
             apiKey,
-            "seedream-pro",
+            config.modelName,
         );
     } catch (error) {
-        logError("Error calling Seedream 4.5 Pro API:", error);
-        // Preserve HttpError status codes (e.g., 400 for content policy violations)
+        logError(`Error calling ${config.displayName} API:`, error);
         if (error instanceof HttpError) {
             throw error;
         }
         throw new Error(
-            `Seedream 4.5 Pro API generation failed: ${error.message}`,
+            `${config.displayName} API generation failed: ${error.message}`,
         );
     }
-};
+}
+
+/** Seedream 5.0 Lite - supports text-to-image, image-to-image, web search, and deep reasoning */
+export function callSeedream5API(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<ImageGenerationResult> {
+    return callSeedreamModelAPI(
+        "seedream5",
+        prompt,
+        safeParams,
+        progress,
+        requestId,
+    );
+}
+
+/** Seedream 4.0 - hidden legacy, calls the real 4.0 endpoint */
+export function callSeedreamAPI(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<ImageGenerationResult> {
+    return callSeedreamModelAPI(
+        "seedream",
+        prompt,
+        safeParams,
+        progress,
+        requestId,
+    );
+}
+
+/** Seedream 4.5 Pro - hidden legacy, calls the real 4.5 endpoint */
+export function callSeedreamProAPI(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<ImageGenerationResult> {
+    return callSeedreamModelAPI(
+        "seedream-pro",
+        prompt,
+        safeParams,
+        progress,
+        requestId,
+    );
+}
 
 /**
  * Internal function to generate image with specific Seedream model version
@@ -170,7 +188,7 @@ async function generateWithSeedream(
     progress: ProgressManager,
     requestId: string,
     apiKey: string,
-    actualModelName: string = "seedream",
+    actualModelName: string,
 ): Promise<ImageGenerationResult> {
     // Prepare request body
     const requestBody: any = {

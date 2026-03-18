@@ -3,16 +3,13 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { user as userTable } from "../db/schema/better-auth.ts";
 
 /**
- * Atomically deducts pollen from user balances in the correct order:
- * tier_balance → crypto_balance → pack_balance
+ * Atomically deducts pollen from user balance.
  *
- * This function performs the deduction in a single atomic SQL statement to avoid
- * race conditions that could occur with concurrent requests.
+ * If the user has no positive paid balance (crypto+pack ≤ 0), always deducts from tier.
+ * Tier resets hourly/daily so going negative is fine — prevents spillover into paid balances.
  *
- * @param db - Drizzle database instance
- * @param userId - User ID to deduct from
- * @param amount - Amount of pollen to deduct
- * @returns Promise that resolves when deduction is complete
+ * If the user has positive paid balance, uses existing priority: tier → crypto → pack.
+ * This lets users who purchased packs use them after tier runs out.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
@@ -21,32 +18,32 @@ export async function atomicDeductUserBalance(
 ): Promise<void> {
     if (amount <= 0) return;
 
-    // This complex SQL statement atomically deducts from balances in order:
-    // 1. First, deduct from tier_balance (up to available amount)
-    // 2. Then, deduct remainder from crypto_balance (up to available amount)
-    // 3. Finally, deduct any remaining from pack_balance (can go negative)
-    //
-    // The MAX(0, ...) ensures tier and crypto never go below 0
-    // Pack balance is allowed to go negative as it represents paid credits
-    // Note: SQLite uses MAX/MIN instead of GREATEST/LEAST
     await db.run(sql`
 		UPDATE ${userTable}
 		SET
-			tier_balance = MAX(0, tier_balance - MIN(tier_balance, ${amount})),
-			crypto_balance = MAX(0,
-				crypto_balance - MIN(crypto_balance,
-					MAX(0, ${amount} - COALESCE(tier_balance, 0))
-				)
-			),
-			pack_balance = pack_balance - MAX(0,
-				${amount} - COALESCE(tier_balance, 0) - COALESCE(crypto_balance, 0)
-			)
+			tier_balance = CASE
+				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0)) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
+				WHEN COALESCE(tier_balance, 0) > 0 THEN COALESCE(tier_balance, 0) - ${amount}
+				ELSE tier_balance
+			END,
+			crypto_balance = CASE
+				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0)) <= 0 THEN crypto_balance
+				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
+				ELSE crypto_balance
+			END,
+			pack_balance = CASE
+				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0)) <= 0 THEN pack_balance
+				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
+				ELSE pack_balance
+			END
 		WHERE id = ${userId}
 	`);
 }
 
 /**
  * Atomically deducts pollen from API key balance.
+ * The `AND pollen_balance IS NOT NULL` guard means keys with NULL balance
+ * (= unlimited budget) are never touched — no COALESCE needed here.
  *
  * @param db - Drizzle database instance
  * @param apiKeyTable - API key table
@@ -106,39 +103,37 @@ export async function getUserBalances(
     };
 }
 
-export type DeductionSplit = {
+export type DeductionSource = {
     fromTier: number;
     fromCrypto: number;
     fromPack: number;
 };
 
 /**
- * Calculates how a deduction would be split across balance types.
- * This is useful for logging or preview purposes.
- *
- * @param tierBalance - Current tier balance
- * @param cryptoBalance - Current crypto balance
- * @param packBalance - Current pack balance
- * @param amount - Amount to deduct
- * @returns Object showing how much would be deducted from each balance type
+ * Identifies which single balance bucket a deduction comes from.
+ * Matches the logic in atomicDeductUserBalance:
+ * - If no positive paid balance → always tier
+ * - Otherwise: tier → crypto → pack
  */
-export function calculateDeductionSplit(
+export function identifyDeductionSource(
     tierBalance: number,
     cryptoBalance: number,
-    packBalance: number,
     amount: number,
-): DeductionSplit {
-    const fromTier = Math.min(amount, Math.max(0, tierBalance));
-    const remainingAfterTier = amount - fromTier;
-    const fromCrypto = Math.min(remainingAfterTier, Math.max(0, cryptoBalance));
-    const fromPack = remainingAfterTier - fromCrypto;
-
-    return { fromTier, fromCrypto, fromPack };
+    packBalance = 0,
+): DeductionSource {
+    // No positive paid balance → always deduct from tier
+    if (cryptoBalance + packBalance <= 0)
+        return { fromTier: amount, fromCrypto: 0, fromPack: 0 };
+    if (tierBalance > 0)
+        return { fromTier: amount, fromCrypto: 0, fromPack: 0 };
+    if (cryptoBalance > 0)
+        return { fromTier: 0, fromCrypto: amount, fromPack: 0 };
+    return { fromTier: 0, fromCrypto: 0, fromPack: amount };
 }
 
 /**
  * Atomically deducts pollen from paid balances only (excluding tier_balance).
- * Deduction order: crypto_balance → pack_balance
+ * Picks the first positive bucket: crypto → pack. Full amount from one bucket.
  *
  * @param db - Drizzle database instance
  * @param userId - User ID to deduct from
@@ -152,12 +147,19 @@ export async function atomicDeductPaidBalance(
 ): Promise<void> {
     if (amount <= 0) return;
 
-    // Deduct from crypto first, then pack (tier is not touched)
+    // Deduct entire amount from first positive paid bucket (crypto → pack)
+    // COALESCE guards against NULL columns in both conditions and subtraction
     await db.run(sql`
 		UPDATE ${userTable}
 		SET
-			crypto_balance = MAX(0, crypto_balance - MIN(crypto_balance, ${amount})),
-			pack_balance = pack_balance - MAX(0, ${amount} - COALESCE(crypto_balance, 0))
+			crypto_balance = CASE
+				WHEN COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
+				ELSE crypto_balance
+			END,
+			pack_balance = CASE
+				WHEN COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
+				ELSE pack_balance
+			END
 		WHERE id = ${userId}
 	`);
 }

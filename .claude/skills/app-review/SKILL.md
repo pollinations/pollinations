@@ -11,14 +11,14 @@ Process app submissions from GitHub issues. Validation (registration, duplicates
 
 ## Categories
 
-Pick the best fit: `Creative`, `Chat`, `Games`, `Dev_Tools`, `Vibes`, `Social_Bots`, `Learn`
+Pick the best fit: `image`, `video_audio`, `writing`, `chat`, `games`, `learn`, `bots`, `build`, `business`
 
 ---
 
 ## APPS.md Row Format
 
 ```
-| EMOJI | Name | Web_URL | Description (~80 chars) | LANG | category | @author | github_id | repo_url | ⭐stars | discord | other | Submitted_Date | Issue_URL | Approved_Date |
+| EMOJI | Name | Web_URL | Description (~200 chars) | LANG | category | @author | github_id | repo_url | ⭐stars | discord | other | Submitted_Date | Issue_URL | Approved_Date |
 ```
 
 - **Submitted_Date**: Issue creation date (when user submitted)

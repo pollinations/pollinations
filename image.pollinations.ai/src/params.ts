@@ -1,12 +1,14 @@
-import { z } from "zod";
-import { MODELS } from "./models.js";
 import Debug from "debug";
+import { z } from "zod";
+import { IMAGE_CONFIG } from "./models.js";
 
 const log = Debug("pollinations:image.params");
 
-type ModelName = keyof typeof MODELS;
+type ModelName = keyof typeof IMAGE_CONFIG;
 
-const allowedModels = Object.keys(MODELS) as Array<keyof typeof MODELS>;
+const allowedModels = Object.keys(IMAGE_CONFIG) as Array<
+    keyof typeof IMAGE_CONFIG
+>;
 const validQualities = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
@@ -36,7 +38,9 @@ function adjustImageSizeForModel(
     width?: number,
     height?: number,
 ): { width: number; height: number } {
-    const defaultSideLength = MODELS[model].defaultSideLength ?? 1024;
+    const defaultSideLength =
+        (IMAGE_CONFIG[model] as { defaultSideLength?: number })
+            .defaultSideLength ?? 1024;
 
     // Use provided dimensions or default - no scaling/limiting
     const sanitizedWidth =
@@ -64,11 +68,12 @@ export const ImageParamsSchema = z
         private: sanitizedBoolean.catch(false).optional(),
         quality: z.literal(validQualities).catch("medium"),
         image: z
-            .union([z.string(), z.null(), z.undefined()])
-            .transform((value?: string | null) => {
+            .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+            .transform((value?: string[] | string | null) => {
                 if (!value) return [];
-                // Support both pipe (|) and comma (,) separators
-                // Prefer pipe separator if present, otherwise use comma
+                // Already an array (from POST JSON body)
+                if (Array.isArray(value)) return value;
+                // String: support both pipe (|) and comma (,) separators
                 return value.includes("|")
                     ? value.split("|")
                     : value.split(",");

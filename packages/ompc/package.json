@@ -1,0 +1,47 @@
+{
+  "name": "@pollinations_ai/ompc",
+  "version": "2.0.2",
+  "description": "Pre-configured OpenCode + oh-my-opencode with Pollinations AI models",
+  "type": "module",
+  "bin": {
+    "ompc": "./orchestrator.js"
+  },
+  "scripts": {
+    "start": "node orchestrator.js",
+    "test": "node orchestrator.test.js"
+
+  },
+  "keywords": [
+    "pollinations",
+    "opencode",
+    "oh-my-opencode",
+    "ai",
+    "llm",
+    "coding-assistant"
+  ],
+  "author": "pollinations.ai <hello@pollinations.ai>",
+  "contributors": [
+    {
+      "name": "Circuit-Overtime",
+      "email": "ayushman@myceli.ai"
+    },
+    {
+      "name": "ElliotEtag",
+      "email": "elliot@myceli.ai"
+    }
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pollinations/pollinations.git",
+    "directory": "packages/ompc"
+  },
+  "funding": {
+  "type": "github",
+  "url": "https://github.com/sponsors/pollinations"
+  },
+  "homepage": "https://pollinations.ai",
+  "publishConfig": {
+    "access": "public"
+  }
+}

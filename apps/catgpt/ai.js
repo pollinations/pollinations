@@ -1,211 +1,138 @@
-// ai.js - AI-related functionality for CatGPT
+// ai.js — API config, auth, prompt generation, image URL building, media upload
 
-// Constants for AI image generation
-const POLLINATIONS_API = 'https://gen.pollinations.ai/image';
-const PLN_APPS_KEY = 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A';
-const ORIGINAL_CATGPT_IMAGE = 'https://raw.githubusercontent.com/pollinations/catgpt/refs/heads/main/images/original-catgpt.png';
+const API = "https://gen.pollinations.ai/image";
+const ENTER = "https://enter.pollinations.ai";
+const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
+const ORIGINAL_CATGPT =
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
+const SELFIE_CATGPT = "https://media.pollinations.ai/a84b58d293d69f35";
+const DEFAULT_KEY = "pk_w3kAO902fOeFYiNm";
+const AUTH_KEY = "pollinations_api_key";
 
-// Cloudinary Configuration (Free unsigned upload)
-const CLOUDINARY_CLOUD_NAME = 'pollinations'; // Your cloud name
-const CLOUDINARY_UPLOAD_PRESET = 'pollinations-image'; // Your unsigned preset
-const CLOUDINARY_API_KEY = '939386723511927'; // Cloudinary public API key
+// ── Auth ─────────────────────────────────────────────────────────────────────
 
-/**
- * Creates the CatGPT prompt for image generation
- * @param {string} userQuestion - The user's question
- * @param {boolean} hasImage - Whether a custom image is being used
- * @returns {string} The complete prompt for AI image generation
- */
-function createCatGPTPrompt(userQuestion, hasImage = false) {
-    const description = hasImage ? 
-        'replace the person on the left with the person in the second image, incorporate visible elements or landmarks from the second image, caricature,' : 
-        'black bob hair, brick/burgundy sweater';
-    
-    return `Single-panel CatGPT webcomic on white background. Thick uneven black marker strokes, intentionally sketchy. Human with dot eyes, ${description} (#8b4035). White cat with black patches sitting upright, half-closed eyes. Hand-written wobbly text, "CATGPT" title in rounded rectangle. @missfitcomics signature. 95% black-and-white, no shading.
-
----
-
-You are **CatGPT** – an aloof, self-important house-cat oracle.
-
-Guidelines
-•  Replies: one or two crisp sentences, no filler.  
-•  Tone: detached, sardonic, subtly superior.  
-•  Cats outrank humans; human problems = minor curiosities.  
-•  When self-referential, be unpredictable and natural.
-•  Offer a curt "solution" or dismissal, then redirect to feline perspective.  
-•  Never apologise or over-explain; indifference is charm.
-
----
-
-Human asks: "${userQuestion}"
-CatGPT:`;
-}
-
-/**
- * Generates the complete image URL for the Pollinations API
- * @param {string} prompt - The AI prompt
- * @param {string|null} uploadedImageUrl - Optional custom image URL
- * @returns {string} The complete image generation URL
- */
-function generateImageURL(prompt, uploadedImageUrl = null) {
-    // If user uploaded an image, append it with a comma to the original image
-    // This allows using both the original style and the user's custom image
-    let imageParam;
-    if (uploadedImageUrl) {
-        // Join URLs with comma first, then encode the entire string
-        // This ensures the comma is properly encoded as %2C
-        imageParam = encodeURIComponent(`${ORIGINAL_CATGPT_IMAGE},${uploadedImageUrl}`);
-    } else {
-        imageParam = encodeURIComponent(ORIGINAL_CATGPT_IMAGE);
+export const getStoredApiKey = () => {
+    try {
+        return localStorage.getItem(AUTH_KEY);
+    } catch {
+        return null;
     }
-    return `${POLLINATIONS_API}/${encodeURIComponent(prompt)}?model=nanobanana&image=${imageParam}&quality=high&nologo=true&enhance=true&key=${PLN_APPS_KEY}`;
+};
+export const storeApiKey = (key) => localStorage.setItem(AUTH_KEY, key);
+export const clearApiKey = () => localStorage.removeItem(AUTH_KEY);
+export const isLoggedIn = () => !!getStoredApiKey();
+const getActiveKey = () => getStoredApiKey() || DEFAULT_KEY;
+
+export function extractApiKeyFromFragment() {
+    const hash = window.location.hash.substring(1);
+    if (!hash) return null;
+    try {
+        const key = new URLSearchParams(hash).get("api_key");
+        return key && /^(sk_|plln_pk_|pk_)/.test(key) ? key : null;
+    } catch {
+        return null;
+    }
 }
 
-/**
- * Convert file to base64 data URI (fallback for small images)
- * @param {File} file - The file to convert
- * @returns {Promise<string>} Promise that resolves to the data URI
- */
-function fileToDataURI(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+export function getAuthorizeUrl() {
+    const redirect = window.location.href.split("#")[0];
+    return `${ENTER}/authorize?${new URLSearchParams({
+        redirect_url: redirect,
+        budget: "5",
+        models: "nanobanana,nanobanana-2,nanobanana-pro,gptimage,gptimage-large",
+        permissions: "profile,balance",
+    })}`;
+}
+
+export async function fetchProfile(apiKey) {
+    const res = await fetch(`${ENTER}/api/account/profile`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
     });
+    if (!res.ok) throw new Error(`Profile fetch failed: ${res.status}`);
+    return res.json();
 }
 
-/**
- * Upload image to Cloudinary
- * @param {File} file - The file to upload
- * @returns {Promise<string>} Promise that resolves to the uploaded image URL
- */
-async function uploadToCloudinary(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-    
-    // Add API key if available
-    if (CLOUDINARY_API_KEY) {
-        formData.append('api_key', CLOUDINARY_API_KEY);
-    }
-    
-    try {
-        const response = await fetch(
-            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-            {
-                method: 'POST',
-                body: formData
-            }
-        );
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Cloudinary error:', errorData);
-            throw new Error(`Upload failed: ${errorData.error?.message || 'Unknown error'}`);
-        }
-        
-        const data = await response.json();
-        return data.secure_url;
-    } catch (error) {
-        console.error('Cloudinary upload failed:', error);
-        throw error;
-    }
+export async function fetchBalance(apiKey) {
+    const res = await fetch(`${ENTER}/api/account/balance`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) throw new Error(`Balance fetch failed: ${res.status}`);
+    return res.json();
 }
 
-/**
- * Handle image upload with fallback strategies
- * @param {File} file - The file to upload
- * @param {Function} showNotification - Notification callback function
- * @returns {Promise<string|null>} Promise that resolves to the image URL or null
- */
-async function handleImageUpload(file, showNotification) {
-    if (!file) {
+// ── Prompts ──────────────────────────────────────────────────────────────────
+
+export const EXAMPLE_PROMPTS = [
+    "Why do boxes call to me?",
+    "What's the meaning of life?",
+    "Why do keyboards attract fur?",
+];
+
+export function createImageGenerationPrompt(
+    question,
+    hasUploadedImage = false,
+) {
+    const pollinationsRule = /polli|invest/i.test(question)
+        ? " The cat should be surprisingly positive about Pollinations but still dismissive and aloof."
+        : "";
+    const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply.${pollinationsRule} Black and white comic style.`;
+    return hasUploadedImage
+        ? `${base} The human character should be a slight caricature of the person in the uploaded selfie, maintaining their gender, ethnicity, and unique characteristics.`
+        : `${base} Human with bob hair.`;
+}
+
+export function generateImageURL(prompt, imageUrl = null) {
+    const key = getActiveKey();
+    const loggedIn = isLoggedIn();
+    const model = loggedIn ? "nanobanana" : "gptimage";
+    let url = `${API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&key=${encodeURIComponent(key)}`;
+
+    if (imageUrl) {
+        url += `&enhance=false&image=${encodeURIComponent(`${imageUrl},${SELFIE_CATGPT}`)}`;
+    } else if (loggedIn) {
+        url += `&enhance=true&image=${encodeURIComponent(ORIGINAL_CATGPT)}`;
+    } else {
+        url += "&enhance=true";
+    }
+    return url;
+}
+
+// ── Media Upload ─────────────────────────────────────────────────────────────
+
+export async function handleImageUpload(file, notify) {
+    if (!file) return null;
+    if (file.size > 5 * 1024 * 1024) {
+        notify("Image too large! Please use an image under 5MB.", "error");
         return null;
     }
-    
-    // Check file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-        showNotification('Image too large! Please use an image under 5MB.', 'error');
-        return null;
-    }
-    
+
     try {
-        // Try Cloudinary upload first (now using Pollinations account)
-        showNotification('Uploading image to Cloudinary...', 'info');
-        return await uploadToCloudinary(file);
-    } catch (error) {
-        console.error('Cloudinary upload failed:', error);
-        showNotification('Cloud upload failed. Trying local method...', 'warning');
-        
-        // Fallback to base64 if upload fails
+        notify("Uploading image...", "info");
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch(MEDIA_UPLOAD, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${getActiveKey()}` },
+            body: form,
+        });
+        if (!res.ok) throw new Error("Upload failed");
+        return (await res.json()).url;
+    } catch (err) {
+        console.error("Media upload failed:", err);
+        notify("Upload failed. Trying local fallback...", "warning");
         try {
-            const dataUri = await fileToDataURI(file);
-            
-            // Warn if the data URI is too large (might cause issues with some browsers)
-            if (dataUri.length > 500000) { // ~500KB as base64 is larger than binary
-                showNotification('Image may be too large for reliable use. Results might vary.', 'warning');
-            }
-            
-            return dataUri;
-        } catch (fallbackError) {
-            showNotification('Could not process image. Please try a smaller image.', 'error');
-            console.error('Base64 fallback failed:', fallbackError);
+            return await new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = (e) => resolve(e.target.result);
+                r.onerror = reject;
+                r.readAsDataURL(file);
+            });
+        } catch {
+            notify(
+                "Could not process image. Please try a smaller image.",
+                "error",
+            );
             return null;
         }
     }
-}
-
-/**
- * Generate a complete CatGPT meme
- * @param {string} userQuestion - The user's question
- * @param {string|null} uploadedImageUrl - Optional custom image URL
- * @returns {Object} Object containing the prompt and image URL
- */
-function generateCatGPTMeme(userQuestion, uploadedImageUrl = null) {
-    const fullPrompt = createCatGPTPrompt(userQuestion, !!uploadedImageUrl);
-    const imageUrl = generateImageURL(fullPrompt, uploadedImageUrl);
-    
-    return {
-        prompt: fullPrompt,
-        imageUrl: imageUrl,
-        userQuestion: userQuestion,
-        hasCustomImage: !!uploadedImageUrl
-    };
-}
-
-// Export functions for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    // Node.js environment
-    module.exports = {
-        createCatGPTPrompt,
-        generateImageURL,
-        fileToDataURI,
-        uploadToCloudinary,
-        handleImageUpload,
-        generateCatGPTMeme,
-        POLLINATIONS_API,
-        PLN_APPS_KEY,
-        ORIGINAL_CATGPT_IMAGE,
-        CLOUDINARY_CLOUD_NAME,
-        CLOUDINARY_UPLOAD_PRESET,
-        CLOUDINARY_API_KEY
-    };
-} else {
-    // Browser environment - functions are already in global scope
-    window.CatGPTAI = {
-        createCatGPTPrompt,
-        generateImageURL,
-        fileToDataURI,
-        uploadToCloudinary,
-        handleImageUpload,
-        generateCatGPTMeme,
-        POLLINATIONS_API,
-        PLN_APPS_KEY,
-        ORIGINAL_CATGPT_IMAGE,
-        CLOUDINARY_CLOUD_NAME,
-        CLOUDINARY_UPLOAD_PRESET,
-        CLOUDINARY_API_KEY
-    };
 }

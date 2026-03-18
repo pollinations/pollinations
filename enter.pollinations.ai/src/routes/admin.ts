@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { sendTierEventToTinybird } from "@/events.ts";
+import { runD1TinybirdSync } from "@/scheduled/d1-tinybird-sync.ts";
 import {
     getTierPollen,
     isValidTier,
@@ -16,25 +17,31 @@ import type { Env } from "../env.ts";
 
 const log = getLogger(["hono", "admin"]);
 
-// KV key for tracking bulk refill timestamp (separate from individual user refills)
-const BULK_REFILL_KV_KEY = "tier:bulk_refill:last_timestamp";
+// KV keys for tracking bulk refill timestamps (separate for hourly vs daily)
+const HOURLY_REFILL_KV_KEY = "tier:bulk_refill:hourly:last_timestamp";
+const DAILY_REFILL_KV_KEY = "tier:bulk_refill:daily:last_timestamp";
 
-// Helper functions for tier refill
+function getCurrentHourMs(): number {
+    const now = new Date();
+    return Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        now.getUTCHours(),
+    );
+}
+
 function getTodayStartMs(): number {
     const now = new Date();
     return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 }
 
-async function getLastBulkRefillTime(kv: KVNamespace): Promise<number> {
-    const value = await kv.get(BULK_REFILL_KV_KEY);
-    return value ? Number.parseInt(value, 10) : 0;
-}
-
-async function setLastBulkRefillTime(
+async function getLastRefillTime(
     kv: KVNamespace,
-    timestamp: number,
-): Promise<void> {
-    await kv.put(BULK_REFILL_KV_KEY, timestamp.toString());
+    key: string,
+): Promise<number> {
+    const value = await kv.get(key);
+    return value ? Number.parseInt(value, 10) : 0;
 }
 
 function calculateTierBreakdown(
@@ -50,7 +57,7 @@ function calculateTierBreakdown(
             if (!acc[tier]) {
                 acc[tier] = {
                     count: 0,
-                    pollenAmount: TIER_POLLEN[tier] ?? TIER_POLLEN.spore,
+                    pollenAmount: TIER_POLLEN[tier] ?? 0,
                 };
             }
             acc[tier].count++;
@@ -73,13 +80,21 @@ async function sendBulkTierRefillEvents(
     logger: Logger,
 ): Promise<void> {
     if (!tinybirdUrl || !tinybirdToken || users.length === 0) {
+        logger.warn(
+            "TINYBIRD_TIER_SKIP: url={url} token={token} users={users}",
+            {
+                url: !!tinybirdUrl,
+                token: !!tinybirdToken,
+                users: users.length,
+            },
+        );
         return;
     }
 
     const events = users
         .map((user) => {
             const tierName = user.tier as TierName;
-            const pollenAmount = TIER_POLLEN[tierName] ?? TIER_POLLEN.spore;
+            const pollenAmount = TIER_POLLEN[tierName] ?? 0;
             return JSON.stringify({
                 event_type: "tier_refill",
                 environment,
@@ -102,21 +117,168 @@ async function sendBulkTierRefillEvents(
             body: events,
         });
 
+        const responseText = await response.text();
+
         if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(
-                "Failed to send tier refill events to Tinybird: {error}",
-                {
-                    error: errorText,
-                    status: response.status,
-                },
-            );
+            logger.error("TINYBIRD_TIER_ERROR: status={status} error={error}", {
+                status: response.status,
+                error: responseText,
+            });
+        } else {
+            try {
+                const result = JSON.parse(responseText);
+                logger.info(
+                    "TINYBIRD_TIER_SENT: total={total} success={success} quarantined={quarantined}",
+                    {
+                        total: users.length,
+                        success: result.successful_rows ?? 0,
+                        quarantined: result.quarantined_rows ?? 0,
+                    },
+                );
+            } catch {
+                logger.info(
+                    "TINYBIRD_TIER_SENT: total={total} response={response}",
+                    { total: users.length, response: responseText },
+                );
+            }
         }
     } catch (err) {
-        logger.error("Failed to send tier refill events to Tinybird: {error}", {
+        logger.error("TINYBIRD_TIER_FAIL: error={error}", {
             error: err instanceof Error ? err.message : String(err),
         });
     }
+}
+
+/**
+ * Core refill logic — callable from both the HTTP endpoint and CF scheduled handler.
+ * Runs hourly and daily refills with separate idempotency checks.
+ *
+ * Hourly tiers (spore, seed): adds pollen increment each hour
+ * Daily tiers (flower, nectar, router): adds pollen increment at midnight UTC
+ */
+export async function runTierRefill(
+    env: CloudflareBindings,
+    ctx: { waitUntil: (p: Promise<unknown>) => void },
+) {
+    const db = drizzle(env.DB);
+    const kv = env.KV;
+    const refillTimestamp = Date.now();
+    const timestamp = new Date(refillTimestamp).toISOString();
+
+    // --- Hourly refill (spore, seed) ---
+    const currentHourMs = getCurrentHourMs();
+    const lastHourlyMs = await getLastRefillTime(kv, HOURLY_REFILL_KV_KEY);
+    let hourlyRefillCount = 0;
+    const hourlySkipped = lastHourlyMs >= currentHourMs;
+
+    // --- Daily refill check ---
+    const todayStartMs = getTodayStartMs();
+    const lastDailyMs = await getLastRefillTime(kv, DAILY_REFILL_KV_KEY);
+    let dailyRefillCount = 0;
+    const dailySkipped = lastDailyMs >= todayStartMs;
+
+    // Skip early if both already ran (avoids unnecessary DB scan)
+    if (hourlySkipped && dailySkipped) {
+        log.info("TIER_REFILL_SKIPPED: hourly and daily already ran", {
+            eventType: "tier_refill_skipped",
+        });
+        return {
+            success: true,
+            skipped: true,
+            timestamp,
+        };
+    }
+
+    // Snapshot balances before updates (for Tinybird events)
+    const usersBeforeRefill = await db
+        .select({
+            id: userTable.id,
+            tier: userTable.tier,
+            tierBalance: userTable.tierBalance,
+        })
+        .from(userTable)
+        .where(sql`tier IS NOT NULL`);
+
+    if (!hourlySkipped) {
+        // Add hourly pollen, capped at the tier max (negative balances recover gradually)
+        const hourlyResult = await db.run(sql`
+            UPDATE user
+            SET
+                tier_balance = CASE tier
+                    WHEN 'spore' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.spore}, ${TIER_POLLEN.spore})
+                    WHEN 'seed' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.seed}, ${TIER_POLLEN.seed})
+                    ELSE tier_balance
+                END,
+                last_tier_grant = ${refillTimestamp}
+            WHERE tier IN ('spore', 'seed')
+        `);
+        hourlyRefillCount = hourlyResult.meta.changes ?? 0;
+        await kv.put(HOURLY_REFILL_KV_KEY, refillTimestamp.toString());
+    }
+
+    if (!dailySkipped) {
+        // Add daily pollen, capped at the tier max (negative balances recover gradually)
+        const dailyResult = await db.run(sql`
+            UPDATE user
+            SET
+                tier_balance = CASE tier
+                    WHEN 'flower' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.flower}, ${TIER_POLLEN.flower})
+                    WHEN 'nectar' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.nectar}, ${TIER_POLLEN.nectar})
+                    WHEN 'router' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.router}, ${TIER_POLLEN.router})
+                    ELSE tier_balance
+                END,
+                last_tier_grant = ${refillTimestamp}
+            WHERE tier IN ('flower', 'nectar', 'router')
+        `);
+        dailyRefillCount = dailyResult.meta.changes ?? 0;
+        await kv.put(DAILY_REFILL_KV_KEY, refillTimestamp.toString());
+    }
+
+    const tierBreakdown = calculateTierBreakdown(usersBeforeRefill);
+    const refilledTiers = new Set([
+        ...(!hourlySkipped ? ["spore", "seed"] : []),
+        ...(!dailySkipped ? ["flower", "nectar", "router"] : []),
+    ]);
+    const usersForEvents = usersBeforeRefill.filter(
+        (u) => u.tier && refilledTiers.has(u.tier),
+    );
+
+    ctx.waitUntil(
+        sendBulkTierRefillEvents(
+            usersForEvents,
+            timestamp,
+            env.ENVIRONMENT || "unknown",
+            env.TINYBIRD_TIER_INGEST_URL,
+            env.TINYBIRD_TIER_INGEST_TOKEN,
+            log,
+        ),
+    );
+
+    const refillCount = hourlyRefillCount + dailyRefillCount;
+    log.info(
+        "TIER_REFILL_COMPLETE: usersUpdated={usersUpdated} (hourly={hourly}, daily={daily})",
+        {
+            eventType: "tier_refill_complete",
+            usersUpdated: refillCount,
+            hourlyRefillCount,
+            dailyRefillCount,
+            hourlySkipped,
+            dailySkipped,
+            tierBreakdown,
+        },
+    );
+
+    return {
+        success: true,
+        skipped: false,
+        usersRefilled: refillCount,
+        hourlyRefillCount,
+        dailyRefillCount,
+        hourlySkipped,
+        dailySkipped,
+        tierBreakdown,
+        timestamp,
+    };
 }
 
 export const adminRoutes = new Hono<Env>()
@@ -139,6 +301,16 @@ export const adminRoutes = new Hono<Env>()
         if (
             providedKey === c.env.REFILL_TOKEN &&
             c.req.path.endsWith("/trigger-refill")
+        ) {
+            return await next();
+        }
+
+        // Tinybird sync token: authenticates the GH Action AND is used for Tinybird API calls
+        const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
+        if (
+            syncToken &&
+            providedKey === syncToken &&
+            c.req.path.endsWith("/trigger-d1-sync")
         ) {
             return await next();
         }
@@ -198,7 +370,7 @@ export const adminRoutes = new Hono<Env>()
                     pollen_amount: tierBalance,
                 },
                 c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
+                c.env.TINYBIRD_TIER_INGEST_TOKEN,
             ),
         );
 
@@ -221,88 +393,22 @@ export const adminRoutes = new Hono<Env>()
         });
     })
     .post("/trigger-refill", async (c) => {
-        const db = drizzle(c.env.DB);
-        const kv = c.env.KV;
-
-        // Check idempotency: has BULK refill already run today?
-        // Uses KV to track bulk refill time separately from individual user refills
-        const todayStartMs = getTodayStartMs();
-        const lastBulkRefillMs = await getLastBulkRefillTime(kv);
-
-        if (lastBulkRefillMs >= todayStartMs) {
-            const lastRefillDate = new Date(lastBulkRefillMs).toISOString();
-            log.info("TIER_REFILL_SKIPPED: already ran today at {lastRefill}", {
-                eventType: "tier_refill_skipped",
-                lastRefill: lastRefillDate,
-            });
-            return c.json({
-                success: true,
-                skipped: true,
-                reason: "Already refilled today",
-                lastRefill: lastRefillDate,
+        const result = await runTierRefill(c.env, c.executionCtx);
+        return c.json(result);
+    })
+    .post("/trigger-d1-sync", async (c) => {
+        const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
+        if (!syncToken) {
+            throw new HTTPException(500, {
+                message: "TINYBIRD_D1_SYNC_TOKEN not configured",
             });
         }
 
-        // Get users before update (for Tinybird events)
-        const usersToRefill = await db
-            .select({
-                id: userTable.id,
-                tier: userTable.tier,
-                tierBalance: userTable.tierBalance,
-            })
-            .from(userTable)
-            .where(sql`tier IS NOT NULL`);
+        const results = await runD1TinybirdSync(c.env.DB, syncToken);
+        const hasErrors = results.some((r) => r.status === "error");
 
-        // Bulk update all tier balances
-        const result = await db.run(sql`
-            UPDATE user
-            SET
-                tier_balance = CASE tier
-                    WHEN 'microbe' THEN ${TIER_POLLEN.microbe}
-                    WHEN 'spore' THEN ${TIER_POLLEN.spore}
-                    WHEN 'seed' THEN ${TIER_POLLEN.seed}
-                    WHEN 'flower' THEN ${TIER_POLLEN.flower}
-                    WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
-                    WHEN 'router' THEN ${TIER_POLLEN.router}
-                    ELSE ${TIER_POLLEN.spore}
-                END,
-                last_tier_grant = ${Date.now()}
-            WHERE tier IS NOT NULL
-        `);
-
-        const refillCount = result.meta.changes ?? 0;
-        const refillTimestamp = Date.now();
-        const timestamp = new Date(refillTimestamp).toISOString();
-
-        // Store bulk refill timestamp in KV for idempotency
-        await setLastBulkRefillTime(kv, refillTimestamp);
-
-        // Calculate tier breakdown for response
-        const tierBreakdown = calculateTierBreakdown(usersToRefill);
-
-        // Send per-user events to Tinybird
-        c.executionCtx.waitUntil(
-            sendBulkTierRefillEvents(
-                usersToRefill,
-                timestamp,
-                c.env.ENVIRONMENT || "unknown",
-                c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
-                log,
-            ),
+        return c.json(
+            { success: !hasErrors, tables: results },
+            hasErrors ? 207 : 200,
         );
-
-        log.info("TIER_REFILL_COMPLETE: usersUpdated={usersUpdated}", {
-            eventType: "tier_refill_complete",
-            usersUpdated: refillCount,
-            tierBreakdown,
-        });
-
-        return c.json({
-            success: true,
-            skipped: false,
-            usersRefilled: refillCount,
-            tierBreakdown,
-            timestamp,
-        });
     });

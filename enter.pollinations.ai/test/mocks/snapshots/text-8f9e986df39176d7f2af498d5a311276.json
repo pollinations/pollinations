@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sequential test 1771387556994"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1816",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 18 Feb 2026 04:06:12 GMT",
+      "etag": "W/\"718-/PKkGqz6YeSN2Xm5kkQoYPbXSkQ\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "1728",
+      "x-usage-completion-text-tokens": "190",
+      "x-usage-prompt-text-tokens": "255"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Do you want me to treat \"1771387556994\" as an ID, a number to analyze, or a timestamp (milliseconds since epoch)? I can do any of those. Quick starts while you decide:\n\n- As a number: it’s even and factors at least as 2 * 3^2 * 11 * 8,946,401,803 (so 2 * 9 * 11 * 8,946,401,803). I can try to factor the last piece further or run a primality test on it.\n\n- As a timestamp (milliseconds since 1970-01-01): I can convert it to a human date/time (tell me the timezone you want, or I’ll use UTC).\n\n- As an ID: I can log it, format it, or generate a short label for it.\n\nWhich would you like me to do?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1771387557,
+        "id": "pllns_ccde480328cf69d80c4de25a3a1bbbaf",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1918,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1728,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 255,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 2173
+        }
+      }
+    }
+  }
+}

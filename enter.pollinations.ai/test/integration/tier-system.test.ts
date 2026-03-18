@@ -1,7 +1,7 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect } from "vitest";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import { atomicDeductUserBalance } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
@@ -25,7 +25,7 @@ describe("Tier System End-to-End", () => {
     describe("Daily Usage Pattern", () => {
         test("user exhausts tier balance and falls back to pack balance", async () => {
             const db = drizzle(env.DB);
-            const executionContext = createExecutionContext();
+            const _executionContext = createExecutionContext();
             const userId = "heavy-user";
 
             // User starts with flower tier (10 pollen/day) and bought a pack (50 pollen)
@@ -70,9 +70,10 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Should have exhausted tier (10) and used 10 from pack
-            expect(afterUsage[0]?.tierBalance).toBe(0);
-            expect(afterUsage[0]?.packBalance).toBe(40);
+            // Single-bucket deduction: tier absorbs [3,2,4,5]=14, going to -4;
+            // remaining [2,3,1]=6 deducted from pack (first positive bucket)
+            expect(afterUsage[0]?.tierBalance).toBe(-4);
+            expect(afterUsage[0]?.packBalance).toBe(44);
 
             // Trigger tier refill
             await triggerTierRefill();
@@ -88,22 +89,27 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Tier should be refilled, pack unchanged
+            // Tier should be refilled (hard SET), pack unchanged
             expect(afterRefill[0]?.tierBalance).toBe(10);
-            expect(afterRefill[0]?.packBalance).toBe(40);
+            expect(afterRefill[0]?.packBalance).toBe(44);
             expect(afterRefill[0]?.lastTierGrant).toBeGreaterThan(
                 Date.now() - 5000,
             );
         });
 
-        test("multiple users with different tiers get correct daily allowance", async () => {
+        test("multiple users with different tiers get correct allowance", async () => {
             const db = drizzle(env.DB);
-            const executionContext = createExecutionContext();
+            const _executionContext = createExecutionContext();
 
             // Setup diverse user base
+            // Hourly tiers (spore, seed) get incremental add; daily tiers get hard reset
             const users = [
-                { id: "free-user", tier: "spore", expectedPollen: 1 },
-                { id: "basic-user", tier: "seed", expectedPollen: 3 },
+                {
+                    id: "free-user",
+                    tier: "spore",
+                    expectedPollen: 0.01,
+                },
+                { id: "basic-user", tier: "seed", expectedPollen: 0.15 },
                 { id: "pro-user", tier: "flower", expectedPollen: 10 },
                 { id: "enterprise-user", tier: "nectar", expectedPollen: 20 },
                 { id: "router-user", tier: "router", expectedPollen: 500 },
@@ -338,7 +344,7 @@ describe("Tier System End-to-End", () => {
     describe("Tier Migration Integrity", () => {
         test("users migrated from Polar maintain their tier and get daily refills", async () => {
             const db = drizzle(env.DB);
-            const executionContext = createExecutionContext();
+            const _executionContext = createExecutionContext();
 
             // Simulate migrated users with various states
             const migratedUsers = [
@@ -351,7 +357,7 @@ describe("Tier System End-to-End", () => {
                 {
                     id: "migrated-new",
                     tier: "seed",
-                    tierBalance: 3, // Full balance
+                    tierBalance: 0.15, // Full hourly balance
                     packBalance: 0,
                 },
                 {
@@ -421,7 +427,7 @@ describe("Tier System End-to-End", () => {
     describe("Edge Cases", () => {
         test("handles tier changes correctly", async () => {
             const db = drizzle(env.DB);
-            const executionContext = createExecutionContext();
+            const _executionContext = createExecutionContext();
             const userId = "tier-change-user";
 
             // User starts as seed tier
@@ -492,7 +498,7 @@ describe("Tier System End-to-End", () => {
                     },
                 });
 
-            // Use 30 pollen (1 from tier, 29 from crypto)
+            // Use 30 pollen — tier is first positive bucket, full amount deducted there
             await atomicDeductUserBalance(db, userId, 30);
 
             const balance = await db
@@ -505,8 +511,8 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            expect(balance[0]?.tierBalance).toBe(0);
-            expect(balance[0]?.cryptoBalance).toBe(21); // 50 - 29
+            expect(balance[0]?.tierBalance).toBe(-29); // 1 - 30 (single bucket, goes negative)
+            expect(balance[0]?.cryptoBalance).toBe(50); // Untouched
             expect(balance[0]?.packBalance).toBe(100); // Untouched
         });
     });

@@ -34,16 +34,6 @@ export async function getTextModels() {
     return response.json();
 }
 
-export async function getImageModelNames() {
-    const models = await getImageModels();
-    return models.map((m) => m.name);
-}
-
-export async function getTextModelNames() {
-    const models = await getTextModels();
-    return models.map((m) => m.name);
-}
-
 export async function getAudioVoices() {
     const models = await getTextModels();
     const audioModel = models.find((m) => m.name === "openai-audio");
@@ -63,34 +53,6 @@ export async function getAudioVoices() {
         "ash",
         "sage",
     ];
-}
-
-export async function isValidImageModel(modelName) {
-    const names = await getImageModelNames();
-    return names.includes(modelName);
-}
-
-export async function isValidTextModel(modelName) {
-    const names = await getTextModelNames();
-    return names.includes(modelName);
-}
-
-export async function getImageModelInfo(modelName) {
-    const models = await getImageModels();
-    return (
-        models.find(
-            (m) => m.name === modelName || m.aliases?.includes(modelName),
-        ) || null
-    );
-}
-
-export async function getTextModelInfo(modelName) {
-    const models = await getTextModels();
-    return (
-        models.find(
-            (m) => m.name === modelName || m.aliases?.includes(modelName),
-        ) || null
-    );
 }
 
 export async function validateImageModel(modelName) {

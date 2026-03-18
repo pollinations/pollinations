@@ -75,7 +75,6 @@ function serverQueueInfo(servers: ServerMap): ServerInfo[] {
         return servers.map((server) => serverInfo(server, type as ServerType));
     });
 }
-//            console.table(serverQueueInfo);
 
 // Decay errors every minute
 setInterval(decayErrors, 60 * 1000); // Every 1 minute
@@ -165,8 +164,6 @@ export const getNextServerUrl = async (
     return selectedServer.url;
 };
 
-// Wrapper functions for backward compatibility
-export const getNextFluxServerUrl = () => getNextServerUrl("flux");
 export const getNextTranslationServerUrl = () => getNextServerUrl("translate");
 
 /**
@@ -213,12 +210,6 @@ export const handleRegisterEndpoint = (
             ([type, servers]) =>
                 servers.map((server) => serverInfo(server, type as ServerType)),
         );
-        // res.writeHead(200, {
-        //     'Content-Type': 'application/json',
-        //     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        //     'Pragma': 'no-cache',
-        //     'Expires': '0'
-        // });
         res.end(JSON.stringify(availableServersInfo));
     } else {
         res.end(
@@ -236,7 +227,6 @@ export const filterActiveServers = (servers: Server[]): Server[] => {
     const now = Date.now();
     return servers.filter(
         (server) => now - server.lastHeartbeat < SERVER_TIMEOUT,
-        // && server.url.includes('23.23.212.46')
     );
 };
 

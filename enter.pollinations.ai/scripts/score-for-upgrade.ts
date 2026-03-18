@@ -240,7 +240,11 @@ interface GitHubGraphQLUser {
     createdAt: string;
     repositories: {
         totalCount: number;
-        nodes: Array<{ stargazerCount: number } | null>;
+        nodes: Array<{
+            stargazerCount: number;
+            diskUsage: number;
+            createdAt: string;
+        } | null>;
     };
     contributionsCollection: {
         totalCommitContributions: number;
@@ -248,14 +252,15 @@ interface GitHubGraphQLUser {
 }
 
 function buildGraphQLQuery(usernames: string[]): string {
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
     const fragments = usernames.map((u, i) => {
         const safe = u.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
         return `u${i}: user(login: "${safe}") {
       login createdAt
-      repositories(privacy: PUBLIC, isFork: false, first: 5, orderBy: {field: STARGAZERS, direction: DESC}) {
-        totalCount nodes { stargazerCount }
+      repositories(privacy: PUBLIC, isFork: false, first: 10, orderBy: {field: STARGAZERS, direction: DESC}) {
+        totalCount nodes { stargazerCount diskUsage createdAt }
       }
-      contributionsCollection { totalCommitContributions }
+      contributionsCollection(from: "${ninetyDaysAgo}") { totalCommitContributions }
     }`;
     });
     return `query { ${fragments.join("\n")} }`;
@@ -266,9 +271,13 @@ function parseGitHubUser(data: GitHubGraphQLUser | null): GitHubMetrics | null {
     const github_age_days = Math.floor(
         (Date.now() - new Date(data.createdAt).getTime()) / 86400000,
     );
-    const repos = data.repositories?.totalCount || 0;
     const commits = data.contributionsCollection?.totalCommitContributions || 0;
-    const stars = (data.repositories?.nodes || []).reduce(
+    // Filter to non-empty repos (diskUsage > 0) for quality signal
+    const qualityNodes = (data.repositories?.nodes || []).filter(
+        (node) => node && node.diskUsage > 0,
+    );
+    const repos = qualityNodes.length;
+    const stars = qualityNodes.reduce(
         (sum, node) => sum + (node?.stargazerCount || 0),
         0,
     );
@@ -281,11 +290,16 @@ function parseGitHubUser(data: GitHubGraphQLUser | null): GitHubMetrics | null {
     };
 }
 
+interface GitHubBatchResult {
+    metrics: Map<string, GitHubMetrics>;
+    rawData: Map<string, GitHubGraphQLUser>;
+}
+
 async function fetchGitHubBatch(
     usernames: string[],
     token: string,
     retries = 3,
-): Promise<Map<string, GitHubMetrics>> {
+): Promise<GitHubBatchResult> {
     const query = buildGraphQLQuery(usernames);
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
@@ -325,27 +339,37 @@ async function fetchGitHubBatch(
                 string,
                 GitHubGraphQLUser | null
             >;
-            const map = new Map<string, GitHubMetrics>();
+            const metrics = new Map<string, GitHubMetrics>();
+            const rawData = new Map<string, GitHubGraphQLUser>();
             for (let i = 0; i < usernames.length; i++) {
-                const metrics = parseGitHubUser(results[`u${i}`] ?? null);
-                if (metrics) map.set(usernames[i], metrics);
+                const raw = results[`u${i}`] ?? null;
+                const parsed = parseGitHubUser(raw);
+                if (parsed) metrics.set(usernames[i], parsed);
+                if (raw) rawData.set(usernames[i], raw);
             }
-            return map;
+            return { metrics, rawData };
         } catch {
             if (attempt < retries - 1) {
                 await new Promise((r) => setTimeout(r, 5000 * (attempt + 1)));
             }
         }
     }
-    return new Map();
+    return { metrics: new Map(), rawData: new Map() };
+}
+
+interface GitHubFetchResult {
+    metrics: Map<string, GitHubMetrics>;
+    rawData: Map<string, GitHubGraphQLUser>;
 }
 
 async function fetchGitHubMetrics(
     usernames: string[],
-): Promise<Map<string, GitHubMetrics>> {
-    if (usernames.length === 0) return new Map();
+): Promise<GitHubFetchResult> {
+    if (usernames.length === 0)
+        return { metrics: new Map(), rawData: new Map() };
     const token = getGithubToken();
-    const result = new Map<string, GitHubMetrics>();
+    const allMetrics = new Map<string, GitHubMetrics>();
+    const allRawData = new Map<string, GitHubGraphQLUser>();
     const PARALLEL = 3;
 
     // Build all batch slices
@@ -361,7 +385,8 @@ async function fetchGitHubMetrics(
             chunk.map((batch) => fetchGitHubBatch(batch, token)),
         );
         for (const batchResult of results) {
-            for (const [k, v] of batchResult) result.set(k, v);
+            for (const [k, v] of batchResult.metrics) allMetrics.set(k, v);
+            for (const [k, v] of batchResult.rawData) allRawData.set(k, v);
         }
 
         const progress = Math.min(
@@ -381,15 +406,15 @@ async function fetchGitHubMetrics(
     // Count listed apps per user from apps/APPS.md
     const appCounts = countListedApps(usernames);
     for (const [username, count] of appCounts) {
-        const metrics = result.get(username);
+        const metrics = allMetrics.get(username);
         if (metrics) {
             metrics.apps_listed = count;
         } else {
-            result.set(username, { ...EMPTY_GITHUB, apps_listed: count });
+            allMetrics.set(username, { ...EMPTY_GITHUB, apps_listed: count });
         }
     }
 
-    return result;
+    return { metrics: allMetrics, rawData: allRawData };
 }
 
 // ── Listed apps ────────────────────────────────────────────────────────
@@ -428,6 +453,13 @@ function countListedApps(usernames: string[]): Map<string, number> {
 
 // ── Scoring ─────────────────────────────────────────────────────────────
 
+interface FraudFlags {
+    burst_empty_repos: boolean;
+    star_uniformity: boolean;
+    empty_repo_dominance: boolean;
+    repo_quality_gap: boolean;
+}
+
 interface ScoreResult {
     userId: string;
     username: string;
@@ -436,6 +468,7 @@ interface ScoreResult {
     upgraded: boolean;
     scores: Record<string, number>;
     total: number;
+    fraudFlags?: FraudFlags;
 }
 
 const EMPTY_GITHUB: GitHubMetrics = {
@@ -446,11 +479,70 @@ const EMPTY_GITHUB: GitHubMetrics = {
     apps_listed: 0,
 };
 
+/** Check fraud flags from raw GitHub GraphQL data */
+function checkFraudFlags(data: GitHubGraphQLUser | null): FraudFlags {
+    const flags: FraudFlags = {
+        burst_empty_repos: false,
+        star_uniformity: false,
+        empty_repo_dominance: false,
+        repo_quality_gap: false,
+    };
+    if (!data) return flags;
+
+    const nodes = data.repositories?.nodes?.filter(Boolean) ?? [];
+    const totalCount = data.repositories?.totalCount ?? 0;
+    const emptyNodes = nodes.filter((n) => n && n.diskUsage === 0);
+    const qualityNodes = nodes.filter((n) => n && n.diskUsage > 0);
+
+    // burst_empty_repos: >=5 repos created in last 7 days with diskUsage == 0
+    const sevenDaysAgo = Date.now() - 7 * 86400000;
+    const recentEmpty = emptyNodes.filter(
+        (n) => n && new Date(n.createdAt).getTime() > sevenDaysAgo,
+    );
+    flags.burst_empty_repos = recentEmpty.length >= 5;
+
+    // star_uniformity: 5+ starred repos share same star count at >60% frequency (exclude count=1)
+    const starCounts = nodes
+        .map((n) => n?.stargazerCount ?? 0)
+        .filter((s) => s > 1);
+    if (starCounts.length >= 5) {
+        const freq = new Map<number, number>();
+        for (const s of starCounts) freq.set(s, (freq.get(s) ?? 0) + 1);
+        for (const count of freq.values()) {
+            if (count >= 5 && count / starCounts.length > 0.6) {
+                flags.star_uniformity = true;
+                break;
+            }
+        }
+    }
+
+    // empty_repo_dominance: >=5 fetched repos, >80% empty, totalCount > 20
+    if (
+        nodes.length >= 5 &&
+        emptyNodes.length / nodes.length > 0.8 &&
+        totalCount > 20
+    ) {
+        flags.empty_repo_dominance = true;
+    }
+
+    // repo_quality_gap: totalCount > 20 but qualityCount < 3
+    if (totalCount > 20 && qualityNodes.length < 3) {
+        flags.repo_quality_gap = true;
+    }
+
+    return flags;
+}
+
+function hasFraudFlag(flags: FraudFlags): boolean {
+    return Object.values(flags).some(Boolean);
+}
+
 function scoreUser(
     user: D1User,
     githubMetrics: GitHubMetrics | null,
     weeklySpend: number,
     trustScore: number,
+    fraudFlags?: FraudFlags,
 ): ScoreResult {
     const pollinationsAgeDays = user.created_at
         ? Math.floor((Date.now() / 1000 - user.created_at) / 86400)
@@ -471,10 +563,13 @@ function scoreUser(
     const newTier = bestTierForMetrics(rawMetrics);
     const total = computeScore(rawMetrics, newTier);
 
+    // Reject upgrade if any fraud flag is set
+    const fraudBlocked = fraudFlags && hasFraudFlag(fraudFlags);
+
     // Only upgrade, never downgrade
     const currentIdx = tierIndex(user.tier as TierName);
     const newIdx = tierIndex(newTier);
-    const upgraded = newIdx > currentIdx;
+    const upgraded = !fraudBlocked && newIdx > currentIdx;
 
     return {
         userId: user.id,
@@ -484,6 +579,7 @@ function scoreUser(
         upgraded,
         scores,
         total,
+        fraudFlags,
     };
 }
 
@@ -629,25 +725,39 @@ const upgradeCommand = command({
 
         // Fetch all data sources in parallel
         console.log(`\nFetching data for ${users.length} users...`);
-        const [spendByUserId, githubMetrics, llmTrustScores] =
-            await Promise.all([
+        const [spendByUserId, githubResult, llmTrustScores] = await Promise.all(
+            [
                 fetchSpendByUserId(),
                 fetchGitHubMetrics(users.map((u) => u.github_username)),
                 fetchLLMTrustScores(users),
-            ]);
+            ],
+        );
         console.log(
-            `  Tinybird: ${spendByUserId.size} | GitHub: ${githubMetrics.size} | LLM: ${llmTrustScores.size}`,
+            `  Tinybird: ${spendByUserId.size} | GitHub: ${githubResult.metrics.size} | LLM: ${llmTrustScores.size}`,
         );
 
-        // Score all users
-        const results: ScoreResult[] = users.map((user) =>
-            scoreUser(
+        // Score all users with fraud detection
+        const results: ScoreResult[] = users.map((user) => {
+            const rawGH =
+                githubResult.rawData.get(user.github_username) ?? null;
+            const fraudFlags = checkFraudFlags(rawGH);
+            return scoreUser(
                 user,
-                githubMetrics.get(user.github_username) ?? null,
+                githubResult.metrics.get(user.github_username) ?? null,
                 spendByUserId.get(user.id) ?? 0,
                 llmTrustScores.get(user.github_username) ?? 100,
-            ),
+                fraudFlags,
+            );
+        });
+
+        const fraudBlocked = results.filter(
+            (r) => r.fraudFlags && hasFraudFlag(r.fraudFlags),
         );
+        if (fraudBlocked.length > 0) {
+            console.log(
+                `  Fraud blocked: ${fraudBlocked.length} users rejected`,
+            );
+        }
 
         const upgraded = results.filter((r) => r.upgraded);
         const unchanged = results.filter((r) => !r.upgraded);
@@ -738,11 +848,11 @@ const scoreCommand = command({
         const user = rows[0] as D1User;
 
         // Fetch all data in parallel
-        const [githubMap, weeklySpend] = await Promise.all([
+        const [githubResult, weeklySpend] = await Promise.all([
             fetchGitHubMetrics([username]),
             fetchSpendForUser(user.id),
         ]);
-        const gh = githubMap.get(username) ?? EMPTY_GITHUB;
+        const gh = githubResult.metrics.get(username) ?? EMPTY_GITHUB;
 
         const pollinationsAgeDays = user.created_at
             ? Math.floor((Date.now() / 1000 - user.created_at) / 86400)
@@ -843,7 +953,7 @@ const dumpCommand = command({
 
         const fetches: [
             Promise<Map<string, number>>,
-            Promise<Map<string, GitHubMetrics>>,
+            Promise<GitHubFetchResult>,
             Promise<Map<string, number>>,
         ] = [
             fetchSpendByUserId(),
@@ -853,15 +963,16 @@ const dumpCommand = command({
                 : Promise.resolve(new Map<string, number>()),
         ];
 
-        const [spendByUserId, githubMetrics, llmTrustScores] =
+        const [spendByUserId, githubResult, llmTrustScores] =
             await Promise.all(fetches);
 
         console.error(
-            `  GitHub: ${githubMetrics.size} | LLM: ${llmTrustScores.size}`,
+            `  GitHub: ${githubResult.metrics.size} | LLM: ${llmTrustScores.size}`,
         );
 
         const dump = allUsers.map((user) => {
-            const gh = githubMetrics.get(user.github_username) ?? EMPTY_GITHUB;
+            const gh =
+                githubResult.metrics.get(user.github_username) ?? EMPTY_GITHUB;
             const pollinationsAgeDays = user.created_at
                 ? Math.floor((Date.now() / 1000 - user.created_at) / 86400)
                 : 0;

@@ -18,4 +18,15 @@ export const AUTH_COPY = {
     // Header
     registerButton: "Register",
     enterButton: "Enter",
+
+    // Dropdown
+    enterLink: "Dashboard",
+    defaultUsername: "User",
+    tierLabel: "Tier",
+
+    // BYOP CTA
+    byopTitle: "🐝 Register your app for BYOP",
+    byopDescription:
+        "🌼 Let your users connect and use their own Pollen in your app.",
+    byopLink: "Learn about BYOP",
 };

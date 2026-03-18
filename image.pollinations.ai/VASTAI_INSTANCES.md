@@ -1,6 +1,6 @@
 # Vast.ai GPU Instances - Flux & Z-Image Deployment
 
-Last updated: 2026-02-05
+Last updated: 2026-03-08
 
 ## Overview
 
@@ -12,7 +12,7 @@ Vast.ai instances running RTX 5090 GPUs for image generation:
 
 | Instance ID | Public IP | SSH Host | SSH Port | GPUs | GPU Type | Location | Services |
 |-------------|-----------|----------|----------|------|----------|----------|----------|
-| 30937024 | 211.72.13.202 | ssh3.vast.ai | 17024 | 4 | RTX 5090 | Taiwan | Flux (GPU 0), Z-Image (GPU 1,2,3) |
+| 30937024 | 211.72.13.202 | ssh3.vast.ai | 17024 | 4 | RTX 5090 | Taiwan | Sana 0.6B (GPU 0), Z-Image (GPU 1,2,3) |
 | 30826995 | 76.69.188.175 | ssh2.vast.ai | 26994 | 4 | RTX 5090 | Quebec, CA | Flux (GPU 0,1,2,3) |
 | 30939919 | 108.255.76.60 | ssh1.vast.ai | 19918 | 2 | RTX 5090 | North Carolina, US | Flux (GPU 0,1) |
 | 30994805 | 108.255.76.60 | ssh7.vast.ai | 34804 | 1 | RTX 5090 | North Carolina, US | Z-Image |
@@ -22,7 +22,7 @@ Vast.ai instances running RTX 5090 GPUs for image generation:
 **Instance 30937024 (Taiwan)**
 | Internal Port | External Port | Service |
 |---------------|---------------|---------|
-| 8765 | 47190 | Flux (GPU 0) |
+| 8765 | 47190 | Sana 0.6B (GPU 0) |
 | 8766 | 47162 | Z-Image (GPU 1) |
 | 8767 | 47174 | Z-Image (GPU 2) |
 | 8768 | 47158 | Z-Image (GPU 3) |
@@ -451,11 +451,11 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 - Check that `x-backend-token` header matches `PLN_IMAGE_BACKEND_TOKEN`
 - Verify the token in `enter.pollinations.ai/.testingtokens`
 
-## Capacity Summary (2026-02-05)
+## Capacity Summary (2026-03-08)
 
 | Instance | GPU | Service | VRAM | Port | Location |
 |----------|-----|---------|------|------|----------|
-| 30937024 | 0 | Flux | ~27 GB | 47190 | Taiwan |
+| 30937024 | 0 | Sana 0.6B | ~7 GB | 47190 | Taiwan |
 | 30937024 | 1 | Z-Image | ~26 GB | 47162 | Taiwan |
 | 30937024 | 2 | Z-Image | ~25 GB | 47174 | Taiwan |
 | 30937024 | 3 | Z-Image | ~26 GB | 47158 | Taiwan |
@@ -466,7 +466,50 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 | 30939919 | 0 | Flux | ~21 GB | 63218 | N. Carolina |
 | 30939919 | 1 | Flux | ~21 GB | 63511 | N. Carolina |
 | 30994805 | 0 | Z-Image | ~25 GB | 53559 | N. Carolina |
-| **Total** | **11** | **7 Flux + 4 Z-Image** | | |
+| **Total** | **11** | **6 Flux + 4 Z-Image + 1 Sana** | | |
+
+## Legacy image.pollinations.ai (Sana on Taiwan Instance)
+
+GPU 0 on Instance 30937024 (Taiwan) runs **Sana Sprint 0.6B** for the legacy `image.pollinations.ai` endpoint. This is separate from the `gen.pollinations.ai` gateway.
+
+**Architecture:**
+```
+image.pollinations.ai → Cloudflare tunnel → Scaleway (57.130.31.42:16384)
+  → SSH tunnel (localhost:19876) → vast.ai Taiwan (8765) → Sana 0.6B
+```
+
+**Scaleway gateway** (57.130.31.42):
+- Runs the full legacy image service from `master` branch (`image.pollinations.ai/src/index.ts`)
+- Provides rate limiting (90s per IP, 1 concurrent per IP), error images, queue management
+- Remaps all model requests (flux, z-image) to `sana`
+- SSH tunnel to vast.ai for Sana backend
+- Cloudflare tunnel: `image-origin.pollinations.ai` → localhost:16384
+
+**Sana config** (on vast.ai Taiwan GPU 0):
+- Model: `Sana_Sprint_0.6B_1024px_diffusers`
+- Max resolution: 512x512 (clamped, not rejected)
+- Inference steps: 2
+- Generation time: ~0.2-0.5s per image
+
+**Management:**
+```bash
+# Scaleway (legacy service)
+ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42
+sudo systemctl status image-pollinations.service
+sudo journalctl -u image-pollinations -f
+
+# Vast.ai (Sana)
+ssh -i ~/.ssh/pollinations_services_2026 -p 17024 root@ssh3.vast.ai
+screen -r sana-gpu0
+tail -f /tmp/sana.log
+
+# SSH tunnel (on Scaleway) - must be running for legacy service to work
+# Restart if needed:
+nohup ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 \
+  -i ~/.ssh/pollinations_services_2026 -p 17024 \
+  -L 19876:localhost:8765 -N root@ssh3.vast.ai \
+  > /tmp/tunnel-sana.log 2>&1 &
+```
 
 ## Notes
 

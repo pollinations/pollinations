@@ -19,6 +19,9 @@
         "skipLibCheck": true,
         "resolveJsonModule": true,
 
+        // Node.js types
+        "types": ["node"],
+
         // Base path for imports
         "baseUrl": "."
     },

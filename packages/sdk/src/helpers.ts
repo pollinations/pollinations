@@ -4,7 +4,7 @@
  *
  * @example
  * ```ts
- * import { generateImage, generateText } from '@pollinations/sdk';
+ * import { generateImage, generateText } from '@pollinations_ai/sdk';
  *
  * // Generate an image and save it
  * const image = await generateImage('A cute cat');
@@ -19,24 +19,36 @@
  */
 
 import { Pollinations } from "./client.js";
-import type {
-    ImageGenerateOptions,
-    VideoGenerateOptions,
-    TextGenerateOptions,
-    ChatOptions,
-    AudioGenerateOptions,
-    Message,
-    ModelInfo,
-} from "./types.js";
 import {
-    wrapImageResponse,
-    wrapVideoResponse,
-    wrapChatResponse,
+    type ChatResponseExt,
     Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
-    type ChatResponseExt,
+    wrapChatResponse,
+    wrapImageResponse,
+    wrapVideoResponse,
 } from "./extras.js";
+import type {
+    AccountBalance,
+    AccountProfile,
+    AudioGenerateOptions,
+    AuthorizeOptions,
+    ChatOptions,
+    DailyUsageResponse,
+    ImageGenerateOptions,
+    KeyInfo,
+    Message,
+    ModelInfo,
+    TextGenerateOptions,
+    TranscribeOptions,
+    TranscriptionResponse,
+    TranscriptionVerboseResponse,
+    UploadOptions,
+    UploadResponse,
+    UsageOptions,
+    UsageResponse,
+    VideoGenerateOptions,
+} from "./types.js";
 
 // Default client instance
 let defaultClient: Pollinations | null = null;
@@ -63,7 +75,7 @@ export function resetClient(): void {
  *
  * @example
  * ```ts
- * import { configure } from '@pollinations/sdk';
+ * import { configure } from '@pollinations_ai/sdk';
  * configure({ apiKey: 'your-api-key' });
  * ```
  */
@@ -411,4 +423,114 @@ export async function getImageModels(): Promise<ModelInfo[]> {
  */
 export async function getModels(): Promise<ModelInfo[]> {
     return getClient().models();
+}
+
+// ============================================================================
+// Transcription (STT) Functions
+// ============================================================================
+
+/**
+ * Transcribe audio to text
+ *
+ * @example
+ * ```ts
+ * import fs from 'fs';
+ * const audio = fs.readFileSync('speech.mp3');
+ * const { text } = await transcribe(audio);
+ * ```
+ */
+export async function transcribe(
+    audio: ArrayBuffer | Blob,
+    options: TranscribeOptions & { responseFormat: "verbose_json" },
+): Promise<TranscriptionVerboseResponse>;
+export async function transcribe(
+    audio: ArrayBuffer | Blob,
+    options?: TranscribeOptions,
+): Promise<TranscriptionResponse>;
+export async function transcribe(
+    audio: ArrayBuffer | Blob,
+    options?: TranscribeOptions,
+): Promise<TranscriptionResponse | TranscriptionVerboseResponse> {
+    return getClient().transcribe(audio, options as TranscribeOptions);
+}
+
+// ============================================================================
+// Media Upload Functions
+// ============================================================================
+
+/**
+ * Upload media and get a public URL
+ *
+ * @example
+ * ```ts
+ * const result = await upload(imageBuffer, { contentType: 'image/jpeg' });
+ * console.log(result.url);
+ * ```
+ */
+export async function upload(
+    data: ArrayBuffer | Blob,
+    options?: UploadOptions,
+): Promise<UploadResponse> {
+    return getClient().upload(data, options);
+}
+
+// ============================================================================
+// BYOP Functions
+// ============================================================================
+
+/**
+ * Build a BYOP authorization URL
+ *
+ * @example
+ * ```ts
+ * const url = authorizeUrl({
+ *   redirectUrl: 'https://myapp.com/callback',
+ *   models: ['flux', 'openai'],
+ *   budget: 10,
+ * });
+ * ```
+ */
+export function authorizeUrl(options: AuthorizeOptions): string {
+    return getClient().authorizeUrl(options);
+}
+
+// ============================================================================
+// Account Functions
+// ============================================================================
+
+/**
+ * Get user profile
+ */
+export async function getProfile(): Promise<AccountProfile> {
+    return getClient().accountProfile();
+}
+
+/**
+ * Get account balance
+ */
+export async function getBalance(): Promise<AccountBalance> {
+    return getClient().accountBalance();
+}
+
+/**
+ * Get usage history
+ */
+export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
+    return getClient().accountUsage(options);
+}
+
+/**
+ * Get daily usage summary
+ */
+export async function getDailyUsage(options?: {
+    format?: "json" | "csv";
+}): Promise<DailyUsageResponse> {
+    return getClient().accountUsageDaily(options);
+}
+
+/**
+ * Validate API key and get key info
+ */
+export async function validateKey(): Promise<KeyInfo> {
+    return getClient().validateKey();
 }

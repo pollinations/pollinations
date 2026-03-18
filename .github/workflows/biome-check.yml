@@ -2,7 +2,7 @@ name: Biome Check
 
 "on":
   pull_request:
-    branches: [main]
+    branches: [main, master]
 
 jobs:
   biome:
@@ -24,12 +24,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Biome CLI
+        run: npm install --no-save @biomejs/cli-linux-x64@2.3.10
+
       - name: Get changed files
         id: changed-files
         run: |
           # Get only added/modified files (exclude deleted files)
           # Also exclude paths that biome.jsonc ignores (reddit, node_modules, dist, etc.)
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|reddit|dist|build|\.next|\.cache|out|package-lock\.json)/' | grep -v 'package-lock\.json$' || true)
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|reddit|dist|build|\.next|\.cache|out|package-lock\.json|secrets)/' | grep -v 'package-lock\.json$' || true)
           echo "Changed files:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT

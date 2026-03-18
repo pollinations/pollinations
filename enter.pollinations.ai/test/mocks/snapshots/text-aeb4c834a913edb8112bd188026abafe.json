@@ -1,0 +1,131 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-3-pro-legacy",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "id": "portkey-7bdb4cc7-2264-4c7d-a71f-02021ea67516",
+                "type": "function",
+                "function": {
+                  "name": "calculator",
+                  "arguments": "{\"b\":3,\"a\":5,\"operation\":\"add\"}",
+                  "thought_signature": "CrgCAY89a18YqR8dUhWbszT6VCfiszRX6kZWyDQIx9sNC6DvE2PINY1P2LbwztOaVChylmz8LX7tAEApPjbLHWY4AnCH4zZ5M7fUK1yFGp2H+opylU0jBqxnXwbmBgECwJ5P6eKI9/PuPxq8e2qjzYvsp9aLr/0HTVqqL7MwNP+YPuACu7MJmtlGTXgqjY2P4MR5iymKvTYbRwKK/PE6vZ3rsLJ1uMYn7I0Tr+deC0Lxt10gxfSnxyUM9e2ULs/7pV2mFb9D4MWh+oFMw8QvU9fdbeDz4YqBpGs1fVtv1frlEJSTy6SxS+pE2BMd6Cb9TJAhhabqrZkOXtB9wEzVgEEIQaJVQVcCsHczNvfpqpHdNm5NCmnUY6rdlDMh5TDqD97+C/48EWNfTRcRyCQnxPq+nYyTV8iKrNDd"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "portkey-7bdb4cc7-2264-4c7d-a71f-02021ea67516",
+            "content": "{\"result\":8}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "seed": 42,
+        "max_tokens": 4096
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "534",
+      "content-type": "application/json",
+      "date": "Tue, 17 Mar 2026 13:25:19 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-pro-preview",
+      "x-usage-completion-text-tokens": "12",
+      "x-usage-prompt-text-tokens": "66"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_4607efedd7e2954bda6e3abe5f65c9c9",
+        "object": "chat.completion",
+        "created": 1773753919,
+        "model": "gemini-3-pro-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "The result of 5 + 3 is 8.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "The result of 5 + 3 is 8."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 66,
+          "completion_tokens": 12,
+          "total_tokens": 78,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

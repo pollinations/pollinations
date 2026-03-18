@@ -11,6 +11,7 @@ const cardColors = {
     red: "border-red-300",
     yellow: "border-yellow-200",
     gray: "border-gray-200",
+    pink: "border-pink-300",
 } as const;
 
 type CardProps = PropsWithChildren<{
@@ -21,13 +22,13 @@ type CardProps = PropsWithChildren<{
 
 export const Card: FC<CardProps> = ({
     color = "gray",
-    bg = "bg-white/50",
+    bg = "bg-white/80",
     className,
     children,
 }) => (
     <div
         className={cn(
-            "rounded-xl border shadow-sm p-4",
+            "rounded-xl border p-4",
             cardColors[color],
             bg,
             className,

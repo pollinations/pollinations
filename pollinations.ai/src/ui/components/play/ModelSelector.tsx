@@ -1,8 +1,10 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 import { Button } from "../ui/button";
+
+type ModelCategory = "image" | "text" | "audio" | "video";
 
 interface ModelSelectorProps {
     models: Model[];
@@ -12,12 +14,47 @@ interface ModelSelectorProps {
     allowedImageModelIds: Set<string>;
     allowedTextModelIds: Set<string>;
     allowedAudioModelIds: Set<string>;
+    isLoading?: boolean;
+    isLoggedIn?: boolean;
+}
+
+const CATEGORY_GLOW: Record<ModelCategory, string> = {
+    image: "var(--primary-strong)",
+    text: "var(--secondary-strong)",
+    audio: "var(--tertiary-strong)",
+    video: "var(--accent-strong)",
+};
+
+const COLOR_VARS: Record<ModelCategory, { strong: string; light: string }> = {
+    image: {
+        strong: "rgb(var(--primary-strong))",
+        light: "rgb(var(--primary-light))",
+    },
+    text: {
+        strong: "rgb(var(--secondary-strong))",
+        light: "rgb(var(--secondary-light))",
+    },
+    audio: {
+        strong: "rgb(var(--tertiary-strong))",
+        light: "rgb(var(--tertiary-light))",
+    },
+    video: {
+        strong: "rgb(var(--accent-strong))",
+        light: "rgb(var(--accent-light))",
+    },
+};
+
+function getModelCategory(m: Model): ModelCategory {
+    if (m.hasVideoOutput) return "video";
+    if (m.hasAudioOutput || m.type === "audio") return "audio";
+    if (m.type === "image") return "image";
+    return "text";
 }
 
 /**
  * ModelSelector Component
  * Unified model selection UI used in both Create and Watch views
- * Shows image/text/audio models with color indicators
+ * Shows image/text/audio/video models with color-coded filter tabs
  * Memoized to prevent unnecessary re-renders
  */
 export const ModelSelector = memo(function ModelSelector({
@@ -28,112 +65,109 @@ export const ModelSelector = memo(function ModelSelector({
     allowedImageModelIds,
     allowedTextModelIds,
     allowedAudioModelIds,
+    isLoading = false,
+    isLoggedIn = false,
 }: ModelSelectorProps) {
-    // Get translated copy
     const { copy } = usePageCopy(PLAY_PAGE);
+    const [activeCategory, setActiveCategory] =
+        useState<ModelCategory>("image");
+
+    const categories: { key: ModelCategory; label: string }[] = [
+        { key: "image", label: copy.imageLabel },
+        { key: "text", label: copy.textLabel },
+        { key: "audio", label: copy.audioLabel },
+        { key: "video", label: copy.videoLabel },
+    ];
+
+    const filteredModels = models.filter(
+        (m) => getModelCategory(m) === activeCategory,
+    );
 
     return (
         <div className="mb-6">
             {showLegend && (
-                <div className="flex items-center gap-4 mb-3">
-                    <div className="font-headline text-text-body-main uppercase text-xs tracking-wider font-black">
-                        {copy.modelsLabel}
-                    </div>
-                    <div className="flex items-center gap-3 text-[10px] font-headline uppercase tracking-wider font-black">
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-indicator-image" />
-                            <span className="text-text-caption">
-                                {copy.imageLabel}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-indicator-text" />
-                            <span className="text-text-caption">
-                                {copy.textLabel}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-indicator-audio" />
-                            <span className="text-text-caption">
-                                {copy.audioLabel}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-indicator-video" />
-                            <span className="text-text-caption">
-                                {copy.videoLabel}
-                            </span>
-                        </div>
-                    </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                    {categories.map(({ key, label }) => (
+                        <Button
+                            key={key}
+                            type="button"
+                            variant="toggle-glow"
+                            data-active={activeCategory === key}
+                            onClick={() => setActiveCategory(key)}
+                            className="px-2 py-1 text-sm md:px-4 md:py-2 md:text-base"
+                            style={
+                                {
+                                    "--glow": CATEGORY_GLOW[key],
+                                } as React.CSSProperties
+                            }
+                        >
+                            {label}
+                        </Button>
+                    ))}
                 </div>
             )}
             <div className="flex flex-wrap gap-2">
-                {models.map((m) => {
-                    const hasVideoOutput = m.hasVideoOutput;
-                    const hasAudioOutput = m.hasAudioOutput;
-                    const isImage = m.type === "image";
-                    const isPaidOnly = m.paid_only;
+                {isLoading
+                    ? ["s1", "s2", "s3", "s4"].map((k) => (
+                          <div
+                              key={k}
+                              className="h-8 w-20 rounded animate-pulse bg-border opacity-40"
+                          />
+                      ))
+                    : filteredModels.map((m) => {
+                          const modelType = getModelCategory(m);
+                          const isActive = selectedModel === m.id;
+                          const isPaidOnly = m.paid_only;
+                          const isImage = m.type === "image";
+                          const isAudio = m.type === "audio";
+                          const allowedSet = isImage
+                              ? allowedImageModelIds
+                              : isAudio
+                                ? allowedAudioModelIds
+                                : allowedTextModelIds;
+                          const isAllowed = allowedSet.has(m.id);
+                          const borderColor = isActive
+                              ? COLOR_VARS[modelType].strong
+                              : COLOR_VARS[modelType].light;
 
-                    const isAudio = m.type === "audio";
-
-                    // Priority: video > audio (by output or type) > image > text
-                    const modelType = hasVideoOutput
-                        ? "video"
-                        : hasAudioOutput || isAudio
-                          ? "audio"
-                          : isImage
-                            ? "image"
-                            : "text";
-                    const isActive = selectedModel === m.id;
-                    const allowedSet = isImage
-                        ? allowedImageModelIds
-                        : isAudio
-                          ? allowedAudioModelIds
-                          : allowedTextModelIds;
-                    const isAllowed = allowedSet.has(m.id);
-
-                    const borderColor = hasVideoOutput
-                        ? "rgb(var(--indicator-video))"
-                        : hasAudioOutput || isAudio
-                          ? "rgb(var(--indicator-audio))"
-                          : isImage
-                            ? "rgb(var(--indicator-image))"
-                            : "rgb(var(--indicator-text))";
-
-                    return (
-                        <div key={m.id} className="relative group">
-                            <Button
-                                type="button"
-                                onClick={() => isAllowed && onSelectModel(m.id)}
-                                variant="model"
-                                size={null}
-                                data-active={isActive}
-                                data-type={modelType}
-                                disabled={!isAllowed}
-                                title={m.description || m.id}
-                                className={`border-2 ${
-                                    !isAllowed
-                                        ? "opacity-40 cursor-not-allowed grayscale"
-                                        : ""
-                                }`}
-                                style={{ borderColor }}
-                            >
-                                {m.name}
-                                {isPaidOnly && (
-                                    <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">
-                                        💎
-                                    </span>
-                                )}
-                            </Button>
-                            {!isAllowed && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    {copy.gatedModelTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                          return (
+                              <div key={m.id} className="relative group">
+                                  <Button
+                                      type="button"
+                                      onClick={() =>
+                                          isAllowed && onSelectModel(m.id)
+                                      }
+                                      variant="model"
+                                      size={null}
+                                      data-active={isActive}
+                                      data-type={modelType}
+                                      disabled={!isAllowed}
+                                      title={m.description || m.id}
+                                      className={`border-2 ${
+                                          !isAllowed
+                                              ? "opacity-40 cursor-not-allowed grayscale"
+                                              : ""
+                                      }`}
+                                      style={{ borderColor }}
+                                  >
+                                      {m.description?.split(" - ")[0] || m.name}
+                                      {isPaidOnly && (
+                                          <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">
+                                              💎
+                                          </span>
+                                      )}
+                                  </Button>
+                                  {!isAllowed && (
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                          {isLoggedIn
+                                              ? copy.gatedModelTooltipLoggedIn
+                                              : copy.gatedModelTooltip}
+                                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
+                                      </div>
+                                  )}
+                              </div>
+                          );
+                      })}
             </div>
         </div>
     );

@@ -158,6 +158,7 @@ def create_buffer_post(
     channel_id: str,
     text: str,
     media: Optional[Dict] = None,
+    metadata: Optional[Dict] = None,
     scheduled_at: Optional[str] = None,
     now: bool = False,
 ) -> Dict:
@@ -168,6 +169,7 @@ def create_buffer_post(
         channel_id: Buffer channel ID to post to
         text: The post text content
         media: Optional media dict with key 'photo' or 'url' containing image URL
+        metadata: Optional per-platform metadata for Buffer GraphQL
         scheduled_at: Optional ISO 8601 timestamp for scheduling
         now: If True, post immediately (shareNow mode)
 
@@ -191,6 +193,9 @@ def create_buffer_post(
 
     if scheduled_at:
         post_input["dueAt"] = scheduled_at
+
+    if metadata:
+        post_input["metadata"] = metadata
 
     # Map media (REST used media[photo], GraphQL uses assets.images)
     if media:

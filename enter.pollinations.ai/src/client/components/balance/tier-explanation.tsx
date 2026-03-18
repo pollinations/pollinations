@@ -13,6 +13,15 @@ import { Tooltip } from "../pricing/Tooltip.tsx";
 
 const tierBoxBase = "rounded-lg p-3 flex flex-col";
 
+const TIER_BG_CLASSES: Record<string, string> = {
+    blue: "bg-blue-100/60",
+    green: "bg-green-100/60",
+    pink: "bg-pink-100/60",
+    amber: "bg-amber-100/60",
+    gray: "bg-gray-100/60",
+    red: "bg-red-100/60",
+};
+
 const ScoringTooltip: FC<{ tier: TierName }> = ({ tier }) => {
     const groups = groupedCriteriaForTier(tier);
     const threshold = TIER_THRESHOLDS[tier];
@@ -79,7 +88,7 @@ export const TierExplanation: FC = () => (
             {DISPLAY_TIERS.map((tier) => (
                 <div
                     key={tier}
-                    className={`${tierBoxBase} ${TIER_COLORS[tier] ?? ""}`}
+                    className={`${tierBoxBase} ${TIER_BG_CLASSES[TIER_COLORS[tier]] ?? ""}`}
                 >
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS[tier]}</span>

@@ -17,6 +17,8 @@ import { User } from "../components/layout/user.tsx";
 import { Pricing } from "../components/pricing";
 import { UsageGraph } from "../components/usage-analytics";
 
+const SECONDS_PER_DAY = 24 * 60 * 60;
+
 export const Route = createFileRoute("/")({
     component: RouteComponent,
     beforeLoad: getUserOrRedirect,
@@ -72,8 +74,8 @@ function RouteComponent() {
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleSignOut = async () => {
-        if (isSigningOut) return; // Prevent double-clicks
+    async function handleSignOut(): Promise<void> {
+        if (isSigningOut) return;
         setIsSigningOut(true);
         try {
             await authClient.signOut();
@@ -83,7 +85,7 @@ function RouteComponent() {
         } finally {
             setIsSigningOut(false);
         }
-    };
+    }
 
     async function handleCreateApiKey(
         formState: CreateApiKey,
@@ -91,8 +93,6 @@ function RouteComponent() {
         const keyType = formState.keyType || "secret";
         const isPublishable = keyType === "publishable";
 
-        // Create key via better-auth's native API
-        const SECONDS_PER_DAY = 24 * 60 * 60;
         const createResult = await authClient.apiKey.create({
             name: formState.name,
             prefix: isPublishable ? "pk" : "sk",
@@ -114,16 +114,26 @@ function RouteComponent() {
 
         const apiKey = createResult.data;
 
-        // Store plaintext key for publishable keys
+        // Store plaintext key and app settings for publishable keys
         if (isPublishable) {
-            await authClient.apiKey.update({
-                keyId: apiKey.id,
-                metadata: {
+            const metaRes = await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
                     description: formState.description,
                     keyType,
                     plaintextKey: apiKey.key,
-                },
+                    ...(formState.appUrl && { appUrl: formState.appUrl }),
+                }),
             });
+            if (!metaRes.ok) {
+                const err = await metaRes.json().catch(() => null);
+                throw new Error(
+                    (err as { error?: { message?: string } })?.error?.message ||
+                        "Failed to save key metadata",
+                );
+            }
         }
 
         // Set permissions and budget if provided
@@ -194,10 +204,9 @@ function RouteComponent() {
         router.invalidate();
     }
 
-    const handleBuyPollen = (amount: number) => {
-        // Navigate to Stripe checkout endpoint with amount in USD
+    function handleBuyPollen(amount: number): void {
         window.location.href = `/api/stripe/checkout/${amount}`;
-    };
+    }
 
     return (
         <div className="flex flex-col gap-6">
@@ -450,9 +459,7 @@ function RouteComponent() {
                 </div>
                 {tierData && (
                     <div className="flex flex-col gap-2">
-                        <div className="flex flex-col sm:flex-row justify-between gap-3">
-                            <h2 className="font-bold flex-1">Tier</h2>
-                        </div>
+                        <h2 className="font-bold">Tier</h2>
                         <TierPanel {...tierData} />
                     </div>
                 )}

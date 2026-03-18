@@ -57,10 +57,10 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
-        TINYBIRD_ACCESS_TOKEN: string;
         TESTING_REFERRER: string;
         PLN_ENTER_TOKEN: string;
-        TINYBIRD_INGEST_TOKEN: string;
+        TINYBIRD_GENERATION_INGEST_TOKEN: string;
+        TINYBIRD_TIER_INGEST_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         TINYBIRD_POLAR_INGEST_TOKEN: string;
         TINYBIRD_CRYPTO_INGEST_TOKEN: string;
@@ -70,6 +70,9 @@ declare namespace Cloudflare {
         REFILL_TOKEN: string;
         ELEVENLABS_API_KEY: string;
         OVHCLOUD_API_KEY: string;
+        AIRFORCE_API_KEY: string;
+        SERAPHYN_API_KEY: string;
+        TINYBIRD_D1_SYNC_TOKEN: string;
         POLLEN_RATE_LIMITER: DurableObjectNamespace /* PollenRateLimiter from pollinations-enter */;
         IMAGE_BUCKET: R2Bucket;
         TEXT_BUCKET: R2Bucket;
@@ -109,10 +112,10 @@ declare namespace NodeJS {
                 | "POLAR_WEBHOOK_SECRET"
                 | "GITHUB_CLIENT_ID"
                 | "GITHUB_CLIENT_SECRET"
-                | "TINYBIRD_ACCESS_TOKEN"
                 | "TESTING_REFERRER"
                 | "PLN_ENTER_TOKEN"
-                | "TINYBIRD_INGEST_TOKEN"
+                | "TINYBIRD_GENERATION_INGEST_TOKEN"
+                | "TINYBIRD_TIER_INGEST_TOKEN"
                 | "TINYBIRD_READ_TOKEN"
                 | "TINYBIRD_POLAR_INGEST_TOKEN"
                 | "TINYBIRD_CRYPTO_INGEST_TOKEN"

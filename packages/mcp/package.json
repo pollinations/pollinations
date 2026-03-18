@@ -1,6 +1,6 @@
 {
-    "name": "@pollinations/model-context-protocol",
-    "version": "2.0.0",
+    "name": "@pollinations_ai/mcp",
+    "version": "2.0.3",
     "description": "Model Context Protocol (MCP) server for pollinations.ai - image, text, audio & video generation",
     "type": "module",
     "bin": {
@@ -31,7 +31,17 @@
         "stdio",
         "openai-compatible"
     ],
-    "author": "pollinations.ai",
+    "author": "pollinations.ai <hello@pollinations.ai>",
+    "contributors": [
+        {
+        "name": "Circuit-Overtime",
+        "email": "ayushman@myceli.ai"
+        },
+        {
+        "name": "ElliotEtag",
+        "email": "elliot@myceli.ai"
+        }
+    ],
     "license": "MIT",
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.25.1",
@@ -41,7 +51,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/pollinations/pollinations.git",
+        "url": "https://github.com/pollinations/pollinations.git",
         "directory": "packages/mcp"
     },
     "bugs": {
@@ -50,6 +60,13 @@
     "homepage": "https://github.com/pollinations/pollinations#readme",
     "engines": {
         "node": ">=18.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/pollinations"
     },
     "devDependencies": {
         "@types/node": "^22.14.1",

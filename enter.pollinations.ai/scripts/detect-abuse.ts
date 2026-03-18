@@ -17,15 +17,18 @@
  *   --model NAME      LLM model to use (default: gemini)
  *   --single-chunk    Only process first chunk (for testing)
  *   --parallel N      Process N chunks in parallel (default: 1)
+ *   --since DATE      Only scan users created after this date (YYYY-MM-DD)
+ *   --last DURATION   Only scan users from the last N hours/days (e.g. 24h, 7d)
+ *   --auto-apply      Automatically apply blocks after scanning (no dry-run)
  *
  * OUTPUT:
  *   abuse-report.csv - All users sorted by score (action, score, email, github, signals, date)
  */
 
+import { execSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { formatDate, type ScoredUser, scoreUsers } from "./llm-scorer.ts";
 
-// Configuration
 const SCORE_THRESHOLDS = {
     block: 70,
     review: 40,
@@ -37,31 +40,66 @@ interface ParsedArgs {
     modelName: string;
     parallelism: number;
     singleChunk: boolean;
+    sinceTimestamp: number | null;
+    autoApply: boolean;
 }
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
 
-    function getArgValue(
-        flag: string,
-        defaultValue: number | string,
-    ): number | string {
+    function getStr(flag: string, defaultValue: string): string {
         const index = args.indexOf(flag);
-        if (index >= 0 && args[index + 1]) {
-            return typeof defaultValue === "number"
-                ? parseInt(args[index + 1], 10)
-                : args[index + 1];
-        }
-        return defaultValue;
+        return index >= 0 && args[index + 1] ? args[index + 1] : defaultValue;
     }
 
+    function getNum(flag: string, defaultValue: number): number {
+        const value = getStr(flag, "");
+        return value ? parseInt(value, 10) : defaultValue;
+    }
+
+    const sinceTimestamp = parseSinceTimestamp(
+        getStr("--since", ""),
+        getStr("--last", ""),
+    );
+
     return {
-        userLimit: getArgValue("--limit", 5000) as number,
-        chunkSize: getArgValue("--chunk-size", 100) as number,
-        modelName: getArgValue("--model", "gemini") as string,
-        parallelism: getArgValue("--parallel", 1) as number,
+        userLimit: getNum("--limit", 5000),
+        chunkSize: getNum("--chunk-size", 100),
+        modelName: getStr("--model", "gemini"),
+        parallelism: getNum("--parallel", 1),
         singleChunk: args.includes("--single-chunk"),
+        sinceTimestamp,
+        autoApply: args.includes("--auto-apply"),
     };
+}
+
+function parseSinceTimestamp(
+    sinceDate: string,
+    lastDuration: string,
+): number | null {
+    if (lastDuration) {
+        const match = lastDuration.match(/^(\d+)(h|d)$/);
+        if (!match) {
+            console.error(
+                `Invalid --last format: ${lastDuration} (use e.g. 24h or 7d)`,
+            );
+            process.exit(1);
+        }
+        const amount = parseInt(match[1], 10);
+        const ms = match[2] === "h" ? amount * 3600_000 : amount * 86400_000;
+        return Date.now() - ms;
+    }
+
+    if (sinceDate) {
+        const timestamp = new Date(sinceDate).getTime();
+        if (Number.isNaN(timestamp)) {
+            console.error(`Invalid --since date: ${sinceDate}`);
+            process.exit(1);
+        }
+        return timestamp;
+    }
+
+    return null;
 }
 
 /**
@@ -142,11 +180,11 @@ function exportResults(users: ScoredUser[]): void {
 
     if (topSuspicious.length > 0) {
         console.log("\nTop suspicious accounts:");
-        topSuspicious.forEach((u) => {
+        for (const u of topSuspicious) {
             console.log(
                 `  ${u.email} | ${u.github_username || "-"} | ${formatDate(u.created_at)}`,
             );
-        });
+        }
     }
 }
 
@@ -155,13 +193,20 @@ async function main(): Promise<void> {
 
     console.log("Abuse Detection");
     console.log("=".repeat(50));
+    const sinceLabel = config.sinceTimestamp
+        ? `, since ${new Date(config.sinceTimestamp).toISOString().split("T")[0]}`
+        : "";
     console.log(
-        `Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}`,
+        `Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}${sinceLabel}`,
     );
+
+    const whereClause = config.sinceTimestamp
+        ? `WHERE created_at > ${config.sinceTimestamp}`
+        : "";
 
     const scored = await scoreUsers({
         name: "abuse-detection",
-        userQuery: `SELECT email, github_username, created_at, tier FROM user ORDER BY created_at DESC LIMIT ${config.userLimit}`,
+        userQuery: `SELECT email, github_username, created_at, tier FROM user ${whereClause} ORDER BY created_at DESC LIMIT ${config.userLimit}`,
         buildPrompt: buildAbusePrompt,
         chunkSize: config.chunkSize,
         model: config.modelName,
@@ -175,6 +220,24 @@ async function main(): Promise<void> {
     }
 
     exportResults(scored);
+
+    if (config.autoApply) {
+        const blockCount = scored.filter((u) => u.action === "block").length;
+        if (blockCount === 0) {
+            console.log("\n✅ No users to block, skipping apply step");
+            return;
+        }
+        console.log(`\n🚫 Auto-applying blocks to ${blockCount} users...`);
+        try {
+            execSync(
+                "npx tsx scripts/apply-abuse-blocks.ts apply-blocks --env production --batch-size 50",
+                { encoding: "utf-8", stdio: "inherit" },
+            );
+        } catch (error) {
+            console.error("❌ Failed to apply blocks:", error);
+            process.exit(1);
+        }
+    }
 }
 
 main().catch(console.error);

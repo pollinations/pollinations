@@ -43,21 +43,11 @@ export const VOICE_MAPPING: Record<string, string> = {
     bill: "pqHfZKP75CvOlQylNhV4", // Trustworthy, American
 };
 
-export const ELEVENLABS_VOICES = Object.keys(
-    VOICE_MAPPING,
-) as (keyof typeof VOICE_MAPPING)[];
-export type ElevenLabsVoice = keyof typeof VOICE_MAPPING;
+export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
 export type AudioServiceId = keyof typeof AUDIO_SERVICES;
 export type AudioModelId = (typeof AUDIO_SERVICES)[AudioServiceId]["modelId"];
-
-/**
- * Helper to convert dollars per 1000 characters to dollars per character
- */
-function perThousandChars(dollarsPerThousand: number): number {
-    return dollarsPerThousand / 1000;
-}
 
 export const AUDIO_SERVICES = {
     elevenlabs: {
@@ -68,7 +58,7 @@ export const AUDIO_SERVICES = {
             {
                 date: new Date("2026-02-07").getTime(),
                 // ElevenLabs pricing: 1 credit = 1 character, ~$0.18 per 1000 chars
-                completionAudioTokens: perThousandChars(0.18),
+                completionAudioTokens: 0.18 / 1000,
             },
         ],
         description:
@@ -111,4 +101,58 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         alpha: true,
     },
+    suno: {
+        aliases: ["suno-v5", "suno-music"],
+        modelId: "suno-v5",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-03-02").getTime(),
+                // Suno music: ~$0.001 per second of output audio
+                completionAudioSeconds: 0.001,
+            },
+        ],
+        description:
+            "Suno v5 (api.airforce) - AI music generation from text prompts",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        alpha: true,
+    },
+    scribe: {
+        aliases: ["scribe_v2", "scribe-v2"],
+        modelId: "scribe_v2",
+        provider: "elevenlabs",
+        cost: [
+            {
+                date: new Date("2026-02-13").getTime(),
+                // ElevenLabs Scribe: $0.40/hour = $0.0001111/sec
+                promptAudioSeconds: 0.0001111,
+            },
+        ],
+        description:
+            "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+    },
+    "qwen3-tts": {
+        aliases: ["qwen-tts"],
+        modelId: "qwen3-tts",
+        provider: "seraphyn",
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                // Half of Alibaba's cheapest (qwen3-tts-flash $0.01/1K chars)
+                completionAudioTokens: 0.005 / 1000,
+            },
+        ],
+        description:
+            "Qwen3 TTS (seraphyn.ai) - Text-to-speech via community provider",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        alpha: true,
+    },
 } satisfies Record<string, ServiceDefinition<string>>;
+
+export function resolveElevenLabsVoiceId(voice: string): string {
+    return VOICE_MAPPING[voice] ?? voice;
+}

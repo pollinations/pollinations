@@ -6,8 +6,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 const logFeed = debug("pollinations:feed");
 const logAuth = debug("pollinations:auth");
 
-let feedListeners = [];
-const lastStates = [];
+type FeedListener = { res: ServerResponse; isAuthenticated: boolean };
+
+let feedListeners: FeedListener[] = [];
+const lastStates: unknown[] = [];
 
 function getAbsoluteUrl(req: IncomingMessage): URL {
     const host = req.headers.host;
@@ -37,14 +39,15 @@ export const registerFeedListener = async (
 
     // Check if the password query parameter matches the PLN_FEED_PASSWORD
     const isAuthenticated =
-        parsedUrl.searchParams.get("password") === process.env.PLN_FEED_PASSWORD;
+        parsedUrl.searchParams.get("password") ===
+        process.env.PLN_FEED_PASSWORD;
 
     if (isAuthenticated) {
         logAuth("Authenticated feed access granted");
     }
 
     // add listener to feedListeners with authentication status
-    feedListeners = [...feedListeners, { res, isAuthenticated }];
+    feedListeners.push({ res, isAuthenticated });
 
     // remove listener when connection closes
     req.on("close", () => {
@@ -55,7 +58,7 @@ export const registerFeedListener = async (
     });
 
     const pastResults =
-        parseInt(parsedUrl.searchParams.get("past_results")) || 20;
+        parseInt(parsedUrl.searchParams.get("past_results"), 10) || 20;
 
     const statesToSend = lastStates.slice(-pastResults);
 
@@ -80,9 +83,9 @@ export const sendToFeedListeners = (
     if (options.saveAsLastState) {
         lastStates.push(data);
     }
-    feedListeners.forEach((listener) =>
-        sendToListener(listener.res, data, listener.isAuthenticated),
-    );
+    for (const listener of feedListeners) {
+        sendToListener(listener.res, data, listener.isAuthenticated);
+    }
 };
 
 function sendToListener(listener, data, isAuthenticated = false) {

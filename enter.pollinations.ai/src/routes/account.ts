@@ -9,11 +9,19 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
-import { tierNames } from "@/tier-config.ts";
+import { getTierCadence, tierNames } from "@/tier-config.ts";
 
-// Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
-function getNextRefillAt(): string {
+// Calculate next tier refill time based on cadence (null for tiers with no refill)
+function getNextRefillAt(tier?: string | null): string | null {
+    const cadence = tier ? getTierCadence(tier) : "none";
+    if (cadence === "none") return null;
     const now = new Date();
+    if (cadence === "hourly") {
+        const nextHour = new Date(now);
+        nextHour.setUTCMinutes(0, 0, 0);
+        nextHour.setUTCHours(nextHour.getUTCHours() + 1);
+        return nextHour.toISOString();
+    }
     const tomorrow = new Date(now);
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     tomorrow.setUTCHours(0, 0, 0, 0);
@@ -94,7 +102,7 @@ const profileResponseSchema = z.object({
     nextResetAt: z.iso
         .datetime()
         .nullable()
-        .describe("Next daily pollen reset timestamp (ISO 8601)"),
+        .describe("Next pollen refill timestamp (ISO 8601)"),
 });
 
 const balanceResponseSchema = z.object({
@@ -157,13 +165,13 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/profile",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["👤 Account"],
+            summary: "Get Profile",
             description:
-                "Get user profile info (name, email, GitHub username, tier, createdAt, nextResetAt). Requires `account:profile` permission for API keys.",
+                "Returns your account profile including name, email, tier level, and account creation date. Requires `account:profile` permission when using API keys.",
             responses: {
                 200: {
-                    description:
-                        "User profile with name, email, githubUsername, tier, createdAt, nextResetAt",
+                    description: "User profile",
                     content: {
                         "application/json": {
                             schema: resolver(profileResponseSchema),
@@ -211,8 +219,7 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
-            // Next reset is always midnight UTC (cron runs daily)
-            const nextResetAt = getNextRefillAt();
+            const nextResetAt = getNextRefillAt(profile.tier);
 
             return c.json({
                 name: profile.name,
@@ -228,12 +235,13 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/balance",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["👤 Account"],
+            summary: "Get Balance",
             description:
-                "Get pollen balance. Returns the key's remaining budget if set, otherwise the user's total balance. Requires `account:balance` permission for API keys.",
+                "Returns your current pollen balance. If the API key has a budget limit, returns the key's remaining budget instead. Requires `account:balance` permission when using API keys.",
             responses: {
                 200: {
-                    description: "Balance (remaining pollen)",
+                    description: "Pollen balance",
                     content: {
                         "application/json": {
                             schema: resolver(balanceResponseSchema),
@@ -281,21 +289,26 @@ export const accountRoutes = new Hono<Env>()
             const packBalance = users[0]?.packBalance ?? 0;
             const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
+            // Clamp each bucket at 0 before summing — individual buckets can go negative
+            // from overage but shouldn't reduce the visible total
             return c.json({
-                balance: tierBalance + packBalance + cryptoBalance,
+                balance:
+                    Math.max(0, tierBalance) +
+                    Math.max(0, packBalance) +
+                    Math.max(0, cryptoBalance),
             });
         },
     )
     .get(
         "/usage",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["👤 Account"],
+            summary: "Get Usage History",
             description:
-                "Get request history and spending data. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.",
+                "Returns your request history with per-request details: model used, token counts, cost, and response time. Supports JSON and CSV export. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
-                    description:
-                        "Usage records with timestamp, model, tokens, cost_usd, etc.",
+                    description: "Usage records",
                     content: {
                         "application/json": {
                             schema: resolver(usageResponseSchema),
@@ -444,9 +457,10 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/usage/daily",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["👤 Account"],
+            summary: "Get Daily Usage",
             description:
-                "Get daily aggregated usage data (last 90 days). Supports JSON and CSV formats. Requires `account:usage` permission for API keys. Results are cached for 1 hour.",
+                "Returns daily aggregated usage for the last 90 days, grouped by date and model. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Daily usage records aggregated by date/model",
@@ -573,9 +587,10 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/key",
         describeRoute({
-            tags: ["gen.pollinations.ai"],
+            tags: ["👤 Account"],
+            summary: "Get API Key Info",
             description:
-                "Get API key status and information. Returns key validity, type, expiry, permissions, and remaining budget. This endpoint allows validating keys without making expensive generation requests. Requires API key authentication.",
+                "Returns information about the API key used in the request: validity, type (secret/publishable), expiry, permissions, and remaining budget. Useful for validating keys without making generation requests.",
             responses: {
                 200: {
                     description: "API key status and information",
@@ -672,7 +687,6 @@ export const accountRoutes = new Hono<Env>()
             const keyDetails = await db
                 .select({
                     expiresAt: apikeyTable.expiresAt,
-                    rateLimitEnabled: apikeyTable.rateLimitEnabled,
                 })
                 .from(apikeyTable)
                 .where(eq(apikeyTable.id, apiKey.id))
@@ -712,7 +726,8 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
-                rateLimitEnabled: keyDetails?.rateLimitEnabled ?? true,
+                // Rate limiting applies to publishable keys only (see rate-limit-durable.ts)
+                rateLimitEnabled: keyType === "publishable",
             });
         },
     );

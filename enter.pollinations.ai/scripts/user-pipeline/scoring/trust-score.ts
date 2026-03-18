@@ -26,7 +26,7 @@
  *   abuse-report.csv - Successfully scored users sorted by abuse score
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { executeD1, queryD1 } from "../shared/d1.ts";
 import {
@@ -34,14 +34,12 @@ import {
     escapeSqlString,
     loadEmailCohort,
 } from "../shared/email-cohort.ts";
+import { PIPELINE_DB_BATCH_SIZE } from "../shared/github-identity.ts";
+import { validateGithubAccounts } from "../shared/github-validation.ts";
 import {
-    banUsersByEmails,
-    banUsersByGithubIds,
-    GITHUB_ACCOUNT_DELETED_REASON,
-    GITHUB_USERNAME_RE,
-    PIPELINE_DB_BATCH_SIZE,
-} from "../shared/github-identity.ts";
-import { runInlinePython } from "../shared/python.ts";
+    callPollinationsChatModel,
+    loadEnterApiToken,
+} from "../shared/pollinations-llm.ts";
 import { parseLLMResponse, SCORE_THRESHOLDS } from "./trust-score-helpers.ts";
 
 const OVERLAP_SIZE = 20;
@@ -70,12 +68,6 @@ interface ParsedArgs {
     singleChunk: boolean;
     storeStatus: boolean;
     cohortEmails: string[] | null;
-}
-
-interface GithubValidationResult {
-    github_id?: number | null;
-    username?: string;
-    status?: string;
 }
 
 interface ScoreUsersResult {
@@ -136,26 +128,6 @@ function parseArguments(): ParsedArgs {
     };
 }
 
-function loadApiKey(): string {
-    const tokenFile = ".testingtokens";
-    if (!existsSync(tokenFile)) {
-        console.error("❌ No .testingtokens file found");
-        console.error(
-            "💡 Create one with: echo 'ENTER_API_TOKEN_REMOTE=pk_...' > .testingtokens",
-        );
-        process.exit(1);
-    }
-
-    const content = readFileSync(tokenFile, "utf-8");
-    const match = content.match(/ENTER_API_TOKEN_REMOTE=([^\n]+)/);
-    if (!match) {
-        console.error("❌ No ENTER_API_TOKEN_REMOTE found in .testingtokens");
-        process.exit(1);
-    }
-
-    return match[1].trim();
-}
-
 function fetchUsers(
     env: Environment,
     limit: number,
@@ -187,180 +159,6 @@ function fetchUsers(
 function formatDate(timestamp: number): string {
     const d = new Date(Number(timestamp));
     return d.toISOString().slice(0, 16).replace("T", " ");
-}
-
-function syncGithubUsernames(
-    env: Environment,
-    users: Array<{ github_id: number; github_username: string }>,
-): number {
-    const uniqueUsers = Array.from(
-        new Map(
-            users
-                .filter(
-                    (user) =>
-                        Number.isInteger(user.github_id) &&
-                        user.github_id > 0 &&
-                        typeof user.github_username === "string" &&
-                        GITHUB_USERNAME_RE.test(user.github_username),
-                )
-                .map((user) => [user.github_id, user]),
-        ).values(),
-    );
-    let updated = 0;
-
-    for (let i = 0; i < uniqueUsers.length; i += PIPELINE_DB_BATCH_SIZE) {
-        const batch = uniqueUsers.slice(i, i + PIPELINE_DB_BATCH_SIZE);
-        if (batch.length === 0) continue;
-
-        const usernameCases = batch
-            .map(
-                ({ github_id, github_username }) =>
-                    `WHEN ${github_id} THEN '${escapeSqlString(github_username)}'`,
-            )
-            .join(" ");
-        const idList = batch.map(({ github_id }) => github_id).join(", ");
-        const ok = executeD1(
-            env,
-            `UPDATE user SET github_username = CASE github_id ${usernameCases} END WHERE github_id IN (${idList})`,
-        );
-        if (ok) updated += batch.length;
-    }
-
-    return updated;
-}
-
-function runGithubValidation(users: User[]): GithubValidationResult[] {
-    if (users.length === 0) return [];
-
-    const scriptPath = import.meta.dirname;
-    const pythonScript = `
-import sys, json
-sys.path.insert(0, "${scriptPath}")
-from github_score import validate_account_records
-results = validate_account_records(${JSON.stringify(users)})
-print(json.dumps(results))
-`;
-
-    const output = runInlinePython(pythonScript);
-
-    return JSON.parse(output.trim()) as GithubValidationResult[];
-}
-
-function validateGithubAccounts(
-    users: User[],
-    env: Environment,
-    applyChanges: boolean,
-): User[] {
-    if (users.length === 0) return [];
-
-    const missingOrInvalidUsers = users.filter(
-        (user) => !Number.isInteger(user.github_id) || user.github_id === null,
-    );
-    const usersWithGithub = users.filter(
-        (user): user is User & { github_id: number } =>
-            Number.isInteger(user.github_id) && user.github_id !== null,
-    );
-
-    if (missingOrInvalidUsers.length > 0) {
-        if (applyChanges) {
-            const banned = banUsersByEmails(
-                env,
-                missingOrInvalidUsers.map((user) => user.email),
-            );
-            console.log(
-                `🚫 Banned ${banned} new users with missing/invalid GitHub IDs`,
-            );
-        } else {
-            console.log(
-                `🚫 Detected ${missingOrInvalidUsers.length} users with missing/invalid GitHub IDs`,
-            );
-        }
-    }
-
-    if (usersWithGithub.length === 0) {
-        return [];
-    }
-
-    const results = runGithubValidation(usersWithGithub);
-    const deletedGithubIds = Array.from(
-        new Set(
-            results.flatMap((result) =>
-                result.status === GITHUB_ACCOUNT_DELETED_REASON &&
-                Number.isInteger(result.github_id)
-                    ? [result.github_id]
-                    : [],
-            ),
-        ),
-    );
-    const resolvedUsers = results.flatMap((result) =>
-        Number.isInteger(result.github_id) &&
-        typeof result.username === "string" &&
-        GITHUB_USERNAME_RE.test(result.username)
-            ? [
-                  {
-                      github_id: result.github_id,
-                      github_username: result.username,
-                  },
-              ]
-            : [],
-    );
-
-    if (resolvedUsers.length > 0) {
-        if (applyChanges) {
-            const updated = syncGithubUsernames(env, resolvedUsers);
-            if (updated > 0) {
-                console.log(
-                    `🔄 Synced ${updated} GitHub usernames from GitHub IDs`,
-                );
-            }
-        } else {
-            console.log(
-                `🔄 Resolved ${resolvedUsers.length} GitHub identities by GitHub ID`,
-            );
-        }
-    }
-
-    if (deletedGithubIds.length > 0) {
-        if (applyChanges) {
-            const banned = banUsersByGithubIds(env, deletedGithubIds);
-            console.log(
-                `🚫 Banned ${banned} new users with deleted GitHub accounts`,
-            );
-        } else {
-            console.log(
-                `🚫 Detected ${deletedGithubIds.length} users with deleted GitHub accounts`,
-            );
-        }
-    }
-
-    const resultsByGithubId = new Map(
-        results.flatMap((result) =>
-            Number.isInteger(result.github_id)
-                ? [[result.github_id, result] as const]
-                : [],
-        ),
-    );
-    const deletedSet = new Set(deletedGithubIds);
-    return usersWithGithub.flatMap((user) => {
-        if (deletedSet.has(user.github_id)) {
-            return [];
-        }
-
-        const result = resultsByGithubId.get(user.github_id);
-        const github_username =
-            typeof result?.username === "string" &&
-            GITHUB_USERNAME_RE.test(result.username)
-                ? result.username
-                : user.github_username;
-        if (
-            typeof github_username !== "string" ||
-            !GITHUB_USERNAME_RE.test(github_username)
-        ) {
-            return [];
-        }
-
-        return [{ ...user, github_username }];
-    });
 }
 
 function buildChunkRanges(
@@ -432,28 +230,7 @@ async function callScoringAPI(
     const { csvRows, githubToIndex } = prepareChunkData(chunk);
     const prompt = buildScoringPrompt(csvRows);
 
-    const response = await fetch(
-        "https://gen.pollinations.ai/v1/chat/completions",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model: modelName,
-                messages: [{ role: "user", content: prompt }],
-                temperature: 0.1,
-            }),
-        },
-    );
-
-    if (!response.ok) {
-        throw new Error(`LLM API returned HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
+    const content = await callPollinationsChatModel(prompt, apiKey, modelName);
     return parseLLMResponse(content, githubToIndex, chunk.length);
 }
 
@@ -522,7 +299,7 @@ async function scoreUsers(
     users: User[],
     config: ParsedArgs,
 ): Promise<ScoreUsersResult> {
-    const apiKey = loadApiKey();
+    const apiKey = loadEnterApiToken();
     const mode =
         config.parallelism > 1
             ? `${config.parallelism} parallel`
@@ -697,10 +474,16 @@ async function main(): Promise<void> {
         return;
     }
 
-    const validUsers = validateGithubAccounts(
+    const { validUsers } = validateGithubAccounts(
         fetchedUsers,
         config.env,
-        config.storeStatus,
+        `${import.meta.dirname}`,
+        {
+            applyChanges: config.storeStatus,
+            missingLabel: "Banned new users with missing/invalid GitHub IDs",
+            deletedLabel: "Banned new users with deleted GitHub accounts",
+            syncLabel: "Synced GitHub usernames from GitHub IDs",
+        },
     );
     if (validUsers.length === 0) {
         console.log("✅ No valid new users left for trust scoring");

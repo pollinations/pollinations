@@ -13,6 +13,7 @@ The one-time `trust_score = 0/100` bootstrap remains migration-only in `drizzle/
 `trust_score` is the single trust field for the implemented pipeline:
 
 - it is first written by the hourly onboarding trust gate
+- the daily global abuse scan is report-only on this branch and does not write `trust_score` yet
 
 See also:
 
@@ -21,7 +22,8 @@ See also:
 ## Implemented Jobs
 
 1. Hourly new-user trust gate and tier pipeline
-2. Daily spore recheck
+2. Daily global abuse scan (report-only)
+3. Daily spore recheck
 
 ## Layout
 
@@ -29,9 +31,11 @@ Current checked-in layout on this branch:
 
 ```text
 scripts/user-pipeline/
+├── daily-global-abuse-scan.ts
 ├── hourly-new-users.ts
 ├── daily-spore-recheck.py
 ├── scoring/
+│   ├── global-abuse-score.ts
 │   ├── trust-score.ts
 │   ├── trust-score-helpers.ts
 │   ├── github_score.py
@@ -42,7 +46,9 @@ scripts/user-pipeline/
 │   ├── d1.py
 │   ├── email-cohort.ts
 │   ├── github-identity.ts
+│   ├── github-validation.ts
 │   ├── github_account_state.py
+│   ├── pollinations-llm.ts
 │   ├── python.ts
 │   └── python_runtime.py
 ├── manual/
@@ -127,14 +133,14 @@ tier = spore"]
     style P fill:#4a4,color:#fff
 ```
 
-## Planned Follow-Up: Daily Global Abuse Scan
+## Daily Global Abuse Scan
 
-- This job is planned, but not implemented on this branch yet
+- This job is implemented on this branch as a staging-only report-only workflow
 - Recommended cadence is daily, not weekly
-- It would run separately from onboarding and separately from the daily spore recheck
-- Planned workflow file: `.github/workflows/user-pipeline-daily-global-abuse-scan.yml`
-- Planned runtime entrypoint: `scripts/user-pipeline/daily-global-abuse-scan.ts`
-- Planned scorer: `scripts/user-pipeline/scoring/global-abuse-score.ts`
+- It runs separately from onboarding and separately from the daily spore recheck
+- Workflow file: `.github/workflows/user-pipeline-daily-global-abuse-scan.yml`
+- Runtime entrypoint: `scripts/user-pipeline/daily-global-abuse-scan.ts`
+- Scorer: `scripts/user-pipeline/scoring/global-abuse-score.ts`
 - Uses D1 directly, not Tinybird, because IP and session signals matter
 - Uses the whole unbanned user table as reference context
 - Uses recent session data as signals, starting with the last 30 days of `session.ip_address` and `session.user_agent`
@@ -144,10 +150,10 @@ tier = spore"]
 - Sends only suspicious cohorts to the LLM, not the whole database raw
 - Reuses `trust_score` as the current trust field
 - Reuses the LLM plumbing from `scoring/trust-score.ts`, but not the onboarding prompt
-- First version should be report-only / dry-run with no writes and no downgrades
+- Current version is report-only with no writes and no downgrades
 - Later live mode can overwrite `trust_score` and downgrade to `microbe` when `trust_score < 60`
 - Does not ban users for LLM suspicion in this pipeline
-- Only bans deleted GitHub accounts after `github_id` validation
+- Detects deleted GitHub accounts after `github_id` validation, but only reports them in this version
 
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent'}}}%%
@@ -164,9 +170,8 @@ Validate by github_id
 Sync current github_username"]
 
     D --> E{"GitHub account valid?"}
-    E -->|No| F["Ban user
-banned = 1
-ban_reason = github_account_deleted"]
+    E -->|No| F["Report deleted / invalid GitHub identity
+No writes in report-only mode"]
     E -->|Yes| G["Build suspicious cohorts from D1:
 shared IPs
 shared user agents
@@ -175,28 +180,25 @@ GitHub naming patterns
 creation-time clusters"]
 
     G --> H{"Any suspicious cohorts?"}
-    H -->|No| I["Exit
+    H -->|No| I["Emit report only
 No trust_score changes"]
     H -->|Yes| J["LLM Abuse Review
 Score only suspicious cohorts"]
 
-    J --> K{"Report-only mode?"}
-    K -->|Yes| L["Emit report only
+    J --> K["Emit report only
 No writes
 No downgrades"]
-    K -->|No| M["Overwrite trust_score
-for evaluated users"]
-
-    M --> N{"trust_score < 60?"}
-    N -->|Yes| O["Downgrade to Microbe
-tier = microbe"]
-    N -->|No| P["Keep current tier"]
 
     style F fill:#833,color:#fff
-    style L fill:#666,color:#fff
-    style O fill:#c44,color:#fff
-    style P fill:#47a,color:#fff
+    style I fill:#666,color:#fff
+    style K fill:#666,color:#fff
 ```
+
+Planned live-mode follow-up:
+
+- overwrite `trust_score` for evaluated users
+- downgrade to `microbe` when `trust_score < 60`
+- keep deleted-account handling separate from LLM suspicion
 
 ## Daily Spore Recheck Pipeline
 

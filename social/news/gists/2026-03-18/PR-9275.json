@@ -1,0 +1,34 @@
+{
+  "pr_number": 9275,
+  "title": "Add PromptPilot Bot to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9275",
+  "merged_at": "2026-03-18T18:44:51Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "PromptPilot takes flight",
+    "blurb": "PromptPilot just landed in the community showcase. It's a Telegram bot that wires up 20 of our models—from Flux to ElevenLabs—so you can generate images, video, and audio without leaving your chat.",
+    "summary": "Added PromptPilot Bot to the community showcase, integrating 20 different image, video, and audio generation models via the Pollinations API.",
+    "impact": "The community gets a new way to interact with the API directly from Telegram, supporting everything from Imagen 4 to Seedance.",
+    "keywords": [
+      "community",
+      "app",
+      "telegram",
+      "bot",
+      "showcase"
+    ],
+    "visual_concept": "A pilot/aviation theme to match 'PromptPilot'. The Pollinations bee (Polly) wearing tiny aviator goggles, flying alongside a cute robot dressed as a pilot or a paper airplane (Telegram logo reference). They are navigating through floating polaroids, film strips, and musical notes to represent the multi-modal capabilities.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny aviator goggles, flying alongside a chunky pixel robot dressed as a pilot. They are soaring through a sky filled with floating polaroids, film strips, and musical notes. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi 8-bit aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-18/PR-9275.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny aviator goggles, flying alongside a chunky pixel robot dressed as a pilot. They are soaring through a sky filled with floating polaroids, film strips, and musical notes. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi 8-bit aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-18T18:45:46.141066+00:00"
+}

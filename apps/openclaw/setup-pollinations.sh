@@ -55,10 +55,11 @@ fi
 
 echo "Adding Pollinations models..."
 
-POLLINATIONS_PROVIDER=$(cat <<EOF
+# Patch provider + web search into openclaw.json (preserves all other config)
+POLLINATIONS_PROVIDER=$(cat <<'EOF'
 {
   "baseUrl": "https://gen.pollinations.ai/v1",
-  "apiKey": "$API_KEY",
+  "apiKey": "__KEY__",
   "api": "openai-completions",
   "models": [
     {
@@ -129,15 +130,9 @@ POLLINATIONS_PROVIDER=$(cat <<EOF
 EOF
 )
 
-# Patch provider + web search into openclaw.json (preserves all other config)
-WEB_SEARCH=$(cat <<'SEARCH'
-{"provider":"perplexity","perplexity":{"baseUrl":"https://gen.pollinations.ai/v1","apiKey":"__API_KEY__","model":"perplexity-fast"}}
-SEARCH
-)
-WEB_SEARCH=$(echo "$WEB_SEARCH" | sed "s|__API_KEY__|$API_KEY|")
-
-jq --argjson provider "$POLLINATIONS_PROVIDER" --argjson search "$WEB_SEARCH" \
-  '.models.providers.pollinations = $provider | .models.mode = "merge" | .tools.web.search = $search' \
+jq --argjson provider "$POLLINATIONS_PROVIDER" --arg key "$API_KEY" \
+  '(.models.providers.pollinations = ($provider | .apiKey = $key)) | .models.mode = "merge" |
+   .tools.web.search = {"provider":"perplexity","perplexity":{"baseUrl":"https://gen.pollinations.ai/v1","apiKey":$key,"model":"perplexity-fast"}}' \
   "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
 
 # --- Step 3: Set default model + fallbacks via CLI ---

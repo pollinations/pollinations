@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# setup-pollinations.sh - Configure OpenClaw to use Pollinations.ai models
+# Configure OpenClaw to use Pollinations.ai models
 # Works on: macOS, Linux, Windows (WSL/Git Bash/MSYS2)
-#
-# Fresh install:  curl ... | bash -s -- YOUR_API_KEY
-# Existing setup: curl ... | bash -s -- YOUR_API_KEY  (adds provider, keeps your config)
+# Usage: curl ... | bash -s -- YOUR_API_KEY
 
 set -e
 
@@ -50,7 +48,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
       --skip-skills \
       --skip-ui \
       --skip-health \
-      2>&1 | grep -v "^$"
+      2>&1 | grep -v "^$" || true
 fi
 
 # --- Step 2: Patch openclaw.json with full Pollinations provider + models ---

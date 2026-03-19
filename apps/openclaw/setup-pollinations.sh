@@ -129,9 +129,15 @@ POLLINATIONS_PROVIDER=$(cat <<EOF
 EOF
 )
 
-# Patch the provider into openclaw.json (preserves all other config)
-jq --argjson provider "$POLLINATIONS_PROVIDER" \
-  '.models.providers.pollinations = $provider | .models.mode = "merge"' \
+# Patch provider + web search into openclaw.json (preserves all other config)
+WEB_SEARCH=$(cat <<'SEARCH'
+{"provider":"perplexity","perplexity":{"baseUrl":"https://gen.pollinations.ai/v1","apiKey":"__API_KEY__","model":"perplexity-fast"}}
+SEARCH
+)
+WEB_SEARCH=$(echo "$WEB_SEARCH" | sed "s|__API_KEY__|$API_KEY|")
+
+jq --argjson provider "$POLLINATIONS_PROVIDER" --argjson search "$WEB_SEARCH" \
+  '.models.providers.pollinations = $provider | .models.mode = "merge" | .tools.web.search = $search' \
   "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
 
 # --- Step 3: Set default model + fallbacks via CLI ---

@@ -1,0 +1,33 @@
+{
+  "pr_number": 9300,
+  "title": "Update default API key for Pollinations.ai website",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9300",
+  "merged_at": "2026-03-19T10:27:35Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "New keys to the garden",
+    "blurb": "Swapped out the default publishable API key on the frontend. Just some routine housekeeping to keep the pollen flowing.",
+    "summary": "Updated the default fallback publishable API key used by the frontend for direct API calls.",
+    "impact": "Ensures continued seamless access to the API for unauthenticated users by rotating the fallback key.",
+    "keywords": [
+      "api-key",
+      "frontend",
+      "auth",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee holding a shiny new golden key. A retro terminal or lock mechanism in the background. Represents updating access keys.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a shiny golden key next to a retro computer terminal glowing with lime green (#ecf874) code. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-19/PR-9300.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a shiny golden key next to a retro computer terminal glowing with lime green (#ecf874) code. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-19T10:28:32.617726+00:00"
+}

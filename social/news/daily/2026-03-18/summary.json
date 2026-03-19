@@ -1,0 +1,75 @@
+{
+  "date": "2026-03-18",
+  "period_start": "2026-03-18",
+  "period_end": "2026-03-18",
+  "title": "Bots taking over Discord and Telegram",
+  "summary": "An absolute avalanche of community apps: 14 new showcase additions ranging from ESP32 microcontrollers to Telegram bots and desktop novel generators.\n\nThe community showcase absorbed a swarm of new bots today. 'Suspicious Helper' brings a massive open-source integration to Discord, while 'PromptPilot' wires 20 different generation models straight into Telegram. We also merged OtakuBox and OpenRelay (an SMTP routing bot, because why not).\n\nPeople are building weird and heavy things. We added 'NovelSeek-Pro-PC' (an end-to-end desktop ebook generator), 'Alchemica' (an AI element-mixing game), and 'Parallel' (an alternate-life timeline simulator). Throw in 'lstation.co' for interactive kids' stories, and the creative directory is looking dense.\n\nThe API is escaping the browser. 'NEURGenerator' provides a reference implementation for running Pollinations on an ESP32-S3 microcontroller with PSRAM. On the mobile front, we added 'Nova.ai' for iOS and 'Luna', a self-hosted Chinese AI companion. We also merged 'House Painter', 'SRTAudio', and 'Vibe DB' into the greenhouse.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 8114,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9260,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9262,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9269,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9270,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9271,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9272,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9273,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9274,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9275,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9276,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9277,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9278,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9280,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9281,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9284,
+      "date": "2026-03-18"
+    }
+  ],
+  "generated_at": "2026-03-19T06:19:59.721818+00:00"
+}

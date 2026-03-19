@@ -6,6 +6,9 @@
  */
 
 const ENDPOINT = "https://gen.pollinations.ai/v1/chat/completions";
+const DEFAULT_MODEL = "gemini-fast";
+const REQUEST_TIMEOUT_MS = 120_000;
+const TIMEOUT_RESULT = Symbol("llm-timeout");
 
 export async function llmComplete(
     prompt: string,
@@ -15,18 +18,25 @@ export async function llmComplete(
         temperature?: number;
     },
 ): Promise<string> {
-    const { apiKey, model = "gemini", temperature = 0.1 } = options;
+    const { apiKey, model = DEFAULT_MODEL, temperature = 0.1 } = options;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60_000);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<typeof TIMEOUT_RESULT>((resolve) => {
+        timeout = setTimeout(() => {
+            console.warn(`   ⏰ AbortController fired after 120s`);
+            controller.abort();
+            resolve(TIMEOUT_RESULT);
+        }, REQUEST_TIMEOUT_MS);
+    });
 
-    let response: Response;
-    try {
-        response = await fetch(ENDPOINT, {
+    const requestPromise = (async () => {
+        const response = await fetch(ENDPOINT, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${apiKey}`,
+                Connection: "close",
             },
             body: JSON.stringify({
                 model,
@@ -35,18 +45,33 @@ export async function llmComplete(
             }),
             signal: controller.signal,
         });
-    } finally {
-        clearTimeout(timeout);
-    }
-
-    if (!response.ok) {
         const body = await response.text();
-        throw new Error(
-            `LLM API HTTP ${response.status}: ${body.slice(0, 200)}`,
-        );
-    }
 
-    const data = await response.json();
-    const content: string = data.choices?.[0]?.message?.content ?? "";
-    return content;
+        if (!response.ok) {
+            throw new Error(
+                `LLM API HTTP ${response.status}: ${body.slice(0, 200)}`,
+            );
+        }
+
+        const data = JSON.parse(body) as {
+            choices?: Array<{ message?: { content?: string } }>;
+        };
+        return data.choices?.[0]?.message?.content ?? "";
+    })();
+
+    try {
+        const result = await Promise.race([requestPromise, timeoutPromise]);
+        if (result === TIMEOUT_RESULT) {
+            const error = new Error(
+                `LLM request timed out after ${REQUEST_TIMEOUT_MS}ms`,
+            );
+            error.name = "AbortError";
+            throw error;
+        }
+        return result;
+    } finally {
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+    }
 }

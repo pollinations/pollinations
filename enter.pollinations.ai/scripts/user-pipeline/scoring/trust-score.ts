@@ -76,7 +76,11 @@ export function parseLLMResponse(
     const seen = new Set<number>();
 
     for (const line of content.split("\n")) {
-        if (!line.trim() || line.startsWith("github_id,") || !line.includes(","))
+        if (
+            !line.trim() ||
+            line.startsWith("github_id,") ||
+            !line.includes(",")
+        )
             continue;
 
         const parts = line.split(",");
@@ -85,7 +89,9 @@ export function parseLLMResponse(
         const githubId = Number.parseInt(parts[0]?.trim(), 10);
         const score = Number.parseInt(parts[1], 10);
         const reason = parts[2]?.trim() || "";
-        const idx = !Number.isNaN(githubId) ? idToIndex.get(githubId) : undefined;
+        const idx = !Number.isNaN(githubId)
+            ? idToIndex.get(githubId)
+            : undefined;
         if (idx === undefined || Number.isNaN(score)) continue;
 
         results[idx] = {
@@ -132,19 +138,40 @@ async function scoreChunk(
 ): Promise<Array<{ score: number; signals: string[] }>> {
     const { csvRows, idToIndex } = prepareChunkData(chunk);
     const prompt = PROMPT_TEMPLATE + csvRows.join("\n");
-    const startedAt = Date.now();
 
-    console.log(`   ⏱️  LLM request: ${chunk.length} users, ${prompt.length} chars`);
-    const content = await llmComplete(prompt, { apiKey });
-    console.log(`   ✅ LLM response in ${Date.now() - startedAt}ms (${content.length} chars)`);
-    return parseLLMResponse(content, idToIndex, chunk.length);
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        const startedAt = Date.now();
+        console.log(
+            `   ⏱️  LLM request: ${chunk.length} users, ${prompt.length} chars${attempt > 1 ? ` (attempt ${attempt})` : ""}`,
+        );
+        try {
+            const content = await llmComplete(prompt, { apiKey });
+            console.log(
+                `   ✅ LLM response in ${Date.now() - startedAt}ms (${content.length} chars)`,
+            );
+            return parseLLMResponse(content, idToIndex, chunk.length);
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            const stack = err instanceof Error ? err.stack : "";
+            const errName = err instanceof Error ? err.name : "unknown";
+            console.warn(
+                `   ⚠️  Attempt ${attempt} failed [${errName}]: ${msg}`,
+            );
+            if (errName !== "AbortError" && stack)
+                console.warn(`   Stack: ${stack}`);
+            if (attempt >= 3) throw err;
+        }
+    }
+    throw new Error("unreachable");
 }
 
 async function scoreUsers(
     users: User[],
 ): Promise<{ scoredUsers: ScoredUser[]; failedUsers: User[] }> {
     const apiKey = loadApiKey();
-    console.log(`\n🤖 Scoring ${users.length} users in chunks of ${CHUNK_SIZE}...`);
+    console.log(
+        `\n🤖 Scoring ${users.length} users in chunks of ${CHUNK_SIZE}...`,
+    );
 
     const allScores = new Map<string, { score: number; signals: string[] }>();
     const failedEmails = new Set<string>();
@@ -152,20 +179,31 @@ async function scoreUsers(
     for (let i = 0; i < users.length; i += SCORE_WINDOW) {
         const before = users.slice(Math.max(0, i - SCORE_WINDOW), i);
         const group = users.slice(i, Math.min(i + SCORE_WINDOW, users.length));
-        const after = users.slice(i + SCORE_WINDOW, Math.min(i + SCORE_WINDOW * 2, users.length));
+        const after = users.slice(
+            i + SCORE_WINDOW,
+            Math.min(i + SCORE_WINDOW * 2, users.length),
+        );
         const chunk = [...before, ...group, ...after];
         const startIdx = before.length;
 
-        console.log(`\n⚡ Scoring users ${i + 1}-${i + group.length} of ${users.length} (chunk size: ${chunk.length})`);
+        console.log(
+            `\n⚡ Scoring users ${i + 1}-${i + group.length} of ${users.length} (chunk size: ${chunk.length})`,
+        );
 
         try {
             const scores = await scoreChunk(chunk, apiKey);
-            for (let j = startIdx; j < startIdx + group.length && j < scores.length; j++) {
+            for (
+                let j = startIdx;
+                j < startIdx + group.length && j < scores.length;
+                j++
+            ) {
                 allScores.set(chunk[j].email, scores[j]);
                 failedEmails.delete(chunk[j].email);
             }
         } catch (error) {
-            console.error(`   ❌ Chunk failed: ${error instanceof Error ? error.message : String(error)}`);
+            console.error(
+                `   ❌ Chunk failed: ${error instanceof Error ? error.message : String(error)}`,
+            );
             for (const user of group) failedEmails.add(user.email);
         }
 
@@ -176,18 +214,30 @@ async function scoreUsers(
         }
         const scored = allScores.size;
         const deferred = failedEmails.size;
-        const remaining = users.length - (i + Math.min(SCORE_WINDOW, users.length - i));
-        console.log(`   📈 Progress: ${scored} scored, ${deferred} deferred, ${remaining} remaining | block:${tally.block} review:${tally.review} ok:${tally.ok}`);
+        const remaining =
+            users.length - (i + Math.min(SCORE_WINDOW, users.length - i));
+        console.log(
+            `   📈 Progress: ${scored} scored, ${deferred} deferred, ${remaining} remaining | block:${tally.block} review:${tally.review} ok:${tally.ok}`,
+        );
     }
 
     const scoredUsers = users.flatMap((user) => {
         const scoreData = allScores.get(user.email);
         if (!scoreData) return [];
-        return [{ ...user, score: scoreData.score, signals: scoreData.signals, action: getAction(scoreData.score) } satisfies ScoredUser];
+        return [
+            {
+                ...user,
+                score: scoreData.score,
+                signals: scoreData.signals,
+                action: getAction(scoreData.score),
+            } satisfies ScoredUser,
+        ];
     });
     const failedUsers = users.filter((u) => failedEmails.has(u.email));
 
-    console.log(`\n✅ Scoring complete: ${scoredUsers.length} scored, ${failedUsers.length} deferred`);
+    console.log(
+        `\n✅ Scoring complete: ${scoredUsers.length} scored, ${failedUsers.length} deferred`,
+    );
     return { scoredUsers, failedUsers };
 }
 
@@ -227,26 +277,42 @@ function storeTrustScores(scored: ScoredUser[]): void {
         if (batch.length === 0) continue;
 
         const cases = batch
-            .map((u) => `WHEN '${escapeSqlString(u.email)}' THEN ${100 - u.score}`)
+            .map(
+                (u) =>
+                    `WHEN '${escapeSqlString(u.email)}' THEN ${100 - u.score}`,
+            )
             .join(" ");
         const emailList = batch
             .map((u) => `'${escapeSqlString(u.email)}'`)
             .join(", ");
 
-        if (executeD1(ENV, `UPDATE user SET trust_score = CASE email ${cases} END WHERE email IN (${emailList})`)) {
+        if (
+            executeD1(
+                ENV,
+                `UPDATE user SET trust_score = CASE email ${cases} END WHERE email IN (${emailList})`,
+            )
+        ) {
             stored += batch.length;
         }
-        console.log(`   📊 ${Math.min(i + PIPELINE_DB_BATCH_SIZE, scored.length)}/${scored.length} stored`);
+        console.log(
+            `   📊 ${Math.min(i + PIPELINE_DB_BATCH_SIZE, scored.length)}/${scored.length} stored`,
+        );
     }
 
     const passed = scored.filter((u) => 100 - u.score >= 60).length;
     const failed = scored.filter((u) => 100 - u.score < 60).length;
-    console.log(`✅ Stored ${stored} trust scores (${passed} passed, ${failed} failed)`);
+    console.log(
+        `✅ Stored ${stored} trust scores (${passed} passed, ${failed} failed)`,
+    );
 }
 
 function fetchUsers(limit: number, cohortEmails: string[] | null): User[] {
-    const cohortLabel = cohortEmails ? ` from cohort (${cohortEmails.length})` : "";
-    console.log(`📊 Fetching up to ${limit} unprocessed users${cohortLabel}...`);
+    const cohortLabel = cohortEmails
+        ? ` from cohort (${cohortEmails.length})`
+        : "";
+    console.log(
+        `📊 Fetching up to ${limit} unprocessed users${cohortLabel}...`,
+    );
 
     const emailFilter = buildEmailFilter("email", cohortEmails);
     const sinceClause = cohortEmails
@@ -265,10 +331,14 @@ function loadApiKey(): string {
     const tokenFile = ".testingtokens";
     if (!existsSync(tokenFile)) {
         console.error("❌ No .testingtokens file found");
-        console.error("💡 Create one with: echo 'ENTER_API_TOKEN_REMOTE=sk_...' > .testingtokens");
+        console.error(
+            "💡 Create one with: echo 'ENTER_API_TOKEN_REMOTE=sk_...' > .testingtokens",
+        );
         process.exit(1);
     }
-    const match = readFileSync(tokenFile, "utf-8").match(/ENTER_API_TOKEN_REMOTE=([^\n]+)/);
+    const match = readFileSync(tokenFile, "utf-8").match(
+        /ENTER_API_TOKEN_REMOTE=([^\n]+)/,
+    );
     if (!match) {
         console.error("❌ No ENTER_API_TOKEN_REMOTE found in .testingtokens");
         process.exit(1);
@@ -293,7 +363,9 @@ function parseArguments(): ParsedArgs {
     try {
         cohortEmails = loadEmailCohort(emailsFile || undefined);
     } catch (error) {
-        console.error(`❌ ${error instanceof Error ? error.message : String(error)}`);
+        console.error(
+            `❌ ${error instanceof Error ? error.message : String(error)}`,
+        );
         process.exit(1);
     }
 
@@ -309,7 +381,9 @@ async function main(): Promise<void> {
 
     console.log("🚀 New-User Trust Gate");
     console.log("=".repeat(50));
-    console.log(`📋 env=${ENV}, limit=${config.userLimit}, store=${config.storeStatus}, cohort=${config.cohortEmails?.length ?? "none"}`);
+    console.log(
+        `📋 env=${ENV}, limit=${config.userLimit}, store=${config.storeStatus}, cohort=${config.cohortEmails?.length ?? "none"}`,
+    );
 
     const users = fetchUsers(config.userLimit, config.cohortEmails);
     if (users.length === 0) {
@@ -327,7 +401,9 @@ async function main(): Promise<void> {
     }
 
     if (failedUsers.length > 0) {
-        console.warn(`⚠️ Deferred ${failedUsers.length} users — will retry on next run.`);
+        console.warn(
+            `⚠️ Deferred ${failedUsers.length} users — will retry on next run.`,
+        );
     }
 }
 

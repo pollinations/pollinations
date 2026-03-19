@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../shared/d1.ts", () => ({
     executeD1: vi.fn(),
@@ -12,21 +12,33 @@ vi.mock("node:fs", async (importOriginal) => {
     return {
         ...original,
         readFileSync: (path: unknown, ...args: unknown[]) => {
-            if (typeof path === "string" && path.endsWith("trust-score-prompt.md")) {
+            if (
+                typeof path === "string" &&
+                path.endsWith("trust-score-prompt.md")
+            ) {
                 return "mocked prompt";
             }
-            if (path instanceof URL && String(path).endsWith("trust-score-prompt.md")) {
+            if (
+                path instanceof URL &&
+                String(path).endsWith("trust-score-prompt.md")
+            ) {
                 return "mocked prompt";
             }
-            return original.readFileSync(path as Parameters<typeof original.readFileSync>[0], ...(args as [never]));
+            return original.readFileSync(
+                path as Parameters<typeof original.readFileSync>[0],
+                ...(args as [never]),
+            );
         },
     };
 });
 
-import {
-    parseLLMResponse,
-    SCORE_THRESHOLDS,
-} from "../scoring/trust-score.ts";
+import { parseLLMResponse, SCORE_THRESHOLDS } from "../scoring/trust-score.ts";
+import { llmComplete } from "../shared/llm.ts";
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+});
 
 describe("parseLLMResponse", () => {
     it("parses CSV rows and clamps scores to 0-100", () => {
@@ -145,5 +157,47 @@ describe("SCORE_THRESHOLDS", () => {
 
     it("score of 39 is below review threshold", () => {
         expect(39).toBeLessThan(SCORE_THRESHOLDS.review);
+    });
+});
+
+describe("llmComplete", () => {
+    it("uses the current supported default model alias", async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            text: vi.fn().mockResolvedValue(
+                JSON.stringify({
+                    choices: [{ message: { content: "ok" } }],
+                }),
+            ),
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            llmComplete("trust prompt", { apiKey: "sk_test" }),
+        ).resolves.toBe("ok");
+
+        expect(fetchMock).toHaveBeenCalledOnce();
+        const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+        expect(body.model).toBe("gemini-fast");
+    });
+
+    it("times out when the response body never completes", async () => {
+        vi.useFakeTimers();
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue({
+                ok: true,
+                text: () => new Promise<string>(() => {}),
+            }),
+        );
+
+        const request = llmComplete("trust prompt", { apiKey: "sk_test" });
+        const expectation = expect(request).rejects.toMatchObject({
+            name: "AbortError",
+            message: "LLM request timed out after 120000ms",
+        });
+        await vi.advanceTimersByTimeAsync(120_000);
+
+        await expectation;
     });
 });

@@ -50,7 +50,7 @@ class ImagePreparationService {
 
   /**
    * prepare image for transformation
-   * Upload local images to ImgBB
+   * Upload local images
    */
   static async prepareImagesForTransformation(
     images: ImageSource[]
@@ -68,7 +68,7 @@ class ImagePreparationService {
           continue;
         }
 
-        // Image locale : upload to ImgBB
+        // Image locale : upload image
         if (image.source === 'local' && image.localUri) {
           console.log(`📤 Uploading local image: ${image.id}`);
           
@@ -78,9 +78,9 @@ class ImagePreparationService {
             throw new Error(validation.error || 'Invalid image');
           }
 
-          // Upload to ImgBB
+          // Upload image
           console.log(`🔄 Calling ImageUploadService for: ${image.localUri}`);
-          const uploadResult = await ImageUploadService.uploadToImgBB(image.localUri);
+          const uploadResult = await ImageUploadService.uploadImage(image.localUri);
           
           if (uploadResult.success && uploadResult.url) {
             console.log(`✅ Upload success: ${uploadResult.url}`);

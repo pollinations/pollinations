@@ -17,6 +17,7 @@ import {civitaiService} from '../services/CivitaiService';
 import * as ImagePicker from 'expo-image-picker';
 import VersionChecker from '../components/VersionChecker';
 import ReportImageModal from '../components/ReportImageModal';
+import { useAuth } from '../context/AuthContext';
 import {
     CivitaiImage,
     TrendingFilters,
@@ -139,6 +140,7 @@ ImageItem.displayName = 'ImageItem';
 
 export default function HomeScreen({navigation}: TabScreenProps<'Home'>) {
     const {theme} = useTheme();
+    const { token } = useAuth();
     const [images, setImages] = useState<CivitaiImage[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -308,6 +310,15 @@ export default function HomeScreen({navigation}: TabScreenProps<'Home'>) {
     }, []);
 
     const handlePickLocalImage = async () => {
+        if (!token) {
+            Alert.alert(
+                'Authentication Required',
+                'Please login with Pollinations in the Profile tab to enable local image uploads.',
+                [{ text: 'OK', style: 'default' }]
+            );
+            return;
+        }
+
         try {
             const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {

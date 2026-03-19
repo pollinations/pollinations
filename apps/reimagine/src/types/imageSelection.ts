@@ -3,7 +3,7 @@ export type ImageSourceType = 'civitai' | 'local';
 
 export interface ImageSource {
   id: string;
-  url?: string;              // URL si Civitai ou déjà uploadée sur ImgBB
+  url?: string;              // URL si Civitai ou déjà uploadée sur image
   localUri?: string;         // URI local si image du device
   source: ImageSourceType;
   thumbnail: string;         // Pour preview dans le bottom bar

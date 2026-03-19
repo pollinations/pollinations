@@ -18,6 +18,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import TransformationService from '../services/TransformationService';
 import { TransformationChain } from '../types/transformation';
 import { pollinationsService } from '../services/PollinationsService';
+import { useAuth } from '../context/AuthContext';
 
 // TransformationItem component outside to avoid re-creation
 interface TransformationItemProps {
@@ -116,6 +117,7 @@ TransformationItem.displayName = 'TransformationItem';
 
 export default function ProfileScreen({ navigation }: TabScreenProps<'Profile'>) {
   const { theme, isDark, toggleTheme } = useTheme();
+  const { token, login, logout } = useAuth();
   const [transformations, setTransformations] = useState<TransformationChain[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -308,6 +310,26 @@ export default function ProfileScreen({ navigation }: TabScreenProps<'Profile'>)
                 />
               </TouchableOpacity>
             </View>
+          </View>
+          
+          <View style={[styles.authContainer, { borderTopColor: theme.colors.border }]}>
+            {token ? (
+              <View style={styles.authRow}>
+                <Ionicons name="checkmark-circle" size={20} color={theme.colors.success || '#4CAF50'} />
+                <Text style={[styles.authText, { color: theme.colors.text }]}>Connected to Pollinations</Text>
+                <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+                  <Text style={[styles.logoutText, { color: theme.colors.error || '#F44336' }]}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
+                onPress={login}
+              >
+                <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.loginButtonText}>Login with Pollinations</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -529,6 +551,45 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   browseButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  authContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+  },
+  authRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  authText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  logoutButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+  },
+  logoutText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  loginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    gap: 8,
+  },
+  loginButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',

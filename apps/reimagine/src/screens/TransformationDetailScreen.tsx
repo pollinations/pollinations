@@ -164,11 +164,11 @@ export default function TransformationDetailScreen({
       setUploadingForReport(true);
       const imageUri = currentVersion.resultUrl;
 
-      // Check if image is local (file://) - need to upload to ImgBB
+      // Check if image is local (file://) - need to upload image
       if (imageUri.startsWith('file://')) {
-        console.log('🔄 Local image detected, uploading to ImgBB for report...');
+        console.log('🔄 Local image detected, uploading image for report...');
 
-        const uploadResult = await ImageUploadService.uploadToImgBB(imageUri);
+        const uploadResult = await ImageUploadService.uploadImage(imageUri);
 
         if (!uploadResult.success || !uploadResult.url) {
           throw new Error(uploadResult.error || 'Failed to upload image');

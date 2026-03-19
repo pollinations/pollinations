@@ -277,6 +277,149 @@ describe("validateUserRecords", () => {
         ]);
         expect(githubGraphqlRequest).not.toHaveBeenCalled();
     });
+
+    it("retries users with field-level GraphQL errors in smaller batches", async () => {
+        githubRestRequest.mockResolvedValue({
+            data: { node_id: "NODE_123" },
+            status: 200,
+            remaining: null,
+            reset: null,
+            total: null,
+        });
+
+        githubGraphqlRequest
+            .mockResolvedValueOnce({
+                data: {
+                    data: {
+                        u0: {
+                            __typename: "User",
+                            createdAt: new Date(
+                                Date.now() - 365 * 24 * 60 * 60 * 1000,
+                            ).toISOString(),
+                            repositories: {
+                                totalCount: 52,
+                                nodes: null,
+                            },
+                            contributionsCollection: {
+                                totalCommitContributions: 80,
+                            },
+                        },
+                        u1: makeUser({
+                            ageDays: 365,
+                            qualityRepos: 3,
+                            commits: 80,
+                            stars: 20,
+                        }),
+                    },
+                    errors: [
+                        {
+                            message: "Resource limits for this query exceeded.",
+                            path: ["u0", "repositories", "nodes"],
+                        },
+                    ],
+                },
+                rateLimit: {
+                    remaining: null,
+                    reset: null,
+                    total: null,
+                },
+            })
+            .mockResolvedValueOnce({
+                data: {
+                    data: {
+                        u0: makeUser({
+                            ageDays: 365,
+                            qualityRepos: 4,
+                            commits: 80,
+                            stars: 20,
+                        }),
+                    },
+                    errors: [],
+                },
+                rateLimit: {
+                    remaining: null,
+                    reset: null,
+                    total: null,
+                },
+            });
+
+        const results = await validateUserRecords([
+            { github_id: 123 },
+            { github_id: 456 },
+        ]);
+
+        expect(githubGraphqlRequest).toHaveBeenCalledTimes(2);
+        expect(results).toHaveLength(2);
+        expect(results[0]).toMatchObject({
+            github_id: 123,
+            status: "ok",
+            approved: true,
+            risk_status: "ok",
+        });
+        expect(results[0].risk_flags).toEqual([]);
+        expect(results[1]).toMatchObject({
+            github_id: 456,
+            status: "ok",
+            approved: true,
+            risk_status: "ok",
+        });
+    });
+
+    it("defers users when a single-user GraphQL retry still has field-level errors", async () => {
+        githubRestRequest.mockResolvedValue({
+            data: { node_id: "NODE_123" },
+            status: 200,
+            remaining: null,
+            reset: null,
+            total: null,
+        });
+
+        githubGraphqlRequest.mockResolvedValue({
+            data: {
+                data: {
+                    u0: {
+                        __typename: "User",
+                        createdAt: new Date(
+                            Date.now() - 365 * 24 * 60 * 60 * 1000,
+                        ).toISOString(),
+                        repositories: {
+                            totalCount: 52,
+                            nodes: null,
+                        },
+                        contributionsCollection: {
+                            totalCommitContributions: 80,
+                        },
+                    },
+                },
+                errors: [
+                    {
+                        message: "Resource limits for this query exceeded.",
+                        path: ["u0", "repositories", "nodes"],
+                    },
+                ],
+            },
+            rateLimit: {
+                remaining: null,
+                reset: null,
+                total: null,
+            },
+        });
+
+        await expect(
+            validateUserRecords([{ github_id: 123 }]),
+        ).resolves.toEqual([
+            {
+                github_id: 123,
+                status: "unavailable",
+                approved: false,
+                reason: "Resource limits for this query exceeded.",
+                details: null,
+                risk_status: "unavailable",
+                risk_flags: [],
+                risk_details: null,
+            },
+        ]);
+    });
 });
 
 describe("isScorableValidationResult", () => {

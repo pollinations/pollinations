@@ -93,6 +93,7 @@ export function assessProfileRisk(
     }
     if (
         totalRepos > EMPTY_REPO_DOMINANCE_MIN_TOTAL_REPOS &&
+        fetchedRepos > 0 &&
         qualityNodes.length < MIN_QUALITY_REPOS_FOR_LARGE_ACCOUNT
     ) {
         flags.push("repo_quality_gap");

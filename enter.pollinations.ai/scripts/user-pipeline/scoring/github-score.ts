@@ -24,7 +24,7 @@ import {
 import { assessProfileRisk, type GitHubRiskResult } from "./github-risk.ts";
 
 const GITHUB_REST_USER = "https://api.github.com/user";
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 20;
 const ACCOUNT_LOOKUP_MAX_WORKERS = 3;
 const GRAPHQL_MAX_WORKERS = 3;
 const THRESHOLD = 8;
@@ -357,7 +357,7 @@ export async function validateAccountRecords(
 
 async function fetchBatch(
     accounts: GitHubValidationAccount[],
-): Promise<{ results: GitHubValidationResult[]; rateLimit: GitHubRateLimit }> {
+): Promise<GitHubValidationResult[]> {
     const { data, rateLimit } =
         await githubGraphqlRequest<GitHubGraphqlResponse>(
             buildQuery(
@@ -369,8 +369,22 @@ async function fetchBatch(
                 userAgent: "pollinations-github-validator",
             },
         );
+    await maybeThrottle(rateLimit);
 
-    const results = accounts.map((account, index) => {
+    const aliasErrors = collectAliasErrors(data.errors);
+    const results = new Array<GitHubValidationResult>(accounts.length);
+    const retryEntries: Array<{
+        account: GitHubValidationAccount;
+        index: number;
+    }> = [];
+
+    for (const [index, account] of accounts.entries()) {
+        const errors = aliasErrors.get(index);
+        if (errors) {
+            retryEntries.push({ account, index });
+            continue;
+        }
+
         const nodeData = data.data?.[`u${index}`];
         const userData =
             nodeData &&
@@ -379,18 +393,68 @@ async function fetchBatch(
                 ? (nodeData as GitHubGraphqlUser)
                 : null;
         if (userData) {
-            return scoreUser(userData, account.github_id);
+            results[index] = scoreUser(userData, account.github_id);
+            continue;
         }
 
-        const matchingError = data.errors?.find((error) =>
-            error.path?.includes(`u${index}`),
-        );
-        return unavailableUserResult(
+        results[index] = unavailableUserResult(
             account.github_id,
-            matchingError?.message || "GitHub scoring unavailable",
+            "GitHub scoring unavailable",
         );
-    });
-    return { results, rateLimit };
+    }
+
+    if (retryEntries.length === 0) {
+        return results;
+    }
+
+    if (accounts.length === 1) {
+        const onlyRetry = retryEntries[0];
+        results[onlyRetry.index] = unavailableUserResult(
+            onlyRetry.account.github_id,
+            aliasErrors.get(onlyRetry.index)?.join("; ") ||
+                "GitHub scoring unavailable",
+        );
+        return results;
+    }
+
+    const retryBatchSize = Math.max(1, Math.floor(accounts.length / 2));
+    for (let index = 0; index < retryEntries.length; index += retryBatchSize) {
+        const batch = retryEntries.slice(index, index + retryBatchSize);
+        const retried = await fetchBatch(batch.map(({ account }) => account));
+        for (const [offset, result] of retried.entries()) {
+            results[batch[offset].index] = result;
+        }
+    }
+
+    return results;
+}
+
+function collectAliasErrors(
+    errors: GitHubGraphqlResponse["errors"],
+): Map<number, string[]> {
+    const aliasErrors = new Map<number, string[]>();
+
+    for (const error of errors ?? []) {
+        const alias = error.path?.[0];
+        if (typeof alias !== "string") {
+            continue;
+        }
+        const match = /^u(\d+)$/.exec(alias);
+        if (!match) {
+            continue;
+        }
+        const index = Number.parseInt(match[1], 10);
+        if (!Number.isInteger(index) || index < 0) {
+            continue;
+        }
+        const existing = aliasErrors.get(index) ?? [];
+        if (error.message && !existing.includes(error.message)) {
+            existing.push(error.message);
+        }
+        aliasErrors.set(index, existing);
+    }
+
+    return aliasErrors;
 }
 
 export async function validateUserRecords(
@@ -433,13 +497,10 @@ export async function validateUserRecords(
     const batchResults = await mapConcurrent(
         batches,
         GRAPHQL_MAX_WORKERS,
-        async (batch) => {
-            const { results: scored, rateLimit } = await fetchBatch(
-                batch.map(({ account }) => account),
-            );
-            await maybeThrottle(rateLimit);
-            return { batch, scored };
-        },
+        async (batch) => ({
+            batch,
+            scored: await fetchBatch(batch.map(({ account }) => account)),
+        }),
     );
 
     for (const { batch, scored } of batchResults) {

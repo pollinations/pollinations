@@ -85,6 +85,21 @@ describe("assessProfileRisk", () => {
         expect(result.risk_flags).toContain("repo_quality_gap");
     });
 
+    it("does not flag repo_quality_gap when zero repos were fetched", () => {
+        const result = assessProfileRisk(
+            {
+                repositories: {
+                    totalCount: 25,
+                    nodes: [],
+                },
+            },
+            105,
+        );
+
+        expect(result.risk_flags).not.toContain("repo_quality_gap");
+        expect(result.risk_status).toBe("ok");
+    });
+
     it("keeps normal profiles clear", () => {
         const result = assessProfileRisk(
             {
@@ -121,7 +136,10 @@ describe("assessProfileRisk", () => {
     });
 
     it("includes github_id in the result", () => {
-        const result = assessProfileRisk({ repositories: { totalCount: 0, nodes: [] } }, 42);
+        const result = assessProfileRisk(
+            { repositories: { totalCount: 0, nodes: [] } },
+            42,
+        );
         expect(result.github_id).toBe(42);
     });
 

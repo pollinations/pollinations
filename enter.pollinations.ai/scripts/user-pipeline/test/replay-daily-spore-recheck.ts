@@ -12,16 +12,18 @@
  *   npm run user-pipeline:replay-daily -- --emails-file /tmp/emails.txt
  *   npm run user-pipeline:replay-daily -- --emails-file /tmp/emails.txt --dry-run
  *   npm run user-pipeline:replay-daily -- --emails-file /tmp/emails.txt --skip-prepare --passes 3
+ *   npm run user-pipeline:replay-daily -- --emails-file /tmp/emails.txt --trace-file /tmp/daily-trace.jsonl
  *
  * Options:
  *   --emails-file    Required. Newline-separated list of emails to replay.
  *   --skip-prepare   Skip the cohort reset (use current D1 state as-is).
  *   --passes N       Max number of daily passes to run (default: cohort size).
  *   --dry-run        Run one dry-run pass without writing to D1.
+ *   --trace-file     Append per-pass daily trace output as JSONL
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TIER_POLLEN } from "../../../src/tier-config.ts";
@@ -36,6 +38,7 @@ interface ParsedArgs {
     skipPrepare: boolean;
     passes: number | null;
     dryRun: boolean;
+    traceFile: string | null;
 }
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -72,6 +75,7 @@ function parseArguments(): ParsedArgs {
         skipPrepare: args.includes("--skip-prepare"),
         passes: getNumber("--passes"),
         dryRun: args.includes("--dry-run"),
+        traceFile: getString("--trace-file") || null,
     };
 }
 
@@ -165,6 +169,9 @@ function main(): void {
     console.log(`   Environment: ${config.env}`);
     console.log(`   Cohort file: ${config.emailsFile}`);
     console.log(`   Cohort size: ${cohortSize}`);
+    if (config.traceFile) {
+        console.log(`   Trace file: ${config.traceFile}`);
+    }
 
     if (cohortSize === 0) {
         console.error("❌ No users matched the supplied emails on staging");
@@ -176,6 +183,9 @@ function main(): void {
     if (!config.skipPrepare) {
         console.log("\n🛠️ Preparing cohort for daily replay...");
         prepareCohort(config.env, emails);
+        if (config.traceFile) {
+            writeFileSync(config.traceFile, "");
+        }
     } else {
         console.log("\n⏭️ Skipping cohort preparation");
     }
@@ -192,6 +202,9 @@ function main(): void {
                 "--dry-run",
                 "--emails-file",
                 config.emailsFile,
+                ...(config.traceFile
+                    ? ["--trace-file", config.traceFile, "--trace-pass", "1"]
+                    : []),
             ],
             childEnv,
         );
@@ -218,6 +231,14 @@ function main(): void {
                 config.env,
                 "--emails-file",
                 config.emailsFile,
+                ...(config.traceFile
+                    ? [
+                          "--trace-file",
+                          config.traceFile,
+                          "--trace-pass",
+                          String(index + 1),
+                      ]
+                    : []),
             ],
             childEnv,
         );

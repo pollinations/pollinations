@@ -15,13 +15,20 @@
  */
 
 import { TIER_POLLEN } from "../../src/tier-config.ts";
+import {
+    extractDeletedGithubIds,
+    type GitHubValidationResult,
+    isScorableValidationResult,
+    storeGithubScores,
+    validateUserRecords,
+} from "./scoring/github-score.ts";
 import { executeD1, queryD1 } from "./shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "./shared/email-cohort.ts";
 import {
+    banUsersByEmails,
     banUsersByGithubIds,
-    GITHUB_USERNAME_RE,
+    PIPELINE_DB_BATCH_SIZE,
 } from "./shared/github-identity.ts";
-import { runInlinePython } from "./shared/python.ts";
 
 type Environment = "staging";
 
@@ -34,19 +41,6 @@ interface ParsedArgs {
 interface TrustedUser {
     email: string;
     github_id: number | null;
-    github_username: string | null;
-}
-
-interface ValidationResult {
-    github_id?: number | null;
-    username?: string;
-    status?: string;
-    approved?: boolean;
-    risk_status?: "ok" | "suspicious" | "unavailable";
-    risk_flags?: string[];
-    details?: {
-        total?: number;
-    } | null;
 }
 
 function parseArguments(): ParsedArgs {
@@ -91,98 +85,24 @@ function fetchTrustedMicrobeUsers(
     const emailFilter = buildEmailFilter("email", cohortEmails);
     return queryD1(
         env,
-        `SELECT email, github_id, github_username FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0${emailFilter}`,
+        `SELECT email, github_id FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0${emailFilter}`,
     ) as TrustedUser[];
 }
 
-function runGithubScoring(users: TrustedUser[]): ValidationResult[] {
-    if (users.length === 0) return [];
-
-    const scriptPath = `${import.meta.dirname}/scoring`;
-    const pythonScript = `
-import sys, json
-sys.path.insert(0, "${scriptPath}")
-from github_score import validate_user_records
-results = validate_user_records(${JSON.stringify(users)})
-print(json.dumps(results))
-`;
-    const output = runInlinePython(pythonScript);
-
-    return JSON.parse(output.trim()) as ValidationResult[];
-}
-
-function extractDeletedGithubUsers(results: ValidationResult[]): number[] {
-    return Array.from(
-        new Set(
-            results.flatMap((result) =>
-                result.status === GITHUB_ACCOUNT_DELETED_REASON &&
-                Number.isInteger(result.github_id)
-                    ? [result.github_id]
-                    : [],
-            ),
-        ),
-    );
-}
-
-function extractRiskBlockedGithubUsers(results: ValidationResult[]): number[] {
+function extractRiskBlockedGithubUsers(
+    results: GitHubValidationResult[],
+): number[] {
     return Array.from(
         new Set(
             results.flatMap((result) =>
                 result.risk_status === "suspicious" &&
-                Number.isInteger(result.github_id)
+                Number.isInteger(result.github_id) &&
+                result.github_id > 0
                     ? [result.github_id]
                     : [],
             ),
         ),
     );
-}
-
-function storeScores(
-    env: Environment,
-    results: ValidationResult[],
-    timestamp: number,
-): number {
-    let stored = 0;
-
-    for (let i = 0; i < results.length; i += DB_BATCH_SIZE) {
-        const batch = results.slice(i, i + DB_BATCH_SIZE).flatMap((result) => {
-            const githubId = result.github_id;
-            const username = result.username;
-            if (
-                !Number.isInteger(githubId) ||
-                githubId <= 0 ||
-                typeof username !== "string" ||
-                !GITHUB_USERNAME_RE.test(username)
-            ) {
-                return [];
-            }
-            const rawScore = Number(result.details?.total ?? 0);
-            const totalScore = Number.isFinite(rawScore) ? rawScore : 0;
-            return [{ githubId, username, totalScore }];
-        });
-        if (batch.length === 0) continue;
-
-        const scoreCases = batch
-            .map(
-                ({ githubId, totalScore }) =>
-                    `WHEN ${githubId} THEN ${totalScore}`,
-            )
-            .join(" ");
-        const usernameCases = batch
-            .map(
-                ({ githubId, username }) =>
-                    `WHEN ${githubId} THEN '${escapeSqlString(username)}'`,
-            )
-            .join(" ");
-        const idList = batch.map(({ githubId }) => githubId).join(", ");
-        const ok = executeD1(
-            env,
-            `UPDATE user SET score = CASE github_id ${scoreCases} END, github_username = CASE github_id ${usernameCases} END, score_checked_at = ${timestamp} WHERE github_id IN (${idList}) AND tier = 'microbe'`,
-        );
-        if (ok) stored += batch.length;
-    }
-
-    return stored;
 }
 
 function applyTierUpdates(
@@ -201,8 +121,8 @@ function applyTierUpdates(
     );
     let updated = 0;
 
-    for (let i = 0; i < uniqueIds.length; i += DB_BATCH_SIZE) {
-        const batch = uniqueIds.slice(i, i + DB_BATCH_SIZE);
+    for (let i = 0; i < uniqueIds.length; i += PIPELINE_DB_BATCH_SIZE) {
+        const batch = uniqueIds.slice(i, i + PIPELINE_DB_BATCH_SIZE);
         if (batch.length === 0) continue;
 
         const idList = batch.join(", ");
@@ -267,13 +187,11 @@ async function main(): Promise<void> {
         return;
     }
 
-    const results = runGithubScoring(scoreableUsers);
-    const deletedGithubIds = extractDeletedGithubUsers(results);
-    const deletedSet = new Set(deletedGithubIds);
-    const scoreableResults = results.filter((result) => {
-        const githubId = result.github_id;
-        return Number.isInteger(githubId) && !deletedSet.has(githubId);
-    });
+    const results = await validateUserRecords(scoreableUsers);
+    const deletedGithubIds = extractDeletedGithubIds(results);
+    const scoreableResults = results.filter(isScorableValidationResult);
+    const unavailableCount =
+        results.length - deletedGithubIds.length - scoreableResults.length;
     const riskBlockedGithubIds =
         extractRiskBlockedGithubUsers(scoreableResults);
     const riskBlockedSet = new Set(riskBlockedGithubIds);
@@ -302,6 +220,11 @@ async function main(): Promise<void> {
                 `🚩 Would keep ${riskBlockedGithubIds.length} trusted users at spore due to suspicious GitHub profiles`,
             );
         }
+        if (unavailableCount > 0) {
+            console.log(
+                `⏭️ Would defer ${unavailableCount} users because GitHub scoring was unavailable`,
+            );
+        }
         console.log(`🌱 Would promote to seed: ${approvedGithubIds.length}`);
         console.log(`🍄 Would promote to spore: ${sporeGithubIds.length}`);
         return;
@@ -312,8 +235,7 @@ async function main(): Promise<void> {
         console.log(`🚫 Banned ${banned} users with deleted GitHub accounts`);
     }
 
-    const now = Date.now();
-    const stored = storeScores(config.env, scoreableResults, now);
+    const stored = storeGithubScores(config.env, "microbe", scoreableResults);
     const seeded = applyTierUpdates(
         config.env,
         approvedGithubIds,
@@ -330,6 +252,7 @@ async function main(): Promise<void> {
     console.log("\n📊 Summary:");
     console.log(`   Scores stored: ${stored}`);
     console.log(`   Risk-blocked from seed: ${riskBlockedGithubIds.length}`);
+    console.log(`   Deferred (GitHub unavailable): ${unavailableCount}`);
     console.log(`   Microbe -> Seed: ${seeded}`);
     console.log(`   Microbe -> Spore: ${spored}`);
 }

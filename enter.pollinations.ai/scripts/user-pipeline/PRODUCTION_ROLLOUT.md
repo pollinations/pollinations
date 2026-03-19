@@ -32,8 +32,7 @@ The last pre-merge commit should do only two things:
 - `.github/workflows/user-pipeline-daily-spore-recheck.yml`
 - `enter.pollinations.ai/scripts/user-pipeline/scoring/trust-score.ts`
 - `enter.pollinations.ai/scripts/user-pipeline/hourly-new-users.ts`
-- `enter.pollinations.ai/scripts/user-pipeline/daily-spore-recheck.py`
-- `enter.pollinations.ai/scripts/user-pipeline/shared/d1.py`
+- `enter.pollinations.ai/scripts/user-pipeline/daily-spore-recheck.ts`
 
 ## First Post-Merge Run Must Be Dry
 
@@ -74,7 +73,7 @@ run: npm run user-pipeline:daily-spore-recheck -- --env production --dry-run
 
 - `trust-score.ts` without `--store-status` does not write `trust_score` and does not ban users.
 - `hourly-new-users.ts --dry-run` prints would-be `microbe -> spore/seed` outcomes without changing tiers.
-- `daily-spore-recheck.py --dry-run` prints would-be `spore -> seed` outcomes without changing tiers or scores.
+- `daily-spore-recheck.ts --dry-run` prints would-be `spore -> seed` outcomes without changing tiers or scores.
 
 So the first merged production runs are safe observation runs.
 

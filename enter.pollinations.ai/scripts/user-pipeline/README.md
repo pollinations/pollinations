@@ -28,42 +28,34 @@ Current checked-in layout on this branch:
 ```text
 scripts/user-pipeline/
 ├── hourly-new-users.ts
-├── daily-spore-recheck.py
+├── daily-spore-recheck.ts
 ├── scoring/
 │   ├── trust-score.ts
-│   ├── trust-score-helpers.ts
-│   ├── github_score.py
-│   ├── github_risk.py
-│   └── test_github_risk.py
+│   ├── github-score.ts
+│   └── github-risk.ts
 ├── shared/
 │   ├── d1.ts
-│   ├── d1.py
 │   ├── email-cohort.ts
 │   ├── github-identity.ts
-│   ├── github_account_state.py
-│   ├── python.ts
-│   └── python_runtime.py
+│   └── github.ts
 ├── manual/
 │   ├── cleanup-github-users.ts
-│   ├── replay-hourly-new-users.py
-│   └── replay-daily-spore-recheck.py
+│   ├── replay-hourly-new-users.ts
+│   └── replay-daily-spore-recheck.ts
 └── backfills/
-    └── backfill-spore-scores.py
+    └── backfill-spore-scores.ts
 ```
 
-## Local Python
-
-- Python package scripts honor `PYTHON_BIN` if it is set.
-- If `PYTHON_BIN` is not set, the launcher prefers `python3.11`, then falls back to `python3`.
-- This keeps local replay and backfill commands stable even when the machine default `python3` is not the interpreter that has the required SSL certificates or Python packages.
+Pipeline tests live under `enter.pollinations.ai/test/`, not inside `scripts/user-pipeline/`.
 
 ## Hourly New-User Pipeline
 
 - Targets users where `trust_score IS NULL` and `banned = 0`
-- Uses all recent unbanned users from the last 24 hours as the reference context for trust scoring
+- In steady state, only scans users from the last hour
 - Validates that the GitHub account still exists by `github_id` before any other checks
-- Syncs `github_username` from GitHub when the user has renamed their account
-- Uses LLM trust scoring to decide whether the user can leave `microbe`
+- Uses `github_id` as the identity key for validation and writes
+- Uses the stored `github_username` from D1 only as LLM context
+- Uses the old overlapping recent-cohort LLM detector on username/email/domain/timing patterns to decide whether the user can leave `microbe`
 - Scores developer activity immediately for trusted users
 - Applies a separate GitHub risk check before allowing `seed`
 - Allows a direct `microbe -> seed` upgrade for users who already qualify
@@ -85,21 +77,17 @@ AND banned = 0"]
 
     C --> D{"Any target users?"}
     D -->|No| E["Exit"]
-    D -->|Yes| F["Build 24h Reference Window
-All recent unbanned users
-from the last 24 hours"]
-
-    F --> G["GitHub Account Validation
-Validate by github_id
-Sync current github_username"]
+    D -->|Yes| G["GitHub Account Validation
+Validate by github_id"]
 
     G --> H{"GitHub account valid?"}
     H -->|No| I["Ban user
 banned = 1
 ban_reason = github_account_deleted"]
     H -->|Yes| J["LLM Trust Evaluation
-Score target users using the
-24h reference context
+Score the recent 1h cohort in
+overlapping chunks using
+github_username + email + timing
 Write trust_score"]
 
     J --> K{"trust_score >= 60?"}
@@ -131,9 +119,15 @@ tier = spore"]
 - Rechecks the users who have waited the longest since their last GitHub score check
 - Daily slice size is `ceil(current_spore_count / 7)`
 - Validates GitHub account existence by `github_id` before scoring
-- Syncs `github_username` from GitHub when needed
+- Uses `github_id` as the only GitHub identity key in the active pipeline
 - Applies the same GitHub risk check before allowing `seed`
 - This keeps the full `spore` pool rotating over roughly one week, even as the pool grows
+
+## Backfill And Replay Tools
+
+- `backfills/backfill-spore-scores.ts` backfills `score` and `score_checked_at` for existing `spore` users
+- `manual/replay-hourly-new-users.ts` resets a staging cohort and reruns the hourly trust + tier pipeline
+- `manual/replay-daily-spore-recheck.ts` resets a staging cohort and reruns the daily `spore -> seed` pipeline
 
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent'}}}%%
@@ -147,8 +141,7 @@ Take oldest ceil(total_spores / 7) users"]
     B --> C{"Any spore users to check?"}
     C -->|No| D["Exit"]
     C -->|Yes| E["GitHub Account Validation
-Validate by github_id
-Sync current github_username"]
+Validate by github_id"]
 
     E --> F{"GitHub account valid?"}
     F -->|No| G["Ban user

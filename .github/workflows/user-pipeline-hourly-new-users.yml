@@ -19,9 +19,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
 
       - name: Generate GitHub App token
         id: token
@@ -32,9 +29,7 @@ jobs:
           owner: pollinations
 
       - name: Install dependencies
-        run: |
-          npm install
-          pip install tqdm
+        run: npm install
 
       - name: Create API token file
         run: echo "ENTER_API_TOKEN_REMOTE=${{ secrets.ENTER_API_TOKEN }}" > .testingtokens

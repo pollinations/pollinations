@@ -20,10 +20,10 @@
  *   GITHUB_APP_PRIVATE_KEY_PATH - Path to .pem private key
  */
 
-import * as crypto from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
 import { executeD1, queryD1 } from "../shared/d1.ts";
+import { githubRestRequest } from "../shared/github.ts";
 
 type Environment = "staging" | "production";
 
@@ -65,48 +65,24 @@ interface GitHubResult {
     rateLimitTotal: number;
 }
 
-async function checkGitHubUser(
-    githubId: number,
-    token: string,
-): Promise<GitHubResult> {
-    const res = await fetch(`https://api.github.com/user/${githubId}`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/vnd.github+json",
-            "User-Agent": "pollinations-cleanup",
+async function checkGitHubUser(githubId: number): Promise<GitHubResult> {
+    const result = await githubRestRequest<{ login?: string }>(
+        `https://api.github.com/user/${githubId}`,
+        {
+            userAgent: "pollinations-cleanup",
         },
-    });
-
-    const rateLimitRemaining = Number.parseInt(
-        res.headers.get("x-ratelimit-remaining") || "5000",
-        10,
     );
-    const rateLimitReset = Number.parseInt(
-        res.headers.get("x-ratelimit-reset") || "0",
-        10,
-    );
-    const rateLimitTotal = Number.parseInt(
-        res.headers.get("x-ratelimit-limit") || "5000",
-        10,
-    );
-
-    if (res.status === 200) {
-        const data = (await res.json()) as { login: string };
-        return {
-            login: data.login,
-            status: 200,
-            rateLimitRemaining,
-            rateLimitReset,
-            rateLimitTotal,
-        };
-    }
-
-    await res.text(); // consume body
     return {
-        status: res.status,
-        rateLimitRemaining,
-        rateLimitReset,
-        rateLimitTotal,
+        login:
+            result.status === 200 &&
+            result.data &&
+            typeof result.data.login === "string"
+                ? result.data.login
+                : undefined,
+        status: result.status,
+        rateLimitRemaining: result.remaining ?? 5000,
+        rateLimitReset: result.reset ?? 0,
+        rateLimitTotal: result.total ?? 5000,
     };
 }
 
@@ -121,125 +97,24 @@ function saveReport(report: AuditReport, path: string): void {
 
 // ── GitHub App auth (15k/hr on Enterprise Cloud) ─────────────
 
-function generateJWT(appId: string, privateKey: string): string {
-    const header = Buffer.from(
-        JSON.stringify({ alg: "RS256", typ: "JWT" }),
-    ).toString("base64url");
-    const now = Math.floor(Date.now() / 1000);
-    const payload = Buffer.from(
-        JSON.stringify({ iat: now - 60, exp: now + 10 * 60, iss: appId }),
-    ).toString("base64url");
-    const signature = crypto
-        .sign("SHA256", Buffer.from(`${header}.${payload}`), privateKey)
-        .toString("base64url");
-    return `${header}.${payload}.${signature}`;
-}
-
-async function getInstallationToken(
-    appId: string,
-    privateKey: string,
-): Promise<{ token: string; expiresAt: number }> {
-    const jwt = generateJWT(appId, privateKey);
-
-    // Find first installation
-    const installRes = await fetch("https://api.github.com/app/installations", {
-        headers: {
-            Authorization: `Bearer ${jwt}`,
-            Accept: "application/vnd.github+json",
-            "User-Agent": "pollinations-audit",
-        },
-    });
-    const installations = (await installRes.json()) as {
-        id: number;
-        account: { login: string };
-    }[];
-    if (installations.length === 0) {
-        throw new Error(
-            "No installations found — install the app on an org first",
-        );
-    }
-    const installationId = installations[0].id;
-
-    // Get token
-    const tokenRes = await fetch(
-        `https://api.github.com/app/installations/${installationId}/access_tokens`,
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${jwt}`,
-                Accept: "application/vnd.github+json",
-                "User-Agent": "pollinations-audit",
-            },
-        },
-    );
-    const tokenData = (await tokenRes.json()) as {
-        token: string;
-        expires_at: string;
-    };
-    // Refresh 5 min before expiry
-    const expiresAt = new Date(tokenData.expires_at).getTime() - 5 * 60 * 1000;
-    return { token: tokenData.token, expiresAt };
-}
-
-interface TokenProvider {
-    getToken: () => Promise<string>;
-    label: string;
-}
-
-async function createTokenProvider(): Promise<TokenProvider> {
-    const appId = process.env.GITHUB_APP_ID;
-    const keyPath = process.env.GITHUB_APP_PRIVATE_KEY_PATH;
-
-    // Prefer GitHub App (15k/hr) over PAT (5k/hr)
-    if (appId && keyPath && existsSync(keyPath)) {
-        const privateKey = readFileSync(keyPath, "utf-8");
-        let current = await getInstallationToken(appId, privateKey);
-        console.log(
-            `🔑 GitHub App auth (15k/hr) — token expires ${new Date(current.expiresAt + 5 * 60 * 1000).toISOString()}`,
-        );
-
-        return {
-            label: "GitHub App (15k/hr)",
-            getToken: async () => {
-                if (Date.now() >= current.expiresAt) {
-                    console.log("  🔄 Refreshing installation token...");
-                    current = await getInstallationToken(appId, privateKey);
-                    console.log(
-                        `  ✅ New token expires ${new Date(current.expiresAt + 5 * 60 * 1000).toISOString()}`,
-                    );
-                }
-                return current.token;
-            },
-        };
+function describeGithubAuth(): string {
+    if (process.env.GITHUB_APP_ID && process.env.GITHUB_APP_PRIVATE_KEY_PATH) {
+        return "GitHub App";
     }
 
-    // Fallback: PAT(s)
     const tokenStr = process.env.GITHUB_TOKENS || process.env.GITHUB_TOKEN;
     if (!tokenStr) {
         console.error(
-            "❌ Set GITHUB_APP_ID+GITHUB_APP_PRIVATE_KEY_PATH (15k/hr) or GITHUB_TOKEN (5k/hr)",
+            "❌ Set GITHUB_APP_ID+GITHUB_APP_PRIVATE_KEY_PATH or GITHUB_TOKEN",
         );
         process.exit(1);
     }
-    const tokens = tokenStr
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-    let tokenIndex = 0;
-    const label =
-        tokens.length > 1
-            ? `${tokens.length} PATs (~${tokens.length * 5000}/hr)`
-            : "PAT (5k/hr)";
-    console.log(`🔑 Using ${label}`);
 
-    return {
-        label,
-        getToken: async () => {
-            const t = tokens[tokenIndex % tokens.length];
-            tokenIndex++;
-            return t;
-        },
-    };
+    const tokenCount = tokenStr
+        .split(",")
+        .map((token) => token.trim())
+        .filter(Boolean).length;
+    return tokenCount > 1 ? `${tokenCount} PATs` : "PAT";
 }
 
 // GitHub usernames: alphanumeric + hyphens, max 39 chars
@@ -265,8 +140,8 @@ const auditCommand = command({
     },
     handler: async (opts) => {
         const env = opts.env as Environment;
-
-        const tokenProvider = await createTokenProvider();
+        const authLabel = describeGithubAuth();
+        console.log(`🔑 Using ${authLabel}`);
 
         const reportPath = getReportPath(env);
         let report: AuditReport;
@@ -322,10 +197,7 @@ const auditCommand = command({
                 if (newlyProcessed >= maxToProcess) break;
                 if (processedIds.has(user.github_id)) continue;
 
-                const result = await checkGitHubUser(
-                    user.github_id,
-                    await tokenProvider.getToken(),
-                );
+                const result = await checkGitHubUser(user.github_id);
 
                 // Auto-tune delay based on actual rate limit
                 if (!detectedLimit && result.rateLimitTotal > 0) {
@@ -336,7 +208,7 @@ const auditCommand = command({
                     );
                     const rps = (1000 / baseDelayMs).toFixed(1);
                     console.log(
-                        `  ⚡ Rate limit: ${result.rateLimitTotal}/hr (${tokenProvider.label}) → ${rps} req/sec (${baseDelayMs}ms delay)\n`,
+                        `  ⚡ Rate limit: ${result.rateLimitTotal}/hr (${authLabel}) → ${rps} req/sec (${baseDelayMs}ms delay)\n`,
                     );
                 }
 
@@ -719,15 +591,12 @@ const retryCommand = command({
         }
 
         console.log(`🔄 Retrying ${errors.length} errored entries...\n`);
-
-        const tokenProvider = await createTokenProvider();
+        const authLabel = describeGithubAuth();
+        console.log(`🔑 Using ${authLabel}`);
         let fixed = 0;
 
         for (const entry of errors) {
-            const result = await checkGitHubUser(
-                entry.githubId,
-                await tokenProvider.getToken(),
-            );
+            const result = await checkGitHubUser(entry.githubId);
 
             if (result.status === 200 && result.login) {
                 if (

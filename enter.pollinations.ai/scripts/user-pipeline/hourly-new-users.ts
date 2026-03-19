@@ -3,10 +3,10 @@
  * Hourly new-user pipeline.
  *
  * Promotes trusted microbe users (trust_score >= 60) to seed or spore based on
- * GitHub activity. Validates GitHub account existence first via the shared
- * validateGithubAccounts step, then scores developer activity (age, repos,
- * commits, stars) and applies a risk check. Users above threshold go to seed;
- * others go to spore. Deleted accounts are banned.
+ * GitHub activity. Bans users with missing/invalid github_id, then scores
+ * developer activity (age, repos, commits, stars) and applies a risk check.
+ * Users above threshold go to seed; others go to spore. Deleted accounts are
+ * banned.
  *
  * Runs after trust-score.ts has already written trust_score to D1.
  *
@@ -32,9 +32,10 @@ import {
 import { executeD1, queryD1 } from "./shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "./shared/email-cohort.ts";
 import {
+    banUsersByEmails,
     banUsersByGithubIds,
+    GITHUB_ID_INVALID_REASON,
     PIPELINE_DB_BATCH_SIZE,
-    validateGithubAccounts,
 } from "./shared/github-identity.ts";
 
 type Environment = "staging";
@@ -165,22 +166,54 @@ async function main(): Promise<void> {
 
     console.log(`📊 Trusted microbe users: ${trustedUsers.length}`);
 
-    const scoreableUsers = await validateGithubAccounts(
-        trustedUsers,
-        config.env,
-        !config.dryRun,
+    const invalidUsers = trustedUsers.filter(
+        (user) => !Number.isInteger(user.github_id) || user.github_id === null,
+    );
+    const validUsers = trustedUsers.filter(
+        (user): user is TrustedUser & { github_id: number } =>
+            Number.isInteger(user.github_id) && user.github_id !== null,
     );
 
-    if (scoreableUsers.length === 0) {
+    if (invalidUsers.length > 0) {
+        if (config.dryRun) {
+            console.log(
+                `🚫 Would ban ${invalidUsers.length} trusted users with missing/invalid GitHub IDs`,
+            );
+        } else {
+            const banned = banUsersByEmails(
+                config.env,
+                invalidUsers.map((user) => user.email),
+                GITHUB_ID_INVALID_REASON,
+            );
+            console.log(
+                `🚫 Banned ${banned} trusted users with missing/invalid GitHub IDs`,
+            );
+        }
+    }
+
+    if (validUsers.length === 0) {
         console.log("✅ No valid trusted users left for GitHub scoring");
         return;
     }
 
-    const results = await validateUserRecords(scoreableUsers);
-    const deletedGithubIds = extractDeletedGithubIds(results);
-    const scoreableResults = results.filter(isScorableValidationResult);
+    const results = await validateUserRecords(validUsers);
+    const resultsByGithubId = new Map(
+        results.flatMap((result) =>
+            Number.isInteger(result.github_id) && result.github_id > 0
+                ? [[result.github_id, result] as const]
+                : [],
+        ),
+    );
+    const orderedResults = validUsers.flatMap((user) => {
+        const result = resultsByGithubId.get(user.github_id);
+        return result ? [result] : [];
+    });
+    const deletedGithubIds = extractDeletedGithubIds(orderedResults);
+    const scoreableResults = orderedResults.filter(isScorableValidationResult);
     const unavailableCount =
-        results.length - deletedGithubIds.length - scoreableResults.length;
+        orderedResults.length -
+        deletedGithubIds.length -
+        scoreableResults.length;
     const riskBlockedGithubIds =
         extractRiskBlockedGithubUsers(scoreableResults);
     const riskBlockedSet = new Set(riskBlockedGithubIds);

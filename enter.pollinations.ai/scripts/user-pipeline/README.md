@@ -59,6 +59,7 @@ scripts/user-pipeline/
 
 - Targets users where `trust_score IS NULL` and `banned = 0`
 - In steady state, only scans users from the last hour
+- Bans missing/invalid `github_id` rows before calling GitHub
 - Validates that the GitHub account still exists by `github_id` before any other checks
 - Uses `github_id` as the identity key for validation and writes
 - Uses the stored `github_username` from D1 only as LLM context
@@ -90,7 +91,8 @@ Validate by github_id"]
     G --> H{"GitHub account valid?"}
     H -->|No| I["Ban user
 banned = 1
-ban_reason = github_account_deleted"]
+ban_reason = github_id_invalid
+or github_account_deleted"]
     H -->|Yes| J["LLM Trust Evaluation
 Score the recent 1h cohort in
 overlapping chunks using
@@ -125,6 +127,7 @@ tier = spore"]
 - Runs only on unbanned `spore` users
 - Rechecks the users who have waited the longest since their last GitHub score check
 - Daily slice size is `ceil(current_spore_count / 7)`
+- Bans missing/invalid `github_id` rows before calling GitHub
 - Validates GitHub account existence by `github_id` before scoring
 - Uses `github_id` as the only GitHub identity key in the active pipeline
 - Applies the same GitHub risk check before allowing `seed`
@@ -155,7 +158,8 @@ Validate by github_id"]
     E --> F{"GitHub account valid?"}
     F -->|No| G["Ban user
 banned = 1
-ban_reason = github_account_deleted"]
+ban_reason = github_id_invalid
+or github_account_deleted"]
     F -->|Yes| H["GitHub Developer Scoring
 Write score
 Write score_checked_at"]

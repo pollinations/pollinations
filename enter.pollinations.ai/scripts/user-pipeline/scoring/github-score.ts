@@ -2,12 +2,13 @@
  * GitHub activity scoring for the user pipeline.
  *
  * validateUserRecords is the main entry point: it checks account existence via
- * REST (404 = deleted), then fetches activity data via GraphQL and scores each
- * user on age, quality repos, commits, and stars. A total >= 8 is "approved".
- * Also runs assessProfileRisk to flag suspicious repository patterns.
+ * REST, then fetches activity data via GraphQL and scores each user on age,
+ * quality repos, commits, and stars. A REST 404 is treated as deleted;
+ * transient lookup failures are deferred as unavailable. A total >= 8 is
+ * "approved". Also runs assessProfileRisk to flag suspicious repository
+ * patterns.
  *
  * storeGithubScores persists scores to D1.
- * validateAccountRecords is used by github-identity.ts for the pre-step check.
  */
 
 import { executeD1 } from "../shared/d1.ts";
@@ -72,7 +73,8 @@ interface GitHubGraphqlResponse {
 export interface GitHubValidationAccount {
     github_id: number | null;
     node_id: string | null;
-    status: "ok" | typeof GITHUB_ACCOUNT_DELETED_REASON;
+    status: "ok" | "unavailable" | typeof GITHUB_ACCOUNT_DELETED_REASON;
+    reason?: string;
 }
 
 export interface GitHubScoreDetails {
@@ -153,16 +155,7 @@ export function scoreUser(
     githubId: number | null,
 ): GitHubValidationResult {
     if (!data) {
-        return {
-            github_id: githubId,
-            status: GITHUB_ACCOUNT_DELETED_REASON,
-            approved: false,
-            reason: "GitHub account deleted",
-            details: null,
-            risk_status: "unavailable",
-            risk_flags: [],
-            risk_details: null,
-        };
+        return deletedUserResult(githubId);
     }
 
     const createdAt = new Date(data.createdAt);
@@ -224,6 +217,22 @@ export function scoreUser(
         risk_status: risk.risk_status,
         risk_flags: risk.risk_flags,
         risk_details: risk.risk_details,
+    };
+}
+
+function deletedUserResult(
+    githubId: number | null,
+    reason = "GitHub account deleted",
+): GitHubValidationResult {
+    return {
+        github_id: githubId,
+        status: GITHUB_ACCOUNT_DELETED_REASON,
+        approved: false,
+        reason,
+        details: null,
+        risk_status: "unavailable",
+        risk_flags: [],
+        risk_details: null,
     };
 }
 
@@ -303,10 +312,23 @@ async function fetchAccountById(
         };
     }
 
+    if (result.status === 404) {
+        return {
+            github_id: githubId,
+            node_id: null,
+            status: GITHUB_ACCOUNT_DELETED_REASON,
+            reason: "GitHub account deleted",
+        };
+    }
+
     return {
         github_id: githubId,
         node_id: null,
-        status: GITHUB_ACCOUNT_DELETED_REASON,
+        status: "unavailable",
+        reason:
+            result.status === 200
+                ? "GitHub account lookup missing node_id"
+                : `GitHub account lookup failed: HTTP ${result.status}`,
     };
 }
 
@@ -324,7 +346,8 @@ export async function validateAccountRecords(
                 return {
                     github_id: null,
                     node_id: null,
-                    status: GITHUB_ACCOUNT_DELETED_REASON,
+                    status: "unavailable",
+                    reason: "Missing GitHub ID",
                 };
             }
             return fetchAccountById(githubId);
@@ -382,12 +405,23 @@ export async function validateUserRecords(
     );
 
     for (const [index, accountResult] of accountResults.entries()) {
+        if (accountResult.status === GITHUB_ACCOUNT_DELETED_REASON) {
+            results[index] = deletedUserResult(
+                accountResult.github_id,
+                accountResult.reason,
+            );
+            continue;
+        }
+
         if (
             accountResult.status !== "ok" ||
             !accountResult.github_id ||
             !accountResult.node_id
         ) {
-            results[index] = scoreUser(null, accountResult.github_id);
+            results[index] = unavailableUserResult(
+                accountResult.github_id,
+                accountResult.reason,
+            );
         }
     }
 

@@ -2,8 +2,8 @@
 /**
  * Full GitHub account audit for all D1 users.
  *
- * Uses the shared validateGithubAccounts step to detect and ban deleted accounts.
- * Also detects renamed accounts and updates github_username in D1 accordingly.
+ * Scans GitHub REST account state directly to detect deleted accounts and
+ * renamed usernames, then applies those updates to D1.
  *
  * Runs in two phases:
  *   audit  — scan all users via GitHub REST API, save results to /tmp/github-audit-<env>.json
@@ -27,10 +27,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
 import { executeD1, queryD1 } from "./shared/d1.ts";
 import { githubRestRequest } from "./shared/github.ts";
-import {
-    banUsersByGithubIds,
-    GITHUB_ACCOUNT_DELETED_REASON,
-} from "./shared/github-identity.ts";
+import { banUsersByGithubIds } from "./shared/github-identity.ts";
 
 type Environment = "staging" | "production";
 
@@ -86,10 +83,15 @@ function describeGithubAuth(): string {
     }
     const tokenStr = process.env.GITHUB_TOKENS || process.env.GITHUB_TOKEN;
     if (!tokenStr) {
-        console.error("❌ Set GITHUB_APP_ID+GITHUB_APP_PRIVATE_KEY_PATH or GITHUB_TOKEN");
+        console.error(
+            "❌ Set GITHUB_APP_ID+GITHUB_APP_PRIVATE_KEY_PATH or GITHUB_TOKEN",
+        );
         process.exit(1);
     }
-    const tokenCount = tokenStr.split(",").map((t) => t.trim()).filter(Boolean).length;
+    const tokenCount = tokenStr
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean).length;
     return tokenCount > 1 ? `${tokenCount} PATs` : "PAT";
 }
 
@@ -113,7 +115,9 @@ const auditCommand = command({
     desc: "Scan all D1 users via GitHub REST API — detect deleted and renamed accounts",
     options: {
         env: string().enum("staging", "production").default("production"),
-        resume: boolean().default(false).desc("Resume from previous saved audit"),
+        resume: boolean()
+            .default(false)
+            .desc("Resume from previous saved audit"),
         limit: number().desc("Max users to process (for testing)"),
     },
     handler: async (opts) => {
@@ -126,9 +130,14 @@ const auditCommand = command({
 
         if (opts.resume && existsSync(reportPath)) {
             report = JSON.parse(readFileSync(reportPath, "utf-8"));
-            console.log(`📋 Resuming: ${report.processedCount}/${report.totalUsers} already processed`);
+            console.log(
+                `📋 Resuming: ${report.processedCount}/${report.totalUsers} already processed`,
+            );
         } else {
-            const countRows = queryD1(env, "SELECT COUNT(*) as count FROM user WHERE github_id IS NOT NULL;");
+            const countRows = queryD1(
+                env,
+                "SELECT COUNT(*) as count FROM user WHERE github_id IS NOT NULL;",
+            );
             const totalUsers = Number(countRows[0]?.count) || 0;
             console.log(`📊 Total D1 users with github_id: ${totalUsers}`);
             report = {
@@ -170,31 +179,66 @@ const auditCommand = command({
                     `https://api.github.com/user/${user.github_id}`,
                     { userAgent: "pollinations-github-audit" },
                 );
+                const rateLimitTotal = result.total ?? 0;
 
-                if (!detectedLimit && (result.total ?? 0) > 0) {
+                if (!detectedLimit && rateLimitTotal > 0) {
                     detectedLimit = true;
-                    baseDelayMs = Math.ceil((3600 / result.total!) * 1.1 * 1000);
+                    baseDelayMs = Math.ceil(
+                        (3600 / rateLimitTotal) * 1.1 * 1000,
+                    );
                     const rps = (1000 / baseDelayMs).toFixed(1);
-                    console.log(`  ⚡ Rate limit: ${result.total}/hr → ${rps} req/sec\n`);
+                    console.log(
+                        `  ⚡ Rate limit: ${rateLimitTotal}/hr → ${rps} req/sec\n`,
+                    );
                 }
 
                 let entry: AuditEntry;
                 if (result.status === 200 && result.data?.login) {
                     const currentLogin = result.data.login;
-                    if (currentLogin.toLowerCase() === (user.github_username || "").toLowerCase()) {
-                        entry = { userId: user.id, githubId: user.github_id, d1Username: user.github_username, currentUsername: currentLogin, status: "ok" };
+                    if (
+                        currentLogin.toLowerCase() ===
+                        (user.github_username || "").toLowerCase()
+                    ) {
+                        entry = {
+                            userId: user.id,
+                            githubId: user.github_id,
+                            d1Username: user.github_username,
+                            currentUsername: currentLogin,
+                            status: "ok",
+                        };
                         stats.ok++;
                     } else {
-                        entry = { userId: user.id, githubId: user.github_id, d1Username: user.github_username, currentUsername: currentLogin, status: "renamed" };
+                        entry = {
+                            userId: user.id,
+                            githubId: user.github_id,
+                            d1Username: user.github_username,
+                            currentUsername: currentLogin,
+                            status: "renamed",
+                        };
                         stats.renamed++;
-                        console.log(`  🔄 Renamed: ${user.github_username} → ${currentLogin} (ID: ${user.github_id})`);
+                        console.log(
+                            `  🔄 Renamed: ${user.github_username} → ${currentLogin} (ID: ${user.github_id})`,
+                        );
                     }
                 } else if (result.status === 404) {
-                    entry = { userId: user.id, githubId: user.github_id, d1Username: user.github_username, status: "deleted" };
+                    entry = {
+                        userId: user.id,
+                        githubId: user.github_id,
+                        d1Username: user.github_username,
+                        status: "deleted",
+                    };
                     stats.deleted++;
-                    console.log(`  ❌ Deleted: ${user.github_username} (ID: ${user.github_id})`);
+                    console.log(
+                        `  ❌ Deleted: ${user.github_username} (ID: ${user.github_id})`,
+                    );
                 } else {
-                    entry = { userId: user.id, githubId: user.github_id, d1Username: user.github_username, status: "error", error: `HTTP ${result.status}` };
+                    entry = {
+                        userId: user.id,
+                        githubId: user.github_id,
+                        d1Username: user.github_username,
+                        status: "error",
+                        error: `HTTP ${result.status}`,
+                    };
                     stats.error++;
                 }
 
@@ -203,10 +247,15 @@ const auditCommand = command({
                 newlyProcessed++;
 
                 if ((result.remaining ?? 5000) < 100) {
-                    const waitMs = Math.max((result.reset ?? 0) * 1000 - Date.now() + 1000, 0);
+                    const waitMs = Math.max(
+                        (result.reset ?? 0) * 1000 - Date.now() + 1000,
+                        0,
+                    );
                     if (waitMs > 0) {
                         saveReport(report, reportPath);
-                        console.log(`\n⏳ Rate limit low, pausing ${Math.ceil(waitMs / 1000)}s...\n`);
+                        console.log(
+                            `\n⏳ Rate limit low, pausing ${Math.ceil(waitMs / 1000)}s...\n`,
+                        );
                         await sleep(waitMs);
                     }
                 } else if ((result.remaining ?? 5000) < 500) {
@@ -217,7 +266,9 @@ const auditCommand = command({
 
                 if (newlyProcessed % 100 === 0) {
                     saveReport(report, reportPath);
-                    console.log(`  📝 Progress: ${report.processedCount}/${report.totalUsers} | ok:${stats.ok} renamed:${stats.renamed} deleted:${stats.deleted} err:${stats.error}`);
+                    console.log(
+                        `  📝 Progress: ${report.processedCount}/${report.totalUsers} | ok:${stats.ok} renamed:${stats.renamed} deleted:${stats.deleted} err:${stats.error}`,
+                    );
                 }
             }
         }
@@ -227,14 +278,18 @@ const auditCommand = command({
         console.log(`\n${"═".repeat(50)}`);
         console.log(`📊 Audit Summary (${env})`);
         console.log(`${"═".repeat(50)}`);
-        console.log(`   Processed: ${report.processedCount} / ${report.totalUsers}`);
+        console.log(
+            `   Processed: ${report.processedCount} / ${report.totalUsers}`,
+        );
         console.log(`   ✅ OK:      ${stats.ok}`);
         console.log(`   🔄 Renamed: ${stats.renamed}`);
         console.log(`   ❌ Deleted: ${stats.deleted}`);
         console.log(`   ⚠️  Errors:  ${stats.error}`);
         console.log(`\n📄 Report: ${reportPath}`);
         if (stats.renamed > 0 || stats.deleted > 0) {
-            console.log(`\n💡 Run 'apply --env ${env}' to preview changes (dry-run by default)`);
+            console.log(
+                `\n💡 Run 'apply --env ${env}' to preview changes (dry-run by default)`,
+            );
         }
     },
 });
@@ -246,8 +301,12 @@ const applyCommand = command({
     desc: "Apply audit results: ban deleted accounts, update renamed usernames in D1",
     options: {
         env: string().enum("staging", "production").default("production"),
-        updateApps: boolean().default(true).desc("Also update APPS.md usernames"),
-        dryRun: boolean().default(true).desc("Show what would change without applying"),
+        updateApps: boolean()
+            .default(true)
+            .desc("Also update APPS.md usernames"),
+        dryRun: boolean()
+            .default(true)
+            .desc("Show what would change without applying"),
     },
     handler: async (opts) => {
         const env = opts.env as Environment;
@@ -255,17 +314,23 @@ const applyCommand = command({
         const renamed = report.results.filter((r) => r.status === "renamed");
         const deleted = report.results.filter((r) => r.status === "deleted");
 
-        console.log(`📋 Loaded audit report (${report.processedCount} users processed)`);
+        console.log(
+            `📋 Loaded audit report (${report.processedCount} users processed)`,
+        );
         console.log(`   🔄 Renamed: ${renamed.length}`);
         console.log(`   🚫 To ban:  ${deleted.length}`);
-        console.log(`   Mode: ${opts.dryRun ? "DRY RUN" : "LIVE — changes will be applied"}\n`);
+        console.log(
+            `   Mode: ${opts.dryRun ? "DRY RUN" : "LIVE — changes will be applied"}\n`,
+        );
 
         // Ban deleted accounts via shared helper
         if (deleted.length > 0) {
             console.log(`\n🚫 Banning ${deleted.length} deleted accounts...`);
             if (opts.dryRun) {
                 for (const entry of deleted) {
-                    console.log(`   [dry] Would ban: ${entry.d1Username} (github_id: ${entry.githubId})`);
+                    console.log(
+                        `   [dry] Would ban: ${entry.d1Username} (github_id: ${entry.githubId})`,
+                    );
                 }
             } else {
                 const deletedIds = deleted.map((e) => e.githubId);
@@ -276,23 +341,31 @@ const applyCommand = command({
 
         // Update D1 usernames for renamed accounts
         if (renamed.length > 0) {
-            console.log(`\n🔄 Updating ${renamed.length} renamed usernames in D1...`);
+            console.log(
+                `\n🔄 Updating ${renamed.length} renamed usernames in D1...`,
+            );
             for (let i = 0; i < renamed.length; i += D1_WRITE_BATCH_SIZE) {
                 const batch = renamed.slice(i, i + D1_WRITE_BATCH_SIZE);
                 for (const entry of batch) {
                     if (typeof entry.currentUsername !== "string") continue;
                     const safeName = sanitizeUsername(entry.currentUsername);
                     if (opts.dryRun) {
-                        console.log(`   [dry] ${entry.d1Username} → ${safeName}`);
+                        console.log(
+                            `   [dry] ${entry.d1Username} → ${safeName}`,
+                        );
                     } else {
                         const ok = executeD1(
                             env,
                             `UPDATE user SET github_username = '${safeName}' WHERE id = '${sanitizeId(entry.userId)}';`,
                         );
                         if (ok) {
-                            console.log(`   ✅ ${entry.d1Username} → ${safeName}`);
+                            console.log(
+                                `   ✅ ${entry.d1Username} → ${safeName}`,
+                            );
                         } else {
-                            console.error(`   ❌ Failed: ${entry.d1Username} → ${safeName}`);
+                            console.error(
+                                `   ❌ Failed: ${entry.d1Username} → ${safeName}`,
+                            );
                         }
                     }
                 }
@@ -310,30 +383,46 @@ const applyCommand = command({
                 const renamedById = new Map(
                     renamed.flatMap((e) =>
                         typeof e.currentUsername === "string"
-                            ? [[e.githubId, { old: e.d1Username, current: e.currentUsername }] as const]
+                            ? [
+                                  [
+                                      e.githubId,
+                                      {
+                                          old: e.d1Username,
+                                          current: e.currentUsername,
+                                      },
+                                  ] as const,
+                              ]
                             : [],
                     ),
                 );
                 let appsUpdated = 0;
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
-                    if (!line.startsWith("|") || line.startsWith("| ---")) continue;
+                    if (!line.startsWith("|") || line.startsWith("| ---"))
+                        continue;
                     const cols = line.split("|");
                     const githubId = Number.parseInt(cols[9]?.trim() ?? "", 10);
                     if (Number.isNaN(githubId)) continue;
                     const rename = renamedById.get(githubId);
                     if (!rename) continue;
-                    const newCol = cols[8].replace(/@\S+/, `@${rename.current}`);
+                    const newCol = cols[8].replace(
+                        /@\S+/,
+                        `@${rename.current}`,
+                    );
                     if (cols[8] !== newCol) {
                         cols[8] = newCol;
                         lines[i] = cols.join("|");
                         appsUpdated++;
-                        console.log(`   ${opts.dryRun ? "[dry] " : "✅ "}APPS.md: @${rename.old} → @${rename.current}`);
+                        console.log(
+                            `   ${opts.dryRun ? "[dry] " : "✅ "}APPS.md: @${rename.old} → @${rename.current}`,
+                        );
                     }
                 }
                 if (appsUpdated > 0 && !opts.dryRun) {
                     writeFileSync(appsPath, lines.join("\n"));
-                    console.log(`   📝 Wrote ${appsUpdated} updates to APPS.md`);
+                    console.log(
+                        `   📝 Wrote ${appsUpdated} updates to APPS.md`,
+                    );
                 } else if (appsUpdated === 0) {
                     console.log(`   No renamed users found in APPS.md`);
                 }
@@ -378,25 +467,36 @@ const retryCommand = command({
             );
 
             if (result.status === 200 && result.data?.login) {
-                if (result.data.login.toLowerCase() === (entry.d1Username || "").toLowerCase()) {
+                if (
+                    result.data.login.toLowerCase() ===
+                    (entry.d1Username || "").toLowerCase()
+                ) {
                     entry.status = "ok";
                     entry.currentUsername = result.data.login;
                     delete entry.error;
-                    console.log(`   ✅ OK: ${entry.d1Username} (${entry.githubId})`);
+                    console.log(
+                        `   ✅ OK: ${entry.d1Username} (${entry.githubId})`,
+                    );
                 } else {
                     entry.status = "renamed";
                     entry.currentUsername = result.data.login;
                     delete entry.error;
-                    console.log(`   🔄 Renamed: ${entry.d1Username} → ${result.data.login} (${entry.githubId})`);
+                    console.log(
+                        `   🔄 Renamed: ${entry.d1Username} → ${result.data.login} (${entry.githubId})`,
+                    );
                 }
                 fixed++;
             } else if (result.status === 404) {
                 entry.status = "deleted";
                 delete entry.error;
-                console.log(`   ❌ Deleted: ${entry.d1Username} (${entry.githubId})`);
+                console.log(
+                    `   ❌ Deleted: ${entry.d1Username} (${entry.githubId})`,
+                );
                 fixed++;
             } else {
-                console.log(`   ⚠️  Still error: ${entry.d1Username} (${entry.githubId}) → HTTP ${result.status}`);
+                console.log(
+                    `   ⚠️  Still error: ${entry.d1Username} (${entry.githubId}) → HTTP ${result.status}`,
+                );
                 entry.error = `HTTP ${result.status}`;
             }
 
@@ -404,8 +504,12 @@ const retryCommand = command({
         }
 
         saveReport(report, reportPath);
-        const remaining = report.results.filter((r) => r.status === "error").length;
-        console.log(`\n📊 Retry results: ${fixed} resolved, ${remaining} still errored`);
+        const remaining = report.results.filter(
+            (r) => r.status === "error",
+        ).length;
+        console.log(
+            `\n📊 Retry results: ${fixed} resolved, ${remaining} still errored`,
+        );
         console.log(`📄 Updated report: ${reportPath}`);
     },
 });

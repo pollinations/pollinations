@@ -31,6 +31,7 @@ import { buildEmailFilter, loadEmailCohort } from "./shared/email-cohort.ts";
 import {
     banUsersByEmails,
     banUsersByGithubIds,
+    GITHUB_ID_INVALID_REASON,
     PIPELINE_DB_BATCH_SIZE,
 } from "./shared/github-identity.ts";
 
@@ -223,6 +224,7 @@ async function main(): Promise<void> {
             const banned = banUsersByEmails(
                 config.env,
                 invalidRows.map((row) => row.email),
+                GITHUB_ID_INVALID_REASON,
             );
             console.log(
                 `🚫 Banned ${banned} spore users with missing/invalid GitHub IDs`,
@@ -280,7 +282,7 @@ async function main(): Promise<void> {
     if (config.dryRun) {
         if (deletedGithubIds.length > 0) {
             console.log(
-                `\n🚫 Dry run would ban ${deletedGithubIds.length} users with deleted/invalid GitHub accounts`,
+                `\n🚫 Dry run would ban ${deletedGithubIds.length} users with deleted GitHub accounts`,
             );
         }
         if (riskBlockedGithubIds.length > 0) {
@@ -301,9 +303,7 @@ async function main(): Promise<void> {
 
     if (deletedGithubIds.length > 0) {
         const banned = banUsersByGithubIds(config.env, deletedGithubIds);
-        console.log(
-            `\n🚫 Banned ${banned} users with deleted/invalid GitHub accounts`,
-        );
+        console.log(`\n🚫 Banned ${banned} users with deleted GitHub accounts`);
     }
 
     const stored = storeGithubScores(config.env, "spore", scoreableResults);

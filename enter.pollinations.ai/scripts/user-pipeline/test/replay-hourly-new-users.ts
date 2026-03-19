@@ -11,15 +11,17 @@
  *   npm run user-pipeline:replay-hourly -- --emails-file /tmp/emails.txt
  *   npm run user-pipeline:replay-hourly -- --emails-file /tmp/emails.txt --hourly-dry-run
  *   npm run user-pipeline:replay-hourly -- --emails-file /tmp/emails.txt --skip-prepare
+ *   npm run user-pipeline:replay-hourly -- --emails-file /tmp/emails.txt --trace-file /tmp/hourly-trace.jsonl
  *
  * Options:
  *   --emails-file      Required. Newline-separated list of emails to replay.
  *   --skip-prepare     Skip the cohort reset (use current D1 state as-is).
  *   --hourly-dry-run   Pass --dry-run to hourly-new-users (trust scoring still runs live).
+ *   --trace-file       Append hourly trust/hourly trace output as JSONL
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { executeD1, queryD1 } from "../shared/d1.ts";
@@ -32,6 +34,7 @@ interface ParsedArgs {
     emailsFile: string;
     skipPrepare: boolean;
     hourlyDryRun: boolean;
+    traceFile: string | null;
 }
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -63,6 +66,7 @@ function parseArguments(): ParsedArgs {
         emailsFile,
         skipPrepare: args.includes("--skip-prepare"),
         hourlyDryRun: args.includes("--hourly-dry-run"),
+        traceFile: getString("--trace-file") || null,
     };
 }
 
@@ -152,6 +156,9 @@ function main(): void {
     console.log(`   Environment: ${config.env}`);
     console.log(`   Cohort file: ${config.emailsFile}`);
     console.log(`   Cohort size: ${cohortSize}`);
+    if (config.traceFile) {
+        console.log(`   Trace file: ${config.traceFile}`);
+    }
 
     if (cohortSize === 0) {
         console.error("❌ No users matched the supplied emails on staging");
@@ -163,6 +170,9 @@ function main(): void {
     if (!config.skipPrepare) {
         console.log("\n🛠️ Preparing cohort for hourly replay...");
         prepareCohort(config.env, emails);
+        if (config.traceFile) {
+            writeFileSync(config.traceFile, "");
+        }
     } else {
         console.log("\n⏭️ Skipping cohort preparation");
     }
@@ -176,6 +186,7 @@ function main(): void {
             "--store-status",
             "--emails-file",
             config.emailsFile,
+            ...(config.traceFile ? ["--trace-file", config.traceFile] : []),
         ],
         childEnv,
     );
@@ -187,6 +198,7 @@ function main(): void {
         "--",
         "--emails-file",
         config.emailsFile,
+        ...(config.traceFile ? ["--trace-file", config.traceFile] : []),
     ];
     if (config.hourlyDryRun) {
         command.push("--dry-run");

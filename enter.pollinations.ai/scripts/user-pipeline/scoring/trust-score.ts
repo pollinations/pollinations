@@ -14,9 +14,15 @@
  *   --limit N        Max users to fetch (default: 5000)
  *   --store-status   Write results back to D1
  *   --emails-file    Restrict to emails in a newline-separated file
+ *   --trace-file     Append local debugging traces as JSONL
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import {
+    appendFileSync,
+    existsSync,
+    readFileSync,
+    writeFileSync,
+} from "node:fs";
 import { fileURLToPath } from "node:url";
 import { executeD1, queryD1 } from "../shared/d1.ts";
 import {
@@ -55,12 +61,36 @@ interface ParsedArgs {
     userLimit: number;
     storeStatus: boolean;
     cohortEmails: string[] | null;
+    traceFile: string | null;
 }
+
+interface StoredTrustState {
+    email: string;
+    trust_score: number | null;
+    tier: string | null;
+    banned: number | null;
+}
+
+type TrustDecision = "trust_pass" | "trust_block" | "defer_trust_chunk";
 
 export const SCORE_THRESHOLDS = {
     block: 70,
     review: 40,
 } as const;
+
+function appendTrace(
+    traceFile: string | null,
+    payload: Record<string, unknown>,
+): void {
+    if (!traceFile) return;
+    appendFileSync(
+        traceFile,
+        `${JSON.stringify({
+            timestamp: new Date().toISOString(),
+            ...payload,
+        })}\n`,
+    );
+}
 
 export function parseLLMResponse(
     content: string,
@@ -135,17 +165,47 @@ function prepareChunkData(chunk: User[]): {
 async function scoreChunk(
     chunk: User[],
     apiKey: string,
+    options?: {
+        traceFile: string | null;
+        runId: string;
+        windowStart: number;
+        windowEnd: number;
+        centerEmails: string[];
+    },
 ): Promise<Array<{ score: number; signals: string[] }>> {
     const { csvRows, idToIndex } = prepareChunkData(chunk);
     const prompt = PROMPT_TEMPLATE + csvRows.join("\n");
 
     for (let attempt = 1; attempt <= 3; attempt++) {
         const startedAt = Date.now();
+        appendTrace(options?.traceFile ?? null, {
+            stage: "trust",
+            type: "chunk_attempt",
+            run_id: options?.runId ?? null,
+            window_start: options?.windowStart ?? null,
+            window_end: options?.windowEnd ?? null,
+            center_emails: options?.centerEmails ?? [],
+            chunk_size: chunk.length,
+            prompt_chars: prompt.length,
+            attempt,
+        });
         console.log(
             `   ⏱️  LLM request: ${chunk.length} users, ${prompt.length} chars${attempt > 1 ? ` (attempt ${attempt})` : ""}`,
         );
         try {
             const content = await llmComplete(prompt, { apiKey });
+            appendTrace(options?.traceFile ?? null, {
+                stage: "trust",
+                type: "chunk_success",
+                run_id: options?.runId ?? null,
+                window_start: options?.windowStart ?? null,
+                window_end: options?.windowEnd ?? null,
+                center_emails: options?.centerEmails ?? [],
+                chunk_size: chunk.length,
+                attempt,
+                duration_ms: Date.now() - startedAt,
+                response_chars: content.length,
+            });
             console.log(
                 `   ✅ LLM response in ${Date.now() - startedAt}ms (${content.length} chars)`,
             );
@@ -154,6 +214,19 @@ async function scoreChunk(
             const msg = err instanceof Error ? err.message : String(err);
             const stack = err instanceof Error ? err.stack : "";
             const errName = err instanceof Error ? err.name : "unknown";
+            appendTrace(options?.traceFile ?? null, {
+                stage: "trust",
+                type: "chunk_failure",
+                run_id: options?.runId ?? null,
+                window_start: options?.windowStart ?? null,
+                window_end: options?.windowEnd ?? null,
+                center_emails: options?.centerEmails ?? [],
+                chunk_size: chunk.length,
+                attempt,
+                duration_ms: Date.now() - startedAt,
+                error_name: errName,
+                message: msg,
+            });
             console.warn(
                 `   ⚠️  Attempt ${attempt} failed [${errName}]: ${msg}`,
             );
@@ -167,6 +240,8 @@ async function scoreChunk(
 
 async function scoreUsers(
     users: User[],
+    traceFile: string | null,
+    runId: string,
 ): Promise<{ scoredUsers: ScoredUser[]; failedUsers: User[] }> {
     const apiKey = loadApiKey();
     console.log(
@@ -191,7 +266,13 @@ async function scoreUsers(
         );
 
         try {
-            const scores = await scoreChunk(chunk, apiKey);
+            const scores = await scoreChunk(chunk, apiKey, {
+                traceFile,
+                runId,
+                windowStart: i + 1,
+                windowEnd: i + group.length,
+                centerEmails: group.map((user) => user.email),
+            });
             for (
                 let j = startIdx;
                 j < startIdx + group.length && j < scores.length;
@@ -219,6 +300,17 @@ async function scoreUsers(
         console.log(
             `   📈 Progress: ${scored} scored, ${deferred} deferred, ${remaining} remaining | block:${tally.block} review:${tally.review} ok:${tally.ok}`,
         );
+        appendTrace(traceFile, {
+            stage: "trust",
+            type: "chunk_progress",
+            run_id: runId,
+            window_start: i + 1,
+            window_end: i + group.length,
+            scored,
+            deferred,
+            remaining,
+            tally,
+        });
     }
 
     const scoredUsers = users.flatMap((user) => {
@@ -306,6 +398,61 @@ function storeTrustScores(scored: ScoredUser[]): void {
     );
 }
 
+function fetchStoredTrustStatesByEmail(
+    emails: string[],
+): Map<string, StoredTrustState> {
+    const states = new Map<string, StoredTrustState>();
+    const uniqueEmails = Array.from(new Set(emails));
+
+    for (
+        let index = 0;
+        index < uniqueEmails.length;
+        index += PIPELINE_DB_BATCH_SIZE
+    ) {
+        const batch = uniqueEmails.slice(index, index + PIPELINE_DB_BATCH_SIZE);
+        if (batch.length === 0) continue;
+
+        const rows = queryD1(
+            ENV,
+            `SELECT email, trust_score, tier, COALESCE(banned, 0) AS banned FROM user WHERE email IN (${batch
+                .map((email) => `'${escapeSqlString(email)}'`)
+                .join(", ")})`,
+        ) as StoredTrustState[];
+
+        for (const row of rows) {
+            states.set(row.email, row);
+        }
+    }
+
+    return states;
+}
+
+function classifyTrustDecision(user: ScoredUser): TrustDecision {
+    return 100 - user.score >= 60 ? "trust_pass" : "trust_block";
+}
+
+function reconcileTrustDecision(
+    decision: TrustDecision,
+    state: StoredTrustState | undefined,
+): string | null {
+    if (!state) return "missing_post_state";
+
+    switch (decision) {
+        case "trust_pass":
+            return Number(state.trust_score ?? -1) >= 60
+                ? null
+                : "expected_trust_score_gte_60";
+        case "trust_block":
+            return Number(state.trust_score ?? 101) < 60
+                ? null
+                : "expected_trust_score_lt_60";
+        case "defer_trust_chunk":
+            return state.trust_score === null
+                ? null
+                : "expected_null_trust_score";
+    }
+}
+
 function fetchUsers(limit: number, cohortEmails: string[] | null): User[] {
     const cohortLabel = cohortEmails
         ? ` from cohort (${cohortEmails.length})`
@@ -360,6 +507,7 @@ function parseArguments(): ParsedArgs {
 
     let cohortEmails: string[] | null = null;
     const emailsFile = getStr("--emails-file", "");
+    const traceFile = getStr("--trace-file", "") || null;
     try {
         cohortEmails = loadEmailCohort(emailsFile || undefined);
     } catch (error) {
@@ -373,25 +521,52 @@ function parseArguments(): ParsedArgs {
         userLimit: getNum("--limit", 5000),
         storeStatus: args.includes("--store-status"),
         cohortEmails,
+        traceFile,
     };
 }
 
 async function main(): Promise<void> {
     const config = parseArguments();
+    const runId = `${Date.now()}-${process.pid}`;
 
     console.log("🚀 New-User Trust Gate");
     console.log("=".repeat(50));
     console.log(
         `📋 env=${ENV}, limit=${config.userLimit}, store=${config.storeStatus}, cohort=${config.cohortEmails?.length ?? "none"}`,
     );
+    if (config.traceFile) {
+        console.log(`🧾 Trace file: ${config.traceFile}`);
+    }
 
     const users = fetchUsers(config.userLimit, config.cohortEmails);
+    appendTrace(config.traceFile, {
+        stage: "trust",
+        type: "run_start",
+        run_id: runId,
+        store_status: config.storeStatus,
+        selected_users: users.length,
+        cohort_size: config.cohortEmails?.length ?? null,
+    });
     if (users.length === 0) {
         console.log("⚠️  No users found");
+        appendTrace(config.traceFile, {
+            stage: "trust",
+            type: "run_end",
+            run_id: runId,
+            selected_users: 0,
+            scored_users: 0,
+            deferred_users: 0,
+            stored_users: 0,
+            anomalies: 0,
+        });
         return;
     }
 
-    const { scoredUsers, failedUsers } = await scoreUsers(users);
+    const { scoredUsers, failedUsers } = await scoreUsers(
+        users,
+        config.traceFile,
+        runId,
+    );
 
     if (scoredUsers.length > 0) {
         exportResults(scoredUsers);
@@ -405,6 +580,74 @@ async function main(): Promise<void> {
             `⚠️ Deferred ${failedUsers.length} users — will retry on next run.`,
         );
     }
+
+    const storedStates = config.storeStatus
+        ? fetchStoredTrustStatesByEmail(users.map((user) => user.email))
+        : null;
+    let anomalies = 0;
+
+    for (const user of scoredUsers) {
+        const trustScore = 100 - user.score;
+        const decision = classifyTrustDecision(user);
+        const state = storedStates?.get(user.email);
+        const reconcileIssue =
+            config.storeStatus && storedStates
+                ? reconcileTrustDecision(decision, state)
+                : null;
+        if (reconcileIssue) anomalies += 1;
+        appendTrace(config.traceFile, {
+            stage: "trust",
+            type: "user_decision",
+            run_id: runId,
+            email: user.email,
+            github_id: user.github_id,
+            abuse_score: user.score,
+            trust_score: trustScore,
+            action: user.action,
+            signals: user.signals,
+            decision,
+            stored: config.storeStatus,
+            post_tier: state?.tier ?? null,
+            post_trust_score: state?.trust_score ?? null,
+            reconcile_issue: reconcileIssue,
+        });
+    }
+
+    for (const user of failedUsers) {
+        const state = storedStates?.get(user.email);
+        const reconcileIssue =
+            config.storeStatus && storedStates
+                ? reconcileTrustDecision("defer_trust_chunk", state)
+                : null;
+        if (reconcileIssue) anomalies += 1;
+        appendTrace(config.traceFile, {
+            stage: "trust",
+            type: "user_decision",
+            run_id: runId,
+            email: user.email,
+            github_id: user.github_id,
+            abuse_score: null,
+            trust_score: null,
+            action: null,
+            signals: [],
+            decision: "defer_trust_chunk",
+            stored: config.storeStatus,
+            post_tier: state?.tier ?? null,
+            post_trust_score: state?.trust_score ?? null,
+            reconcile_issue: reconcileIssue,
+        });
+    }
+
+    appendTrace(config.traceFile, {
+        stage: "trust",
+        type: "run_end",
+        run_id: runId,
+        selected_users: users.length,
+        scored_users: scoredUsers.length,
+        deferred_users: failedUsers.length,
+        stored_users: config.storeStatus ? scoredUsers.length : 0,
+        anomalies,
+    });
 }
 
 const isMain =

@@ -15,12 +15,15 @@
  *   npx tsx scripts/user-pipeline/hourly-new-users.ts
  *   npx tsx scripts/user-pipeline/hourly-new-users.ts --dry-run
  *   npx tsx scripts/user-pipeline/hourly-new-users.ts --emails-file /tmp/emails.txt
+ *   npx tsx scripts/user-pipeline/hourly-new-users.ts --emails-file /tmp/emails.txt --trace-file /tmp/hourly-trace.jsonl
  *
  * Options:
  *   --dry-run        Preview actions without writing to D1
  *   --emails-file    Restrict to emails in a newline-separated file
+ *   --trace-file     Append local debugging traces as JSONL
  */
 
+import { appendFileSync } from "node:fs";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
 import {
     extractDeletedGithubIds,
@@ -30,7 +33,11 @@ import {
     validateUserRecords,
 } from "./scoring/github-score.ts";
 import { executeD1, queryD1 } from "./shared/d1.ts";
-import { buildEmailFilter, loadEmailCohort } from "./shared/email-cohort.ts";
+import {
+    buildEmailFilter,
+    escapeSqlString,
+    loadEmailCohort,
+} from "./shared/email-cohort.ts";
 import {
     banUsersByEmails,
     banUsersByGithubIds,
@@ -44,23 +51,46 @@ interface ParsedArgs {
     env: Environment;
     dryRun: boolean;
     cohortEmails: string[] | null;
+    traceFile: string | null;
 }
 
 interface TrustedUser {
     email: string;
     github_id: number | null;
+    trust_score: number | null;
 }
+
+interface StoredUserState {
+    email: string;
+    github_id: number | null;
+    tier: string | null;
+    banned: number | null;
+    ban_reason: string | null;
+    score: number | null;
+    score_checked_at: number | null;
+    trust_score: number | null;
+}
+
+type HourlyDecision =
+    | "ban_invalid_id"
+    | "ban_deleted"
+    | "defer_unavailable"
+    | "promote_seed"
+    | "promote_spore_below_threshold"
+    | "promote_spore_risk_blocked"
+    | "missing_result";
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
+    const getString = (flag: string): string | undefined => {
+        const index = args.indexOf(flag);
+        return index >= 0 && args[index + 1] ? args[index + 1] : undefined;
+    };
     const envIndex = args.indexOf("--env");
     const env =
         envIndex >= 0 && args[envIndex + 1] ? args[envIndex + 1] : "staging";
-    const emailsFileIndex = args.indexOf("--emails-file");
-    const emailsFile =
-        emailsFileIndex >= 0 && args[emailsFileIndex + 1]
-            ? args[emailsFileIndex + 1]
-            : undefined;
+    const emailsFile = getString("--emails-file");
+    const traceFile = getString("--trace-file") ?? null;
 
     if (env !== "staging") {
         console.error(
@@ -83,6 +113,7 @@ function parseArguments(): ParsedArgs {
         env: "staging",
         dryRun: args.includes("--dry-run"),
         cohortEmails,
+        traceFile,
     };
 }
 
@@ -93,7 +124,7 @@ function fetchTrustedMicrobeUsers(
     const emailFilter = buildEmailFilter("email", cohortEmails);
     return queryD1(
         env,
-        `SELECT email, github_id FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0${emailFilter}`,
+        `SELECT email, github_id, trust_score FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0${emailFilter}`,
     ) as TrustedUser[];
 }
 
@@ -144,8 +175,92 @@ function applyTierUpdates(
     return updated;
 }
 
+function appendTrace(
+    traceFile: string | null,
+    payload: Record<string, unknown>,
+): void {
+    if (!traceFile) return;
+    appendFileSync(
+        traceFile,
+        `${JSON.stringify({
+            timestamp: new Date().toISOString(),
+            ...payload,
+        })}\n`,
+    );
+}
+
+function classifyDecision(
+    result: GitHubValidationResult | null | undefined,
+): HourlyDecision {
+    if (!result) return "missing_result";
+    if (result.status === "github_account_deleted") return "ban_deleted";
+    if (result.status === "unavailable") return "defer_unavailable";
+    if (result.approved && result.risk_status === "suspicious") {
+        return "promote_spore_risk_blocked";
+    }
+    if (result.approved) return "promote_seed";
+    return "promote_spore_below_threshold";
+}
+
+function fetchStoredUserStatesByEmail(
+    env: Environment,
+    emails: string[],
+): Map<string, StoredUserState> {
+    const states = new Map<string, StoredUserState>();
+    const uniqueEmails = Array.from(new Set(emails));
+
+    for (
+        let index = 0;
+        index < uniqueEmails.length;
+        index += PIPELINE_DB_BATCH_SIZE
+    ) {
+        const batch = uniqueEmails.slice(index, index + PIPELINE_DB_BATCH_SIZE);
+        if (batch.length === 0) continue;
+
+        const rows = queryD1(
+            env,
+            `SELECT email, github_id, tier, COALESCE(banned, 0) AS banned, ban_reason, score, score_checked_at, trust_score FROM user WHERE email IN (${batch
+                .map((email) => `'${escapeSqlString(email)}'`)
+                .join(", ")})`,
+        ) as StoredUserState[];
+
+        for (const row of rows) {
+            states.set(row.email, row);
+        }
+    }
+
+    return states;
+}
+
+function reconcileDecision(
+    decision: HourlyDecision,
+    state: StoredUserState | undefined,
+): string | null {
+    if (!state) return "missing_post_state";
+
+    switch (decision) {
+        case "ban_invalid_id":
+        case "ban_deleted":
+            return Number(state.banned ?? 0) === 1
+                ? null
+                : "expected_banned_user";
+        case "defer_unavailable":
+            return Number(state.banned ?? 0) === 0 && state.tier === "microbe"
+                ? null
+                : "unexpected_state_for_unavailable";
+        case "promote_seed":
+            return state.tier === "seed" ? null : "expected_seed_tier";
+        case "promote_spore_below_threshold":
+        case "promote_spore_risk_blocked":
+            return state.tier === "spore" ? null : "expected_spore_tier";
+        case "missing_result":
+            return "missing_validation_result";
+    }
+}
+
 async function main(): Promise<void> {
     const config = parseArguments();
+    const runId = `${Date.now()}-${process.pid}`;
 
     console.log("🚀 Hourly New-User Pipeline");
     console.log("=".repeat(50));
@@ -154,13 +269,31 @@ async function main(): Promise<void> {
     if (config.cohortEmails) {
         console.log(`🎯 Email cohort: ${config.cohortEmails.length} users`);
     }
+    if (config.traceFile) {
+        console.log(`🧾 Trace file: ${config.traceFile}`);
+    }
 
     const trustedUsers = fetchTrustedMicrobeUsers(
         config.env,
         config.cohortEmails,
     );
+    appendTrace(config.traceFile, {
+        stage: "hourly",
+        type: "run_start",
+        run_id: runId,
+        dry_run: config.dryRun,
+        selected_users: trustedUsers.length,
+        cohort_size: config.cohortEmails?.length ?? null,
+    });
     if (trustedUsers.length === 0) {
         console.log("✅ No trusted microbe users ready for GitHub scoring");
+        appendTrace(config.traceFile, {
+            stage: "hourly",
+            type: "run_end",
+            run_id: runId,
+            selected_users: 0,
+            anomalies: 0,
+        });
         return;
     }
 
@@ -193,6 +326,40 @@ async function main(): Promise<void> {
 
     if (validUsers.length === 0) {
         console.log("✅ No valid trusted users left for GitHub scoring");
+        for (const [index, user] of trustedUsers.entries()) {
+            appendTrace(config.traceFile, {
+                stage: "hourly",
+                type: "user_decision",
+                run_id: runId,
+                selected_index: index + 1,
+                selected_total: trustedUsers.length,
+                email: user.email,
+                github_id: user.github_id,
+                pre_tier: "microbe",
+                trust_score: user.trust_score,
+                account_status: "invalid_id",
+                approved: false,
+                score: null,
+                reason: GITHUB_ID_INVALID_REASON,
+                risk_status: null,
+                risk_flags: [],
+                risk_details: null,
+                decision: "ban_invalid_id",
+                dry_run: config.dryRun,
+            });
+        }
+        appendTrace(config.traceFile, {
+            stage: "hourly",
+            type: "run_end",
+            run_id: runId,
+            selected_users: trustedUsers.length,
+            deleted_users: 0,
+            unavailable_users: 0,
+            risk_blocked_users: 0,
+            seed_users: 0,
+            spore_users: 0,
+            anomalies: 0,
+        });
         return;
     }
 
@@ -208,6 +375,12 @@ async function main(): Promise<void> {
         const result = resultsByGithubId.get(user.github_id);
         return result ? [result] : [];
     });
+    const resultsByEmail = new Map(
+        validUsers.flatMap((user) => {
+            const result = resultsByGithubId.get(user.github_id);
+            return result ? [[user.email, result] as const] : [];
+        }),
+    );
     const deletedGithubIds = extractDeletedGithubIds(orderedResults);
     const scoreableResults = orderedResults.filter(isScorableValidationResult);
     const unavailableCount =
@@ -249,6 +422,45 @@ async function main(): Promise<void> {
         }
         console.log(`🌱 Would promote to seed: ${approvedGithubIds.length}`);
         console.log(`🍄 Would promote to spore: ${sporeGithubIds.length}`);
+        for (const [index, user] of trustedUsers.entries()) {
+            const result = resultsByEmail.get(user.email) ?? null;
+            const decision =
+                !Number.isInteger(user.github_id) || user.github_id === null
+                    ? "ban_invalid_id"
+                    : classifyDecision(result);
+            appendTrace(config.traceFile, {
+                stage: "hourly",
+                type: "user_decision",
+                run_id: runId,
+                selected_index: index + 1,
+                selected_total: trustedUsers.length,
+                email: user.email,
+                github_id: user.github_id,
+                pre_tier: "microbe",
+                trust_score: user.trust_score,
+                account_status: result?.status ?? "invalid_id",
+                approved: result?.approved ?? false,
+                score: result?.details?.total ?? null,
+                reason: result?.reason ?? null,
+                risk_status: result?.risk_status ?? null,
+                risk_flags: result?.risk_flags ?? [],
+                risk_details: result?.risk_details ?? null,
+                decision,
+                dry_run: true,
+            });
+        }
+        appendTrace(config.traceFile, {
+            stage: "hourly",
+            type: "run_end",
+            run_id: runId,
+            selected_users: trustedUsers.length,
+            deleted_users: deletedGithubIds.length,
+            unavailable_users: unavailableCount,
+            risk_blocked_users: riskBlockedGithubIds.length,
+            seed_users: approvedGithubIds.length,
+            spore_users: sporeGithubIds.length,
+            anomalies: 0,
+        });
         return;
     }
 
@@ -277,6 +489,61 @@ async function main(): Promise<void> {
     console.log(`   Deferred (GitHub unavailable): ${unavailableCount}`);
     console.log(`   Microbe -> Seed: ${seeded}`);
     console.log(`   Microbe -> Spore: ${spored}`);
+
+    const storedStates = fetchStoredUserStatesByEmail(
+        config.env,
+        trustedUsers.map((user) => user.email),
+    );
+    let anomalies = 0;
+
+    for (const [index, user] of trustedUsers.entries()) {
+        const result = resultsByEmail.get(user.email) ?? null;
+        const decision =
+            !Number.isInteger(user.github_id) || user.github_id === null
+                ? "ban_invalid_id"
+                : classifyDecision(result);
+        const state = storedStates.get(user.email);
+        const reconcileIssue = reconcileDecision(decision, state);
+        if (reconcileIssue) anomalies += 1;
+        appendTrace(config.traceFile, {
+            stage: "hourly",
+            type: "user_decision",
+            run_id: runId,
+            selected_index: index + 1,
+            selected_total: trustedUsers.length,
+            email: user.email,
+            github_id: user.github_id,
+            pre_tier: "microbe",
+            trust_score: user.trust_score,
+            account_status: result?.status ?? "invalid_id",
+            approved: result?.approved ?? false,
+            score: result?.details?.total ?? null,
+            reason: result?.reason ?? null,
+            risk_status: result?.risk_status ?? null,
+            risk_flags: result?.risk_flags ?? [],
+            risk_details: result?.risk_details ?? null,
+            decision,
+            post_tier: state?.tier ?? null,
+            post_banned: state?.banned ?? null,
+            post_ban_reason: state?.ban_reason ?? null,
+            post_score: state?.score ?? null,
+            post_score_checked_at: state?.score_checked_at ?? null,
+            reconcile_issue: reconcileIssue,
+        });
+    }
+
+    appendTrace(config.traceFile, {
+        stage: "hourly",
+        type: "run_end",
+        run_id: runId,
+        selected_users: trustedUsers.length,
+        deleted_users: deletedGithubIds.length,
+        unavailable_users: unavailableCount,
+        risk_blocked_users: riskBlockedGithubIds.length,
+        seed_users: seeded,
+        spore_users: spored,
+        anomalies,
+    });
 }
 
 main().catch((error) => {

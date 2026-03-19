@@ -1,3 +1,7 @@
+- **2026-03-18** – **🤖 Silicon meets pollen** Someone wired the API into an ESP32-S3 microcontroller (NEURGenerator). Hardware hackers now have a reference for bringing generation to physical devices.
+- **2026-03-18** – **📱 Pocket-sized infrastructure** Nova.ai just dropped into the showcase—a full iOS assistant with streaming chat and image generation built entirely on our endpoints.
+- **2026-03-18** – **📚 The hive writes a novel** NovelSeek-Pro-PC is now in the creative directory. It's a desktop tool that takes you from a blank page to a fully formatted ebook with generated cover art.
+- **2026-03-18** – **👾 Bot swarm** The community showcase on our [website](https://hello.pollinations.ai) absorbed over a dozen new apps this week, including Telegram model-routers and massive Discord bot presets.
 - **2026-03-17** – **🚀 Drag-and-Drop Uploads** You can now upload local images (up to 5MB) directly on the Play page instead of hunting for URLs.
 - **2026-03-17** – **📊 Omniscient Model Monitor** The model monitor now tracks audio and video models alongside text and images, so you know exactly what's up (or down).
 - **2026-03-17** – **🧠 Qwen3.5 397B Arrives** We've added Qwen3.5 397B to the [Unified API](https://gen.pollinations.ai). Massive 262K context window, vision, and reasoning capabilities are now a single endpoint away.

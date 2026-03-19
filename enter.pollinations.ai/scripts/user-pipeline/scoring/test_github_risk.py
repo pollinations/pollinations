@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timezone
 
-from github_risk import assess_profile_risk
+from github_score import assess_profile_risk
 
 
 class GithubRiskTests(unittest.TestCase):

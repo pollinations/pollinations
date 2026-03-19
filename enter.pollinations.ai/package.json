@@ -32,10 +32,10 @@
         "docs:generate": "tsx scripts/generate-apidocs.ts",
         "user-pipeline:trust-score": "tsx scripts/user-pipeline/scoring/trust-score.ts",
         "user-pipeline:hourly-new-users": "tsx scripts/user-pipeline/hourly-new-users.ts",
-        "user-pipeline:daily-spore-recheck": "tsx scripts/run-python.ts scripts/user-pipeline/daily-spore-recheck.py",
-        "user-pipeline:replay-hourly": "tsx scripts/run-python.ts scripts/user-pipeline/manual/replay-hourly-new-users.py",
-        "user-pipeline:replay-daily": "tsx scripts/run-python.ts scripts/user-pipeline/manual/replay-daily-spore-recheck.py",
-        "user-pipeline:backfill-spore-scores": "tsx scripts/run-python.ts scripts/user-pipeline/backfills/backfill-spore-scores.py",
+        "user-pipeline:daily-spore-recheck": "tsx scripts/user-pipeline/daily-spore-recheck.ts",
+        "user-pipeline:replay-hourly": "tsx scripts/user-pipeline/manual/replay.ts hourly",
+        "user-pipeline:replay-daily": "tsx scripts/user-pipeline/manual/replay.ts daily",
+        "user-pipeline:backfill-spore-scores": "tsx scripts/user-pipeline/backfills/backfill-spore-scores.ts",
         "user-pipeline:cleanup-github-users": "tsx scripts/user-pipeline/manual/cleanup-github-users.ts"
     },
     "dependencies": {

@@ -128,9 +128,9 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
         string,
         {
             prRefs: PRReference[];
-            dailyImages: string[];
-            weeklyImages: string[];
-            prImages: string[];
+            dailyImages: ImageVariant[];
+            weeklyImages: ImageVariant[];
+            prImages: ImageVariant[];
             hasWeekly: boolean;
             hasDaily: boolean;
             dailySummaryUrl?: string;
@@ -172,18 +172,25 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
             /^social\/news\/gists\/(\d{4}-\d{2}-\d{2})\/PR-(\d+)\.jpg$/,
         );
         if (gistImgMatch) {
-            ensure(gistImgMatch[1]).prImages.push(`PR-${gistImgMatch[2]}.jpg`);
+            ensure(gistImgMatch[1]).prImages.push({
+                platform: `PR ${gistImgMatch[2]}`,
+                url: `${RAW_BASE}/gists/${gistImgMatch[1]}/PR-${gistImgMatch[2]}.jpg`,
+            });
             continue;
         }
 
         // Daily images: social/news/daily/2026-03-08/images/twitter.jpg
         // → covers PRs from 2026-03-07, so shift date back by 1 day
+        // URL uses the ORIGINAL folder date (not the shifted display date)
         const dailyImgMatch = p.match(
             /^social\/news\/daily\/(\d{4}-\d{2}-\d{2})\/images\/(.+\.jpg)$/,
         );
         if (dailyImgMatch) {
             const shiftedDate = subtractOneDay(dailyImgMatch[1]);
-            ensure(shiftedDate).dailyImages.push(dailyImgMatch[2]);
+            ensure(shiftedDate).dailyImages.push({
+                platform: platformLabel(dailyImgMatch[2]),
+                url: `${RAW_BASE}/daily/${dailyImgMatch[1]}/images/${dailyImgMatch[2]}`,
+            });
             continue;
         }
 
@@ -214,7 +221,10 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
         );
         if (weeklyImgMatch) {
             const entry = ensure(weeklyImgMatch[1]);
-            entry.weeklyImages.push(weeklyImgMatch[2]);
+            entry.weeklyImages.push({
+                platform: platformLabel(weeklyImgMatch[2]),
+                url: `${RAW_BASE}/weekly/${weeklyImgMatch[1]}/images/${weeklyImgMatch[2]}`,
+            });
             entry.hasWeekly = true;
             continue;
         }
@@ -262,68 +272,43 @@ function buildTimeline(treePaths: string[]): TimelineEntry[] {
         const hasDailyContent = data.dailyImages.length > 0 || data.hasDaily;
 
         if (hasDailyContent && data.hasWeekly) {
-            // Both day and week entries for this date
-            const dayImages = buildImageVariants(
-                date,
-                data.dailyImages,
-                data.prImages,
-                "daily",
-            );
             timeline.push({
                 date,
                 type: "day",
                 ...info,
                 prNumbers,
                 prRefs,
-                images: dayImages,
+                images: buildImageVariants(data.dailyImages, data.prImages),
                 summaryUrl: data.dailySummaryUrl,
             });
-
-            const weekImages = buildImageVariants(
-                date,
-                data.weeklyImages,
-                data.prImages,
-                "weekly",
-            );
+            // Weekly entries don't show individual PR chips — it's a digest
             timeline.push({
                 date,
                 type: "week",
                 ...info,
-                prNumbers,
-                prRefs,
-                images: weekImages,
+                prNumbers: [],
+                prRefs: [],
+                images: buildImageVariants(data.weeklyImages, data.prImages),
                 summaryUrl: data.weeklySummaryUrl,
             });
         } else if (data.hasWeekly) {
-            const images = buildImageVariants(
-                date,
-                data.weeklyImages,
-                data.prImages,
-                "weekly",
-            );
             timeline.push({
                 date,
                 type: "week",
                 ...info,
-                prNumbers,
-                prRefs,
-                images,
+                prNumbers: [],
+                prRefs: [],
+                images: buildImageVariants(data.weeklyImages, data.prImages),
                 summaryUrl: data.weeklySummaryUrl,
             });
         } else {
-            const images = buildImageVariants(
-                date,
-                data.dailyImages,
-                data.prImages,
-                "daily",
-            );
             timeline.push({
                 date,
                 type: "day",
                 ...info,
                 prNumbers,
                 prRefs,
-                images,
+                images: buildImageVariants(data.dailyImages, data.prImages),
                 summaryUrl: data.dailySummaryUrl,
             });
         }
@@ -344,31 +329,25 @@ function sortPrRefs(refs: PRReference[]): PRReference[] {
 }
 
 function buildImageVariants(
-    date: string,
-    platformImages: string[],
-    prImages: string[],
-    tier: "daily" | "weekly",
+    platformImages: ImageVariant[],
+    prImages: ImageVariant[],
 ): ImageVariant[] {
-    // Sort platform images in canonical order
-    const sorted = [...platformImages].sort(
-        (a, b) =>
-            PLATFORM_ORDER.indexOf(a.replace(/\.jpg$/, "")) -
-            PLATFORM_ORDER.indexOf(b.replace(/\.jpg$/, "")),
-    );
-
-    if (sorted.length > 0) {
-        return sorted.map((filename) => ({
-            platform: platformLabel(filename),
-            url: `${RAW_BASE}/${tier}/${date}/images/${filename}`,
-        }));
+    if (platformImages.length > 0) {
+        // Sort platform images in canonical order
+        return [...platformImages].sort(
+            (a, b) =>
+                PLATFORM_ORDER.indexOf(
+                    a.platform === "X" ? "twitter" : a.platform.toLowerCase(),
+                ) -
+                PLATFORM_ORDER.indexOf(
+                    b.platform === "X" ? "twitter" : b.platform.toLowerCase(),
+                ),
+        );
     }
 
     // Fallback: use PR images
     if (prImages.length > 0) {
-        return prImages.map((filename) => ({
-            platform: `PR ${filename.replace(/^PR-/, "").replace(/\.jpg$/, "")}`,
-            url: `${RAW_BASE}/gists/${date}/${filename}`,
-        }));
+        return prImages;
     }
 
     return [];
@@ -441,6 +420,9 @@ async function enrichEntryFromSummary(
 
     const summary = await fetchJSON<CanonicalSummaryJson>(entry.summaryUrl);
     if (!summary?.prs?.length) return entry;
+
+    // Weekly entries don't show PR chips — skip enrichment
+    if (entry.type === "week") return entry;
 
     const prRefs = sortPrRefs(summary.prs);
     if (prRefs.length === 0) return entry;
@@ -556,7 +538,8 @@ export function useDiaryData() {
                     summary = (canonical.summary || "").trim();
 
                     // Lazily update prRefs for older entries not enriched at load time
-                    if (canonical.prs?.length) {
+                    // Weekly entries don't show PR chips, so skip
+                    if (canonical.prs?.length && entry.type !== "week") {
                         const prRefs = sortPrRefs(canonical.prs);
                         if (prRefs.length > 0) {
                             setTimeline((prev) =>

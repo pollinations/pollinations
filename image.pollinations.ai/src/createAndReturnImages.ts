@@ -716,23 +716,27 @@ const callAzureGPTImageWithEndpoint = async (
                     const buffer =
                         await resizeInputImageForGptImage(originalBuffer);
 
-                    // Only check safety after we've successfully fetched the image
-                    logCloudflare(
-                        `Checking safety of input image ${i + 1}/${imageUrls.length}`,
-                    );
-                    const imageSafetyResult = await analyzeImageSafety(buffer);
-
-                    if (!imageSafetyResult.safe) {
-                        const errorMessage = `Input image ${i + 1} contains unsafe content: ${imageSafetyResult.formattedViolations}`;
-                        const error = new Error(errorMessage);
-                        await logGptImageError(
-                            prompt,
-                            safeParams,
-                            userInfo,
-                            error,
-                            imageSafetyResult,
+                    // Keep the extra local image safety screen only for safe=true.
+                    // Provider-side Azure/OpenAI safety still applies in all modes.
+                    if (safeParams.safe) {
+                        logCloudflare(
+                            `Checking safety of input image ${i + 1}/${imageUrls.length}`,
                         );
-                        throw error;
+                        const imageSafetyResult =
+                            await analyzeImageSafety(buffer);
+
+                        if (!imageSafetyResult.safe) {
+                            const errorMessage = `Input image ${i + 1} contains unsafe content: ${imageSafetyResult.formattedViolations}`;
+                            const error = new Error(errorMessage);
+                            await logGptImageError(
+                                prompt,
+                                safeParams,
+                                userInfo,
+                                error,
+                                imageSafetyResult,
+                            );
+                            throw error;
+                        }
                     }
 
                     // Determine file extension and MIME type from Content-Type header
@@ -954,17 +958,21 @@ const generateImage = async (
                 requestId,
                 30,
                 "Processing",
-                "Checking prompt safety...",
+                safeParams.safe
+                    ? "Checking prompt safety..."
+                    : "Preparing request...",
             );
 
             try {
-                await requireSafePrompt(
-                    prompt,
-                    safeParams,
-                    userInfo,
-                    progress,
-                    requestId,
-                );
+                if (safeParams.safe) {
+                    await requireSafePrompt(
+                        prompt,
+                        safeParams,
+                        userInfo,
+                        progress,
+                        requestId,
+                    );
+                }
 
                 progress.updateBar(
                     requestId,

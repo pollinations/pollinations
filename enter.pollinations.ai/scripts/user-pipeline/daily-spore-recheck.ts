@@ -1,4 +1,22 @@
 #!/usr/bin/env npx tsx
+/**
+ * Daily spore recheck pipeline.
+ *
+ * Scores 1/7 of all spore users per day via GitHub activity (age, repos, commits, stars).
+ * Users above the threshold are promoted to seed; deleted accounts are banned.
+ * Runs until all spores have been checked (takes ~7 days for a full cycle).
+ *
+ * Usage:
+ *   cd enter.pollinations.ai
+ *   npx tsx scripts/user-pipeline/daily-spore-recheck.ts
+ *   npx tsx scripts/user-pipeline/daily-spore-recheck.ts --dry-run
+ *   npx tsx scripts/user-pipeline/daily-spore-recheck.ts --emails-file /tmp/emails.txt
+ *
+ * Options:
+ *   --dry-run        Preview actions without writing to D1
+ *   --verbose / -v   Print per-user score breakdown
+ *   --emails-file    Restrict to emails in a newline-separated file
+ */
 
 import { TIER_POLLEN } from "../../src/tier-config.ts";
 import {

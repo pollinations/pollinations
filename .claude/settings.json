@@ -20,7 +20,10 @@
       "Bash(mkdir:*)",
       "Bash(vitest:*)",
       "Bash(tsc:*)",
-      "Bash(sops:*)"
+      "Bash(sops:*)",
+      "Bash(npx wrangler:*)",
+      "Bash(set -a)",
+      "Bash(set +a)"
     ],
     "deny": []
   }

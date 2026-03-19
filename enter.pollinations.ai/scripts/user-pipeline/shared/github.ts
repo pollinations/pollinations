@@ -1,3 +1,12 @@
+/**
+ * GitHub API client for the user pipeline.
+ *
+ * Provides authenticated REST and GraphQL request helpers with retry logic,
+ * rate-limit handling, and automatic token rotation. Supports both GitHub App
+ * auth (higher rate limits via installation tokens) and PAT auth (GITHUB_TOKEN
+ * or comma-separated GITHUB_TOKENS for rotation).
+ */
+
 import * as crypto from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";

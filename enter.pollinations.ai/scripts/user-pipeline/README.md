@@ -31,22 +31,29 @@ scripts/user-pipeline/
 ├── daily-spore-recheck.ts
 ├── scoring/
 │   ├── trust-score.ts
+│   ├── trust-score-prompt.md
 │   ├── github-score.ts
 │   └── github-risk.ts
 ├── shared/
 │   ├── d1.ts
 │   ├── email-cohort.ts
 │   ├── github-identity.ts
-│   └── github.ts
-├── manual/
-│   ├── cleanup-github-users.ts
-│   ├── replay-hourly-new-users.ts
-│   └── replay-daily-spore-recheck.ts
-└── backfills/
-    └── backfill-spore-scores.ts
+│   ├── github.ts
+│   └── llm.ts
+├── audit-github-accounts.ts
+├── backfills/
+│   ├── backfill-spore-scores.ts
+│   └── backfill-trust-scores.ts
+└── test/
+    ├── TESTING.md
+    ├── STAGING.md
+    ├── cohort-setup.ts
+    ├── reset-cohort.ts
+    ├── verify-results.ts
+    ├── user-pipeline.test.ts
+    ├── github-risk.test.ts
+    └── github-score.test.ts
 ```
-
-Pipeline tests live under `enter.pollinations.ai/test/`, not inside `scripts/user-pipeline/`.
 
 ## Hourly New-User Pipeline
 
@@ -55,7 +62,7 @@ Pipeline tests live under `enter.pollinations.ai/test/`, not inside `scripts/use
 - Validates that the GitHub account still exists by `github_id` before any other checks
 - Uses `github_id` as the identity key for validation and writes
 - Uses the stored `github_username` from D1 only as LLM context
-- Uses the old overlapping recent-cohort LLM detector on username/email/domain/timing patterns to decide whether the user can leave `microbe`
+- Uses a windowed LLM detector: sends 150-user chunks ordered by registration date, scores the middle 50, uses the outer 50+50 as context only — so every user is scored exactly once with full surrounding context
 - Scores developer activity immediately for trusted users
 - Applies a separate GitHub risk check before allowing `seed`
 - Allows a direct `microbe -> seed` upgrade for users who already qualify
@@ -125,9 +132,11 @@ tier = spore"]
 
 ## Backfill And Replay Tools
 
+- `backfills/backfill-trust-scores.ts` (staging only) sets `trust_score = 100` for all non-microbe users with no trust score — run once to bootstrap staging before testing
 - `backfills/backfill-spore-scores.ts` backfills `score` and `score_checked_at` for existing `spore` users
-- `manual/replay-hourly-new-users.ts` resets a staging cohort and reruns the hourly trust + tier pipeline
-- `manual/replay-daily-spore-recheck.ts` resets a staging cohort and reruns the daily `spore -> seed` pipeline
+- `audit-github-accounts.ts` audits GitHub account validity for D1 users
+- `test/replay-hourly-new-users.ts` resets a staging cohort and reruns the hourly trust + tier pipeline
+- `test/replay-daily-spore-recheck.ts` resets a staging cohort and reruns the daily `spore -> seed` pipeline
 
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent'}}}%%

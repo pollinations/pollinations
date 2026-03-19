@@ -1,3 +1,15 @@
+/**
+ * GitHub activity scoring for the user pipeline.
+ *
+ * validateUserRecords is the main entry point: it checks account existence via
+ * REST (404 = deleted), then fetches activity data via GraphQL and scores each
+ * user on age, quality repos, commits, and stars. A total >= 8 is "approved".
+ * Also runs assessProfileRisk to flag suspicious repository patterns.
+ *
+ * storeGithubScores persists scores to D1.
+ * validateAccountRecords is used by github-identity.ts for the pre-step check.
+ */
+
 import { executeD1 } from "../shared/d1.ts";
 import {
     type GitHubRateLimit,

@@ -9,12 +9,15 @@ dist/
 backups/
 prod_data*.sql
 
+# Secrets
+.testingtokens
+
 # Abuse detection outputs (contain PII)
 scripts/abuse-detection/flagged-users*.csv
 scripts/abuse-detection/flagged-users*.md
 scripts/flagged-users*.csv
 scripts/flagged-users*.md
-abuse-report*.csv
+scripts/user-pipeline/scoring/abuse-report*.csv
 
 # Script outputs
 

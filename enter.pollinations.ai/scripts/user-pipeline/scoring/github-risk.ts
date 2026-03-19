@@ -1,3 +1,12 @@
+/**
+ * GitHub profile risk assessment.
+ *
+ * assessProfileRisk inspects a user's repository data and flags suspicious
+ * patterns: burst of recently-created empty repos, high ratio of empty repos
+ * in large accounts, and large accounts with almost no quality repos.
+ * Returns "ok", "suspicious", or "unavailable" with specific flag codes.
+ */
+
 const RECENT_EMPTY_REPO_WINDOW_DAYS = 7;
 const BURST_EMPTY_REPO_THRESHOLD = 5;
 const EMPTY_REPO_DOMINANCE_MIN_TOTAL_REPOS = 20;

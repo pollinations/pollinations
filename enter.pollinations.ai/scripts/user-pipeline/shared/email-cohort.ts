@@ -1,3 +1,10 @@
+/**
+ * Helpers for loading and filtering email cohorts.
+ * loadEmailCohort reads a newline-separated email file (returns null if no path given).
+ * buildEmailFilter produces a SQL AND clause for restricting queries to a cohort.
+ * escapeSqlString escapes single quotes for safe SQL string interpolation.
+ */
+
 import { readFileSync } from "node:fs";
 
 export function escapeSqlString(value: string): string {

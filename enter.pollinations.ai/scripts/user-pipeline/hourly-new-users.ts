@@ -2,16 +2,23 @@
 /**
  * Hourly new-user pipeline.
  *
- * This script processes trusted microbe users after the trust gate has already
- * run. It scores developer activity for the trusted cohort only, applies a
- * separate GitHub risk check for seed eligibility, then moves each user
- * directly to seed or spore and grants the new tier balance immediately.
+ * Promotes trusted microbe users (trust_score >= 60) to seed or spore based on
+ * GitHub activity. Validates GitHub account existence first via the shared
+ * validateGithubAccounts step, then scores developer activity (age, repos,
+ * commits, stars) and applies a risk check. Users above threshold go to seed;
+ * others go to spore. Deleted accounts are banned.
+ *
+ * Runs after trust-score.ts has already written trust_score to D1.
  *
  * Usage:
  *   cd enter.pollinations.ai
  *   npx tsx scripts/user-pipeline/hourly-new-users.ts
  *   npx tsx scripts/user-pipeline/hourly-new-users.ts --dry-run
- *   npx tsx scripts/user-pipeline/hourly-new-users.ts --emails-file /tmp/replay-emails.txt
+ *   npx tsx scripts/user-pipeline/hourly-new-users.ts --emails-file /tmp/emails.txt
+ *
+ * Options:
+ *   --dry-run        Preview actions without writing to D1
+ *   --emails-file    Restrict to emails in a newline-separated file
  */
 
 import { TIER_POLLEN } from "../../src/tier-config.ts";
@@ -25,9 +32,9 @@ import {
 import { executeD1, queryD1 } from "./shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "./shared/email-cohort.ts";
 import {
-    banUsersByEmails,
     banUsersByGithubIds,
     PIPELINE_DB_BATCH_SIZE,
+    validateGithubAccounts,
 } from "./shared/github-identity.ts";
 
 type Environment = "staging";
@@ -156,31 +163,13 @@ async function main(): Promise<void> {
         return;
     }
 
-    const missingOrInvalidGithubUsers = trustedUsers.filter(
-        (user) => !Number.isInteger(user.github_id) || user.github_id === null,
-    );
-    const scoreableUsers = trustedUsers.filter(
-        (user): user is TrustedUser & { github_id: number } =>
-            Number.isInteger(user.github_id) && user.github_id !== null,
-    );
-
     console.log(`📊 Trusted microbe users: ${trustedUsers.length}`);
 
-    if (config.dryRun) {
-        if (missingOrInvalidGithubUsers.length > 0) {
-            console.log(
-                `🚫 Would ban ${missingOrInvalidGithubUsers.length} users with missing/invalid GitHub IDs`,
-            );
-        }
-    } else if (missingOrInvalidGithubUsers.length > 0) {
-        const banned = banUsersByEmails(
-            config.env,
-            missingOrInvalidGithubUsers.map((user) => user.email),
-        );
-        console.log(
-            `🚫 Banned ${banned} users with missing/invalid GitHub IDs`,
-        );
-    }
+    const scoreableUsers = await validateGithubAccounts(
+        trustedUsers,
+        config.env,
+        !config.dryRun,
+    );
 
     if (scoreableUsers.length === 0) {
         console.log("✅ No valid trusted users left for GitHub scoring");

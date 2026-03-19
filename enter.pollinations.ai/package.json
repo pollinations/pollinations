@@ -33,10 +33,11 @@
         "user-pipeline:trust-score": "tsx scripts/user-pipeline/scoring/trust-score.ts",
         "user-pipeline:hourly-new-users": "tsx scripts/user-pipeline/hourly-new-users.ts",
         "user-pipeline:daily-spore-recheck": "tsx scripts/user-pipeline/daily-spore-recheck.ts",
-        "user-pipeline:replay-hourly": "tsx scripts/user-pipeline/manual/replay-hourly-new-users.ts",
-        "user-pipeline:replay-daily": "tsx scripts/user-pipeline/manual/replay-daily-spore-recheck.ts",
+        "user-pipeline:replay-hourly": "tsx scripts/user-pipeline/test/replay-hourly-new-users.ts",
+        "user-pipeline:replay-daily": "tsx scripts/user-pipeline/test/replay-daily-spore-recheck.ts",
         "user-pipeline:backfill-spore-scores": "tsx scripts/user-pipeline/backfills/backfill-spore-scores.ts",
-        "user-pipeline:cleanup-github-users": "tsx scripts/user-pipeline/manual/cleanup-github-users.ts"
+        "user-pipeline:backfill-trust-scores": "tsx scripts/user-pipeline/backfills/backfill-trust-scores.ts",
+        "user-pipeline:audit-github-accounts": "tsx scripts/user-pipeline/audit-github-accounts.ts"
     },
     "dependencies": {
         "@ark-ui/react": "^5.29.1",

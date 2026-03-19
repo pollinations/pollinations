@@ -1,3 +1,8 @@
+/**
+ * Thin wrapper around `wrangler d1 execute` for running SQL against a remote D1 database.
+ * queryD1 returns rows; executeD1 runs mutations and returns success/failure.
+ */
+
 import { execFileSync } from "node:child_process";
 
 type Environment = "staging" | "production";

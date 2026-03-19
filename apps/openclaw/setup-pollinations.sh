@@ -136,9 +136,9 @@ jq --argjson provider "$POLLINATIONS_PROVIDER" \
 
 # --- Step 3: Set default model + fallbacks via CLI ---
 
-openclaw models set pollinations/kimi >/dev/null 2>&1
-openclaw models fallbacks add pollinations/deepseek >/dev/null 2>&1
-openclaw models fallbacks add pollinations/glm >/dev/null 2>&1
+openclaw models set pollinations/kimi >/dev/null
+openclaw models fallbacks add pollinations/deepseek >/dev/null
+openclaw models fallbacks add pollinations/glm >/dev/null
 
 # --- Step 4: Restart gateway if running ---
 

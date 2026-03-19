@@ -59,7 +59,7 @@ echo "Adding Pollinations models..."
 POLLINATIONS_PROVIDER=$(cat <<'EOF'
 {
   "baseUrl": "https://gen.pollinations.ai/v1",
-  "apiKey": "__KEY__",
+  "apiKey": "",
   "api": "openai-completions",
   "models": [
     {

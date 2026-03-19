@@ -45,21 +45,23 @@ If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. 
 
 ```json
 {
-  "providers": {
-    "pollinations": {
-      "baseUrl": "https://gen.pollinations.ai/v1",
-      "apiKey": "YOUR_API_KEY",
-      "api": "openai-completions",
-      "models": [
-        {
-          "id": "kimi",
-          "name": "Kimi K2.5",
-          "reasoning": true,
-          "input": ["text", "image"],
-          "contextWindow": 256000,
-          "maxTokens": 8192
-        }
-      ]
+  "models": {
+    "providers": {
+      "pollinations": {
+        "baseUrl": "https://gen.pollinations.ai/v1",
+        "apiKey": "YOUR_API_KEY",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "kimi",
+            "name": "Kimi K2.5",
+            "reasoning": true,
+            "input": ["text", "image"],
+            "contextWindow": 256000,
+            "maxTokens": 8192
+          }
+        ]
+      }
     }
   }
 }

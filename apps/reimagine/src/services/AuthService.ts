@@ -52,7 +52,7 @@ export class AuthService {
       // Create the authorization URL
       const params = new URLSearchParams({
         redirect_url: redirectUrl,
-        app_key: 'pk_reimagine', // identifying the app optionally
+        app_key: 'pk_IKINQsX7rwBZkifu', // ReImagine publishable key
       });
       const authUrl = `https://enter.pollinations.ai/authorize?${params.toString()}`;
 

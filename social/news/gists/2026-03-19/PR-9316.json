@@ -1,0 +1,34 @@
+{
+  "pr_number": 9316,
+  "title": "fix: update OpenClaw setup script for v2026.3",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9316",
+  "merged_at": "2026-03-19T21:42:16Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Sharpening the claws",
+    "blurb": "The OpenClaw setup script got a much-needed tune-up for v2026.3. We traded 30 lines of messy JSON merging for a clean CLI command, because life is too short to write jq scripts.",
+    "summary": "Updated the OpenClaw setup script to use the native CLI onboarding and correct configuration schemas for v2026.3.",
+    "impact": "Setting up OpenClaw with Pollinations is now faster, cleaner, and less prone to configuration errors.",
+    "keywords": [
+      "openclaw",
+      "setup",
+      "cli",
+      "integration",
+      "community"
+    ],
+    "visual_concept": "OpenClaw suggests a crab mascot or claw motif. The PR is about fixing a setup script and cleaning up code. Polly the bee helping a cute pixel crab configure a retro terminal.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, happily helping a cute little red pixel crab type on a glowing retro terminal. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-19/PR-9316.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, happily helping a cute little red pixel crab type on a glowing retro terminal. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-19T21:43:07.919067+00:00"
+}

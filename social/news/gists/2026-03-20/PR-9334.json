@@ -1,0 +1,33 @@
+{
+  "pr_number": 9334,
+  "title": "docs: update README — 2026-03-20",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9334",
+  "merged_at": "2026-03-20T07:23:27Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "The daily chronicle",
+    "blurb": "Our trusty bot just updated the README with the latest news and community apps. The hive's history is secure.",
+    "summary": "Automated daily update to the README file to reflect the latest news and recently added community apps.",
+    "impact": "Keeps the repository's front page fresh with the latest community creations and project updates.",
+    "keywords": [
+      "readme",
+      "bot",
+      "news",
+      "community"
+    ],
+    "visual_concept": "A cute robot updating a giant book or notice board, representing the automated README update. Polly the bee helping out.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head pinning new pixelated polaroids to a wooden notice board. The tiny bee mascot hovers nearby holding a tiny thumbtack. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9334.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head pinning new pixelated polaroids to a wooden notice board. The tiny bee mascot hovers nearby holding a tiny thumbtack. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-20T07:24:17.421128+00:00"
+}

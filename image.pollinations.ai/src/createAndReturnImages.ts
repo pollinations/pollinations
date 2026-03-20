@@ -610,7 +610,9 @@ const callAzureGPTImageWithEndpoint = async (
     let endpoint: string;
     const path = isEditMode ? "images/edits" : "images/generations";
     endpoint = `${baseUrl}/${path}?api-version=${AZURE_GPTIMAGE_API_VERSION}`;
-    logCloudflare(`Using Azure ${config.modelName} in ${isEditMode ? "edit" : "generation"} mode`);
+    logCloudflare(
+        `Using Azure ${config.modelName} in ${isEditMode ? "edit" : "generation"} mode`,
+    );
 
     // Map safeParams to Azure API parameters
     // GPT Image 1.5 only supports: 1024x1024 (1:1), 1024x1536 (2:3), 1536x1024 (3:2)

@@ -1,13 +1,15 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/util.ts";
+import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Input } from "../ui/input.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
+import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
@@ -29,27 +31,22 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const isPublishable = apiKey.metadata?.keyType === "publishable";
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
-    useEffect(() => {
-        const originalBodyOverflow = document.body.style.overflow;
-        const originalHtmlOverflow = document.documentElement.style.overflow;
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = originalBodyOverflow;
-            document.documentElement.style.overflow = originalHtmlOverflow;
-        };
-    }, []);
+    const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
+    const isAppKey = isPublishable && !!initialAppUrl;
+    const [appUrl, setAppUrl] = useState(initialAppUrl);
 
-    const handleCopyKey = async () => {
+    useScrollLock();
+
+    async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
         try {
             await navigator.clipboard.writeText(plaintextKey);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch (_err) {
-            // Silently fail
+        } catch {
+            // Clipboard API may fail in some contexts
         }
-    };
+    }
 
     const expiryDays = apiKey.expiresAt
         ? Math.ceil(
@@ -77,6 +74,29 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
                     : null,
             });
+
+            // Save app settings for publishable keys
+            if (isPublishable && appUrl !== initialAppUrl) {
+                const metaRes = await fetch(
+                    `/api/api-keys/${apiKey.id}/metadata`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({
+                            appUrl: appUrl || undefined,
+                        }),
+                    },
+                );
+                if (!metaRes.ok) {
+                    const err = await metaRes.json().catch(() => null);
+                    throw new Error(
+                        (err as { error?: { message?: string } })?.error
+                            ?.message || "Failed to save key metadata",
+                    );
+                }
+            }
+
             onClose();
         } catch (error) {
             console.error("Failed to update API key:", error);
@@ -94,15 +114,32 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
-                <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col">
+                <Dialog.Content
+                    className={cn(
+                        "border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col",
+                        "bg-green-100",
+                    )}
+                >
                     <div className="shrink-0 p-6 pb-4">
                         <Dialog.Title className="text-xl font-bold mb-4">
-                            Edit API Key
+                            {isAppKey ? "Edit App Key" : "Edit API Key"}
                         </Dialog.Title>
 
                         <div className="flex items-center gap-3">
-                            <Badge color={isPublishable ? "blue" : "purple"}>
-                                {isPublishable ? "🌐 Publishable" : "🔒 Secret"}
+                            <Badge
+                                color={
+                                    isAppKey
+                                        ? "amber"
+                                        : isPublishable
+                                          ? "blue"
+                                          : "purple"
+                                }
+                            >
+                                {isAppKey
+                                    ? "🖥️ App"
+                                    : isPublishable
+                                      ? "🌐 Publishable"
+                                      : "🔒 Secret"}
                             </Badge>
                             {isPublishable && plaintextKey ? (
                                 <button
@@ -158,11 +195,21 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 />
                             </Field.Root>
 
-                            <KeyPermissionsInputs
-                                value={keyPermissions}
-                                disabled={isSubmitting}
-                                inline
-                            />
+                            {isPublishable && (
+                                <PublishableKeySettings
+                                    appUrl={appUrl}
+                                    onAppUrlChange={setAppUrl}
+                                    disabled={isSubmitting}
+                                />
+                            )}
+
+                            {!isAppKey && (
+                                <KeyPermissionsInputs
+                                    value={keyPermissions}
+                                    disabled={isSubmitting}
+                                    inline
+                                />
+                            )}
                         </div>
                     </div>
 

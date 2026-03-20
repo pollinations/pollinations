@@ -1,0 +1,33 @@
+TOKEN d1_apikey_append APPEND
+TOKEN grafana_generation_read READ
+
+DESCRIPTION >
+    Daily snapshot of D1 apikey table (key metadata, balances, rate limits)
+
+SCHEMA >
+    `id` String `json:$.id`,
+    `name` Nullable(String) `json:$.name`,
+    `start` Nullable(String) `json:$.start`,
+    `prefix` Nullable(String) `json:$.prefix`,
+    `user_id` String `json:$.user_id`,
+    `refill_interval` Nullable(Int32) `json:$.refill_interval`,
+    `refill_amount` Nullable(Int32) `json:$.refill_amount`,
+    `last_refill_at` Nullable(Int64) `json:$.last_refill_at`,
+    `enabled` UInt8 `json:$.enabled` DEFAULT 1,
+    `rate_limit_enabled` UInt8 `json:$.rate_limit_enabled` DEFAULT 1,
+    `rate_limit_time_window` Nullable(Int32) `json:$.rate_limit_time_window`,
+    `rate_limit_max` Nullable(Int32) `json:$.rate_limit_max`,
+    `request_count` Nullable(Int32) `json:$.request_count`,
+    `remaining` Nullable(Int32) `json:$.remaining`,
+    `last_request` Nullable(Int64) `json:$.last_request`,
+    `expires_at` Nullable(Int64) `json:$.expires_at`,
+    `created_at` Int64 `json:$.created_at`,
+    `updated_at` Int64 `json:$.updated_at`,
+    `permissions` Nullable(String) `json:$.permissions`,
+    `metadata` Nullable(String) `json:$.metadata`,
+    `pollen_balance` Nullable(Float64) `json:$.pollen_balance`,
+    `synced_at` DateTime `json:$.synced_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(synced_at)"
+ENGINE_SORTING_KEY "id"

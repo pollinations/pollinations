@@ -15,18 +15,18 @@ import { cn } from "../../../utils";
 // ============================================
 
 const badgeVariants = cva(
-    "inline-flex items-center font-headline text-sm font-black uppercase tracking-wider px-3 py-1 rounded-full",
+    "inline-flex items-center font-headline text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full",
     {
         variants: {
             variant: {
                 highlight:
-                    "bg-button-focus-ring/20 text-text-highlight border border-border-highlight shadow-shadow-highlight-sm",
-                brand: "bg-button-primary-bg/20 text-text-brand border border-border-brand shadow-shadow-brand-sm",
-                muted: "bg-surface-card text-text-body-secondary border border-border-subtle",
-                // Per-badge accent colors (theme-responsive)
-                fresh: "bg-badge-fresh/15 text-badge-fresh border border-badge-fresh/50 shadow-[0_0_6px] shadow-badge-fresh/30",
-                pollen: "bg-badge-pollen/15 text-badge-pollen border border-badge-pollen/50 shadow-[0_0_6px] shadow-badge-pollen/30",
-                buzz: "bg-badge-buzz/15 text-badge-buzz border border-badge-buzz/50 shadow-[0_0_6px] shadow-badge-buzz/30",
+                    "bg-white text-dark border border-dark shadow-highlight-sm",
+                brand: "bg-white text-dark border border-dark shadow-brand-sm",
+                muted: "bg-white text-muted border border-tan",
+                // Per-badge accent colors — synesthesia mapping
+                fresh: "bg-tertiary-strong/25 text-dark border-r-4 border-b-4 border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                pollen: "bg-accent-strong/25 text-dark border-r-4 border-b-4 border-accent-strong shadow-[2px_2px_0_rgb(var(--accent-strong)_/_0.3)]",
+                buzz: "bg-primary-strong/25 text-dark border-r-4 border-b-4 border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)_/_0.3)]",
             },
         },
         defaultVariants: {

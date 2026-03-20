@@ -23,6 +23,10 @@ export type User = ClientSession["user"];
 export async function getUserOrRedirect() {
     const result = await authClient.getSession();
     if (result.error) throw new Error("Authentication failed.");
-    else if (!result.data?.user) throw redirect({ to: "/sign-in" });
+    else if (!result.data?.user)
+        throw redirect({
+            to: "/sign-in",
+            hash: window.location.hash || undefined,
+        });
     else return { user: result.data.user };
 }

@@ -15,7 +15,7 @@ import { cn } from "../../../utils";
 //
 // Spacing variants control vertical margin above/below
 // ============================================
-const dividerVariants = cva("border-t-2 border-border-faint", {
+const dividerVariants = cva("border-t-2 border-white", {
     variants: {
         spacing: {
             default: "my-12", // Standard section spacing (most common)

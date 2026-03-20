@@ -14,6 +14,14 @@ jobs:
   upgrade-spore-to-seed:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ORG_BOSS_APP_ID }}
+          private-key: ${{ secrets.ORG_BOSS_PRIVATE_KEY }}
+          owner: pollinations
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -29,7 +37,7 @@ jobs:
 
       - name: Run upgrade script
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |

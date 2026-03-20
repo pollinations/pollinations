@@ -1,15 +1,15 @@
 import asyncio
-import hashlib
 import logging
 import os
-import re
-import time
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
 
 import tiktoken
 
+from .._cache import TTLCache
+from .._hash import content_hash
+from .._re import re
+from .._url import join_url, parse_url
 from .embeddings_utils import validate_and_get_openai_client
 
 logger = logging.getLogger(__name__)
@@ -61,17 +61,17 @@ def _get_collection():
 
 
 def _content_hash(content: str) -> str:
-    return hashlib.md5(content.encode()).hexdigest()
+    return content_hash(content)
 
 
 def _clean_url(url: str) -> str:
-    parsed = urlparse(url)
+    parsed = parse_url(url)
     return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
 
 
 def _is_same_domain(url: str, base_url: str) -> bool:
-    url_domain = urlparse(url).netloc
-    base_domain = urlparse(base_url).netloc
+    url_domain = parse_url(url).netloc
+    base_domain = parse_url(base_url).netloc
     return url_domain == base_domain
 
 
@@ -308,7 +308,7 @@ async def _crawl_site(base_url: str, max_pages: int = MAX_PAGES_PER_SITE) -> lis
                         continue
 
                     if link_url.startswith("/"):
-                        link_url = urljoin(base_url, link_url)
+                        link_url = join_url(base_url, link_url)
 
                     link_url = _clean_url(link_url)
 
@@ -388,7 +388,7 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
                     "url": chunk["url"],
                     "page_title": chunk["page_title"] or "",
                     "section": chunk["section"] or "",
-                    "site": urlparse(base_url).netloc,
+                    "site": parse_url(base_url).netloc,
                     "page_hash": content_hash,
                     "last_updated": datetime.utcnow().isoformat(),
                 }
@@ -456,30 +456,12 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
 
 
 # TTL cache for doc search results (avoids redundant OpenAI API calls)
-_search_cache: dict[str, tuple[float, list[dict]]] = {}
-_SEARCH_CACHE_TTL = 300  # 5 minutes
-_SEARCH_CACHE_MAX = 256
-
-
-def _cache_get(key: str) -> list[dict] | None:
-    if key in _search_cache:
-        ts, val = _search_cache[key]
-        if time.time() - ts < _SEARCH_CACHE_TTL:
-            return val
-        del _search_cache[key]
-    return None
-
-
-def _cache_set(key: str, val: list[dict]):
-    if len(_search_cache) >= _SEARCH_CACHE_MAX:
-        oldest = min(_search_cache, key=lambda k: _search_cache[k][0])
-        del _search_cache[oldest]
-    _search_cache[key] = (time.time(), val)
+_search_cache = TTLCache(maxsize=256, ttl=300)
 
 
 async def search_docs(query: str, top_k: int = 5) -> list[dict]:
     cache_key = f"{query}:{top_k}"
-    cached = _cache_get(cache_key)
+    cached = _search_cache.get(cache_key)
     if cached is not None:
         return cached
 
@@ -516,7 +498,7 @@ async def search_docs(query: str, top_k: int = 5) -> list[dict]:
             }
         )
 
-    _cache_set(cache_key, formatted)
+    _search_cache.set(cache_key, formatted)
     return formatted
 
 

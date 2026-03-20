@@ -10,6 +10,7 @@ See social/PIPELINE.md for full architecture.
 
 import base64
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
@@ -19,7 +20,6 @@ from common import (
     DISCORD_CHAR_LIMIT,
     GISTS_BRANCH,
     GITHUB_API_BASE,
-    MODEL_FALLBACK,
     call_pollinations_api,
     get_env,
     get_repo_root,
@@ -104,13 +104,13 @@ def main():
 
     merged_at = fetch_pr_merged_at(repo_full_name, pr_number, github_token)
     if not merged_at:
-        print("  Could not determine merged_at — skipping")
-        return
+        print("  FATAL: Could not determine merged_at")
+        sys.exit(1)
 
     gist = fetch_gist(int(pr_number), merged_at, github_token, owner, repo)
     if not gist:
-        print("  Gist not found — skipping Discord post")
-        return
+        print("  FATAL: Gist not found")
+        sys.exit(1)
 
     print(f"  Gist loaded: {gist['title']}")
 
@@ -134,26 +134,17 @@ def main():
     snippet = call_pollinations_api(
         voice, task, pollinations_token, temperature=0.7, exit_on_failure=False
     )
-
     if not snippet:
-        print(f"  Primary snippet model failed — trying fallback ({MODEL_FALLBACK})...")
-        snippet = call_pollinations_api(
-            voice, task, pollinations_token, temperature=0.7,
-            model=MODEL_FALLBACK, exit_on_failure=False
-        )
+        print("  FATAL: Discord snippet generation failed")
+        sys.exit(1)
 
     pr_url = gist["url"]
     author = gist["author"]
 
-    if snippet:
-        lines = snippet.split('\n', 1)
-        if lines:
-            lines[0] = f"### {lines[0]}"
-            snippet = '\n\n'.join(lines)
-    else:
-        # Both models failed — use plain format
-        print("  All snippet models failed — using plain format")
-        snippet = f"### `#{pr_number}` — {gist['title']}"
+    lines = snippet.split('\n', 1)
+    if lines:
+        lines[0] = f"### {lines[0]}"
+        snippet = '\n\n'.join(lines)
 
     timestamp_str = ""
     if merged_at:
@@ -167,9 +158,17 @@ def main():
         except Exception:
             pass
 
-    pr_link = f"[PR #{pr_number}](<{pr_url}>)"
     author_link = f"[{author}](<https://github.com/{author}>)"
-    footer = f"\n\n{pr_link} | By {author_link}{timestamp_str}"
+
+    # App submission PRs: link to the app instead of the PR
+    app_url = gist.get("app_url")
+    app_name = gist.get("app_name")
+    if app_url and app_name:
+        source_link = f"🔗 [{app_name}](<{app_url}>)"
+    else:
+        source_link = f"[PR #{pr_number}](<{pr_url}>)"
+
+    footer = f"\n\n{source_link} | By {author_link}{timestamp_str}"
 
     message = snippet + footer
 
@@ -179,16 +178,23 @@ def main():
 
     # Download image for embed if available
     image_url = gist.get("image", {}).get("url")
+    if not image_url:
+        print("  FATAL: Gist is missing an image URL")
+        sys.exit(1)
+
     image_bytes = None
-    if image_url:
-        try:
-            resp = requests.get(image_url, timeout=30)
-            if resp.status_code == 200 and "image" in resp.headers.get(
-                "content-type", ""
-            ):
-                image_bytes = resp.content
-        except Exception as e:
-            print(f"  Could not download image for Discord: {e}")
+    try:
+        resp = requests.get(image_url, timeout=30)
+        if resp.status_code != 200:
+            print(f"  FATAL: Could not download image for Discord: HTTP {resp.status_code}")
+            sys.exit(1)
+        if "image" not in resp.headers.get("content-type", ""):
+            print(f"  FATAL: Discord image URL returned non-image content: {resp.headers.get('content-type', '')}")
+            sys.exit(1)
+        image_bytes = resp.content
+    except requests.RequestException as e:
+        print(f"  FATAL: Could not download image for Discord: {e}")
+        sys.exit(1)
 
     # Post to Discord
     if "?" not in discord_webhook:
@@ -231,8 +237,10 @@ def main():
                 pass
         else:
             print(f"  Discord webhook error: {resp.status_code} {resp.text[:200]}")
+            sys.exit(1)
     except Exception as e:
         print(f"  Discord post failed: {e}")
+        sys.exit(1)
 
     print("\n=== Done ===")
 

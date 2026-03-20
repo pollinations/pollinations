@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BYOP Standalone Demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; background: #f0fdf4; color: #14532d; }
+    button { background: #14532d; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+    button:hover { background: #166534; }
+    .key-display { background: #dcfce7; border: 2px solid #14532d; border-radius: 8px; padding: 16px; margin: 16px 0; word-break: break-all; font-family: monospace; }
+    .status { margin: 16px 0; padding: 12px; border-radius: 8px; }
+    .connected { background: #dcfce7; border: 2px solid #22c55e; }
+    .disconnected { background: #fef9c3; border: 2px solid #eab308; }
+    #test-result { margin-top: 16px; padding: 12px; border-radius: 8px; background: #e2e8f0; white-space: pre-wrap; font-family: monospace; font-size: 13px; max-height: 300px; overflow-y: auto; display: none; }
+  </style>
+</head>
+<body>
+  <h1>BYOP Standalone Demo</h1>
+  <p>This HTML file uses Pollinations BYOP — it redirects to <code>enter.pollinations.ai/authorize</code> and back to itself.</p>
+
+  <div id="status"></div>
+  <div id="actions"></div>
+  <div id="test-result"></div>
+
+  <script>
+    const STORAGE_KEY = 'pollinations_api_key';
+
+    // On load: check for key in URL fragment (returning from auth)
+    const hashParams = new URLSearchParams(location.hash.slice(1));
+    const newKey = hashParams.get('api_key');
+    if (newKey) {
+      localStorage.setItem(STORAGE_KEY, newKey);
+      // Clean the URL fragment
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+
+    const apiKey = localStorage.getItem(STORAGE_KEY);
+
+    function render() {
+      const key = localStorage.getItem(STORAGE_KEY);
+      const status = document.getElementById('status');
+      const actions = document.getElementById('actions');
+
+      if (key) {
+        status.className = 'status connected';
+        status.innerHTML = `<strong>Connected</strong><div class="key-display">${key.slice(0, 8)}...${key.slice(-4)}</div>`;
+        actions.innerHTML = `
+          <button onclick="testApi()">Test API Call</button>
+          <button onclick="disconnect()" style="background:#dc2626;margin-left:8px;">Disconnect</button>
+        `;
+      } else {
+        status.className = 'status disconnected';
+        status.innerHTML = '<strong>Not connected</strong> — click below to authenticate with Pollinations';
+        actions.innerHTML = '<button onclick="connect()">Connect with Pollinations</button>';
+      }
+    }
+
+    function connect() {
+      const params = new URLSearchParams({
+        redirect_url: location.href.split('#')[0],
+        models: 'flux,mistral,openai-fast',
+        expiry: '30',
+      });
+      window.location.href = 'https://enter.pollinations.ai/authorize?' + params;
+    }
+
+    function disconnect() {
+      localStorage.removeItem(STORAGE_KEY);
+      document.getElementById('test-result').style.display = 'none';
+      render();
+    }
+
+    async function testApi() {
+      const key = localStorage.getItem(STORAGE_KEY);
+      const result = document.getElementById('test-result');
+      result.style.display = 'block';
+      result.textContent = 'Testing API call...';
+
+      try {
+        const res = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'openai-fast',
+            messages: [{ role: 'user', content: 'Say "BYOP works!" in one sentence.' }],
+          }),
+        });
+        const data = await res.json();
+        result.textContent = res.ok
+          ? 'Success!\n\n' + (data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2))
+          : 'Error ' + res.status + '\n\n' + JSON.stringify(data, null, 2);
+      } catch (e) {
+        result.textContent = 'Network error: ' + e.message;
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

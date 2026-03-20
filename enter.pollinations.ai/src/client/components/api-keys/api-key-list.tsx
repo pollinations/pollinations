@@ -21,12 +21,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
-    const handleDelete = async () => {
+    async function handleDelete(): Promise<void> {
         if (deleteId) {
             await onDelete(deleteId);
             setDeleteId(null);
         }
-    };
+    }
 
     const sortedKeys = [...apiKeys].sort(
         (a, b) =>
@@ -37,30 +37,40 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         <>
             <div className="flex flex-col gap-2">
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
-                    <h2 className="font-bold flex-1">API Keys</h2>
+                    <h2 className="font-bold flex-1">Keys</h2>
                     <div className="flex gap-3">
                         <ApiKeyDialog
                             onSubmit={onCreate}
                             onComplete={() => {}}
+                            triggerLabel="🖥️ + App Key"
+                            triggerColor="blue"
+                            simplified
+                        />
+                        <ApiKeyDialog
+                            onSubmit={onCreate}
+                            onComplete={() => {}}
+                            triggerLabel="🔑 + API Key"
+                            triggerColor="blue"
                         />
                     </div>
                 </div>
                 {apiKeys.length ? (
-                    <Panel color="blue" compact>
+                    <Panel color="blue">
                         <div className="flex flex-col gap-3">
                             {sortedKeys.map((apiKey) => {
-                                const keyType = apiKey.metadata?.["keyType"] as
+                                const isPublishable =
+                                    apiKey.metadata?.keyType === "publishable";
+                                const plaintextKey = apiKey.metadata
+                                    ?.plaintextKey as string | undefined;
+                                const appUrl = apiKey.metadata?.appUrl as
                                     | string
                                     | undefined;
-                                const isPublishable = keyType === "publishable";
-                                const plaintextKey = apiKey.metadata?.[
-                                    "plaintextKey"
-                                ] as string | undefined;
+                                const isAppKey = isPublishable && !!appUrl;
 
                                 return (
                                     <div
                                         key={apiKey.id}
-                                        className="bg-white/40 rounded-xl p-3 transition-colors hover:bg-white/60"
+                                        className="bg-white/80 rounded-xl p-4 transition-colors hover:bg-white/90"
                                     >
                                         {/* Row 1: Type, Name, Key, Actions */}
                                         <div className="flex items-center gap-2 mb-2">
@@ -68,12 +78,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 className={cn(
                                                     "px-2 py-0.5 rounded text-xs font-medium shrink-0",
                                                     isPublishable
-                                                        ? "bg-blue-100 text-blue-700"
+                                                        ? appUrl
+                                                            ? "bg-amber-100 text-amber-700"
+                                                            : "bg-blue-100 text-blue-700"
                                                         : "bg-purple-100 text-purple-700",
                                                 )}
                                             >
                                                 {isPublishable
-                                                    ? "🌐 Publishable"
+                                                    ? appUrl
+                                                        ? "🖥️ App"
+                                                        : "🌐 Publishable"
                                                     : "🔒 Secret"}
                                             </span>
                                             <span
@@ -150,43 +164,69 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         : "never"}
                                                 </span>
                                             </span>
-                                            <LimitsBadge
-                                                expiresAt={apiKey.expiresAt}
-                                                pollenBudget={
-                                                    apiKey.pollenBalance
-                                                }
-                                            />
-                                            <span className="flex items-center gap-1">
-                                                <span className="text-gray-400">
-                                                    Permissions:
+                                            {isPublishable && appUrl && (
+                                                <span title={appUrl}>
+                                                    <span className="text-gray-400">
+                                                        URL:{" "}
+                                                    </span>
+                                                    <a
+                                                        href={appUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-600 hover:underline truncate max-w-[200px] inline-block align-bottom"
+                                                    >
+                                                        {appUrl.replace(
+                                                            /^https?:\/\//,
+                                                            "",
+                                                        )}
+                                                    </a>
                                                 </span>
-                                                <span className="flex items-center gap-1">
-                                                    <ModelsBadge
-                                                        permissions={
-                                                            apiKey.permissions
+                                            )}
+                                            {!isAppKey && (
+                                                <>
+                                                    <LimitsBadge
+                                                        expiresAt={
+                                                            apiKey.expiresAt
+                                                                ? new Date(
+                                                                      apiKey.expiresAt,
+                                                                  )
+                                                                : null
+                                                        }
+                                                        pollenBudget={
+                                                            apiKey.pollenBalance
                                                         }
                                                     />
-                                                    <AccountBadge
-                                                        permissions={
-                                                            apiKey.permissions
-                                                        }
-                                                    />
-                                                </span>
-                                            </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <span className="text-gray-400">
+                                                            Permissions:
+                                                        </span>
+                                                        <span className="flex items-center gap-1">
+                                                            <ModelsBadge
+                                                                permissions={
+                                                                    apiKey.permissions
+                                                                }
+                                                            />
+                                                            <AccountBadge
+                                                                permissions={
+                                                                    apiKey.permissions
+                                                                }
+                                                            />
+                                                        </span>
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
                         {apiKeys.some(
-                            (k) => k.metadata?.["keyType"] === "publishable",
+                            (k) => k.metadata?.keyType === "publishable",
                         ) && (
-                            <div className="flex justify-center mt-4">
-                                <p className="text-xs text-blue-700 bg-blue-100/60 px-4 py-2 rounded-full text-center">
-                                    ⚠️ <strong>Publishable keys</strong> are in
-                                    beta — for production apps, use secret keys.
-                                </p>
-                            </div>
+                            <p className="text-sm font-medium text-gray-900 mt-3">
+                                ⚠️ <strong>Publishable keys</strong> are in beta
+                                — for production apps, use secret keys.
+                            </p>
                         )}
                     </Panel>
                 ) : null}

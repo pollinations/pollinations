@@ -1,18 +1,28 @@
 import { Hono } from "hono";
+import { stream } from "hono/streaming";
 import type { MockAPI } from "./fetch.ts";
 import { createHonoMockHandler } from "./fetch.ts";
-import { stream } from "hono/streaming";
 
-export function createMockTextService(): MockAPI<Record<string, never>> {
+type TextServiceState = {
+    /** When true, returns JSON even for stream: true requests (simulates upstream bug) */
+    forceNonStreaming: boolean;
+};
+
+export function createMockTextService(): MockAPI<TextServiceState> {
+    const state: TextServiceState = { forceNonStreaming: false };
+
     const app = new Hono().post("/openai", async (c) => {
         // Add realistic delay to simulate actual service response time
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         const body = await c.req.json();
-        const isStreaming = body.stream === true;
+        const isStreaming = body.stream === true && !state.forceNonStreaming;
 
         if (isStreaming) {
-            // streaming response in SSE format
+            // streaming response in SSE format (match real text service headers)
+            c.header("Content-Type", "text/event-stream; charset=utf-8");
+            c.header("Cache-Control", "no-cache");
+            c.header("Connection", "keep-alive");
             return stream(c, async (stream) => {
                 for await (const chunk of mockOpenAIStream(
                     "Hello, whats up?",
@@ -53,13 +63,13 @@ export function createMockTextService(): MockAPI<Record<string, never>> {
     });
 
     return {
-        state: {},
+        state,
         handlerMap: {
             "ec2-3-80-56-235.compute-1.amazonaws.com:16385":
                 createHonoMockHandler(app),
         },
         reset: () => {
-            // No state to reset
+            state.forceNonStreaming = false;
         },
     };
 }

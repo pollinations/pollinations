@@ -11,6 +11,7 @@ import {
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
+    createSeraphynModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -144,7 +145,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-2.5-flash-lite",
         "us-central1",
     ),
-    "gemini-3-pro-preview": createVertexGeminiConfig(
+    "gemini-3-pro-legacy": createVertexGeminiConfig(
         "gemini-3-pro-preview",
         "global",
     ),
@@ -190,6 +191,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- api.airforce ---------------------------------------------------------
+    "step-3.5-flash:free": () =>
+        createAirforceModelConfig({ model: "step-3.5-flash:free" }),
     "qwen-character": () =>
         createAirforceModelConfig({ model: "qwen-character" }),
+    "claude-sonnet-4.6": () =>
+        createAirforceModelConfig({ model: "claude-sonnet-4.6" }),
+
+    // -- seraphyn.ai ------------------------------------------------------
+    "seraphyn-gpt-5.4": () => createSeraphynModelConfig({ model: "gpt-5.4" }),
 };

@@ -168,12 +168,11 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        provider: "io.net",
+        provider: "vast.ai",
         cost: [
-            // Flux Schnell (nunchaku-quantized) on io.net RTX 4090 cluster
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
+                completionImageTokens: 0.001,
             },
         ],
         description: "Flux Schnell - Fast high-quality image generation",
@@ -183,13 +182,11 @@ export const IMAGE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
-        provider: "io.net",
+        provider: "vast.ai",
         cost: [
-            // Z-Image-Turbo (6B params, 9 steps) with SPAN 2x upscaling
-            // IO.net cluster (10x RTX 4090), ~1s for 768x768, ~2s for 1536x1536
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
+                completionImageTokens: 0.002,
             },
         ],
         description: "Z-Image Turbo - Fast 6B Flux with 2x upscaling",
@@ -273,33 +270,16 @@ export const IMAGE_SERVICES = {
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
-        provider: "modal",
+        provider: "bpai",
+        alpha: true,
         cost: [
-            // Flux Klein on Modal L40S GPU
-            // L40S: $0.000542/sec × 15s avg (including cold starts) = $0.008/image
             {
                 date: new Date("2026-01-21").getTime(), // Launch date
-                completionImageTokens: 0.008, // ~$0.008 per image (L40S @ 15s avg)
+                completionImageTokens: 0.01,
             },
         ],
         description:
-            "FLUX.2 Klein 4B - Fast image generation & editing on Modal",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-    },
-    "klein-large": {
-        aliases: ["flux-klein-9b", "klein-9b"],
-        modelId: "klein-large",
-        provider: "modal",
-        cost: [
-            // Flux Klein 9B on Modal L40S GPU (~$0.012/image with cold starts)
-            {
-                date: new Date("2026-01-21").getTime(),
-                completionImageTokens: 0.012,
-            },
-        ],
-        description:
-            "FLUX.2 Klein 9B - Higher quality image generation & editing on Modal",
+            "FLUX.2 Klein 4B - Fast image generation and editing via bpaigen",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -318,6 +298,21 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "flux-2-dev": {
+        aliases: ["flux-2", "flux2-dev"],
+        modelId: "flux-2-dev",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-03-02").getTime(),
+                completionImageTokens: 0.001, // $0.001 per image
+            },
+        ],
+        description: "FLUX.2 Dev (api.airforce) - Flux 2 image generation",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "grok-imagine": {
         aliases: [],
         modelId: "grok-imagine",
@@ -330,6 +325,38 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Grok Imagine (api.airforce) - xAI image gen",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "dirtberry": {
+        aliases: [],
+        modelId: "dirtberry",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-03-09").getTime(),
+                completionImageTokens: 0.001, // ~free via api.airforce
+            },
+        ],
+        description:
+            "Dirtberry (api.airforce) - Quick realistic image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "dirtberry-pro": {
+        aliases: ["special-berry"],
+        modelId: "special-berry",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.0015, // 1.5x dirtberry ($0.001)
+            },
+        ],
+        description:
+            "Dirtberry Pro (api.airforce) - High quality realism, pixel art & complex scenes",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -365,6 +392,52 @@ export const IMAGE_SERVICES = {
         description:
             "LTX-2 - Fast text-to-video generation with audio on Modal",
         inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
+    "p-image": {
+        aliases: ["pruna-image", "pruna"],
+        modelId: "p-image",
+        provider: "pruna",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.005, // $0.005 per image
+            },
+        ],
+        description: "Pruna p-image - Fast text-to-image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "p-image-edit": {
+        aliases: ["pruna-edit", "pruna-image-edit"],
+        modelId: "p-image-edit",
+        provider: "pruna",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.01, // $0.01 per image
+            },
+        ],
+        description: "Pruna p-image-edit - Image-to-image editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "p-video": {
+        aliases: ["pruna-video"],
+        modelId: "p-video",
+        provider: "pruna",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionVideoSeconds: 0.024, // $0.12 per run / 5s default = $0.024/sec
+            },
+        ],
+        description:
+            "Pruna p-video - Text/image-to-video generation (up to 1080p)",
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
 } as const satisfies Record<string, ServiceDefinition<string>>;

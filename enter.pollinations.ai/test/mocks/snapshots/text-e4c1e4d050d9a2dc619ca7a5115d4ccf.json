@@ -1,0 +1,126 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Different message 2 - 1773694484786"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2020",
+      "content-type": "application/json",
+      "date": "Mon, 16 Mar 2026 20:54:56 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-usage-completion-reasoning-tokens": "960",
+      "x-usage-completion-text-tokens": "239",
+      "x-usage-prompt-text-tokens": "17"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "It looks like the trailing number is a Unix timestamp in milliseconds: 1773694484786 ms = 1,773,694,484.786 s since the epoch. That corresponds to\n\n- 2026-03-16 20:54:44.786 UTC.\n\nWhat would you like me to do with the string \"Different message 2 - 1773694484786\"? Options:\n- Replace the numeric timestamp with a human date/time (UTC or a specific timezone).\n- Reformat or rewrite the message (shorten, paraphrase, or make it more formal/informal).\n- Parse or extract other parts, or generate different message variants.\n\nIf you want a quick example, here are three variants:\n1) \"Different message 2 — 2026-03-16 20:54:44 UTC\"\n2) \"Different message #2 (2026-03-16 20:54:44)\"\n3) \"Different message 2 — Mar 16, 2026 20:54:44 (UTC)\"\n\nWhich would you like, or do you have something else in mind?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1773694485,
+        "id": "pllns_c957abcc13b7410ddff0fe27763394e3",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1199,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 960,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 17,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1216
+        }
+      }
+    }
+  }
+}

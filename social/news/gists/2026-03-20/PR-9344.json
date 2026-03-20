@@ -1,0 +1,35 @@
+{
+  "pr_number": 9344,
+  "title": "Add Ask PollinationsAI for a Text to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9344",
+  "merged_at": "2026-03-20T13:43:26Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "PowerShell meets the hive",
+    "blurb": "A new community integration brings Pollinations text generation straight to PowerShell. Perfect for wiring up AI into your .NET apps and Azure workflows without breaking a sweat.",
+    "summary": "Added a new community integration that enables text generation via Pollinations using PowerShell, designed for .NET and Azure environments.",
+    "impact": "Windows developers can now easily pipe Pollinations text generation directly into their PowerShell scripts and Azure workflows.",
+    "keywords": [
+      "powershell",
+      "dotnet",
+      "azure",
+      "community",
+      "integration",
+      "scripting"
+    ],
+    "visual_concept": "PowerShell/Windows/Azure themes. A blue terminal or a classic Windows-style window. The bee mascot (Polly) wearing a tiny sysadmin tie or holding a scripting manual, interacting with a retro terminal.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sysadmin tie, hovering next to a chunky retro computer monitor displaying a blue PowerShell terminal. The monitor glows with soft lime green (#ecf874) accents. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9344.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sysadmin tie, hovering next to a chunky retro computer monitor displaying a blue PowerShell terminal. The monitor glows with soft lime green (#ecf874) accents. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-20T13:44:15.645991+00:00"
+}

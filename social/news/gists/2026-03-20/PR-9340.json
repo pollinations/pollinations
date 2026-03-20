@@ -1,0 +1,33 @@
+{
+  "pr_number": 9340,
+  "title": "fix: app-update-metrics uses PR instead of direct push",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9340",
+  "merged_at": "2026-03-20T13:19:20Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Metrics flowing again",
+    "blurb": "Fixed a branch protection issue that was blocking our app metrics updates. The automated greenhouse bot now politely submits a PR instead of trying to push directly to main.",
+    "summary": "Updated the app metrics GitHub workflow to create an auto-merging PR instead of pushing directly to main, resolving branch protection blocks.",
+    "impact": "Internal app metrics and README updates will now successfully run and merge automatically.",
+    "keywords": [
+      "github-actions",
+      "ci-cd",
+      "metrics",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot looking happily at a glowing chart/metrics board, representing the restored flow of data.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot looking happily at a glowing lime green (#ecf874) chart on a retro terminal screen. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cozy pixel art, chunky sprites, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9340.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot looking happily at a glowing lime green (#ecf874) chart on a retro terminal screen. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cozy pixel art, chunky sprites, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-20T13:20:12.893160+00:00"
+}

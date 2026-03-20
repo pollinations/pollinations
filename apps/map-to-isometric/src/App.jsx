@@ -19,7 +19,6 @@ function App() {
     'isometric 3D city view with detailed buildings, streets, and urban architecture. Vibrant colors, clear architectural details, game style.'
   );
 
-  const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY || '';
   const handleImageUpload = (file) => {
     if (file && file.type.startsWith('image/')) {
       setSelectedFile(file);
@@ -55,24 +54,16 @@ function App() {
     setError(null);
     
     try {
-
-      const reader = new FileReader();
-      const imageBase64 = await new Promise((resolve, reject) => {
-        reader.onloadend = () => {
-          const base64 = reader.result.split(',')[1]; // Get base64 part only
-          resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(selectedFile);
-      });
       
-      
-      // Step 2: Upload to ImgBB (supports CORS)
+      // Step 1: Upload to Pollinations Media Service
       const formData = new FormData();
-      formData.append('image', imageBase64);
+      formData.append('file', selectedFile);
       
-      const uploadResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+      const uploadResponse = await fetch(`https://media.pollinations.ai/upload`, {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer pk_oPuys0EyzV8eDtY4`
+        },
         body: formData
       });
     
@@ -80,16 +71,16 @@ function App() {
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text();
         console.error('Upload error:', errorText);
-        throw new Error('Failed to upload image to ImgBB');
+        throw new Error('Failed to upload image to Pollinations Media Service');
       }
       
       const uploadData = await uploadResponse.json();
       
-      if (!uploadData.success || !uploadData.data.url) {
-        throw new Error('No image URL returned from ImgBB');
+      if (!uploadData.url) {
+        throw new Error('No image URL returned from Media Service');
       }
       
-      const imageUrl = uploadData.data.url;
+      const imageUrl = uploadData.url;
       
       // Step 3: Build prompt
       let fullPrompt = `Using this location as a landmark, create it as an isometric image (buildings only) with a game-style theme park aesthetic. ${prompt}`;

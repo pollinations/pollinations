@@ -52,7 +52,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
                 "flex items-center rounded-xl p-4",
                 isDisabled
                     ? "bg-transparent"
-                    : "bg-white/80 hover:bg-white/90 transition-colors",
+                    : "bg-white/80 hover:bg-white/90 dark:bg-white/10 dark:hover:bg-white/20 transition-colors",
             )}
         >
             {/* Model info — flexible width */}
@@ -117,7 +117,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
                     <button
                         type="button"
                         onClick={copyModelName}
-                        className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer text-left"
+                        className="text-xs text-gray-500 dark:text-gray-400 font-mono hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer text-left"
                         title="Click to copy"
                     >
                         {copied ? "✓ copied" : model.name}

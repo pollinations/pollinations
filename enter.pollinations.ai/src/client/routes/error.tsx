@@ -13,7 +13,7 @@ function ErrorPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
-            <div className="max-w-md w-full bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 text-center">
+            <div className="max-w-md w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 text-center">
                 <div className="text-5xl mb-4">{isBanned ? "🐝" : "🌸"}</div>
 
                 <h1 className="font-heading text-3xl mb-3">

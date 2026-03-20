@@ -9,6 +9,8 @@ export function ThemeToggle() {
             onClick={toggleTheme}
             className="p-2 rounded-full bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-colors"
             title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            aria-pressed={theme === "dark"}
         >
             {theme === "light" ? (
                 <svg

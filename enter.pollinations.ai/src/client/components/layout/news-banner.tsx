@@ -70,14 +70,14 @@ export const NewsBanner: FC = () => {
             className="border-transparent !bg-transparent"
         >
             <div className="flex flex-col gap-2">
-                <span className="text-xs text-gray-500">What's new</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">What's new</span>
                 {PINNED_NEWS.length > 0 && (
-                    <div className="bg-amber-50 rounded-md px-3 py-2">
+                    <div className="bg-amber-50 dark:bg-amber-950 rounded-md px-3 py-2">
                         <ul className="text-xs space-y-1.5">
                             {PINNED_NEWS.map((h) => (
                                 <li
                                     key={`pinned-${h.title}`}
-                                    className="text-gray-900"
+                                    className="text-gray-900 dark:text-amber-50"
                                 >
                                     {h.emoji} <strong>{h.title}:</strong>{" "}
                                     <span
@@ -95,7 +95,7 @@ export const NewsBanner: FC = () => {
                         {highlights.map((h) => (
                             <li
                                 key={h.date + h.title}
-                                className="text-gray-600"
+                                className="text-gray-600 dark:text-gray-400"
                             >
                                 {h.emoji} <strong>{h.title}:</strong>{" "}
                                 {h.description}
@@ -107,7 +107,7 @@ export const NewsBanner: FC = () => {
                     href={HIGHLIGHTS_GITHUB_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-violet-600 hover:text-violet-800 hover:underline"
+                    className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 hover:underline"
                 >
                     More...
                 </a>

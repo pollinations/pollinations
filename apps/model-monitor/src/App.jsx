@@ -248,6 +248,8 @@ function FavoriteButton({ modelKey, isFavorite, onToggle }) {
             }}
             className="inline-flex items-center justify-center w-5 h-5 hover:scale-110 transition-transform"
             title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            aria-pressed={isFavorite}
         >
             {isFavorite ? (
                 <svg
@@ -277,6 +279,10 @@ function FavoriteButton({ modelKey, isFavorite, onToggle }) {
         </button>
     );
 }
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+const getModelKey = (model) => `${model.type}-${model.name}`;
 
 // ── Sortable header ──────────────────────────────────────────────────
 
@@ -442,13 +448,13 @@ function App() {
 
     // Filter models by favorites if enabled
     const filteredModels = showOnlyFavorites
-        ? models.filter((m) => favorites.has(`${m.type}-${m.name}`))
+        ? models.filter((m) => favorites.has(getModelKey(m)))
         : models;
 
     const sortedModels = [...filteredModels].sort((a, b) => {
         // Always prioritize favorites when sorting (favorites first)
-        const aKey = `${a.type}-${a.name}`;
-        const bKey = `${b.type}-${b.name}`;
+        const aKey = getModelKey(a);
+        const bKey = getModelKey(b);
         const aIsFav = favorites.has(aKey);
         const bIsFav = favorites.has(bKey);
         if (aIsFav !== bIsFav) return aIsFav ? -1 : 1;
@@ -600,11 +606,11 @@ function App() {
 
                     <div className="flex items-center gap-3">
                         {/* Favorites filter toggle */}
-                        {favorites.size > 0 && (
+                        {(favorites.size > 0 || showOnlyFavorites) && (
                             <button
                                 type="button"
                                 onClick={() =>
-                                    setShowOnlyFavorites(!showOnlyFavorites)
+                                    setShowOnlyFavorites((prev) => !prev)
                                 }
                                 className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors border border-dark flex items-center gap-1.5 ${
                                     showOnlyFavorites
@@ -790,7 +796,7 @@ function App() {
                                             : health === "degraded"
                                               ? "bg-status-degraded-light"
                                               : "";
-                                    const modelKey = `${model.type}-${model.name}`;
+                                    const modelKey = getModelKey(model);
                                     const isFavorite = favorites.has(modelKey);
 
                                     return (

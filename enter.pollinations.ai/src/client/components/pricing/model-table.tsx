@@ -188,8 +188,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                 isDisabled
                     ? "bg-transparent"
                     : expanded
-                      ? "bg-white/90"
-                      : "bg-white/80 hover:bg-white/90 transition-colors",
+                      ? "bg-white/90 dark:bg-white/20"
+                      : "bg-white/80 hover:bg-white/90 dark:bg-white/10 dark:hover:bg-white/20 transition-colors",
             )}
         >
             {/* Clickable header */}
@@ -279,7 +279,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer"
+                            className="text-xs text-gray-500 dark:text-gray-400 font-mono hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer"
                             onClick={copyModelName}
                         >
                             {copied ? "✓ copied" : model.name}
@@ -390,7 +390,7 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
 
     return (
         <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide shrink-0 w-7">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide shrink-0 w-7">
                 {label}
             </span>
             <div className="flex flex-wrap gap-1.5">
@@ -442,7 +442,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             size="small"
             className={cn(
                 "px-3",
-                activeTab !== section.type && "!bg-white/80 text-gray-500",
+                activeTab !== section.type && "!bg-white/80 dark:!bg-white/10 text-gray-500 dark:text-gray-400",
             )}
             onClick={() => setActiveTab(section.type)}
         >
@@ -460,10 +460,10 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <div className="flex-1 min-w-6" />
                 <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
                     <div className="cursor-help text-right min-[500px]:text-center shrink-0">
-                        <div className="text-sm font-bold text-gray-900">
+                        <div className="text-sm font-bold text-gray-900 dark:text-gray-200">
                             1 pollen ≈
                         </div>
-                        <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                        <div className="text-xs font-normal text-gray-700 dark:text-gray-400 opacity-70 italic">
                             {activeSection
                                 ? unitLabels[activeSection.type]
                                 : ""}
@@ -471,16 +471,16 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     </div>
                 </Tooltip>
                 <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
-                    <div className="text-sm font-bold text-gray-900">Input</div>
-                    <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                    <div className="text-sm font-bold text-gray-900 dark:text-gray-200">Input</div>
+                    <div className="text-xs font-normal text-gray-700 dark:text-gray-400 opacity-70 italic">
                         pollen
                     </div>
                 </div>
                 <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
-                    <div className="text-sm font-bold text-gray-900">
+                    <div className="text-sm font-bold text-gray-900 dark:text-gray-200">
                         Output
                     </div>
-                    <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                    <div className="text-xs font-normal text-gray-700 dark:text-gray-400 opacity-70 italic">
                         pollen
                     </div>
                 </div>

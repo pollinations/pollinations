@@ -147,7 +147,7 @@ export const FAQ: FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => toggleQuestion(index)}
-                                    className="w-full text-left flex justify-between items-start gap-4 text-violet-950 hover:text-violet-800 transition-colors"
+                                    className="w-full text-left flex justify-between items-start gap-4 text-violet-950 hover:text-violet-800 dark:text-violet-100 dark:hover:text-violet-200 transition-colors"
                                 >
                                     <span
                                         className="flex-1 text-pink-500"
@@ -162,8 +162,8 @@ export const FAQ: FC = () => {
                                 {openIndices.has(index) && (
                                     <Card
                                         color="violet"
-                                        bg="bg-white/80"
-                                        className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800"
+                                        bg="bg-white/80 dark:bg-black/20"
+                                        className="mt-3 text-gray-600 dark:text-gray-300 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 dark:prose-li:text-gray-300 prose-p:mb-3 prose-a:text-purple-600 dark:prose-a:text-purple-400 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800 dark:hover:prose-a:text-purple-300"
                                     >
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}

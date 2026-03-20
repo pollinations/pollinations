@@ -2,9 +2,9 @@ import type { FC } from "react";
 import { cn } from "../../../util.ts";
 
 const priceBadgeColors = {
-    gray: "text-gray-700",
-    purple: "text-purple-700",
-    teal: "text-teal-700",
+    gray: "text-gray-700 dark:text-gray-300",
+    purple: "text-purple-700 dark:text-purple-300",
+    teal: "text-teal-700 dark:text-teal-300",
 } as const;
 
 export const PriceBadge: FC<{

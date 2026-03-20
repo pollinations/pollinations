@@ -106,8 +106,8 @@ export const PollenExamples: FC = () => {
     const examples = getExamples(stats);
 
     return (
-        <div className="mt-4 bg-white/80 rounded-xl p-4 space-y-4">
-            <div className="text-sm text-gray-600 mb-3">
+        <div className="mt-4 bg-white/80 dark:bg-white/10 rounded-xl p-4 space-y-4">
+            <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                 <strong>$1 ≈ 1 Pollen</strong> — here's what you can create:
             </div>
 

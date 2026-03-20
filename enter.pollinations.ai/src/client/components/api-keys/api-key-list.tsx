@@ -70,7 +70,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 return (
                                     <div
                                         key={apiKey.id}
-                                        className="bg-white/80 rounded-xl p-4 transition-colors hover:bg-white/90"
+                                        className="bg-white/80 dark:bg-white/10 rounded-xl p-4 transition-colors hover:bg-white/90 dark:hover:bg-white/20"
                                     >
                                         {/* Row 1: Type, Name, Key, Actions */}
                                         <div className="flex items-center gap-2 mb-2">
@@ -110,7 +110,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             <div className="flex gap-1 shrink-0 ml-2 items-center">
                                                 <button
                                                     type="button"
-                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/50 text-blue-400 dark:text-blue-300 hover:text-blue-600 dark:hover:text-blue-200 transition-colors cursor-pointer"
                                                     onClick={() =>
                                                         setEditingKey(apiKey)
                                                     }
@@ -120,7 +120,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-800/50 text-red-400 dark:text-red-300 hover:text-red-600 dark:hover:text-red-200 transition-colors text-lg cursor-pointer"
                                                     onClick={() =>
                                                         setDeleteId(apiKey.id)
                                                     }
@@ -223,7 +223,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         {apiKeys.some(
                             (k) => k.metadata?.keyType === "publishable",
                         ) && (
-                            <p className="text-sm font-medium text-gray-900 mt-3">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-3">
                                 ⚠️ <strong>Publishable keys</strong> are in beta
                                 — for production apps, use secret keys.
                             </p>

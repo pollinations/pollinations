@@ -2,6 +2,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @font-face {
     font-family: "LCT Mogi";
     src: url("./fonts/lct-mogi-a.woff2") format("woff2"),

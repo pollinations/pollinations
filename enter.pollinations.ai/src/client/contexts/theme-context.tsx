@@ -2,7 +2,7 @@ import {
     createContext,
     type ReactNode,
     useContext,
-    useEffect,
+    useLayoutEffect,
     useState,
 } from "react";
 
@@ -19,8 +19,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [theme, setTheme] = useState<Theme>(() => {
         // Check localStorage first, then system preference, default to dark
         if (typeof window !== "undefined") {
-            const stored = localStorage.getItem("theme") as Theme | null;
-            if (stored) return stored;
+            try {
+                const stored = localStorage.getItem("theme");
+                if (stored === "light" || stored === "dark") return stored;
+            } catch (e) {
+                // Ignore storage errors
+            }
 
             if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
                 return "dark";
@@ -29,14 +33,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         return "dark"; // Default to dark mode as requested
     });
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const root = document.documentElement;
         if (theme === "dark") {
             root.classList.add("dark");
         } else {
             root.classList.remove("dark");
         }
-        localStorage.setItem("theme", theme);
+        try {
+            localStorage.setItem("theme", theme);
+        } catch (e) {
+            // Ignore storage errors
+        }
     }, [theme]);
 
     const toggleTheme = () => {

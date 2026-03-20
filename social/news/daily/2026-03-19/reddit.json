@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-19",
+  "period_start": "2026-03-19",
+  "period_end": "2026-03-19",
+  "generated_at": "2026-03-20T06:16:28.939246+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-19/images/reddit.jpg"
+    }
+  ],
+  "title": "Updated the OpenClaw setup script for v2026.3 compatibility",
+  "text": "Just a quick update today. We merged PR #9316 to fix the OpenClaw setup script for v2026.3 compatibility.\n\nIf you've been trying to run the local stack recently and the setup script was hanging or throwing weird environment errors, this is why. The older version was getting in the way during initialization. We've updated the script so it actually gets out of your way and lets the build finish.\n\nIt's a single PR, but it removes a pretty annoying bottleneck if you're pulling the repo fresh or updating your local environment. You shouldn't have to manually bypass the initialization step anymore.\n\nYou can check the specific changes in the repo here: github.com/pollinations/pollinations/pull/9316.\n\nAs a reminder, all our infrastructure for image, text, audio, and video generation is open source and available via simple HTTP calls. If you're building something with it and run into setup friction like this, let us know or open an issue. We'd rather fix the bash scripts than have you waste an afternoon debugging our environment logic.\n\nBack to the rest of the backlog."
+}

@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
+import { config } from "../config.ts";
 
 const SCOPE_LABELS: Record<string, string> = {
     openid: "Know who you are",
@@ -43,22 +44,24 @@ function DeviceComponent() {
         if (prefilled) verifyCode(prefilled);
     }, [prefilled]);
 
+    const apiBase = `${config.baseUrl}${config.authPath}`;
+
     async function verifyCode(code: string) {
         setError(null);
         try {
-            const res = await authClient.deviceAuthorization.device({
-                query: { user_code: code },
-            });
-            if ("error" in res && res.error) {
-                setError(res.error.message || "Invalid code");
+            const res = await fetch(
+                `${apiBase}/device?user_code=${encodeURIComponent(code)}`,
+                { credentials: "include" },
+            );
+            if (!res.ok) {
+                const data = await res.json().catch(() => null);
+                setError(data?.error_description || "Invalid code");
                 return;
             }
-            if (res.data) {
-                setStatus(res.data.status as DeviceStatus);
-                // scope comes from the device code record
-                if ("scope" in res.data && typeof res.data.scope === "string") {
-                    setScope(res.data.scope.split(" ").filter(Boolean));
-                }
+            const data = await res.json();
+            setStatus(data.status as DeviceStatus);
+            if (data.scope) {
+                setScope(data.scope.split(" ").filter(Boolean));
             }
         } catch {
             setError("Failed to verify code");
@@ -75,11 +78,17 @@ function DeviceComponent() {
         setSubmitting(true);
         setError(null);
         try {
-            const res = await authClient.deviceAuthorization.approve({
-                userCode: userCode.trim().toUpperCase(),
+            const res = await fetch(`${apiBase}/device/approve`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                    userCode: userCode.trim().toUpperCase(),
+                }),
             });
-            if ("error" in res && res.error) {
-                setError(res.error.message || "Approval failed");
+            if (!res.ok) {
+                const data = await res.json().catch(() => null);
+                setError(data?.error_description || "Approval failed");
                 setSubmitting(false);
                 return;
             }
@@ -94,8 +103,13 @@ function DeviceComponent() {
         setSubmitting(true);
         setError(null);
         try {
-            await authClient.deviceAuthorization.deny({
-                userCode: userCode.trim().toUpperCase(),
+            await fetch(`${apiBase}/device/deny`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                    userCode: userCode.trim().toUpperCase(),
+                }),
             });
             setDone(true);
             setStatus("denied");

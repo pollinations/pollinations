@@ -105,5 +105,4 @@ CREATE TABLE `oauth_refresh_token` (
 );
 --> statement-breakpoint
 CREATE INDEX `idx_oauth_refresh_token_token` ON `oauth_refresh_token` (`token`);--> statement-breakpoint
-DROP TABLE `event`;--> statement-breakpoint
-ALTER TABLE `apikey` ADD `pollen_balance` real;
+DROP TABLE IF EXISTS `event`;

@@ -222,6 +222,23 @@ export const jwks = sqliteTable("jwks", {
   expiresAt: integer("expires_at", { mode: "timestamp" }),
 });
 
+// Device Authorization Grant (RFC 8628) table
+export const deviceCode = sqliteTable("device_code", {
+  id: text("id").primaryKey(),
+  deviceCode: text("device_code").notNull(),
+  userCode: text("user_code").notNull(),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  status: text("status").notNull(),
+  lastPolledAt: integer("last_polled_at", { mode: "timestamp" }),
+  pollingInterval: integer("polling_interval"),
+  clientId: text("client_id"),
+  scope: text("scope"),
+}, (table) => [
+  index("idx_device_code_device_code").on(table.deviceCode),
+  index("idx_device_code_user_code").on(table.userCode),
+]);
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),

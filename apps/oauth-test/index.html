@@ -66,6 +66,23 @@
         <div id="pre-auth">
             <div class="actions">
                 <button onclick="startOAuth()">Connect with Pollinations</button>
+                <button onclick="startDeviceFlow()" class="secondary">Device Flow</button>
+            </div>
+        </div>
+
+        <!-- Device flow: polling state -->
+        <div id="device-flow" class="hidden">
+            <h2>Device Authorization</h2>
+            <div class="token-box">
+                <div class="label">User Code</div>
+                <pre id="device-user-code" style="font-size: 1.5rem; text-align: center;"></pre>
+            </div>
+            <p style="margin: 0.75rem 0; font-size: 0.9rem;">
+                Visit <a id="device-verify-link" href="#" target="_blank" style="color: #a78bfa;"></a> and enter the code above.
+            </p>
+            <div id="device-status" class="status info">Waiting for authorization...</div>
+            <div class="actions">
+                <button onclick="cancelDeviceFlow()" class="danger">Cancel</button>
             </div>
         </div>
 
@@ -389,6 +406,110 @@
         } catch (err) {
             setStatus(err.message, 'error');
         }
+    }
+
+    // ── Device Flow ──
+    let devicePollTimer = null;
+
+    async function startDeviceFlow() {
+        try {
+            const client = await getOrRegisterClient();
+            setStatus('Starting device authorization flow...');
+
+            const resp = await fetch(`${server()}/api/auth/device/code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    client_id: client.client_id,
+                    scope: 'openid profile generate',
+                }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.text();
+                throw new Error(`Device code request failed: ${resp.status} ${err}`);
+            }
+
+            const data = await resp.json();
+
+            $('pre-auth').classList.add('hidden');
+            $('device-flow').classList.remove('hidden');
+            $('device-user-code').textContent = data.user_code;
+
+            const verifyUrl = data.verification_uri_complete || data.verification_uri;
+            $('device-verify-link').href = verifyUrl;
+            $('device-verify-link').textContent = data.verification_uri;
+            $('device-status').className = 'status info';
+            $('device-status').textContent = 'Waiting for authorization...';
+
+            // Start polling
+            const interval = (data.interval || 5) * 1000;
+            devicePollTimer = setInterval(() => pollDeviceToken(client.client_id, data.device_code), interval);
+        } catch (err) {
+            setStatus(err.message, 'error');
+        }
+    }
+
+    async function pollDeviceToken(clientId, deviceCode) {
+        try {
+            const resp = await fetch(`${server()}/api/auth/device/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+                    device_code: deviceCode,
+                    client_id: clientId,
+                }),
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok && data.access_token) {
+                // Success
+                clearInterval(devicePollTimer);
+                devicePollTimer = null;
+                tokens = data;
+                $('device-flow').classList.add('hidden');
+                displayTokens();
+                return;
+            }
+
+            // Handle polling errors
+            const error = data.error;
+            if (error === 'authorization_pending') {
+                $('device-status').textContent = 'Waiting for authorization...';
+            } else if (error === 'slow_down') {
+                $('device-status').textContent = 'Slowing down polling...';
+            } else if (error === 'expired_token') {
+                clearInterval(devicePollTimer);
+                devicePollTimer = null;
+                $('device-status').className = 'status error';
+                $('device-status').textContent = 'Device code expired. Please try again.';
+            } else if (error === 'access_denied') {
+                clearInterval(devicePollTimer);
+                devicePollTimer = null;
+                $('device-status').className = 'status error';
+                $('device-status').textContent = 'Access denied by user.';
+            } else {
+                clearInterval(devicePollTimer);
+                devicePollTimer = null;
+                $('device-status').className = 'status error';
+                $('device-status').textContent = `Error: ${data.error_description || error}`;
+            }
+        } catch (err) {
+            // Network error — keep polling
+            $('device-status').textContent = 'Network error, retrying...';
+        }
+    }
+
+    function cancelDeviceFlow() {
+        if (devicePollTimer) {
+            clearInterval(devicePollTimer);
+            devicePollTimer = null;
+        }
+        $('device-flow').classList.add('hidden');
+        $('pre-auth').classList.remove('hidden');
+        setStatus('Device flow cancelled.', 'info');
     }
 
     // ── Init ──

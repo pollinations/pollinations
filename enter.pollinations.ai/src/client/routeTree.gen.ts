@@ -14,6 +14,7 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ErrorRouteImport } from './routes/error'
+import { Route as DeviceRouteImport } from './routes/device'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as IndexRouteImport } from './routes/index'
@@ -43,6 +44,11 @@ const ErrorRoute = ErrorRouteImport.update({
   path: '/error',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeviceRoute = DeviceRouteImport.update({
+  id: '/device',
+  path: '/device',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConsentRoute = ConsentRouteImport.update({
   id: '/consent',
   path: '/consent',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
   '/consent': typeof ConsentRoute
+  '/device': typeof DeviceRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
   '/consent': typeof ConsentRoute
+  '/device': typeof DeviceRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
   '/consent': typeof ConsentRoute
+  '/device': typeof DeviceRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/authorize'
     | '/consent'
+    | '/device'
     | '/error'
     | '/privacy'
     | '/refunds'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/authorize'
     | '/consent'
+    | '/device'
     | '/error'
     | '/privacy'
     | '/refunds'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/authorize'
     | '/consent'
+    | '/device'
     | '/error'
     | '/privacy'
     | '/refunds'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthorizeRoute: typeof AuthorizeRoute
   ConsentRoute: typeof ConsentRoute
+  DeviceRoute: typeof DeviceRoute
   ErrorRoute: typeof ErrorRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/device': {
+      id: '/device'
+      path: '/device'
+      fullPath: '/device'
+      preLoaderRoute: typeof DeviceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/consent': {
       id: '/consent'
       path: '/consent'
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthorizeRoute: AuthorizeRoute,
   ConsentRoute: ConsentRoute,
+  DeviceRoute: DeviceRoute,
   ErrorRoute: ErrorRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,

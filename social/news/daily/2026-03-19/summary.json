@@ -1,0 +1,15 @@
+{
+  "date": "2026-03-19",
+  "period_start": "2026-03-19",
+  "period_end": "2026-03-19",
+  "title": "OpenClaw setup gets out of your way",
+  "summary": "A quiet day focused on smoothing out the OpenClaw integration and setup experience.\n\nThe OpenClaw setup script has been updated to use the native CLI onboarding and correct v2026.3 schemas. It's a small change that removes configuration friction and makes getting started noticeably cleaner.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 9316,
+      "date": "2026-03-19"
+    }
+  ],
+  "generated_at": "2026-03-20T06:16:28.939246+00:00"
+}

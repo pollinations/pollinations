@@ -1,0 +1,34 @@
+{
+  "pr_number": 9367,
+  "title": "fix: replace blocked Azure gptimage resource",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9367",
+  "merged_at": "2026-03-20T22:45:06Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Unblocking the canvas",
+    "blurb": "We've swapped out some backend resources and unified our API versions. The gptimage and gptimage-large models are officially back online and ready to paint!",
+    "summary": "Restored functionality for the gptimage and gptimage-large models by migrating to a new Azure OpenAI resource and unifying the API version.",
+    "impact": "Users can once again generate and edit images using the gptimage models, which are now fully operational.",
+    "keywords": [
+      "gptimage",
+      "azure",
+      "bugfix",
+      "image-generation",
+      "models"
+    ],
+    "visual_concept": "Polly the bee as a painter, fixing a broken easel or painting on a fresh canvas with a robot helper, symbolizing the restored image generation models.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, happily painting on a fresh digital canvas on an easel. A chunky robot with a CRT monitor head stands nearby holding a glowing lime green (#ecf874) paint palette. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9367.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, happily painting on a fresh digital canvas on an easel. A chunky robot with a CRT monitor head stands nearby holding a glowing lime green (#ecf874) paint palette. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-20T22:46:03.905651+00:00"
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import TransformationService from '../services/TransformationService';
 import { TransformationChain } from '../types/transformation';
 import { pollinationsService } from '../services/PollinationsService';
-import { useAuth } from '../context/AuthContext';
 
 // TransformationItem component outside to avoid re-creation
 interface TransformationItemProps {
@@ -27,6 +26,7 @@ interface TransformationItemProps {
   onPress: (chain: TransformationChain) => void;
   onDelete: (chain: TransformationChain) => void;
   theme: any;
+  isDark: boolean;
 }
 
 const TransformationItem = React.memo<TransformationItemProps>(({
@@ -116,8 +116,7 @@ const TransformationItem = React.memo<TransformationItemProps>(({
 TransformationItem.displayName = 'TransformationItem';
 
 export default function ProfileScreen({ navigation }: TabScreenProps<'Profile'>) {
-  const { theme, isDark, toggleTheme } = useTheme();
-  const { token, login, logout } = useAuth();
+  const { theme, isDark } = useTheme();
   const [transformations, setTransformations] = useState<TransformationChain[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -125,14 +124,7 @@ export default function ProfileScreen({ navigation }: TabScreenProps<'Profile'>)
   const { width } = useWindowDimensions();
   const imageWidth = (width - 20) / 2;
 
-  useFocusEffect(
-      React.useCallback(() => {
-        console.log('ProfileScreen: Focus effect triggered');
-        loadData();
-      }, [])
-  );
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -154,7 +146,14 @@ export default function ProfileScreen({ navigation }: TabScreenProps<'Profile'>)
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(
+      React.useCallback(() => {
+        console.log('ProfileScreen: Focus effect triggered');
+        loadData();
+      }, [loadData])
+  );
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -225,7 +224,7 @@ export default function ProfileScreen({ navigation }: TabScreenProps<'Profile'>)
             isDark={isDark}
         />
     );
-  }, [imageWidth, handleChainPress, handleDeleteChain, theme]);
+  }, [imageWidth, handleChainPress, handleDeleteChain, theme, isDark]);
 
   const EmptyComponent = useMemo(() => (
       <View style={styles.emptyContainer}>

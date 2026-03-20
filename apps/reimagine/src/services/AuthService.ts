@@ -1,7 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
-import { Platform } from 'react-native';
 
 const TOKEN_KEY = 'POLLINATIONS_API_TOKEN';
 

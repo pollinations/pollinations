@@ -18,7 +18,7 @@ import { OptimizedImage } from '../components/OptimizedImage';
 import ReportImageModal from '../components/ReportImageModal';
 import TransformationService from '../services/TransformationService';
 import ImageUploadService from '../services/ImageUploadService';
-import { TransformationChain, TransformationVersion } from '../types/transformation';
+import { TransformationChain } from '../types/transformation';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
@@ -356,7 +356,7 @@ export default function TransformationDetailScreen({
             </Text>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeline}>
-              {chain.versions.map((version, index) => {
+              {chain.versions.map((version) => {
                 const isActive = version.id === currentVersionId;
                 return (
                     <TouchableOpacity

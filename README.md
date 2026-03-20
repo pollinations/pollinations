@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🐉 Daily Cryptid](https://cjhauser.me/daily-cryptid) | Generate one AI-created cryptid every 24 hours with Daily Cryptid, using pollinations.ai to produce both image and description. | [@web](https://github.com/web) |
-| [🔀 Parallel](https://parallelsim.vercel.app/) | Alternate-life timeline simulator that generates divergent year-by-year futures from unchosen decisions using Pollinations text API. | [@web](https://github.com/web) |
-| [🌙 Luna](197387035) | Chinese AI companion with ENFJ personality, memory system, tool calling, and Pollinations-powered text/image generation across 19 text and 12 image models. | [@api](https://github.com/api) |
-| [🤖 Suspicious Helper](123081329) | 14k+ line Discord bot with Pollinations-powered persistent chatbot (Qwen), image generation (Flux), plus Vibe Engine web terminal and open-source API wrappers and bot presets. | [@discord](https://github.com/discord) |
-| [📚 NovelSeek-Pro-PC](https://huggingface.co/spaces/QQS0498/NovelSeek-Pro-PC) | Tauri desktop novel creator with Pollinations-powered chapter generation, cover art illustration, and ebook export via Rust backend. | [@desktop](https://github.com/desktop) |
-| [🧠 Nova.ai](200781425) | iOS AI assistant combining conversational AI, image generation, and project organization using Pollinations text and image APIs for streaming chat and prompt-based image creation. | [@ios](https://github.com/ios) |
-| [🤖 PromptPilot Bot](https://t.me/promptpilotsbot) | Generate images, video, and audio via Pollinations API with PromptPilot Bot, supporting 20 models including Flux, GPT-Image-1, Imagen 4, Grok, Imagine, Seedance, and ElevenLabs TTS. | [@telegram](https://github.com/telegram) |
-| [🗃️ Vibe DB](16942845) | Manage and query datasets in Vibe DB. This entry is the developer's second app submission. | [@web](https://github.com/web) |
-| [🔁 OpenRelay](https://cazyundee.github.io/OpenRelay) | Lightweight Windows desktop overlay routing queries to multiple AI models via Pollinations API with text generation across 9 models and image generation across 4 models. | [@windows](https://github.com/windows) |
-| [📚 lstation.co Children Story Creator and Player Plat](https://lstation.co) | Create and play interactive stories for children using lstation.co Children Story Creator and Player Plat with AI-powered storytelling and educational features. | [@web](https://github.com/web) |
+| [🐉 Daily Cryptid](https://cjhauser.me/daily-cryptid) | Generate one AI-created cryptid every 24 hours with Daily Cryptid, using pollinations.ai to produce both image and description. | [@CloudCompile](https://github.com/CloudCompile) |
+| [🔀 Parallel](https://parallelsim.vercel.app/) | Alternate-life timeline simulator that generates divergent year-by-year futures from unchosen decisions using Pollinations text API. | [@novachrono09](https://github.com/novachrono09) |
+| 🌙 Luna | Chinese AI companion with ENFJ personality, memory system, tool calling, and Pollinations-powered text/image generation across 19 text and 12 image models. | [@ZCX-Priv](https://github.com/ZCX-Priv) |
+| 🤖 Suspicious Helper | 14k+ line Discord bot with Pollinations-powered persistent chatbot (Qwen), image generation (Flux), plus Vibe Engine web terminal and open-source API wrappers and bot presets. | [@blueplaysgames3921](https://github.com/blueplaysgames3921) |
+| [📚 NovelSeek-Pro-PC](https://huggingface.co/spaces/QQS0498/NovelSeek-Pro-PC) | Tauri desktop novel creator with Pollinations-powered chapter generation, cover art illustration, and ebook export via Rust backend. | [@QwenchC](https://github.com/QwenchC) |
+| 🧠 Nova.ai | iOS AI assistant combining conversational AI, image generation, and project organization using Pollinations text and image APIs for streaming chat and prompt-based image creation. | [@amazonka142](https://github.com/amazonka142) |
+| [🤖 PromptPilot Bot](https://t.me/promptpilotsbot) | Generate images, video, and audio via Pollinations API with PromptPilot Bot, supporting 20 models including Flux, GPT-Image-1, Imagen 4, Grok, Imagine, Seedance, and ElevenLabs TTS. | [@doctorm333](https://github.com/doctorm333) |
+| 🗃️ Vibe DB | Manage and query datasets in Vibe DB. This entry is the developer's second app submission. | [@Rithprohos](https://github.com/Rithprohos) |
+| [🔁 OpenRelay](https://cazyundee.github.io/OpenRelay) | Lightweight Windows desktop overlay routing queries to multiple AI models via Pollinations API with text generation across 9 models and image generation across 4 models. | [@CazyUndee](https://github.com/CazyUndee) |
+| [📚 lstation.co Children Story Creator and Player Plat](https://lstation.co) | Create and play interactive stories for children using lstation.co Children Story Creator and Player Plat with AI-powered storytelling and educational features. | [@idebroy](https://github.com/idebroy) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -47,6 +47,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-03-19** – **🔗 OpenClaw Integration** Setting up OpenClaw with Pollinations is now faster and less prone to configuration errors thanks to native CLI onboarding for v2026.3.
 - **2026-03-18** – **🤖 Silicon meets pollen** Someone wired the API into an ESP32-S3 microcontroller (NEURGenerator). Hardware hackers now have a reference for bringing generation to physical devices.
 - **2026-03-18** – **📱 Pocket-sized infrastructure** Nova.ai just dropped into the showcase—a full iOS assistant with streaming chat and image generation built entirely on our endpoints.
 - **2026-03-18** – **📚 The hive writes a novel** NovelSeek-Pro-PC is now in the creative directory. It's a desktop tool that takes you from a blank page to a fully formatted ebook with generated cover art.
@@ -56,7 +57,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-03-17** – **🧠 Qwen3.5 397B Arrives** We've added Qwen3.5 397B to the [Unified API](https://gen.pollinations.ai). Massive 262K context window, vision, and reasoning capabilities are now a single endpoint away.
 - **2026-03-16** – **✨ Hourly Pollen Refills** Spore and Seed tier balances now regenerate every hour. Your free tier credits grow back naturally while you figure out why your code isn't working.
 - **2026-03-16** – **📱 Full Model Roster** The [models table](https://hello.pollinations.ai) now correctly fetches stats for all 200+ available models instead of giving up at 50. We also cleaned up the UI so you can easily spot new and alpha models.
-- **2026-03-16** – **🎨 Nanobanana Image Sizes** Requesting smaller images from nanobanana models now returns actual pixels instead of Vertex AI errors.
 ---
 
 ## 🌱 Introduction

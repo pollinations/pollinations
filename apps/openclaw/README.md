@@ -1,28 +1,29 @@
-# 🧬 Pollinations × OpenClaw
+# Pollinations x OpenClaw
 
 Use **25+ AI models** as your OpenClaw brain through a single API.
 
-**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM-4.7, Gemini Flash Lite, and Claude Haiku as free alternatives. Premium models (Claude Sonnet, Gemini 3, Grok 4) available on paid tier.
+**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM-4.7, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
 
-## 30-Second Setup
+## Setup
 
 **Step 1:** Get your API key (comes with free credits) at [enter.pollinations.ai](https://enter.pollinations.ai)
 
-**Step 2:** Run the setup script:
+**Step 2:** Run the setup script (requires `jq`):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- YOUR_API_KEY
 ```
 
-### Then install/restart OpenClaw:
+This works for both fresh installs and existing OpenClaw setups. It:
+- Runs `openclaw onboard` for fresh installs (creates config + workspace)
+- Adds the Pollinations provider with 7 models to `~/.openclaw/openclaw.json`
+- Sets Kimi K2.5 as default with DeepSeek + GLM fallbacks
+
+**Step 3 (fresh install only):** Start the gateway:
 
 ```bash
-openclaw onboard --install-daemon
+openclaw gateway start
 ```
-
-- Use **Quickstart** onboarding mode
-- Skip the Model/auth provider step (Pollinations is already configured)
-- Choose "All Providers" → "Keep Current" for default model
 
 ## Available Models
 
@@ -30,43 +31,25 @@ Switch models anytime in chat with `/model pollinations/<name>`:
 
 | Model | ID | Best for |
 |---|---|---|
-| **Kimi K2.5** ⭐ | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
+| **Kimi K2.5** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
 | **DeepSeek V3.2** | `pollinations/deepseek` | Strong reasoning & tool calling |
 | **GLM-4.7** | `pollinations/glm` | Coding, reasoning, agentic workflows |
-| **Gemini Flash Lite** | `pollinations/gemini-fast` | Fast, vision support |
+| **Gemini + Search** | `pollinations/gemini-search` | Web search grounded answers |
 | **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast with good reasoning |
-| **Claude Sonnet** 💰 | `pollinations/claude` | Complex reasoning (paid) |
-| **Gemini 3** 💰 | `pollinations/gemini` | 1M context (paid) |
-| **Grok 4** 💰 | `pollinations/grok` | Tool calling, fast (paid) |
+| **Claude Opus 4.6** | `pollinations/claude-large` | Most intelligent (paid) |
+| **Gemini 3 Pro** | `pollinations/gemini-large` | 1M context (paid) |
 
-## Manual Configuration
+## Manual Setup
 
-If you prefer to edit `~/.openclaw/openclaw.json` directly:
+If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. Add a `pollinations` provider under `models.providers`:
 
 ```json
 {
-  "env": { "POLLINATIONS_API_KEY": "sk_your_key_here" },
-  "agents": {
-    "defaults": {
-      "model": {
-        "primary": "pollinations/kimi",
-        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
-      },
-      "models": {
-        "pollinations/kimi": { "alias": "Kimi K2.5 (Pollinations)" },
-        "pollinations/deepseek": { "alias": "DeepSeek V3.2 (Pollinations)" },
-        "pollinations/glm": { "alias": "GLM-4.7 (Pollinations)" },
-        "pollinations/gemini-fast": { "alias": "Gemini Flash Lite (Pollinations)" },
-        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5 (Pollinations)" }
-      }
-    }
-  },
   "models": {
-    "mode": "merge",
     "providers": {
       "pollinations": {
         "baseUrl": "https://gen.pollinations.ai/v1",
-        "apiKey": "${POLLINATIONS_API_KEY}",
+        "apiKey": "YOUR_API_KEY",
         "api": "openai-completions",
         "models": [
           {
@@ -74,21 +57,7 @@ If you prefer to edit `~/.openclaw/openclaw.json` directly:
             "name": "Kimi K2.5",
             "reasoning": true,
             "input": ["text", "image"],
-            "contextLength": 256000,
-            "maxTokens": 8192
-          },
-          {
-            "id": "deepseek",
-            "name": "DeepSeek V3.2",
-            "input": ["text"],
-            "contextLength": 128000,
-            "maxTokens": 8192
-          },
-          {
-            "id": "glm",
-            "name": "GLM-4.7",
-            "input": ["text"],
-            "contextLength": 128000,
+            "contextWindow": 256000,
             "maxTokens": 8192
           }
         ]
@@ -98,34 +67,27 @@ If you prefer to edit `~/.openclaw/openclaw.json` directly:
 }
 ```
 
-Add more models by adding entries to the `models` array. See all available models at [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models).
+Then set the default model:
 
-## Why Pollinations?
+```bash
+openclaw models set pollinations/kimi
+openclaw models fallbacks add pollinations/deepseek
+openclaw gateway restart
+```
 
-- **Free credits included** — Sign up and start building immediately
-- **25+ models, one API** — Kimi, DeepSeek, GLM, Gemini, Claude, and more
-- **OpenAI-compatible** — Standard `/v1/chat/completions` endpoint, works with any OpenAI client
-- **Unified API** — Same endpoint for text, image, video, and audio generation
-- **Pay-as-you-go** — Only pay for what you use, top up anytime at [enter.pollinations.ai](https://enter.pollinations.ai)
+See all available models at [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models).
 
-## Layer 2: Pollinations Skill (Image/Video/Audio)
+## Pollinations Skill (Image/Video/Audio)
 
-There's also a [Pollinations skill on ClawHub](https://github.com/openclaw/skills/blob/main/skills/isaacgounton/pollinations/SKILL.md) that gives your OpenClaw agent the ability to **generate images, videos, and audio**:
+The [Pollinations skill on ClawHub](https://github.com/openclaw/skills/blob/main/skills/isaacgounton/pollinations/SKILL.md) gives your agent image, video, and audio generation:
 
 ```
 /skill install isaacgounton/pollinations
 ```
 
-This adds capabilities like:
-- 🖼️ Image generation (Flux, GPT Image, Seedream, Imagen 4...)
-- 🎬 Video generation (Veo 3.1, Seedance, Wan...)
-- 🔊 Text-to-speech (13 voices)
-- 👁️ Image/video analysis
-
 ## Links
 
 - **API Docs:** https://gen.pollinations.ai/api/docs
 - **Get API Key:** https://enter.pollinations.ai
-- **Text Models:** https://gen.pollinations.ai/v1/models
-- **Image Models:** https://gen.pollinations.ai/image/models
+- **Models:** https://gen.pollinations.ai/v1/models
 - **GitHub:** https://github.com/pollinations/pollinations

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9323,
+  "title": "Add Daily Cryptid to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9323",
+  "merged_at": "2026-03-20T02:12:26Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive spots a cryptid",
+    "blurb": "Someone built a daily cryptid generator using our API. Every 24 hours, a brand new monster and its lore drops into the world. Bigfoot is shaking.",
+    "summary": "Added 'Daily Cryptid' to the community app showcase, a project that uses the pollinations.ai API to generate a unique cryptid image and description every 24 hours.",
+    "impact": "Developers can check out the app in the showcase to see a great example of automated daily content generation using our text and image endpoints.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "cryptid",
+      "generator"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot acting as cryptozoologists, discovering a cute, friendly cryptid (like a tiny fluffy mothman) in a cozy forest setting. The robot is taking a picture of the sighting.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny explorer hat, hiding in a glowing lime green (#ecf874) bush alongside a cute chunky robot with a monitor head. They are taking a photo of a tiny, friendly pixel-art cryptid (like a fluffy mothman) in a cozy forest. Soft pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9323.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny explorer hat, hiding in a glowing lime green (#ecf874) bush alongside a cute chunky robot with a monitor head. They are taking a photo of a tiny, friendly pixel-art cryptid (like a fluffy mothman) in a cozy forest. Soft pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-20T02:13:17.341080+00:00"
+}

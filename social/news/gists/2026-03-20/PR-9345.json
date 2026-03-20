@@ -1,0 +1,35 @@
+{
+  "pr_number": 9345,
+  "title": "feat(text): reject empty upstream completions with 502",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/9345",
+  "merged_at": "2026-03-20T17:45:02Z",
+  "labels": [
+    "TEXT",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more silent treatment",
+    "blurb": "We taught the API to stop accepting empty boxes from upstream providers. If a model tries to hand us zero tokens, we now throw a proper 502 error instead of passing along the void.",
+    "summary": "Implemented a provider-agnostic guard in the text API that intercepts empty completions and returns a 502 Bad Gateway error.",
+    "impact": "Developers will now receive clear error codes instead of confusing empty 200 OK responses when upstream models fail to generate text.",
+    "keywords": [
+      "api",
+      "text",
+      "error-handling",
+      "reliability"
+    ],
+    "visual_concept": "Polly the bee acting as an inspector, catching an empty box or empty plate before it reaches the user. A '502' sign or stamp represents the new error handling.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny inspector's hat, stamping a glowing '502' on an empty digital box. The round tan nomnom creature watches happily nearby, waiting for real data. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9345.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny inspector's hat, stamping a glowing '502' on an empty digital box. The round tan nomnom creature watches happily nearby, waiting for real data. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-20T17:45:59.508751+00:00"
+}

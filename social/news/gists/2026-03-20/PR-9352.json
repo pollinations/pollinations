@@ -1,0 +1,34 @@
+{
+  "pr_number": 9352,
+  "title": "Add BubbleUp to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9352",
+  "merged_at": "2026-03-20T14:53:18Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Bubbling up the best notes",
+    "blurb": "A new community app called BubbleUp just landed in the greenhouse! It's a neat tool for organizing web highlights, extracting key points, and syncing your notes across devices.",
+    "summary": "Added BubbleUp to the community apps showcase, a tool for organizing and syncing web highlights and notes.",
+    "impact": "Users can now discover and use BubbleUp from the pollinations.ai app directory to manage their web research.",
+    "keywords": [
+      "app",
+      "community",
+      "notes",
+      "productivity",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee interacting with floating bubbles that contain notes and highlights, representing the 'BubbleUp' app's note-taking and organizing features.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, organizing glowing floating bubbles that contain tiny pixelated notes and web pages. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9352.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, organizing glowing floating bubbles that contain tiny pixelated notes and web pages. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-20T14:54:15.696879+00:00"
+}

@@ -2,14 +2,14 @@ import type { FC, PropsWithChildren } from "react";
 import { cn } from "../../../util.ts";
 
 const panelColors = {
-    blue: "border-blue-300 bg-blue-50/70",
-    teal: "border-teal-200 bg-teal-50/70",
-    violet: "border-violet-300 bg-violet-50/70",
-    purple: "border-purple-300 bg-purple-50/70",
-    amber: "border-amber-300 bg-amber-50/70",
-    green: "border-green-200 bg-green-50/70",
-    pink: "border-pink-300 bg-pink-50/70",
-    gray: "border-gray-300 bg-gray-50/70",
+    blue: "border-blue-300 bg-blue-50/70 dark:border-blue-700 dark:bg-blue-950/70",
+    teal: "border-teal-200 bg-teal-50/70 dark:border-teal-700 dark:bg-teal-950/70",
+    violet: "border-violet-300 bg-violet-50/70 dark:border-violet-700 dark:bg-violet-950/70",
+    purple: "border-purple-300 bg-purple-50/70 dark:border-purple-700 dark:bg-purple-950/70",
+    amber: "border-amber-300 bg-amber-50/70 dark:border-amber-700 dark:bg-amber-950/70",
+    green: "border-green-200 bg-green-50/70 dark:border-green-700 dark:bg-green-950/70",
+    pink: "border-pink-300 bg-pink-50/70 dark:border-pink-700 dark:bg-pink-950/70",
+    gray: "border-gray-300 bg-gray-50/70 dark:border-gray-600 dark:bg-gray-800/70",
 } as const;
 
 type PanelProps = PropsWithChildren<{

@@ -43,17 +43,18 @@
 
 @layer base {
     html {
-        color-scheme: light;
+        color-scheme: light dark;
         overflow-x: hidden;
     }
 
     * {
-        @apply border-gray-800;
+        @apply border-gray-800 dark:border-gray-600;
     }
 
     html,
     body {
         @apply text-green-950 bg-emerald-100 font-body text-base;
+        @apply dark:text-gray-100 dark:bg-gray-950;
         @apply pb-8 min-h-screen font-medium;
     }
 

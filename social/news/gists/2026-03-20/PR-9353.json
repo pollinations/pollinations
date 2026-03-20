@@ -1,0 +1,34 @@
+{
+  "pr_number": 9353,
+  "title": "Add StoryTale to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9353",
+  "merged_at": "2026-03-20T14:56:18Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Once upon a markdown",
+    "blurb": "StoryTale has officially joined our community writing apps! Generate tales and export them straight to Markdown with all your formatting perfectly preserved.",
+    "summary": "Added StoryTale to the community apps showcase, a new writing tool that supports exporting generated stories to Markdown.",
+    "impact": "Writers and creators can now discover StoryTale in the apps directory to generate stories and easily export them for publishing.",
+    "keywords": [
+      "community",
+      "app",
+      "writing",
+      "markdown",
+      "storytale"
+    ],
+    "visual_concept": "Polly the bee acting as a writer/storyteller. A magical book or scroll with Markdown symbols (like # or **) floating around. Cozy library or writing desk setting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, writing a story in a glowing magical book on a wooden desk. Floating pixelated Markdown symbols surround the pages. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9353.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, writing a story in a glowing magical book on a wooden desk. Floating pixelated Markdown symbols surround the pages. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-20T14:57:09.895139+00:00"
+}

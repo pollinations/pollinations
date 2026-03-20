@@ -1,0 +1,35 @@
+{
+  "pr_number": 9343,
+  "title": "Add Ask PollinationsAI for an image to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9343",
+  "merged_at": "2026-03-20T13:28:28Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "PowerShell Pixels",
+    "blurb": "A new community integration lets you generate images straight from PowerShell, .NET, and Azure. Time to make those terminal scripts a lot more colorful!",
+    "summary": "Added a new community integration for generating Pollinations images directly from PowerShell, .NET, and Azure environments.",
+    "impact": "Developers can now easily integrate AI image generation into their Windows and enterprise scripting workflows.",
+    "keywords": [
+      "powershell",
+      ".net",
+      "azure",
+      "community",
+      "integration",
+      "images"
+    ],
+    "visual_concept": "The PR is about PowerShell, .NET, and Azure integration. Visual symbols: a retro terminal/command prompt, blue/white colors (PowerShell), maybe a glowing script. Characters: Polly the bee wearing a tiny IT admin tie or glasses, typing on a retro terminal that is sprouting colorful pixel flowers (images).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny IT admin glasses, typing on a retro computer terminal with a blue screen. Colorful pixel flowers and glowing images are popping out of the monitor. Soft lime green (#ecf874) and pastel blue gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9343.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny IT admin glasses, typing on a retro computer terminal with a blue screen. Colorful pixel flowers and glowing images are popping out of the monitor. Soft lime green (#ecf874) and pastel blue gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-20T13:29:17.839721+00:00"
+}

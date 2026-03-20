@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💐 BexyFlowers - AI Bouquet Designer](https://bexyflowers.shop) | Generates photorealistic AI previews of custom bouquets using pollinations.ai for BexyFlowers - AI Bouquet Designer, an e-commerce platform based in Lebanon. | [@web](https://github.com/web) |
+| [📝 StoryTale](https://storytale.onrender.com/) | Export StoryTale stories to Markdown for editing and publishing, preserving headings, links, images, and basic formatting. | [@web](https://github.com/web) |
+| [🫧 BubbleUp](https://bubbleup.clinko.com) | Organizes web highlights and notes in BubbleUp, extracting key points, tagging content, and syncing across devices for later review. | [@web](https://github.com/web) |
+| [📈 BorsaciAI - BIST Financial Analysis Bot](https://t.me/ai_borsaci_bot) | Provides open-source Telegram assistant to summarize companies listed on Borsa Istanbul and combine market data for quick financial analysis; BorsaciAI - BIST Financial Analysis Bot | [@telegram](https://github.com/telegram) |
 | [📝 Ask PollinationsAI for a Text](1894723) | Generate text with Ask PollinationsAI for a Text using Powershell and integrate the output into .NET applications and Azure. | [@cli](https://github.com/cli) |
 | [🖼️ Ask PollinationsAI for an image](1894723) | Generate images from Powershell or integrate into the .NET environment and Azure using Ask PollinationsAI for an image. | [@cli](https://github.com/cli) |
 | [🐉 Daily Cryptid](https://cjhauser.me/daily-cryptid) | Generate one AI-created cryptid every 24 hours with Daily Cryptid, using pollinations.ai to produce both image and description. | [@web](https://github.com/web) |
 | [🔀 Parallel](https://parallelsim.vercel.app/) | Alternate-life timeline simulator that generates divergent year-by-year futures from unchosen decisions using Pollinations text API. | [@web](https://github.com/web) |
 | [🌙 Luna](197387035) | Chinese AI companion with ENFJ personality, memory system, tool calling, and Pollinations-powered text/image generation across 19 text and 12 image models. | [@api](https://github.com/api) |
 | [🤖 Suspicious Helper](123081329) | 14k+ line Discord bot with Pollinations-powered persistent chatbot (Qwen), image generation (Flux), plus Vibe Engine web terminal and open-source API wrappers and bot presets. | [@discord](https://github.com/discord) |
-| [📚 NovelSeek-Pro-PC](https://huggingface.co/spaces/QQS0498/NovelSeek-Pro-PC) | Tauri desktop novel creator with Pollinations-powered chapter generation, cover art illustration, and ebook export via Rust backend. | [@desktop](https://github.com/desktop) |
-| [🧠 Nova.ai](200781425) | iOS AI assistant combining conversational AI, image generation, and project organization using Pollinations text and image APIs for streaming chat and prompt-based image creation. | [@ios](https://github.com/ios) |
-| [🤖 PromptPilot Bot](https://t.me/promptpilotsbot) | Generate images, video, and audio via Pollinations API with PromptPilot Bot, supporting 20 models including Flux, GPT-Image-1, Imagen 4, Grok, Imagine, Seedance, and ElevenLabs TTS. | [@telegram](https://github.com/telegram) |
-| [🗃️ Vibe DB](16942845) | Manage and query datasets in Vibe DB. This entry is the developer's second app submission. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

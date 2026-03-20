@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **1112** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **1113** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -229,12 +229,13 @@
 | [🎬 Postsiva](https://youtube.postsiva.com/) | SaaS platform to help YouTube creators manage and optimize their channels. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 Postsiva  AI Facebook Automation](https://facebook.postsiva.com/) | AI platform to generate, schedule and publish Facebook posts at scale. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 68 apps</summary>
+<details><summary>Show all 69 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
 | [🧠 AI Youtube Comment Summary Browser ExtensionAddon](https://addons.mozilla.org/en-US/firefox/addon/ai-youtube-comment-summary/) | Summarizes YouTube comment threads directly in your browser. | [@browser-ext](https://github.com/browser-ext) |  | 🫧 |
 | [📖 Fable Friend](https://huggingface.co/spaces/Shreemahor/Fable-Friend) | Interactive AI story adventure with selectable role, genre, and image style. | [@web](https://github.com/web) |  | 🫧 |
+| [📝 Ask PollinationsAI for a Text](1894723) | Generate text with Ask PollinationsAI for a Text using Powershell and integrate the output into .NET applications and Azure. | [@cli](https://github.com/cli) |  | 🫧 |
 | [📚 StoryWeaver AI](https://storyweaver-ai-umber.vercel.app/) | Generate illustrated storybooks as SVG using the Gamini model via the Pollinations API. | [@web](https://github.com/web) |  | 🫧 |
 | [📊 LandPPT](https://landppt.com) | LLM-powered platform converting documents into professional PPT presentations. | [@web](https://github.com/web) |  | 🫧 |
 | [✍️ StoryFlux](https://play.google.com/store/apps/details?id=com.storyflux) | Create and read interactive AI-powered stories with social features. | [@android](https://github.com/android) |  | 🫧 |

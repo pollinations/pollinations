@@ -1,0 +1,34 @@
+{
+  "pr_number": 9354,
+  "title": "Add BexyFlowers - AI Bouquet Designer to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9354",
+  "merged_at": "2026-03-20T15:52:06Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh cut pixels",
+    "blurb": "BexyFlowers just joined the greenhouse. They're using our image API to generate photorealistic previews of custom bouquets for their shop in Lebanon, proving once again that the best flowers are the ones you don't have to water.",
+    "summary": "Added BexyFlowers, an AI Bouquet Designer from Lebanon, to the community app showcase.",
+    "impact": "The community can now see how the Pollinations image API is being used in production for e-commerce product visualization.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "image-api",
+      "bexyflowers"
+    ],
+    "visual_concept": "The PR is about an AI bouquet designer app called BexyFlowers. Visuals should include flowers, bouquets, a flower shop setting, and the Pollinations bee. The bee could be arranging a digital bouquet or holding a glowing pixel flower.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny florist apron, arranging a beautiful glowing digital flower bouquet in a lime green (#ecf874) vase. A retro computer monitor on the wooden counter shows photorealistic flower designs. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9354.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny florist apron, arranging a beautiful glowing digital flower bouquet in a lime green (#ecf874) vase. A retro computer monitor on the wooden counter shows photorealistic flower designs. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-20T15:53:00.848045+00:00"
+}

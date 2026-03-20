@@ -1,0 +1,33 @@
+{
+  "pr_number": 9342,
+  "title": "fix: remove orphaned submodule entries",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9342",
+  "merged_at": "2026-03-20T13:06:26Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Exorcising ghost modules",
+    "blurb": "We swept away some orphaned git submodules that were haunting our CI pipelines. The codebase is now a little cleaner and our automated tests are much happier.",
+    "summary": "Removed orphaned git submodule entries that were causing CI pipeline errors.",
+    "impact": "Developers will no longer see fatal git warnings about missing submodule URLs during automated runs.",
+    "keywords": [
+      "git",
+      "ci",
+      "submodules",
+      "cleanup"
+    ],
+    "visual_concept": "The Nomnom creature eating old dusty folders or ghost-like code snippets, while Polly the bee watches with a tiny broom.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating dusty, ghost-like folders while the cute bee mascot sweeps up with a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9342.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating dusty, ghost-like folders while the cute bee mascot sweeps up with a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-20T13:07:37.355160+00:00"
+}

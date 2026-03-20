@@ -26,7 +26,6 @@ interface TransformationItemProps {
   onPress: (chain: TransformationChain) => void;
   onDelete: (chain: TransformationChain) => void;
   theme: any;
-  isDark: boolean;
 }
 
 const TransformationItem = React.memo<TransformationItemProps>(({
@@ -34,8 +33,7 @@ const TransformationItem = React.memo<TransformationItemProps>(({
                                                                   imageWidth,
                                                                   onPress,
                                                                   onDelete,
-                                                                  theme,
-                                                                  isDark
+                                                                  theme
                                                                 }) => {
   const currentVersion = item.versions.find((v) => v.id === item.currentVersionId);
 
@@ -109,14 +107,14 @@ const TransformationItem = React.memo<TransformationItemProps>(({
       prevProps.item.id === nextProps.item.id &&
       prevProps.item.currentVersionId === nextProps.item.currentVersionId &&
       prevProps.imageWidth === nextProps.imageWidth &&
-      prevProps.isDark === nextProps.isDark
+      prevProps.theme === nextProps.theme
   );
 });
 
 TransformationItem.displayName = 'TransformationItem';
 
 export default function ProfileScreen({ navigation }: TabScreenProps<'Profile'>) {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const [transformations, setTransformations] = useState<TransformationChain[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -221,10 +219,9 @@ export default function ProfileScreen({ navigation }: TabScreenProps<'Profile'>)
             onPress={handleChainPress}
             onDelete={handleDeleteChain}
             theme={theme}
-            isDark={isDark}
         />
     );
-  }, [imageWidth, handleChainPress, handleDeleteChain, theme, isDark]);
+  }, [imageWidth, handleChainPress, handleDeleteChain, theme]);
 
   const EmptyComponent = useMemo(() => (
       <View style={styles.emptyContainer}>

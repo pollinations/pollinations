@@ -151,18 +151,19 @@ export default function HomeScreen({navigation}: TabScreenProps<'Home'>) {
 
     const listRef = useRef<MasonryFlashList<CivitaiImage>>(null);
     const imageIdsRef = useRef<Set<number>>(new Set());
+    const loadingRef = useRef(false);
+    const refreshingRef = useRef(false);
+    const cursorRef = useRef<number | undefined>(undefined);
+    const filtersRef = useRef<TrendingFilters>({
+        sort: 'Most Reactions',
+        period: 'Week',
+        nsfw: 'None',
+    });
 
     // Selection state
     const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
     const [selectionMode, setSelectionMode] = useState(false);
-    const [selectionVersion, setSelectionVersion] = useState(0);
-
     const [networkError, setNetworkError] = useState(false);
-
-    // Update version when selection changes
-    useEffect(() => {
-        setSelectionVersion(prev => prev + 1);
-    }, [selectedImages.length, selectionMode]);
 
     // Report state
     const [reportModalVisible, setReportModalVisible] = useState(false);
@@ -174,20 +175,39 @@ export default function HomeScreen({navigation}: TabScreenProps<'Home'>) {
         nsfw: 'None',
     });
 
+    useEffect(() => {
+        loadingRef.current = loading;
+    }, [loading]);
+
+    useEffect(() => {
+        refreshingRef.current = refreshing;
+    }, [refreshing]);
+
+    const selectionVersion = useMemo(
+        () => `${selectionMode}-${selectedImages.map((image) => image.id).join(',')}`,
+        [selectionMode, selectedImages]
+    );
+
     const fetchTrendingImages = useCallback(async (pageNum: number = 1, reset: boolean = false) => {
-        if (loading && !refreshing) return;
+        if (loadingRef.current && !refreshingRef.current) return;
 
         try {
             setNetworkError(false);
             if (reset) {
                 setLoading(true);
                 setCursor(undefined);
+                cursorRef.current = undefined;
             } else {
                 setLoading(true);
             }
 
-            const currentCursor = reset ? undefined : cursor;
-            const response = await civitaiService.getTrendingImages(filters, pageNum, 100, currentCursor);
+            const currentCursor = reset ? undefined : cursorRef.current;
+            const response = await civitaiService.getTrendingImages(
+                filtersRef.current,
+                pageNum,
+                100,
+                currentCursor
+            );
 
             if (response.items.length === 0) {
                 setHasNextPage(false);
@@ -216,6 +236,7 @@ export default function HomeScreen({navigation}: TabScreenProps<'Home'>) {
             let nextPageAvailable = false;
             if (response.metadata.nextCursor) {
                 setCursor(response.metadata.nextCursor);
+                cursorRef.current = response.metadata.nextCursor;
                 nextPageAvailable = true;
             } else if (response.metadata.nextPage) {
                 nextPageAvailable = true;
@@ -230,13 +251,14 @@ export default function HomeScreen({navigation}: TabScreenProps<'Home'>) {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [filters, cursor]);
+    }, []);
 
     useEffect(() => {
+        filtersRef.current = filters;
         imageIdsRef.current.clear();
         listRef.current?.scrollToOffset({offset: 0, animated: false});
         fetchTrendingImages(1, true);
-    }, [filters.sort, filters.period, filters.nsfw]);
+    }, [filters, fetchTrendingImages]);
 
     const handleFilterChange = (key: keyof TrendingFilters, value: any) => {
         setFilters(prev => ({...prev, [key]: value}));
@@ -246,6 +268,7 @@ export default function HomeScreen({navigation}: TabScreenProps<'Home'>) {
         setRefreshing(true);
         setPage(1);
         setCursor(undefined);
+        cursorRef.current = undefined;
         fetchTrendingImages(1, true);
     };
 

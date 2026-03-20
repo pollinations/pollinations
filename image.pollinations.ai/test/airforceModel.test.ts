@@ -19,24 +19,41 @@ process.env.AIRFORCE_API_KEY = "test-key";
 // Mock download
 vi.mock("node-fetch", () => ({}));
 
-// We also need to mock the progress bar and video download
+// We also need to mock the progress bar and video/image download
 vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
     if (typeof url === "string" && url.includes("example.com")) {
-        // Simulate downloading the video buffer
+        // HEAD requests for redirect resolution — return the same URL
+        if (init?.method === "HEAD") {
+            return { ok: true, url } as Response;
+        }
+        // Simulate downloading the result buffer
         return {
             ok: true,
             arrayBuffer: async () => new ArrayBuffer(8),
         } as Response;
     }
     lastFetchBody = JSON.parse((init?.body as string) ?? "{}");
+    // Check if this is a video model request (has sse field) or image model request
+    if (lastFetchBody.sse) {
+        return {
+            ok: true,
+            text: async () =>
+                'data: {"data":[{"url":"https://example.com/video.mp4"}]}\ndata: [DONE]\n',
+        } as Response;
+    }
+    // Image model response (JSON with b64_json)
     return {
         ok: true,
-        text: async () =>
-            'data: {"data":[{"url":"https://example.com/video.mp4"}]}\ndata: [DONE]\n',
+        json: async () => ({
+            data: [{ b64_json: Buffer.from("fake-image").toString("base64") }],
+        }),
     } as Response;
 });
 
-import { callAirforceVideoAPI } from "../src/models/airforceModel.ts";
+import {
+    callAirforceImageAPI,
+    callAirforceVideoAPI,
+} from "../src/models/airforceModel.ts";
 import type { ImageParams } from "../src/params.ts";
 
 const makeProgress = () => ({
@@ -117,6 +134,99 @@ describe("airforceModel - grok-imagine-video", () => {
 
         expect(lastFetchBody.image_urls).toEqual([
             "https://example.com/single.jpg",
+        ]);
+    });
+});
+
+describe("airforceModel - flux-2-dev size snapping", () => {
+    const imageParams: ImageParams = {
+        ...baseParams,
+        model: "flux-2-dev",
+    };
+
+    beforeEach(() => {
+        lastFetchBody = {};
+    });
+
+    it("snaps landscape dimensions to 1792x1024 with SSE + aspectRatio", async () => {
+        const params: ImageParams = {
+            ...imageParams,
+            width: 1920,
+            height: 1080,
+        };
+
+        await callAirforceImageAPI(
+            "test prompt",
+            params,
+            makeProgress() as any,
+            "req-img-1",
+            "flux-2-dev",
+        );
+
+        expect(lastFetchBody.size).toBe("1792x1024");
+        expect(lastFetchBody.aspectRatio).toBe("1792:1024");
+        expect(lastFetchBody.sse).toBe(true);
+        expect(lastFetchBody.response_format).toBe("url");
+    });
+
+    it("snaps portrait dimensions to 1024x1792 with SSE + aspectRatio", async () => {
+        const params: ImageParams = {
+            ...imageParams,
+            width: 768,
+            height: 1344,
+        };
+
+        await callAirforceImageAPI(
+            "test prompt",
+            params,
+            makeProgress() as any,
+            "req-img-2",
+            "flux-2-dev",
+        );
+
+        expect(lastFetchBody.size).toBe("1024x1792");
+        expect(lastFetchBody.aspectRatio).toBe("1024:1792");
+    });
+
+    it("snaps square dimensions to 1024x1024 with SSE + aspectRatio", async () => {
+        const params: ImageParams = {
+            ...imageParams,
+            width: 512,
+            height: 512,
+        };
+
+        await callAirforceImageAPI(
+            "test prompt",
+            params,
+            makeProgress() as any,
+            "req-img-3",
+            "flux-2-dev",
+        );
+
+        expect(lastFetchBody.size).toBe("1024x1024");
+        expect(lastFetchBody.aspectRatio).toBe("1024:1024");
+    });
+
+    it("still sends image_urls for image-to-image", async () => {
+        const params: ImageParams = {
+            ...imageParams,
+            width: 1024,
+            height: 1024,
+            image: ["https://example.com/input.jpg"],
+        };
+
+        await callAirforceImageAPI(
+            "test prompt",
+            params,
+            makeProgress() as any,
+            "req-img-4",
+            "flux-2-dev",
+        );
+
+        expect(lastFetchBody.size).toBe("1024x1024");
+        expect(lastFetchBody.aspectRatio).toBe("1024:1024");
+        expect(lastFetchBody.image_urls).toEqual([
+            "https://example.com/input.jpg",
         ]);
     });
 });

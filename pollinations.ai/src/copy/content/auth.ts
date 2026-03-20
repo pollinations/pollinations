@@ -25,8 +25,8 @@ export const AUTH_COPY = {
     tierLabel: "Tier",
 
     // BYOP CTA
-    byopTitle: "Add Pollen to your app",
+    byopTitle: "🐝 Register your app for BYOP",
     byopDescription:
-        "Let users pay with their own Pollen — your cost drops to zero.",
+        "🌼 Let your users connect and use their own Pollen in your app.",
     byopLink: "Learn about BYOP",
 };

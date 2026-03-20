@@ -10,8 +10,8 @@ body:
       description: What does your dashboard show?
       options:
         - Account under review
-        - Weekly pollen (1.5/week)
-        - Seed (3 pollen/day)
+        - Spore (0.01 pollen/hour)
+        - Seed (0.15 pollen/hour)
         - Flower (10 pollen/day)
         - Nectar (20 pollen/day)
 

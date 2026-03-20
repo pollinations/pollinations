@@ -1,0 +1,59 @@
+graph TD
+    CDN["CDN · DNS · WAF"] --> GEN["gen.pollinations.ai\nEdge Router"] --> ENTER
+
+    subgraph CF["Cloudflare Workers"]
+        ENTER["enter.pollinations.ai\nGateway\n───────────\nOAuth + API Keys\nTier System\nBalance Mgmt\nRate Limiting\nCost Tracking"]
+        MEDIA["media.pollinations.ai\nFile Uploads"]
+        FRONT["pollinations.ai\nReact Frontend"]
+    end
+
+    subgraph STORAGE["Cloudflare Storage Layer"]
+        D1["D1 · SQLite\n40K Users · Sessions\nAPI Keys · Balances"]
+        KV_S["KV Store\nCache · Refill State"]
+        R2["R2 · 48 TB\nImage/Text Cache\nUser Uploads"]
+        DO["Durable Objects\nPollen Rate Limiter"]
+    end
+
+    ENTER --> D1
+    ENTER --> KV_S
+    ENTER --> R2
+    ENTER --> DO
+
+    subgraph COMPUTE["AWS EC2 · us-east-1"]
+        TEXT["text service :16385\nPortkey · OpenAI-compat"]
+        IMAGE["image service :16384\nQueue Router · Sharp"]
+    end
+
+    ENTER --> TEXT
+    ENTER --> IMAGE
+
+    subgraph PROVIDERS["AI Provider APIs"]
+        PORTKEY["Portkey Gateway\nAzure · Anthropic · Google\nBedrock · Fireworks · OVH"]
+        IMG_API["Image APIs\nAzure · Vertex · ByteDance\nAlibaba · api.airforce"]
+        AUD_API["Audio APIs\nElevenLabs · Suno"]
+    end
+
+    TEXT --> PORTKEY
+    IMAGE --> IMG_API
+    ENTER --> AUD_API
+
+    subgraph GPU["GPU Compute"]
+        VAST["Vast.ai\n11 RTX 5090"]
+        IONET["io.net\n8 Workers"]
+        MODAL["Modal\nH200 Serverless"]
+    end
+
+    IMAGE --> VAST
+    IMAGE --> IONET
+    IMAGE --> MODAL
+
+    subgraph SUPPORT["Support Services"]
+        TB_S["TinyBird · ClickHouse\nAnalytics Events"]
+        STRIPE["Stripe · Packs"]
+        POLAR["Polar · Subs"]
+        GH["GitHub · SOPS"]
+    end
+
+    ENTER -.-> TB_S
+    STRIPE -.->|webhooks| ENTER
+    POLAR -.->|webhooks| ENTER

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐱 CatGPT Meme Generator | Pollinations.AI</title>
+    <title>CatGPT Meme Generator | Pollinations.AI</title>
 
     <meta property="og:title" content="CatGPT Meme Generator - Where Your Questions Meet Feline Indifference">
     <meta property="og:description"
@@ -37,30 +37,40 @@
 <body>
     <div class="container">
         <header>
-            <h1 class="emoji-title">
-                <span class="emoji-bounce">🐱</span>
-                CatGPT Meme Generator
-                <span class="emoji-bounce">✨</span>
-            </h1>
-            <p class="tagline">Ask a question. Get a cat response. 🐈</p>
+            <h1 class="emoji-title">Ask a question. Get a cat response.</h1>
+            <a href="https://www.instagram.com/missfitcomics/" target="_blank" rel="noopener" class="original-comic-link">
+                <img src="images/original-catgpt.png" alt="Original CatGPT comic by @missfitcomics" class="original-comic" />
+            </a>
+            <p class="tagline">Original comic by <a href="https://www.instagram.com/missfitcomics/" target="_blank" rel="noopener">@missfitcomics</a> (Tanika Godbole)</p>
         </header>
 
-        <div class="intro-section">
-            <p class="intro-text">
-                A collab with <a href="https://www.instagram.com/missfitcomics/" target="_blank" rel="noopener">Tanika
-                    Godbole</a>,
-                the original CatGPT creator! 🎨
-            </p>
-            <p class="intro-text small">
-                Powered by <a href="https://pollinations.ai" target="_blank" rel="noopener">Pollinations.AI</a> 🐝
-                | <a href="https://github.com/pollinations/pollinations/tree/main/apps/catgpt" target="_blank" rel="noopener">Open
-                    Source</a> 🌟
-            </p>
+        <div id="authContainer" class="auth-container">
+            <div id="authLoggedOut" class="auth-logged-out">
+                <div class="auth-info-text">
+                    <p class="auth-headline">Connect your <span class="auth-highlight">pollinations.ai</span> account</p>
+                    <p class="auth-subtext">Login with Pollinations to use</p>
+                </div>
+                <button id="authLoginBtn" class="auth-login-btn">Log In</button>
+            </div>
+            <div id="authLoggedIn" class="auth-logged-in hidden">
+                <div class="auth-bar">
+                    <div class="auth-user-pill">
+                        <img id="authAvatar" class="auth-avatar" src="" alt="avatar" />
+                        <div id="authAvatarFallback" class="auth-avatar-fallback">?</div>
+                        <span id="authUserName" class="auth-user-name">User</span>
+                    </div>
+                    <span id="authBalance" class="auth-balance-value">-</span>
+                    <span class="auth-spacer"></span>
+                    <a id="authDashboardLink" href="https://enter.pollinations.ai" target="_blank" rel="noopener" class="auth-dashboard-btn">Dashboard</a>
+                    <button id="authLogoutBtn" class="auth-logout-btn">Logout</button>
+                </div>
+                <span id="authUserEmail" class="hidden"></span>
+                <span id="authTier" class="hidden">-</span>
+                <span id="authApiKey" class="hidden">-</span>
+            </div>
         </div>
 
-        <div class="generator-section">
-            <h2>✨ Create Your Meme</h2>
-
+        <div class="section-card generator-section hidden">
             <div class="input-group">
                 <label for="userInput">What do you want to ask CatGPT?</label>
                 <textarea id="userInput"
@@ -69,35 +79,22 @@
             </div>
 
             <div class="input-group">
-                <label for="imageUpload">Optional: Upload your own reference image</label>
                 <div id="imageUploadContainer" class="upload-container">
-                    <input type="file" id="imageUpload" accept="image/*" class="image-upload-input" />
-                    <p class="upload-note">Upload an image to use as a style reference (max 5MB)</p>
+                    <label for="imageUpload" class="upload-btn">Upload Selfie (optional)</label>
+                    <input type="file" id="imageUpload" accept="image/*" class="hidden" />
                 </div>
 
                 <div id="imageThumbnailContainer" class="thumbnail-container hidden">
                     <img id="imageThumbnail" class="image-thumbnail" alt="Uploaded image preview" />
-                    <button id="removeImageBtn" class="remove-image-btn" aria-label="Remove image">
-                        ✕
-                    </button>
+                    <button id="removeImageBtn" class="remove-image-btn" aria-label="Remove image">✕</button>
                 </div>
             </div>
 
-            <button id="generateBtn" class="generate-btn">
-                <span class="btn-text">Generate Meme</span>
-                <span class="btn-emoji">🎨</span>
-            </button>
-
-            <div id="loadingIndicator" class="loading hidden">
-                <div class="loading-spinner"></div>
-                <p>CatGPT is thinking... 💭</p>
-            </div>
+            <button id="generateBtn" class="generate-btn">Generate Meme</button>
+            <div id="generateError" class="generate-error hidden"></div>
 
             <div id="resultSection" class="result-section hidden">
-                <h3>Your CatGPT Meme! 🎉</h3>
-                <div class="meme-container">
-                    <img id="generatedMeme" alt="Generated CatGPT meme" />
-                </div>
+                <img id="generatedMeme" alt="Generated CatGPT meme" />
                 <div class="action-buttons">
                     <button id="downloadBtn" class="action-btn">
                         <span>Download</span> 💾
@@ -109,32 +106,17 @@
             </div>
         </div>
 
-        <div class="your-memes-section">
-            <h2>✨ Your Memes</h2>
+        <div class="section-card">
+            <h2>Your Memes</h2>
             <div class="your-memes-grid" id="yourMemesGrid"></div>
-        </div>
-
-        <div class="examples-section">
-            <h2>🌟 Examples</h2>
+            <h2 style="margin-top: 2rem;">Examples</h2>
             <div class="examples-grid" id="examplesGrid"></div>
-        </div>
-
-        <div class="sponsor-section">
-            <p class="sponsor-text">
-                Keep your cat happy with premium pet food from
-                <a href="https://www.purapep.de/" target="_blank" rel="noopener" class="sponsor-link">
-                    PuraPep 🐾
-                </a>
-            </p>
         </div>
 
         <footer>
             <p>Made with 💜 by <a href="https://pollinations.ai" target="_blank" rel="noopener">Pollinations.AI</a></p>
-            <p class="footer-small">Original CatGPT comic by <a href="https://www.instagram.com/missfitcomics/"
-                    target="_blank" rel="noopener">Tanika Godbole</a></p>
             <p class="footer-small">
-                <a href="https://github.com/pollinations/pollinations/tree/main/apps/catgpt" target="_blank" rel="noopener">View
-                    on GitHub</a> 🐙
+                <a href="https://github.com/pollinations/pollinations/tree/main/apps/catgpt" target="_blank" rel="noopener">View on GitHub</a> 🐙
             </p>
         </footer>
     </div>

@@ -1,10 +1,10 @@
 import logging
-import re
 from typing import Any
 
 import aiohttp
 import discord
 
+from .._re import re
 from ..config import config
 
 logger = logging.getLogger(__name__)

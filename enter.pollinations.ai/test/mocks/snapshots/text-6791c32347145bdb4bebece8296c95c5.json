@@ -1,0 +1,126 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Dedup test 1772709779221"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2125",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 11:23:06 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-usage-completion-reasoning-tokens": "320",
+      "x-usage-completion-text-tokens": "238",
+      "x-usage-prompt-text-tokens": "15"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Got it: \"Dedup test 1772709779221\". What would you like me to do with that?\n\nI can help in several ways — pick one or tell me more:\n- Run a dedup on a list or file you paste/upload.\n- Explain deduplication strategies (exact, case-insensitive, fuzzy).\n- Give code snippets (Python, SQL, Excel) to deduplicate your data.\n\nQuick examples:\n- Python (preserve order):\n  seen = set()\n  result = []\n  for x in items:\n      if x not in seen:\n          seen.add(x)\n          result.append(x)\n\n- SQL (remove duplicates keeping lowest id, example for SQL Server / PostgreSQL):\n  WITH ranked AS (\n    SELECT *, ROW_NUMBER() OVER (PARTITION BY key_cols ORDER BY id) rn\n    FROM my_table\n  )\n  DELETE FROM my_table WHERE id IN (SELECT id FROM ranked WHERE rn > 1);\n\nTell me what format your data is and what rule you want for duplicates (keep first, keep last, merge rows, fuzzy match, etc.), and I’ll do it.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772709780,
+        "id": "pllns_095101dc06066fcaaf99082eb87e80cb",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 558,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 320,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 15,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 573
+        }
+      }
+    }
+  }
+}

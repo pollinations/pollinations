@@ -1,21 +1,27 @@
 // CommunityPage content configuration
 
 export const COMMUNITY_PAGE = {
+    pageTitle: "community",
+    pageDescription:
+        "Contribute to pollinations.ai — open source, open roadmap, open community",
     // Section 1 — Hero
     title: "Contribute",
-    subtitle:
-        "pollinations.ai is open source — the code, the roadmap, the conversations. Contributors shape the platform directly. Your PR can land in production tomorrow, and every contribution earns you Pollen.",
+    subtitlePrefix:
+        "🌸 pollinations.ai is open source — the code, the roadmap, the conversations.",
+    subtitleBold: "Contributors shape the platform directly.",
+    subtitleSuffix:
+        " Your PR can land in production tomorrow, and starting Q2, every contribution earns you Pollen. 🌿",
     heroStat1: "17K+",
     heroStat1Label: "Discord members",
     heroStat2: "4K+",
     heroStat2Label: "GitHub stars",
-    heroStat3: "600",
-    heroStat3Label: "new creators daily",
+    heroStat3: "500+",
+    heroStat3Label: "new developers daily",
 
-    // Section 2 — Earn Pollen
-    contributeTitle: "Earn Pollen",
+    // Section 2 — Level up
+    contributeTitle: "Level up",
     contributeBody:
-        "Activity on the platform helps you level up your tier. Higher tier means bigger daily Pollen grants and more free compute.",
+        "Activity on the platform moves you up tiers. Higher tier, more compute.",
     contributeCard1Title: "Ship an app",
     contributeCard1Body:
         "Publish something to the ecosystem. Biggest tier boost.",
@@ -24,21 +30,30 @@ export const COMMUNITY_PAGE = {
     contributeCard3Title: "Help in Discord",
     contributeCard3Body:
         "Answer a question, share what you built, help someone get unstuck.",
-    contributeNote:
-        "All activity feeds your creator tier: Seed → Flower → Nectar. More you do, more daily compute you get.",
+    contributeNotePre: "All activity feeds your tier: ",
+    contributeNoteLink: "Seed → Flower → Nectar",
+    contributeNotePost: ". More you do, more compute you get.",
     learnAboutTiersButton: "Learn about tiers",
 
     // Section 3 — Jump In
     jumpInTitle: "Where to start",
     discordTitle: "Discord",
-    discordSubtitle:
-        "Chat with builders, get help, share what you're working on. Start in #pollen-beta if you're new.",
+    discordEmoji: "💬",
+    discordDesc1: "Chat with builders, ",
+    discordDesc1Em: "get help",
+    discordDesc1End: ", share what you're working on.",
+    discordDesc2Pre: "Start in ",
+    discordDesc2Link: "#pollen-beta",
+    discordDesc2Post: " if you're new.",
     githubTitle: "GitHub",
-    githubSubtitle:
-        'Contribute code, report bugs, review PRs, or just star us. New here? Check the "good first issue" label.',
+    githubEmoji: "🛠️",
+    githubDesc: "Contribute code, report bugs, review PRs, or just ",
+    githubDescBold: "star us",
+    githubDescEnd: ".",
     submitAppTitle: "Submit Your App",
-    submitAppSubtitle:
-        "Built something? Get it in the showcase. Featured apps get visibility and help you level up.",
+    submitEmoji: "🚀",
+    submitDesc: "Built something? ",
+    submitDescBold: "Add it to the showcase.",
 
     // Buttons
     joinDiscordButton: "Join Discord",
@@ -73,11 +88,13 @@ export const COMMUNITY_PAGE = {
     // Top Contributors
     topContributorsTitle: "Most active contributors",
     topContributorsDescription:
-        "These folks are actively building and improving the platform. Want to join them? Check out our",
+        "These folks are actively building and improving the platform.",
+    topContributorsCta: "Want to join them? Check out our",
     githubRepositoryLink: "GitHub repository",
     overThePastYear: "and get started.",
     commitsLabel: "commits",
     commitLabel: "commit",
+    votesLabel: "votes",
 
     // Section 5 — Build Diary + Supporters
     buildDiaryTitle: "Build diary",
@@ -148,6 +165,12 @@ export const COMMUNITY_PAGE = {
             url: "https://api.airforce/",
             description:
                 "AI API gateway — alpha models (imagen-4, grok-video, qwen-character)",
+        },
+        {
+            name: "Seraphyn",
+            url: "https://seraphyn.ai/",
+            description:
+                "AI API gateway — community models (gpt-5.4, qwen3-tts)",
         },
     ],
 };

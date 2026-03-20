@@ -5,6 +5,9 @@ import { Panel } from "../ui/panel.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
+const isFractional = (v: number) => v > 0 && v < 1;
+const formatPollen = (v: number) => v.toFixed(isFractional(v) ? 3 : 2);
+
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
@@ -48,7 +51,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
             {percentage > 15 && (
                 <div className="absolute inset-0 flex items-center justify-center gap-1">
                     <span className={`${textColor} font-bold text-sm`}>
-                        {label} {value.toFixed(1)}
+                        {label} {formatPollen(value)}
                     </span>
                 </div>
             )}
@@ -90,13 +93,13 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
         totalPollen > 0 ? Math.min(100 - MIN_SEGMENT, rawFreePercentage) : 50;
 
     return (
-        <Panel color="purple" className="sm:p-8">
+        <Panel color="purple">
             <div className="flex flex-row justify-center text-center pb-1">
                 {/* Combined Pollen Gauge */}
                 <div className="flex flex-col items-center gap-4 w-full">
                     {/* Pollen amount above gauge */}
                     <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-950 tabular-nums">
-                        {totalPollen.toFixed(2)} pollen
+                        {formatPollen(totalPollen)} pollen
                     </span>
                     {/* Gauge */}
                     <div className="w-full max-w-[540px]">
@@ -107,7 +110,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={displayPaid}
                                 label="💎"
                                 color="purple"
-                                title={`💎 Purchased: ${displayPaid.toFixed(2)} pollen\nFrom packs you've bought\nRequired for 💎 Paid Only models; used after daily grants for others`}
+                                title={`💎 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 💎 Paid Only models; used after tier grants for others`}
                                 position="left"
                             />
                             {/* Free Pollen - Soft teal for free */}
@@ -116,7 +119,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={displayTier}
                                 label={tierEmoji}
                                 color="teal"
-                                title={`${tierEmoji} Daily: ${displayTier.toFixed(2)} pollen\nFree pollen from your tier, refills at 00:00 UTC\nUsed first, except for 💎 Paid Only models`}
+                                title={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 💎 Paid Only models`}
                                 position="right"
                                 offset={paidPercentage}
                             />
@@ -125,7 +128,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
             {/* Purchase info */}
-            <Card color="purple" className="mt-4">
+            <Card color="purple" className="mt-4 !border-transparent">
                 <p className="text-sm font-medium text-purple-900">
                     🎁 During beta, we double your pollen! ($5 → 10💎, $10 →
                     20💎, $20 → 40💎, $50 → 100💎)

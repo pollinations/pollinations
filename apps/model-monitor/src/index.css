@@ -1,15 +1,46 @@
 @import "tailwindcss";
 
-:root {
-    --font-mono:
-        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-        "Liberation Mono", monospace;
+@theme {
+    /* Pollinations palette — no other colors allowed */
+    --color-dark: #110518;
+    --color-muted: #4a3f5c;
+    --color-subtle: #6b5f80;
+    --color-white: #ffffff;
+    --color-cream: #F3EBDE;
+    --color-tan: #e8e2d8;
+    --color-border: #cfc8b8;
+
+    /* Modality colors: light (bg) + strong (text/border) */
+    --color-primary-light: #E9D9EF;
+    --color-primary-strong: #C9A9E4;
+    --color-secondary-light: #D8DFF8;
+    --color-secondary-strong: #A4B4DE;
+    --color-tertiary-light: #D4F0D7;
+    --color-tertiary-strong: #A8E6A2;
+    --color-accent-light: #F5FABC;
+    --color-accent-strong: #E8F372;
+
+    /* Status colors — exception for monitoring visibility */
+    --color-status-off: #dc2626;
+    --color-status-off-light: #fef2f2;
+    --color-status-degraded: #d97706;
+    --color-status-degraded-light: #fffbeb;
+
+    /* Shadows — hard offset, no blur */
+    --shadow-sm: 2px 2px 0px #110518;
+    --shadow-md: 4px 4px 0px #110518;
+
+    /* Fonts */
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono",
+        Menlo, Consolas, "Liberation Mono", monospace;
 }
 
-body {
-    font-family: var(--font-mono);
-    background-color: #fafafa;
-    color: #1a1a1a;
-    margin: 0;
-    padding: 0;
+@layer base {
+    body {
+        font-family: var(--font-mono);
+        background-color: var(--color-cream);
+        color: var(--color-dark);
+        margin: 0;
+        padding: 0;
+    }
 }

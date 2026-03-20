@@ -29,15 +29,15 @@ async function triggerTierRefill() {
 }
 
 describe("Tier Balance Management", () => {
-    describe("Daily Cron Refill", () => {
+    describe("Cron Refill", () => {
         test("should refill tier balance for all users based on their tier", async () => {
             const db = drizzle(env.DB);
             const executionContext = createExecutionContext();
 
             // Setup: Create test users with different tiers and depleted balances
             const testUsers = [
-                { id: "user-spore", tier: "spore", tierBalance: 0.5 },
-                { id: "user-seed", tier: "seed", tierBalance: 1.0 },
+                { id: "user-spore", tier: "spore", tierBalance: 0 },
+                { id: "user-seed", tier: "seed", tierBalance: 0 },
                 { id: "user-flower", tier: "flower", tierBalance: 2.0 },
                 { id: "user-nectar", tier: "nectar", tierBalance: 0 },
                 { id: "user-router", tier: "router", tierBalance: 100 },
@@ -67,7 +67,7 @@ describe("Tier Balance Management", () => {
                     });
             }
 
-            // Execute the scheduled handler
+            // Execute the refill
             await triggerTierRefill();
 
             // Verify: Check that all users have their tier balance refilled
@@ -86,12 +86,15 @@ describe("Tier Balance Management", () => {
                     )})`,
                 );
 
-            const isMonday = new Date().getUTCDay() === 1;
-
-            // Daily tiers always get refilled
-            expect(users.find((u) => u.id === "user-seed")?.tierBalance).toBe(
-                TIER_POLLEN.seed,
+            // Hourly tiers: incremental add (0 + increment)
+            expect(users.find((u) => u.id === "user-spore")?.tierBalance).toBe(
+                TIER_POLLEN.spore, // 0.01
             );
+            expect(users.find((u) => u.id === "user-seed")?.tierBalance).toBe(
+                TIER_POLLEN.seed, // 0.15
+            );
+
+            // Daily tiers: additive refill (capped at max)
             expect(users.find((u) => u.id === "user-flower")?.tierBalance).toBe(
                 TIER_POLLEN.flower,
             );
@@ -102,17 +105,8 @@ describe("Tier Balance Management", () => {
                 TIER_POLLEN.router,
             );
 
-            // Spore: weekly refill (Monday only)
-            const sporeUser = users.find((u) => u.id === "user-spore");
-            if (isMonday) {
-                expect(sporeUser?.tierBalance).toBe(TIER_POLLEN.spore);
-            } else {
-                // Not refilled on non-Monday — keeps pre-test balance
-                expect(sporeUser?.tierBalance).toBe(0.5);
-            }
-
-            // Daily-refill users should have lastTierGrant updated
-            for (const user of users.filter((u) => u.id !== "user-spore")) {
+            // All refilled users should have lastTierGrant updated
+            for (const user of users) {
                 expect(user.lastTierGrant).toBeDefined();
                 expect(user.lastTierGrant).toBeGreaterThan(Date.now() - 60000);
             }
@@ -163,6 +157,74 @@ describe("Tier Balance Management", () => {
             expect(user[0]?.tierBalance).toBe(TIER_POLLEN.flower);
             expect(user[0]?.packBalance).toBe(50); // Unchanged
             expect(user[0]?.cryptoBalance).toBe(25); // Unchanged
+        });
+
+        test("should recover negative balances gradually via additive refill", async () => {
+            const db = drizzle(env.DB);
+
+            // Setup: users with negative balances
+            const testUsers = [
+                { id: "neg-spore", tier: "spore", tierBalance: -0.005 },
+                { id: "neg-seed", tier: "seed", tierBalance: -0.5 },
+                { id: "neg-flower", tier: "flower", tierBalance: -5 },
+                { id: "neg-nectar", tier: "nectar", tierBalance: -15 },
+            ];
+
+            for (const user of testUsers) {
+                await db
+                    .insert(userTable)
+                    .values({
+                        id: user.id,
+                        email: `${user.id}@test.com`,
+                        name: user.id,
+                        tier: user.tier,
+                        tierBalance: user.tierBalance,
+                        packBalance: 0,
+                        cryptoBalance: 0,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    })
+                    .onConflictDoUpdate({
+                        target: userTable.id,
+                        set: {
+                            tier: user.tier,
+                            tierBalance: user.tierBalance,
+                        },
+                    });
+            }
+
+            await triggerTierRefill();
+
+            const users = await db
+                .select({
+                    id: userTable.id,
+                    tierBalance: userTable.tierBalance,
+                })
+                .from(userTable)
+                .where(
+                    sql`${userTable.id} IN (${sql.join(
+                        testUsers.map((u) => sql`${u.id}`),
+                        sql`, `,
+                    )})`,
+                );
+
+            // Additive refill: MIN(balance + increment, cap)
+            // Spore: MIN(-0.005 + 0.01, 0.01) = 0.005
+            expect(
+                users.find((u) => u.id === "neg-spore")?.tierBalance,
+            ).toBeCloseTo(-0.005 + TIER_POLLEN.spore, 4);
+            // Seed: MIN(-0.50 + 0.15, 0.15) = -0.35 (still negative, recovers over multiple refills)
+            expect(
+                users.find((u) => u.id === "neg-seed")?.tierBalance,
+            ).toBeCloseTo(-0.5 + TIER_POLLEN.seed, 4);
+            // Flower: MIN(-5 + 10, 10) = 5 (recovers in one daily refill)
+            expect(
+                users.find((u) => u.id === "neg-flower")?.tierBalance,
+            ).toBeCloseTo(-5 + TIER_POLLEN.flower, 4);
+            // Nectar: MIN(-15 + 20, 20) = 5 (recovers in one daily refill)
+            expect(
+                users.find((u) => u.id === "neg-nectar")?.tierBalance,
+            ).toBeCloseTo(-15 + TIER_POLLEN.nectar, 4);
         });
     });
 
@@ -316,48 +378,49 @@ describe("Tier Balance Management", () => {
         });
 
         test("identifyDeductionSource should pick single bucket", () => {
-            // Tier is positive — full amount attributed to tier
-            const fromTier = identifyDeductionSource(5, 3, 7);
+            // Tier is positive, has paid balance — tier first
+            const fromTier = identifyDeductionSource(5, 3, 7, 5);
             expect(fromTier.fromTier).toBe(7);
             expect(fromTier.fromCrypto).toBe(0);
             expect(fromTier.fromPack).toBe(0);
 
-            // Tier is zero, crypto is positive — full amount from crypto
-            const fromCrypto = identifyDeductionSource(0, 3, 7);
+            // Tier zero, crypto positive, has paid — falls to crypto
+            const fromCrypto = identifyDeductionSource(0, 3, 7, 0);
             expect(fromCrypto.fromTier).toBe(0);
             expect(fromCrypto.fromCrypto).toBe(7);
             expect(fromCrypto.fromPack).toBe(0);
 
-            // Tier and crypto are zero — full amount from pack
-            const fromPack = identifyDeductionSource(0, 0, 8);
+            // Tier/crypto zero, pack positive — falls to pack
+            const fromPack = identifyDeductionSource(0, 0, 8, 5);
             expect(fromPack.fromTier).toBe(0);
             expect(fromPack.fromCrypto).toBe(0);
             expect(fromPack.fromPack).toBe(8);
 
-            // All zero — falls through to pack
-            const allZero = identifyDeductionSource(0, 0, 3);
-            expect(allZero.fromPack).toBe(3);
+            // No paid balance (crypto+pack ≤ 0) — always tier, never spills
+            const noPaid = identifyDeductionSource(0, 0, 3);
+            expect(noPaid.fromTier).toBe(3);
+            expect(noPaid.fromPack).toBe(0);
 
-            // Negative tier, zero crypto — falls through to pack
-            const negTier = identifyDeductionSource(-3, 0, 4);
-            expect(negTier.fromTier).toBe(0);
-            expect(negTier.fromCrypto).toBe(0);
-            expect(negTier.fromPack).toBe(4);
+            // Negative tier, no paid balance — always tier
+            const negTierNoPaid = identifyDeductionSource(-3, 0, 4);
+            expect(negTierNoPaid.fromTier).toBe(4);
+            expect(negTierNoPaid.fromCrypto).toBe(0);
+            expect(negTierNoPaid.fromPack).toBe(0);
 
-            // Negative tier, positive crypto — skips tier, uses crypto
-            const negTierPosCrypto = identifyDeductionSource(-3, 2, 4);
+            // Negative tier, positive crypto+pack — falls to crypto
+            const negTierPosCrypto = identifyDeductionSource(-3, 2, 4, 0);
             expect(negTierPosCrypto.fromTier).toBe(0);
             expect(negTierPosCrypto.fromCrypto).toBe(4);
             expect(negTierPosCrypto.fromPack).toBe(0);
 
-            // All negative — falls through to pack
+            // All negative — no paid balance, always tier
             const allNeg = identifyDeductionSource(-3, -1, 5);
-            expect(allNeg.fromTier).toBe(0);
+            expect(allNeg.fromTier).toBe(5);
             expect(allNeg.fromCrypto).toBe(0);
-            expect(allNeg.fromPack).toBe(5);
+            expect(allNeg.fromPack).toBe(0);
         });
 
-        test("should deduct from pack when all buckets are negative or zero", async () => {
+        test("should deduct from tier when all buckets are negative or zero", async () => {
             const db = drizzle(env.DB);
             const userId = "test-all-negative";
 
@@ -383,13 +446,13 @@ describe("Tier Balance Management", () => {
                     },
                 });
 
-            // All buckets ≤ 0 — falls through to pack
+            // All paid buckets ≤ 0 — deducts from tier to prevent paid spillover
             await atomicDeductUserBalance(db, userId, 3);
 
             const balances = await getUserBalances(db, userId);
-            expect(balances.tierBalance).toBe(-1); // Unchanged
+            expect(balances.tierBalance).toBe(-4); // -1 - 3
             expect(balances.cryptoBalance).toBe(-1); // Unchanged
-            expect(balances.packBalance).toBe(-5); // -2 - 3
+            expect(balances.packBalance).toBe(-2); // Unchanged
         });
     });
 
@@ -452,7 +515,7 @@ describe("Tier Balance Management", () => {
             expect(getTierPollen("router")).toBe(TIER_POLLEN.router);
 
             // Default tier
-            expect(getTierPollen("spore")).toBe(1.5);
+            expect(getTierPollen("spore")).toBe(0.01);
         });
 
         test("tierNames should contain all valid tier names", () => {
@@ -523,7 +586,9 @@ describe("Tier Balance Management", () => {
 
             expect(response.status).toBe(402);
             const error = await response.json();
-            expect(error.error?.message).toContain("requires a paid balance");
+            expect(error.error?.message).toMatch(
+                /requires a paid balance|Insufficient balance/,
+            );
         });
 
         test("should reject nanobanana-pro when user has only tier balance", async ({
@@ -617,7 +682,9 @@ describe("Tier Balance Management", () => {
 
             expect(response.status).toBe(402);
             const error = await response.json();
-            expect(error.error?.message).toContain("requires a paid balance");
+            expect(error.error?.message).toMatch(
+                /requires a paid balance|Insufficient balance/,
+            );
         });
 
         test("should reject seedream-pro when user has only tier balance", async ({

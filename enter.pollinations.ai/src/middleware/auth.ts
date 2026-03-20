@@ -76,6 +76,20 @@ function extractApiKey(c: Context<AuthEnv>): string | null {
     return null;
 }
 
+function assertNotBanned(user: {
+    banned?: boolean | null;
+    banExpires?: Date | string | null;
+    banReason?: string | null;
+}): void {
+    if (user.banned !== true) return;
+    if (user.banExpires && new Date(user.banExpires) <= new Date()) return;
+    throw new HTTPException(403, {
+        message: user.banReason
+            ? `Account banned: ${user.banReason}`
+            : "Account banned",
+    });
+}
+
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
         const _log = c.get("log").getChild("auth");
@@ -87,6 +101,9 @@ export const auth = (options: AuthOptions) =>
                 headers: c.req.raw.headers,
             });
             if (!result?.user) return null;
+
+            assertNotBanned(result.user);
+
             return {
                 user: result?.user,
                 session: result?.session,
@@ -138,6 +155,10 @@ export const auth = (options: AuthOptions) =>
             // Check if the key is disabled
             if (fullApiKey?.enabled === false) {
                 return null;
+            }
+
+            if (fullApiKey?.user) {
+                assertNotBanned(fullApiKey.user);
             }
 
             return {

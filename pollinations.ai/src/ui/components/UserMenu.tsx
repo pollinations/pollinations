@@ -38,7 +38,7 @@ export function UserMenu() {
                 variant="primary"
                 size={null}
                 onClick={login}
-                className="px-3 py-1.5 lg:px-5 lg:py-1.5 text-base"
+                className="self-start px-3 py-1.5 lg:px-5 lg:py-1.5 text-xs bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
             >
                 {copy.loginButton}
             </Button>
@@ -55,7 +55,7 @@ export function UserMenu() {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 font-headline text-base font-black uppercase tracking-wider text-text-body-main bg-surface-page backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button transition-all hover:bg-button-secondary-bg hover:shadow-shadow-brand-md whitespace-nowrap"
+                className="flex items-center gap-4 px-3 py-1.5 font-headline text-xs font-black tracking-wider text-dark bg-secondary-strong border-r-4 border-b-4 border-dark rounded-button transition hover:bg-secondary-strong/80 hover:text-dark hover:shadow-dark-md whitespace-nowrap"
             >
                 {profile?.image && (
                     <img
@@ -66,18 +66,18 @@ export function UserMenu() {
                 )}
                 <span className="max-w-[140px] truncate">{displayName}</span>
                 {balance !== null && (
-                    <span className="text-text-brand">
+                    <span className="text-accent-strong">
                         {balance.balance.toFixed(1)} {copy.pollenUnit}
                     </span>
                 )}
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 bg-[rgb(var(--surface-base))] backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button p-4 z-50 shadow-shadow-brand-lg">
+                <div className="absolute right-0 top-full mt-2 w-72 bg-secondary-strong/20 backdrop-blur-md border-r-4 border-b-4 border-dark rounded-button p-4 z-50 shadow-dark-lg">
                     {/* Profile */}
                     {profile && (
                         <div className="mb-3">
-                            <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block mb-1">
+                            <span className="text-xs uppercase tracking-wider text-subtle font-medium block mb-1">
                                 {copy.accountLabel}
                             </span>
                             <div className="flex items-center gap-1.5">
@@ -88,7 +88,7 @@ export function UserMenu() {
                                         className="w-5 h-5 rounded-full shrink-0"
                                     />
                                 )}
-                                <span className="font-headline text-base font-black text-text-body-main">
+                                <span className="font-headline text-xs font-black text-dark">
                                     {displayName}
                                 </span>
                             </div>
@@ -98,10 +98,10 @@ export function UserMenu() {
                     {/* Balance */}
                     {balance !== null && (
                         <div className="mb-3">
-                            <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block">
+                            <span className="text-xs uppercase tracking-wider text-subtle font-medium block">
                                 {copy.balanceLabel}
                             </span>
-                            <span className="font-headline text-base font-black text-text-brand">
+                            <span className="font-headline text-xs font-black text-dark">
                                 {balance.balance.toFixed(2)} {copy.pollenUnit}
                             </span>
                         </div>
@@ -110,10 +110,10 @@ export function UserMenu() {
                     {/* Tier (creator tiers only) */}
                     {tierEmoji && profile?.tier && (
                         <div className="mb-3">
-                            <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block">
+                            <span className="text-xs uppercase tracking-wider text-subtle font-medium block">
                                 {copy.tierLabel}
                             </span>
-                            <span className="font-headline text-base font-black text-text-body-main">
+                            <span className="font-headline text-xs font-black text-dark">
                                 {tierEmoji}{" "}
                                 {profile.tier.charAt(0).toUpperCase() +
                                     profile.tier.slice(1)}
@@ -123,10 +123,10 @@ export function UserMenu() {
 
                     {/* API Key */}
                     <div className="mb-4">
-                        <span className="text-xs uppercase tracking-wider text-text-body-tertiary font-medium block">
+                        <span className="text-xs uppercase tracking-wider text-subtle font-medium block">
                             {copy.apiKeyLabel}
                         </span>
-                        <span className="font-mono text-base text-text-body-secondary">
+                        <span className="font-mono text-base text-muted">
                             {apiKey.slice(0, 4)}••••••••
                         </span>
                     </div>
@@ -136,15 +136,15 @@ export function UserMenu() {
                         href={LINKS.byopDocs}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block mb-4 p-2 rounded-md bg-[rgb(var(--surface-page))] hover:opacity-80 transition-opacity"
+                        className="block mb-4 p-2 rounded-md bg-[rgb(var(--cream))] hover:opacity-80 transition-opacity"
                     >
-                        <span className="text-xs uppercase tracking-wider text-text-brand font-bold block">
+                        <span className="text-xs uppercase tracking-wider text-dark font-bold block">
                             🔌 {copy.byopTitle}
                         </span>
-                        <span className="text-xs text-text-body-secondary block mt-0.5">
+                        <span className="text-xs text-muted block mt-0.5">
                             {copy.byopDescription}
                         </span>
-                        <span className="text-xs text-text-brand font-medium mt-1 block">
+                        <span className="text-xs text-dark font-medium mt-1 block">
                             {copy.byopLink} →
                         </span>
                     </a>
@@ -157,7 +157,7 @@ export function UserMenu() {
                         rel="noopener noreferrer"
                         variant="primary"
                         size="sm"
-                        className="w-full mb-2"
+                        className="w-full mb-2 bg-[rgb(var(--primary-strong))] text-dark hover:bg-[rgb(var(--primary-strong)/0.8)] hover:text-dark"
                     >
                         {copy.enterLink}
                     </Button>

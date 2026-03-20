@@ -1,0 +1,93 @@
+graph LR
+    subgraph CLIENTS["Clients · ~2.2M req/day"]
+        direction TB
+        WEB["pollinations.ai"]
+        SDK["SDK / npm"]
+        BOTS["Discord · Telegram · WhatsApp"]
+        APPS["500+ Apps"]
+        MCP_C["MCP · AI Agents"]
+    end
+
+    GEN["gen.pollinations.ai\nEdge Router"]
+    ENTER["enter.pollinations.ai\nAuth · Billing · Routing"]
+
+    CLIENTS --> GEN --> ENTER
+
+    ENTER --> TEXT_SVC
+    ENTER --> IMG_SVC
+    ENTER --> AUD
+
+    subgraph TEXT_SVC["Text Service · EC2"]
+        PORTKEY["Portkey Gateway"]
+    end
+
+    subgraph IMG_SVC["Image Service · EC2"]
+        LB["Queue Router"]
+    end
+
+    subgraph AUD["Audio"]
+        direction TB
+        ELEVEN["ElevenLabs TTS"]
+        SUNO_A["Suno Music"]
+    end
+
+    subgraph AZURE["Azure OpenAI"]
+        direction TB
+        GPT5["GPT-5-mini · 5.2 · 5-nano"]
+        GROK4["Grok-4"]
+        GPTI["GPT Image · Kontext"]
+    end
+
+    subgraph ANTHRO["Anthropic"]
+        direction TB
+        CLAUDE["Claude Haiku 4.5\nSonnet 4.6 · Opus 4.6"]
+    end
+
+    subgraph GOOGLE["Google Vertex AI"]
+        direction TB
+        GEM["Gemini 3 Flash/Pro\n2.5 Flash/Pro"]
+        NANO["Nanobanana · Veo 3.1"]
+    end
+
+    subgraph AWS_B["AWS Bedrock"]
+        NOVA["Nova Micro"]
+    end
+
+    subgraph FIRE["Fireworks AI"]
+        direction TB
+        FIRE_M["DeepSeek V3.2 · Kimi K2.5\nGLM-5 · MiniMax M2.5"]
+    end
+
+    subgraph OTHER_T["Other Text"]
+        direction TB
+        OVH_T["OVHcloud: Qwen3 · Mistral"]
+        PERP["Perplexity: Sonar"]
+        AIR_T["api.airforce"]
+    end
+
+    subgraph GPU_SELF["Self-Hosted GPUs"]
+        direction TB
+        VAST["Vast.ai · ~11 RTX 5090\nFlux Schnell · Z-Image"]
+        IONET["io.net · 8 Workers"]
+        MODAL["Modal · Klein · LTX-2"]
+    end
+
+    subgraph OTHER_I["Other Image/Video APIs"]
+        direction TB
+        ARK["ByteDance: Seedream · Seedance"]
+        DASH["Alibaba: Wan 2.6 Video"]
+        AIR_I["api.airforce: Imagen 4"]
+        PRUNA["Pruna AI"]
+    end
+
+    PORTKEY --> AZURE
+    PORTKEY --> ANTHRO
+    PORTKEY --> GOOGLE
+    PORTKEY --> AWS_B
+    PORTKEY --> FIRE
+    PORTKEY --> OTHER_T
+
+    LB --> GPU_SELF
+    LB --> AZURE
+    LB --> GOOGLE
+    LB --> OTHER_I

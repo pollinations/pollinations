@@ -1,0 +1,97 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#fff3e0', 'primaryBorderColor': '#e65100', 'primaryTextColor': '#1a1a1a', 'lineColor': '#666', 'secondaryColor': '#e3f2fd', 'tertiaryColor': '#f3e5f5', 'fontSize': '14px', 'fontFamily': 'Inter, system-ui, sans-serif'}}}%%
+
+graph LR
+    subgraph CLIENTS["👥 Clients · ~2.2M req/day · 40K+ users"]
+        direction TB
+        WEB["🌐 pollinations.ai"]
+        SDK["📦 SDK / npm"]
+        BOTS["🤖 Discord · Telegram\nWhatsApp"]
+        APPS["📱 500+ Apps"]
+        MCP_C["🔌 MCP Server\nClaude · AI Agents"]
+    end
+
+    GEN["⚡ gen.pollinations.ai\nCloudflare Edge Router\n─────────────\nURL rewriting\nService binding"]:::cfWorker
+    ENTER["🔐 enter.pollinations.ai\nAPI Gateway\n─────────────\nAuth · Tiers · Billing\nRate Limiting\n280M req/month"]:::cfWorker
+
+    CLIENTS --> GEN --> ENTER
+
+    ENTER -->|"OpenAI-compat\n~1,340 RPM"| TEXT_SVC
+    ENTER -->|"image / video\n~441 img/min"| IMG_SVC
+    ENTER -->|"TTS / music"| AUD
+
+    subgraph TEXT_SVC["📝 Text Service · EC2 :16385"]
+        PORTKEY["🔀 Portkey Gateway\nportkey.pollinations.ai\n25+ models · 10+ providers"]
+    end
+
+    subgraph IMG_SVC["🎨 Image Service · EC2 :16384"]
+        LB["⚖️ Queue Router\nLeast-busy selection\nConcurrency: 2/server"]
+    end
+
+    subgraph AUD["🔊 Audio · Direct API"]
+        direction TB
+        ELEVEN["ElevenLabs\nTTS · Voices"]
+        SUNO_A["Suno\nMusic Gen"]
+    end
+
+    subgraph AZURE["☁️ Azure OpenAI"]
+        direction TB
+        GPT5["GPT-5-mini · 5.2 · 5-nano\nGrok-4"]:::textModel
+        GPTI["GPT Image\nKontext (FLUX.1)"]:::imgModel
+    end
+
+    subgraph ANTHRO["🟤 Anthropic"]
+        CLAUDE["Claude Haiku 4.5\nSonnet 4.6 · Opus 4.6"]:::textModel
+    end
+
+    subgraph GOOGLE["🔵 Google Vertex AI"]
+        direction TB
+        GEM["Gemini 3 Flash/Pro\n2.5 Flash Lite/Pro"]:::textModel
+        NANO["Nanobanana (Gemini)\nVeo 3.1 Video"]:::imgModel
+    end
+
+    subgraph AWS_B["🟠 AWS Bedrock"]
+        NOVA["Nova Micro → Lite"]:::textModel
+    end
+
+    subgraph FIRE["🔥 Fireworks AI"]
+        FIRE_M["DeepSeek V3.2\nKimi K2.5\nGLM-5 · MiniMax M2.5"]:::textModel
+    end
+
+    subgraph OTHER_T["📡 Other Text APIs"]
+        direction TB
+        OVH_T["OVHcloud\nQwen3 · Mistral"]:::textModel
+        PERP["Perplexity\nSonar web search"]:::textModel
+        AIR_T["api.airforce\nCommunity models"]:::textModel
+    end
+
+    subgraph GPU_SELF["🖥️ Self-Hosted GPUs"]
+        direction TB
+        VAST["Vast.ai\n~11× RTX 5090\nFlux Schnell · Z-Image"]:::gpuNode
+        IONET["io.net\n8 Workers\nFlux + Z-Image"]:::gpuNode
+        MODAL["Modal.com\nKlein (Flux 4B)\nLTX-2 Video (H200)"]:::gpuNode
+    end
+
+    subgraph OTHER_I["🎬 Other Image/Video APIs"]
+        direction TB
+        ARK["ByteDance\nSeedream 5 · Seedance"]:::imgModel
+        DASH["Alibaba DashScope\nWan 2.6 Video"]:::imgModel
+        AIR_I["api.airforce\nImagen 4 · Grok"]:::imgModel
+        PRUNA["Pruna AI\nP-Image · P-Video"]:::imgModel
+    end
+
+    PORTKEY --> AZURE
+    PORTKEY --> ANTHRO
+    PORTKEY --> GOOGLE
+    PORTKEY --> AWS_B
+    PORTKEY --> FIRE
+    PORTKEY --> OTHER_T
+
+    LB --> GPU_SELF
+    LB --> AZURE
+    LB --> GOOGLE
+    LB --> OTHER_I
+
+    classDef cfWorker fill:#F48120,color:#fff,stroke:#c66000,stroke-width:2px,font-weight:bold
+    classDef textModel fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+    classDef imgModel fill:#fce4ec,stroke:#c62828,color:#b71c1c
+    classDef gpuNode fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20,stroke-width:2px

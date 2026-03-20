@@ -10,6 +10,7 @@ import { ensureConfigured } from "@/logger.ts";
 import { createFetchMock, teardownFetchMock } from "./mocks/fetch.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockPolar } from "./mocks/polar.ts";
+import { createMockTextService } from "./mocks/text-service.ts";
 import { createMockTinybird } from "./mocks/tinybird.ts";
 import { createMockVcr } from "./mocks/vcr.ts";
 
@@ -27,6 +28,7 @@ const createMocks = () => ({
     polar: createMockPolar(),
     tinybird: createMockTinybird(),
     github: createMockGithub(),
+    text: createMockTextService(),
     vcr: createMockVcr(globalThis.fetch),
 });
 

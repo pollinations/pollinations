@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
+import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { UserMenu } from "../components/UserMenu";
-import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
@@ -16,7 +16,7 @@ import { Body, Title } from "../components/ui/typography";
 function PlayPage() {
     const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
-    const { apiKey } = useAuth();
+    const { apiKey, isLoggedIn } = useAuth();
     const {
         imageModels,
         textModels,
@@ -25,10 +25,12 @@ function PlayPage() {
         allowedImageModelIds,
         allowedTextModelIds,
         allowedAudioModelIds,
+        isLoading: isLoadingModels,
     } = useModelList(apiKey);
 
     // Get translated copy
     const { copy: pageCopy, isTranslating } = usePageCopy(PLAY_PAGE);
+    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const allModels = useMemo(() => {
         const typeOrder: Record<string, number> = {
@@ -67,6 +69,14 @@ function PlayPage() {
             ? pageCopy.imagePlaceholder
             : pageCopy.textPlaceholder;
 
+    const textareaColorClass = isVideoModel
+        ? "border-accent-strong focus:ring-accent-strong"
+        : isAudioModel
+          ? "border-tertiary-strong focus:ring-tertiary-strong"
+          : isImageModel
+            ? "border-primary-strong focus:ring-primary-strong"
+            : "border-secondary-strong focus:ring-secondary-strong";
+
     return (
         <PageContainer>
             <PageCard isTranslating={isTranslating}>
@@ -76,20 +86,20 @@ function PlayPage() {
                 </div>
 
                 <div className="mb-6">
-                    <Body className="mb-3">{pageCopy.createDescription}</Body>
-                    <Button
-                        as="a"
+                    <Body className="mb-3">
+                        {pageCopy.createDescriptionPrefix}{" "}
+                        <strong>{pageCopy.createDescriptionBold}</strong>
+                        {pageCopy.createDescriptionSuffix}
+                    </Body>
+                    <a
                         href={LINKS.enter}
                         target="_blank"
                         rel="noopener noreferrer"
-                        variant="iconText"
-                        className="inline-flex"
+                        className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
                     >
-                        <span className="font-headline text-sm md:text-base font-black uppercase tracking-wider text-text-body-main">
-                            {pageCopy.pricingLinkText}
-                        </span>
-                        <ExternalLinkIcon className="w-3 h-3 md:w-4 md:h-4 text-text-brand" />
-                    </Button>
+                        {pageCopy.pricingLinkText}
+                        <ExternalLinkIcon className="w-3 h-3" strokeWidth="4" />
+                    </a>
                 </div>
 
                 <ModelSelector
@@ -99,6 +109,8 @@ function PlayPage() {
                     allowedImageModelIds={allowedImageModelIds}
                     allowedTextModelIds={allowedTextModelIds}
                     allowedAudioModelIds={allowedAudioModelIds}
+                    isLoading={isLoadingModels}
+                    isLoggedIn={isLoggedIn}
                 />
 
                 <div className="flex flex-col gap-4">
@@ -107,7 +119,7 @@ function PlayPage() {
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder={promptPlaceholder}
-                            className="min-h-[100px] p-3 border border-border-main rounded bg-transparent font-bold text-text-body-main focus:outline-none focus:ring-2 focus:ring-border-brand resize-none"
+                            className={`min-h-[100px] p-3 border-2 rounded bg-transparent font-bold text-dark focus:outline-none focus:ring-2 resize-none ${textareaColorClass}`}
                         />
                     </div>
                     <PlayGenerator

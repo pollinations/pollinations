@@ -19,37 +19,65 @@ interface Env {
     ENTER: Fetcher;
 }
 
+/** Append X-Robots-Tag to prevent search engines from indexing API responses */
+function noIndex(response: Response): Response {
+    const res = new Response(response.body, response);
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return res;
+}
+
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         const url = new URL(request.url);
         const path = url.pathname;
 
+        // Serve robots.txt — block infinite generation paths, allow docs
+        if (path === "/robots.txt") {
+            return new Response(
+                [
+                    "User-agent: *",
+                    "Allow: /api/docs",
+                    "Allow: /api/docs/llm.txt",
+                    "Disallow: /image/",
+                    "Disallow: /text/",
+                    "Disallow: /video/",
+                    "Disallow: /audio/",
+                    "Disallow: /v1/",
+                    "Disallow: /api/generate/",
+                    "Disallow: /api/v1/",
+                ].join("\n"),
+                { headers: { "Content-Type": "text/plain" } },
+            );
+        }
+
         // Redirect root and /docs to API docs
         if (path === "/" || path === "/docs") {
-            return Response.redirect(`${url.origin}/api/docs`, 302);
+            return Response.redirect(`${url.origin}/api/docs`, 301);
         }
 
         // Convenience: /models → /api/generate/text/models (most common use case)
         if (path === "/models") {
             url.pathname = "/api/generate/text/models";
-            return env.ENTER.fetch(url, request);
+            return noIndex(await env.ENTER.fetch(url, request));
         }
 
         // Don't rewrite /api/* paths - they're already in the correct format
+        // Allow docs to be indexed; block all other API routes
         if (path.startsWith("/api/")) {
-            return env.ENTER.fetch(request);
+            const response = await env.ENTER.fetch(request);
+            return path.startsWith("/api/docs") ? response : noIndex(response);
         }
 
         // Account routes: /account/* → /api/account/*
         if (path.startsWith("/account")) {
             url.pathname = "/api" + path;
-            return env.ENTER.fetch(url, request);
+            return noIndex(await env.ENTER.fetch(url, request));
         }
 
         // Rewrite API paths: /image/*, /text/*, /v1/* → /api/generate/*
         url.pathname = "/api/generate" + path;
 
         // Forward via service binding (zero latency - same V8 isolate)
-        return env.ENTER.fetch(url, request);
+        return noIndex(await env.ENTER.fetch(url, request));
     },
 };

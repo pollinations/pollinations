@@ -2,6 +2,7 @@ import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { FC } from "react";
+import { useState } from "react";
 import { cn } from "@/util.ts";
 import { Badge } from "../ui/badge.tsx";
 import { getModelDisplayName } from "./model-utils.ts";
@@ -10,7 +11,6 @@ type AccountPermissionsInputProps = {
     value: string[] | null;
     onChange: (value: string[] | null) => void;
     disabled?: boolean;
-    // Model permissions
     allowedModels: string[] | null;
     onModelsChange: (models: string[] | null) => void;
 };
@@ -33,7 +33,6 @@ const ACCOUNT_PERMISSIONS = [
     },
 ] as const;
 
-// Build model lists from the shared registry
 const textModels = Object.keys(TEXT_SERVICES)
     .map((id) => ({
         id,
@@ -79,6 +78,18 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     allowedModels,
     onModelsChange,
 }) => {
+    const isUnrestricted = allowedModels === null;
+    const [isExpanded, setIsExpanded] = useState(!isUnrestricted);
+
+    const totalModels =
+        textModels.length +
+        imageModels.length +
+        videoModels.length +
+        audioModels.length;
+    const selectedCount = isUnrestricted
+        ? totalModels
+        : (allowedModels ?? []).length;
+
     const handleToggle = (permissionId: string) => {
         const currentPermissions = value ?? [];
         const hasPermission = currentPermissions.includes(permissionId);
@@ -91,22 +102,6 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         } else {
             onChange([...currentPermissions, permissionId]);
         }
-    };
-
-    // Model permissions logic
-    const isUnrestricted = allowedModels === null;
-    const totalModels =
-        textModels.length +
-        imageModels.length +
-        videoModels.length +
-        audioModels.length;
-    const selectedCount = isUnrestricted
-        ? totalModels
-        : (allowedModels ?? []).length;
-
-    const toggleRestrictionMode = () => {
-        if (disabled) return;
-        onModelsChange(isUnrestricted ? [] : null);
     };
 
     const toggleModel = (modelId: string) => {
@@ -145,11 +140,29 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     const isCategoryAllSelected = (categoryModels: { id: string }[]) =>
         categoryModels.every((m) => (allowedModels ?? []).includes(m.id));
 
+    const handleHeaderClick = () => {
+        if (disabled) return;
+        setIsExpanded((prev) => !prev);
+    };
+
+    const handleRestrictionToggle = (
+        e: React.MouseEvent<HTMLButtonElement>,
+    ) => {
+        e.stopPropagation();
+        if (disabled) return;
+        if (isUnrestricted) {
+            onModelsChange([]);
+            setIsExpanded(true);
+        } else {
+            onModelsChange(null);
+        }
+    };
+
     return (
         <div>
             <div className="text-sm font-semibold mb-4">Permissions</div>
             <div className="space-y-2">
-                {/* Model Permission - Full width box */}
+                {/* Model Permission */}
                 <div
                     className={cn(
                         "rounded-lg border transition-all",
@@ -161,9 +174,9 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 >
                     <button
                         type="button"
-                        onClick={toggleRestrictionMode}
+                        onClick={handleHeaderClick}
                         disabled={disabled}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-left"
+                        className="w-full flex items-center gap-3 px-3 py-2 text-left cursor-pointer"
                     >
                         <div className="flex-1">
                             <span className="text-sm font-medium">Model</span>
@@ -171,7 +184,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                 {" "}
                                 –{" "}
                                 {isUnrestricted
-                                    ? "Allow selected models"
+                                    ? "All models allowed"
                                     : "Limited to selected models"}
                             </span>
                         </div>
@@ -188,155 +201,107 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                 ? "All"
                                 : `${selectedCount} selected`}
                         </Badge>
-                        <span className="text-gray-400 text-lg leading-none">
-                            ✕
+                        <span
+                            className={cn(
+                                "text-gray-400 text-sm leading-none transition-transform duration-200",
+                                isExpanded && "rotate-180",
+                            )}
+                        >
+                            ▾
                         </span>
                     </button>
 
-                    {/* Model chips when restricting */}
-                    {!isUnrestricted && (
-                        <div className="px-3 pb-3 space-y-3 border-t border-gray-200 pt-3">
-                            {/* Text models */}
-                            <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-semibold text-gray-500 tracking-wide">
-                                        Text
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            toggleCategory(textModels)
-                                        }
-                                        disabled={disabled}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer"
-                                    >
-                                        {isCategoryAllSelected(textModels)
-                                            ? "Deselect all"
-                                            : "Select all"}
-                                    </button>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    {textModels.map((model) => (
-                                        <ModelChip
-                                            key={model.id}
-                                            apiName={model.id}
-                                            officialName={model.label}
-                                            selected={isModelSelected(model.id)}
-                                            onClick={() =>
-                                                toggleModel(model.id)
-                                            }
-                                            disabled={disabled}
-                                        />
-                                    ))}
-                                </div>
+                    {/* Expandable model panel */}
+                    <div
+                        className={cn(
+                            "overflow-hidden transition-all duration-200 ease-in-out",
+                            isExpanded
+                                ? "max-h-[2000px] opacity-100"
+                                : "max-h-0 opacity-0",
+                        )}
+                    >
+                        <div
+                            className="px-3 pb-3 space-y-3 border-t border-gray-200 pt-3 overflow-y-auto"
+                            style={{
+                                maxHeight: "50vh",
+                                scrollbarWidth: "thin",
+                            }}
+                        >
+                            {/* Restriction toggle */}
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs text-gray-500">
+                                    {isUnrestricted
+                                        ? "This key can access all models"
+                                        : "Select which models this key can access"}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={handleRestrictionToggle}
+                                    disabled={disabled}
+                                    className={cn(
+                                        "text-xs px-2 py-1 rounded-md transition-colors cursor-pointer",
+                                        isUnrestricted
+                                            ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                                            : "bg-green-100 text-green-700 hover:bg-green-200",
+                                    )}
+                                >
+                                    {isUnrestricted
+                                        ? "Restrict models"
+                                        : "Allow all"}
+                                </button>
                             </div>
 
-                            {/* Image models */}
-                            <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-semibold text-gray-500 tracking-wide">
-                                        Image
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            toggleCategory(imageModels)
-                                        }
+                            {/* Model chips when restricted */}
+                            {!isUnrestricted && (
+                                <>
+                                    <ModelCategory
+                                        label="Text"
+                                        models={textModels}
                                         disabled={disabled}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer"
-                                    >
-                                        {isCategoryAllSelected(imageModels)
-                                            ? "Deselect all"
-                                            : "Select all"}
-                                    </button>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    {imageModels.map((model) => (
-                                        <ModelChip
-                                            key={model.id}
-                                            apiName={model.id}
-                                            officialName={model.label}
-                                            selected={isModelSelected(model.id)}
-                                            onClick={() =>
-                                                toggleModel(model.id)
-                                            }
-                                            disabled={disabled}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Video models */}
-                            <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-semibold text-gray-500 tracking-wide">
-                                        Video
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            toggleCategory(videoModels)
+                                        isModelSelected={isModelSelected}
+                                        toggleModel={toggleModel}
+                                        toggleCategory={toggleCategory}
+                                        isCategoryAllSelected={
+                                            isCategoryAllSelected
                                         }
+                                    />
+                                    <ModelCategory
+                                        label="Image"
+                                        models={imageModels}
                                         disabled={disabled}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer"
-                                    >
-                                        {isCategoryAllSelected(videoModels)
-                                            ? "Deselect all"
-                                            : "Select all"}
-                                    </button>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    {videoModels.map((model) => (
-                                        <ModelChip
-                                            key={model.id}
-                                            apiName={model.id}
-                                            officialName={model.label}
-                                            selected={isModelSelected(model.id)}
-                                            onClick={() =>
-                                                toggleModel(model.id)
-                                            }
-                                            disabled={disabled}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Audio models */}
-                            <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-semibold text-gray-500 tracking-wide">
-                                        Audio
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            toggleCategory(audioModels)
+                                        isModelSelected={isModelSelected}
+                                        toggleModel={toggleModel}
+                                        toggleCategory={toggleCategory}
+                                        isCategoryAllSelected={
+                                            isCategoryAllSelected
                                         }
+                                    />
+                                    <ModelCategory
+                                        label="Video"
+                                        models={videoModels}
                                         disabled={disabled}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer"
-                                    >
-                                        {isCategoryAllSelected(audioModels)
-                                            ? "Deselect all"
-                                            : "Select all"}
-                                    </button>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    {audioModels.map((model) => (
-                                        <ModelChip
-                                            key={model.id}
-                                            apiName={model.id}
-                                            officialName={model.label}
-                                            selected={isModelSelected(model.id)}
-                                            onClick={() =>
-                                                toggleModel(model.id)
-                                            }
-                                            disabled={disabled}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
+                                        isModelSelected={isModelSelected}
+                                        toggleModel={toggleModel}
+                                        toggleCategory={toggleCategory}
+                                        isCategoryAllSelected={
+                                            isCategoryAllSelected
+                                        }
+                                    />
+                                    <ModelCategory
+                                        label="Audio"
+                                        models={audioModels}
+                                        disabled={disabled}
+                                        isModelSelected={isModelSelected}
+                                        toggleModel={toggleModel}
+                                        toggleCategory={toggleCategory}
+                                        isCategoryAllSelected={
+                                            isCategoryAllSelected
+                                        }
+                                    />
+                                </>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* Other Permissions - Profile, Balance, Usage */}
@@ -376,6 +341,53 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         </div>
     );
 };
+
+/** Renders a category of model chips with a select/deselect-all toggle. */
+const ModelCategory: FC<{
+    label: string;
+    models: { id: string; label: string }[];
+    disabled: boolean;
+    isModelSelected: (id: string) => boolean;
+    toggleModel: (id: string) => void;
+    toggleCategory: (models: { id: string }[]) => void;
+    isCategoryAllSelected: (models: { id: string }[]) => boolean;
+}> = ({
+    label,
+    models,
+    disabled,
+    isModelSelected,
+    toggleModel,
+    toggleCategory,
+    isCategoryAllSelected,
+}) => (
+    <div>
+        <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-semibold text-gray-500 tracking-wide">
+                {label}
+            </span>
+            <button
+                type="button"
+                onClick={() => toggleCategory(models)}
+                disabled={disabled}
+                className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer"
+            >
+                {isCategoryAllSelected(models) ? "Deselect all" : "Select all"}
+            </button>
+        </div>
+        <div className="flex flex-col gap-1">
+            {models.map((model) => (
+                <ModelChip
+                    key={model.id}
+                    apiName={model.id}
+                    officialName={model.label}
+                    selected={isModelSelected(model.id)}
+                    onClick={() => toggleModel(model.id)}
+                    disabled={disabled}
+                />
+            ))}
+        </div>
+    </div>
+);
 
 const ModelChip: FC<{
     apiName: string;

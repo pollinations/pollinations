@@ -1,0 +1,126 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Different message 1 - 1772712138803"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2289",
+      "content-type": "application/json",
+      "date": "Thu, 05 Mar 2026 12:02:27 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-usage-completion-reasoning-tokens": "512",
+      "x-usage-completion-text-tokens": "270",
+      "x-usage-prompt-text-tokens": "17"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "I’m not sure what you’d like me to do with “Different message 1 - 1772712138803.” Do you want me to:\n\n- Rephrase an existing message with that ID?\n- Produce several alternative messages labeled that way?\n- Turn it into a notification, email subject, SMS, or something else?\n- Match a specific tone (formal, friendly, urgent, concise)?\n\nIf you want quick examples, here are five different ways that line could be presented as short notifications (pick a tone and I’ll tailor more):\n\n1) Formal: Notification: Different message 1 (ID 1772712138803) — please review at your earliest convenience.  \n2) Friendly: Heads up — Different message 1 (1772712138803) is ready for you!  \n3) Urgent: Action required: Different message 1 — ID 1772712138803. Please respond immediately.  \n4) Concise (SMS): Msg 1 #1772712138803: Check your inbox.  \n5) Informative (email subject): Different message 1 — Reference 1772712138803 (Details inside)\n\nTell me which option you want or paste the original message if you want a rewording, and I’ll create more tailored variants.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1772712139,
+        "id": "pllns_d99f502352a0ea052d9f62efaba9fb91",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 782,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 512,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 17,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 799
+        }
+      }
+    }
+  }
+}

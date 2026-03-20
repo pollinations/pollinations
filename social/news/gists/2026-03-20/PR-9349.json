@@ -1,0 +1,34 @@
+{
+  "pr_number": 9349,
+  "title": "Add BorsaciAI - BIST Financial Analysis Bot to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9349",
+  "merged_at": "2026-03-20T14:38:05Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Financial buzzing with BorsaciAI",
+    "blurb": "A new community bot just landed in the greenhouse. BorsaciAI is an open-source Telegram assistant that crunches Borsa Istanbul market data so you don't have to.",
+    "summary": "Added BorsaciAI, an open-source Telegram assistant for Borsa Istanbul financial analysis, to the community apps showcase.",
+    "impact": "Users can now discover and use BorsaciAI to get quick summaries and market data for Turkish companies directly through Telegram.",
+    "keywords": [
+      "community",
+      "bot",
+      "telegram",
+      "finance",
+      "borsa-istanbul"
+    ],
+    "visual_concept": "Polly the bee analyzing financial charts. A Telegram paper plane motif. Coins or upward trending graphs to represent financial analysis of Borsa Istanbul.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny business tie, looking at a retro computer monitor displaying green financial charts going up. A chunky pixel robot with a CRT monitor head holds a small paper airplane. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-20/PR-9349.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny business tie, looking at a retro computer monitor displaying green financial charts going up. A chunky pixel robot with a CRT monitor head holds a small paper airplane. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-20T14:39:21.226849+00:00"
+}

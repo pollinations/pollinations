@@ -220,7 +220,7 @@ function RouteComponent() {
                     <Button
                         as="a"
                         href="/api/docs"
-                        className="bg-gray-900 text-white hover:!brightness-90 whitespace-nowrap"
+                        className="bg-gray-900 text-white hover:!brightness-90 whitespace-nowrap dark:bg-gray-100 dark:text-gray-900"
                     >
                         API Reference
                     </Button>
@@ -234,20 +234,20 @@ function RouteComponent() {
                                 onClick={() => setActiveTab("balance")}
                                 className={`font-bold ${
                                     activeTab === "balance"
-                                        ? "text-green-950"
-                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                        ? "text-green-950 dark:text-gray-100"
+                                        : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 cursor-pointer"
                                 }`}
                             >
                                 Balance
                             </button>
-                            <span className="text-gray-300">·</span>
+                            <span className="text-gray-300 dark:text-gray-600">·</span>
                             <button
                                 type="button"
                                 onClick={() => setActiveTab("usage")}
                                 className={`font-bold ${
                                     activeTab === "usage"
-                                        ? "text-green-950"
-                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                        ? "text-green-950 dark:text-gray-100"
+                                        : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 cursor-pointer"
                                 }`}
                             >
                                 Usage
@@ -348,7 +348,7 @@ function RouteComponent() {
                                     </svg>
                                 </Button>
                                 {downloadOpen && (
-                                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-10">
                                         <button
                                             type="button"
                                             onClick={async () => {
@@ -384,10 +384,10 @@ function RouteComponent() {
                                                     setDownloadOpen(false);
                                                 }
                                             }}
-                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Daily Summary
-                                            <span className="block text-xs text-gray-400">
+                                            <span className="block text-xs text-gray-400 dark:text-gray-500">
                                                 Aggregated by day
                                             </span>
                                         </button>
@@ -431,12 +431,12 @@ function RouteComponent() {
                                                 }
                                             }}
                                             disabled={downloadingDetailed}
-                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
                                         >
                                             {downloadingDetailed
                                                 ? "Downloading..."
                                                 : "Detailed Usage"}
-                                            <span className="block text-xs text-gray-400">
+                                            <span className="block text-xs text-gray-400 dark:text-gray-500">
                                                 Per-request data
                                             </span>
                                         </button>

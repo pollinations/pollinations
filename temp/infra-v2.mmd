@@ -1,0 +1,88 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#fff3e0', 'primaryBorderColor': '#e65100', 'primaryTextColor': '#1a1a1a', 'lineColor': '#555', 'secondaryColor': '#e3f2fd', 'tertiaryColor': '#f3e5f5', 'fontSize': '14px', 'fontFamily': 'Inter, system-ui, sans-serif'}}}%%
+
+graph TD
+    CDN["🌍 Cloudflare CDN\nDNS · WAF · DDoS Protection\n~280M req/month"]:::cfEdge
+
+    CDN --> GEN
+
+    GEN["⚡ gen.pollinations.ai\nEdge Router · URL Rewriting"]:::cfWorker
+
+    GEN -->|"service binding\n(zero latency)"| ENTER
+
+    subgraph CF["☁️ Cloudflare Workers"]
+        ENTER["🔐 enter.pollinations.ai\nAPI Gateway\n─────────────────\n🔑 OAuth (GitHub) + API Keys (pk_ / sk_)\n🏷️ Tiers: microbe → spore → seed → flower → nectar → router\n💰 Balance: tier refill + packs ($1=1 pollen) + crypto\n⏱️ Rate Limiting via Durable Objects\n📊 Cost Tracking → TinyBird\n🔄 Request Deduplication"]:::cfWorker
+        MEDIA["📁 media.pollinations.ai\nContent-Addressed Uploads\nSHA-256 dedup · 10MB limit"]:::cfWorkerLight
+        FRONT["🌐 pollinations.ai\nReact + Vite + TailwindCSS\nTheme Creator"]:::cfWorkerLight
+    end
+
+    subgraph STORAGE["💾 Cloudflare Storage"]
+        D1["🗃️ D1 · SQLite\n─────────────────\n40K+ Users\nSessions · API Keys\nOAuth Accounts\nTier & Balance Data\n360M writes/mo · 10B reads/mo"]:::cfStorage
+        KV_S["⚡ KV Store\n─────────────────\nModel stats cache\nTier refill timestamps\nResponse dedup\n145M writes · 140M reads/mo"]:::cfStorage
+        R2["📦 R2 · Object Storage\n─────────────────\n48 TB total\nImage cache (30-day)\nText cache\nUser uploads (20MB · 14-day)\n2 buckets"]:::cfStorage
+        DO["🔒 Durable Objects\n─────────────────\nPollenRateLimiter\nPer-IP pollen budgets\nFrontend key enforcement\n10K req/10s per IP"]:::cfStorage
+    end
+
+    ENTER --> D1
+    ENTER --> KV_S
+    ENTER --> R2
+    ENTER --> DO
+
+    subgraph COMPUTE["🖥️ AWS EC2 · us-east-1"]
+        TEXT["📝 text.pollinations.ai :16385\n─────────────────\nNode.js · Hono server\nPortkey multi-provider gateway\nTransform pipeline\nOpenAI-compatible API\n25+ models · 10+ providers"]:::ec2
+        IMAGE["🎨 image.pollinations.ai :16384\n─────────────────\nNode.js · Hono server\nQueue-aware load balancer\nServer pool management\nSharp image processing\n30+ image/video models"]:::ec2
+    end
+
+    ENTER -->|"text / chat"| TEXT
+    ENTER -->|"image / video"| IMAGE
+    ENTER -->|"audio"| AUD_API
+
+    subgraph PROVIDERS["🔌 AI Provider APIs"]
+        PORTKEY["🔀 Portkey Gateway\n─────────────────\nAzure OpenAI · Anthropic\nGoogle Vertex · AWS Bedrock\nFireworks · OVHcloud\nPerplexity · api.airforce"]:::provider
+        IMG_API["🖼️ Image/Video APIs\n─────────────────\nAzure (GPT Image)\nVertex (Gemini · Veo)\nByteDance (Seedream)\nAlibaba (Wan Video)\nPruna AI"]:::provider
+        AUD_API["🔊 Audio APIs\n─────────────────\nElevenLabs TTS\nSuno Music"]:::provider
+    end
+
+    TEXT --> PORTKEY
+    IMAGE --> IMG_API
+
+    subgraph GPU["⚡ GPU Compute · Self-Hosted"]
+        VAST["🟢 Vast.ai\n~11× RTX 5090\n4 instances\nQuebec · NC · Taiwan\nFlux Schnell · Z-Image · Sana"]:::gpu
+        IONET["🔵 io.net\n8 Decentralized Workers\nFlux + Z-Image"]:::gpu
+        MODAL["🟣 Modal.com\nServerless H200 GPUs\nKlein (Flux 4B)\nLTX-2 Video"]:::gpu
+    end
+
+    IMAGE --> VAST
+    IMAGE --> IONET
+    IMAGE --> MODAL
+
+    subgraph OBS["📊 Observability · TinyBird"]
+        TB_S["📈 ClickHouse Analytics\n─────────────────\ngeneration_event\nstripe_event · polar_event\ncrypto_event · tier_event\nD1 sync snapshots\nDashboards & Pipes"]:::tinybird
+    end
+
+    ENTER -.->|"async ingest"| TB_S
+
+    subgraph PAY["💳 Payments"]
+        STRIPE["Stripe\nPack purchases\n$1 = 1 Pollen (2× beta)"]:::payment
+        POLAR["Polar\nSubscriptions\nBenefit grants → tier"]:::payment
+    end
+
+    STRIPE -.->|"webhooks"| ENTER
+    POLAR -.->|"webhooks"| ENTER
+
+    subgraph CICD["🔧 CI/CD & Secrets"]
+        GH["GitHub Monorepo\nOpen source\nActions CI/CD"]:::cicd
+        SOPS_S["SOPS\nEncrypted secrets\non GitHub"]:::cicd
+    end
+
+    ENTER -.->|"cron hourly/daily\ntier refills"| D1
+
+    classDef cfEdge fill:#F48120,color:#fff,stroke:#c66000,stroke-width:2px,font-weight:bold
+    classDef cfWorker fill:#F48120,color:#fff,stroke:#c66000,stroke-width:2px,font-weight:bold
+    classDef cfWorkerLight fill:#FFE0B2,color:#1a1a1a,stroke:#F48120,stroke-width:1px
+    classDef cfStorage fill:#FFF3E0,color:#1a1a1a,stroke:#E65100,stroke-width:1px
+    classDef ec2 fill:#232F3E,color:#fff,stroke:#FF9900,stroke-width:2px
+    classDef gpu fill:#e8f5e9,color:#1b5e20,stroke:#2e7d32,stroke-width:2px
+    classDef provider fill:#e3f2fd,color:#0d47a1,stroke:#1565c0,stroke-width:1px
+    classDef tinybird fill:#E0F7FA,color:#006064,stroke:#00838F,stroke-width:1px
+    classDef payment fill:#EDE7F6,color:#311B92,stroke:#4527A0,stroke-width:1px
+    classDef cicd fill:#F5F5F5,color:#333,stroke:#999,stroke-width:1px

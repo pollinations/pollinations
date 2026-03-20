@@ -1,3 +1,7 @@
+import {
+    oauthProviderAuthServerMetadata,
+    oauthProviderOpenIdConfigMetadata,
+} from "@better-auth/oauth-provider";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -48,6 +52,16 @@ export type ApiRoutes = typeof api;
 
 const docsRoutes = createDocsRoutes(api);
 
+const wellKnownRoutes = new Hono<Env>()
+    .get("/oauth-authorization-server/*", (c) => {
+        const auth = createAuth(c.env, c.executionCtx);
+        return oauthProviderAuthServerMetadata(auth)(c.req.raw);
+    })
+    .get("/openid-configuration/*", (c) => {
+        const auth = createAuth(c.env, c.executionCtx);
+        return oauthProviderOpenIdConfigMetadata(auth)(c.req.raw);
+    });
+
 const app = new Hono<Env>()
     // Permissive CORS for all API endpoints (all require API keys for auth)
     .use(
@@ -62,6 +76,7 @@ const app = new Hono<Env>()
     )
     .use("*", requestId())
     .use("*", logger)
+    .route("/.well-known", wellKnownRoutes)
     // Prevent search engines from indexing API responses (except docs)
     .use("/api/*", async (c, next) => {
         await next();

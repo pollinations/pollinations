@@ -1,8 +1,7 @@
+import { apiKeyClient } from "@better-auth/api-key/client";
+import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import { redirect } from "@tanstack/react-router";
-import {
-    apiKeyClient,
-    inferAdditionalFields,
-} from "better-auth/client/plugins";
+import { inferAdditionalFields } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import type { createAuth } from "@/auth.ts";
 import { config } from "./config.ts";
@@ -12,6 +11,7 @@ export const authClient = createAuthClient({
     basePath: config.authPath,
     plugins: [
         apiKeyClient(),
+        oauthProviderClient(),
         inferAdditionalFields<ReturnType<typeof createAuth>>(),
     ],
 });

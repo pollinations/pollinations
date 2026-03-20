@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **1114** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **1115** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -556,7 +556,7 @@
 | [🎮 Lapse Game 2075](https://makeypocket.github.io/LapseGame/) | AI-powered game where decisions shape a country's future over four pillars | [@makeypocket](https://github.com/makeypocket) | 1 |  |
 | [🧟‍♂️ zombies coming](https://zombie.001412.xyz) | Level up and survive waves in a zombie-infested world. | [@Komorebi-yaodong](https://github.com/Komorebi-yaodong) | 1 |  |
 
-<details><summary>Show all 94 apps</summary>
+<details><summary>Show all 95 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -567,6 +567,7 @@
 | [🐉 polli-dungeon](https://polli-game.netlify.app/) | Add AI-driven NPC behavior, encounter generation, and narrative assistance to Dungeons & Dragons sessions. | [@web](https://github.com/web) |  | 🫧 |
 | [🎮 Convince the CRAZY Idol to let you free](https://www.roblox.com/games/95878078212429/Convince-the-CRAZY-Idol-to-let-you-free) | AI-powered Roblox escape room game where players must convince an obsessed AI idol to let them go. Features TTS STT and multiplayer. Uses pollinations.ai for AI conversation. 2.2M visits 97 fail rate | [@roblox](https://github.com/roblox) |  | 🫧 |
 | [🌐 GeoCitAIes.com](https://geocitaies.com) | Surf 1990s-style web and generate retro personal homepages on demand using AI personas. | [@web](https://github.com/web) |  | 🫧 |
+| [🫧 BubbleUp](https://bubbleup.clinko.com) | Organizes web highlights and notes in BubbleUp, extracting key points, tagging content, and syncing across devices for later review. | [@web](https://github.com/web) |  | 🫧 |
 | [🎭 Aeona AI Roleplay & Companion](https://play.google.com/store/apps/details?id=com.artifexstudios.aeonaapp) | AI roleplay companion for imaginative, meaningful conversations. | [@android](https://github.com/android) |  | 🫧 |
 | [🧩 Generador de puzles jigsaw](https://proyectodescartes.org/IATools/Puzle_Jigsaw/) | Browser jigsaw puzzle generator with AI-generated images: cut, scramble, solve. | [@web](https://github.com/web) |  | 🫧 |
 | [🪄 3.5e DD Magic Item Generator](7650591) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@desktop](https://github.com/desktop) |  | 🫧 |

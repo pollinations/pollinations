@@ -4,23 +4,28 @@ import { cn } from "@/util.ts";
 const SAFETY_FEATURES = [
     {
         id: "privacy",
-        label: "Privacy",
-        description: "Redact emails, phones, names, addresses",
+        label: "🔒 Privacy",
+        description: "Strips emails, names, phones before they hit the model",
     },
     {
         id: "secrets",
-        label: "Secrets",
-        description: "Redact API keys, passwords, tokens",
+        label: "🔑 Secrets",
+        description: "Strips API keys & passwords from prompts",
     },
     {
-        id: "nsfw",
-        label: "NSFW",
-        description: "Block sexual/violent content",
+        id: "sexual",
+        label: "🔞 Sexual",
+        description: "Blocks sexual & nude content",
+    },
+    {
+        id: "violence",
+        label: "⚔️ Violence",
+        description: "Blocks violent & gory content",
     },
     {
         id: "shield",
-        label: "Shield",
-        description: "Block prompt injection",
+        label: "🛡️ Shield",
+        description: "Blocks prompt injection & jailbreaks",
     },
 ] as const;
 

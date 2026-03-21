@@ -7,7 +7,9 @@
  * Features:
  *   privacy  — redact emails, phones, names, addresses, IPs
  *   secrets  — redact API keys, passwords, tokens, credit cards
- *   nsfw     — block sexual/violent content
+ *   sexual   — block sexual/nude content
+ *   violence — block violent/gory content
+ *   nsfw     — shorthand for sexual,violence
  *   shield   — block prompt injection
  *   true     — expands to privacy,secrets,shield
  */
@@ -52,7 +54,8 @@ const SECRETS_REGEX_NAMES = new Set([
 ]);
 
 // Content filter categories by feature
-const NSFW_CATEGORIES = new Set(["SEXUAL", "VIOLENCE"]);
+const SEXUAL_CATEGORIES = new Set(["SEXUAL"]);
+const VIOLENCE_CATEGORIES = new Set(["VIOLENCE"]);
 const SHIELD_CATEGORIES = new Set(["PROMPT_ATTACK"]);
 
 const DEFAULT_FEATURES = ["privacy", "secrets", "shield"];
@@ -61,6 +64,8 @@ const VALID_FEATURES = new Set([
     "privacy",
     "secrets",
     "nsfw",
+    "sexual",
+    "violence",
     "shield",
     "true",
 ]);
@@ -99,13 +104,19 @@ export function resolveEffectiveSafety(
 }
 
 /**
- * Expand `true` to default feature set.
+ * Expand shorthand features: `true` → defaults, `nsfw` → sexual + violence.
  */
 function expandDefaults(features: Set<string>): Set<string> {
-    if (!features.has("true")) return features;
     const expanded = new Set(features);
-    expanded.delete("true");
-    for (const f of DEFAULT_FEATURES) expanded.add(f);
+    if (expanded.has("true")) {
+        expanded.delete("true");
+        for (const f of DEFAULT_FEATURES) expanded.add(f);
+    }
+    if (expanded.has("nsfw")) {
+        expanded.delete("nsfw");
+        expanded.add("sexual");
+        expanded.add("violence");
+    }
     return expanded;
 }
 
@@ -141,7 +152,10 @@ function getBlockedCategories(
     const blocked: string[] = [];
     for (const filter of filters) {
         if (filter.action !== "BLOCKED") continue;
-        if (features.has("nsfw") && NSFW_CATEGORIES.has(filter.type)) {
+        if (features.has("sexual") && SEXUAL_CATEGORIES.has(filter.type)) {
+            blocked.push(filter.type);
+        }
+        if (features.has("violence") && VIOLENCE_CATEGORIES.has(filter.type)) {
             blocked.push(filter.type);
         }
         if (features.has("shield") && SHIELD_CATEGORIES.has(filter.type)) {
@@ -386,7 +400,8 @@ function setSafetyHeaders(
 function createSafetyError(blockedCategories: string[]): HTTPException {
     const triggeredFeatures = new Set<string>();
     for (const cat of blockedCategories) {
-        if (NSFW_CATEGORIES.has(cat)) triggeredFeatures.add("nsfw");
+        if (SEXUAL_CATEGORIES.has(cat)) triggeredFeatures.add("sexual");
+        if (VIOLENCE_CATEGORIES.has(cat)) triggeredFeatures.add("violence");
         if (SHIELD_CATEGORIES.has(cat)) triggeredFeatures.add("shield");
     }
 

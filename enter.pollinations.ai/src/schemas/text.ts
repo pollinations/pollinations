@@ -34,6 +34,10 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text.",
     }),
+    safe: z.string().optional().meta({
+        description:
+            "Safety features: true, privacy, secrets, nsfw, shield (comma-separated). Redacts PII/secrets or blocks harmful content.",
+    }),
 });
 
 export type GenerateTextRequestQueryParams = z.infer<

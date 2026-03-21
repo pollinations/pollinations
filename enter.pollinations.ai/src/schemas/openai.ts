@@ -341,6 +341,7 @@ export const CreateChatCompletionRequestSchema = z.object({
         .min(1)
         .max(128)
         .optional(), // deprecated, supported
+    safe: z.string().optional(),
 });
 
 const ChatCompletionMessageContentBlockSchema = z.union([

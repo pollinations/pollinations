@@ -14,6 +14,7 @@ import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
+import { applySafetyToChat, applySafetyToText } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import type { Env } from "../env.ts";
@@ -141,6 +142,10 @@ const chatCompletionHandlers = factory.createHandlers(
         // Use resolved model from middleware for the backend request
         const requestBody = await c.req.json();
         requestBody.model = c.var.model.resolved;
+
+        // Apply safety features (PII redaction / content blocking)
+        await applySafetyToChat(c, requestBody);
+
         await checkBalance(c.var, c.env);
 
         const textServiceUrl =
@@ -524,9 +529,15 @@ export const proxyRoutes = new Hono<Env>()
             // Use resolved model from middleware
             const model = c.var.model.resolved;
 
+            // Apply safety features (PII redaction / content blocking)
+            let prompt = c.req.param("prompt");
+            const safetyResult = await applySafetyToText(c, prompt);
+            if (safetyResult) {
+                prompt = safetyResult.prompt;
+            }
+
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            const prompt = c.req.param("prompt");
             const targetUrl = proxyUrl(
                 c,
                 `${textServiceUrl}/${encodeURIComponent(prompt)}`,

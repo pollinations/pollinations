@@ -60,6 +60,11 @@ NOWPAYMENTS_ENV = "sandbox"
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
+# Bedrock Guardrails (safety features)
+# AWS credentials are secrets (via sops), these are public config
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = ""
+BEDROCK_GUARDRAIL_VERSION = "1"
 
 
 [env.local]

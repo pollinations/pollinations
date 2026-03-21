@@ -1,0 +1,36 @@
+{
+  "pr_number": 9389,
+  "title": "fix(image): pass seed to vertex ai models",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/9389",
+  "merged_at": "2026-03-21T13:56:00Z",
+  "labels": [
+    "IMAGE",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Planting new seeds",
+    "blurb": "Fixed a quirky bug where our nanobanana image models were getting a little too attached to their first drafts. Now, passing a new seed guarantees a fresh, unique variation every single time.",
+    "summary": "Passed the seed parameter to Vertex AI requests for nanobanana models to ensure distinct image variations on each generation.",
+    "impact": "Users will now receive properly varied images when regenerating or editing with nanobanana models, rather than identical cached results.",
+    "keywords": [
+      "image-generation",
+      "bug-fix",
+      "nanobanana",
+      "vertex-ai",
+      "seed"
+    ],
+    "visual_concept": "The PR is about 'seeds' and 'variations' in image generation. Depict Polly the bee planting glowing digital seeds in a garden, with each seed sprouting a completely different, unique pixel-art flower or glowing image frame to represent the fixed variation generation.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot planting glowing lime green (#ecf874) seeds in a digital garden, with each seed sprouting a completely unique, colorful pixel flower. A chunky robot with a CRT monitor head watches happily, holding a small watering can. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9389.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot planting glowing lime green (#ecf874) seeds in a digital garden, with each seed sprouting a completely unique, colorful pixel flower. A chunky robot with a CRT monitor head watches happily, holding a small watering can. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-03-21T13:56:49.216515+00:00"
+}

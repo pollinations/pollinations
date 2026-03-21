@@ -1,17 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
+import { SCOPE_LABELS } from "../components/auth/scope-labels.ts";
 import { Button } from "../components/button.tsx";
-
-const SCOPE_LABELS: Record<string, string> = {
-    openid: "Know who you are",
-    profile: "Read your profile (name, picture)",
-    email: "Read your email address",
-    generate: "Generate images, text, audio, and video",
-    "read:usage": "View your usage history",
-    "read:balance": "View your pollen balance",
-    offline_access: "Stay connected when you're away",
-};
 
 export const Route = createFileRoute("/consent")({
     component: ConsentComponent,

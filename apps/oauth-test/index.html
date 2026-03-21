@@ -456,7 +456,7 @@
 
     async function pollDeviceToken(clientId, deviceCode) {
         try {
-            const resp = await fetch(`${server()}/api/auth/device/token`, {
+            const resp = await fetch(`${server()}/api/device/token`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

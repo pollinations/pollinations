@@ -187,6 +187,7 @@ export const accountRoutes = new Hono<Env>()
         }),
         async (c) => {
             await c.var.auth.requireAuthorization();
+            c.var.auth.requireScope("profile");
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
@@ -257,6 +258,7 @@ export const accountRoutes = new Hono<Env>()
         }),
         async (c) => {
             await c.var.auth.requireAuthorization();
+            c.var.auth.requireScope("read:balance");
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
@@ -329,6 +331,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization({
                 message: "Authentication required to view usage history",
             });
+            c.var.auth.requireScope("read:usage");
 
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
@@ -484,6 +487,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization({
                 message: "Authentication required to view usage history",
             });
+            c.var.auth.requireScope("read:usage");
 
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;

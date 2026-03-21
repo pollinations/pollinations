@@ -448,6 +448,10 @@ export const proxyRoutes = new Hono<Env>()
     )
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth({ allowApiKey: true, allowSessionCookie: false }))
+    .use(async (c, next) => {
+        c.var.auth.requireScope("generate");
+        await next();
+    })
     .use(frontendKeyRateLimit)
     .use(balance)
     // Request deduplication: prevents duplicate concurrent requests by sharing promises

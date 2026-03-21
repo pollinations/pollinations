@@ -72,14 +72,6 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 1. Header: `Authorization: Bearer YOUR_API_KEY`
 2. Query param: `?key=YOUR_API_KEY`
-3. OAuth 2.1 Bearer token (JWT) — for apps using the OAuth provider
-
-**Getting keys:**
-
-- **Dashboard:** [enter.pollinations.ai](https://enter.pollinations.ai) — create keys manually
-- **Device flow (CLI/headless):** `POST /api/auth/device/code` → user approves in browser → poll `POST /api/device/token` for key. See [RFC 8628](https://datatracker.ietf.org/doc/html/rfc8628).
-- **BYOP (apps):** redirect users to `/authorize?redirect_url=...` — they get a scoped key. See [BYOP docs](./BRING_YOUR_OWN_POLLEN.md).
-- **OAuth 2.1:** full authorization code flow with PKCE, dynamic client registration, JWT tokens. Endpoints at `/api/auth/oauth2/*`.
 
 ## Account Management
 

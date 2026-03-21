@@ -132,6 +132,21 @@ function generateLLMDoc(): string {
         "Key types: `sk_` (secret, server-side) | `pk_` (publishable, client-side, rate limited)",
     );
     lines.push("");
+    lines.push("**Getting keys:**");
+    lines.push("");
+    lines.push(
+        "- Dashboard: [enter.pollinations.ai](https://enter.pollinations.ai)",
+    );
+    lines.push(
+        "- Device flow (CLI/headless): `POST /api/auth/device/code` → user approves in browser → poll `POST /api/device/token`",
+    );
+    lines.push(
+        "- BYOP (apps): redirect users to `/authorize?redirect_url=...` — see [BYOP docs](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)",
+    );
+    lines.push(
+        "- OAuth 2.1: authorization code + PKCE, dynamic client registration. Endpoints at `/api/auth/oauth2/*`",
+    );
+    lines.push("");
 
     // Endpoints
     lines.push("## Endpoints");
@@ -1156,6 +1171,8 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "# Option 2: Query parameter",
                             'curl "https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY"',
                             "```",
+                            "",
+                            "**Getting keys:** [Dashboard](https://enter.pollinations.ai) · [Device flow](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#device-flow-for-clis--headless-apps) (CLI) · [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) (apps) · OAuth 2.1 (`/api/auth/oauth2/*`)",
                             "",
                             "> **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.",
                             "",

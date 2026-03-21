@@ -14,8 +14,6 @@ why this is good:
 - **self-regulating** — everyone pays for what they use
 - **frontend only** — no backend needed
 
-![Authorize Screen](https://raw.githubusercontent.com/pollinations/pollinations/main/enter.pollinations.ai/public/authorize-screen.png)
-
 ## setup
 
 ### 1. register your app (optional but recommended)

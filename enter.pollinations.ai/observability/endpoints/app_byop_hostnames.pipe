@@ -1,16 +1,20 @@
 DESCRIPTION >
-    Get distinct API key names that are secret (BYOP) keys and look like hostnames.
-    Used by the app metrics script to detect BYOP apps.
+    Get distinct BYOP app identifiers from the last 90 days.
+    Priority: api_key_created_for_app (explicit app attribution) > api_key_name (hostname heuristic).
+    Both signals kept so BYOP stats don't drop as app key adoption ramps up.
 
 TOKEN app_metrics READ
 TOKEN model_usage READ
 
 NODE app_byop_hostnames_node
 SQL >
-    SELECT DISTINCT api_key_name as hostname
+    SELECT DISTINCT
+        if(api_key_created_for_app != 'undefined', api_key_created_for_app, api_key_name) as hostname
     FROM generation_event
-    WHERE api_key_type = 'secret'
-      AND start_time > now() - INTERVAL 90 DAY
-      AND api_key_name LIKE '%.%'
+    WHERE start_time > now() - INTERVAL 90 DAY
+      AND (
+        api_key_created_via = 'redirect-auth'
+        OR (api_key_type = 'secret' AND api_key_name LIKE '%.%')
+      )
 
 TYPE endpoint

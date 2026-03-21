@@ -1,8 +1,8 @@
 DESCRIPTION >
     Weekly BYOP vs non-BYOP usage metrics.
-    BYOP = secret API keys with hostname-like names (contains a dot),
-    matching the detection logic used by app_byop_hostnames.pipe.
-    Two-node design: inner node evaluates LIKE once per row,
+    BYOP = authorize-flow metadata (api_key_created_via = 'redirect-auth')
+    OR legacy hostname heuristic (secret key with dot in name).
+    Two-node design: inner node evaluates the condition once per row,
     outer node pivots back to the original column schema.
 
 TOKEN model_usage READ
@@ -12,7 +12,7 @@ SQL >
     %
     SELECT
         formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
-        (api_key_type = 'secret' AND position(api_key_name, '.') > 0) AS is_byop,
+        ((api_key_type = 'secret' AND position(api_key_name, '.') > 0) OR api_key_created_via = 'redirect-auth') AS is_byop,
         uniq(user_id) AS users,
         sum(total_price) AS pollen,
         count() AS requests

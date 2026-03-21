@@ -53,15 +53,37 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet apps/APPS.md apps/GREENHOUSE.md; then
+          if git diff --quiet apps/APPS.md apps/GREENHOUSE.md README.md; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Commit and push changes
+      - name: Create branch and push changes
         if: steps.changes.outputs.changed == 'true'
         run: |
-          git add apps/APPS.md apps/GREENHOUSE.md
+          BRANCH="auto/app-metrics-$(date -u +%Y-%m-%d)"
+          git checkout -b "$BRANCH"
+          git add apps/APPS.md apps/GREENHOUSE.md README.md
           git commit -m "chore: update app metrics, health, and greenhouse"
-          git push
+          git push -f origin "$BRANCH"
+
+      - name: Create or update PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          BRANCH="auto/app-metrics-$(date -u +%Y-%m-%d)"
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url' || true)
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR already exists: $EXISTING_PR"
+            PR_URL="$EXISTING_PR"
+          else
+            PR_URL=$(gh pr create \
+              --title "chore: update app metrics $(date -u +%Y-%m-%d)" \
+              --body "Daily automated update of app metrics, health checks, and greenhouse")
+            echo "Created PR: $PR_URL"
+          fi
+
+          gh pr merge "$PR_URL" --auto --squash --delete-branch

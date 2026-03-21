@@ -11,10 +11,12 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
+ *   npx tsx scripts/user-pipeline/audit-github-accounts.ts audit
+ *   npx tsx scripts/user-pipeline/audit-github-accounts.ts audit --resume
+ *   npx tsx scripts/user-pipeline/audit-github-accounts.ts audit --limit 100
+ *   npx tsx scripts/user-pipeline/audit-github-accounts.ts apply
+ *   npx tsx scripts/user-pipeline/audit-github-accounts.ts apply --no-dryRun
  *   npx tsx scripts/user-pipeline/audit-github-accounts.ts audit --env production
- *   npx tsx scripts/user-pipeline/audit-github-accounts.ts audit --env production --resume
- *   npx tsx scripts/user-pipeline/audit-github-accounts.ts audit --env production --limit 100
- *   npx tsx scripts/user-pipeline/audit-github-accounts.ts apply --env production
  *   npx tsx scripts/user-pipeline/audit-github-accounts.ts apply --env production --no-dryRun
  *
  * Environment variables:
@@ -114,7 +116,7 @@ const auditCommand = command({
     name: "audit",
     desc: "Scan all D1 users via GitHub REST API — detect deleted and renamed accounts",
     options: {
-        env: string().enum("staging", "production").default("production"),
+        env: string().enum("staging", "production").default("staging"),
         resume: boolean()
             .default(false)
             .desc("Resume from previous saved audit"),
@@ -300,7 +302,7 @@ const applyCommand = command({
     name: "apply",
     desc: "Apply audit results: ban deleted accounts, update renamed usernames in D1",
     options: {
-        env: string().enum("staging", "production").default("production"),
+        env: string().enum("staging", "production").default("staging"),
         updateApps: boolean()
             .default(true)
             .desc("Also update APPS.md usernames"),
@@ -444,7 +446,7 @@ const retryCommand = command({
     name: "retry",
     desc: "Retry errored entries from the audit report",
     options: {
-        env: string().enum("staging", "production").default("production"),
+        env: string().enum("staging", "production").default("staging"),
     },
     handler: async (opts) => {
         const env = opts.env as Environment;

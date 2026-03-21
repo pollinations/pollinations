@@ -4,6 +4,12 @@ This note describes the final productionization step for the user pipeline on `f
 
 The current branch stays staging-only until the last pre-merge commit.
 
+That staging lock applies to steady-state workflows and manual pipeline tools:
+
+- orchestrators default to `staging`
+- audit and rollout helpers default to `staging`
+- production use should always be explicit with `--env production`
+
 ## Rollout Shape
 
 1. Keep the branch staging-locked while validating behavior.
@@ -79,6 +85,7 @@ The last pre-merge commit should do only two things:
 
 - `.github/workflows/user-pipeline-hourly-new-users.yml`
 - `.github/workflows/user-pipeline-daily-spore-recheck.yml`
+- `enter.pollinations.ai/scripts/user-pipeline/audit-github-accounts.ts`
 - `enter.pollinations.ai/scripts/user-pipeline/scoring/trust-score.ts`
 - `enter.pollinations.ai/scripts/user-pipeline/hourly-new-users.ts`
 - `enter.pollinations.ai/scripts/user-pipeline/daily-spore-recheck.ts`
@@ -149,6 +156,12 @@ After production is migrated and the new system is live, the recommended staging
 3. use [`TESTING.md`](../test/TESTING.md) for routine validation
 
 Routine staging tests should rely on `reset-cohort.ts`, not on rollout helpers.
+
+## Analytics Note
+
+Tinybird `d1_user.datasource` keeps `github_id` as `Int64`.
+
+This avoids overflow once GitHub user IDs grow past signed 32-bit range.
 
 ## Do Not Change
 

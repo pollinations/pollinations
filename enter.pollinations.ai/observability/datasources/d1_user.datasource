@@ -16,7 +16,7 @@ SCHEMA >
     `banned` UInt8 `json:$.banned` DEFAULT 0,
     `ban_reason` Nullable(String) `json:$.ban_reason`,
     `ban_expires` Nullable(Int64) `json:$.ban_expires`,
-    `github_id` Nullable(Int32) `json:$.github_id`,
+    `github_id` Nullable(Int64) `json:$.github_id`,
     `github_username` Nullable(String) `json:$.github_username`,
     `tier` String `json:$.tier` DEFAULT 'microbe',
     `tier_balance` Nullable(Float64) `json:$.tier_balance`,

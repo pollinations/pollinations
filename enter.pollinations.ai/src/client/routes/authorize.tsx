@@ -146,7 +146,7 @@ function AuthorizeComponent() {
                 setError("No redirect URL provided");
                 return;
             }
-            if (!parsedRedirectUrl) {
+            if (!safeParseUrl(redirect_url)) {
                 setError("Invalid redirect URL format");
                 return;
             }
@@ -160,7 +160,7 @@ function AuthorizeComponent() {
                 .then((data) => setAttribution(data as Attribution))
                 .catch(() => {});
         }
-    }, [isDeviceMode, user_code, app_key, redirect_url, parsedRedirectUrl]);
+    }, [isDeviceMode, user_code, app_key, redirect_url]);
 
     async function handleSignIn(): Promise<void> {
         setIsSigningIn(true);
@@ -286,7 +286,7 @@ function AuthorizeComponent() {
     async function handleDeny(): Promise<void> {
         if (isDeviceMode) {
             try {
-                await fetch(`${config.baseUrl}${config.authPath}/device/deny`, {
+                await fetch(`${config.baseUrl}/api/device/deny`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",

@@ -116,6 +116,49 @@ export const deviceRoutes = new Hono<Env>()
             return c.json({ success: true });
         },
     )
+    .post(
+        "/deny",
+        auth({ allowApiKey: false, allowSessionCookie: true }),
+        async (c) => {
+            const body = await c.req.json<{ userCode: string }>();
+
+            if (!body.userCode) {
+                throw new HTTPException(400, {
+                    message: "userCode is required",
+                });
+            }
+
+            const db = drizzle(c.env.DB, { schema });
+            const device = await db.query.deviceCode.findFirst({
+                where: eq(
+                    schema.deviceCode.userCode,
+                    body.userCode.toUpperCase(),
+                ),
+            });
+
+            if (
+                !device ||
+                device.status !== ("pending" satisfies DeviceStatus)
+            ) {
+                throw new HTTPException(400, {
+                    message: "Invalid or already-used device code",
+                });
+            }
+
+            if (isExpired(device)) {
+                throw new HTTPException(400, {
+                    message: "Device code expired",
+                });
+            }
+
+            await db
+                .update(schema.deviceCode)
+                .set({ status: "denied" satisfies DeviceStatus })
+                .where(eq(schema.deviceCode.id, device.id));
+
+            return c.json({ success: true });
+        },
+    )
     .post("/token", async (c) => {
         const body = await c.req.json<{
             device_code: string;

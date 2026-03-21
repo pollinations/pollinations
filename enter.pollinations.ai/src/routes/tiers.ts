@@ -22,7 +22,7 @@ const TierStatusSchema = z.object({
         tier: z.literal([...tierNames, "none"]),
         displayName: z.string(),
         pollen: z.number(),
-        cadence: z.enum(["daily", "weekly"]),
+        cadence: z.enum(["daily", "hourly", "none"]),
     }),
 });
 
@@ -35,7 +35,7 @@ export const tiersRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             description:
-                "Get the current user's tier status and daily pollen information.",
+                "Get the current user's tier status and pollen information.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
             responses: {
                 200: {

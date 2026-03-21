@@ -64,16 +64,20 @@ export const NewsBanner: FC = () => {
     if (highlights.length === 0 && PINNED_NEWS.length === 0) return null;
 
     return (
-        <Panel color="violet" compact className="border-transparent">
+        <Panel
+            color="violet"
+            compact
+            className="border-transparent !bg-transparent"
+        >
             <div className="flex flex-col gap-2">
                 <span className="text-xs text-gray-500">What's new</span>
                 {PINNED_NEWS.length > 0 && (
-                    <div className="bg-violet-50 rounded-md px-3 py-2">
+                    <div className="bg-amber-50 rounded-md px-3 py-2">
                         <ul className="text-xs space-y-1.5">
                             {PINNED_NEWS.map((h) => (
                                 <li
                                     key={`pinned-${h.title}`}
-                                    className="text-violet-900"
+                                    className="text-gray-900"
                                 >
                                     {h.emoji} <strong>{h.title}:</strong>{" "}
                                     <span
@@ -85,9 +89,6 @@ export const NewsBanner: FC = () => {
                             ))}
                         </ul>
                     </div>
-                )}
-                {PINNED_NEWS.length > 0 && highlights.length > 0 && (
-                    <hr className="border-violet-200" />
                 )}
                 {highlights.length > 0 && (
                     <ul className="text-xs space-y-1.5">

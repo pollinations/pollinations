@@ -15,35 +15,39 @@ const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
 };
 
 const SeedTooltipContent = () => (
-    <div className="w-56">
+    <div className="w-72">
         <p className="font-semibold text-gray-900 mb-2">Dev Points (need 8+)</p>
         <table className="w-full text-left text-[11px]">
             <tbody>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">Account age</td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
+                        Account age
+                    </td>
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.5pt/month (max 6)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">Commits</td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
+                        Public commits (last 90 days)
+                    </td>
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.1pt each (max 2)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">
-                        Public repos (with code)
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
+                        Original repos (public, non-empty)
                     </td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.5pt each (max 1)
                     </td>
                 </tr>
                 <tr>
-                    <td className="py-1 text-gray-600">
-                        Stars (on repos with code)
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
+                        Stars (on original non-empty repos)
                     </td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.1pt each (max 5)
                     </td>
                 </tr>
@@ -65,7 +69,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
         <div>
             <p className="text-sm text-gray-900 leading-relaxed mb-3">
                 📈 <strong>Grow Your Tier:</strong> For developers building with
-                pollinations.ai. Level up to earn more daily pollen.
+                pollinations.ai. Level up to earn more pollen.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {/* Spore */}
@@ -77,7 +81,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <strong className="text-gray-800 text-sm">Spore</strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.spore} pollen/week
+                        {TIER_POLLEN.spore} pollen/hour
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
@@ -94,7 +98,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <strong className="text-gray-800 text-sm">Seed</strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.seed} pollen/day
+                        {TIER_POLLEN.seed} pollen/hour
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>

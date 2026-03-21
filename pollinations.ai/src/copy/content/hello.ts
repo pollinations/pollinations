@@ -3,7 +3,7 @@
 export const HELLO_PAGE = {
     pageTitle: "hello",
     pageDescription:
-        "Build AI apps with easy APIs, daily grants, and community support",
+        "Build AI apps with easy APIs, free compute, and community support",
     // Section 1 — Hero
     heroTitle: "Build an AI app.",
     heroBodyPrefix: "⚡ One API for text, image, audio, and video.",
@@ -23,34 +23,52 @@ export const HELLO_PAGE = {
     // How it works section
     howItWorksTitle: "How it works",
     howItWorksBuildDesc: "Use one API across models.",
-    howItWorksShipDesc: "Start free with daily compute.",
+    howItWorksShipDesc: "Start free with regular compute refills.",
     howItWorksGetPaidDesc: "Your users get their own compute.",
 
     // Start free section
     startFreeTitle: "Start free",
     startFreeLines: [
-        { pre: "🔌 Use ", bold: "one API", post: " across models" },
-        { pre: "🚀 ", bold: "No setup", post: " required" },
-        { pre: "🏢 No company needed", bold: "", post: "" },
-        { pre: "🌱 ", bold: "Free daily compute", post: " to build and ship" },
         {
-            pre: "📈 As your app grows, you ",
+            pre: "Use ",
+            bold: "one API",
+            post: " across models",
+            emoji: "🔌",
+            pillColor: "bg-primary-light",
+        },
+        {
+            pre: "",
+            bold: "No setup",
+            post: " required",
+            emoji: "🚀",
+            pillColor: "bg-accent-light",
+        },
+        {
+            pre: "",
+            bold: "Free compute with regular refills",
+            post: " to build and ship",
+            emoji: "🌱",
+            pillColor: "bg-tertiary-light",
+        },
+        {
+            pre: "As your app grows, you ",
             bold: "get more compute",
             post: "",
+            emoji: "📈",
+            pillColor: "bg-secondary-light",
         },
-        { pre: "⚡ Just ", bold: "sign up", post: " and go" },
     ],
-    freeDailyComputeTitle: "Free daily compute",
+    freeDailyComputeTitle: "Free compute",
 
-    tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
-    computeTiersTitle: "Compute tiers",
+    tiersBetaNote: "🧪 Beta — values may shift.",
+    computeTiersTitle: "Tiers",
     tierHowText: "Want to know more?",
     tierHowLink: "Check our FAQ",
 
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
     tierSeedDescription: "You're building. Contributing, shipping apps.",
-    tierSeedGrant: "3 pollen / day",
+    tierSeedGrant: "0.15 pollen / hour",
     tierSeedPoints: "",
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
@@ -63,53 +81,95 @@ export const HELLO_PAGE = {
     tierNectarGrant: "20 pollen / day",
     tierNectarPoints: "",
 
-    // Section — For your users / BYOP
-    usersTitle: "For your users",
-    usersBody:
-        "Each user who signs in gets free weekly compute to try your app. When they need more, it just works — no Stripe setup on your end.",
-    usersPaymentsLink: "🔌 Set up for your app",
+    // Section — What you get
+    whatYouGetTitle: "What's inside",
+    whatYouGetItems: [
+        {
+            emoji: "🪩",
+            title: "Text, image, video, audio",
+            desc: "All modalities, one endpoint.",
+            linkText: "Browse the model list",
+            linkUrl: "enterModels",
+        },
+        {
+            emoji: "🪄",
+            title: "OpenAI-compatible",
+            desc: "Change one line. Your existing SDK code just works.",
+        },
+        {
+            emoji: "🎯",
+            title: "Media uploads",
+            desc: "Upload files, get a URL. Use them as inputs for generation.",
+        },
+        {
+            emoji: "🔥",
+            title: "Streaming & tools",
+            desc: "Real-time responses, tool use, structured output.",
+        },
+        {
+            emoji: "🔮",
+            title: "Vision, search & embeddings",
+            desc: "Models that see images, search the live web, and turn content into vectors.",
+        },
+        {
+            emoji: "💎",
+            title: "Open source & transparent",
+            desc: "The whole stack. Fork it, self-host, contribute.",
+            linkText: "Fork on GitHub",
+            linkUrl: "githubFork",
+        },
+        {
+            emoji: "🤝",
+            title: "For your users",
+            desc: "Each user who signs in gets free hourly compute to try your app.\nWhen they need more, it just works — no Stripe setup on your end.",
+            linkText: "🔌 Set up for your app",
+            linkUrl: "byopDocs",
+            fullWidth: true,
+        },
+    ],
+    whatYouGetFooter: "Dig deeper?",
+    whatYouGetFooterLink: "Explore the docs",
+    whatYouGetFooterUrl: "enterApiDocs",
 
     // Section 8 — We Build in the Open
     openTitle: "We build in the open",
-    recentUpdatesTitle: "What's New",
-    roadmapLabel: "What's Next",
+    recentUpdatesTitle: "New",
+    roadmapLabel: "Next",
     roadmapItems: [
         {
             emoji: "🧮",
-            title: "Scoring System",
+            title: "Scoring",
             description:
-                "Tiers will be based on a transparent score — GitHub activity, API usage, apps shipped, and community contributions.",
+                "Transparent score based on GitHub activity, API usage, and apps shipped. Determines your tier.",
         },
         {
             emoji: "🔑",
-            title: "Pollinations Login",
-            description:
-                "OAuth sign-in for your users. Token handling and production-ready auth.",
+            title: "Auth",
+            description: "OAuth for your users. Token handling built in.",
         },
         {
             emoji: "🏠",
-            title: "App Hosting",
-            description:
-                "Ship your app on our infra. No deploy setup, no separate hosting bill.",
+            title: "Hosting",
+            description: "Deploy on our infra. No setup, no separate bill.",
         },
         {
             emoji: "🌻",
-            title: "Creator Rewards",
-            description: "Get recognized for what people build with your app.",
+            title: "Rewards",
+            description: "People use your app, you earn pollen.",
         },
         {
             emoji: "🗺️",
-            title: "App Discovery",
-            description: "A marketplace where users find your app.",
+            title: "Discovery",
+            description: "A place where people find what you built.",
         },
     ],
-    comingFooterEmoji: "🌱",
-    comingFooterLine1: "The platform gives you runway.",
-    comingFooterLine2: "We're shaping the rest together, in the open.",
+    comingFooterEmoji: "",
+    comingFooterLine1: "",
+    comingFooterLine2: "",
 
     // Section 9 — CTA
     ctaTitle: "Get started",
-    ctaBody: "One API. Open source. Built in the open.",
+    ctaBody: "One API. Open source.",
     browseAppsLink: "Browse Apps",
     communityLink: "Community",
 };

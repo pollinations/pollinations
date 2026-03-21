@@ -12,7 +12,7 @@ import { useUsageData } from "./use-usage-data";
 const TIER_EMOJIS: Record<TierStatus, string> = {
     none: "🦠",
     microbe: "🦠",
-    spore: "🦠",
+    spore: "🍄",
     seed: "🌱",
     flower: "🌸",
     nectar: "🍯",

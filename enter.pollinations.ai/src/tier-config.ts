@@ -1,7 +1,7 @@
 export const TIERS = {
-    microbe: { pollen: 0, emoji: "🦠", color: "gray", cadence: "weekly" },
-    spore: { pollen: 1.5, emoji: "🍄", color: "blue", cadence: "weekly" },
-    seed: { pollen: 3, emoji: "🌱", color: "green", cadence: "daily" },
+    microbe: { pollen: 0, emoji: "🦠", color: "gray", cadence: "none" },
+    spore: { pollen: 0.01, emoji: "🍄", color: "blue", cadence: "hourly" },
+    seed: { pollen: 0.15, emoji: "🌱", color: "green", cadence: "hourly" },
     flower: { pollen: 10, emoji: "🌸", color: "pink", cadence: "daily" },
     nectar: { pollen: 20, emoji: "🍯", color: "amber", cadence: "daily" },
     router: { pollen: 500, emoji: "🐝", color: "red", cadence: "daily" },
@@ -50,9 +50,9 @@ export function getTierColor(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].color : TIERS[DEFAULT_TIER].color;
 }
 
-export function getTierCadence(tier: TierName): "daily" | "weekly";
-export function getTierCadence(tier: string): "daily" | "weekly";
-export function getTierCadence(tier: string): "daily" | "weekly" {
+export function getTierCadence(tier: TierName): "daily" | "hourly" | "none";
+export function getTierCadence(tier: string): "daily" | "hourly" | "none";
+export function getTierCadence(tier: string): "daily" | "hourly" | "none" {
     return isValidTier(tier)
         ? TIERS[tier].cadence
         : TIERS[DEFAULT_TIER].cadence;

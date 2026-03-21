@@ -7,7 +7,7 @@ import {
     useMemo,
     useState,
 } from "react";
-import { DEFAULT_API_KEY } from "../api.config";
+import { APP_KEY, DEFAULT_API_KEY } from "../api.config";
 import { fetchWithRetry } from "../utils/fetchWithRetry";
 
 const STORAGE_KEY = "pollinations_api_key";
@@ -162,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = useCallback(() => {
         const currentUrl = window.location.href.split("#")[0];
-        const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&permissions=profile,balance`;
+        const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&app_key=${APP_KEY}&permissions=profile,balance`;
         window.location.href = authUrl;
     }, []);
 

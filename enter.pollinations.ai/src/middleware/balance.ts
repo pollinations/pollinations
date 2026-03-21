@@ -18,6 +18,28 @@ export type UserBalance = {
     cryptoBalance: number;
 };
 
+/**
+ * Get the total available balance across relevant buckets.
+ * For paid-only models: crypto + pack only.
+ * For regular models: tier + crypto + pack (only positive buckets).
+ */
+export function getAvailableBalance(
+    balances: UserBalance,
+    isPaidOnly = false,
+): number {
+    if (isPaidOnly) {
+        return (
+            Math.max(0, balances.cryptoBalance) +
+            Math.max(0, balances.packBalance)
+        );
+    }
+    return (
+        Math.max(0, balances.tierBalance) +
+        Math.max(0, balances.cryptoBalance) +
+        Math.max(0, balances.packBalance)
+    );
+}
+
 export type BalanceVariables = {
     balance: {
         requirePositiveBalance: (
@@ -40,7 +62,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const db = drizzle(c.env.DB);
 
     // Get balance from D1 only
-    // Pack balance is updated via webhooks, tier balance via daily cron
+    // Pack balance is updated via webhooks, tier balance via cron (hourly for spore/seed, daily for others)
     const getBalance = async (userId: string): Promise<UserBalance> => {
         const users = await db
             .select({

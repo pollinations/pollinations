@@ -32,7 +32,11 @@ vi.mock("node:fs", async (importOriginal) => {
     };
 });
 
-import { parseLLMResponse, SCORE_THRESHOLDS } from "../scoring/trust-score.ts";
+import {
+    parseLLMResponse,
+    partitionPendingUsers,
+    SCORE_THRESHOLDS,
+} from "../scoring/trust-score.ts";
 import { llmComplete } from "../shared/llm.ts";
 
 afterEach(() => {
@@ -71,7 +75,9 @@ describe("parseLLMResponse", () => {
                 idToIndex,
                 2,
             ),
-        ).toThrow("LLM response omitted one or more users from the chunk");
+        ).toThrow(
+            "LLM response omitted one or more target users from the chunk",
+        );
     });
 
     it("does not throw when strict=false and user is omitted", () => {
@@ -143,6 +149,69 @@ describe("parseLLMResponse", () => {
         );
 
         expect(parsed[0].score).toBe(60);
+    });
+
+    it("ignores context rows and only requires target rows", () => {
+        const idToIndex = new Map([
+            [12345678, 0],
+            [87654321, 1],
+        ]);
+
+        const parsed = parseLLMResponse(
+            [
+                "github_id,score,signals",
+                "99999999,90,cluster",
+                "12345678,10,ok",
+                "87654321,20,disp",
+            ].join("\n"),
+            idToIndex,
+            2,
+        );
+
+        expect(parsed).toEqual([
+            { score: 10, signals: [] },
+            { score: 20, signals: ["disp"] },
+        ]);
+    });
+});
+
+describe("partitionPendingUsers", () => {
+    function buildUser(index: number, createdAtMs: number) {
+        return {
+            email: `user-${index}@example.com`,
+            github_id: index,
+            github_username: `user-${index}`,
+            created_at: createdAtMs,
+            tier: "microbe",
+        };
+    }
+
+    it("holds back the newest 30 pending users and scores the rest", () => {
+        const nowMs = Date.parse("2026-03-21T12:00:00Z");
+        const users = Array.from({ length: 75 }, (_, index) =>
+            buildUser(index + 1, nowMs - index * 60_000),
+        );
+
+        const partition = partitionPendingUsers(users, { nowMs });
+
+        expect(partition.holdbackUsers).toHaveLength(30);
+        expect(partition.targetUsers).toHaveLength(45);
+        expect(partition.releasedHoldbackUsers).toHaveLength(0);
+        expect(partition.holdbackUsers[0]?.email).toBe("user-1@example.com");
+        expect(partition.targetUsers[0]?.email).toBe("user-31@example.com");
+    });
+
+    it("releases held-back users once they have waited past the SLA", () => {
+        const nowMs = Date.parse("2026-03-21T12:00:00Z");
+        const users = Array.from({ length: 10 }, (_, index) =>
+            buildUser(index + 1, nowMs - (100 + index) * 60_000),
+        );
+
+        const partition = partitionPendingUsers(users, { nowMs });
+
+        expect(partition.holdbackUsers).toHaveLength(0);
+        expect(partition.targetUsers).toHaveLength(10);
+        expect(partition.releasedHoldbackUsers).toHaveLength(10);
     });
 });
 

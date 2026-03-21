@@ -11,7 +11,7 @@
  *   npx tsx scripts/user-pipeline/scoring/trust-score.ts --emails-file /tmp/emails.txt
  *
  * Options:
- *   --limit N        Max users to fetch (default: 5000)
+ *   --limit N        Max pending users to consider (default: 5000)
  *   --store-status   Write results back to D1
  *   --emails-file    Restrict to emails in a newline-separated file
  *   --trace-file     Append local debugging traces as JSONL
@@ -34,16 +34,17 @@ import { PIPELINE_DB_BATCH_SIZE } from "../shared/github-identity.ts";
 import { llmComplete } from "../shared/llm.ts";
 
 const ENV = "staging";
-const CHUNK_SIZE = 90;
-const SCORE_WINDOW = 30; // users in the middle of each chunk whose scores are saved
-const TRUST_LOOKBACK_SECONDS = 3600;
+const SCORE_WINDOW = 30;
+const HOLD_BACK_USERS = 30;
+const MAX_WAIT_MINUTES = 90;
+const DEFAULT_USER_LIMIT = 5000;
 
 const PROMPT_TEMPLATE = readFileSync(
     new URL("trust-score-prompt.md", import.meta.url),
     "utf-8",
 );
 
-interface User {
+export interface User {
     email: string;
     github_id: number;
     github_username: string | null;
@@ -71,7 +72,17 @@ interface StoredTrustState {
     banned: number | null;
 }
 
-type TrustDecision = "trust_pass" | "trust_block" | "defer_trust_chunk";
+export interface PendingTrustPartition {
+    holdbackUsers: User[];
+    targetUsers: User[];
+    releasedHoldbackUsers: User[];
+}
+
+type TrustDecision =
+    | "trust_pass"
+    | "trust_block"
+    | "defer_trust_chunk"
+    | "holdback_context";
 
 export const SCORE_THRESHOLDS = {
     block: 70,
@@ -95,12 +106,12 @@ function appendTrace(
 export function parseLLMResponse(
     content: string,
     idToIndex: Map<number, number>,
-    chunkLength: number,
+    targetCount: number,
     options?: { strict?: boolean },
 ): Array<{ score: number; signals: string[] }> {
     const strict = options?.strict ?? true;
     const results: Array<{ score: number; signals: string[] }> = Array.from(
-        { length: chunkLength },
+        { length: targetCount },
         () => ({ score: 0, signals: [] }),
     );
     const seen = new Set<number>();
@@ -134,46 +145,109 @@ export function parseLLMResponse(
         seen.add(idx);
     }
 
-    if (strict && seen.size < chunkLength) {
+    if (strict && seen.size < targetCount) {
         throw new Error(
-            "LLM response omitted one or more users from the chunk",
+            "LLM response omitted one or more target users from the chunk",
         );
     }
 
     return results;
 }
 
-function formatDate(timestamp: number): string {
-    const raw = Number(timestamp);
-    const normalized = raw < 1_000_000_000_000 ? raw * 1000 : raw;
-    return new Date(normalized).toISOString().slice(0, 16).replace("T", " ");
+function normalizeTimestamp(timestamp: number): number {
+    return timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp;
 }
 
-function prepareChunkData(chunk: User[]): {
+function formatDate(timestamp: number): string {
+    return new Date(normalizeTimestamp(Number(timestamp)))
+        .toISOString()
+        .slice(0, 16)
+        .replace("T", " ");
+}
+
+function hasWaitedLongEnough(
+    user: User,
+    nowMs: number,
+    maxWaitMinutes: number = MAX_WAIT_MINUTES,
+): boolean {
+    return (
+        nowMs - normalizeTimestamp(user.created_at) >= maxWaitMinutes * 60_000
+    );
+}
+
+export function partitionPendingUsers(
+    users: User[],
+    options?: {
+        nowMs?: number;
+        holdBackUsers?: number;
+        maxWaitMinutes?: number;
+    },
+): PendingTrustPartition {
+    const nowMs = options?.nowMs ?? Date.now();
+    const holdBackUsers = options?.holdBackUsers ?? HOLD_BACK_USERS;
+    const maxWaitMinutes = options?.maxWaitMinutes ?? MAX_WAIT_MINUTES;
+    const holdbackUsers: User[] = [];
+    const targetUsers: User[] = [];
+    const releasedHoldbackUsers: User[] = [];
+
+    for (const [index, user] of users.entries()) {
+        const forcedRelease =
+            index < holdBackUsers &&
+            hasWaitedLongEnough(user, nowMs, maxWaitMinutes);
+
+        if (index < holdBackUsers && !forcedRelease) {
+            holdbackUsers.push(user);
+            continue;
+        }
+
+        targetUsers.push(user);
+        if (forcedRelease) {
+            releasedHoldbackUsers.push(user);
+        }
+    }
+
+    return {
+        holdbackUsers,
+        targetUsers,
+        releasedHoldbackUsers,
+    };
+}
+
+function prepareChunkData(
+    chunk: User[],
+    targetUsers: User[],
+): {
     csvRows: string[];
     idToIndex: Map<number, number>;
 } {
     const idToIndex = new Map<number, number>();
-    const csvRows = chunk.map((user, idx) => {
+    const targetEmails = new Set(targetUsers.map((user) => user.email));
+    const csvRows = chunk.map((user) => {
         const upgraded = user.tier !== "spore" && user.tier !== "microbe";
-        idToIndex.set(user.github_id, idx);
-        return `${user.github_id},${user.github_username ?? ""},${user.email},${formatDate(user.created_at)},${upgraded}`;
+        const role = targetEmails.has(user.email) ? "target" : "context";
+        if (role === "target") {
+            idToIndex.set(user.github_id, idToIndex.size);
+        }
+        return `${user.github_id},${user.github_username ?? ""},${user.email},${formatDate(user.created_at)},${upgraded},${role}`;
     });
     return { csvRows, idToIndex };
 }
 
 async function scoreChunk(
     chunk: User[],
+    targetUsers: User[],
     apiKey: string,
     options?: {
         traceFile: string | null;
         runId: string;
         windowStart: number;
         windowEnd: number;
-        centerEmails: string[];
+        targetEmails: string[];
+        newerContextCount: number;
+        olderContextCount: number;
     },
 ): Promise<Array<{ score: number; signals: string[] }>> {
-    const { csvRows, idToIndex } = prepareChunkData(chunk);
+    const { csvRows, idToIndex } = prepareChunkData(chunk, targetUsers);
     const prompt = PROMPT_TEMPLATE + csvRows.join("\n");
 
     for (let attempt = 1; attempt <= 3; attempt++) {
@@ -184,13 +258,16 @@ async function scoreChunk(
             run_id: options?.runId ?? null,
             window_start: options?.windowStart ?? null,
             window_end: options?.windowEnd ?? null,
-            center_emails: options?.centerEmails ?? [],
+            target_emails: options?.targetEmails ?? [],
             chunk_size: chunk.length,
+            target_count: targetUsers.length,
+            newer_context_count: options?.newerContextCount ?? null,
+            older_context_count: options?.olderContextCount ?? null,
             prompt_chars: prompt.length,
             attempt,
         });
         console.log(
-            `   ⏱️  LLM request: ${chunk.length} users, ${prompt.length} chars${attempt > 1 ? ` (attempt ${attempt})` : ""}`,
+            `   ⏱️  LLM request: ${targetUsers.length} targets, ${chunk.length} total users, ${prompt.length} chars${attempt > 1 ? ` (attempt ${attempt})` : ""}`,
         );
         try {
             const content = await llmComplete(prompt, { apiKey });
@@ -200,8 +277,9 @@ async function scoreChunk(
                 run_id: options?.runId ?? null,
                 window_start: options?.windowStart ?? null,
                 window_end: options?.windowEnd ?? null,
-                center_emails: options?.centerEmails ?? [],
+                target_emails: options?.targetEmails ?? [],
                 chunk_size: chunk.length,
+                target_count: targetUsers.length,
                 attempt,
                 duration_ms: Date.now() - startedAt,
                 response_chars: content.length,
@@ -209,7 +287,7 @@ async function scoreChunk(
             console.log(
                 `   ✅ LLM response in ${Date.now() - startedAt}ms (${content.length} chars)`,
             );
-            return parseLLMResponse(content, idToIndex, chunk.length);
+            return parseLLMResponse(content, idToIndex, targetUsers.length);
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             const stack = err instanceof Error ? err.stack : "";
@@ -220,8 +298,9 @@ async function scoreChunk(
                 run_id: options?.runId ?? null,
                 window_start: options?.windowStart ?? null,
                 window_end: options?.windowEnd ?? null,
-                center_emails: options?.centerEmails ?? [],
+                target_emails: options?.targetEmails ?? [],
                 chunk_size: chunk.length,
+                target_count: targetUsers.length,
                 attempt,
                 duration_ms: Date.now() - startedAt,
                 error_name: errName,
@@ -238,48 +317,85 @@ async function scoreChunk(
     throw new Error("unreachable");
 }
 
+function buildExclusionFilter(column: string, emails: string[]): string {
+    if (emails.length === 0) return "";
+    const values = emails
+        .map((email) => `'${escapeSqlString(email)}'`)
+        .join(", ");
+    return ` AND ${column} NOT IN (${values})`;
+}
+
+function fetchNeighborContext(
+    direction: "newer" | "older",
+    boundaryCreatedAt: number,
+    limit: number,
+    cohortEmails: string[] | null,
+    excludeEmails: string[],
+): User[] {
+    if (limit <= 0) return [];
+
+    const emailFilter = buildEmailFilter("email", cohortEmails);
+    const exclusionFilter = buildExclusionFilter("email", excludeEmails);
+    const comparison = direction === "newer" ? ">" : "<";
+    const order = direction === "newer" ? "ASC" : "DESC";
+    const rows = queryD1(
+        ENV,
+        `SELECT email, github_id, github_username, created_at, tier FROM user WHERE COALESCE(banned, 0) = 0 AND created_at ${comparison} ${boundaryCreatedAt}${emailFilter}${exclusionFilter} ORDER BY created_at ${order} LIMIT ${limit}`,
+    ) as unknown as User[];
+
+    return direction === "newer" ? rows.reverse() : rows;
+}
+
 async function scoreUsers(
     users: User[],
+    cohortEmails: string[] | null,
     traceFile: string | null,
     runId: string,
 ): Promise<{ scoredUsers: ScoredUser[]; failedUsers: User[] }> {
     const apiKey = loadApiKey();
     console.log(
-        `\n🤖 Scoring ${users.length} users in chunks of ${CHUNK_SIZE}...`,
+        `\n🤖 Scoring ${users.length} target users in ${SCORE_WINDOW}-user groups...`,
     );
 
     const allScores = new Map<string, { score: number; signals: string[] }>();
     const failedEmails = new Set<string>();
 
     for (let i = 0; i < users.length; i += SCORE_WINDOW) {
-        const before = users.slice(Math.max(0, i - SCORE_WINDOW), i);
         const group = users.slice(i, Math.min(i + SCORE_WINDOW, users.length));
-        const after = users.slice(
-            i + SCORE_WINDOW,
-            Math.min(i + SCORE_WINDOW * 2, users.length),
+        const groupEmails = group.map((user) => user.email);
+        const newerContext = fetchNeighborContext(
+            "newer",
+            group[0].created_at,
+            SCORE_WINDOW,
+            cohortEmails,
+            groupEmails,
         );
-        const chunk = [...before, ...group, ...after];
-        const startIdx = before.length;
+        const olderContext = fetchNeighborContext(
+            "older",
+            group[group.length - 1].created_at,
+            SCORE_WINDOW,
+            cohortEmails,
+            groupEmails,
+        );
+        const chunk = [...newerContext, ...group, ...olderContext];
 
         console.log(
-            `\n⚡ Scoring users ${i + 1}-${i + group.length} of ${users.length} (chunk size: ${chunk.length})`,
+            `\n⚡ Scoring targets ${i + 1}-${i + group.length} of ${users.length} (chunk size: ${chunk.length}, newer=${newerContext.length}, older=${olderContext.length})`,
         );
 
         try {
-            const scores = await scoreChunk(chunk, apiKey, {
+            const scores = await scoreChunk(chunk, group, apiKey, {
                 traceFile,
                 runId,
                 windowStart: i + 1,
                 windowEnd: i + group.length,
-                centerEmails: group.map((user) => user.email),
+                targetEmails: groupEmails,
+                newerContextCount: newerContext.length,
+                olderContextCount: olderContext.length,
             });
-            for (
-                let j = startIdx;
-                j < startIdx + group.length && j < scores.length;
-                j++
-            ) {
-                allScores.set(chunk[j].email, scores[j]);
-                failedEmails.delete(chunk[j].email);
+            for (const [index, user] of group.entries()) {
+                allScores.set(user.email, scores[index]);
+                failedEmails.delete(user.email);
             }
         } catch (error) {
             console.error(
@@ -447,28 +563,26 @@ function reconcileTrustDecision(
                 ? null
                 : "expected_trust_score_lt_60";
         case "defer_trust_chunk":
+        case "holdback_context":
             return state.trust_score === null
                 ? null
                 : "expected_null_trust_score";
     }
 }
 
-function fetchUsers(limit: number, cohortEmails: string[] | null): User[] {
+function fetchPendingUsers(
+    limit: number,
+    cohortEmails: string[] | null,
+): User[] {
     const cohortLabel = cohortEmails
         ? ` from cohort (${cohortEmails.length})`
         : "";
-    console.log(
-        `📊 Fetching up to ${limit} unprocessed users${cohortLabel}...`,
-    );
+    console.log(`📊 Fetching up to ${limit} pending users${cohortLabel}...`);
 
     const emailFilter = buildEmailFilter("email", cohortEmails);
-    const sinceClause = cohortEmails
-        ? ""
-        : `AND created_at >= ${Math.floor(Date.now() / 1000) - TRUST_LOOKBACK_SECONDS}`;
-
     const users = queryD1(
         ENV,
-        `SELECT email, github_id, github_username, created_at, tier FROM user WHERE COALESCE(banned, 0) = 0 AND trust_score IS NULL ${sinceClause} ${emailFilter} ORDER BY created_at DESC LIMIT ${limit}`,
+        `SELECT email, github_id, github_username, created_at, tier FROM user WHERE COALESCE(banned, 0) = 0 AND trust_score IS NULL ${emailFilter} ORDER BY created_at DESC LIMIT ${limit}`,
     ) as unknown as User[];
     console.log(`✅ Fetched ${users.length} users`);
     return users;
@@ -518,7 +632,7 @@ function parseArguments(): ParsedArgs {
     }
 
     return {
-        userLimit: getNum("--limit", 5000),
+        userLimit: getNum("--limit", DEFAULT_USER_LIMIT),
         storeStatus: args.includes("--store-status"),
         cohortEmails,
         traceFile,
@@ -538,13 +652,20 @@ async function main(): Promise<void> {
         console.log(`🧾 Trace file: ${config.traceFile}`);
     }
 
-    const users = fetchUsers(config.userLimit, config.cohortEmails);
+    const users = fetchPendingUsers(config.userLimit, config.cohortEmails);
+    const partition = partitionPendingUsers(users);
+    const releasedHoldbackEmails = new Set(
+        partition.releasedHoldbackUsers.map((user) => user.email),
+    );
     appendTrace(config.traceFile, {
         stage: "trust",
         type: "run_start",
         run_id: runId,
         store_status: config.storeStatus,
         selected_users: users.length,
+        holdback_users: partition.holdbackUsers.length,
+        target_users: partition.targetUsers.length,
+        forced_target_users: partition.releasedHoldbackUsers.length,
         cohort_size: config.cohortEmails?.length ?? null,
     });
     if (users.length === 0) {
@@ -562,8 +683,62 @@ async function main(): Promise<void> {
         return;
     }
 
+    console.log(
+        `🧭 Holdback=${partition.holdbackUsers.length}, targets=${partition.targetUsers.length}, forced release=${partition.releasedHoldbackUsers.length}`,
+    );
+    if (partition.targetUsers.length === 0) {
+        console.log(
+            `⚠️  No target users yet. Holding back ${partition.holdbackUsers.length} newest pending users for future context.`,
+        );
+        const storedStates = config.storeStatus
+            ? fetchStoredTrustStatesByEmail(users.map((user) => user.email))
+            : null;
+        let anomalies = 0;
+
+        for (const user of partition.holdbackUsers) {
+            const state = storedStates?.get(user.email);
+            const reconcileIssue =
+                config.storeStatus && storedStates
+                    ? reconcileTrustDecision("holdback_context", state)
+                    : null;
+            if (reconcileIssue) anomalies += 1;
+            appendTrace(config.traceFile, {
+                stage: "trust",
+                type: "user_decision",
+                run_id: runId,
+                email: user.email,
+                github_id: user.github_id,
+                abuse_score: null,
+                trust_score: null,
+                action: null,
+                signals: [],
+                decision: "holdback_context",
+                stored: config.storeStatus,
+                forced_release: false,
+                post_tier: state?.tier ?? null,
+                post_trust_score: state?.trust_score ?? null,
+                reconcile_issue: reconcileIssue,
+            });
+        }
+
+        appendTrace(config.traceFile, {
+            stage: "trust",
+            type: "run_end",
+            run_id: runId,
+            selected_users: users.length,
+            holdback_users: partition.holdbackUsers.length,
+            target_users: 0,
+            scored_users: 0,
+            deferred_users: 0,
+            stored_users: 0,
+            anomalies,
+        });
+        return;
+    }
+
     const { scoredUsers, failedUsers } = await scoreUsers(
-        users,
+        partition.targetUsers,
+        config.cohortEmails,
         config.traceFile,
         runId,
     );
@@ -607,6 +782,7 @@ async function main(): Promise<void> {
             signals: user.signals,
             decision,
             stored: config.storeStatus,
+            forced_release: releasedHoldbackEmails.has(user.email),
             post_tier: state?.tier ?? null,
             post_trust_score: state?.trust_score ?? null,
             reconcile_issue: reconcileIssue,
@@ -632,6 +808,33 @@ async function main(): Promise<void> {
             signals: [],
             decision: "defer_trust_chunk",
             stored: config.storeStatus,
+            forced_release: releasedHoldbackEmails.has(user.email),
+            post_tier: state?.tier ?? null,
+            post_trust_score: state?.trust_score ?? null,
+            reconcile_issue: reconcileIssue,
+        });
+    }
+
+    for (const user of partition.holdbackUsers) {
+        const state = storedStates?.get(user.email);
+        const reconcileIssue =
+            config.storeStatus && storedStates
+                ? reconcileTrustDecision("holdback_context", state)
+                : null;
+        if (reconcileIssue) anomalies += 1;
+        appendTrace(config.traceFile, {
+            stage: "trust",
+            type: "user_decision",
+            run_id: runId,
+            email: user.email,
+            github_id: user.github_id,
+            abuse_score: null,
+            trust_score: null,
+            action: null,
+            signals: [],
+            decision: "holdback_context",
+            stored: config.storeStatus,
+            forced_release: false,
             post_tier: state?.tier ?? null,
             post_trust_score: state?.trust_score ?? null,
             reconcile_issue: reconcileIssue,
@@ -643,6 +846,8 @@ async function main(): Promise<void> {
         type: "run_end",
         run_id: runId,
         selected_users: users.length,
+        holdback_users: partition.holdbackUsers.length,
+        target_users: partition.targetUsers.length,
         scored_users: scoredUsers.length,
         deferred_users: failedUsers.length,
         stored_users: config.storeStatus ? scoredUsers.length : 0,

@@ -19,10 +19,11 @@ No markdown.
 No explanations, summaries, or questions.
 No code fences.
 Start with the exact header: github_id,score,signals
-Return exactly one row for every input user.
-Reuse the exact github_id value from the input.
-If a user is clean, return 0 and leave signals empty.
-If unsure, prefer 0 over omitting the user.
+Return exactly one row for every input user marked target.
+Ignore rows marked context.
+Reuse the exact github_id value from each target row.
+If a target user is clean, return 0 and leave signals empty.
+If unsure, prefer 0 over omitting a target user.
 Join multiple signals with +.
 
 Example:
@@ -31,4 +32,4 @@ github_id,score,signals
 87654321,0,
 11223344,20,disp
 
-Data (github_id,github_username,email,registered,upgraded):
+Data (github_id,github_username,email,registered,upgraded,role):

@@ -58,12 +58,19 @@ scripts/user-pipeline/
 ## Hourly New-User Pipeline
 
 - Targets users where `trust_score IS NULL` and `banned = 0`
-- In steady state, only scans users from the last hour
+- Builds one reverse-chronological pending queue ordered by `created_at DESC`
+- Holds back the newest `30` pending users so they become newer-side context on the next run
+- Scores every remaining pending user in consecutive `30`-user target groups
+- For each target group, fetches up to `30` newer neighbors and `30` older neighbors by registration date
+- Context neighbors may already have a `trust_score`; they are prompt-only and are never rewritten
+- Users waiting at least `90` minutes bypass the holdback buffer and get scored immediately
 - Bans missing/invalid `github_id` rows before calling GitHub
 - Validates that the GitHub account still exists by `github_id` before any other checks
 - Uses `github_id` as the identity key for validation and writes
 - Uses the stored `github_username` from D1 only as LLM context
-- Uses a windowed LLM detector: sends 150-user chunks ordered by registration date, scores the middle 50, uses the outer 50+50 as context only — so every user is scored exactly once with full surrounding context
+- Sends `30/30/30` trust batches to the LLM:
+  `newer context + target users + older context`
+- The LLM returns scores only for the middle target users; only those target rows get `trust_score` written
 - Scores developer activity immediately for trusted users
 - Applies a separate GitHub risk check before allowing `seed`
 - Allows a direct `microbe -> seed` upgrade for users who already qualify
@@ -83,43 +90,51 @@ Target users:
 trust_score IS NULL
 AND banned = 0"]
 
-    C --> D{"Any target users?"}
-    D -->|No| E["Exit"]
-    D -->|Yes| G["GitHub Account Validation
-Validate by github_id"]
+    C --> D["Fetch pending queue
+    ORDER BY created_at DESC"]
+    D --> E["Hold back newest 30 pending users
+    unless they waited >= 90 minutes"]
+    E --> F{"Any target users?"}
+    F -->|No| G["Exit
+    Wait for more context"]
+    F -->|Yes| H["For each 30-user target group:
+    fetch up to 30 newer neighbors
+    and 30 older neighbors"]
 
-    G --> H{"GitHub account valid?"}
-    H -->|No| I["Ban user
+    H --> I["GitHub Account Validation
+    Validate by github_id"]
+
+    I --> J{"GitHub account valid?"}
+    J -->|No| K["Ban user
 banned = 1
 ban_reason = github_id_invalid
 or github_account_deleted"]
-    H -->|Yes| J["LLM Trust Evaluation
-Score the recent 1h cohort in
-overlapping chunks using
-github_username + email + timing
-Write trust_score"]
+    J -->|Yes| L["LLM Trust Evaluation
+Send 30 newer context +
+30 targets + 30 older context
+Write trust_score only for targets"]
 
-    J --> K{"trust_score >= 60?"}
-    K -->|No| L["Stay Microbe
+    L --> M{"trust_score >= 60?"}
+    M -->|No| N["Stay Microbe
 No automatic re-check"]
-    K -->|Yes| M["GitHub Developer Scoring
+    M -->|Yes| O["GitHub Developer Scoring
 Write score
 Write score_checked_at"]
 
-    M --> N["GitHub Risk Check
+    O --> P["GitHub Risk Check
 Block suspicious seed upgrades"]
 
-    N --> O{"score >= 8
+    P --> Q{"score >= 8
 AND risk is ok?"}
-    O -->|Yes| P["Promote directly to Seed
+    Q -->|Yes| R["Promote directly to Seed
 tier = seed"]
-    O -->|No| Q["Promote to Spore
+    Q -->|No| S["Promote to Spore
 tier = spore"]
 
-    style I fill:#833,color:#fff
-    style L fill:#c44,color:#fff
-    style Q fill:#47a,color:#fff
-    style P fill:#4a4,color:#fff
+    style K fill:#833,color:#fff
+    style N fill:#c44,color:#fff
+    style S fill:#47a,color:#fff
+    style R fill:#4a4,color:#fff
 ```
 
 ## Daily Spore Recheck Pipeline

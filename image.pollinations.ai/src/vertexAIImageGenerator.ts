@@ -240,6 +240,7 @@ export async function callVertexAIGemini(
             referenceImages: processedImages,
             model: vertexModel,
             safe: safeParams.safe,
+            seed: processedParams.seed as number,
         };
 
         // Generate image using Vertex AI

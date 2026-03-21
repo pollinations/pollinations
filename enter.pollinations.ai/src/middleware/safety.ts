@@ -49,9 +49,8 @@ const SECRETS_PII_TYPES = new Set([
 const NSFW_CATEGORIES = new Set(["SEXUAL", "VIOLENCE"]);
 const SHIELD_CATEGORIES = new Set(["PROMPT_ATTACK"]);
 
-const TEXT_DEFAULTS = ["privacy", "secrets", "shield"];
+const DEFAULT_FEATURES = ["privacy", "secrets", "shield"];
 
-// All valid feature names
 const VALID_FEATURES = new Set([
     "privacy",
     "secrets",
@@ -59,6 +58,11 @@ const VALID_FEATURES = new Set([
     "shield",
     "true",
 ]);
+
+type ChatMessage = {
+    role?: string;
+    content?: string | { type?: string; text?: string }[];
+};
 
 /**
  * Parse a safe value (string like "privacy,secrets" or "true") into a feature set.
@@ -95,7 +99,7 @@ function expandDefaults(features: Set<string>): Set<string> {
     if (!features.has("true")) return features;
     const expanded = new Set(features);
     expanded.delete("true");
-    for (const f of TEXT_DEFAULTS) expanded.add(f);
+    for (const f of DEFAULT_FEATURES) expanded.add(f);
     return expanded;
 }
 
@@ -140,12 +144,7 @@ function getBlockedCategories(
 /**
  * Extract text content from chat completion messages.
  */
-function extractMessagesText(
-    messages: {
-        role?: string;
-        content?: string | { type?: string; text?: string }[];
-    }[],
-): string {
+function extractMessagesText(messages: ChatMessage[]): string {
     const parts: string[] = [];
     for (const msg of messages) {
         if (typeof msg.content === "string") {
@@ -162,35 +161,58 @@ function extractMessagesText(
 }
 
 /**
- * Replace text content in chat completion messages with redacted version.
- * Uses simple string replacement — works because Bedrock returns exact matches.
+ * Apply PII redaction to each message individually using Bedrock's detected entities.
+ * Unlike extractMessagesText which joins all text, this applies replacements
+ * per-message so multi-line content within messages is handled correctly.
  */
 function redactMessages(
-    messages: {
-        role?: string;
-        content?: string | { type?: string; text?: string }[];
-    }[],
-    redactedText: string,
+    messages: ChatMessage[],
+    response: BedrockResponse,
+    allowedTypes: Set<string>,
 ): void {
-    // Reconstruct: split redacted text by the same \n boundaries used in extractMessagesText
-    const redactedParts = redactedText.split("\n");
-    let partIndex = 0;
-
     for (const msg of messages) {
         if (typeof msg.content === "string") {
-            if (partIndex < redactedParts.length) {
-                msg.content = redactedParts[partIndex++];
+            const redacted = redactText(msg.content, response, allowedTypes);
+            if (redacted !== null) {
+                msg.content = redacted;
             }
         } else if (Array.isArray(msg.content)) {
             for (const part of msg.content) {
                 if (part.type === "text" && part.text) {
-                    if (partIndex < redactedParts.length) {
-                        part.text = redactedParts[partIndex++];
+                    const redacted = redactText(
+                        part.text,
+                        response,
+                        allowedTypes,
+                    );
+                    if (redacted !== null) {
+                        part.text = redacted;
                     }
                 }
             }
         }
     }
+}
+
+/**
+ * Collect unique redacted PII type names from the Bedrock response.
+ */
+function getRedactedTypes(
+    response: BedrockResponse,
+    allowedTypes: Set<string>,
+): string[] {
+    const policy = response.assessments[0]?.sensitiveInformationPolicy;
+    if (!policy) return [];
+
+    const types = new Set<string>();
+    for (const entity of policy.piiEntities ?? []) {
+        if (allowedTypes.has(entity.type)) {
+            types.add(entity.type);
+        }
+    }
+    for (const regex of policy.regexes ?? []) {
+        types.add(regex.name);
+    }
+    return [...types];
 }
 
 export interface SafetyResult {
@@ -215,10 +237,7 @@ export async function applySafetyToChat(
     // Strip safe from body before forwarding
     delete requestBody.safe;
 
-    const messages = requestBody.messages as {
-        role?: string;
-        content?: string | { type?: string; text?: string }[];
-    }[];
+    const messages = requestBody.messages as ChatMessage[];
     if (!messages?.length) return null;
 
     const text = extractMessagesText(messages);
@@ -226,21 +245,28 @@ export async function applySafetyToChat(
 
     const env = c.env as unknown as BedrockGuardrailEnv;
     const response = await applyGuardrail(text, "INPUT", env);
-    const result = processResponse(response, features, text);
 
-    if (result.blocked) {
-        setSafetyHeaders(c, result);
-        throw createSafetyError(result);
+    // Check content blocking
+    const blockedCategories = getBlockedCategories(response, features);
+    if (blockedCategories.length > 0) {
+        setSafetyHeaders(c, features);
+        throw createSafetyError(blockedCategories);
     }
 
-    if (result.redactedText) {
-        redactMessages(messages, result.redactedText);
+    // Apply PII redaction
+    const allowedTypes = getAllowedPiiTypes(features);
+    const redactedTypes = allowedTypes
+        ? getRedactedTypes(response, allowedTypes)
+        : [];
+
+    if (allowedTypes && redactedTypes.length > 0) {
+        redactMessages(messages, response, allowedTypes);
     }
 
-    setSafetyHeaders(c, result);
+    setSafetyHeaders(c, features, redactedTypes);
     return {
         applied: [...features],
-        redactedTypes: result.redactedTypes,
+        redactedTypes,
         blocked: false,
         blockedCategories: [],
     };
@@ -262,19 +288,29 @@ export async function applySafetyToText(
 
     const env = c.env as unknown as BedrockGuardrailEnv;
     const response = await applyGuardrail(prompt, "INPUT", env);
-    const processed = processResponse(response, features, prompt);
 
-    if (processed.blocked) {
-        setSafetyHeaders(c, processed);
-        throw createSafetyError(processed);
+    // Check content blocking
+    const blockedCategories = getBlockedCategories(response, features);
+    if (blockedCategories.length > 0) {
+        setSafetyHeaders(c, features);
+        throw createSafetyError(blockedCategories);
     }
 
-    setSafetyHeaders(c, processed);
+    // Apply PII redaction
+    const allowedTypes = getAllowedPiiTypes(features);
+    const redactedTypes = allowedTypes
+        ? getRedactedTypes(response, allowedTypes)
+        : [];
+    const redactedPrompt = allowedTypes
+        ? (redactText(prompt, response, allowedTypes) ?? prompt)
+        : prompt;
+
+    setSafetyHeaders(c, features, redactedTypes);
     return {
-        prompt: processed.redactedText ?? prompt,
+        prompt: redactedPrompt,
         result: {
             applied: [...features],
-            redactedTypes: processed.redactedTypes,
+            redactedTypes,
             blocked: false,
             blockedCategories: [],
         },
@@ -284,7 +320,6 @@ export async function applySafetyToText(
 // --- Internal helpers ---
 
 function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
-    // Skip if Bedrock is not configured
     const env = c.env as unknown as BedrockGuardrailEnv;
     if (!env.BEDROCK_GUARDRAIL_ID || !env.AWS_BEDROCK_ACCESS_KEY_ID) {
         return new Set();
@@ -297,7 +332,6 @@ function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
     const querySafe = new URL(c.req.url).searchParams.get("safe");
     const headerSafe = c.req.header("x-safe");
 
-    // Union all sources
     const raw = resolveEffectiveSafety(
         keyMeta,
         bodySafe || querySafe || headerSafe,
@@ -306,100 +340,24 @@ function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
     return expandDefaults(raw);
 }
 
-interface ProcessedResponse {
-    redactedText: string | null;
-    redactedTypes: string[];
-    blocked: boolean;
-    blockedCategories: string[];
-    features: Set<string>;
-}
-
-function processResponse(
-    response: BedrockResponse,
-    features: Set<string>,
-    originalText: string,
-): ProcessedResponse {
-    // Check content blocking first
-    const blockedCategories = getBlockedCategories(response, features);
-    if (blockedCategories.length > 0) {
-        return {
-            redactedText: null,
-            redactedTypes: [],
-            blocked: true,
-            blockedCategories,
-            features,
-        };
-    }
-
-    // Check PII redaction
-    const allowedTypes = getAllowedPiiTypes(features);
-    if (!allowedTypes) {
-        return {
-            redactedText: null,
-            redactedTypes: [],
-            blocked: false,
-            blockedCategories: [],
-            features,
-        };
-    }
-
-    const redactedText = redactText(originalText, response, allowedTypes);
-    const redactedTypes: string[] = [];
-    const policy = response.assessments[0]?.sensitiveInformationPolicy;
-    if (policy) {
-        for (const entity of policy.piiEntities ?? []) {
-            if (
-                allowedTypes.has(entity.type) &&
-                !redactedTypes.includes(entity.type)
-            ) {
-                redactedTypes.push(entity.type);
-            }
-        }
-        for (const regex of policy.regexes ?? []) {
-            if (!redactedTypes.includes(regex.name)) {
-                redactedTypes.push(regex.name);
-            }
-        }
-    }
-
-    return {
-        redactedText,
-        redactedTypes,
-        blocked: false,
-        blockedCategories: [],
-        features,
-    };
-}
-
 function setSafetyHeaders(
     c: Context,
-    result:
-        | ProcessedResponse
-        | {
-              applied?: string[];
-              redactedTypes: string[];
-              blocked: boolean;
-              blockedCategories: string[];
-              features?: Set<string>;
-          },
+    features: Set<string>,
+    redactedTypes: string[] = [],
 ): void {
-    const features =
-        "features" in result && result.features
-            ? [...result.features]
-            : ("applied" in result && result.applied) || [];
-    if (features.length > 0) {
-        c.header("X-Safety-Applied", features.join(","));
+    if (features.size > 0) {
+        c.header("X-Safety-Applied", [...features].join(","));
     }
-    if (result.redactedTypes.length > 0) {
-        c.header("X-Safety-Redacted", result.redactedTypes.join(","));
+    if (redactedTypes.length > 0) {
+        c.header("X-Safety-Redacted", redactedTypes.join(","));
     }
 }
 
-function createSafetyError(result: ProcessedResponse): HTTPException {
-    const triggeredFeatures: string[] = [];
-    for (const cat of result.blockedCategories) {
-        if (NSFW_CATEGORIES.has(cat)) triggeredFeatures.push("nsfw");
-        if (SHIELD_CATEGORIES.has(cat)) triggeredFeatures.push("shield");
+function createSafetyError(blockedCategories: string[]): HTTPException {
+    const triggeredFeatures = new Set<string>();
+    for (const cat of blockedCategories) {
+        if (NSFW_CATEGORIES.has(cat)) triggeredFeatures.add("nsfw");
+        if (SHIELD_CATEGORIES.has(cat)) triggeredFeatures.add("shield");
     }
 
     const body = JSON.stringify({
@@ -408,8 +366,8 @@ function createSafetyError(result: ProcessedResponse): HTTPException {
             type: "safety_error",
             code: "content_blocked",
             safety: {
-                triggered: [...new Set(triggeredFeatures)],
-                categories: result.blockedCategories,
+                triggered: [...triggeredFeatures],
+                categories: blockedCategories,
             },
         },
     });

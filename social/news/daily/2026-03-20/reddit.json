@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-20",
+  "period_start": "2026-03-20",
+  "period_end": "2026-03-20",
+  "generated_at": "2026-03-21T06:10:53.817644+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-20/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped multi-image editing, fixed Azure gptimage blocks, and proper 502s",
+  "text": "Merged 10 PRs today. The most notable changes are around our image endpoints and handling upstream weirdness.\n\nFirst, Klein now supports multi-image editing via a new multipart endpoint (#9350). If you've been trying to pass multiple images for editing, you can now do it properly without hacking around the single-image constraints.\n\nAzure blocked our gptimage resource. Not entirely sure what tripped their filters, but we spun up a replacement and swapped it out (#9367). If your image generations were failing or timing out over the last 24 hours, this is why. It's fully restored now.\n\nWe also pushed a small but necessary quality-of-life fix for text generation. When upstream models return an empty completion (which happens more often than it should), the API now correctly rejects it and returns a 502 Bad Gateway (#9345). No more parsing empty strings and wondering if your prompt was the issue or if the model just gave up. Just honest HTTP status codes.\n\nFinally, the community showcase added a few new tools today, including BorsaciAI and BexyFlowers. \n\nYou can check out the source for these and the rest of the updates on our GitHub: https://github.com/pollinations/pollinations.\n\nLet me know if the new multi-image endpoint behaves as expected."
+}

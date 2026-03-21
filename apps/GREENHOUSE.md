@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **1124** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **1125** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -20,8 +20,8 @@
 | [🤖 Twitch Gemini Chatbot](9457737) | Runs Twitch Gemini Chatbot to provide zero-code Google Gemini AI chat and Pollinations.ai media generation for 24/7 interactive livestream conversations. | [@web](https://github.com/web) |  | 🫧 |
 | [🌌 InfiniteMud](https://infinitemud.app/) | Build persistent, procedurally generated worlds with InfiniteMud, offering scalable navigable space and user-created structures. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 Pollinations AI  Claude Code CLI Plugin](https://www.ai-ministries.com/downloads/) | Generate images, text, audio, and video from Claude Code using Pollinations AI  Claude Code CLI Plugin and Pollinations.ai httpspollinations.ai | [@cli](https://github.com/cli) |  | 🫧 |
+| [⚛️ Physics study with AI](https://physicsatlas.github.io/PhysicsAtlas/) | Practice physics problems and receive step-by-step solutions and explanations with Physics study with AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🐉 Daily Cryptid](https://cjhauser.me/daily-cryptid) | Generate one AI-created cryptid every 24 hours with Daily Cryptid, using pollinations.ai to produce both image and description. | [@web](https://github.com/web) |  | 🫧 |
-| [💐 BexyFlowers - AI Bouquet Designer](https://bexyflowers.shop) | Generates photorealistic AI previews of custom bouquets using pollinations.ai for BexyFlowers - AI Bouquet Designer, an e-commerce platform based in Lebanon. | [@web](https://github.com/web) |  | 🫧 |
 
 ---
 
@@ -662,6 +662,7 @@
 |-----|-------------|--------|---:|---|
 | [🧩 Connect Pollinations with Open Web UI tutorial](https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI) | Step-by-step guide to integrate Pollinations APIs into Open Web UI | [@cloph-dsp](https://github.com/cloph-dsp) | 15 |  |
 | [🧬 Benchside](https://benchside.vercel.app/) | Provides AI biomedical assistance via Benchside for researchers and medical professionals, offering research tools, document analysis, and pharmaceutical expertise. | [@web](https://github.com/web) |  | 🫧 |
+| [⚛️ Physics study with AI](https://physicsatlas.github.io/PhysicsAtlas/) | Practice physics problems and receive step-by-step solutions and explanations with Physics study with AI. | [@web](https://github.com/web) |  | 🫧 |
 | [📐 Proyecto Descartes](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html) | STEM education initiative integrating Pollinations AI | [@web](https://github.com/web) |  |  |
 | [📚 lstation.co Children Story Creator and Player Plat](https://lstation.co) | Create and play interactive stories for children using lstation.co Children Story Creator and Player Plat with AI-powered storytelling and educational features. | [@web](https://github.com/web) |  | 🫧 |
 | [📚 StudyCcc](https://mddecn.github.io/Studing-site-by-Dannzss.-/) | Provides study tools in beta as StudyCcc; created by Dannszz. | [@web](https://github.com/web) |  | 🫧 |
@@ -669,12 +670,12 @@
 | [🧮 BhaskarMath](https://bhaskarmath.github.io/BhaskarMath/) | Math lessons, practice problems, and step-by-step solutions across algebra, calculus, and geometry for study and exam preparation. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 MLALab.ai](https://mlalab.ai) | Multi-language video dubbing tool that generates AI videos in 21 languages with captions, audio tracks, and subtitles using Pollinations for scene image generation. | [@web](https://github.com/web) |  | 🫧 |
 | [🔍 ExplainMyBigO](https://explain-my-bigo.vercel.app/) | AI tool that estimates Big-O time and space complexity of your algorithms instantly. | [@web](https://github.com/web) |  | 🫧 |
-| [📖 Tiny Tales](https://tiny-tales.nathanconnor.dev) | Generates child-friendly 4-page stories with adjustable max word length. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 75 apps</summary>
+<details><summary>Show all 76 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [📖 Tiny Tales](https://tiny-tales.nathanconnor.dev) | Generates child-friendly 4-page stories with adjustable max word length. | [@web](https://github.com/web) |  | 🫧 |
 | [📚 Cryonex](https://www.cryonex.app/app) | All-in-one study assistant replacing tabs to save students money. | [@web](https://github.com/web) |  | 🫧 |
 | [🏫 My Web Site](https://proyectodescartes.org/IATools/85_Generador_de_c%C3%B3digo_con_IA/ejemplos/game.html) | Sitio web para proyectos de aula de bachillerato con estructura completa. | [@web](https://github.com/web) |  | 🫧 |
 | [📝 AI Quiz Simulator](https://mrlearner1606.github.io/quiz/) | Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations. | [@web](https://github.com/web) |  | 🫧 |

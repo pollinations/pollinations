@@ -1,0 +1,33 @@
+{
+  "pr_number": 9403,
+  "title": "Add Webcalypt Image Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9403",
+  "merged_at": "2026-03-21T17:08:49Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Webcalypt joins the gallery",
+    "blurb": "The Webcalypt Image Generator has officially sprouted in our community garden. Just describe what you want to see, and watch the pixels assemble themselves.",
+    "summary": "Added the Webcalypt Image Generator to the community apps showcase.",
+    "impact": "Users can now discover and access the Webcalypt text-to-image tool directly from the Pollinations app directory.",
+    "keywords": [
+      "community",
+      "app",
+      "image-generation",
+      "showcase"
+    ],
+    "visual_concept": "Webcalypt is a text-to-image generator. The visual should represent text transforming into art. Polly the bee as an artist (wearing a beret) alongside the Monitor Robot who is displaying a beautiful landscape on its screen, representing the generated image.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, hovering next to a cute chunky monitor robot whose screen displays a beautiful glowing landscape. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9403.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, hovering next to a cute chunky monitor robot whose screen displays a beautiful glowing landscape. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-21T17:10:43.695548+00:00"
+}

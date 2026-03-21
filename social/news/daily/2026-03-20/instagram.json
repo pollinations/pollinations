@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-20",
+  "period_start": "2026-03-20",
+  "period_end": "2026-03-20",
+  "generated_at": "2026-03-21T06:10:53.817644+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-20/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-20/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-20/images/instagram-3.jpg"
+    }
+  ],
+  "text": "10 PRs merged this week. The showcase garden is getting crowded — five new community apps just dropped, covering everything from AI bouquet design to daily cryptids.\n\nOn the API side, Klein learned how to handle multi-image editing via the multipart endpoint. We also finally taught the text generation endpoint to return an honest 502 when upstream gives us an empty response (no more ghost completions). Oh, and gptimage is back online.\n\nCode, docs, and the showcase at pollinations.ai. 🐝\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #aiartcommunity",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

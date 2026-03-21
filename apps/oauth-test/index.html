@@ -306,24 +306,28 @@
             $('id-token-box').classList.remove('hidden');
         }
 
-        // Decode and display JWT claims
-        try {
-            const claims = decodeJwtPayload(tokens.access_token);
-            const grid = $('claims');
-            grid.innerHTML = '';
-            for (const [key, val] of Object.entries(claims)) {
-                const k = document.createElement('div');
-                k.className = 'key';
-                k.textContent = key;
-                const v = document.createElement('div');
-                v.className = 'val';
-                v.textContent = typeof val === 'object' ? JSON.stringify(val) : String(val);
-                grid.append(k, v);
-            }
-            setStatus('Authenticated successfully!', 'success');
-        } catch {
-            setStatus('Authenticated (could not decode JWT claims)', 'success');
+        // Decode and display JWT claims (try access_token first, fall back to id_token)
+        const grid = $('claims');
+        grid.innerHTML = '';
+        let decoded = false;
+        for (const src of [tokens.access_token, tokens.id_token]) {
+            if (!src) continue;
+            try {
+                const claims = decodeJwtPayload(src);
+                for (const [key, val] of Object.entries(claims)) {
+                    const k = document.createElement('div');
+                    k.className = 'key';
+                    k.textContent = key;
+                    const v = document.createElement('div');
+                    v.className = 'val';
+                    v.textContent = typeof val === 'object' ? JSON.stringify(val) : String(val);
+                    grid.append(k, v);
+                }
+                decoded = true;
+                break;
+            } catch {}
         }
+        setStatus(decoded ? 'Authenticated successfully!' : 'Authenticated (session token)', 'success');
     }
 
     // ── Refresh ──
@@ -377,7 +381,7 @@
             return;
         }
         try {
-            const url = `${server()}/v1/chat/completions`;
+            const url = `${server()}/api/generate/v1/chat/completions`;
             setStatus(`Calling ${url}...`);
 
             const resp = await fetch(url, {

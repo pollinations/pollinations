@@ -1,0 +1,33 @@
+{
+  "pr_number": 9381,
+  "title": "docs: update README — 2026-03-21",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9381",
+  "merged_at": "2026-03-21T07:17:11Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Daily Chronicle",
+    "blurb": "The hive's daily records have been updated with the latest community creations and news.",
+    "summary": "Automated daily update to the README file to reflect the latest news and recently added community apps.",
+    "impact": "Keeps the repository's front page fresh with the newest community contributions and updates.",
+    "keywords": [
+      "readme",
+      "news",
+      "apps",
+      "automated"
+    ],
+    "visual_concept": "Polly the bee acting as a librarian or archivist, updating a large pixelated notice board with new polaroids of community apps.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, pinning new pixelated polaroid photos to a wooden notice board. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9381.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, pinning new pixelated polaroid photos to a wooden notice board. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-21T07:18:39.647970+00:00"
+}

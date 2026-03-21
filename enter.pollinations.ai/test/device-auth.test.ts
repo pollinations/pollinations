@@ -170,10 +170,12 @@ describe("Device Authorization Flow", () => {
             const tokenBody = (await tokenRes.json()) as {
                 access_token: string;
                 token_type: string;
+                scope?: string;
             };
             expect(tokenRes.status).toBe(200);
             expect(tokenBody.access_token).toBe(key);
             expect(tokenBody.token_type).toBe("bearer");
+            expect(tokenBody.scope).toBe("generate");
 
             // Replay protection: polling again should return access_denied
             const replayRes = await SELF.fetch(`${BASE}/api/device/token`, {

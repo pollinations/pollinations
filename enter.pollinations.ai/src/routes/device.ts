@@ -295,6 +295,7 @@ export const deviceRoutes = new Hono<Env>()
                     ...(stored.expiresIn != null && {
                         expires_in: stored.expiresIn,
                     }),
+                    ...(device.scope && { scope: device.scope }),
                 });
             }
 

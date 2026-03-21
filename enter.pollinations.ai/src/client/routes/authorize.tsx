@@ -108,10 +108,9 @@ function AuthorizeComponent() {
 
     const [deviceScopes, setDeviceScopes] = useState<string[]>([]);
 
-    const parsedRedirectUrl = safeParseUrl(redirect_url);
-    const isValidUrl = parsedRedirectUrl !== null;
+    const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
-    const canAuthorize = isDeviceMode || isValidUrl;
+    const canAuthorize = isDeviceMode || parsedRedirectUrl !== null;
 
     const keyPermissions = useKeyPermissions({
         allowedModels: models,
@@ -147,7 +146,7 @@ function AuthorizeComponent() {
                 setError("No redirect URL provided");
                 return;
             }
-            if (!isValidUrl) {
+            if (!parsedRedirectUrl) {
                 setError("Invalid redirect URL format");
                 return;
             }
@@ -161,7 +160,7 @@ function AuthorizeComponent() {
                 .then((data) => setAttribution(data as Attribution))
                 .catch(() => {});
         }
-    }, [isDeviceMode, user_code, app_key, redirect_url, isValidUrl]);
+    }, [isDeviceMode, user_code, app_key, redirect_url, parsedRedirectUrl]);
 
     async function handleSignIn(): Promise<void> {
         setIsSigningIn(true);
@@ -292,7 +291,7 @@ function AuthorizeComponent() {
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
                     body: JSON.stringify({
-                        userCode: user_code?.toUpperCase(),
+                        userCode: user_code.toUpperCase(),
                     }),
                 });
             } catch {
@@ -300,7 +299,7 @@ function AuthorizeComponent() {
             }
             setDone(true);
             setError("denied");
-        } else if (isValidUrl) {
+        } else if (parsedRedirectUrl) {
             window.location.href = redirect_url;
         } else {
             navigate({ to: "/" });
@@ -442,7 +441,7 @@ function AuthorizeComponent() {
                     </div>
                     <p className="text-sm text-green-800 mt-1">
                         Signed in as{" "}
-                        <strong>{user?.githubUsername || user?.email}</strong>
+                        <strong>{user.githubUsername || user.email}</strong>
                     </p>
                 </div>
 

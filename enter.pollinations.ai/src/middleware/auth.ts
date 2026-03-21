@@ -105,8 +105,8 @@ export const auth = (options: AuthOptions) =>
             assertNotBanned(result.user);
 
             return {
-                user: result?.user,
-                session: result?.session,
+                user: result.user,
+                session: result.session,
             };
         };
 
@@ -183,12 +183,12 @@ export const auth = (options: AuthOptions) =>
 
             try {
                 // Use env-based issuer (not request URL) to match the JWT's issuer claim
-                const baseURL =
-                    c.env.ENVIRONMENT === "production"
-                        ? "https://enter.pollinations.ai"
-                        : c.env.ENVIRONMENT === "staging"
-                          ? "https://staging.enter.pollinations.ai"
-                          : "http://localhost:3000";
+                let baseURL = "http://localhost:3000";
+                if (c.env.ENVIRONMENT === "production") {
+                    baseURL = "https://enter.pollinations.ai";
+                } else if (c.env.ENVIRONMENT === "staging") {
+                    baseURL = "https://staging.enter.pollinations.ai";
+                }
                 const payload = await verifyAccessToken(bearer, {
                     verifyOptions: {
                         issuer: `${baseURL}/api/auth`,

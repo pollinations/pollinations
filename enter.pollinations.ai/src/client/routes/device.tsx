@@ -25,7 +25,7 @@ function DeviceComponent() {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const verifyAndRedirect = useCallback(
-        async function verifyAndRedirect(code: string) {
+        async (code: string) => {
             setError(null);
             setChecking(true);
             try {

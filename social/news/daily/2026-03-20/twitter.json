@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-03-20",
+  "period_start": "2026-03-20",
+  "period_end": "2026-03-20",
+  "generated_at": "2026-03-21T06:10:53.817644+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-20/images/twitter.jpg"
+    }
+  ],
+  "text": "10 updates shipped. multi-image editing is live via multipart endpoint. text gen now returns a 502 when upstream gives an empty completion instead of silently failing. swapped a blocked azure resource to get gptimage back, plus 5 new community apps in the showcase."
+}

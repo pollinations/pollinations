@@ -291,11 +291,16 @@ const tierDist = queryStaging(
 const bannedCount = queryStaging(
     "SELECT COUNT(*) as c FROM user WHERE banned = 1",
 );
+const stagingApikeyCount = Number(apikeyCount[0]?.c ?? 0);
 
 console.log(`  Users:    ${userCount[0]?.c}`);
-console.log(`  API keys: ${apikeyCount[0]?.c}`);
 console.log(`  Accounts: ${accountCount[0]?.c}`);
 console.log(`  Banned:   ${bannedCount[0]?.c}`);
+if (stagingApikeyCount === exportedApikeyCount) {
+    console.log("  API keys: verified");
+} else {
+    console.log("  API keys: count mismatch");
+}
 console.log(`\n  Tier distribution:`);
 for (const row of tierDist) {
     console.log(`    ${row.tier}: ${row.c}`);

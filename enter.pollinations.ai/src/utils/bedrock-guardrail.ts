@@ -35,7 +35,7 @@ export interface BedrockResponse {
             regexes: RegexFilter[];
         };
     }[];
-    output: { text: string }[];
+    outputs: { text: string }[];
     usage: {
         contentPolicyUnits: number;
         sensitiveInformationPolicyUnits: number;
@@ -142,8 +142,8 @@ export function redactText(
     const hasAnonymized = policy.piiEntities?.some(
         (e) => e.action === "ANONYMIZED",
     );
-    if (hasAnonymized && !allowedTypes && result.output?.[0]?.text) {
-        redacted = result.output[0].text;
+    if (hasAnonymized && !allowedTypes && result.outputs?.[0]?.text) {
+        redacted = result.outputs[0].text;
     } else {
         for (const entity of policy.piiEntities ?? []) {
             if (!allowedTypes || allowedTypes.has(entity.type)) {

@@ -46,7 +46,7 @@ describe("redactText", () => {
 					sensitiveInformationPolicy: { piiEntities, regexes },
 				},
 			],
-			output: outputText ? [{ text: outputText }] : [],
+			outputs: outputText ? [{ text: outputText }] : [],
 			usage: { contentPolicyUnits: 0, sensitiveInformationPolicyUnits: 1, wordPolicyUnits: 0 },
 		};
 	}
@@ -55,7 +55,7 @@ describe("redactText", () => {
 		const response: BedrockResponse = {
 			action: "NONE",
 			assessments: [{}],
-			output: [],
+			outputs: [],
 			usage: { contentPolicyUnits: 0, sensitiveInformationPolicyUnits: 0, wordPolicyUnits: 0 },
 		};
 		expect(redactText("hello world", response)).toBeNull();

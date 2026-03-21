@@ -63,8 +63,8 @@ STRIPE_SUCCESS_URL = "http://localhost:3000"
 # Bedrock Guardrails (safety features)
 # AWS credentials are secrets (via sops), these are public config
 AWS_BEDROCK_REGION = "us-east-1"
-BEDROCK_GUARDRAIL_ID = ""
-BEDROCK_GUARDRAIL_VERSION = "1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
 
 
 [env.local]
@@ -350,5 +350,5 @@ IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 # Bedrock Guardrails (empty = safety features disabled in tests)
 AWS_BEDROCK_REGION = "us-east-1"
-BEDROCK_GUARDRAIL_ID = ""
-BEDROCK_GUARDRAIL_VERSION = "1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"

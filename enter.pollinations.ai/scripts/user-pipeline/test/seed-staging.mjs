@@ -178,6 +178,9 @@ console.log(
 const allUsers = [];
 const allApikeys = [];
 const allAccounts = [];
+let exportedUserCount = 0;
+let exportedApikeyCount = 0;
+let exportedAccountCount = 0;
 
 const ID_BATCH = 100;
 
@@ -195,20 +198,23 @@ for (let i = 0; i < allUserIds.length; i += ID_BATCH) {
         `SELECT ${USER_COLS.map((c) => `"${c}"`).join(",")} FROM user WHERE id IN (${inClause})`,
     );
     allUsers.push(...users);
+    exportedUserCount += users.length;
 
     const keys = queryProd(
         `SELECT ${APIKEY_COLS.map((c) => `"${c}"`).join(",")} FROM apikey WHERE user_id IN (${inClause})`,
     );
     allApikeys.push(...keys);
+    exportedApikeyCount += keys.length;
 
     const accounts = queryProd(
         `SELECT ${ACCOUNT_COLS.map((c) => `"${c}"`).join(",")} FROM account WHERE user_id IN (${inClause})`,
     );
     allAccounts.push(...accounts);
+    exportedAccountCount += accounts.length;
 }
 
 console.log(
-    `  Exported: ${allUsers.length} users, ${allApikeys.length} apikeys, ${allAccounts.length} accounts\n`,
+    `  Exported: ${exportedUserCount} users, ${exportedApikeyCount} apikeys, ${exportedAccountCount} accounts\n`,
 );
 
 // ─── Phase 3: Clear staging ─────────────────────────────────────────
@@ -232,38 +238,45 @@ console.log("=== Phase 4: Inserting into staging ===\n");
 
 const INSERT_BATCH = 25;
 
-function batchInsert(table, cols, rows, label) {
-    console.log(`  Inserting ${rows.length} ${label}...`);
+function batchInsert(table, cols, rows, rowCount, label) {
+    console.log(`  Inserting ${rowCount} ${label}...`);
     for (let i = 0; i < rows.length; i += INSERT_BATCH) {
         const batch = rows.slice(i, i + INSERT_BATCH);
         const sql = buildInsert(table, cols, batch);
         try {
             execStaging(sql);
-        } catch (e) {
+        } catch (_e) {
             console.error(
-                `    ERROR inserting ${label} batch ${i}: ${e.message.slice(0, 200)}`,
+                `    ERROR inserting ${label} batch ${i}: retrying rows individually`,
             );
             for (const row of batch) {
                 try {
                     execStaging(buildInsert(table, cols, [row]));
                 } catch (e2) {
+                    void e2;
                     console.error(
-                        `    SKIP ${label} ${row.id}: ${e2.message.slice(0, 200)}`,
+                        `    SKIP ${label}: row failed to insert after retry`,
                     );
                 }
             }
         }
         if ((i + INSERT_BATCH) % 250 < INSERT_BATCH) {
             console.log(
-                `    ${Math.min(i + INSERT_BATCH, rows.length)} / ${rows.length}`,
+                `    ${Math.min(i + INSERT_BATCH, rowCount)} / ${rowCount}`,
             );
         }
     }
 }
 
-batchInsert("user", USER_COLS, allUsers, "users");
-batchInsert("apikey", APIKEY_COLS, allApikeys, "apikeys");
-batchInsert("account", ACCOUNT_COLS, allAccounts, "accounts");
+batchInsert("user", USER_COLS, allUsers, exportedUserCount, "users");
+batchInsert("apikey", APIKEY_COLS, allApikeys, exportedApikeyCount, "apikeys");
+batchInsert(
+    "account",
+    ACCOUNT_COLS,
+    allAccounts,
+    exportedAccountCount,
+    "accounts",
+);
 
 // ─── Phase 5: Verify ────────────────────────────────────────────────
 

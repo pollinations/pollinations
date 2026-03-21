@@ -178,9 +178,7 @@ export async function getGithubToken(
         }
         const resolvedKeyPath = resolveGithubAppKeyPath(keyPath);
         if (!existsSync(resolvedKeyPath)) {
-            throw new Error(
-                `GitHub App private key not found: ${keyPath}`,
-            );
+            throw new Error(`GitHub App private key not found: ${keyPath}`);
         }
 
         if (appToken && Date.now() < appTokenExpiresAt) {

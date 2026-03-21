@@ -51,7 +51,14 @@ function queryGroup(emails: string[]): Record<string, number>[] {
 
 function verifyGroupA(): CheckResult[] {
     const emails = loadEmails("/tmp/cohort-group-a.txt");
-    if (emails.length === 0) return [{ name: "Group A", pass: false, detail: "Missing /tmp/cohort-group-a.txt" }];
+    if (emails.length === 0)
+        return [
+            {
+                name: "Group A",
+                pass: false,
+                detail: "Missing /tmp/cohort-group-a.txt",
+            },
+        ];
 
     const row = queryGroup(emails)[0];
     const checks: CheckResult[] = [];
@@ -78,7 +85,14 @@ function verifyGroupA(): CheckResult[] {
 
 function verifyGroupB(): CheckResult[] {
     const emails = loadEmails("/tmp/cohort-group-b.txt");
-    if (emails.length === 0) return [{ name: "Group B", pass: false, detail: "Missing /tmp/cohort-group-b.txt" }];
+    if (emails.length === 0)
+        return [
+            {
+                name: "Group B",
+                pass: false,
+                detail: "Missing /tmp/cohort-group-b.txt",
+            },
+        ];
 
     const row = queryGroup(emails)[0];
     const seedRate = Number(row.seed ?? 0) / emails.length;
@@ -100,7 +114,14 @@ function verifyGroupB(): CheckResult[] {
 function verifyGroupC(): CheckResult[] {
     const emailsB = loadEmails("/tmp/cohort-group-b.txt");
     const emailsC = loadEmails("/tmp/cohort-group-c.txt");
-    if (emailsC.length === 0) return [{ name: "Group C", pass: false, detail: "Missing /tmp/cohort-group-c.txt" }];
+    if (emailsC.length === 0)
+        return [
+            {
+                name: "Group C",
+                pass: false,
+                detail: "Missing /tmp/cohort-group-c.txt",
+            },
+        ];
 
     const rowB = queryGroup(emailsB)[0];
     const rowC = queryGroup(emailsC)[0];
@@ -128,11 +149,13 @@ function main(): void {
 
     console.log("Pipeline Test Verification\n");
 
-    let checks: CheckResult[] = [];
+    const checks: CheckResult[] = [];
 
     if (group === "all" || group === "a") checks.push(...verifyGroupA());
-    if (group === "all" || group === "daily" || group === "b") checks.push(...verifyGroupB());
-    if (group === "all" || group === "daily" || group === "c") checks.push(...verifyGroupC());
+    if (group === "all" || group === "daily" || group === "b")
+        checks.push(...verifyGroupB());
+    if (group === "all" || group === "daily" || group === "c")
+        checks.push(...verifyGroupC());
 
     let passed = 0;
     let failed = 0;
@@ -145,7 +168,9 @@ function main(): void {
         else failed++;
     }
 
-    console.log(`\n${passed} passed, ${failed} failed of ${checks.length} checks`);
+    console.log(
+        `\n${passed} passed, ${failed} failed of ${checks.length} checks`,
+    );
 
     if (failed > 0) process.exit(1);
 }

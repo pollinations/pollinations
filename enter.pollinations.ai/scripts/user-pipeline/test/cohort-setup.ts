@@ -33,13 +33,15 @@ const GROUPS: CohortGroup[] = [
         name: "Group B",
         file: "/tmp/cohort-group-b.txt",
         query: `SELECT email FROM user WHERE tier IN ('seed','spore') AND COALESCE(banned, 0) = 0 AND github_id IS NOT NULL ORDER BY created_at ASC LIMIT 200`,
-        description: "200 seed/spore users (downgraded to spore at reset) for daily pipeline",
+        description:
+            "200 seed/spore users (downgraded to spore at reset) for daily pipeline",
     },
     {
         name: "Group C",
         file: "/tmp/cohort-group-c.txt",
         query: `SELECT email FROM user WHERE tier = 'spore' AND COALESCE(banned, 0) = 0 AND github_id IS NOT NULL ORDER BY created_at ASC LIMIT 100 OFFSET 200`,
-        description: "100 genuine spore users for daily pipeline (no overlap with B)",
+        description:
+            "100 genuine spore users for daily pipeline (no overlap with B)",
     },
 ];
 
@@ -51,7 +53,7 @@ function main(): void {
     for (const group of GROUPS) {
         const rows = queryD1(ENV, group.query);
         const emails = rows.map((r) => String(r.email));
-        writeFileSync(group.file, emails.join("\n") + "\n");
+        writeFileSync(group.file, `${emails.join("\n")}\n`);
         console.log(`  ${group.name}: ${emails.length} users -> ${group.file}`);
         console.log(`    ${group.description}`);
 
@@ -62,8 +64,10 @@ function main(): void {
 
     // Combined daily cohort (B + C)
     const dailyFile = "/tmp/cohort-daily.txt";
-    writeFileSync(dailyFile, allEmails.join("\n") + "\n");
-    console.log(`\n  Daily combined (B+C): ${allEmails.length} users -> ${dailyFile}`);
+    writeFileSync(dailyFile, `${allEmails.join("\n")}\n`);
+    console.log(
+        `\n  Daily combined (B+C): ${allEmails.length} users -> ${dailyFile}`,
+    );
 
     console.log("\nDone. Run reset-cohort.ts before each test run.");
 }

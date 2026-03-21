@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **1126** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **1127** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -20,8 +20,8 @@
 | [🤖 Twitch Gemini Chatbot](9457737) | Runs Twitch Gemini Chatbot to provide zero-code Google Gemini AI chat and Pollinations.ai media generation for 24/7 interactive livestream conversations. | [@web](https://github.com/web) |  | 🫧 |
 | [🌌 InfiniteMud](https://infinitemud.app/) | Build persistent, procedurally generated worlds with InfiniteMud, offering scalable navigable space and user-created structures. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 Pollinations AI  Claude Code CLI Plugin](https://www.ai-ministries.com/downloads/) | Generate images, text, audio, and video from Claude Code using Pollinations AI  Claude Code CLI Plugin and Pollinations.ai httpspollinations.ai | [@cli](https://github.com/cli) |  | 🫧 |
+| [🎨 Pollinations AI All-in-One Generation](https://mokindred.github.io/) | Generate images, music, and text with Pollinations AI All-in-One Generation using customizable prompts, style controls, and output format options. | [@web](https://github.com/web) |  | 🫧 |
 | [⚛️ Physics study with AI](https://physicsatlas.github.io/PhysicsAtlas/) | Practice physics problems and receive step-by-step solutions and explanations with Physics study with AI. | [@web](https://github.com/web) |  | 🫧 |
-| [🐉 Daily Cryptid](https://cjhauser.me/daily-cryptid) | Generate one AI-created cryptid every 24 hours with Daily Cryptid, using pollinations.ai to produce both image and description. | [@web](https://github.com/web) |  | 🫧 |
 
 ---
 
@@ -30,6 +30,7 @@
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
 | [🎨 AI-Ministries Image Generator](https://images.ai-ministries.com/) | Generate images using AI-Ministries Image Generator and reference the asset at httpsgithub.comuser-attachmentsassetsded25f67-c0c9-469e-81c9-d470e7dcdd49. | [@web](https://github.com/web) |  | 🫧 |
+| [🎨 Pollinations AI All-in-One Generation](https://mokindred.github.io/) | Generate images, music, and text with Pollinations AI All-in-One Generation using customizable prompts, style controls, and output format options. | [@web](https://github.com/web) |  | 🫧 |
 | [🐉 Daily Cryptid](https://cjhauser.me/daily-cryptid) | Generate one AI-created cryptid every 24 hours with Daily Cryptid, using pollinations.ai to produce both image and description. | [@web](https://github.com/web) |  | 🫧 |
 | [💐 BexyFlowers - AI Bouquet Designer](https://bexyflowers.shop) | Generates photorealistic AI previews of custom bouquets using pollinations.ai for BexyFlowers - AI Bouquet Designer, an e-commerce platform based in Lebanon. | [@web](https://github.com/web) |  | 🫧 |
 | [🖌️ House Painter](https://konsumer.js.org/housepainter/) | Generate paint color schemes for your house using pollinations.ai with House Painter to visualize exterior options and combinations. | [@web](https://github.com/web) |  | 🫧 |
@@ -38,12 +39,12 @@
 | [🧑‍🎨 Pollinations Avatar Gen](48694850) | An extension for SillyTavern that generates character avatars based on their text descriptions using the Pollinations.ai API. Everything is done at the click of a button. | [@browser-ext](https://github.com/browser-ext) |  | 🫧 |
 | [🎨 Pollinations-ai-STUDIO](https://pollinations-ai-studio.pages.dev/) | API endpoints, authentication, and image-generation parameters for developer integration. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ StickerForge](https://stickerforge-two.vercel.app/) | Generate custom stickers for Telegram and WhatsApp from images or text prompts. | [@web](https://github.com/web) |  | 🫧 |
-| [🖼️ Text To Image](https://t.me/GenerateTTI_bot) | Convert text prompts into images using the Telegram Bot by API Pollinations.ai. | [@telegram](https://github.com/telegram) |  | 🫧 |
 
-<details><summary>Show all 141 apps</summary>
+<details><summary>Show all 142 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ Text To Image](https://t.me/GenerateTTI_bot) | Convert text prompts into images using the Telegram Bot by API Pollinations.ai. | [@telegram](https://github.com/telegram) |  | 🫧 |
 | [🖼️ Comics Explorer](https://juanrivera-boop.github.io/Pollinations-slides/) | Organiza y visualiza colecciones de cómics digitales y presentaciones interactivas en Comics Explorer mediante una interfaz web moderna. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 AI img gen stant](https://jic-server.xo.je/?i=1) | Generate images from text prompts with control over style, resolution, and seeds, and export outputs for iteration. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 junk journal Ai](https://junkjournalai.shop/) | Generate junk journal pages with junk journal Ai, creating printable, customizable layouts and collage-style elements for scrapbooking and mixed-media projects. | [@web](https://github.com/web) |  | 🫧 |

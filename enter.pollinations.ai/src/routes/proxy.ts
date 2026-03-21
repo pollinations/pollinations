@@ -991,7 +991,19 @@ async function checkBalance(
     // Pre-check: reject if balance < estimated cost for this model
     // getModelStats is cached in KV for 1hr, so this is cheap
     const stats = await getModelStats(env.KV, log);
-    const estimatedCost = getEstimatedPrice(stats, model.resolved);
+    let estimatedCost = getEstimatedPrice(stats, model.resolved);
+
+    // Cap to guard against skewed Tinybird averages blocking users
+    if (estimatedCost > 5) {
+        log.warn(
+            "Estimated cost for {model} is suspiciously high ({cost}). Capping to 2.0",
+            {
+                model: model.resolved,
+                cost: estimatedCost,
+            },
+        );
+        estimatedCost = 2.0;
+    }
 
     if (estimatedCost > 0) {
         const userBalance = await balance.getBalance(auth.user.id);

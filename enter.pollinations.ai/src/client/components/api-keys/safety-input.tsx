@@ -20,7 +20,12 @@ const SAFETY_FEATURES = [
     {
         id: "violence",
         label: "⚔️ Violence",
-        description: "Blocks violent & gory content",
+        description: "Blocks violence, hate speech & insults",
+    },
+    {
+        id: "shield",
+        label: "🛡️ Shield",
+        description: "Blocks prompt injection & illegal instructions",
     },
 ] as const;
 

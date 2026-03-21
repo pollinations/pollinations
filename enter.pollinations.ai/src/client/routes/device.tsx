@@ -38,7 +38,6 @@ function DeviceComponent() {
                         error_description?: string;
                     } | null;
                     setError(data?.error_description || "Invalid code");
-                    setChecking(false);
                     return;
                 }
                 const data = (await res.json()) as { status: string };
@@ -48,16 +47,15 @@ function DeviceComponent() {
                             ? "This code has expired"
                             : "This code has already been used",
                     );
-                    setChecking(false);
                     return;
                 }
-                // Navigate to authorize with device code context
                 navigate({
                     to: "/authorize",
                     search: { user_code: code.toUpperCase() },
                 });
             } catch {
                 setError("Failed to verify code");
+            } finally {
                 setChecking(false);
             }
         },

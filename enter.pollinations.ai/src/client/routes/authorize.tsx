@@ -106,15 +106,11 @@ function AuthorizeComponent() {
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [done, setDone] = useState(false);
 
-    // Device mode state
     const [deviceScopes, setDeviceScopes] = useState<string[]>([]);
 
-    // Derive URL validity and hostname from redirect_url (redirect mode only)
     const parsedRedirectUrl = safeParseUrl(redirect_url);
     const isValidUrl = parsedRedirectUrl !== null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
-
-    // In device mode, always valid (no redirect URL needed)
     const canAuthorize = isDeviceMode || isValidUrl;
 
     const keyPermissions = useKeyPermissions({
@@ -126,10 +122,8 @@ function AuthorizeComponent() {
 
     useScrollLock();
 
-    // Fetch context on mount — device info or redirect attribution
     useEffect(() => {
         if (isDeviceMode) {
-            // Device mode: fetch scope/client info
             fetch(
                 `${config.baseUrl}/api/device/info?user_code=${encodeURIComponent(user_code)}`,
                 { credentials: "include" },
@@ -149,12 +143,11 @@ function AuthorizeComponent() {
                 })
                 .catch((e) => setError(e.message));
         } else {
-            // Redirect mode: validate URL and fetch attribution
             if (!redirect_url) {
                 setError("No redirect URL provided");
                 return;
             }
-            if (!safeParseUrl(redirect_url)) {
+            if (!isValidUrl) {
                 setError("Invalid redirect URL format");
                 return;
             }
@@ -168,7 +161,7 @@ function AuthorizeComponent() {
                 .then((data) => setAttribution(data as Attribution))
                 .catch(() => {});
         }
-    }, [isDeviceMode, user_code, app_key, redirect_url]);
+    }, [isDeviceMode, user_code, app_key, redirect_url, isValidUrl]);
 
     async function handleSignIn(): Promise<void> {
         setIsSigningIn(true);
@@ -216,9 +209,8 @@ function AuthorizeComponent() {
             );
         }
 
-        const data = result.data;
+        const { key, id } = result.data;
 
-        // Update permissions if needed
         const { allowedModels, pollenBudget, accountPermissions } =
             keyPermissions.permissions;
         const updates = {
@@ -227,7 +219,7 @@ function AuthorizeComponent() {
             ...(accountPermissions?.length && { accountPermissions }),
         };
         if (Object.keys(updates).length > 0) {
-            const response = await fetch(`/api/api-keys/${data.id}/update`, {
+            const response = await fetch(`/api/api-keys/${id}/update`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -242,8 +234,8 @@ function AuthorizeComponent() {
         }
 
         return {
-            key: data.key,
-            id: data.id,
+            key,
+            id,
             expiresIn:
                 expiryDays !== null ? expiryDays * SECONDS_PER_DAY : null,
         };
@@ -259,7 +251,6 @@ function AuthorizeComponent() {
             const { key, id, expiresIn } = await createKeyAndSetPermissions();
 
             if (isDeviceMode) {
-                // Device mode: store key for CLI polling, then show "done"
                 const res = await fetch(
                     `${config.baseUrl}/api/device/approve`,
                     {
@@ -283,7 +274,6 @@ function AuthorizeComponent() {
                 }
                 setDone(true);
             } else {
-                // Redirect mode: redirect with key in hash
                 const url = new URL(redirect_url);
                 url.hash = `api_key=${key}`;
                 window.location.href = url.toString();
@@ -296,7 +286,6 @@ function AuthorizeComponent() {
 
     async function handleDeny(): Promise<void> {
         if (isDeviceMode) {
-            // Deny the device code via better-auth
             try {
                 await fetch(`${config.baseUrl}${config.authPath}/device/deny`, {
                     method: "POST",
@@ -318,7 +307,6 @@ function AuthorizeComponent() {
         }
     }
 
-    // Done screen (device mode only)
     if (done) {
         const denied = error === "denied";
         return (
@@ -436,9 +424,6 @@ function AuthorizeComponent() {
         );
     }
 
-    // Determine what scopes to show
-    const scopesToShow = isDeviceMode ? deviceScopes : [];
-
     return (
         <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
             <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg max-h-[85vh] max-w-lg w-full flex flex-col">
@@ -474,7 +459,6 @@ function AuthorizeComponent() {
                         </div>
                     ) : (
                         <>
-                            {/* App / device info */}
                             <div className="bg-green-200 rounded-lg p-4">
                                 {isDeviceMode ? (
                                     <>
@@ -528,14 +512,13 @@ function AuthorizeComponent() {
                                 )}
                             </div>
 
-                            {/* Scopes (device mode) */}
-                            {scopesToShow.length > 0 && (
+                            {deviceScopes.length > 0 && (
                                 <div>
                                     <p className="text-sm font-medium text-green-950 mb-2">
                                         This will allow the device to:
                                     </p>
                                     <ul className="text-sm text-green-900 space-y-2">
-                                        {scopesToShow.map((s) => (
+                                        {deviceScopes.map((s) => (
                                             <li
                                                 key={s}
                                                 className="flex items-start gap-2"
@@ -552,7 +535,6 @@ function AuthorizeComponent() {
                                 </div>
                             )}
 
-                            {/* Capabilities (redirect mode) */}
                             {!isDeviceMode && (
                                 <ul className="text-sm text-green-900 space-y-2">
                                     <li className="flex items-start gap-2">
@@ -593,7 +575,6 @@ function AuthorizeComponent() {
                                 inline
                             />
 
-                            {/* Redirect destination (redirect mode only) */}
                             {!isDeviceMode && (
                                 <div className="bg-green-200 rounded-lg p-3">
                                     <p className="text-green-900 text-xs mb-1 font-medium">

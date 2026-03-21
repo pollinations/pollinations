@@ -85,7 +85,6 @@ export const deviceRoutes = new Hono<Env>()
                 });
             }
 
-            // Store the API key in KV for the CLI to poll
             await c.env.KV.put(
                 `device-key:${device.deviceCode}`,
                 JSON.stringify({
@@ -95,7 +94,6 @@ export const deviceRoutes = new Hono<Env>()
                 { expirationTtl: KV_TTL },
             );
 
-            // Mark device code as approved with the user ID
             await db
                 .update(schema.deviceCode)
                 .set({ status: "approved", userId: user.id })
@@ -136,12 +134,10 @@ export const deviceRoutes = new Hono<Env>()
             );
         }
 
-        // Check expiry
         if (device.expiresAt < new Date()) {
             return c.json({ error: "expired_token" }, 400);
         }
 
-        // Enforce polling interval
         if (device.lastPolledAt && device.pollingInterval) {
             const elapsed = (Date.now() - device.lastPolledAt.getTime()) / 1000;
             if (elapsed < device.pollingInterval) {
@@ -149,7 +145,6 @@ export const deviceRoutes = new Hono<Env>()
             }
         }
 
-        // Update lastPolledAt
         await db
             .update(schema.deviceCode)
             .set({ lastPolledAt: new Date() })
@@ -163,24 +158,20 @@ export const deviceRoutes = new Hono<Env>()
                 return c.json({ error: "access_denied" }, 400);
 
             case "approved": {
-                // Read the stored API key from KV
                 const stored = (await c.env.KV.get(
                     `device-key:${device.deviceCode}`,
                     "json",
                 )) as { key: string; expiresIn: number | null } | null;
 
                 if (!stored) {
-                    // Key expired from KV or not yet stored — treat as pending
                     return c.json({ error: "authorization_pending" }, 400);
                 }
 
-                // Mark as completed so the key can't be retrieved again
                 await db
                     .update(schema.deviceCode)
                     .set({ status: "completed" })
                     .where(eq(schema.deviceCode.id, device.id));
 
-                // Clean up KV
                 await c.env.KV.delete(`device-key:${device.deviceCode}`);
 
                 return c.json({
@@ -193,7 +184,6 @@ export const deviceRoutes = new Hono<Env>()
             }
 
             default:
-                // "completed" or any other status
                 return c.json({ error: "access_denied" }, 400);
         }
     });

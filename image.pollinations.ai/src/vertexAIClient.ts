@@ -19,6 +19,7 @@ export interface VertexAIImageRequest {
     prompt: string;
     width?: number;
     height?: number;
+    seed?: number;
     referenceImages?: VertexAIImageData[];
     model?: string; // Model ID: gemini-2.5-flash-image (default) or gemini-3-pro-image-preview
     imageSize?: string; // "1K", "2K", "4K" - supported by gemini-3-pro-image-preview and gemini-3.1-flash-image-preview
@@ -193,6 +194,7 @@ export async function generateImageWithVertexAI(
                 temperature: number;
                 top_p: number;
                 max_output_tokens: number;
+                seed?: number;
                 imageConfig?: { aspectRatio?: string; imageSize?: string };
             };
             safetySettings: Array<{
@@ -215,6 +217,7 @@ export async function generateImageWithVertexAI(
                 temperature: 0.7,
                 top_p: 0.9,
                 max_output_tokens: 2048,
+                ...(request.seed !== undefined && { seed: request.seed }),
                 ...(Object.keys(imageConfig).length > 0 && { imageConfig }),
             },
             safetySettings,

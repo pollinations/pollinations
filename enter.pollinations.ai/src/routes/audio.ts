@@ -421,9 +421,8 @@ export async function generateMusic(opts: {
 
     // Buffer response and extract duration
     const audioBuffer = await response.arrayBuffer();
-    // Try MP4 header parsing first, fall back to MP3 byte-size estimate
-    const estimatedDuration =
-        parseMp4Duration(audioBuffer) ?? audioBuffer.byteLength / 16000;
+    // MP3 only — parseMp4Duration falsely matches random bytes in compressed audio
+    const estimatedDuration = audioBuffer.byteLength / 16000;
 
     const usageHeaders = buildUsageHeaders(
         "elevenmusic",

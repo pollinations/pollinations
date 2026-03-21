@@ -21,7 +21,7 @@ const { execFileSync } = require("node:child_process");
 const APPS_FILE = "apps/APPS.md";
 const REPORT_FILE = "apps/BROKEN_APPS.md";
 const DEFAULT_TIMEOUT = 10000;
-const HEALTH_THRESHOLD = 7;
+const HEALTH_THRESHOLD = 3;
 const CONCURRENCY = 20;
 
 // URLs that return false-positive errors (anti-bot protection)

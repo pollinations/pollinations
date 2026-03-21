@@ -19,8 +19,9 @@ export interface VertexAIImageRequest {
     prompt: string;
     width?: number;
     height?: number;
+    seed?: number;
     referenceImages?: VertexAIImageData[];
-    model?: string; // Model ID: gemini-2.5-flash-image-preview (default) or gemini-3-pro-image-preview
+    model?: string; // Model ID: gemini-2.5-flash-image (default) or gemini-3-pro-image-preview
     imageSize?: string; // "1K", "2K", "4K" - supported by gemini-3-pro-image-preview and gemini-3.1-flash-image-preview
     safe?: boolean; // When true, use stricter safety settings; when false, use BLOCK_ONLY_HIGH
 }
@@ -48,7 +49,7 @@ export interface VertexAIResponse {
 }
 
 /**
- * Generate image using Gemini 2.5 Flash Image Preview via direct Vertex AI API
+ * Generate image using Gemini 2.5 Flash Image via direct Vertex AI API
  */
 export async function generateImageWithVertexAI(
     request: VertexAIImageRequest,
@@ -79,8 +80,8 @@ export async function generateImageWithVertexAI(
             throw new Error("GOOGLE_PROJECT_ID environment variable not set");
         }
 
-        // Use provided model or default to gemini-2.5-flash-image-preview (Nano Banana)
-        const modelId = request.model || "gemini-2.5-flash-image-preview";
+        // Use provided model or default to gemini-2.5-flash-image (Nano Banana)
+        const modelId = request.model || "gemini-2.5-flash-image";
         const endpoint = `https://aiplatform.googleapis.com/v1/projects/${projectId}/locations/global/publishers/google/models/${modelId}:generateContent`;
 
         log("Using endpoint:", endpoint);
@@ -193,6 +194,7 @@ export async function generateImageWithVertexAI(
                 temperature: number;
                 top_p: number;
                 max_output_tokens: number;
+                seed?: number;
                 imageConfig?: { aspectRatio?: string; imageSize?: string };
             };
             safetySettings: Array<{
@@ -215,6 +217,7 @@ export async function generateImageWithVertexAI(
                 temperature: 0.7,
                 top_p: 0.9,
                 max_output_tokens: 2048,
+                ...(request.seed !== undefined && { seed: request.seed }),
                 ...(Object.keys(imageConfig).length > 0 && { imageConfig }),
             },
             safetySettings,

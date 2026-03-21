@@ -176,6 +176,26 @@ export async function genericOpenAIClient(
             formattedChoice.finish_reason = "tool_calls";
         }
 
+        // Reject empty completions from unstable upstream providers.
+        const hasContent = !!formattedChoice.message?.content;
+        const hasToolCalls = !!formattedChoice.message?.tool_calls?.length;
+        const hasTokens = (data.usage?.completion_tokens ?? 0) > 0;
+
+        if (!hasContent && !hasToolCalls && !hasTokens) {
+            errorLog(
+                `[${requestId}] Empty completion from upstream: model=%s`,
+                modelName,
+            );
+            throw createApiError(
+                { status: 502, statusText: "Bad Gateway" },
+                {
+                    message: "Upstream provider returned an empty completion",
+                    model: modelName,
+                },
+                modelName,
+            );
+        }
+
         return {
             ...data,
             id: data.id || `genericopenai-${requestId}`,

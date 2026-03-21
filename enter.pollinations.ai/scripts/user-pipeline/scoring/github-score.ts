@@ -589,3 +589,41 @@ export function storeGithubScores(
 
     return stored;
 }
+
+export function storeGithubCheckTimestamps(
+    env: "staging" | "production",
+    tier: "microbe" | "spore",
+    githubIds: number[],
+    options: StoreScoresOptions = {},
+): number {
+    const timestamp = options.timestamp ?? Date.now();
+    const uniqueIds = Array.from(
+        new Set(
+            githubIds.filter(
+                (githubId): githubId is number =>
+                    Number.isInteger(githubId) && githubId > 0,
+            ),
+        ),
+    );
+    let stored = 0;
+
+    for (
+        let index = 0;
+        index < uniqueIds.length;
+        index += PIPELINE_DB_BATCH_SIZE
+    ) {
+        const batch = uniqueIds.slice(index, index + PIPELINE_DB_BATCH_SIZE);
+        if (batch.length === 0) continue;
+
+        const ok = executeD1(
+            env,
+            `UPDATE user SET score_checked_at = ${timestamp} WHERE github_id IN (${batch.join(", ")}) AND tier = '${tier}'`,
+        );
+        if (!ok) continue;
+
+        stored += batch.length;
+        options.onBatchStored?.(stored, uniqueIds.length);
+    }
+
+    return stored;
+}

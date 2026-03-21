@@ -27,6 +27,7 @@ import {
     extractDeletedGithubIds,
     type GitHubValidationResult,
     isScorableValidationResult,
+    storeGithubCheckTimestamps,
     storeGithubScores,
     validateUserRecords,
 } from "./scoring/github-score.ts";
@@ -169,6 +170,22 @@ function extractRiskBlockedGithubIds(
     );
 }
 
+function extractUnavailableGithubIds(
+    results: GitHubValidationResult[],
+): number[] {
+    return Array.from(
+        new Set(
+            results.flatMap((result) =>
+                result.status === "unavailable" &&
+                Number.isInteger(result.github_id) &&
+                result.github_id > 0
+                    ? [result.github_id]
+                    : [],
+            ),
+        ),
+    );
+}
+
 function upgradeUsers(env: Environment, githubIds: number[]): number {
     const uniqueIds = Array.from(
         new Set(
@@ -290,9 +307,18 @@ function reconcileDecision(
                 ? null
                 : "expected_banned_user";
         case "defer_unavailable":
-            return Number(state.banned ?? 0) === 0 && state.tier === "spore"
-                ? null
-                : "unexpected_state_for_unavailable";
+            if (Number(state.banned ?? 0) !== 0 || state.tier !== "spore") {
+                return "unexpected_state_for_unavailable";
+            }
+            if (
+                !Number.isFinite(
+                    Number(state.score_checked_at ?? Number.NaN),
+                ) ||
+                Number(state.score_checked_at ?? 0) <= 0
+            ) {
+                return "missing_score_checked_at";
+            }
+            return null;
         case "keep_spore_below_threshold":
         case "keep_spore_risk_blocked":
             if (state.tier !== "spore") return "expected_spore_tier";
@@ -383,6 +409,17 @@ async function main(): Promise<void> {
 
     if (validRows.length === 0) {
         console.log("✅ No valid spore users left for GitHub scoring");
+        appendTrace(config.traceFile, {
+            type: "run_end",
+            run_id: runId,
+            trace_pass: config.tracePass,
+            selected_users: rows.length,
+            deleted_users: 0,
+            unavailable_users: 0,
+            risk_blocked_users: 0,
+            promoted_users: 0,
+            anomalies: 0,
+        });
         return;
     }
 
@@ -399,6 +436,7 @@ async function main(): Promise<void> {
         return result ? [result] : [];
     });
     const deletedGithubIds = extractDeletedGithubIds(orderedResults);
+    const unavailableGithubIds = extractUnavailableGithubIds(orderedResults);
     const scoreableResults = orderedResults.filter(isScorableValidationResult);
     const unavailableCount =
         orderedResults.length -
@@ -421,7 +459,7 @@ async function main(): Promise<void> {
         }),
     );
 
-    summarize(orderedResults);
+    summarize(scoreableResults);
 
     if (config.verbose) {
         console.log("\n📊 Score breakdown samples (first 20):");
@@ -500,6 +538,11 @@ async function main(): Promise<void> {
     }
 
     const stored = storeGithubScores(config.env, "spore", scoreableResults);
+    const unavailableStored = storeGithubCheckTimestamps(
+        config.env,
+        "spore",
+        unavailableGithubIds,
+    );
     const upgraded = upgradeUsers(config.env, approvedGithubIds);
     const storedStates = fetchStoredUserStatesByEmail(
         config.env,
@@ -552,6 +595,7 @@ async function main(): Promise<void> {
 
     console.log("\n📊 Results:");
     console.log(`   Scores stored: ${stored}`);
+    console.log(`   Deferred check timestamps stored: ${unavailableStored}`);
     console.log(`   Risk-blocked from seed: ${riskBlockedGithubIds.length}`);
     console.log(`   Deferred (GitHub unavailable): ${unavailableCount}`);
     console.log(`   Upgraded to seed: ${upgraded}`);

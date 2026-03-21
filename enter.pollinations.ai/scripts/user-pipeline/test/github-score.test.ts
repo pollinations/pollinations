@@ -28,6 +28,7 @@ import {
     extractDeletedGithubIds,
     isScorableValidationResult,
     scoreUser,
+    storeGithubCheckTimestamps,
     storeGithubScores,
     validateAccountRecords,
     validateUserRecords,
@@ -588,5 +589,37 @@ describe("storeGithubScores", () => {
         );
 
         expect(executeD1.mock.calls[0][1]).toContain("tier = 'microbe'");
+    });
+});
+
+describe("storeGithubCheckTimestamps", () => {
+    it("stores score_checked_at without writing score values", () => {
+        const stored = storeGithubCheckTimestamps(
+            "staging",
+            "spore",
+            [123, 456, 123],
+            { timestamp: 1234567890 },
+        );
+
+        expect(stored).toBe(2);
+        expect(executeD1).toHaveBeenCalledTimes(1);
+        expect(executeD1.mock.calls[0][1]).toContain(
+            "UPDATE user SET score_checked_at = 1234567890",
+        );
+        expect(executeD1.mock.calls[0][1]).toContain("github_id IN (123, 456)");
+        expect(executeD1.mock.calls[0][1]).toContain("tier = 'spore'");
+        expect(executeD1.mock.calls[0][1]).not.toContain("score = CASE");
+    });
+
+    it("skips invalid github ids", () => {
+        const stored = storeGithubCheckTimestamps(
+            "staging",
+            "spore",
+            [0, -1, Number.NaN],
+            { timestamp: 1234567890 },
+        );
+
+        expect(stored).toBe(0);
+        expect(executeD1).not.toHaveBeenCalled();
     });
 });

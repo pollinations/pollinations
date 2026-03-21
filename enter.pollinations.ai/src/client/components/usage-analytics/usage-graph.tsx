@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { useEffect, useState } from "react";
-import type { TierStatus } from "../../../tier-config";
+import { getTierEmoji, type TierStatus } from "../../../tier-config";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { Chart } from "./chart";
@@ -8,16 +8,6 @@ import { FilterButton } from "./filter-button";
 import { MultiSelect } from "./multi-select";
 import type { FilterState, Metric, TimeRange } from "./types";
 import { useUsageData } from "./use-usage-data";
-
-const TIER_EMOJIS: Record<TierStatus, string> = {
-    none: "🦠",
-    microbe: "🦠",
-    spore: "🍄",
-    seed: "🌱",
-    flower: "🌸",
-    nectar: "🍯",
-    router: "🔌",
-};
 
 export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
     const [filters, setFilters] = useState<FilterState>({
@@ -217,7 +207,7 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                                     {stats.totalPollen.toFixed(2)}
                                 </span>
                                 <span className="text-xs text-gray-400 ml-1">
-                                    ({TIER_EMOJIS[tier || "microbe"]}{" "}
+                                    ({getTierEmoji(tier || "microbe")}{" "}
                                     {stats.tierPollen.toFixed(2)} + 💎{" "}
                                     {stats.paidPollen.toFixed(2)})
                                 </span>

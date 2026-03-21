@@ -1,0 +1,34 @@
+{
+  "pr_number": 9408,
+  "title": "Add Pollinations AI All-in-One Generation to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9408",
+  "merged_at": "2026-03-21T19:31:24Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The Swiss Army Hive",
+    "blurb": "A new community app just dropped! 'Pollinations AI All-in-One Generation' lets you spin up images, music, and text all from one cozy interface.",
+    "summary": "Added 'Pollinations AI All-in-One Generation' to the community app showcase, featuring combined image, audio, and text generation.",
+    "impact": "Users can now explore a new community-built interface that brings all of Pollinations' core generation capabilities into a single customizable dashboard.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "all-in-one",
+      "ui"
+    ],
+    "visual_concept": "An 'all-in-one' tool metaphor. Polly the bee and the Monitor Robot operating a retro control board that outputs different types of media (art, music, text).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot operating a retro multi-tool control board. The glowing lime green (#ecf874) console has tiny pixel icons for a paintbrush, a musical note, and a text scroll. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9408.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot operating a retro multi-tool control board. The glowing lime green (#ecf874) console has tiny pixel icons for a paintbrush, a musical note, and a text scroll. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-21T19:32:16.310263+00:00"
+}

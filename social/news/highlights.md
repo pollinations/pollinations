@@ -1,3 +1,6 @@
+- **2026-03-20** – **🎨 Klein Multi-Image Blending** The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending.
+- **2026-03-20** – **💻 PowerShell & .NET Integrations** You can now pipe text and image generation directly into your Windows scripting and Azure workflows. Because sometimes you just need to generate pixels from a terminal.
+- **2026-03-20** – **🌟 Showcase Explosion** The community directory is growing. New additions include a daily cryptid generator, a Turkish financial analysis bot, a markdown story exporter, and an AI bouquet designer. See what people are building on the [main website](https://hello.pollinations.ai).
 - **2026-03-19** – **🔗 OpenClaw Integration** Setting up OpenClaw with Pollinations is now faster and less prone to configuration errors thanks to native CLI onboarding for v2026.3.
 - **2026-03-18** – **🤖 Silicon meets pollen** Someone wired the API into an ESP32-S3 microcontroller (NEURGenerator). Hardware hackers now have a reference for bringing generation to physical devices.
 - **2026-03-18** – **📱 Pocket-sized infrastructure** Nova.ai just dropped into the showcase—a full iOS assistant with streaming chat and image generation built entirely on our endpoints.

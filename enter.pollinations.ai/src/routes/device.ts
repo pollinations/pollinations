@@ -10,7 +10,6 @@ const KV_TTL = 600; // 10 minutes
 const DEVICE_CODE_LENGTH = 40;
 const USER_CODE_LENGTH = 8;
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
-const DEFAULT_INTERVAL = 5; // seconds
 
 type DeviceStatus = "pending" | "approved" | "denied" | "completed";
 
@@ -82,7 +81,6 @@ export const deviceRoutes = new Hono<Env>()
             userCode,
             status: "pending" satisfies DeviceStatus,
             expiresAt,
-            pollingInterval: DEFAULT_INTERVAL,
             clientId: body.client_id || null,
             scope: body.scope || null,
         });
@@ -94,7 +92,7 @@ export const deviceRoutes = new Hono<Env>()
             verification_uri: `${baseUrl}/device`,
             verification_uri_complete: `${baseUrl}/device?user_code=${userCode}`,
             expires_in: DEFAULT_EXPIRES_IN,
-            interval: DEFAULT_INTERVAL,
+            interval: 5,
         });
     })
     .get("/info", async (c) => {
@@ -242,20 +240,8 @@ export const deviceRoutes = new Hono<Env>()
         }
 
         switch (device.status) {
-            case "pending" satisfies DeviceStatus: {
-                if (device.lastPolledAt && device.pollingInterval) {
-                    const elapsed =
-                        (Date.now() - device.lastPolledAt.getTime()) / 1000;
-                    if (elapsed < device.pollingInterval) {
-                        return c.json({ error: "slow_down" }, 400);
-                    }
-                }
-                await db
-                    .update(schema.deviceCode)
-                    .set({ lastPolledAt: new Date() })
-                    .where(eq(schema.deviceCode.id, device.id));
+            case "pending" satisfies DeviceStatus:
                 return c.json({ error: "authorization_pending" }, 400);
-            }
 
             case "denied" satisfies DeviceStatus:
                 return c.json({ error: "access_denied" }, 400);

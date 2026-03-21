@@ -378,20 +378,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "last_polled_at": {
-          "name": "last_polled_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "polling_interval": {
-          "name": "polling_interval",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "client_id": {
           "name": "client_id",
           "type": "text",

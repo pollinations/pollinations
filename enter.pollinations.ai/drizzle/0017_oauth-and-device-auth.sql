@@ -5,8 +5,6 @@ CREATE TABLE `device_code` (
 	`user_id` text,
 	`expires_at` integer NOT NULL,
 	`status` text NOT NULL,
-	`last_polled_at` integer,
-	`polling_interval` integer,
 	`client_id` text,
 	`scope` text,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade

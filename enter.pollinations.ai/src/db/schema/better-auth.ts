@@ -173,8 +173,6 @@ export const deviceCode = sqliteTable("device_code", {
   userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
   status: text("status").notNull(),
-  lastPolledAt: integer("last_polled_at", { mode: "timestamp" }),
-  pollingInterval: integer("polling_interval"),
   clientId: text("client_id"),
   scope: text("scope"),
 }, (table) => [

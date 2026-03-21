@@ -50,6 +50,7 @@ export const Route = createFileRoute("/authorize")({
         const result: {
             redirect_url?: string;
             user_code?: string;
+            device_scope?: string;
             app_key?: string;
             models?: string[] | null;
             budget?: number | null;
@@ -61,6 +62,10 @@ export const Route = createFileRoute("/authorize")({
 
         if (search.user_code && typeof search.user_code === "string") {
             result.user_code = search.user_code;
+        }
+
+        if (search.device_scope && typeof search.device_scope === "string") {
+            result.device_scope = search.device_scope;
         }
 
         if (search.app_key && typeof search.app_key === "string") {
@@ -87,6 +92,7 @@ function AuthorizeComponent() {
     const {
         redirect_url,
         user_code,
+        device_scope,
         app_key,
         models,
         budget,
@@ -104,7 +110,9 @@ function AuthorizeComponent() {
     const [isSigningIn, setIsSigningIn] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
-    const [done, setDone] = useState(false);
+    const [deviceOutcome, setDeviceOutcome] = useState<
+        "pending" | "approved" | "denied"
+    >("pending");
 
     const [deviceScopes, setDeviceScopes] = useState<string[]>([]);
 
@@ -123,24 +131,37 @@ function AuthorizeComponent() {
 
     useEffect(() => {
         if (isDeviceMode) {
-            fetch(
-                `${config.baseUrl}/api/device/info?user_code=${encodeURIComponent(user_code)}`,
-                { credentials: "include" },
-            )
-                .then((r) => {
-                    if (!r.ok) throw new Error("Invalid device code");
-                    return r.json() as Promise<{
-                        scope?: string;
-                        clientId?: string;
-                        status?: string;
-                    }>;
-                })
-                .then((data) => {
-                    if (data.scope) {
-                        setDeviceScopes(data.scope.split(" ").filter(Boolean));
-                    }
-                })
-                .catch((e) => setError(e.message));
+            if (device_scope) {
+                setDeviceScopes(device_scope.split(" ").filter(Boolean));
+            } else {
+                fetch(
+                    `${config.baseUrl}/api/device/info?user_code=${encodeURIComponent(user_code)}`,
+                    { credentials: "include" },
+                )
+                    .then((r) => {
+                        if (!r.ok) throw new Error("Invalid device code");
+                        return r.json() as Promise<{
+                            scope?: string;
+                            clientId?: string;
+                            status?: string;
+                        }>;
+                    })
+                    .then((data) => {
+                        if (data.scope) {
+                            setDeviceScopes(
+                                data.scope.split(" ").filter(Boolean),
+                            );
+                        }
+                    })
+                    .catch((e) => setError(e.message));
+            }
+            // Fetch app attribution if device flow has an app_key
+            if (app_key) {
+                fetch(`/api/app-lookup?app_key=${encodeURIComponent(app_key)}`)
+                    .then((r) => r.json())
+                    .then((data) => setAttribution(data as Attribution))
+                    .catch(() => {});
+            }
         } else {
             if (!redirect_url) {
                 setError("No redirect URL provided");
@@ -160,7 +181,7 @@ function AuthorizeComponent() {
                 .then((data) => setAttribution(data as Attribution))
                 .catch(() => {});
         }
-    }, [isDeviceMode, user_code, app_key, redirect_url]);
+    }, [isDeviceMode, user_code, device_scope, app_key, redirect_url]);
 
     async function handleSignIn(): Promise<void> {
         setIsSigningIn(true);
@@ -271,7 +292,7 @@ function AuthorizeComponent() {
                             "Failed to approve device",
                     );
                 }
-                setDone(true);
+                setDeviceOutcome("approved");
             } else {
                 const url = new URL(redirect_url);
                 url.hash = `api_key=${key}`;
@@ -297,8 +318,7 @@ function AuthorizeComponent() {
             } catch {
                 // Best-effort deny
             }
-            setDone(true);
-            setError("denied");
+            setDeviceOutcome("denied");
         } else if (parsedRedirectUrl) {
             window.location.href = redirect_url;
         } else {
@@ -306,8 +326,8 @@ function AuthorizeComponent() {
         }
     }
 
-    if (done) {
-        const denied = error === "denied";
+    if (deviceOutcome !== "pending") {
+        const denied = deviceOutcome === "denied";
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
                 <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-lg w-full">
@@ -351,7 +371,7 @@ function AuthorizeComponent() {
                     </div>
 
                     <div className="px-6 pb-6 space-y-4">
-                        {error && error !== "denied" ? (
+                        {error ? (
                             <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
                                 <p className="text-red-800 text-sm">{error}</p>
                             </div>
@@ -359,10 +379,34 @@ function AuthorizeComponent() {
                             <>
                                 <div className="bg-green-200 rounded-lg p-4">
                                     {isDeviceMode ? (
-                                        <p className="font-semibold text-green-950">
-                                            A device is requesting access to
-                                            your account
-                                        </p>
+                                        attribution?.appName ? (
+                                            <>
+                                                <p className="font-bold text-green-950 text-lg">
+                                                    {attribution.appName}
+                                                </p>
+                                                {attribution.githubUsername && (
+                                                    <p className="text-sm text-green-700 mt-0.5">
+                                                        by{" "}
+                                                        <a
+                                                            href={`https://github.com/${attribution.githubUsername}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="font-medium underline hover:text-green-950"
+                                                        >
+                                                            @
+                                                            {
+                                                                attribution.githubUsername
+                                                            }
+                                                        </a>
+                                                    </p>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <p className="font-semibold text-green-950">
+                                                A device is requesting access to
+                                                your account
+                                            </p>
+                                        )
                                     ) : attribution?.appName ? (
                                         <>
                                             <p className="font-bold text-green-950 text-lg">
@@ -407,9 +451,7 @@ function AuthorizeComponent() {
                         <Button
                             as="button"
                             onClick={handleSignIn}
-                            disabled={
-                                isSigningIn || (!!error && error !== "denied")
-                            }
+                            disabled={isSigningIn || !!error}
                             color="dark"
                             className="w-full"
                         >
@@ -452,7 +494,7 @@ function AuthorizeComponent() {
                         overscrollBehavior: "contain",
                     }}
                 >
-                    {error && error !== "denied" ? (
+                    {error ? (
                         <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
                             <p className="text-red-800 text-sm">{error}</p>
                         </div>
@@ -461,10 +503,38 @@ function AuthorizeComponent() {
                             <div className="bg-green-200 rounded-lg p-4">
                                 {isDeviceMode ? (
                                     <>
-                                        <p className="text-sm text-green-950 font-medium">
-                                            A device is requesting access to
-                                            your account
-                                        </p>
+                                        {attribution?.appName ? (
+                                            <>
+                                                <p className="text-xs text-green-700 mb-1">
+                                                    A device is requesting
+                                                    access via
+                                                </p>
+                                                <p className="font-bold text-green-950 text-lg">
+                                                    {attribution.appName}
+                                                </p>
+                                                {attribution.githubUsername && (
+                                                    <p className="text-sm text-green-700 mt-0.5">
+                                                        by{" "}
+                                                        <a
+                                                            href={`https://github.com/${attribution.githubUsername}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="font-medium underline hover:text-green-950"
+                                                        >
+                                                            @
+                                                            {
+                                                                attribution.githubUsername
+                                                            }
+                                                        </a>
+                                                    </p>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <p className="text-sm text-green-950 font-medium">
+                                                A device is requesting access to
+                                                your account
+                                            </p>
+                                        )}
                                         <p className="text-xs text-green-800 mt-1 font-mono">
                                             Code: {user_code}
                                         </p>

@@ -18,6 +18,25 @@ function isExpired(device: { expiresAt: Date }) {
     return device.expiresAt < new Date();
 }
 
+/** Look up a device code by user_code and verify it's pending + not expired. */
+async function requirePendingDevice(
+    db: ReturnType<typeof drizzle>,
+    userCode: string,
+) {
+    const device = await db.query.deviceCode.findFirst({
+        where: eq(schema.deviceCode.userCode, userCode.toUpperCase()),
+    });
+    if (!device || device.status !== ("pending" satisfies DeviceStatus)) {
+        throw new HTTPException(400, {
+            message: "Invalid or already-used device code",
+        });
+    }
+    if (isExpired(device)) {
+        throw new HTTPException(400, { message: "Device code expired" });
+    }
+    return device;
+}
+
 /** Generate a cryptographically random alphanumeric string. */
 function generateCode(length: number): string {
     const chars =
@@ -128,27 +147,7 @@ export const deviceRoutes = new Hono<Env>()
             }
 
             const db = drizzle(c.env.DB, { schema });
-            const device = await db.query.deviceCode.findFirst({
-                where: eq(
-                    schema.deviceCode.userCode,
-                    body.userCode.toUpperCase(),
-                ),
-            });
-
-            if (
-                !device ||
-                device.status !== ("pending" satisfies DeviceStatus)
-            ) {
-                throw new HTTPException(400, {
-                    message: "Invalid or already-used device code",
-                });
-            }
-
-            if (isExpired(device)) {
-                throw new HTTPException(400, {
-                    message: "Device code expired",
-                });
-            }
+            const device = await requirePendingDevice(db, body.userCode);
 
             // KV store and D1 update are independent — run concurrently
             await Promise.all([
@@ -185,27 +184,7 @@ export const deviceRoutes = new Hono<Env>()
             }
 
             const db = drizzle(c.env.DB, { schema });
-            const device = await db.query.deviceCode.findFirst({
-                where: eq(
-                    schema.deviceCode.userCode,
-                    body.userCode.toUpperCase(),
-                ),
-            });
-
-            if (
-                !device ||
-                device.status !== ("pending" satisfies DeviceStatus)
-            ) {
-                throw new HTTPException(400, {
-                    message: "Invalid or already-used device code",
-                });
-            }
-
-            if (isExpired(device)) {
-                throw new HTTPException(400, {
-                    message: "Device code expired",
-                });
-            }
+            const device = await requirePendingDevice(db, body.userCode);
 
             await db
                 .update(schema.deviceCode)
@@ -249,6 +228,17 @@ export const deviceRoutes = new Hono<Env>()
 
         if (isExpired(device)) {
             return c.json({ error: "expired_token" }, 400);
+        }
+
+        // Validate client_id matches what was used during code issuance (when provided)
+        if (device.clientId && body.client_id && body.client_id !== device.clientId) {
+            return c.json(
+                {
+                    error: "invalid_client",
+                    error_description: "client_id mismatch",
+                },
+                400,
+            );
         }
 
         switch (device.status) {

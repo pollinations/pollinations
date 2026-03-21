@@ -40,7 +40,11 @@ function DeviceComponent() {
                     setError(data?.error_description || "Invalid code");
                     return;
                 }
-                const data = (await res.json()) as { status: string };
+                const data = (await res.json()) as {
+                    status: string;
+                    scope?: string;
+                    clientId?: string | null;
+                };
                 if (data.status !== "pending") {
                     setError(
                         data.status === "expired"
@@ -51,7 +55,11 @@ function DeviceComponent() {
                 }
                 navigate({
                     to: "/authorize",
-                    search: { user_code: code.toUpperCase() },
+                    search: {
+                        user_code: code.toUpperCase(),
+                        ...(data.scope && { device_scope: data.scope }),
+                        ...(data.clientId && { app_key: data.clientId }),
+                    },
                 });
             } catch {
                 setError("Failed to verify code");

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9373,
+  "title": "Add Twitch Gemini Chatbot to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9373",
+  "merged_at": "2026-03-21T03:55:07Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Chat is buzzing",
+    "blurb": "A new Twitch Gemini Chatbot just landed in the greenhouse! Now your stream chat can generate media and talk to Gemini 24/7 without writing a single line of code.",
+    "summary": "Added the Twitch Gemini Chatbot to the community apps showcase, enabling zero-code AI chat and media generation for livestreams.",
+    "impact": "Streamers can now easily integrate 24/7 interactive Gemini conversations and Pollinations media generation directly into their Twitch chats.",
+    "keywords": [
+      "twitch",
+      "chatbot",
+      "gemini",
+      "community",
+      "streaming"
+    ],
+    "visual_concept": "A cozy streaming setup. The bee mascot wearing a little streamer headset with a mic, sitting in front of a retro monitor showing a Twitch-like chat interface with purple accents. The monitor robot acts as a chat moderator.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny streamer headset with a microphone, sitting at a retro computer setup. The glowing monitor shows a purple-themed streaming chat interface. A chunky monitor robot sits nearby acting as a chat moderator. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9373.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny streamer headset with a microphone, sitting at a retro computer setup. The glowing monitor shows a purple-themed streaming chat interface. A chunky monitor robot sits nearby acting as a chat moderator. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-21T03:55:57.954798+00:00"
+}

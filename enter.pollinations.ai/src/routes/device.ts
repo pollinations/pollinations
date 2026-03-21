@@ -8,6 +8,12 @@ import { auth } from "../middleware/auth.ts";
 
 const KV_TTL = 600; // 10 minutes
 
+type DeviceStatus = "pending" | "approved" | "denied" | "completed";
+
+function isExpired(device: { expiresAt: Date }) {
+    return device.expiresAt < new Date();
+}
+
 /**
  * Device Authorization endpoints.
  *
@@ -34,7 +40,7 @@ export const deviceRoutes = new Hono<Env>()
             );
         }
 
-        if (device.expiresAt < new Date()) {
+        if (isExpired(device)) {
             return c.json(
                 { error: "expired_token", error_description: "Code expired" },
                 400,
@@ -73,31 +79,39 @@ export const deviceRoutes = new Hono<Env>()
                 ),
             });
 
-            if (!device || device.status !== "pending") {
+            if (
+                !device ||
+                device.status !== ("pending" satisfies DeviceStatus)
+            ) {
                 throw new HTTPException(400, {
                     message: "Invalid or already-used device code",
                 });
             }
 
-            if (device.expiresAt < new Date()) {
+            if (isExpired(device)) {
                 throw new HTTPException(400, {
                     message: "Device code expired",
                 });
             }
 
-            await c.env.KV.put(
-                `device-key:${device.deviceCode}`,
-                JSON.stringify({
-                    key: body.apiKey,
-                    expiresIn: body.expiresIn ?? null,
-                }),
-                { expirationTtl: KV_TTL },
-            );
-
-            await db
-                .update(schema.deviceCode)
-                .set({ status: "approved", userId: user.id })
-                .where(eq(schema.deviceCode.id, device.id));
+            // KV store and D1 update are independent — run concurrently
+            await Promise.all([
+                c.env.KV.put(
+                    `device-key:${device.deviceCode}`,
+                    JSON.stringify({
+                        key: body.apiKey,
+                        expiresIn: body.expiresIn ?? null,
+                    }),
+                    { expirationTtl: KV_TTL },
+                ),
+                db
+                    .update(schema.deviceCode)
+                    .set({
+                        status: "approved" satisfies DeviceStatus,
+                        userId: user.id,
+                    })
+                    .where(eq(schema.deviceCode.id, device.id)),
+            ]);
 
             return c.json({ success: true });
         },
@@ -134,7 +148,7 @@ export const deviceRoutes = new Hono<Env>()
             );
         }
 
-        if (device.expiresAt < new Date()) {
+        if (isExpired(device)) {
             return c.json({ error: "expired_token" }, 400);
         }
 
@@ -145,19 +159,20 @@ export const deviceRoutes = new Hono<Env>()
             }
         }
 
-        await db
-            .update(schema.deviceCode)
-            .set({ lastPolledAt: new Date() })
-            .where(eq(schema.deviceCode.id, device.id));
-
         switch (device.status) {
-            case "pending":
+            case "pending" satisfies DeviceStatus: {
+                // Only write lastPolledAt when actually pending (skip for terminal states)
+                await db
+                    .update(schema.deviceCode)
+                    .set({ lastPolledAt: new Date() })
+                    .where(eq(schema.deviceCode.id, device.id));
                 return c.json({ error: "authorization_pending" }, 400);
+            }
 
-            case "denied":
+            case "denied" satisfies DeviceStatus:
                 return c.json({ error: "access_denied" }, 400);
 
-            case "approved": {
+            case "approved" satisfies DeviceStatus: {
                 const stored = (await c.env.KV.get(
                     `device-key:${device.deviceCode}`,
                     "json",
@@ -167,12 +182,14 @@ export const deviceRoutes = new Hono<Env>()
                     return c.json({ error: "authorization_pending" }, 400);
                 }
 
-                await db
-                    .update(schema.deviceCode)
-                    .set({ status: "completed" })
-                    .where(eq(schema.deviceCode.id, device.id));
-
-                await c.env.KV.delete(`device-key:${device.deviceCode}`);
+                // Mark completed and clean up KV concurrently
+                await Promise.all([
+                    db
+                        .update(schema.deviceCode)
+                        .set({ status: "completed" satisfies DeviceStatus })
+                        .where(eq(schema.deviceCode.id, device.id)),
+                    c.env.KV.delete(`device-key:${device.deviceCode}`),
+                ]);
 
                 return c.json({
                     access_token: stored.key,

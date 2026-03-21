@@ -152,16 +152,15 @@ export const deviceRoutes = new Hono<Env>()
             return c.json({ error: "expired_token" }, 400);
         }
 
-        if (device.lastPolledAt && device.pollingInterval) {
-            const elapsed = (Date.now() - device.lastPolledAt.getTime()) / 1000;
-            if (elapsed < device.pollingInterval) {
-                return c.json({ error: "slow_down" }, 400);
-            }
-        }
-
         switch (device.status) {
             case "pending" satisfies DeviceStatus: {
-                // Only write lastPolledAt when actually pending (skip for terminal states)
+                if (device.lastPolledAt && device.pollingInterval) {
+                    const elapsed =
+                        (Date.now() - device.lastPolledAt.getTime()) / 1000;
+                    if (elapsed < device.pollingInterval) {
+                        return c.json({ error: "slow_down" }, 400);
+                    }
+                }
                 await db
                     .update(schema.deviceCode)
                     .set({ lastPolledAt: new Date() })

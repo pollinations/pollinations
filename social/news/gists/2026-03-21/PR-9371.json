@@ -1,0 +1,35 @@
+{
+  "pr_number": 9371,
+  "title": "Add Pollinations AI  Claude Code CLI Plugin to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9371",
+  "merged_at": "2026-03-21T02:54:35Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Claude Code meets the Hive",
+    "blurb": "A new Claude Code CLI plugin just dropped in the greenhouse! Now you can generate images, text, audio, and video directly from your terminal using Claude Code and Pollinations.",
+    "summary": "Added a new community-built Claude Code CLI plugin to the Pollinations ecosystem, enabling multimodal generation directly from the terminal.",
+    "impact": "Developers can now generate images, text, audio, and video straight from their Claude Code CLI environment.",
+    "keywords": [
+      "claude",
+      "cli",
+      "plugin",
+      "terminal",
+      "community",
+      "bots"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot working together at a retro terminal. The terminal represents the CLI/Claude Code integration. Polly is wearing a tiny hacker beanie.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hacker beanie, hovering next to a chunky robot with a CRT monitor head. The robot's screen displays glowing lime green (#ecf874) terminal code. Soft lavender and peach pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9371.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hacker beanie, hovering next to a chunky robot with a CRT monitor head. The robot's screen displays glowing lime green (#ecf874) terminal code. Soft lavender and peach pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-03-21T02:55:35.209789+00:00"
+}

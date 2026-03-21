@@ -1,0 +1,34 @@
+{
+  "pr_number": 9384,
+  "title": "Add InfiniteMud to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9384",
+  "merged_at": "2026-03-21T08:03:16Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Mudding around",
+    "blurb": "InfiniteMud just dropped into the ecosystem! Dive into a procedurally generated, persistent world where you can build, explore, and shape the landscape.",
+    "summary": "Added InfiniteMud, a procedurally generated persistent world game, to the community apps showcase.",
+    "impact": "Players can now explore and build in a scalable, user-created navigable space powered by Pollinations.",
+    "keywords": [
+      "community",
+      "games",
+      "app-showcase",
+      "procedural-generation",
+      "infinitemud"
+    ],
+    "visual_concept": "The PR is about 'InfiniteMud', a procedurally generated world/MUD game. Visuals should include mud, building blocks, and the bee mascot playing or building in the mud. A retro terminal showing a MUD interface fits the theme perfectly.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny construction hardhat, happily building a small castle out of chunky pixelated mud blocks. A retro computer monitor nearby displays a glowing text-based MUD interface. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9384.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny construction hardhat, happily building a small castle out of chunky pixelated mud blocks. A retro computer monitor nearby displays a glowing text-based MUD interface. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-03-21T08:04:05.191658+00:00"
+}

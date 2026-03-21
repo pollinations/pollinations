@@ -138,10 +138,13 @@ function generateLLMDoc(): string {
         "- Dashboard: [enter.pollinations.ai](https://enter.pollinations.ai)",
     );
     lines.push(
-        "- Device flow (CLI/headless): `POST /api/auth/device/code` → user approves in browser → poll `POST /api/device/token`",
+        "- [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) — let your users pay with their own pollen. Two entry points, same authorize screen:",
     );
     lines.push(
-        "- BYOP (apps): redirect users to `/authorize?redirect_url=...` — see [BYOP docs](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)",
+        "  - Web apps: redirect to `/authorize?redirect_url=...` → key in URL fragment",
+    );
+    lines.push(
+        "  - CLIs/headless: device flow → `POST /api/auth/device/code` → user approves → poll `POST /api/device/token`",
     );
     lines.push(
         "- OAuth 2.1: authorization code + PKCE, dynamic client registration. Endpoints at `/api/auth/oauth2/*`",
@@ -1172,7 +1175,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             'curl "https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY"',
                             "```",
                             "",
-                            "**Getting keys:** [Dashboard](https://enter.pollinations.ai) · [Device flow](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#device-flow-for-clis--headless-apps) (CLI) · [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) (apps) · OAuth 2.1 (`/api/auth/oauth2/*`)",
+                            "**Getting keys:** [Dashboard](https://enter.pollinations.ai) · [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) (web apps + CLIs) · OAuth 2.1 (`/api/auth/oauth2/*`)",
                             "",
                             "> **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.",
                             "",

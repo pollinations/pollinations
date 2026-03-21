@@ -4,17 +4,19 @@ your users pay for their own AI usage. you pay $0.
 
 ## how it works
 
-1. user taps "Connect with Pollinations"
-2. signs in, gets a temp API key
+1. user connects — via your web app or CLI
+2. signs in, creates a scoped API key
 3. their pollen, your app
 
 why this is good:
 - **$0 costs** — 1 user or 1000, same price: free
 - **no key management** — the auth flow handles it
 - **self-regulating** — everyone pays for what they use
-- **frontend only** — no backend needed
+- **works everywhere** — web apps, CLIs, MCP servers, anything
 
-## setup
+both flows land on the same authorize screen where users set model restrictions, budget, and expiry. same key, same pollen, different entry point.
+
+## web apps (redirect flow)
 
 ### 1. register your app (optional but recommended)
 
@@ -59,7 +61,7 @@ https://myapp.com#api_key=sk_abc123xyz
 
 fragment, not query param — never hits server logs.
 
-## code
+### code
 
 ```javascript
 // send user to auth
@@ -80,11 +82,9 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 });
 ```
 
-keys expire in 30 days. users can revoke anytime from the dashboard.
+## CLIs & headless apps (device flow)
 
-## device flow (for CLIs / headless apps)
-
-same idea, different entry point. your CLI gets a code, user approves in browser, CLI gets a scoped key.
+same authorize screen, but the user opens a browser separately. your CLI polls for the key.
 
 ```bash
 # 1. request a device code
@@ -93,17 +93,18 @@ curl -X POST https://enter.pollinations.ai/api/auth/device/code \
   -d '{"client_id": "your-client-id", "scope": "generate"}'
 # → { "device_code": "...", "user_code": "ABCD-1234", "verification_uri": "/device" }
 
-# 2. tell user to go to enter.pollinations.ai/device and enter ABCD-1234
+# 2. tell user: "go to enter.pollinations.ai/device and enter ABCD-1234"
 
-# 3. poll for the key
+# 3. poll for the key (every 5s)
 curl -X POST https://enter.pollinations.ai/api/device/token \
   -H 'Content-Type: application/json' \
   -d '{"device_code": "..."}'
-# → { "access_token": "sk_...", "token_type": "bearer" }
+# pending → { "error": "authorization_pending" }
+# done    → { "access_token": "sk_...", "token_type": "bearer" }
 ```
 
-user sees the same authorize screen — can set model restrictions, budget, expiry. the key works exactly like a BYOP key.
-
 ---
+
+keys expire in 30 days. users can revoke anytime from the dashboard.
 
 [edit this doc](https://github.com/pollinations/pollinations/edit/main/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for the idea*

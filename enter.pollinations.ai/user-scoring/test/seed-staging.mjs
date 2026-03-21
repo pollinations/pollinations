@@ -12,7 +12,7 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   node scripts/user-pipeline/test/seed-staging.mjs
+ *   node user-scoring/test/seed-staging.mjs
  */
 
 import { execFileSync } from "node:child_process";

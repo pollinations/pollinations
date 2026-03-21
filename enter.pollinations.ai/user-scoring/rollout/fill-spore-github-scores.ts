@@ -9,9 +9,9 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/rollout/fill-spore-github-scores.ts --env staging
- *   npx tsx scripts/user-pipeline/rollout/fill-spore-github-scores.ts --env production --apply
- *   npx tsx scripts/user-pipeline/rollout/fill-spore-github-scores.ts --env production --apply --ban-deleted
+ *   npx tsx user-scoring/rollout/fill-spore-github-scores.ts --env staging
+ *   npx tsx user-scoring/rollout/fill-spore-github-scores.ts --env production --apply
+ *   npx tsx user-scoring/rollout/fill-spore-github-scores.ts --env production --apply --ban-deleted
  */
 
 import {

@@ -6,9 +6,9 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/test/verify-results.ts
- *   npx tsx scripts/user-pipeline/test/verify-results.ts --group a
- *   npx tsx scripts/user-pipeline/test/verify-results.ts --group daily
+ *   npx tsx user-scoring/test/verify-results.ts
+ *   npx tsx user-scoring/test/verify-results.ts --group a
+ *   npx tsx user-scoring/test/verify-results.ts --group daily
  */
 
 import { existsSync, readFileSync } from "node:fs";

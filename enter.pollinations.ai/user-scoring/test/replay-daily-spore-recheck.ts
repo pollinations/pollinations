@@ -1,29 +1,32 @@
 #!/usr/bin/env npx tsx
 /**
- * Manual replay of the hourly new-user pipeline against a cohort.
+ * Manual replay of the daily spore recheck pipeline against a cohort.
  *
- * Resets the cohort to microbe (clearing trust_score, score, ban state), then
- * runs trust-score and hourly-new-users in sequence. Use this to re-test the
- * full hourly flow on a known set of users without waiting for the scheduler.
+ * Resets the cohort to spore (clearing score, score_checked_at, ban state), then
+ * loops daily-spore-recheck until all cohort users have been scored. Each pass
+ * processes 1/7 of the cohort; the loop runs until unchecked count reaches zero
+ * or the pass limit is hit.
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npm run user-pipeline:replay-hourly -- --emails-file /tmp/emails.txt
- *   npm run user-pipeline:replay-hourly -- --emails-file /tmp/emails.txt --hourly-dry-run
- *   npm run user-pipeline:replay-hourly -- --emails-file /tmp/emails.txt --skip-prepare
- *   npm run user-pipeline:replay-hourly -- --emails-file /tmp/emails.txt --trace-file /tmp/hourly-trace.jsonl
+ *   npm run user-pipeline:replay-daily -- --emails-file /tmp/emails.txt
+ *   npm run user-pipeline:replay-daily -- --emails-file /tmp/emails.txt --dry-run
+ *   npm run user-pipeline:replay-daily -- --emails-file /tmp/emails.txt --skip-prepare --passes 3
+ *   npm run user-pipeline:replay-daily -- --emails-file /tmp/emails.txt --trace-file /tmp/daily-trace.jsonl
  *
  * Options:
- *   --emails-file      Required. Newline-separated list of emails to replay.
- *   --skip-prepare     Skip the cohort reset (use current D1 state as-is).
- *   --hourly-dry-run   Pass --dry-run to hourly-new-users (trust scoring still runs live).
- *   --trace-file       Append hourly trust/hourly trace output as JSONL
+ *   --emails-file    Required. Newline-separated list of emails to replay.
+ *   --skip-prepare   Skip the cohort reset (use current D1 state as-is).
+ *   --passes N       Max number of daily passes to run (default: cohort size).
+ *   --dry-run        Run one dry-run pass without writing to D1.
+ *   --trace-file     Append per-pass daily trace output as JSONL
  */
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { TIER_POLLEN } from "../../src/tier-config.ts";
 import { executeD1, queryD1 } from "../shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
 
@@ -33,12 +36,13 @@ interface ParsedArgs {
     env: Environment;
     emailsFile: string;
     skipPrepare: boolean;
-    hourlyDryRun: boolean;
+    passes: number | null;
+    dryRun: boolean;
     traceFile: string | null;
 }
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const workspaceRoot = resolve(scriptDir, "../../..");
+const workspaceRoot = resolve(scriptDir, "../..");
 const repoRoot = resolve(workspaceRoot, "..");
 const dotenvPath = resolve(repoRoot, ".env");
 
@@ -47,6 +51,10 @@ function parseArguments(): ParsedArgs {
     const getString = (flag: string, fallback = ""): string => {
         const index = args.indexOf(flag);
         return index >= 0 && args[index + 1] ? args[index + 1] : fallback;
+    };
+    const getNumber = (flag: string): number | null => {
+        const value = getString(flag);
+        return value ? Number.parseInt(value, 10) : null;
     };
 
     const env = getString("--env", "staging");
@@ -65,7 +73,8 @@ function parseArguments(): ParsedArgs {
         env: "staging",
         emailsFile,
         skipPrepare: args.includes("--skip-prepare"),
-        hourlyDryRun: args.includes("--hourly-dry-run"),
+        passes: getNumber("--passes"),
+        dryRun: args.includes("--dry-run"),
         traceFile: getString("--trace-file") || null,
     };
 }
@@ -81,34 +90,38 @@ function countCohortUsers(env: Environment, emails: string[]): number {
 function prepareCohort(env: Environment, emails: string[]): void {
     const ok = executeD1(
         env,
-        `UPDATE user SET tier = 'microbe', tier_balance = 0, trust_score = NULL, score = NULL, score_checked_at = NULL, banned = 0, ban_reason = NULL, ban_expires = NULL WHERE 1=1${buildEmailFilter("email", emails)}`,
+        `UPDATE user SET tier = 'spore', tier_balance = ${TIER_POLLEN.spore}, score = NULL, score_checked_at = 0, banned = 0, ban_reason = NULL, ban_expires = NULL WHERE 1=1${buildEmailFilter("email", emails)}`,
     );
     if (!ok) {
-        throw new Error("Failed to prepare hourly replay cohort in D1");
+        throw new Error("Failed to prepare daily replay cohort in D1");
     }
+}
+
+function countUncheckedUsers(env: Environment, emails: string[]): number {
+    const rows = queryD1(
+        env,
+        `SELECT COUNT(*) AS count FROM user WHERE 1=1${buildEmailFilter("email", emails)} AND COALESCE(banned, 0) = 0 AND (score_checked_at IS NULL OR score_checked_at = 0)`,
+    );
+    return Number(rows[0]?.count ?? 0);
 }
 
 function printSummary(env: Environment, emails: string[]): void {
     const rows = queryD1(
         env,
         `SELECT
-            SUM(CASE WHEN tier = 'microbe' THEN 1 ELSE 0 END) AS microbe_count,
             SUM(CASE WHEN tier = 'spore' THEN 1 ELSE 0 END) AS spore_count,
             SUM(CASE WHEN tier = 'seed' THEN 1 ELSE 0 END) AS seed_count,
             SUM(CASE WHEN COALESCE(banned, 0) = 1 THEN 1 ELSE 0 END) AS banned_count,
-            SUM(CASE WHEN trust_score >= 60 THEN 1 ELSE 0 END) AS trusted_count,
-            SUM(CASE WHEN trust_score < 60 AND trust_score IS NOT NULL THEN 1 ELSE 0 END) AS blocked_count
+            SUM(CASE WHEN score_checked_at IS NOT NULL AND score_checked_at > 0 THEN 1 ELSE 0 END) AS checked_count
          FROM user
          WHERE 1=1${buildEmailFilter("email", emails)}`,
     );
     const row = rows[0] ?? {};
     console.log("\n📊 Cohort summary:");
-    console.log(`   Microbe: ${row.microbe_count ?? 0}`);
     console.log(`   Spore: ${row.spore_count ?? 0}`);
     console.log(`   Seed: ${row.seed_count ?? 0}`);
     console.log(`   Banned: ${row.banned_count ?? 0}`);
-    console.log(`   Trust >= 60: ${row.trusted_count ?? 0}`);
-    console.log(`   Trust < 60: ${row.blocked_count ?? 0}`);
+    console.log(`   Checked: ${row.checked_count ?? 0}`);
 }
 
 function loadDotenvEnv(): NodeJS.ProcessEnv {
@@ -152,7 +165,7 @@ function main(): void {
     }
 
     const cohortSize = countCohortUsers(config.env, emails);
-    console.log("🧪 Replay Hourly New-User Pipeline");
+    console.log("🧪 Replay Daily Spore Recheck");
     console.log(`   Environment: ${config.env}`);
     console.log(`   Cohort file: ${config.emailsFile}`);
     console.log(`   Cohort size: ${cohortSize}`);
@@ -168,7 +181,7 @@ function main(): void {
     const childEnv = loadDotenvEnv();
 
     if (!config.skipPrepare) {
-        console.log("\n🛠️ Preparing cohort for hourly replay...");
+        console.log("\n🛠️ Preparing cohort for daily replay...");
         prepareCohort(config.env, emails);
         if (config.traceFile) {
             writeFileSync(config.traceFile, "");
@@ -177,33 +190,59 @@ function main(): void {
         console.log("\n⏭️ Skipping cohort preparation");
     }
 
-    console.log("\n🔍 Running trust gate...");
-    runCommand(
-        [
-            "run",
-            "user-pipeline:trust-score",
-            "--",
-            "--store-status",
-            "--emails-file",
-            config.emailsFile,
-            ...(config.traceFile ? ["--trace-file", config.traceFile] : []),
-        ],
-        childEnv,
-    );
-
-    console.log("\n🌱 Running hourly new-user pipeline...");
-    const command = [
-        "run",
-        "user-pipeline:hourly-new-users",
-        "--",
-        "--emails-file",
-        config.emailsFile,
-        ...(config.traceFile ? ["--trace-file", config.traceFile] : []),
-    ];
-    if (config.hourlyDryRun) {
-        command.push("--dry-run");
+    if (config.dryRun) {
+        console.log("\n🌱 Running one dry-run daily pass...");
+        runCommand(
+            [
+                "run",
+                "user-pipeline:daily-spore-recheck",
+                "--",
+                "--env",
+                config.env,
+                "--dry-run",
+                "--emails-file",
+                config.emailsFile,
+                ...(config.traceFile
+                    ? ["--trace-file", config.traceFile, "--trace-pass", "1"]
+                    : []),
+            ],
+            childEnv,
+        );
+        return;
     }
-    runCommand(command, childEnv);
+
+    const totalPasses = config.passes ?? cohortSize;
+    console.log(`\n🌱 Running up to ${totalPasses} daily pass(es)...`);
+
+    for (let index = 0; index < totalPasses; index += 1) {
+        const remainingUnchecked = countUncheckedUsers(config.env, emails);
+        if (remainingUnchecked === 0) {
+            console.log(`\n✅ Cohort fully checked after ${index} pass(es)`);
+            break;
+        }
+
+        console.log(`\n   Pass ${index + 1}/${totalPasses}`);
+        runCommand(
+            [
+                "run",
+                "user-pipeline:daily-spore-recheck",
+                "--",
+                "--env",
+                config.env,
+                "--emails-file",
+                config.emailsFile,
+                ...(config.traceFile
+                    ? [
+                          "--trace-file",
+                          config.traceFile,
+                          "--trace-pass",
+                          String(index + 1),
+                      ]
+                    : []),
+            ],
+            childEnv,
+        );
+    }
 
     printSummary(config.env, emails);
 }

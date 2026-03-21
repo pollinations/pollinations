@@ -7,7 +7,7 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/test/cohort-setup.ts
+ *   npx tsx user-scoring/test/cohort-setup.ts
  */
 
 import { writeFileSync } from "node:fs";

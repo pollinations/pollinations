@@ -24,12 +24,12 @@ Routine testing should not depend on the global staging values of those columns:
 
 ```bash
 cd enter.pollinations.ai
-node scripts/user-pipeline/test/seed-staging.mjs
+node user-scoring/test/seed-staging.mjs
 ```
 
 Edit `SAMPLE` in the script to adjust tier sizes.
 
 After a reseed:
 
-1. Run `npx tsx scripts/user-pipeline/test/cohort-setup.ts`
+1. Run `npx tsx user-scoring/test/cohort-setup.ts`
 2. Follow [`TESTING.md`](./TESTING.md) from the reset step onward

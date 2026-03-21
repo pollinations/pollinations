@@ -11,8 +11,8 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/rollout/bootstrap-trust-scores.ts --env staging
- *   npx tsx scripts/user-pipeline/rollout/bootstrap-trust-scores.ts --env production --apply
+ *   npx tsx user-scoring/rollout/bootstrap-trust-scores.ts --env staging
+ *   npx tsx user-scoring/rollout/bootstrap-trust-scores.ts --env production --apply
  */
 
 import { executeD1, queryD1 } from "../shared/d1.ts";

@@ -11,13 +11,13 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/audit-github-accounts.ts audit
- *   npx tsx scripts/user-pipeline/audit-github-accounts.ts audit --resume
- *   npx tsx scripts/user-pipeline/audit-github-accounts.ts audit --limit 100
- *   npx tsx scripts/user-pipeline/audit-github-accounts.ts apply
- *   npx tsx scripts/user-pipeline/audit-github-accounts.ts apply --no-dryRun
- *   npx tsx scripts/user-pipeline/audit-github-accounts.ts audit --env production
- *   npx tsx scripts/user-pipeline/audit-github-accounts.ts apply --env production --no-dryRun
+ *   npx tsx user-scoring/jobs/audit-github-accounts.ts audit
+ *   npx tsx user-scoring/jobs/audit-github-accounts.ts audit --resume
+ *   npx tsx user-scoring/jobs/audit-github-accounts.ts audit --limit 100
+ *   npx tsx user-scoring/jobs/audit-github-accounts.ts apply
+ *   npx tsx user-scoring/jobs/audit-github-accounts.ts apply --no-dryRun
+ *   npx tsx user-scoring/jobs/audit-github-accounts.ts audit --env production
+ *   npx tsx user-scoring/jobs/audit-github-accounts.ts apply --env production --no-dryRun
  *
  * Environment variables:
  *   GITHUB_TOKEN                - PAT for GitHub API (5,000 req/hr)
@@ -27,9 +27,9 @@
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
-import { executeD1, queryD1 } from "./shared/d1.ts";
-import { githubRestRequest } from "./shared/github.ts";
-import { banUsersByGithubIds } from "./shared/github-identity.ts";
+import { executeD1, queryD1 } from "../shared/d1.ts";
+import { githubRestRequest } from "../shared/github.ts";
+import { banUsersByGithubIds } from "../shared/github-identity.ts";
 
 type Environment = "staging" | "production";
 

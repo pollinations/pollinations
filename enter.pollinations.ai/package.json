@@ -30,14 +30,14 @@
         "tail": "wrangler tail --env production | jq -c '.logs[].message[] | fromjson' | tsx scripts/format-logs.ts",
         "tail:json": "wrangler tail --env production | jq '.logs[].message[] | fromjson'",
         "docs:generate": "tsx scripts/generate-apidocs.ts",
-        "user-pipeline:trust-score": "tsx scripts/user-pipeline/scoring/trust-score.ts",
-        "user-pipeline:hourly-new-users": "tsx scripts/user-pipeline/hourly-new-users.ts",
-        "user-pipeline:daily-spore-recheck": "tsx scripts/user-pipeline/daily-spore-recheck.ts",
-        "user-pipeline:replay-hourly": "tsx scripts/user-pipeline/test/replay-hourly-new-users.ts",
-        "user-pipeline:replay-daily": "tsx scripts/user-pipeline/test/replay-daily-spore-recheck.ts",
-        "user-pipeline:rollout-fill-spore-scores": "tsx scripts/user-pipeline/rollout/fill-spore-github-scores.ts",
-        "user-pipeline:rollout-bootstrap-trust": "tsx scripts/user-pipeline/rollout/bootstrap-trust-scores.ts",
-        "user-pipeline:audit-github-accounts": "tsx scripts/user-pipeline/audit-github-accounts.ts"
+        "user-pipeline:trust-score": "tsx user-scoring/scoring/trust-score.ts",
+        "user-pipeline:hourly-new-users": "tsx user-scoring/jobs/hourly-new-users.ts",
+        "user-pipeline:daily-spore-recheck": "tsx user-scoring/jobs/daily-spore-recheck.ts",
+        "user-pipeline:replay-hourly": "tsx user-scoring/test/replay-hourly-new-users.ts",
+        "user-pipeline:replay-daily": "tsx user-scoring/test/replay-daily-spore-recheck.ts",
+        "user-pipeline:rollout-fill-spore-scores": "tsx user-scoring/rollout/fill-spore-github-scores.ts",
+        "user-pipeline:rollout-bootstrap-trust": "tsx user-scoring/rollout/bootstrap-trust-scores.ts",
+        "user-pipeline:audit-github-accounts": "tsx user-scoring/jobs/audit-github-accounts.ts"
     },
     "dependencies": {
         "@ark-ui/react": "^5.29.1",

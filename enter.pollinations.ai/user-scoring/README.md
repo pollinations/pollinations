@@ -1,10 +1,10 @@
-# User Pipeline
+# User Scoring
 
-This document is the intended contract for the implemented user pipeline on this branch.
+This document is the intended contract for the implemented user-scoring subsystem on this branch.
 
-One-time rollout scripts are separate operational jobs and are not part of the steady-state pipeline.
+One-time rollout scripts are separate operational jobs and are not part of the steady-state subsystem.
 
-Operational helpers are kept separate from the steady-state pipeline under `scripts/user-pipeline/rollout/`.
+Operational helpers are kept separate from the steady-state subsystem under `user-scoring/rollout/`.
 
 The one-time `trust_score = 0/100` bootstrap remains migration-only in `drizzle/0017_add_score_and_trust_score.sql`; it is not part of steady-state code.
 
@@ -26,9 +26,11 @@ See also:
 Current checked-in layout on this branch:
 
 ```text
-scripts/user-pipeline/
-├── hourly-new-users.ts
-├── daily-spore-recheck.ts
+user-scoring/
+├── jobs/
+│   ├── hourly-new-users.ts
+│   ├── daily-spore-recheck.ts
+│   └── audit-github-accounts.ts
 ├── scoring/
 │   ├── trust-score.ts
 │   ├── trust-score-prompt.md
@@ -40,7 +42,6 @@ scripts/user-pipeline/
 │   ├── github-identity.ts
 │   ├── github.ts
 │   └── llm.ts
-├── audit-github-accounts.ts
 ├── rollout/
 │   ├── fill-spore-github-scores.ts
 │   └── bootstrap-trust-scores.ts

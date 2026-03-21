@@ -59,7 +59,7 @@ function resolveGithubAppKeyPath(keyPath: string): string {
         return keyPath;
     }
 
-    const workspaceRoot = resolve(import.meta.dirname, "../../..");
+    const workspaceRoot = resolve(import.meta.dirname, "../..");
     const repoRoot = resolve(workspaceRoot, "..");
     for (const directory of [workspaceRoot, repoRoot]) {
         const pemFile = readdirSync(directory).find((entry) =>

@@ -1,6 +1,6 @@
-# How to Test the User Pipeline
+# How to Test User Scoring
 
-All scripts in this directory (`scripts/user-pipeline/test/`).
+All scripts in this directory (`user-scoring/test/`).
 
 ---
 
@@ -14,7 +14,7 @@ All scripts in this directory (`scripts/user-pipeline/test/`).
    ```
 4. **Staging database** — already seeded with a production sample. See [STAGING.md](STAGING.md). Re-seeding is a rare manual operation — do not run it as part of regular testing.
 
-The rollout helpers under `scripts/user-pipeline/rollout/` are not part of the routine test flow below.
+The rollout helpers under `user-scoring/rollout/` are not part of the routine test flow below.
 
 ---
 
@@ -24,7 +24,7 @@ The rollout helpers under `scripts/user-pipeline/rollout/` are not part of the r
 
 ```bash
 cd enter.pollinations.ai
-npx vitest run scripts/user-pipeline/test/
+npx vitest run user-scoring/test/
 ```
 
 Covers: LLM CSV parsing, GitHub risk detection, GitHub scoring logic.
@@ -32,7 +32,7 @@ Covers: LLM CSV parsing, GitHub risk detection, GitHub scoring logic.
 ### 2. Build cohort files — once, or after re-seeding staging
 
 ```bash
-npx tsx scripts/user-pipeline/test/cohort-setup.ts
+npx tsx user-scoring/test/cohort-setup.ts
 ```
 
 Creates 4 files in `/tmp/`: `cohort-group-a.txt`, `cohort-group-b.txt`, `cohort-group-c.txt`, `cohort-daily.txt`.
@@ -41,7 +41,7 @@ Skip this step if the files already exist and staging hasn't been re-seeded.
 ### 3. Reset cohort — before every staging run
 
 ```bash
-npx tsx scripts/user-pipeline/test/reset-cohort.ts
+npx tsx user-scoring/test/reset-cohort.ts
 ```
 
 Resets group A → microbe (trust_score = NULL), groups B+C → spore (trust_score = 100), clears all GitHub scores and bans.
@@ -60,7 +60,7 @@ npm run user-pipeline:replay-daily -- --emails-file /tmp/cohort-daily.txt
 ### 5. Verify results
 
 ```bash
-npx tsx scripts/user-pipeline/test/verify-results.ts
+npx tsx user-scoring/test/verify-results.ts
 ```
 
 Exits 0 if the current checks pass, exits 1 if any fail.
@@ -128,15 +128,15 @@ Each pass scores ~1/7 of spores. The replay script loops automatically until all
 
 ```bash
 # Reset first
-npx tsx scripts/user-pipeline/test/reset-cohort.ts
+npx tsx user-scoring/test/reset-cohort.ts
 
 # Hourly only
 npm run user-pipeline:replay-hourly -- --emails-file /tmp/cohort-group-a.txt
-npx tsx scripts/user-pipeline/test/verify-results.ts --group a
+npx tsx user-scoring/test/verify-results.ts --group a
 
 # Daily only
 npm run user-pipeline:replay-daily -- --emails-file /tmp/cohort-daily.txt
-npx tsx scripts/user-pipeline/test/verify-results.ts --group daily
+npx tsx user-scoring/test/verify-results.ts --group daily
 ```
 
 For this branch, interpret a Group B `>= 60%` miss as a cohort/expectation mismatch unless the replay itself shows scoring or state-update failures.
@@ -152,7 +152,7 @@ npm run user-pipeline:replay-daily -- --emails-file /tmp/cohort-daily.txt --dry-
 
 ```bash
 # Check cohort state without modifying anything
-npx tsx scripts/user-pipeline/test/reset-cohort.ts --verify-only
+npx tsx user-scoring/test/reset-cohort.ts --verify-only
 
 # Direct D1 query
 npx wrangler d1 execute DB --remote --env staging \
@@ -182,7 +182,11 @@ npx wrangler d1 execute DB --remote --env staging \
 ## File Layout
 
 ```
-scripts/user-pipeline/
+user-scoring/
+├── jobs/
+│   ├── hourly-new-users.ts          # Hourly pipeline entry point
+│   ├── daily-spore-recheck.ts       # Daily pipeline entry point
+│   └── audit-github-accounts.ts     # GitHub account audit tool
 ├── test/                            # <-- you are here
 │   ├── TESTING.md                   # This guide
 │   ├── STAGING.md                   # Staging DB documentation
@@ -195,7 +199,6 @@ scripts/user-pipeline/
 │   ├── user-pipeline.test.ts        # Unit tests: LLM CSV parsing
 │   ├── github-risk.test.ts          # Unit tests: profile risk detection
 │   └── github-score.test.ts         # Unit tests: GitHub scoring logic
-├── audit-github-accounts.ts         # GitHub account audit tool
 ├── scoring/
 │   ├── trust-score.ts               # LLM-based trust scoring
 │   ├── trust-score-prompt.md        # LLM prompt template
@@ -205,6 +208,4 @@ scripts/user-pipeline/
 ├── rollout/
 │   ├── bootstrap-trust-scores.ts    # One-time rollout trust bootstrap helper
 │   └── fill-spore-github-scores.ts  # One-time rollout spore score helper
-├── hourly-new-users.ts              # Hourly pipeline entry point
-└── daily-spore-recheck.ts           # Daily pipeline entry point
 ```

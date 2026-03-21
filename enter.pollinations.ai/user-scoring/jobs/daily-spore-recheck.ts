@@ -8,10 +8,10 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/daily-spore-recheck.ts
- *   npx tsx scripts/user-pipeline/daily-spore-recheck.ts --dry-run
- *   npx tsx scripts/user-pipeline/daily-spore-recheck.ts --emails-file /tmp/emails.txt
- *   npx tsx scripts/user-pipeline/daily-spore-recheck.ts --emails-file /tmp/emails.txt --trace-file /tmp/daily-trace.jsonl
+ *   npx tsx user-scoring/jobs/daily-spore-recheck.ts
+ *   npx tsx user-scoring/jobs/daily-spore-recheck.ts --dry-run
+ *   npx tsx user-scoring/jobs/daily-spore-recheck.ts --emails-file /tmp/emails.txt
+ *   npx tsx user-scoring/jobs/daily-spore-recheck.ts --emails-file /tmp/emails.txt --trace-file /tmp/daily-trace.jsonl
  *
  * Options:
  *   --dry-run        Preview actions without writing to D1
@@ -30,19 +30,19 @@ import {
     storeGithubCheckTimestamps,
     storeGithubScores,
     validateUserRecords,
-} from "./scoring/github-score.ts";
-import { executeD1, queryD1 } from "./shared/d1.ts";
+} from "../scoring/github-score.ts";
+import { executeD1, queryD1 } from "../shared/d1.ts";
 import {
     buildEmailFilter,
     escapeSqlString,
     loadEmailCohort,
-} from "./shared/email-cohort.ts";
+} from "../shared/email-cohort.ts";
 import {
     banUsersByEmails,
     banUsersByGithubIds,
     GITHUB_ID_INVALID_REASON,
     PIPELINE_DB_BATCH_SIZE,
-} from "./shared/github-identity.ts";
+} from "../shared/github-identity.ts";
 
 type Environment = "staging";
 

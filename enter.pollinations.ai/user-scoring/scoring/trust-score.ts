@@ -7,8 +7,8 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/scoring/trust-score.ts --store-status
- *   npx tsx scripts/user-pipeline/scoring/trust-score.ts --emails-file /tmp/emails.txt
+ *   npx tsx user-scoring/scoring/trust-score.ts --store-status
+ *   npx tsx user-scoring/scoring/trust-score.ts --emails-file /tmp/emails.txt
  *
  * Options:
  *   --limit N        Max pending users to consider (default: 5000)

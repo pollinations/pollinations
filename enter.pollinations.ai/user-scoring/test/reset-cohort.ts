@@ -7,8 +7,8 @@
  *
  * Usage:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/user-pipeline/test/reset-cohort.ts
- *   npx tsx scripts/user-pipeline/test/reset-cohort.ts --verify-only
+ *   npx tsx user-scoring/test/reset-cohort.ts
+ *   npx tsx user-scoring/test/reset-cohort.ts --verify-only
  */
 
 import { existsSync, readFileSync } from "node:fs";

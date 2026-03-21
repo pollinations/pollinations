@@ -1,6 +1,6 @@
-# User Pipeline Production Rollout
+# User Scoring Production Rollout
 
-This note describes the final productionization step for the user pipeline on `feat/microbe-first-tier`.
+This note describes the final productionization step for the user-scoring subsystem on `feat/microbe-first-tier`.
 
 The current branch stays staging-only until the last pre-merge commit.
 
@@ -28,7 +28,7 @@ The daily global abuse scan is planned follow-up work. It is not implemented on 
 ## Existing-User Bootstrap
 
 The source of truth for the initial trust bootstrap is the migration
-[`drizzle/0017_add_score_and_trust_score.sql`](../../../drizzle/0017_add_score_and_trust_score.sql):
+[`drizzle/0017_add_score_and_trust_score.sql`](../../drizzle/0017_add_score_and_trust_score.sql):
 
 - existing `microbe` users -> `trust_score = 0`
 - existing `spore/seed/flower/nectar/router` users -> `trust_score = 100`
@@ -85,10 +85,10 @@ The last pre-merge commit should do only two things:
 
 - `.github/workflows/user-pipeline-hourly-new-users.yml`
 - `.github/workflows/user-pipeline-daily-spore-recheck.yml`
-- `enter.pollinations.ai/scripts/user-pipeline/audit-github-accounts.ts`
-- `enter.pollinations.ai/scripts/user-pipeline/scoring/trust-score.ts`
-- `enter.pollinations.ai/scripts/user-pipeline/hourly-new-users.ts`
-- `enter.pollinations.ai/scripts/user-pipeline/daily-spore-recheck.ts`
+- `enter.pollinations.ai/user-scoring/jobs/audit-github-accounts.ts`
+- `enter.pollinations.ai/user-scoring/scoring/trust-score.ts`
+- `enter.pollinations.ai/user-scoring/jobs/hourly-new-users.ts`
+- `enter.pollinations.ai/user-scoring/jobs/daily-spore-recheck.ts`
 
 ## First Post-Merge Run Must Be Dry
 
@@ -166,4 +166,4 @@ This avoids overflow once GitHub user IDs grow past signed 32-bit range.
 ## Do Not Change
 
 - Keep the `trust_score = 0 / 100` bootstrap in the migration only.
-- Keep rollout helpers separate from the steady-state workflows under `scripts/user-pipeline/rollout/`.
+- Keep rollout helpers separate from the steady-state workflows under `user-scoring/rollout/`.

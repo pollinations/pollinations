@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🤖 Twitch Gemini Chatbot](9457737) | Runs Twitch Gemini Chatbot to provide zero-code Google Gemini AI chat and Pollinations.ai media generation for 24/7 interactive livestream conversations. | [@web](https://github.com/web) |
-| [🤖 Pollinations AI  Claude Code CLI Plugin](https://www.ai-ministries.com/downloads/) | Generate images, text, audio, and video from Claude Code using Pollinations AI  Claude Code CLI Plugin and Pollinations.ai httpspollinations.ai | [@cli](https://github.com/cli) |
-| [💐 BexyFlowers - AI Bouquet Designer](https://bexyflowers.shop) | Generates photorealistic AI previews of custom bouquets using pollinations.ai for BexyFlowers - AI Bouquet Designer, an e-commerce platform based in Lebanon. | [@web](https://github.com/web) |
-| [📝 StoryTale](https://storytale.onrender.com/) | Export StoryTale stories to Markdown for editing and publishing, preserving headings, links, images, and basic formatting. | [@web](https://github.com/web) |
-| [🫧 BubbleUp](https://bubbleup.clinko.com) | Organizes web highlights and notes in BubbleUp, extracting key points, tagging content, and syncing across devices for later review. | [@web](https://github.com/web) |
-| [📈 BorsaciAI - BIST Financial Analysis Bot](https://t.me/ai_borsaci_bot) | Provides open-source Telegram assistant to summarize companies listed on Borsa Istanbul and combine market data for quick financial analysis; BorsaciAI - BIST Financial Analysis Bot | [@telegram](https://github.com/telegram) |
-| [📝 Ask PollinationsAI for a Text](1894723) | Generate text with Ask PollinationsAI for a Text using Powershell and integrate the output into .NET applications and Azure. | [@cli](https://github.com/cli) |
-| [🖼️ Ask PollinationsAI for an image](1894723) | Generate images from Powershell or integrate into the .NET environment and Azure using Ask PollinationsAI for an image. | [@cli](https://github.com/cli) |
-| [🐉 Daily Cryptid](https://cjhauser.me/daily-cryptid) | Generate one AI-created cryptid every 24 hours with Daily Cryptid, using pollinations.ai to produce both image and description. | [@web](https://github.com/web) |
-| [🔀 Parallel](https://parallelsim.vercel.app/) | Alternate-life timeline simulator that generates divergent year-by-year futures from unchosen decisions using Pollinations text API. | [@web](https://github.com/web) |
+| 🤖 Twitch Gemini Chatbot | Runs Twitch Gemini Chatbot to provide zero-code Google Gemini AI chat and Pollinations.ai media generation for 24/7 interactive livestream conversations. | [@VirtuallyJesse](https://github.com/VirtuallyJesse) |
+| [🤖 Pollinations AI  Claude Code CLI Plugin](https://www.ai-ministries.com/downloads/) | Generate images, text, audio, and video from Claude Code using Pollinations AI  Claude Code CLI Plugin and Pollinations.ai httpspollinations.ai | [@Tolerable](https://github.com/Tolerable) |
+| [💐 BexyFlowers - AI Bouquet Designer](https://bexyflowers.shop) | Generates photorealistic AI previews of custom bouquets using pollinations.ai for BexyFlowers - AI Bouquet Designer, an e-commerce platform based in Lebanon. | [@Mhmdachkar](https://github.com/Mhmdachkar) |
+| [📝 StoryTale](https://storytale.onrender.com/) | Export StoryTale stories to Markdown for editing and publishing, preserving headings, links, images, and basic formatting. | [@Yorism7](https://github.com/Yorism7) |
+| [🫧 BubbleUp](https://bubbleup.clinko.com) | Organizes web highlights and notes in BubbleUp, extracting key points, tagging content, and syncing across devices for later review. | [@egusta](https://github.com/egusta) |
+| [📈 BorsaciAI - BIST Financial Analysis Bot](https://t.me/ai_borsaci_bot) | Provides open-source Telegram assistant to summarize companies listed on Borsa Istanbul and combine market data for quick financial analysis; BorsaciAI - BIST Financial Analysis Bot | [@azsaritas](https://github.com/azsaritas) |
+| 📝 Ask PollinationsAI for a Text | Generate text with Ask PollinationsAI for a Text using Powershell and integrate the output into .NET applications and Azure. | [@BananaAcid](https://github.com/BananaAcid) |
+| 🖼️ Ask PollinationsAI for an image | Generate images from Powershell or integrate into the .NET environment and Azure using Ask PollinationsAI for an image. | [@BananaAcid](https://github.com/BananaAcid) |
+| [🐉 Daily Cryptid](https://cjhauser.me/daily-cryptid) | Generate one AI-created cryptid every 24 hours with Daily Cryptid, using pollinations.ai to produce both image and description. | [@CloudCompile](https://github.com/CloudCompile) |
+| [🔀 Parallel](https://parallelsim.vercel.app/) | Alternate-life timeline simulator that generates divergent year-by-year futures from unchosen decisions using Pollinations text API. | [@novachrono09](https://github.com/novachrono09) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -47,6 +47,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-03-20** – **🎨 Klein Multi-Image Blending** The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending.
+- **2026-03-20** – **💻 PowerShell & .NET Integrations** You can now pipe text and image generation directly into your Windows scripting and Azure workflows. Because sometimes you just need to generate pixels from a terminal.
+- **2026-03-20** – **🌟 Showcase Explosion** The community directory is growing. New additions include a daily cryptid generator, a Turkish financial analysis bot, a markdown story exporter, and an AI bouquet designer. See what people are building on the [main website](https://hello.pollinations.ai).
 - **2026-03-19** – **🔗 OpenClaw Integration** Setting up OpenClaw with Pollinations is now faster and less prone to configuration errors thanks to native CLI onboarding for v2026.3.
 - **2026-03-18** – **🤖 Silicon meets pollen** Someone wired the API into an ESP32-S3 microcontroller (NEURGenerator). Hardware hackers now have a reference for bringing generation to physical devices.
 - **2026-03-18** – **📱 Pocket-sized infrastructure** Nova.ai just dropped into the showcase—a full iOS assistant with streaming chat and image generation built entirely on our endpoints.
@@ -54,9 +57,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-03-18** – **👾 Bot swarm** The community showcase on our [website](https://hello.pollinations.ai) absorbed over a dozen new apps this week, including Telegram model-routers and massive Discord bot presets.
 - **2026-03-17** – **🚀 Drag-and-Drop Uploads** You can now upload local images (up to 5MB) directly on the Play page instead of hunting for URLs.
 - **2026-03-17** – **📊 Omniscient Model Monitor** The model monitor now tracks audio and video models alongside text and images, so you know exactly what's up (or down).
-- **2026-03-17** – **🧠 Qwen3.5 397B Arrives** We've added Qwen3.5 397B to the [Unified API](https://gen.pollinations.ai). Massive 262K context window, vision, and reasoning capabilities are now a single endpoint away.
-- **2026-03-16** – **✨ Hourly Pollen Refills** Spore and Seed tier balances now regenerate every hour. Your free tier credits grow back naturally while you figure out why your code isn't working.
-- **2026-03-16** – **📱 Full Model Roster** The [models table](https://hello.pollinations.ai) now correctly fetches stats for all 200+ available models instead of giving up at 50. We also cleaned up the UI so you can easily spot new and alpha models.
 ---
 
 ## 🌱 Introduction

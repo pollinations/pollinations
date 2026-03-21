@@ -35,14 +35,9 @@ export const Route = createFileRoute("/")({
                 apiClient.customer.balance
                     .$get()
                     .then((r) => (r.ok ? r.json() : null)),
-                fetch("/api/account/profile", { credentials: "include" }).then(
-                    (r) =>
-                        r.ok
-                            ? (r.json() as Promise<{
-                                  githubUsername: string | null;
-                              }>)
-                            : null,
-                ),
+                apiClient.account.profile
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
             ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;

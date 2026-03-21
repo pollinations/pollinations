@@ -45,6 +45,12 @@ const SECRETS_PII_TYPES = new Set([
     "US_BANK_ROUTING_NUMBER",
 ]);
 
+// Custom regex names mapped to secrets feature
+const SECRETS_REGEX_NAMES = new Set([
+    "POLLINATIONS_SECRET_KEY",
+    "POLLINATIONS_PUBLIC_KEY",
+]);
+
 // Content filter categories by feature
 const NSFW_CATEGORIES = new Set(["SEXUAL", "VIOLENCE"]);
 const SHIELD_CATEGORIES = new Set(["PROMPT_ATTACK"]);
@@ -113,7 +119,11 @@ function getAllowedPiiTypes(features: Set<string>): Set<string> | undefined {
 
     const allowed = new Set<string>();
     if (hasPrivacy) for (const t of PRIVACY_PII_TYPES) allowed.add(t);
-    if (hasSecrets) for (const t of SECRETS_PII_TYPES) allowed.add(t);
+    if (hasSecrets) {
+        for (const t of SECRETS_PII_TYPES) allowed.add(t);
+        // Include custom regex names so they pass the allowedTypes filter
+        for (const name of SECRETS_REGEX_NAMES) allowed.add(name);
+    }
     return allowed;
 }
 
@@ -210,7 +220,9 @@ function getRedactedTypes(
         }
     }
     for (const regex of policy.regexes ?? []) {
-        types.add(regex.name);
+        if (allowedTypes.has(regex.name)) {
+            types.add(regex.name);
+        }
     }
     return [...types];
 }
@@ -298,7 +310,13 @@ export async function applySafetyToText(
 
 function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
     const env = c.env as unknown as BedrockGuardrailEnv;
-    if (!env.BEDROCK_GUARDRAIL_ID || !env.AWS_BEDROCK_ACCESS_KEY_ID) {
+    if (
+        !env.BEDROCK_GUARDRAIL_ID ||
+        !env.BEDROCK_GUARDRAIL_VERSION ||
+        !env.AWS_BEDROCK_ACCESS_KEY_ID ||
+        !env.AWS_BEDROCK_SECRET_ACCESS_KEY ||
+        !env.AWS_BEDROCK_REGION
+    ) {
         return new Set();
     }
 

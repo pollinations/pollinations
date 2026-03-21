@@ -98,6 +98,12 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
         log.trace("HttpException: {message}", {
             message: err.message || getDefaultErrorMessage(err.status),
         });
+        // If the exception carries a custom Response (e.g. safety errors),
+        // return it directly so the caller's payload is preserved.
+        const customRes = err.getResponse();
+        if (customRes.body) {
+            return customRes;
+        }
         return c.json(createErrorResponse(err, status, timestamp), status);
     }
 

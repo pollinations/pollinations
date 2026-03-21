@@ -157,7 +157,9 @@ export function redactText(
     }
 
     for (const regex of policy.regexes ?? []) {
-        redacted = redacted.replaceAll(regex.match, `{${regex.name}}`);
+        if (!allowedTypes || allowedTypes.has(regex.name)) {
+            redacted = redacted.replaceAll(regex.match, `{${regex.name}}`);
+        }
     }
 
     return redacted !== text ? redacted : null;

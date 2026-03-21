@@ -131,6 +131,34 @@ describe("redactText", () => {
         );
     });
 
+    it("skips regex matches when allowedTypes excludes them", () => {
+        const response = makeResponse(
+            [
+                {
+                    action: "BLOCKED",
+                    match: "test@example.com",
+                    type: "EMAIL",
+                },
+            ],
+            [
+                {
+                    action: "BLOCKED",
+                    match: "sk_abc123",
+                    name: "POLLINATIONS_SECRET_KEY",
+                    regex: "sk_[a-zA-Z0-9]+",
+                },
+            ],
+        );
+        const privacyOnly = new Set(["EMAIL"]);
+        expect(
+            redactText(
+                "email: test@example.com key: sk_abc123",
+                response,
+                privacyOnly,
+            ),
+        ).toBe("email: {EMAIL} key: sk_abc123");
+    });
+
     it("uses Bedrock anonymized output when available", () => {
         const response = makeResponse(
             [

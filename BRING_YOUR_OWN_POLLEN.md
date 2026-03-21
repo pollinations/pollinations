@@ -100,8 +100,20 @@ curl -X POST https://enter.pollinations.ai/api/device/token \
   -H 'Content-Type: application/json' \
   -d '{"device_code": "..."}'
 # pending → { "error": "authorization_pending" }
-# done    → { "access_token": "sk_...", "token_type": "bearer" }
+# done    → { "access_token": "sk_...", "token_type": "bearer", "scope": "generate" }
 ```
+
+## who's using this key?
+
+once you have a key, you can check who it belongs to:
+
+```bash
+curl https://enter.pollinations.ai/api/device/userinfo \
+  -H 'Authorization: Bearer sk_...'
+# → { "sub": "user-id", "name": "Thomas", "preferred_username": "voodoohop", "email": "...", "picture": "..." }
+```
+
+standard OIDC userinfo shape — works with any `sk_` or `pk_` key.
 
 ---
 

@@ -1,0 +1,36 @@
+{
+  "pr_number": 9267,
+  "title": "fix(dashboard): read githubUsername from D1 profile endpoint",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/9267",
+  "merged_at": "2026-03-21T15:18:48Z",
+  "labels": [
+    "WEB",
+    "ACCOUNT",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh name tags",
+    "blurb": "Fixed a pesky bug where your dashboard would sometimes show an old GitHub username. Your profile now stays perfectly in sync with reality.",
+    "summary": "Updated the dashboard to fetch the user's GitHub username directly from the database instead of relying on a cached session.",
+    "impact": "Users will now always see their most up-to-date GitHub username on the dashboard immediately after logging in or syncing.",
+    "keywords": [
+      "dashboard",
+      "github",
+      "profile",
+      "bugfix",
+      "sync"
+    ],
+    "visual_concept": "The bee mascot (Polly) holding a freshly printed name tag or ID badge. The robot companion is printing it out from a retro terminal, symbolizing the fresh data fetch.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a freshly printed name tag, while a chunky pixel robot with a CRT monitor head prints it from a retro terminal. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9267.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a freshly printed name tag, while a chunky pixel robot with a CRT monitor head prints it from a retro terminal. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-21T15:20:24.541336+00:00"
+}

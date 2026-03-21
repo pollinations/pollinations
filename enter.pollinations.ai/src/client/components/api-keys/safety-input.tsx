@@ -22,11 +22,6 @@ const SAFETY_FEATURES = [
         label: "⚔️ Violence",
         description: "Blocks violent & gory content",
     },
-    {
-        id: "shield",
-        label: "🛡️ Shield",
-        description: "Blocks prompt injection & jailbreaks",
-    },
 ] as const;
 
 interface SafetyInputProps {

@@ -36,7 +36,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     }),
     safe: z.string().optional().meta({
         description:
-            "Safety features: true, privacy, secrets, sexual, violence, nsfw, shield (comma-separated). Strips personal info/secrets or blocks harmful content.",
+            "Safety features: true, privacy, secrets, sexual, violence, nsfw (comma-separated). Strips personal info/secrets or blocks harmful content.",
     }),
 });
 

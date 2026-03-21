@@ -10,8 +10,7 @@
  *   sexual   — block sexual/nude content
  *   violence — block violent/gory content
  *   nsfw     — shorthand for sexual,violence
- *   shield   — block prompt injection
- *   true     — expands to privacy,secrets,shield
+ *   true     — expands to privacy,secrets
  */
 
 import type { Context } from "hono";
@@ -56,9 +55,7 @@ const SECRETS_REGEX_NAMES = new Set([
 // Content filter categories by feature
 const SEXUAL_CATEGORIES = new Set(["SEXUAL"]);
 const VIOLENCE_CATEGORIES = new Set(["VIOLENCE"]);
-const SHIELD_CATEGORIES = new Set(["PROMPT_ATTACK"]);
-
-const DEFAULT_FEATURES = ["privacy", "secrets", "shield"];
+const DEFAULT_FEATURES = ["privacy", "secrets"];
 
 const VALID_FEATURES = new Set([
     "privacy",
@@ -66,7 +63,6 @@ const VALID_FEATURES = new Set([
     "nsfw",
     "sexual",
     "violence",
-    "shield",
     "true",
 ]);
 
@@ -156,9 +152,6 @@ function getBlockedCategories(
             blocked.push(filter.type);
         }
         if (features.has("violence") && VIOLENCE_CATEGORIES.has(filter.type)) {
-            blocked.push(filter.type);
-        }
-        if (features.has("shield") && SHIELD_CATEGORIES.has(filter.type)) {
             blocked.push(filter.type);
         }
     }
@@ -402,7 +395,6 @@ function createSafetyError(blockedCategories: string[]): HTTPException {
     for (const cat of blockedCategories) {
         if (SEXUAL_CATEGORIES.has(cat)) triggeredFeatures.add("sexual");
         if (VIOLENCE_CATEGORIES.has(cat)) triggeredFeatures.add("violence");
-        if (SHIELD_CATEGORIES.has(cat)) triggeredFeatures.add("shield");
     }
 
     const body = JSON.stringify({

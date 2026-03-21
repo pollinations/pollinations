@@ -19,6 +19,55 @@ The implemented steady-state workflow order on this branch is:
 
 The daily global abuse scan is planned follow-up work. It is not implemented on this branch and is not part of the current rollout.
 
+## Existing-User Bootstrap
+
+The source of truth for the initial trust bootstrap is the migration
+[`drizzle/0017_add_score_and_trust_score.sql`](../../../drizzle/0017_add_score_and_trust_score.sql):
+
+- existing `microbe` users -> `trust_score = 0`
+- existing `spore/seed/flower/nectar/router` users -> `trust_score = 100`
+
+This should happen through the normal production migration path, not by a steady-state job.
+
+The helper script
+[`bootstrap-trust-scores.ts`](./bootstrap-trust-scores.ts)
+exists only as a rollout/repair tool for rows that still have `trust_score IS NULL`.
+
+Recommended verification before any repair write:
+
+```bash
+npm run user-pipeline:rollout-bootstrap-trust -- --env production
+```
+
+Only use `--apply` if production still has null trust rows after migration.
+
+## One-Time Score Coverage Helpers
+
+The rollout helper
+[`fill-spore-github-scores.ts`](./fill-spore-github-scores.ts)
+fills missing `score` and `score_checked_at` for existing `spore` users.
+
+Important behavior:
+
+- safe by default: dry-run unless `--apply` is passed
+- writes `score` and `score_checked_at` only
+- does not promote or downgrade tiers directly
+- deleted/invalid GitHub accounts are only banned when `--ban-deleted` is passed
+
+Recommended first pass:
+
+```bash
+npm run user-pipeline:rollout-fill-spore-scores -- --env production
+```
+
+If you choose to use it live later:
+
+```bash
+npm run user-pipeline:rollout-fill-spore-scores -- --env production --apply
+```
+
+Use `--ban-deleted` only if you explicitly want the rollout helper to ban deleted accounts during that pass.
+
 ## Final Pre-Merge Commit
 
 The last pre-merge commit should do only two things:
@@ -87,8 +136,22 @@ Once the dry production runs look correct, open a very small follow-up PR that r
 
 That PR should not include refactors. It should only turn on live writes.
 
+## Staging After Merge
+
+Staging is not part of the production rollout itself.
+
+After production is migrated and the new system is live, the recommended staging refresh is:
+
+1. reseed staging from production using
+   [`seed-staging.mjs`](../test/seed-staging.mjs)
+2. rebuild cohort files with
+   [`cohort-setup.ts`](../test/cohort-setup.ts)
+3. use [`TESTING.md`](../test/TESTING.md) for routine validation
+
+Routine staging tests should rely on `reset-cohort.ts`, not on rollout helpers.
+
 ## Do Not Change
 
 - Keep the `trust_score = 0 / 100` bootstrap in the migration only.
 - Keep manual tools under `scripts/user-pipeline/manual/`.
-- Keep backfills outside steady-state workflows.
+- Keep rollout helpers outside steady-state workflows.

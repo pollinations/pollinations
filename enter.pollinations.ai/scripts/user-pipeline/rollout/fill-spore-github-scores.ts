@@ -1,4 +1,18 @@
 #!/usr/bin/env npx tsx
+/**
+ * One-time rollout helper: fill missing GitHub developer scores for existing spore users.
+ *
+ * Safe by default. Use --apply to write score + score_checked_at.
+ *
+ * This script never changes tier directly. Deleted/invalid GitHub accounts are
+ * only banned when --ban-deleted is passed.
+ *
+ * Usage:
+ *   cd enter.pollinations.ai
+ *   npx tsx scripts/user-pipeline/rollout/fill-spore-github-scores.ts --env staging
+ *   npx tsx scripts/user-pipeline/rollout/fill-spore-github-scores.ts --env production --apply
+ *   npx tsx scripts/user-pipeline/rollout/fill-spore-github-scores.ts --env production --apply --ban-deleted
+ */
 
 import {
     extractDeletedGithubIds,
@@ -10,11 +24,12 @@ import {
 import { queryD1 } from "../shared/d1.ts";
 import { banUsersByGithubIds } from "../shared/github-identity.ts";
 
-type Environment = "staging";
+type Environment = "staging" | "production";
 
 interface ParsedArgs {
     env: Environment;
-    dryRun: boolean;
+    apply: boolean;
+    banDeleted: boolean;
     limit: number;
     offset: number;
 }
@@ -37,9 +52,9 @@ function parseArguments(): ParsedArgs {
     };
 
     const env = getString("--env", "staging");
-    if (env !== "staging") {
+    if (env !== "staging" && env !== "production") {
         console.error(
-            `❌ Unsupported --env ${env}. This branch is locked to staging and cannot write to production.`,
+            `❌ Unsupported --env ${env}. Use --env staging or --env production.`,
         );
         process.exit(1);
     }
@@ -54,7 +69,8 @@ function parseArguments(): ParsedArgs {
         console.error("❌ --offset must be 0 or greater");
         process.exit(1);
     }
-    if (!args.includes("--dry-run") && offset !== 0) {
+    const apply = args.includes("--apply");
+    if (apply && offset !== 0) {
         console.error(
             "❌ Live runs must use --offset 0. The backlog shrinks as scores are stored, so non-zero offsets would skip users.",
         );
@@ -62,8 +78,9 @@ function parseArguments(): ParsedArgs {
     }
 
     return {
-        env: "staging",
-        dryRun: args.includes("--dry-run"),
+        env,
+        apply,
+        banDeleted: args.includes("--ban-deleted"),
         limit,
         offset,
     };
@@ -91,10 +108,18 @@ function fetchBacklogUsers(
 function summarize(results: GitHubValidationResult[]): void {
     const approved = results.filter((result) => result.approved);
     const rejected = results.filter((result) => !result.approved);
+    const unavailable = results.filter(
+        (result) => result.status === "unavailable",
+    );
+    const deleted = results.filter(
+        (result) => result.status === "github_account_deleted",
+    );
 
     console.log("\n📊 Validation summary:");
     console.log(`   Approved: ${approved.length}`);
     console.log(`   Rejected: ${rejected.length}`);
+    console.log(`   Deleted/invalid accounts: ${deleted.length}`);
+    console.log(`   Unavailable GitHub checks: ${unavailable.length}`);
 
     if (results.length > 0) {
         const average =
@@ -110,9 +135,10 @@ async function main(): Promise<void> {
     const config = parseArguments();
     const totalBacklog = fetchBacklogCount(config.env);
 
-    console.log("🧮 Backfill Spore Scores");
+    console.log("🧮 Fill Existing Spore Scores");
     console.log(`   Environment: ${config.env}`);
-    console.log(`   Mode: ${config.dryRun ? "DRY RUN" : "LIVE"}`);
+    console.log(`   Mode: ${config.apply ? "APPLY" : "DRY RUN"}`);
+    console.log(`   Ban deleted accounts: ${config.banDeleted}`);
     console.log(`   Backlog total: ${totalBacklog}`);
     console.log(`   Slice: offset=${config.offset}, limit=${config.limit}`);
 
@@ -147,19 +173,23 @@ async function main(): Promise<void> {
     summarize(orderedResults);
 
     if (deletedGithubIds.length > 0) {
-        if (config.dryRun) {
+        if (!config.apply) {
             console.log(
-                `\n🚫 Dry run would ban ${deletedGithubIds.length} users with deleted/invalid GitHub accounts`,
+                `\n🚫 Dry run ${config.banDeleted ? "would" : "would not"} ban ${deletedGithubIds.length} users with deleted/invalid GitHub accounts`,
             );
-        } else {
+        } else if (config.banDeleted) {
             const banned = banUsersByGithubIds(config.env, deletedGithubIds);
             console.log(
                 `\n🚫 Banned ${banned} users with deleted/invalid GitHub accounts`,
             );
+        } else {
+            console.log(
+                `\n🚫 Skipped banning ${deletedGithubIds.length} users with deleted/invalid GitHub accounts`,
+            );
         }
     }
 
-    if (config.dryRun) {
+    if (!config.apply) {
         console.log("\n🔍 Dry run sample:");
         for (const result of orderedResults.slice(0, 20)) {
             console.log(
@@ -177,11 +207,22 @@ async function main(): Promise<void> {
             console.log(`   💾 Stored ${storedCount}/${total} score rows`);
         },
     });
-    console.log("\n✅ Backfill complete:");
+    console.log("\n✅ Spore score fill complete:");
     console.log(`   Stored: ${stored}`);
     console.log(
-        `   Remaining backlog estimate: ${Math.max(totalBacklog - stored, 0)}`,
+        `   Remaining backlog estimate: ${Math.max(
+            totalBacklog -
+                stored -
+                (config.banDeleted ? deletedGithubIds.length : 0),
+            0,
+        )}`,
     );
+
+    if (!config.banDeleted && deletedGithubIds.length > 0) {
+        console.log(
+            "   Note: deleted/invalid GitHub accounts were left untouched and will remain in backlog counts.",
+        );
+    }
 }
 
 main().catch((error) => {

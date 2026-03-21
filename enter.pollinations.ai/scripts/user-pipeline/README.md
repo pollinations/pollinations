@@ -2,7 +2,7 @@
 
 This document is the intended contract for the implemented user pipeline on this branch.
 
-One-time backfills are separate operational jobs and are not part of the steady-state pipeline.
+One-time rollout scripts are separate operational jobs and are not part of the steady-state pipeline.
 
 Manual emergency tools are also separate and live outside the steady-state flow under `scripts/user-pipeline/manual/`.
 
@@ -14,7 +14,7 @@ The one-time `trust_score = 0/100` bootstrap remains migration-only in `drizzle/
 
 See also:
 
-- [`PRODUCTION_ROLLOUT.md`](./PRODUCTION_ROLLOUT.md) for the final pre-merge productionization checklist and the initial dry-run rollout plan.
+- [`rollout/README.md`](./rollout/README.md) for the final pre-merge productionization checklist and the initial dry-run rollout plan.
 
 ## Implemented Jobs
 
@@ -41,9 +41,9 @@ scripts/user-pipeline/
 │   ├── github.ts
 │   └── llm.ts
 ├── audit-github-accounts.ts
-├── backfills/
-│   ├── backfill-spore-scores.ts
-│   └── backfill-trust-scores.ts
+├── rollout/
+│   ├── fill-spore-github-scores.ts
+│   └── bootstrap-trust-scores.ts
 └── test/
     ├── TESTING.md
     ├── STAGING.md
@@ -148,10 +148,10 @@ tier = spore"]
 - Applies the same GitHub risk check before allowing `seed`
 - This keeps the full `spore` pool rotating over roughly one week, even as the pool grows
 
-## Backfill And Replay Tools
+## Rollout, Audit And Replay Tools
 
-- `backfills/backfill-trust-scores.ts` (staging only) sets `trust_score = 100` for all non-microbe users with no trust score — run once to bootstrap staging before testing
-- `backfills/backfill-spore-scores.ts` backfills `score` and `score_checked_at` for existing `spore` users
+- `rollout/bootstrap-trust-scores.ts` is a one-time rollout/repair helper that applies the same trust bootstrap semantics as the migration to rows where `trust_score IS NULL`
+- `rollout/fill-spore-github-scores.ts` is a one-time rollout helper that fills missing `score` and `score_checked_at` for existing `spore` users without changing tier directly
 - `audit-github-accounts.ts` audits GitHub account validity for D1 users
 - `test/replay-hourly-new-users.ts` resets a staging cohort and reruns the hourly trust + tier pipeline
 - `test/replay-daily-spore-recheck.ts` resets a staging cohort and reruns the daily `spore -> seed` pipeline

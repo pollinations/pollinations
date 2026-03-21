@@ -16,7 +16,9 @@ Stratified random sample from production (seeded 2026-03-19).
 
 Related tables: 5,983 apikeys, 4,997 accounts, 477 banned users.
 
-Columns `trust_score`, `score`, `score_checked_at` are all NULL (ready for pipeline testing).
+Fresh reseeds now copy `trust_score`, `score`, and `score_checked_at` from production too.
+Routine testing should not depend on the global staging values of those columns:
+[`reset-cohort.ts`](./reset-cohort.ts) is the step that prepares the cohort state used by [`TESTING.md`](./TESTING.md).
 
 ## Re-seeding
 
@@ -26,3 +28,8 @@ node scripts/user-pipeline/test/seed-staging.mjs
 ```
 
 Edit `SAMPLE` in the script to adjust tier sizes.
+
+After a reseed:
+
+1. Run `npx tsx scripts/user-pipeline/test/cohort-setup.ts`
+2. Follow [`TESTING.md`](./TESTING.md) from the reset step onward

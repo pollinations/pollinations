@@ -14,6 +14,8 @@ All scripts in this directory (`scripts/user-pipeline/test/`).
    ```
 4. **Staging database** — already seeded with a production sample. See [STAGING.md](STAGING.md). Re-seeding is a rare manual operation — do not run it as part of regular testing.
 
+The rollout helpers under `scripts/user-pipeline/rollout/` are not part of the routine test flow below.
+
 ---
 
 ## Full Test Sequence (run in this order)
@@ -43,6 +45,7 @@ npx tsx scripts/user-pipeline/test/reset-cohort.ts
 ```
 
 Resets group A → microbe (trust_score = NULL), groups B+C → spore (trust_score = 100), clears all GitHub scores and bans.
+This step is the source of truth for cohort state during testing, regardless of whatever global `trust_score` or `score` values staging currently has.
 
 ### 4. Run pipelines against staging
 
@@ -164,6 +167,8 @@ npx wrangler d1 execute DB --remote --env staging \
 | `replay-hourly-new-users.ts` | End-to-end hourly pipeline test harness | `npm run user-pipeline:replay-hourly` |
 | `replay-daily-spore-recheck.ts` | End-to-end daily pipeline test harness | `npm run user-pipeline:replay-daily` |
 | `seed-staging.mjs` | Seeds staging DB with a production sample | Rare manual operation only — see STAGING.md |
+| `../rollout/bootstrap-trust-scores.ts` | One-time rollout/repair helper for trust bootstrap | Not part of regular staging tests |
+| `../rollout/fill-spore-github-scores.ts` | One-time rollout helper for existing spore score coverage | Not part of regular staging tests |
 | `user-pipeline.test.ts` | Unit tests for LLM CSV parsing | `npx vitest run` |
 | `github-risk.test.ts` | Unit tests for profile risk detection | `npx vitest run` |
 | `github-score.test.ts` | Unit tests for GitHub activity scoring | `npx vitest run` |
@@ -193,9 +198,9 @@ scripts/user-pipeline/
 │   ├── github-score.ts              # GitHub activity scoring
 │   └── github-risk.ts               # Profile risk assessment
 ├── shared/                          # Shared utilities (d1, llm, github, cohort)
-├── backfills/
-│   ├── backfill-trust-scores.ts     # Staging: set trust_score=100 for non-microbe users
-│   └── backfill-spore-scores.ts     # Backfill GitHub scores for existing spore users
+├── rollout/
+│   ├── bootstrap-trust-scores.ts    # One-time rollout trust bootstrap helper
+│   └── fill-spore-github-scores.ts  # One-time rollout spore score helper
 ├── hourly-new-users.ts              # Hourly pipeline entry point
 └── daily-spore-recheck.ts           # Daily pipeline entry point
 ```

@@ -9,7 +9,6 @@ import {
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { deviceAuthorization } from "better-auth/plugins/device-authorization";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
@@ -165,7 +164,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         plugins: [
             adminPlugin,
             apiKeyPlugin,
-            deviceAuthorization({ verificationUri: "/device" }),
             tierPlugin(env, ctx),
             openAPIPlugin,
         ],

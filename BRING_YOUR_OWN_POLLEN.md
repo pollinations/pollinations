@@ -88,7 +88,7 @@ same authorize screen, but the user opens a browser separately. your CLI polls f
 
 ```bash
 # 1. request a device code
-curl -X POST https://enter.pollinations.ai/api/auth/device/code \
+curl -X POST https://enter.pollinations.ai/api/device/code \
   -H 'Content-Type: application/json' \
   -d '{"client_id": "your-client-id", "scope": "generate"}'
 # → { "device_code": "...", "user_code": "ABCD-1234", "verification_uri": "/device" }

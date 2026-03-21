@@ -7,6 +7,10 @@ import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 
 const KV_TTL = 600; // 10 minutes
+const DEVICE_CODE_LENGTH = 40;
+const USER_CODE_LENGTH = 8;
+const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
+const DEFAULT_INTERVAL = 5; // seconds
 
 type DeviceStatus = "pending" | "approved" | "denied" | "completed";
 
@@ -14,14 +18,66 @@ function isExpired(device: { expiresAt: Date }) {
     return device.expiresAt < new Date();
 }
 
+/** Generate a cryptographically random alphanumeric string. */
+function generateCode(length: number): string {
+    const chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const bytes = crypto.getRandomValues(new Uint8Array(length));
+    return Array.from(bytes, (b) => chars[b % chars.length]).join("");
+}
+
+/** Generate an uppercase user-friendly code (letters + digits, no ambiguous chars). */
+function generateUserCode(length: number): string {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1
+    const bytes = crypto.getRandomValues(new Uint8Array(length));
+    return Array.from(bytes, (b) => chars[b % chars.length]).join("");
+}
+
 /**
- * Device Authorization endpoints.
+ * Device Authorization Grant (RFC 8628).
+ * All endpoints live under /api/device/*.
  *
+ * POST /code     — request a device + user code (called by CLI)
+ * GET  /info     — device code metadata for the authorize page
  * POST /approve  — called by the browser after user sets key permissions
+ * POST /deny     — called by the browser to deny access
  * POST /token    — polled by the CLI to receive the minted API key
- * GET  /info     — returns device code info (scope, client_id) for the authorize page
  */
 export const deviceRoutes = new Hono<Env>()
+    .post("/code", async (c) => {
+        const body = await c.req
+            .json<{
+                client_id?: string;
+                scope?: string;
+            }>()
+            .catch(() => ({}) as { client_id?: string; scope?: string });
+
+        const deviceCode = generateCode(DEVICE_CODE_LENGTH);
+        const userCode = generateUserCode(USER_CODE_LENGTH);
+        const expiresAt = new Date(Date.now() + DEFAULT_EXPIRES_IN * 1000);
+
+        const db = drizzle(c.env.DB, { schema });
+        await db.insert(schema.deviceCode).values({
+            id: crypto.randomUUID(),
+            deviceCode,
+            userCode,
+            status: "pending" satisfies DeviceStatus,
+            expiresAt,
+            pollingInterval: DEFAULT_INTERVAL,
+            clientId: body.client_id || null,
+            scope: body.scope || null,
+        });
+
+        const baseUrl = new URL(c.req.url).origin;
+        return c.json({
+            device_code: deviceCode,
+            user_code: userCode,
+            verification_uri: `${baseUrl}/device`,
+            verification_uri_complete: `${baseUrl}/device?user_code=${userCode}`,
+            expires_in: DEFAULT_EXPIRES_IN,
+            interval: DEFAULT_INTERVAL,
+        });
+    })
     .get("/info", async (c) => {
         const userCode = c.req.query("user_code");
         if (!userCode) {

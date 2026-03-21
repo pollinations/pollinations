@@ -428,7 +428,7 @@
             const client = await getOrRegisterClient();
             setStatus('Starting device authorization flow...');
 
-            const resp = await fetch(`${server()}/api/auth/device/code`, {
+            const resp = await fetch(`${server()}/api/device/code`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

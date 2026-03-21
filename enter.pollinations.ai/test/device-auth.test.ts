@@ -45,6 +45,43 @@ async function insertApiKey(userId: string) {
 }
 
 describe("Device Authorization Flow", () => {
+    test("POST /api/device/code issues device and user codes", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ client_id: "test-cli", scope: "generate" }),
+        });
+        const body = (await res.json()) as {
+            device_code: string;
+            user_code: string;
+            verification_uri: string;
+            verification_uri_complete: string;
+            expires_in: number;
+            interval: number;
+        };
+        expect(res.status).toBe(200);
+        expect(body.device_code).toBeTruthy();
+        expect(body.user_code).toHaveLength(8);
+        expect(body.verification_uri).toContain("/device");
+        expect(body.verification_uri_complete).toContain(
+            `user_code=${body.user_code}`,
+        );
+        expect(body.expires_in).toBe(1800);
+        expect(body.interval).toBe(5);
+
+        // Verify the code was persisted — info endpoint should return it
+        const infoRes = await SELF.fetch(
+            `${BASE}/api/device/info?user_code=${body.user_code}`,
+        );
+        expect(infoRes.status).toBe(200);
+        const info = (await infoRes.json()) as {
+            status: string;
+            scope: string;
+        };
+        expect(info.status).toBe("pending");
+        expect(info.scope).toBe("generate");
+    });
+
     test("GET /api/device/info with valid code returns pending", async () => {
         const device = await insertDeviceCode();
         const res = await SELF.fetch(

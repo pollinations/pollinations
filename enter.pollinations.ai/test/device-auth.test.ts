@@ -188,4 +188,28 @@ describe("Device Authorization Flow", () => {
             expect(replayBody.error).toBe("access_denied");
         },
     );
+
+    test(
+        "GET /api/device/userinfo returns OIDC-shaped profile",
+        { timeout: 30000 },
+        async ({ sessionToken, mocks }) => {
+            await mocks.enable("polar", "tinybird", "github");
+            const res = await SELF.fetch(`${BASE}/api/device/userinfo`, {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            });
+            const body = (await res.json()) as {
+                sub: string;
+                name: string;
+                preferred_username: string | null;
+            };
+            expect(res.status).toBe(200);
+            expect(body.sub).toBeTruthy();
+            expect(body.name).toBeTruthy();
+            expect(body).toHaveProperty("email");
+            expect(body).toHaveProperty("picture");
+            expect(body).toHaveProperty("preferred_username");
+        },
+    );
 });

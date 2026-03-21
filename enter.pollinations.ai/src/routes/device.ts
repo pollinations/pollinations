@@ -302,4 +302,32 @@ export const deviceRoutes = new Hono<Env>()
             default:
                 return c.json({ error: "access_denied" }, 400);
         }
-    });
+    })
+    .get(
+        "/userinfo",
+        auth({ allowApiKey: true, allowSessionCookie: true }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const db = drizzle(c.env.DB, { schema });
+            const row = await db.query.user.findFirst({
+                where: eq(schema.user.id, user.id),
+                columns: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    image: true,
+                    githubUsername: true,
+                },
+            });
+            if (!row) {
+                throw new HTTPException(404, { message: "User not found" });
+            }
+            return c.json({
+                sub: row.id,
+                name: row.name,
+                email: row.email,
+                picture: row.image,
+                preferred_username: row.githubUsername,
+            });
+        },
+    );

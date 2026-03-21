@@ -38,7 +38,11 @@ export const frontendKeyRateLimit = createMiddleware<
 
     // Only apply to publishable keys
     const apiKey = c.var?.auth?.apiKey;
-    const apiKeyMetadata = apiKey?.metadata as
+    if (!apiKey) {
+        log.debug("Skipping rate limit, no API key");
+        return next();
+    }
+    const apiKeyMetadata = apiKey.metadata as
         | Record<string, unknown>
         | undefined;
     if (apiKeyMetadata?.keyType !== "publishable") {

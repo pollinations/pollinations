@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **1125** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **1126** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -40,7 +40,7 @@
 | [🖼️ StickerForge](https://stickerforge-two.vercel.app/) | Generate custom stickers for Telegram and WhatsApp from images or text prompts. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ Text To Image](https://t.me/GenerateTTI_bot) | Convert text prompts into images using the Telegram Bot by API Pollinations.ai. | [@telegram](https://github.com/telegram) |  | 🫧 |
 
-<details><summary>Show all 140 apps</summary>
+<details><summary>Show all 141 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -70,6 +70,7 @@
 | [🖼️ PollGen](https://xhyperdevx.github.io/PollGen/) | Minimalist web app for generating images via Pollinations API with customizable options. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ AI Image Generator](https://ai-pic.site/) | Provide a full-stack image generation platform with prompt-based creation, community feed publishing, real-time search, and scalable async frontend-backend workflows. | [@web](https://github.com/web) |  | 🫧 |
+| [🖼️ Webcalypt Image Generator](https://img-webcalypt.ru/tools/text-to-img) | Generate AI images from natural language prompts using Webcalypt Image Generator. Describe the scene, style, or mood and the tool creates a matching image. | [@web](https://github.com/web) |  | 🫧 |
 | [🖌️ AIImageEditor](https://github.com/mikemartemianov/ImageGenerator) | AI image editor with brush editing, outpainting, upscaling, and multi-model support. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ Generator AI Image](https://kenthir.my.id/advanced-generator/) | Indonesian AI image generator with DALL·E, SD, and Flux models | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Sketch My Mood](https://sketch-my-mood.onrender.com/) | AI-powered art therapy app that transforms emotional states into visual masterpieces. | [@web](https://github.com/web) |  | 🫧 |

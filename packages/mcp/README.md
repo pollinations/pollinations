@@ -5,7 +5,7 @@ A Model Context Protocol (MCP) server for pollinations.ai that enables AI assist
 ## What's New in v2.0
 
 - **New API endpoint**: Uses `gen.pollinations.ai` - the unified pollinations.ai gateway
-- **Authentication**: Simple API key system (pk*/sk* keys) replaces OAuth
+- **Authentication**: API key system (pk*/sk* keys) — get keys via dashboard, device flow, or OAuth 2.1
 - **Video generation**: New `generateVideo` tool with veo, seedance, seedance-pro
 - **Chat completions**: OpenAI-compatible `chatCompletion` tool with function calling
 - **Dynamic models**: Models fetched from API - always up to date, no hardcoding!
@@ -27,7 +27,7 @@ pollinations-mcp
 
 ## Authentication
 
-Get your API key at [pollinations.ai](https://pollinations.ai)
+Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai). You can also use the [device flow](../../BRING_YOUR_OWN_POLLEN.md#device-flow-for-clis--headless-apps) for CLI-based login.
 
 **Key Types:**
 

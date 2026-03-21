@@ -84,6 +84,28 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 
 keys expire in 30 days. users can revoke anytime from the dashboard.
 
+## device flow (for CLIs / headless apps)
+
+same idea, different entry point. your CLI gets a code, user approves in browser, CLI gets a scoped key.
+
+```bash
+# 1. request a device code
+curl -X POST https://enter.pollinations.ai/api/auth/device/code \
+  -H 'Content-Type: application/json' \
+  -d '{"client_id": "your-client-id", "scope": "generate"}'
+# → { "device_code": "...", "user_code": "ABCD-1234", "verification_uri": "/device" }
+
+# 2. tell user to go to enter.pollinations.ai/device and enter ABCD-1234
+
+# 3. poll for the key
+curl -X POST https://enter.pollinations.ai/api/device/token \
+  -H 'Content-Type: application/json' \
+  -d '{"device_code": "..."}'
+# → { "access_token": "sk_...", "token_type": "bearer" }
+```
+
+user sees the same authorize screen — can set model restrictions, budget, expiry. the key works exactly like a BYOP key.
+
 ---
 
 [edit this doc](https://github.com/pollinations/pollinations/edit/main/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for the idea*

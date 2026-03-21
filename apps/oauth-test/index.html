@@ -405,7 +405,15 @@
             const data = await resp.json();
             const content = data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
 
-            $('generate-result').innerHTML = `<div class="token-box"><div class="label">Response</div><pre>${content}</pre></div>`;
+            const box = document.createElement('div');
+            box.className = 'token-box';
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.textContent = 'Response';
+            const pre = document.createElement('pre');
+            pre.textContent = content;
+            box.append(label, pre);
+            $('generate-result').replaceChildren(box);
             setStatus('API call succeeded!', 'success');
         } catch (err) {
             setStatus(err.message, 'error');

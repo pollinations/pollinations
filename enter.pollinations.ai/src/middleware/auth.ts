@@ -182,11 +182,16 @@ export const auth = (options: AuthOptions) =>
             if (!bearer || isApiKeyToken(bearer)) return null;
 
             try {
+                // Use env-based issuer (not request URL) to match the JWT's issuer claim
+                const baseURL =
+                    c.env.ENVIRONMENT === "production"
+                        ? "https://enter.pollinations.ai"
+                        : c.env.ENVIRONMENT === "staging"
+                          ? "https://staging.enter.pollinations.ai"
+                          : "http://localhost:3000";
                 const payload = await verifyAccessToken(bearer, {
                     verifyOptions: {
-                        issuer:
-                            new URL("/api/auth", c.req.url).origin +
-                            "/api/auth",
+                        issuer: `${baseURL}/api/auth`,
                         audience: [
                             "https://gen.pollinations.ai",
                             "https://enter.pollinations.ai",

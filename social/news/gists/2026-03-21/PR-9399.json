@@ -1,0 +1,36 @@
+{
+  "pr_number": 9399,
+  "title": "fix(audio): stop parseMp4Duration on elevenmusic mp3 responses",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/9399",
+  "merged_at": "2026-03-21T14:46:44Z",
+  "labels": [
+    "AUDIO",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The $38,000 MP3",
+    "blurb": "Fixed a quirky math bug where reading MP3 files as MP4s accidentally priced 3-minute songs at $38,000. The music API is back to its usual, highly affordable self!",
+    "summary": "Resolved an issue where the audio API incorrectly parsed MP3 files as MP4s, resulting in massive, inaccurate duration estimates that triggered balance errors.",
+    "impact": "Users can once again generate music reliably without hitting unexpected 402 Insufficient Balance errors.",
+    "keywords": [
+      "audio",
+      "api",
+      "bugfix",
+      "billing",
+      "elevenmusic"
+    ],
+    "visual_concept": "The bee (Polly) looking shocked at a comically long receipt or giant price tag coming out of a retro boombox or MP3 player, while the Nomnom creature happily eats the massive bill to make it disappear.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, looking surprised at a comically long paper receipt printing out of a retro boombox. The round tan nomnom creature is happily eating the other end of the massive receipt. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9399.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, looking surprised at a comically long paper receipt printing out of a retro boombox. The round tan nomnom creature is happily eating the other end of the massive receipt. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-21T14:47:32.032147+00:00"
+}

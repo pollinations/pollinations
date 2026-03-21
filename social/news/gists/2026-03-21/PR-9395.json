@@ -1,0 +1,34 @@
+{
+  "pr_number": 9395,
+  "title": "Add HyperRush AI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9395",
+  "merged_at": "2026-03-21T13:23:56Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Director's cut, automated",
+    "blurb": "HyperRush AI just dropped into the chat. Hand it your scripts and audio, and it'll spit out fully edited, captioned short-form videos while you sip your coffee.",
+    "summary": "Added HyperRush AI to the community showcase, introducing automated video editing, captioning, and formatting for short-form content.",
+    "impact": "Creators can now discover and use HyperRush AI to turn raw scripts and media into polished social clips without manual editing.",
+    "keywords": [
+      "video",
+      "editing",
+      "hyperrush",
+      "app showcase",
+      "community"
+    ],
+    "visual_concept": "The PR is about an app that automates video editing and short-form clips. Visual symbols include film reels, clapperboards, and video timelines. Polly the bee can act as a film director, while the Robot monitor displays the video editing process.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny director's beret, holding a pixelated clapperboard next to a chunky retro monitor robot displaying a video editing timeline. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9395.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny director's beret, holding a pixelated clapperboard next to a chunky retro monitor robot displaying a video editing timeline. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-21T13:24:47.745354+00:00"
+}

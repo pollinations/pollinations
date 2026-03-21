@@ -1,0 +1,34 @@
+{
+  "pr_number": 9397,
+  "title": "Add JournalGen to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9397",
+  "merged_at": "2026-03-21T13:28:53Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Dear Diary, I'm AI",
+    "blurb": "A new community app has bloomed! JournalGen joins the writing showcase, bringing AI-powered journaling to the hive.",
+    "summary": "Added JournalGen to the community app showcase under the writing category.",
+    "impact": "Users can now discover and explore JournalGen, a new AI-powered writing tool built by the community.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "writing",
+      "journalgen"
+    ],
+    "visual_concept": "Polly the bee writing in a journal or diary, representing the new JournalGen writing app. Cozy desk setting with a retro monitor.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, writing in a small leather journal with a pixelated quill pen. A retro computer monitor in the background glows with soft lime green (#ecf874) text. Soft pastel lavender and cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-21/PR-9397.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, writing in a small leather journal with a pixelated quill pen. A retro computer monitor in the background glows with soft lime green (#ecf874) text. Soft pastel lavender and cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-21T13:29:48.722295+00:00"
+}

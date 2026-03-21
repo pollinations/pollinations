@@ -246,30 +246,18 @@ export async function applySafetyToChat(
     const env = c.env as unknown as BedrockGuardrailEnv;
     const response = await applyGuardrail(text, "INPUT", env);
 
-    // Check content blocking
-    const blockedCategories = getBlockedCategories(response, features);
-    if (blockedCategories.length > 0) {
-        setSafetyHeaders(c, features);
-        throw createSafetyError(blockedCategories);
-    }
+    checkContentBlocking(c, response, features);
 
-    // Apply PII redaction
-    const allowedTypes = getAllowedPiiTypes(features);
-    const redactedTypes = allowedTypes
-        ? getRedactedTypes(response, allowedTypes)
-        : [];
-
+    const { allowedTypes, redactedTypes } = resolvePiiRedaction(
+        response,
+        features,
+    );
     if (allowedTypes && redactedTypes.length > 0) {
         redactMessages(messages, response, allowedTypes);
     }
 
     setSafetyHeaders(c, features, redactedTypes);
-    return {
-        applied: [...features],
-        redactedTypes,
-        blocked: false,
-        blockedCategories: [],
-    };
+    return makeSafetyResult(features, redactedTypes);
 }
 
 /**
@@ -289,18 +277,12 @@ export async function applySafetyToText(
     const env = c.env as unknown as BedrockGuardrailEnv;
     const response = await applyGuardrail(prompt, "INPUT", env);
 
-    // Check content blocking
-    const blockedCategories = getBlockedCategories(response, features);
-    if (blockedCategories.length > 0) {
-        setSafetyHeaders(c, features);
-        throw createSafetyError(blockedCategories);
-    }
+    checkContentBlocking(c, response, features);
 
-    // Apply PII redaction
-    const allowedTypes = getAllowedPiiTypes(features);
-    const redactedTypes = allowedTypes
-        ? getRedactedTypes(response, allowedTypes)
-        : [];
+    const { allowedTypes, redactedTypes } = resolvePiiRedaction(
+        response,
+        features,
+    );
     const redactedPrompt = allowedTypes
         ? (redactText(prompt, response, allowedTypes) ?? prompt)
         : prompt;
@@ -308,12 +290,7 @@ export async function applySafetyToText(
     setSafetyHeaders(c, features, redactedTypes);
     return {
         prompt: redactedPrompt,
-        result: {
-            applied: [...features],
-            redactedTypes,
-            blocked: false,
-            blockedCategories: [],
-        },
+        result: makeSafetyResult(features, redactedTypes),
     };
 }
 
@@ -329,7 +306,7 @@ function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
         c.var as { auth?: { apiKey?: { metadata?: Record<string, unknown> } } }
     ).auth?.apiKey?.metadata?.safe as string | undefined;
 
-    const querySafe = new URL(c.req.url).searchParams.get("safe");
+    const querySafe = c.req.query("safe");
     const headerSafe = c.req.header("x-safe");
 
     const raw = resolveEffectiveSafety(
@@ -338,6 +315,41 @@ function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
     );
 
     return expandDefaults(raw);
+}
+
+function checkContentBlocking(
+    c: Context,
+    response: BedrockResponse,
+    features: Set<string>,
+): void {
+    const blockedCategories = getBlockedCategories(response, features);
+    if (blockedCategories.length > 0) {
+        setSafetyHeaders(c, features);
+        throw createSafetyError(blockedCategories);
+    }
+}
+
+function resolvePiiRedaction(
+    response: BedrockResponse,
+    features: Set<string>,
+): { allowedTypes: Set<string> | undefined; redactedTypes: string[] } {
+    const allowedTypes = getAllowedPiiTypes(features);
+    const redactedTypes = allowedTypes
+        ? getRedactedTypes(response, allowedTypes)
+        : [];
+    return { allowedTypes, redactedTypes };
+}
+
+function makeSafetyResult(
+    features: Set<string>,
+    redactedTypes: string[],
+): SafetyResult {
+    return {
+        applied: [...features],
+        redactedTypes,
+        blocked: false,
+        blockedCategories: [],
+    };
 }
 
 function setSafetyHeaders(

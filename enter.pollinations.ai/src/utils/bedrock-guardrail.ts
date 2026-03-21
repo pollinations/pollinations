@@ -49,7 +49,7 @@ type GuardrailBody = {
 };
 
 async function signRequest(
-    body: GuardrailBody,
+    serializedBody: string,
     url: string,
     region: string,
     accessKeyId: string,
@@ -73,7 +73,7 @@ async function signRequest(
             host: urlObj.host,
             "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: serializedBody,
     });
 
     return signed.headers;
@@ -98,9 +98,10 @@ export async function applyGuardrail(
         source,
         content: [{ text: { text } }],
     };
+    const serializedBody = JSON.stringify(body);
 
     const headers = await signRequest(
-        body,
+        serializedBody,
         url,
         env.AWS_BEDROCK_REGION,
         env.AWS_BEDROCK_ACCESS_KEY_ID,
@@ -110,7 +111,7 @@ export async function applyGuardrail(
     const response = await fetch(url, {
         method: "POST",
         headers,
-        body: JSON.stringify(body),
+        body: serializedBody,
     });
 
     if (!response.ok) {

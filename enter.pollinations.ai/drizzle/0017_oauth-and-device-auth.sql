@@ -105,4 +105,6 @@ CREATE TABLE `oauth_refresh_token` (
 );
 --> statement-breakpoint
 CREATE INDEX `idx_oauth_refresh_token_token` ON `oauth_refresh_token` (`token`);--> statement-breakpoint
-DROP TABLE IF EXISTS `event`;
+DROP TABLE IF EXISTS `event`;--> statement-breakpoint
+ALTER TABLE `apikey` ADD COLUMN `config_id` text NOT NULL DEFAULT 'default';--> statement-breakpoint
+CREATE INDEX `idx_apikey_config_id` ON `apikey` (`config_id`);

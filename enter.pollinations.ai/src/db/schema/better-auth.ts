@@ -104,13 +104,14 @@ export const verification = sqliteTable("verification", {
 
 export const apikey = sqliteTable("apikey", {
   id: text("id").primaryKey(),
+  configId: text("config_id").notNull().default("default"),
+  referenceId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
   name: text("name"),
   start: text("start"),
   prefix: text("prefix"),
   key: text("key").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
   refillInterval: integer("refill_interval"),
   refillAmount: integer("refill_amount"),
   lastRefillAt: integer("last_refill_at", { mode: "timestamp" }),
@@ -132,7 +133,8 @@ export const apikey = sqliteTable("apikey", {
 }, (table) => [
   index("idx_apikey_key").on(table.key),
   index('idx_apikey_expires_at').on(table.expiresAt),
-  index("idx_apikey_user_id").on(table.userId),
+  index("idx_apikey_user_id").on(table.referenceId),
+  index("idx_apikey_config_id").on(table.configId),
 ]);
 
 // OAuth 2.1 Provider tables (added by @better-auth/oauth-provider + jwt plugins)
@@ -248,7 +250,7 @@ export const userRelations = relations(user, ({ many }) => ({
 
 export const apikeyRelations = relations(apikey, ({ one }) => ({
   user: one(user, {
-    fields: [apikey.userId],
+    fields: [apikey.referenceId],
     references: [user.id],
   }),
 }));

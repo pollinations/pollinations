@@ -10,6 +10,7 @@ import { Card } from "../ui/card.tsx";
 import { Input } from "../ui/input.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
+import { SafetyInput } from "./safety-input.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
@@ -34,6 +35,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
     const isAppKey = isPublishable && !!initialAppUrl;
     const [appUrl, setAppUrl] = useState(initialAppUrl);
+    const initialSafe = (apiKey.metadata?.safe as string) || "";
+    const [safe, setSafe] = useState(initialSafe);
 
     useScrollLock();
 
@@ -75,17 +78,22 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     : null,
             });
 
-            // Save app settings for publishable keys
+            // Save metadata changes (app URL, safety)
+            const metadataPatch: Record<string, string | undefined> = {};
             if (isPublishable && appUrl !== initialAppUrl) {
+                metadataPatch.appUrl = appUrl || undefined;
+            }
+            if (safe !== initialSafe) {
+                metadataPatch.safe = safe || undefined;
+            }
+            if (Object.keys(metadataPatch).length > 0) {
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         credentials: "include",
-                        body: JSON.stringify({
-                            appUrl: appUrl || undefined,
-                        }),
+                        body: JSON.stringify(metadataPatch),
                     },
                 );
                 if (!metaRes.ok) {
@@ -202,6 +210,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                     disabled={isSubmitting}
                                 />
                             )}
+
+                            <SafetyInput
+                                value={safe}
+                                onChange={setSafe}
+                                disabled={isSubmitting}
+                            />
 
                             {!isAppKey && (
                                 <KeyPermissionsInputs

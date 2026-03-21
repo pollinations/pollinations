@@ -12,6 +12,7 @@ import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
+import { SafetyInput } from "./safety-input.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
 
 type ApiKeyDialogProps = {
@@ -47,6 +48,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         simplified ? "publishable" : "secret",
     );
     const [appUrl, setAppUrl] = useState("");
+    const [safe, setSafe] = useState("");
     const keyPermissions = useKeyPermissions(
         simplified
             ? {
@@ -92,6 +94,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 keyType,
                 ...keyPermissions.permissions,
                 ...(isPublishable && appUrl && { appUrl }),
+                ...(safe && { safe }),
             });
             setCreatedKey(newKey);
         } catch (err) {
@@ -144,6 +147,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     setError(null);
                     setName(generateFunName());
                     setAppUrl("");
+                    setSafe("");
                     setKeyType(simplified ? "publishable" : "secret");
                     const dateStr = new Date().toLocaleDateString("en-US", {
                         day: "2-digit",
@@ -341,6 +345,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 <PublishableKeySettings
                                     appUrl={appUrl}
                                     onAppUrlChange={setAppUrl}
+                                    disabled={isSubmitting}
+                                />
+                            )}
+
+                            {!createdKey && (
+                                <SafetyInput
+                                    value={safe}
+                                    onChange={setSafe}
                                     disabled={isSubmitting}
                                 />
                             )}

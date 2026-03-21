@@ -103,6 +103,7 @@ function RouteComponent() {
                 description: formState.description,
                 keyType,
                 ...(isPublishable && { plaintextKey: "" }), // Placeholder, updated below
+                ...(formState.safe && { safe: formState.safe }),
             },
         });
 
@@ -125,6 +126,7 @@ function RouteComponent() {
                     keyType,
                     plaintextKey: apiKey.key,
                     ...(formState.appUrl && { appUrl: formState.appUrl }),
+                    ...(formState.safe && { safe: formState.safe }),
                 }),
             });
             if (!metaRes.ok) {

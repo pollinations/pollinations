@@ -138,6 +138,7 @@ const UpdateMetadataSchema = z.object({
             message: "Must be a valid URL with a scheme (e.g. https://...)",
         })
         .optional(),
+    safe: z.string().optional(),
 });
 
 /**

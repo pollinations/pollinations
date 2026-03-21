@@ -65,6 +65,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 const appUrl = apiKey.metadata?.appUrl as
                                     | string
                                     | undefined;
+                                const safeValue = apiKey.metadata?.safe as
+                                    | string
+                                    | undefined;
                                 const isAppKey = isPublishable && !!appUrl;
 
                                 return (
@@ -214,6 +217,14 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         </span>
                                                     </span>
                                                 </>
+                                            )}
+                                            {safeValue && (
+                                                <span
+                                                    className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-medium"
+                                                    title={`Safety: ${safeValue}`}
+                                                >
+                                                    Safe: {safeValue}
+                                                </span>
                                             )}
                                         </div>
                                     </div>

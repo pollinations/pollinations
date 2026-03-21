@@ -1,0 +1,51 @@
+{
+  "date": "2026-03-20",
+  "period_start": "2026-03-20",
+  "period_end": "2026-03-20",
+  "title": "Klein learns to multitask and gptimage returns",
+  "summary": "A heavy day for the community showcase, native PowerShell integrations, and a massive upgrade to Klein's image blending capabilities.\n\nThe Klein model's image-to-image pipeline got a major upgrade: it now supports blending up to four parallel reference images via a new multipart endpoint. In parallel, we migrated some underlying Azure resources to bring the gptimage and gptimage-large models fully back online.\n\nWindows developers can now pipe Pollinations text and image generation directly into PowerShell scripts and Azure workflows. Two new community integrations just dropped, making enterprise scripting significantly more interesting.\n\nWe added a provider-agnostic guard to the text API. If an upstream model fails and returns an empty completion, you'll now get a proper 502 Bad Gateway error instead of a confusing, empty 200 OK. Failures should look like failures.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 9323,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9343,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9344,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9345,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9349,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9350,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9352,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9353,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9354,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9367,
+      "date": "2026-03-20"
+    }
+  ],
+  "generated_at": "2026-03-21T06:10:53.817644+00:00"
+}

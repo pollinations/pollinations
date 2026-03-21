@@ -85,6 +85,8 @@ BYOP lets your app's users **pay for their own AI generations** with their Polle
 
 🔄 Every user on the platform gets free Pollen refilled hourly. With BYOP, they spend that Pollen in *your* app — the **Pollinations flywheel**: build an app for free → integrate BYOP → your users arrive with Pollen → they fuel the app → you grow → bigger grants → build bigger.
 
+🔑 **App Key:** Create an **App Key** (`pk_...`) on [enter.pollinations.ai](https://enter.pollinations.ai) to get the most out of BYOP. With an App Key, the consent screen shows your **app name + GitHub** instead of a generic hostname, and the traffic your app drives is **tracked to your account** — helping you qualify for automatic tier upgrades and higher Pollen grants.
+
 📖 **[Full BYOP guide →](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)**
 
 ## 🎨 What can I create with Pollen?

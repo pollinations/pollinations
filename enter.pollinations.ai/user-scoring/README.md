@@ -21,6 +21,13 @@ See also:
 1. Hourly new-user trust gate and tier pipeline
 2. Daily spore recheck
 
+## Local Debugging
+
+- `user-scoring/scoring/trust-score.ts` supports `--trace-file` for local JSONL trust traces
+- `user-scoring/jobs/hourly-new-users.ts` supports `--trace-file` for local JSONL hourly decision traces
+- `user-scoring/jobs/daily-spore-recheck.ts` supports `--trace-file` for local JSONL daily decision traces
+- the replay harnesses in [`test/`](./test/) can combine these into one local trace file per replay run
+
 ## Layout
 
 Current checked-in layout on this branch:

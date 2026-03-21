@@ -57,6 +57,53 @@ npm run user-pipeline:replay-hourly -- --emails-file /tmp/cohort-group-a.txt
 npm run user-pipeline:replay-daily -- --emails-file /tmp/cohort-daily.txt
 ```
 
+## Local Trace Files
+
+Both replay harnesses support local JSONL traces for debugging. No trace file is written unless you pass `--trace-file`.
+
+```bash
+# Hourly replay trace: trust stage + hourly stage in one file
+npm run user-pipeline:replay-hourly -- \
+  --emails-file /tmp/cohort-group-a.txt \
+  --trace-file /tmp/hourly-trace.jsonl
+
+# Daily replay trace: all daily passes in one file
+npm run user-pipeline:replay-daily -- \
+  --emails-file /tmp/cohort-daily.txt \
+  --trace-file /tmp/daily-trace.jsonl
+```
+
+What gets written:
+
+- Hourly replay clears the target file first, then appends trace rows from both the trust stage and the hourly GitHub/tier stage.
+- Daily replay clears the target file first, then appends trace rows for each pass with `trace_pass` so you can correlate rows to a specific replay pass.
+- Trace files are local-only debugging output. They are not uploaded anywhere and are not part of normal workflow runs.
+
+Useful events:
+
+- `run_start` / `run_end` summarize each run or pass
+- `user_decision` shows the per-user outcome actually taken
+- trust traces also include chunk retries, deferred windows, holdback/release decisions, and stored trust results
+
+Direct script debugging is also supported:
+
+```bash
+# Trust gate only
+npx tsx user-scoring/scoring/trust-score.ts \
+  --emails-file /tmp/cohort-group-a.txt \
+  --trace-file /tmp/trust-trace.jsonl
+
+# Hourly job only
+npx tsx user-scoring/jobs/hourly-new-users.ts \
+  --emails-file /tmp/cohort-group-a.txt \
+  --trace-file /tmp/hourly-job-trace.jsonl
+
+# Daily job only
+npx tsx user-scoring/jobs/daily-spore-recheck.ts \
+  --emails-file /tmp/cohort-daily.txt \
+  --trace-file /tmp/daily-job-trace.jsonl
+```
+
 ### 5. Verify results
 
 ```bash

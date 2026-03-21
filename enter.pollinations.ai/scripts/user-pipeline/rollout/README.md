@@ -102,11 +102,11 @@ In `.github/workflows/user-pipeline-hourly-new-users.yml`:
 - Keep the trust gate dry by removing `--store-status`
 - Keep the hourly tier step dry by adding `--dry-run`
 
-Target commands for the first merged run:
+Trust-gate note for the first merged run:
 
-```yaml
-run: npm run user-pipeline:trust-score -- --env production --parallel 3
-```
+- This branch keeps `trust-score.ts` staging-only.
+- Do not cargo-cult an unsupported `--env production` or `--parallel` flag into the workflow.
+- Make the productionization change for `trust-score.ts` explicitly in the final pre-merge checklist, then update the workflow command in the same commit.
 
 ```yaml
 run: npm run user-pipeline:hourly-new-users -- --env production --dry-run
@@ -166,5 +166,4 @@ This avoids overflow once GitHub user IDs grow past signed 32-bit range.
 ## Do Not Change
 
 - Keep the `trust_score = 0 / 100` bootstrap in the migration only.
-- Keep manual tools under `scripts/user-pipeline/manual/`.
-- Keep rollout helpers outside steady-state workflows.
+- Keep rollout helpers separate from the steady-state workflows under `scripts/user-pipeline/rollout/`.

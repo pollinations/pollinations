@@ -4,7 +4,7 @@ This document is the intended contract for the implemented user pipeline on this
 
 One-time rollout scripts are separate operational jobs and are not part of the steady-state pipeline.
 
-Manual emergency tools are also separate and live outside the steady-state flow under `scripts/user-pipeline/manual/`.
+Operational helpers are kept separate from the steady-state pipeline under `scripts/user-pipeline/rollout/`.
 
 The one-time `trust_score = 0/100` bootstrap remains migration-only in `drizzle/0017_add_score_and_trust_score.sql`; it is not part of steady-state code.
 

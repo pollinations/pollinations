@@ -14,6 +14,10 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import {
+    callQwenImageAPI,
+    callQwenImageEditAPI,
+} from "./models/qwenImageModel.ts";
+import {
     callSeedream5API,
     callSeedreamAPI,
     callSeedreamProAPI,
@@ -1154,6 +1158,36 @@ const generateImage = async (
                     "Pruna p-image-edit generation failed:",
                     error.message,
                 );
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "qwen-image": {
+            try {
+                return await callQwenImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Qwen image generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "qwen-image-edit": {
+            try {
+                return await callQwenImageEditAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Qwen image edit failed:", error.message);
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }

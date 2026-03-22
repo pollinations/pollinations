@@ -267,6 +267,38 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "qwen-image": {
+        aliases: ["qwen-image-plus", "qwen-image-2512"],
+        modelId: "qwen-image",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.03, // $0.03 per image (international)
+            },
+        ],
+        description:
+            "Qwen Image Plus - Alibaba text-to-image with text rendering via DashScope",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "qwen-image-edit": {
+        aliases: ["qwen-image-edit-plus", "qwen-image-edit-2511"],
+        modelId: "qwen-image-edit",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.03, // $0.03 per image (international)
+            },
+        ],
+        description:
+            "Qwen Image Edit Plus - Alibaba image editing (up to 3 input images) via DashScope",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",

@@ -18,6 +18,7 @@ import {
     callSeedreamAPI,
     callSeedreamProAPI,
 } from "./models/seedreamModel.ts";
+import { callXaiImageAPI } from "./models/xaiModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
@@ -1136,6 +1137,38 @@ const generateImage = async (
                 );
             } catch (error) {
                 logError("Pruna p-image generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "grok-imagine": {
+            try {
+                return await callXaiImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    "grok-imagine-image",
+                );
+            } catch (error) {
+                logError("Grok Imagine generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "grok-imagine-pro": {
+            try {
+                return await callXaiImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    "grok-imagine-image-pro",
+                );
+            } catch (error) {
+                logError("Grok Imagine Pro generation failed:", error.message);
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }

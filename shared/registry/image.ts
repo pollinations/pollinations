@@ -267,6 +267,53 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "grok-imagine": {
+        aliases: ["grok-imagine-image"],
+        modelId: "grok-imagine",
+        provider: "xai",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.02, // $0.02 per image
+            },
+        ],
+        description: "Grok Imagine - xAI official image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "grok-imagine-pro": {
+        aliases: ["grok-aurora", "aurora", "grok-imagine-image-pro"],
+        modelId: "grok-imagine-pro",
+        provider: "xai",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.07, // $0.07 per image (pro)
+            },
+        ],
+        description:
+            "Grok Imagine Pro - xAI official pro image generation (Aurora)",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "grok-video-pro": {
+        aliases: ["grok-imagine-video"],
+        modelId: "grok-video-pro",
+        provider: "xai",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionVideoSeconds: 0.07, // $0.07 per second at 720p
+            },
+        ],
+        description:
+            "Grok Video Pro - xAI official video generation (720p, 1-15s)",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",

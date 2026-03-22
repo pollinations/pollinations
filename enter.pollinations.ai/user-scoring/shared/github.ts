@@ -164,28 +164,43 @@ function getPatTokens(): string[] {
     return patTokens;
 }
 
+function resolvePrivateKey(): string {
+    const inlineKey = process.env.GITHUB_APP_PRIVATE_KEY;
+    if (inlineKey) return inlineKey;
+
+    const keyPath = process.env.GITHUB_APP_PRIVATE_KEY_PATH;
+    if (!keyPath) {
+        throw new Error(
+            "Set GITHUB_APP_PRIVATE_KEY (inline) or GITHUB_APP_PRIVATE_KEY_PATH (file)",
+        );
+    }
+    const resolvedKeyPath = resolveGithubAppKeyPath(keyPath);
+    if (!existsSync(resolvedKeyPath)) {
+        throw new Error(`GitHub App private key not found: ${keyPath}`);
+    }
+    return readFileSync(resolvedKeyPath, "utf-8");
+}
+
 export async function getGithubToken(
     userAgent = DEFAULT_USER_AGENT,
 ): Promise<string> {
     const appId = process.env.GITHUB_APP_ID;
-    const keyPath = process.env.GITHUB_APP_PRIVATE_KEY_PATH;
+    const hasAppKey =
+        process.env.GITHUB_APP_PRIVATE_KEY ||
+        process.env.GITHUB_APP_PRIVATE_KEY_PATH;
 
-    if (appId || keyPath) {
-        if (!appId || !keyPath) {
+    if (appId || hasAppKey) {
+        if (!appId || !hasAppKey) {
             throw new Error(
-                "Set both GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY_PATH for GitHub App auth",
+                "Set GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY or GITHUB_APP_PRIVATE_KEY_PATH",
             );
-        }
-        const resolvedKeyPath = resolveGithubAppKeyPath(keyPath);
-        if (!existsSync(resolvedKeyPath)) {
-            throw new Error(`GitHub App private key not found: ${keyPath}`);
         }
 
         if (appToken && Date.now() < appTokenExpiresAt) {
             return appToken;
         }
 
-        const privateKey = readFileSync(resolvedKeyPath, "utf-8");
+        const privateKey = resolvePrivateKey();
         const next = await fetchInstallationToken(appId, privateKey, userAgent);
         appToken = next.token;
         appTokenExpiresAt = next.expiresAt;

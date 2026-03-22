@@ -9,6 +9,7 @@ export type BotConfig = {
     model: string;
     personality: string;
     conversationChannelIds?: string[];
+    globalChannelIds?: string[];
 };
 
 /**

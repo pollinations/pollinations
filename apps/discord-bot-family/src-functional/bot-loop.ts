@@ -256,21 +256,26 @@ async function processMessage(
     // Check if it's a DM
     const isDM = msg.channel.type === ChannelType.DM;
 
-    // Only respond to mentions, in bot-specific conversation channels (party chat), or DMs
+    // Only respond to mentions, replies, in bot-specific conversation channels, or DMs
     const isMentioned = msg.mentions.users?.has(client.user.id);
+    const isReplyToBot = msg.reference?.messageId
+        ? (await msg.channel.messages.fetch(msg.reference.messageId).catch(() => null))?.author?.id === client.user.id
+        : false;
+    const isDirected = isMentioned || isReplyToBot || isDM;
     const isConvoChannel = config.conversationChannelIds?.includes(
         msg.channelId,
     );
+    const isGlobalChannel = config.globalChannelIds?.includes(msg.channelId);
 
-    if (!isMentioned && !isConvoChannel && !isDM) {
+    if (!isDirected && !isConvoChannel) {
         log(
-            "Message ignored: not mentioned, not in conversation channel, and not a DM",
+            "Message ignored: not mentioned, not replied to, not in conversation channel, and not a DM",
         );
         return;
     }
 
-    // Commands only respond when mentioned, DM'd, or replied to
-    if (isMentioned || isDM) {
+    // Commands only respond when directly addressed
+    if (isDirected) {
         const cmd = msg.content
             .replace(/<@!?\d+>/g, "")
             .trim()
@@ -313,8 +318,8 @@ async function processMessage(
         }
     }
 
-    // Stateless rate limit: check recent channel messages for bot spam
-    if ("messages" in msg.channel) {
+    // Stateless rate limit: only applies in global channels, not when directly addressed
+    if (!isDirected && isGlobalChannel && "messages" in msg.channel) {
         const recent = await msg.channel.messages.fetch({ limit: 5 });
         const now = Date.now();
         const recentBotMessages = recent.filter(
@@ -334,8 +339,8 @@ async function processMessage(
             log("Ignoring bot message from %s", msg.author.username);
             return;
         }
-    } else if (isConvoChannel && !isMentioned) {
-        // Human in conversation channel, not mentioned: 30% chance
+    } else if (isConvoChannel && !isDirected) {
+        // Human in conversation channel, not directly addressed: 30% chance
         if (Math.random() > 0.3) {
             log(
                 "Skipping human message in shared channel (30%% response rate)",
@@ -369,7 +374,7 @@ async function processMessage(
     // For regular messages, we need to handle the current message content
     let initialPrompt: string | undefined;
     // For mentions in non-conversation channels, use the message content directly
-    if (isMentioned && !isConvoChannel && !isDM) {
+    if (isDirected && !isConvoChannel && !isDM) {
         initialPrompt = msg.content.replace(/<@!\d+>/g, "").trim();
     }
 

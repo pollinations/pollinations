@@ -24,7 +24,7 @@ for i in $(seq 0 $((BOT_COUNT - 1))); do
   fi
 
   echo "Starting $MODEL..."
-  DEBUG=app:* npx ts-node src-functional/cli.ts "$MODEL" "$TOKEN" --channels "$BOT_CHANNELS" \
+  DEBUG=app:* npx ts-node src-functional/cli.ts "$MODEL" "$TOKEN" --channels "$BOT_CHANNELS" --global-channels "$GLOBAL_CHANNELS" \
     2>&1 | tee "logs/$MODEL.log" &
   sleep 2
 done

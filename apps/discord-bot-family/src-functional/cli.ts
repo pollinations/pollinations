@@ -17,6 +17,7 @@ function parseArgs(): {
     name?: string;
     personality?: string;
     channels?: string[];
+    globalChannels?: string[];
 } {
     const args = process.argv.slice(2);
 
@@ -47,6 +48,7 @@ Examples:
     let name: string | undefined;
     let personality: string | undefined;
     let channels: string[] | undefined;
+    let globalChannels: string[] | undefined;
 
     // Parse optional arguments
     for (let i = 2; i < args.length; i++) {
@@ -63,11 +65,17 @@ Examples:
                 .split(",")
                 .map((id) => id.trim())
                 .filter(Boolean);
-            i++; // Skip next argument as it's the value
+            i++;
+        } else if (arg === "--global-channels" && i + 1 < args.length) {
+            globalChannels = args[i + 1]
+                .split(",")
+                .map((id) => id.trim())
+                .filter(Boolean);
+            i++;
         }
     }
 
-    return { model, token, name, personality, channels };
+    return { model, token, name, personality, channels, globalChannels };
 }
 
 /**
@@ -96,6 +104,7 @@ function createBotConfig(args: ReturnType<typeof parseArgs>): BotConfig {
         model: args.model,
         personality: args.personality || "A helpful AI assistant",
         conversationChannelIds: args.channels || globalChannels,
+        globalChannelIds: args.globalChannels,
     };
 }
 

@@ -25,11 +25,11 @@ const BLOCK_FEATURES = [
         label: "⚔️ Violence",
         description: "Blocks violence, hate speech & insults",
     },
-    {
-        id: "shield",
-        label: "🛡️ Shield",
-        description: "Blocks prompt injection & illegal instructions",
-    },
+    // {
+    //     id: "shield",
+    //     label: "🛡️ Shield",
+    //     description: "Blocks prompt injection & illegal instructions",
+    // },
 ] as const;
 
 const ALL_FEATURES = [...REDACT_FEATURES, ...BLOCK_FEATURES];
@@ -133,7 +133,7 @@ export const SafetyInput: FC<SafetyInputProps> = ({
                 <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-1">
                     Block — rejects the request entirely
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                     {BLOCK_FEATURES.map(renderFeature)}
                 </div>
             </div>

@@ -14,6 +14,8 @@ const log = debug("app:bot");
 const HISTORY_LIMIT = 8;
 const MAX_BOT_MESSAGES_PER_WINDOW = 2;
 const RATE_WINDOW_MS = 60_000; // 1 minute
+const PROACTIVE_CHECK_INTERVAL_MS = 120_000; // 2 minutes
+const PROACTIVE_CHANCE = 0.2; // 20% chance to post when channel is quiet
 
 function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string): string {
     return `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;
@@ -433,6 +435,43 @@ export async function runBot(
             handleMessageError(error, config, msg.id);
         });
     });
+
+    // Proactive posting: periodically check conversation channels for quiet periods
+    if (config.conversationChannelIds && config.conversationChannelIds.length > 0) {
+        setInterval(async () => {
+            try {
+                // Pick a random conversation channel
+                const channelId = config.conversationChannelIds![
+                    Math.floor(Math.random() * config.conversationChannelIds!.length)
+                ];
+                const channel = client.channels.cache.get(channelId);
+                if (!channel || !("messages" in channel)) return;
+
+                // Check recent activity
+                const recent = await channel.messages.fetch({ limit: 5 });
+                const now = Date.now();
+                const recentMessages = recent.filter(
+                    (m) => now - m.createdTimestamp < PROACTIVE_CHECK_INTERVAL_MS,
+                );
+
+                // Only post if channel is quiet (0-1 messages) and 20% roll
+                if (recentMessages.size <= 1 && Math.random() < PROACTIVE_CHANCE) {
+                    log("Channel %s is quiet, proactively posting", channelId);
+                    const response = await generateResponseWithHistory(
+                        client,
+                        config,
+                        generateText,
+                        channelId,
+                    );
+                    if (response && "send" in channel) {
+                        await (channel as any).send(response.slice(0, 1500));
+                    }
+                }
+            } catch (error) {
+                log("Error in proactive posting for %s: %O", config.name, error);
+            }
+        }, PROACTIVE_CHECK_INTERVAL_MS);
+    }
 
     // Keep the bot alive - the event handlers will process messages
     return new Promise<never>(() => {

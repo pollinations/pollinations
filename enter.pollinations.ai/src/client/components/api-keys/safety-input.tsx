@@ -5,12 +5,12 @@ const REDACT_FEATURES = [
     {
         id: "privacy",
         label: "🔒 Privacy",
-        description: "Strips emails, names, phones before they hit the model",
+        description: "emails · names · phones · IPs",
     },
     {
         id: "secrets",
         label: "🔑 Secrets",
-        description: "Strips API keys & passwords from prompts",
+        description: "api keys · passwords · tokens",
     },
 ] as const;
 
@@ -18,12 +18,12 @@ const BLOCK_FEATURES = [
     {
         id: "sexual",
         label: "🔞 Sexual",
-        description: "Blocks sexual & nude content",
+        description: "nudity · sexual content",
     },
     {
         id: "violence",
         label: "⚔️ Violence",
-        description: "Blocks violence, hate speech & insults",
+        description: "gore · hate · insults",
     },
     // {
     //     id: "shield",
@@ -123,7 +123,7 @@ export const SafetyInput: FC<SafetyInputProps> = ({
             </div>
             <div>
                 <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-1">
-                    Redact — strips sensitive data from prompts
+                    Redact · scrubs prompts before they reach the model
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     {REDACT_FEATURES.map(renderFeature)}
@@ -131,7 +131,7 @@ export const SafetyInput: FC<SafetyInputProps> = ({
             </div>
             <div>
                 <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-1">
-                    Block — rejects the request entirely
+                    Block · rejects the request
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     {BLOCK_FEATURES.map(renderFeature)}

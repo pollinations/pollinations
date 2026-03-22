@@ -1,38 +1,33 @@
 import type { FC } from "react";
 import { cn } from "@/util.ts";
 
-const REDACT_FEATURES = [
+const SAFETY_FEATURES = [
     {
         id: "privacy",
         label: "🔒 Privacy",
-        description: "emails · names · phones · IPs",
+        description: "redacts emails · names · phones · IPs",
     },
     {
         id: "secrets",
         label: "🔑 Secrets",
-        description: "api keys · passwords · tokens",
+        description: "redacts api keys · passwords · tokens",
     },
-] as const;
-
-const BLOCK_FEATURES = [
     {
         id: "sexual",
         label: "🔞 Sexual",
-        description: "nudity · sexual content",
+        description: "blocks nudity · sexual content",
     },
     {
         id: "violence",
         label: "⚔️ Violence",
-        description: "gore · hate · insults",
+        description: "blocks gore · hate · insults",
     },
     // {
     //     id: "shield",
     //     label: "🛡️ Shield",
-    //     description: "Blocks prompt injection & illegal instructions",
+    //     description: "blocks prompt injection · illegal instructions",
     // },
 ] as const;
-
-const ALL_FEATURES = [...REDACT_FEATURES, ...BLOCK_FEATURES];
 
 interface SafetyInputProps {
     value: string;
@@ -76,35 +71,12 @@ export const SafetyInput: FC<SafetyInputProps> = ({
         if (anyActive) {
             onChange("");
         } else {
-            onChange(ALL_FEATURES.map((f) => f.id).join(","));
+            onChange(SAFETY_FEATURES.map((f) => f.id).join(","));
         }
     }
 
-    function renderFeature(feature: (typeof ALL_FEATURES)[number]) {
-        const isActive = active.has(feature.id);
-        return (
-            <button
-                key={feature.id}
-                type="button"
-                onClick={() => toggle(feature.id)}
-                disabled={disabled}
-                className={cn(
-                    "text-left px-3 py-2 rounded-lg text-xs transition-all cursor-pointer",
-                    isActive
-                        ? "bg-green-100 ring-1 ring-green-400 text-green-800"
-                        : "bg-gray-50 text-gray-500 hover:bg-gray-100",
-                )}
-            >
-                <div className="font-medium">{feature.label}</div>
-                <div className="text-[10px] opacity-70">
-                    {feature.description}
-                </div>
-            </button>
-        );
-    }
-
     return (
-        <div className="space-y-3">
+        <div className="space-y-2">
             <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">Safety</span>
                 <button
@@ -121,21 +93,29 @@ export const SafetyInput: FC<SafetyInputProps> = ({
                     {anyActive ? "Clear all" : "Enable all"}
                 </button>
             </div>
-            <div>
-                <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-1">
-                    Redact · scrubs prompts before they reach the model
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    {REDACT_FEATURES.map(renderFeature)}
-                </div>
-            </div>
-            <div>
-                <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-1">
-                    Block · rejects the request
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    {BLOCK_FEATURES.map(renderFeature)}
-                </div>
+            <div className="grid grid-cols-2 gap-2">
+                {SAFETY_FEATURES.map((feature) => {
+                    const isActive = active.has(feature.id);
+                    return (
+                        <button
+                            key={feature.id}
+                            type="button"
+                            onClick={() => toggle(feature.id)}
+                            disabled={disabled}
+                            className={cn(
+                                "text-left px-3 py-2 rounded-lg text-xs transition-all cursor-pointer",
+                                isActive
+                                    ? "bg-green-100 ring-1 ring-green-400 text-green-800"
+                                    : "bg-gray-50 text-gray-500 hover:bg-gray-100",
+                            )}
+                        >
+                            <div className="font-medium">{feature.label}</div>
+                            <div className="text-[10px] opacity-70">
+                                {feature.description}
+                            </div>
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );

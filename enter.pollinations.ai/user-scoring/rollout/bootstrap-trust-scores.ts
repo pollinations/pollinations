@@ -16,10 +16,10 @@
  */
 
 import {
-    executeD1,
-    parseEnvironmentArg,
-    queryD1,
     type Environment,
+    executeD1ForEnv,
+    parseEnvironmentArg,
+    queryD1ForEnv,
 } from "../shared/d1.ts";
 
 interface ParsedArgs {
@@ -49,7 +49,7 @@ function fetchSummary(env: Environment): {
     otherNull: number;
     totalNull: number;
 } {
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         env,
         `SELECT
             SUM(CASE WHEN tier = 'microbe' AND trust_score IS NULL THEN 1 ELSE 0 END) AS microbe_null,
@@ -68,7 +68,7 @@ function fetchSummary(env: Environment): {
 }
 
 function applyBootstrap(env: Environment): void {
-    const elevatedOk = executeD1(
+    const elevatedOk = executeD1ForEnv(
         env,
         "UPDATE user SET trust_score = 100 WHERE tier IN ('spore', 'seed', 'flower', 'nectar', 'router') AND trust_score IS NULL",
     );
@@ -76,7 +76,7 @@ function applyBootstrap(env: Environment): void {
         throw new Error("Failed to set trust_score = 100 for elevated tiers");
     }
 
-    const microbeOk = executeD1(
+    const microbeOk = executeD1ForEnv(
         env,
         "UPDATE user SET trust_score = 0 WHERE tier = 'microbe' AND trust_score IS NULL",
     );

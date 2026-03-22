@@ -70,21 +70,11 @@ function buildWranglerArgs(env: Environment, sql: string): string[] {
     ];
 }
 
-function normalizeD1Call(
-    first: Environment | string,
-    second?: string,
-): [Environment, string] {
-    if (second === undefined) {
-        return [getRuntimeEnvironment(), first];
-    }
-
-    return [first as Environment, second];
+export function queryD1(sql: string): D1Row[] {
+    return queryD1ForEnv(getRuntimeEnvironment(), sql);
 }
 
-export function queryD1(sql: string): D1Row[];
-export function queryD1(env: Environment, sql: string): D1Row[];
-export function queryD1(first: Environment | string, second?: string): D1Row[] {
-    const [env, sql] = normalizeD1Call(first, second);
+export function queryD1ForEnv(env: Environment, sql: string): D1Row[] {
     const output = execFileSync("npx", buildWranglerArgs(env, sql), {
         encoding: "utf-8",
         stdio: ["pipe", "pipe", "pipe"],
@@ -96,13 +86,11 @@ export function queryD1(first: Environment | string, second?: string): D1Row[] {
     return data[0]?.results || [];
 }
 
-export function executeD1(sql: string): boolean;
-export function executeD1(env: Environment, sql: string): boolean;
-export function executeD1(
-    first: Environment | string,
-    second?: string,
-): boolean {
-    const [env, sql] = normalizeD1Call(first, second);
+export function executeD1(sql: string): boolean {
+    return executeD1ForEnv(getRuntimeEnvironment(), sql);
+}
+
+export function executeD1ForEnv(env: Environment, sql: string): boolean {
     try {
         execFileSync("npx", buildWranglerArgs(env, sql), {
             encoding: "utf-8",

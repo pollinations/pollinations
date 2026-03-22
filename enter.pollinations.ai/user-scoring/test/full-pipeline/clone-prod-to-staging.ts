@@ -16,7 +16,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { executeD1, queryD1 } from "../shared/d1.ts";
+import { executeD1ForEnv, queryD1ForEnv } from "../shared/d1.ts";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(scriptDir, "../..");
@@ -51,7 +51,7 @@ function wrangler(args: string[], options?: { timeout?: number }): string {
 function getTierDistribution(
     env: "staging" | "production",
 ): Record<string, number> {
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         env,
         "SELECT tier, COUNT(*) as n FROM user GROUP BY tier ORDER BY n DESC",
     );
@@ -63,7 +63,7 @@ function getTierDistribution(
 }
 
 function getTableCount(env: "staging" | "production", table: string): number {
-    const rows = queryD1(env, `SELECT COUNT(*) as n FROM ${table}`);
+    const rows = queryD1ForEnv(env, `SELECT COUNT(*) as n FROM ${table}`);
     return Number(rows[0]?.n ?? 0);
 }
 
@@ -110,7 +110,7 @@ function exportProduction(): void {
 function clearStaging(): void {
     console.log("\n🗑️  Clearing staging tables...");
     for (const table of TABLES) {
-        const ok = executeD1("staging", `DELETE FROM ${table}`);
+        const ok = executeD1ForEnv("staging", `DELETE FROM ${table}`);
         if (!ok) {
             throw new Error(`Failed to clear staging table: ${table}`);
         }
@@ -244,7 +244,7 @@ function resetSporeAndSeed(): void {
     console.log(`   Spore users to reset: ${sporeCount}`);
     console.log(`   Seed users to reset: ${seedCount}`);
 
-    const ok = executeD1(
+    const ok = executeD1ForEnv(
         "staging",
         `UPDATE user SET tier = 'microbe', tier_balance = 0, trust_score = NULL, score = NULL, score_checked_at = NULL WHERE tier IN ('spore', 'seed')`,
     );
@@ -259,7 +259,7 @@ function verifyReset(): void {
     const tiers = getTierDistribution("staging");
     printTierTable(tiers, "Post-reset tier distribution (staging)");
 
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         "staging",
         `SELECT
 			COUNT(*) as total,

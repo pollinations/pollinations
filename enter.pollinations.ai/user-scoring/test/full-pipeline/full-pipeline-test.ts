@@ -22,7 +22,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { queryD1 } from "../shared/d1.ts";
+import { queryD1ForEnv } from "../shared/d1.ts";
 import { loadDotenvEnv, runNpm } from "../shared/runtime.ts";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -67,7 +67,7 @@ function parseArguments(): ParsedArgs {
 }
 
 function getTierDistribution(): Record<string, number> {
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         ENV,
         "SELECT tier, COUNT(*) as n FROM user GROUP BY tier ORDER BY n DESC",
     );
@@ -79,7 +79,7 @@ function getTierDistribution(): Record<string, number> {
 }
 
 function getUnscoredMicrobeCount(): number {
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         ENV,
         "SELECT COUNT(*) as n FROM user WHERE tier = 'microbe' AND trust_score IS NULL AND COALESCE(banned, 0) = 0 AND github_id IS NOT NULL",
     );
@@ -87,7 +87,7 @@ function getUnscoredMicrobeCount(): number {
 }
 
 function getUntrustedMicrobeCount(): number {
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         ENV,
         "SELECT COUNT(*) as n FROM user WHERE tier = 'microbe' AND trust_score IS NULL AND COALESCE(banned, 0) = 0",
     );
@@ -173,7 +173,7 @@ function verify(snapshot: TierSnapshot | null): VerificationResult {
     // Coverage checks
     console.log("\nCoverage Checks:");
 
-    const coverageRows = queryD1(
+    const coverageRows = queryD1ForEnv(
         ENV,
         `SELECT
 			COUNT(*) as total,
@@ -194,7 +194,7 @@ function verify(snapshot: TierSnapshot | null): VerificationResult {
     );
 
     // Check trusted users got promoted
-    const trustedStillMicrobe = queryD1(
+    const trustedStillMicrobe = queryD1ForEnv(
         ENV,
         "SELECT COUNT(*) as n FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0",
     );
@@ -207,7 +207,7 @@ function verify(snapshot: TierSnapshot | null): VerificationResult {
     );
 
     // Check promoted users have scores
-    const promotedNoScore = queryD1(
+    const promotedNoScore = queryD1ForEnv(
         ENV,
         "SELECT COUNT(*) as n FROM user WHERE tier IN ('spore', 'seed') AND score IS NULL AND COALESCE(banned, 0) = 0",
     );
@@ -222,7 +222,7 @@ function verify(snapshot: TierSnapshot | null): VerificationResult {
     // Consistency checks
     console.log("\nConsistency Checks:");
 
-    const seedLowScore = queryD1(
+    const seedLowScore = queryD1ForEnv(
         ENV,
         "SELECT COUNT(*) as n FROM user WHERE tier = 'seed' AND score IS NOT NULL AND score < 8",
     );
@@ -232,7 +232,7 @@ function verify(snapshot: TierSnapshot | null): VerificationResult {
         `${seedLowScore[0]?.n ?? 0} seed users with low score`,
     );
 
-    const sporeLowTrust = queryD1(
+    const sporeLowTrust = queryD1ForEnv(
         ENV,
         "SELECT COUNT(*) as n FROM user WHERE tier = 'spore' AND trust_score IS NOT NULL AND trust_score < 60 AND COALESCE(banned, 0) = 0",
     );
@@ -242,7 +242,7 @@ function verify(snapshot: TierSnapshot | null): VerificationResult {
         `${sporeLowTrust[0]?.n ?? 0} spore users with low trust`,
     );
 
-    const bannedPromoted = queryD1(
+    const bannedPromoted = queryD1ForEnv(
         ENV,
         "SELECT COUNT(*) as n FROM user WHERE COALESCE(banned, 0) = 1 AND tier IN ('spore', 'seed')",
     );

@@ -5,10 +5,9 @@
  * banning users in D1 by email list or github_id list.
  */
 
-import { executeD1 } from "./d1.ts";
+import { type Environment, executeD1ForEnv } from "./d1.ts";
 import { escapeSqlString } from "./email-cohort.ts";
 
-type Environment = "staging" | "production";
 type Tier = "microbe" | "spore" | "seed" | "flower" | "nectar" | "router";
 
 export const PIPELINE_DB_BATCH_SIZE = 200;
@@ -36,7 +35,7 @@ export function banUsersByEmails(
         const emailList = batch
             .map((email) => `'${escapeSqlString(email)}'`)
             .join(", ");
-        const ok = executeD1(
+        const ok = executeD1ForEnv(
             env,
             `UPDATE user SET banned = 1, ban_reason = '${safeReason}' WHERE email IN (${emailList})`,
         );
@@ -70,7 +69,7 @@ export function promoteUsersByGithubIds(
         const batch = uniqueIds.slice(i, i + PIPELINE_DB_BATCH_SIZE);
         if (batch.length === 0) continue;
 
-        const ok = executeD1(
+        const ok = executeD1ForEnv(
             env,
             `UPDATE user SET tier = '${toTier}', tier_balance = ${tierBalance}, last_tier_grant = ${Date.now()} WHERE github_id IN (${batch.join(", ")}) AND tier = '${fromTier}'`,
         );
@@ -99,7 +98,7 @@ export function banUsersByGithubIds(
         if (batch.length === 0) continue;
 
         const idList = batch.join(", ");
-        const ok = executeD1(
+        const ok = executeD1ForEnv(
             env,
             `UPDATE user SET banned = 1, ban_reason = '${GITHUB_ACCOUNT_DELETED_REASON}' WHERE github_id IN (${idList})`,
         );

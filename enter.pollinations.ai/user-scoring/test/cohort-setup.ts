@@ -11,7 +11,7 @@
  */
 
 import { writeFileSync } from "node:fs";
-import { queryD1 } from "../shared/d1.ts";
+import { queryD1ForEnv } from "../shared/d1.ts";
 
 const ENV = "staging" as const;
 
@@ -51,7 +51,7 @@ function main(): void {
     const allEmails: string[] = [];
 
     for (const group of GROUPS) {
-        const rows = queryD1(ENV, group.query);
+        const rows = queryD1ForEnv(ENV, group.query);
         const emails = rows.map((r) => String(r.email));
         writeFileSync(group.file, `${emails.join("\n")}\n`);
         console.log(`  ${group.name}: ${emails.length} users -> ${group.file}`);

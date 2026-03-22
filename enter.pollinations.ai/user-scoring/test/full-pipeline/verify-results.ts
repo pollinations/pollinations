@@ -12,7 +12,7 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
-import { queryD1 } from "../shared/d1.ts";
+import { queryD1ForEnv } from "../shared/d1.ts";
 import { buildEmailFilter } from "../shared/email-cohort.ts";
 
 const ENV = "staging" as const;
@@ -33,7 +33,7 @@ function loadEmails(path: string): string[] {
 
 function queryGroup(emails: string[]): Record<string, number>[] {
     const filter = buildEmailFilter("email", emails);
-    return queryD1(
+    return queryD1ForEnv(
         ENV,
         `SELECT
             COUNT(*) as total,

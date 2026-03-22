@@ -12,7 +12,7 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
-import { executeD1, queryD1 } from "../shared/d1.ts";
+import { executeD1ForEnv, queryD1ForEnv } from "../shared/d1.ts";
 import { buildEmailFilter } from "../shared/email-cohort.ts";
 
 const ENV = "staging" as const;
@@ -36,7 +36,7 @@ function loadEmails(path: string): string[] {
 
 function resetGroupA(emails: string[]): void {
     const filter = buildEmailFilter("email", emails);
-    const ok = executeD1(
+    const ok = executeD1ForEnv(
         ENV,
         `UPDATE user SET tier = 'microbe', tier_balance = 0, trust_score = NULL, score = NULL, score_checked_at = NULL, banned = 0, ban_reason = NULL, ban_expires = NULL WHERE 1=1${filter}`,
     );
@@ -45,7 +45,7 @@ function resetGroupA(emails: string[]): void {
 
 function resetDaily(emails: string[]): void {
     const filter = buildEmailFilter("email", emails);
-    const ok = executeD1(
+    const ok = executeD1ForEnv(
         ENV,
         `UPDATE user SET tier = 'spore', tier_balance = 0, trust_score = 100, score = NULL, score_checked_at = 0, banned = 0, ban_reason = NULL, ban_expires = NULL WHERE 1=1${filter}`,
     );
@@ -53,7 +53,7 @@ function resetDaily(emails: string[]): void {
 }
 
 function verify(): void {
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         ENV,
         `SELECT tier, COUNT(*) as n,
             SUM(CASE WHEN trust_score IS NULL THEN 1 ELSE 0 END) as no_trust,

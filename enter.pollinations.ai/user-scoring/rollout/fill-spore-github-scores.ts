@@ -24,7 +24,7 @@ import { getNumber, hasFlag } from "../shared/cli.ts";
 import {
     type Environment,
     parseEnvironmentArg,
-    queryD1,
+    queryD1ForEnv,
 } from "../shared/d1.ts";
 import { banUsersByGithubIds } from "../shared/github-identity.ts";
 
@@ -73,7 +73,7 @@ function parseArguments(): ParsedArgs {
 }
 
 function fetchBacklogCount(env: Environment): number {
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         env,
         "SELECT COUNT(*) AS count FROM user WHERE tier = 'spore' AND github_id IS NOT NULL AND COALESCE(banned, 0) = 0 AND score IS NULL",
     );
@@ -85,7 +85,7 @@ function fetchBacklogUsers(
     limit: number,
     offset: number,
 ): BacklogRow[] {
-    return queryD1(
+    return queryD1ForEnv(
         env,
         `SELECT github_id FROM user WHERE tier = 'spore' AND github_id IS NOT NULL AND COALESCE(banned, 0) = 0 AND score IS NULL ORDER BY created_at ASC, github_id ASC LIMIT ${limit} OFFSET ${offset}`,
     ) as BacklogRow[];

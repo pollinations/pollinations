@@ -29,9 +29,9 @@ import { TIER_POLLEN } from "../../src/tier-config.ts";
 import { getNumber, getString, hasFlag } from "../shared/cli.ts";
 import {
     type Environment,
-    executeD1,
+    executeD1ForEnv,
     parseEnvironmentArg,
-    queryD1,
+    queryD1ForEnv,
 } from "../shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
 import { loadDotenvEnv, runNpm } from "./shared/runtime.ts";
@@ -71,7 +71,7 @@ function parseArguments(): ParsedArgs {
 }
 
 function countCohortUsers(env: Environment, emails: string[]): number {
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         env,
         `SELECT COUNT(*) AS count FROM user WHERE 1=1${buildEmailFilter("email", emails)}`,
     );
@@ -79,7 +79,7 @@ function countCohortUsers(env: Environment, emails: string[]): number {
 }
 
 function prepareCohort(env: Environment, emails: string[]): void {
-    const ok = executeD1(
+    const ok = executeD1ForEnv(
         env,
         `UPDATE user SET tier = 'spore', tier_balance = ${TIER_POLLEN.spore}, score = NULL, score_checked_at = 0, banned = 0, ban_reason = NULL, ban_expires = NULL WHERE 1=1${buildEmailFilter("email", emails)}`,
     );
@@ -89,7 +89,7 @@ function prepareCohort(env: Environment, emails: string[]): void {
 }
 
 function countUncheckedUsers(env: Environment, emails: string[]): number {
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         env,
         `SELECT COUNT(*) AS count FROM user WHERE 1=1${buildEmailFilter("email", emails)} AND COALESCE(banned, 0) = 0 AND (score_checked_at IS NULL OR score_checked_at = 0)`,
     );
@@ -97,7 +97,7 @@ function countUncheckedUsers(env: Environment, emails: string[]): number {
 }
 
 function printSummary(env: Environment, emails: string[]): void {
-    const rows = queryD1(
+    const rows = queryD1ForEnv(
         env,
         `SELECT
             SUM(CASE WHEN tier = 'spore' THEN 1 ELSE 0 END) AS spore_count,

@@ -27,11 +27,13 @@
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
-import { executeD1, queryD1 } from "../shared/d1.ts";
+import {
+    type Environment,
+    executeD1ForEnv,
+    queryD1ForEnv,
+} from "../shared/d1.ts";
 import { githubRestRequest } from "../shared/github.ts";
 import { banUsersByGithubIds } from "../shared/github-identity.ts";
-
-type Environment = "staging" | "production";
 
 interface D1User {
     id: string;
@@ -136,7 +138,7 @@ const auditCommand = command({
                 `📋 Resuming: ${report.processedCount}/${report.totalUsers} already processed`,
             );
         } else {
-            const countRows = queryD1(
+            const countRows = queryD1ForEnv(
                 env,
                 "SELECT COUNT(*) as count FROM user WHERE github_id IS NOT NULL;",
             );
@@ -165,7 +167,7 @@ const auditCommand = command({
         console.log(`\n🔍 Auditing users (env: ${env})...\n`);
 
         while (newlyProcessed < maxToProcess) {
-            const users = queryD1(
+            const users = queryD1ForEnv(
                 env,
                 `SELECT id, github_id, github_username FROM user WHERE github_id IS NOT NULL ORDER BY github_id LIMIT ${D1_BATCH_SIZE} OFFSET ${offset};`,
             ) as D1User[];
@@ -356,7 +358,7 @@ const applyCommand = command({
                             `   [dry] ${entry.d1Username} → ${safeName}`,
                         );
                     } else {
-                        const ok = executeD1(
+                        const ok = executeD1ForEnv(
                             env,
                             `UPDATE user SET github_username = '${safeName}' WHERE id = '${sanitizeId(entry.userId)}';`,
                         );

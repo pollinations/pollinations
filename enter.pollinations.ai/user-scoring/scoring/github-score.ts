@@ -11,7 +11,7 @@
  * storeGithubScores persists scores to D1.
  */
 
-import { executeD1 } from "../shared/d1.ts";
+import { executeD1ForEnv } from "../shared/d1.ts";
 import {
     type GitHubRateLimit,
     githubGraphqlRequest,
@@ -660,7 +660,7 @@ export function storeGithubScores(
             )
             .join(" ");
         const idList = batch.map(({ githubId }) => githubId).join(", ");
-        const ok = executeD1(
+        const ok = executeD1ForEnv(
             env,
             `UPDATE user SET score = CASE github_id ${scoreCases} END, score_checked_at = ${timestamp} WHERE github_id IN (${idList}) AND tier = '${tier}'`,
         );
@@ -698,7 +698,7 @@ export function storeGithubCheckTimestamps(
         const batch = uniqueIds.slice(index, index + PIPELINE_DB_BATCH_SIZE);
         if (batch.length === 0) continue;
 
-        const ok = executeD1(
+        const ok = executeD1ForEnv(
             env,
             `UPDATE user SET score_checked_at = ${timestamp} WHERE github_id IN (${batch.join(", ")}) AND tier = '${tier}'`,
         );

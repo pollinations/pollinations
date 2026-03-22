@@ -17,9 +17,12 @@
 [![Open in Bolt](https://img.shields.io/badge/Open%20in-Bolt.new-black?style=flat-square&logo=stackblitz)](https://bolt.new/?prompt=Build%20a%20creative%20AI%20app%20using%20the%20Pollinations%20API%20at%20gen.pollinations.ai.%20Use%20the%20image%20endpoint%20https%3A%2F%2Fgen.pollinations.ai%2Fimage%2F%7Bprompt%7D%20and%20OpenAI-compatible%20text%20endpoint%20at%20https%3A%2F%2Fgen.pollinations.ai%2Fv1%2Fchat%2Fcompletions.%20No%20API%20key%20needed%20for%20basic%20usage.)
 [![Open in Lovable](https://img.shields.io/badge/Open%20in-Lovable-ff69b4?style=flat-square)](https://lovable.dev/?autosubmit=true#prompt=Build%20a%20creative%20AI%20image%20gallery%20app%20using%20the%20Pollinations%20API.%20Use%20https%3A%2F%2Fgen.pollinations.ai%2Fimage%2F%7Bprompt%7D%20for%20image%20generation%20and%20https%3A%2F%2Fgen.pollinations.ai%2Fv1%2Fchat%2Fcompletions%20for%20text.%20No%20API%20key%20needed%20for%20basic%20usage.)
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/pollinations/pollinations/tree/main/apps/_templates/react)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/pollinations/pollinations/tree/main/apps/_templates/react&project-name=pollinations-app&demo-title=Pollinations%20App)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/pollinations/pollinations&base=apps/_templates/react)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/pollinations/pollinations)
 [![Open in Replit](https://img.shields.io/badge/Open%20in-Replit-orange?style=flat-square&logo=replit)](https://replit.com/github/pollinations/pollinations)
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/pollinations/pollinations)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pollinations/pollinations/blob/main/notebooks/pollinations_quickstart.ipynb)
 [![Install MCP in Cursor](https://img.shields.io/badge/Install%20MCP-Cursor-blue?style=flat-square&logo=cursor)](cursor://anysphere.cursor-deeplink/mcp/install?name=pollinations&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJAcG9sbGluYXRpb25zX2FpL21jcCJdfQ==)
 [![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-blue?style=flat-square)](https://deepwiki.com/pollinations/pollinations)
 

@@ -11,7 +11,7 @@ dotenv.config();
  * Pollinations API configuration
  */
 export const pollinationsConfig = {
-  baseUrl: process.env.POLLINATIONS_API_URL || 'https://text.pollinations.ai/openai',
+  baseUrl: 'https://gen.pollinations.ai/v1',
 };
 
 /**

@@ -15,7 +15,6 @@ import {
 } from "./models/prunaModel.ts";
 import {
     callQwenImageAPI,
-    callQwenImageEditAPI,
 } from "./models/qwenImageModel.ts";
 import {
     callSeedream5API,
@@ -1178,20 +1177,6 @@ const generateImage = async (
             }
         }
 
-        case "qwen-image-edit": {
-            try {
-                return await callQwenImageEditAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                );
-            } catch (error) {
-                logError("Qwen image edit failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
 
         case "flux":
             progress.updateBar(

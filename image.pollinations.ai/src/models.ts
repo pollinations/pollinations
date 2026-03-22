@@ -129,16 +129,9 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // Alibaba Qwen Image Plus - Text-to-image with text rendering
+    // Alibaba Qwen Image Plus - Text-to-image and image editing (auto-detects from image input)
     "qwen-image": {
         type: "alibaba-dashscope-image",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Alibaba Qwen Image Edit Plus - Image editing (up to 3 input images)
-    "qwen-image-edit": {
-        type: "alibaba-dashscope-image-edit",
         enhance: false,
         defaultSideLength: 1024,
     },

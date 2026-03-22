@@ -838,7 +838,7 @@ describe("Qwen Image Generation", () => {
     );
 
     test(
-        "qwen-image-edit should return edited image",
+        "qwen-image should return edited image when image input provided",
         { timeout: 60000 },
         async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
@@ -846,7 +846,7 @@ describe("Qwen Image Generation", () => {
             const referenceImageUrl = "https://picsum.photos/256/256";
 
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/image/make%20it%20look%20like%20a%20watercolor%20painting?model=qwen-image-edit&seed=42&image=${encodeURIComponent(referenceImageUrl)}`,
+                `http://localhost:3000/api/generate/image/make%20it%20look%20like%20a%20watercolor%20painting?model=qwen-image&seed=42&image=${encodeURIComponent(referenceImageUrl)}`,
                 {
                     method: "GET",
                     headers: {
@@ -857,7 +857,7 @@ describe("Qwen Image Generation", () => {
 
             if (response.status !== 200) {
                 const body = await response.clone().text();
-                console.log("qwen-image-edit response:", response.status, body);
+                console.log("qwen-image edit response:", response.status, body);
             }
 
             expect(response.status).toBe(200);

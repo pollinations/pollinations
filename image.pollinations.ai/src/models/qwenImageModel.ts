@@ -100,39 +100,6 @@ export async function callQwenImageAPI(
 }
 
 /**
- * Edits an image using Alibaba DashScope Qwen-Image-Edit-Plus
- */
-export async function callQwenImageEditAPI(
-    prompt: string,
-    safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<ImageGenerationResult> {
-    const apiKey = process.env.DASHSCOPE_API_KEY;
-    if (!apiKey) {
-        throw new HttpError(
-            "DASHSCOPE_API_KEY is required for Qwen Image Edit model",
-            500,
-        );
-    }
-
-    if (!safeParams.image || safeParams.image.length === 0) {
-        throw new HttpError(
-            "qwen-image-edit requires at least one input image",
-            400,
-        );
-    }
-
-    return callQwenImageEditInternal(
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-        apiKey,
-    );
-}
-
-/**
  * Text-to-image generation via DashScope
  */
 async function callQwenImageGenerateInternal(

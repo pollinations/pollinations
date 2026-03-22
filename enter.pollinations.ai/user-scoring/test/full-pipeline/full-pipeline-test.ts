@@ -19,11 +19,11 @@
  *   npm run user-pipeline:full-pipeline-test -- --limit 500        # process 500 users per iteration
  */
 
-import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { queryD1 } from "../shared/d1.ts";
+import { loadDotenvEnv, runNpm } from "../shared/runtime.ts";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(scriptDir, "../..");
@@ -64,37 +64,6 @@ function parseArguments(): ParsedArgs {
         dryRun: args.includes("--dry-run"),
         verifyOnly: args.includes("--verify-only"),
     };
-}
-
-function loadDotenvEnv(): NodeJS.ProcessEnv {
-    const env = { ...process.env };
-    if (!existsSync(dotenvPath)) return env;
-
-    for (const rawLine of readFileSync(dotenvPath, "utf-8").split(/\r?\n/)) {
-        const line = rawLine.trim();
-        if (!line || line.startsWith("#") || !line.includes("=")) continue;
-        const [key, ...rest] = line.split("=");
-        const rawValue = rest.join("=").trim();
-        const value =
-            rawValue.startsWith('"') && rawValue.endsWith('"')
-                ? rawValue.slice(1, -1)
-                : rawValue.startsWith("'") && rawValue.endsWith("'")
-                  ? rawValue.slice(1, -1)
-                  : rawValue;
-        if (!(key in env)) {
-            env[key] = value;
-        }
-    }
-    return env;
-}
-
-function runNpm(args: string[], env: NodeJS.ProcessEnv): void {
-    execFileSync("npm", args, {
-        cwd: workspaceRoot,
-        env,
-        stdio: "inherit",
-        timeout: 21600_000, // 6 hours per step
-    });
 }
 
 function getTierDistribution(): Record<string, number> {
@@ -355,7 +324,7 @@ function main(): void {
         return;
     }
 
-    const childEnv = loadDotenvEnv();
+    const childEnv = loadDotenvEnv(dotenvPath);
     childEnv.CLOUDFLARE_ENV = ENV;
 
     // Clear trace file
@@ -396,7 +365,7 @@ function main(): void {
         if (config.dryRun) {
             console.log(`   [DRY RUN] Would run: npm ${trustArgs.join(" ")}`);
         } else {
-            runNpm(trustArgs, childEnv);
+            runNpm(workspaceRoot, trustArgs, childEnv, { timeout: 21600_000 });
         }
 
         // Step 2: Hourly new-users (GitHub check + tier assignment)
@@ -411,7 +380,9 @@ function main(): void {
         if (config.dryRun) {
             console.log(`   [DRY RUN] Would run: npm ${hourlyArgs.join(" ")}`);
         } else {
-            runNpm(hourlyArgs, childEnv);
+            runNpm(workspaceRoot, hourlyArgs, childEnv, {
+                timeout: 21600_000,
+            });
         }
 
         // Progress report

@@ -15,9 +15,12 @@
  *   npx tsx user-scoring/rollout/bootstrap-trust-scores.ts --env production --apply
  */
 
-import { executeD1, queryD1 } from "../shared/d1.ts";
-
-type Environment = "staging" | "production";
+import {
+    executeD1,
+    parseEnvironmentArg,
+    queryD1,
+    type Environment,
+} from "../shared/d1.ts";
 
 interface ParsedArgs {
     env: Environment;
@@ -33,19 +36,9 @@ interface TrustBootstrapSummary {
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
-    const envIndex = args.indexOf("--env");
-    const env =
-        envIndex >= 0 && args[envIndex + 1] ? args[envIndex + 1] : "staging";
-
-    if (env !== "staging" && env !== "production") {
-        console.error(
-            `❌ Unsupported --env ${env}. Use --env staging or --env production.`,
-        );
-        process.exit(1);
-    }
 
     return {
-        env,
+        env: parseEnvironmentArg(args),
         apply: args.includes("--apply"),
     };
 }

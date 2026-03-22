@@ -22,8 +22,7 @@
  *   --trace-file     Append per-pass daily trace output as JSONL
  */
 
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
@@ -34,6 +33,7 @@ import {
     type Environment,
 } from "../shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
+import { loadDotenvEnv, runNpm } from "./shared/runtime.ts";
 
 interface ParsedArgs {
     env: Environment;
@@ -123,39 +123,6 @@ function printSummary(env: Environment, emails: string[]): void {
     console.log(`   Checked: ${row.checked_count ?? 0}`);
 }
 
-function loadDotenvEnv(): NodeJS.ProcessEnv {
-    const env = { ...process.env };
-    if (!existsSync(dotenvPath)) {
-        return env;
-    }
-
-    for (const rawLine of readFileSync(dotenvPath, "utf-8").split(/\r?\n/)) {
-        const line = rawLine.trim();
-        if (!line || line.startsWith("#") || !line.includes("=")) continue;
-        const [key, ...rest] = line.split("=");
-        const rawValue = rest.join("=").trim();
-        const value =
-            rawValue.startsWith('"') && rawValue.endsWith('"')
-                ? rawValue.slice(1, -1)
-                : rawValue.startsWith("'") && rawValue.endsWith("'")
-                  ? rawValue.slice(1, -1)
-                  : rawValue;
-        if (!(key in env)) {
-            env[key] = value;
-        }
-    }
-
-    return env;
-}
-
-function runCommand(args: string[], env: NodeJS.ProcessEnv): void {
-    execFileSync("npm", args, {
-        cwd: workspaceRoot,
-        env,
-        stdio: "inherit",
-    });
-}
-
 function main(): void {
     const config = parseArguments();
     const emails = loadEmailCohort(config.emailsFile);
@@ -179,7 +146,7 @@ function main(): void {
         process.exit(1);
     }
 
-    const childEnv = loadDotenvEnv();
+    const childEnv = loadDotenvEnv(dotenvPath);
     childEnv.CLOUDFLARE_ENV = config.env;
 
     if (!config.skipPrepare) {
@@ -194,7 +161,8 @@ function main(): void {
 
     if (config.dryRun) {
         console.log("\n🌱 Running one dry-run daily pass...");
-        runCommand(
+        runNpm(
+            workspaceRoot,
             [
                 "run",
                 "user-pipeline:daily-spore-recheck",
@@ -222,7 +190,8 @@ function main(): void {
         }
 
         console.log(`\n   Pass ${index + 1}/${totalPasses}`);
-        runCommand(
+        runNpm(
+            workspaceRoot,
             [
                 "run",
                 "user-pipeline:daily-spore-recheck",

@@ -20,10 +20,8 @@ import {
     storeGithubScores,
     validateUserRecords,
 } from "../scoring/github-score.ts";
-import { queryD1 } from "../shared/d1.ts";
+import { parseEnvironmentArg, queryD1, type Environment } from "../shared/d1.ts";
 import { banUsersByGithubIds } from "../shared/github-identity.ts";
-
-type Environment = "staging" | "production";
 
 interface ParsedArgs {
     env: Environment;
@@ -50,14 +48,6 @@ function parseArguments(): ParsedArgs {
         return value ? Number.parseInt(value, 10) : fallback;
     };
 
-    const env = getString("--env", "staging");
-    if (env !== "staging" && env !== "production") {
-        console.error(
-            `❌ Unsupported --env ${env}. Use --env staging or --env production.`,
-        );
-        process.exit(1);
-    }
-
     const limit = getNumber("--limit", DEFAULT_LIMIT);
     const offset = getNumber("--offset", 0);
     if (limit <= 0) {
@@ -77,7 +67,7 @@ function parseArguments(): ParsedArgs {
     }
 
     return {
-        env,
+        env: parseEnvironmentArg(args),
         apply,
         banDeleted: args.includes("--ban-deleted"),
         limit,

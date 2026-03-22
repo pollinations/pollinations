@@ -20,8 +20,7 @@
  *   --trace-file       Append hourly trust/hourly trace output as JSONL
  */
 
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -31,6 +30,7 @@ import {
     type Environment,
 } from "../shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
+import { loadDotenvEnv, runNpm } from "./shared/runtime.ts";
 
 interface ParsedArgs {
     env: Environment;
@@ -110,39 +110,6 @@ function printSummary(env: Environment, emails: string[]): void {
     console.log(`   Trust < 60: ${row.blocked_count ?? 0}`);
 }
 
-function loadDotenvEnv(): NodeJS.ProcessEnv {
-    const env = { ...process.env };
-    if (!existsSync(dotenvPath)) {
-        return env;
-    }
-
-    for (const rawLine of readFileSync(dotenvPath, "utf-8").split(/\r?\n/)) {
-        const line = rawLine.trim();
-        if (!line || line.startsWith("#") || !line.includes("=")) continue;
-        const [key, ...rest] = line.split("=");
-        const rawValue = rest.join("=").trim();
-        const value =
-            rawValue.startsWith('"') && rawValue.endsWith('"')
-                ? rawValue.slice(1, -1)
-                : rawValue.startsWith("'") && rawValue.endsWith("'")
-                  ? rawValue.slice(1, -1)
-                  : rawValue;
-        if (!(key in env)) {
-            env[key] = value;
-        }
-    }
-
-    return env;
-}
-
-function runCommand(args: string[], env: NodeJS.ProcessEnv): void {
-    execFileSync("npm", args, {
-        cwd: workspaceRoot,
-        env,
-        stdio: "inherit",
-    });
-}
-
 function main(): void {
     const config = parseArguments();
     const emails = loadEmailCohort(config.emailsFile);
@@ -166,7 +133,7 @@ function main(): void {
         process.exit(1);
     }
 
-    const childEnv = loadDotenvEnv();
+    const childEnv = loadDotenvEnv(dotenvPath);
     childEnv.CLOUDFLARE_ENV = config.env;
 
     if (!config.skipPrepare) {
@@ -191,12 +158,13 @@ function main(): void {
     if (config.hourlyDryRun) {
         hourlyCommand.push("--dry-run");
     }
-    runCommand(hourlyCommand, childEnv);
+    runNpm(workspaceRoot, hourlyCommand, childEnv);
 
     console.log(
         "\n🔍 Step 2: Trust scoring (remaining microbe → spore or stay)...",
     );
-    runCommand(
+    runNpm(
+        workspaceRoot,
         [
             "run",
             "user-pipeline:trust-score",

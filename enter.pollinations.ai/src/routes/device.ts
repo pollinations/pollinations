@@ -11,7 +11,7 @@ const DEVICE_CODE_LENGTH = 40;
 const USER_CODE_LENGTH = 8;
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
 
-type DeviceStatus = "pending" | "approved" | "denied" | "completed";
+type DeviceStatus = "pending" | "approved" | "denied";
 
 function isExpired(device: { expiresAt: Date }) {
     return device.expiresAt < new Date();
@@ -256,11 +256,10 @@ export const deviceRoutes = new Hono<Env>()
                     return c.json({ error: "authorization_pending" }, 400);
                 }
 
-                // Mark completed and clean up KV concurrently
+                // Delete device code row and KV entry concurrently
                 await Promise.all([
                     db
-                        .update(schema.deviceCode)
-                        .set({ status: "completed" satisfies DeviceStatus })
+                        .delete(schema.deviceCode)
                         .where(eq(schema.deviceCode.id, device.id)),
                     c.env.KV.delete(`device-key:${device.deviceCode}`),
                 ]);

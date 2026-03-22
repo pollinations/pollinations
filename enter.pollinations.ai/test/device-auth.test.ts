@@ -177,7 +177,7 @@ describe("Device Authorization Flow", () => {
             expect(tokenBody.token_type).toBe("bearer");
             expect(tokenBody.scope).toBe("generate");
 
-            // Replay protection: polling again should return access_denied
+            // Replay protection: row deleted, so polling returns invalid_grant
             const replayRes = await SELF.fetch(`${BASE}/api/device/token`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -185,7 +185,7 @@ describe("Device Authorization Flow", () => {
             });
             const replayBody = (await replayRes.json()) as { error: string };
             expect(replayRes.status).toBe(400);
-            expect(replayBody.error).toBe("access_denied");
+            expect(replayBody.error).toBe("invalid_grant");
         },
     );
 

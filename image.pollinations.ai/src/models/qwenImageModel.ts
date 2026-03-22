@@ -78,7 +78,7 @@ export async function callQwenImageAPI(
         );
     }
 
-    const hasImage = safeParams.image && safeParams.image.length > 0;
+    const hasImage = safeParams.image?.length > 0;
 
     if (hasImage) {
         return callQwenImageEditInternal(
@@ -159,9 +159,7 @@ async function callQwenImageEditInternal(
     requestId: string,
     apiKey: string,
 ): Promise<ImageGenerationResult> {
-    const imageUrls = Array.isArray(safeParams.image)
-        ? safeParams.image.slice(0, 3)
-        : [safeParams.image];
+    const imageUrls = safeParams.image.slice(0, 3);
 
     logOps(`Calling Qwen Image Edit (${imageUrls.length} image(s)):`, prompt);
     progress.updateBar(

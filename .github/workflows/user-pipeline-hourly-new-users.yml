@@ -33,9 +33,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Create API token file
-        run: echo "ENTER_API_TOKEN_REMOTE=${{ secrets.ENTER_API_TOKEN }}" > .testingtokens
-
       - name: GitHub check - devs to seed, deleted banned (staging)
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
@@ -48,4 +45,5 @@ jobs:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PLN_GITHUB_USER_SCORE_KEY: ${{ secrets.PLN_GITHUB_USER_SCORE_KEY }}
         run: npm run user-pipeline:trust-score -- --store-status

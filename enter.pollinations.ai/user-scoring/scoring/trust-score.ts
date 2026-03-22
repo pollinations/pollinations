@@ -648,11 +648,14 @@ function fetchPendingUsers(
 }
 
 function loadApiKey(): string {
+    // Prefer env var (set in CI), fall back to .testingtokens (local dev)
+    const envKey = process.env.PLN_GITHUB_USER_SCORE_KEY;
+    if (envKey) return envKey.trim();
+
     const tokenFile = ".testingtokens";
     if (!existsSync(tokenFile)) {
-        console.error("❌ No .testingtokens file found");
         console.error(
-            "💡 Create one with: echo 'ENTER_API_TOKEN_REMOTE=sk_...' > .testingtokens",
+            "❌ No PLN_GITHUB_USER_SCORE_KEY env var or .testingtokens file found",
         );
         process.exit(1);
     }

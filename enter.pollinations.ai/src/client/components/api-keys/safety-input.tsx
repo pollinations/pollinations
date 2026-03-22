@@ -103,13 +103,16 @@ export const SafetyInput: FC<SafetyInputProps> = ({
                             onClick={() => toggle(feature.id)}
                             disabled={disabled}
                             className={cn(
-                                "text-left px-3 py-2 rounded-lg text-xs transition-all cursor-pointer",
+                                "text-left px-3 py-2 rounded-lg text-xs transition-all cursor-pointer border",
                                 isActive
-                                    ? "bg-green-100 ring-1 ring-green-400 text-green-800"
-                                    : "bg-gray-50 text-gray-500 hover:bg-gray-100",
+                                    ? "bg-green-50 border-green-400 text-green-800"
+                                    : "bg-gray-50 border-gray-200 text-gray-400 hover:border-gray-300",
                             )}
                         >
-                            <div className="font-medium">{feature.label}</div>
+                            <div className="font-medium">
+                                {isActive && "✓ "}
+                                {feature.label}
+                            </div>
                             <div className="text-[10px] opacity-70">
                                 {feature.description}
                             </div>

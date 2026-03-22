@@ -36,6 +36,19 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
+        name: "qwen-coder-large",
+        config: portkeyConfig["qwen3-coder-next"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.coding),
+    },
+    {
+        name: "qwen-large",
+        config: portkeyConfig["qwen3.5-plus"],
+    },
+    {
+        name: "qwen-vision",
+        config: portkeyConfig["qwen3-vl-plus"],
+    },
+    {
         name: "mistral",
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
     },

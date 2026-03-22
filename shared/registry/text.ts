@@ -568,6 +568,68 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
         alpha: true,
     },
+    "qwen-coder-large": {
+        aliases: ["qwen3-coder-next"],
+        modelId: "qwen3-coder-next",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.3),
+                completionTextTokens: perMillion(1.5),
+            },
+        ],
+        description:
+            "Qwen3 Coder Next - Advanced Code Generation via DashScope",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "qwen-large": {
+        aliases: ["qwen3.5", "qwen3.5-plus"],
+        modelId: "qwen3.5-plus",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.4),
+                completionTextTokens: perMillion(2.4),
+            },
+        ],
+        description:
+            "Qwen3.5 Plus - Alibaba Frontier MoE Model with Reasoning via DashScope",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "qwen-vision": {
+        aliases: ["qwen3-vl", "qwen3-vl-plus", "qwen-vl"],
+        modelId: "qwen3-vl-plus",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.2),
+                completionTextTokens: perMillion(1.6),
+            },
+        ],
+        description:
+            "Qwen3 VL Plus - Vision-Language Understanding with Reasoning via DashScope",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 131072,
+        isSpecialized: false,
+    },
     "qwen-safety": {
         aliases: ["qwen3guard-gen-8b"],
         modelId: "Qwen3Guard-Gen-8B",

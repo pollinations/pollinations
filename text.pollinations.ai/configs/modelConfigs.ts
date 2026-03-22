@@ -3,6 +3,7 @@ import {
     createAnthropicConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
+    createDashScopeModelConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
     createOVHcloudMistralConfig,
@@ -152,6 +153,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
+
+    // -- Alibaba DashScope (Qwen) ---------------------------------------------
+    "qwen3-coder-next": () =>
+        createDashScopeModelConfig({ model: "qwen3-coder-next" }),
+    "qwen3.5-plus": () => createDashScopeModelConfig({ model: "qwen3.5-plus" }),
+    "qwen3-vl-plus": () =>
+        createDashScopeModelConfig({ model: "qwen3-vl-plus" }),
 
     // -- OVHcloud (Qwen) ------------------------------------------------------
     "qwen3-coder-30b-a3b-instruct": () =>

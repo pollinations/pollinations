@@ -11,7 +11,7 @@ import { FatalTokenError, handleDiscordError } from "./errors";
 import type { ApiMessage, BotConfig, GenerateTextWithHistory } from "./types";
 
 const log = debug("app:bot");
-const HISTORY_LIMIT = 5;
+const HISTORY_LIMIT = 8;
 
 function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string): string {
     return `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;

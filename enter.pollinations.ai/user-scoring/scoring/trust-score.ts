@@ -17,12 +17,7 @@
  *   --trace-file     Append local debugging traces as JSONL
  */
 
-import {
-    appendFileSync,
-    existsSync,
-    readFileSync,
-    writeFileSync,
-} from "node:fs";
+import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
 import { executeD1, queryD1 } from "../shared/d1.ts";
@@ -648,25 +643,13 @@ function fetchPendingUsers(
 }
 
 function loadApiKey(): string {
-    // Prefer env var (set in CI), fall back to .testingtokens (local dev)
-    const envKey = process.env.PLN_GITHUB_USER_SCORE_KEY;
-    if (envKey) return envKey.trim();
-
-    const tokenFile = ".testingtokens";
-    if (!existsSync(tokenFile)) {
-        console.error(
-            "❌ No PLN_GITHUB_USER_SCORE_KEY env var or .testingtokens file found",
-        );
+    const key = process.env.PLN_GITHUB_USER_SCORE_KEY;
+    if (!key) {
+        console.error("❌ PLN_GITHUB_USER_SCORE_KEY not set");
+        console.error("💡 Run: npm run decrypt-vars (local) or set the GitHub Actions secret (CI)");
         process.exit(1);
     }
-    const match = readFileSync(tokenFile, "utf-8").match(
-        /ENTER_API_TOKEN_REMOTE=([^\n]+)/,
-    );
-    if (!match) {
-        console.error("❌ No ENTER_API_TOKEN_REMOTE found in .testingtokens");
-        process.exit(1);
-    }
-    return match[1].trim();
+    return key.trim();
 }
 
 function parseArguments(): ParsedArgs {

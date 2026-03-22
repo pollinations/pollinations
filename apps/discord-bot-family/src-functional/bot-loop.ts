@@ -13,8 +13,8 @@ import type { ApiMessage, BotConfig, GenerateTextWithHistory } from "./types";
 const log = debug("app:bot");
 const HISTORY_LIMIT = 5;
 
-function getSystemPrompt(config: BotConfig): string {
-    return `Your model is ${config.model}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>.`;
+function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string): string {
+    return `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;
 }
 
 /**
@@ -53,7 +53,7 @@ async function generateResponseWithHistory(
     initialPrompt?: string,
 ): Promise<string | null> {
     // Get system prompt based on bot configuration
-    const systemPrompt = getSystemPrompt(config);
+    const systemPrompt = getSystemPrompt(config, client.user?.username, client.user?.id);
 
     // Fetch channel and history
     const channel = await discordApiCall(

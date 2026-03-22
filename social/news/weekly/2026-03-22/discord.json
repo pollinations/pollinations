@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-03-22",
+  "period_start": "2026-03-15",
+  "period_end": "2026-03-21",
+  "generated_at": "2026-03-22T06:16:15.361378+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-22/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>, we merged 61 PRs this week. The infrastructure got faster, the models got smarter, and you all went on an absolute shipping bender.\n\n## Weekly Update - 2026-03-22\n\n📦 **The Community Bender**\n28 new apps were added to the showcase this week. Everything from AI city dioramas and ESP32 generators to interactive storybooks and financial bots. The ecosystem is getting massive.\n\n🧠 **Models & Endpoints**\n- Added `Qwen3.5 397B` to the text endpoint (via Fireworks).\n- Klein now supports multi-image editing via a new multipart endpoint.\n- Vertex AI models now properly respect seed values.\n- Empty upstream completions are now correctly rejected with a 502.\n\n⚙️ **Infrastructure & Tiers**\n- Spore and Seed tiers now get automated hourly pollen refills. If you burn through your allowance, you won't be waiting long.\n- Hardened GitHub username sync on login and fixed KV cache invalidation when API key permissions change.\n\n🖥️ **Frontend & Speed**\n- The frontend is noticeably faster. We shipped lazy-loading, chunk splitting, and SWR caching.\n- Redesigned the model monitor and pricing tables to make them actually readable.\n\nKeep building."
+}

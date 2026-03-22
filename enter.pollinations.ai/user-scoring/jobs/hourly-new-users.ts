@@ -23,7 +23,6 @@
  *   --trace-file     Append local debugging traces as JSONL
  */
 
-import { appendFileSync } from "node:fs";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
 import {
     bucketValidationResults,
@@ -33,11 +32,8 @@ import {
     storeGithubScores,
     validateUserRecords,
 } from "../scoring/github-score.ts";
-import {
-    executeD1,
-    getRuntimeEnvironment,
-    queryD1,
-} from "../shared/d1.ts";
+import { getString, hasFlag } from "../shared/cli.ts";
+import { executeD1, getRuntimeEnvironment, queryD1 } from "../shared/d1.ts";
 import {
     buildEmailFilter,
     escapeSqlString,
@@ -49,6 +45,7 @@ import {
     GITHUB_ID_INVALID_REASON,
     PIPELINE_DB_BATCH_SIZE,
 } from "../shared/github-identity.ts";
+import { appendTrace } from "../shared/trace.ts";
 
 interface ParsedArgs {
     dryRun: boolean;
@@ -84,16 +81,11 @@ type HourlyDecision =
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
-    const getString = (flag: string): string | undefined => {
-        const index = args.indexOf(flag);
-        return index >= 0 && args[index + 1] ? args[index + 1] : undefined;
-    };
-    const emailsFile = getString("--emails-file");
-    const traceFile = getString("--trace-file") ?? null;
+    const traceFile = getString(args, "--trace-file") ?? null;
 
     let cohortEmails: string[] | null = null;
     try {
-        cohortEmails = loadEmailCohort(emailsFile);
+        cohortEmails = loadEmailCohort(getString(args, "--emails-file"));
     } catch (error) {
         console.error(
             `❌ ${error instanceof Error ? error.message : String(error)}`,
@@ -102,7 +94,7 @@ function parseArguments(): ParsedArgs {
     }
 
     return {
-        dryRun: args.includes("--dry-run"),
+        dryRun: hasFlag(args, "--dry-run"),
         cohortEmails,
         traceFile,
     };
@@ -142,20 +134,6 @@ function applyTierUpdates(
     }
 
     return updated;
-}
-
-function appendTrace(
-    traceFile: string | null,
-    payload: Record<string, unknown>,
-): void {
-    if (!traceFile) return;
-    appendFileSync(
-        traceFile,
-        `${JSON.stringify({
-            timestamp: new Date().toISOString(),
-            ...payload,
-        })}\n`,
-    );
 }
 
 function classifyDecision(

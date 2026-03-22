@@ -23,11 +23,12 @@
 import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getString, hasFlag } from "../shared/cli.ts";
 import {
+    type Environment,
     executeD1,
     parseEnvironmentArg,
     queryD1,
-    type Environment,
 } from "../shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
 import { loadDotenvEnv, runNpm } from "./shared/runtime.ts";
@@ -47,14 +48,9 @@ const dotenvPath = resolve(repoRoot, ".env");
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
-    const getString = (flag: string, fallback = ""): string => {
-        const index = args.indexOf(flag);
-        return index >= 0 && args[index + 1] ? args[index + 1] : fallback;
-    };
-
     const env = parseEnvironmentArg(args);
 
-    const emailsFile = getString("--emails-file");
+    const emailsFile = getString(args, "--emails-file");
     if (!emailsFile) {
         console.error("❌ --emails-file is required");
         process.exit(1);
@@ -63,9 +59,9 @@ function parseArguments(): ParsedArgs {
     return {
         env,
         emailsFile,
-        skipPrepare: args.includes("--skip-prepare"),
-        hourlyDryRun: args.includes("--hourly-dry-run"),
-        traceFile: getString("--trace-file") || null,
+        skipPrepare: hasFlag(args, "--skip-prepare"),
+        hourlyDryRun: hasFlag(args, "--hourly-dry-run"),
+        traceFile: getString(args, "--trace-file") ?? null,
     };
 }
 

@@ -17,14 +17,11 @@
  *   --trace-file     Append local debugging traces as JSONL
  */
 
-import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
-import {
-    executeD1,
-    getRuntimeEnvironment,
-    queryD1,
-} from "../shared/d1.ts";
+import { getNumber, getString, hasFlag } from "../shared/cli.ts";
+import { executeD1, getRuntimeEnvironment, queryD1 } from "../shared/d1.ts";
 import {
     buildEmailFilter,
     escapeSqlString,
@@ -32,6 +29,7 @@ import {
 } from "../shared/email-cohort.ts";
 import { PIPELINE_DB_BATCH_SIZE } from "../shared/github-identity.ts";
 import { llmComplete } from "../shared/llm.ts";
+import { appendTrace } from "../shared/trace.ts";
 
 const SCORE_WINDOW = 30;
 const HOLD_BACK_USERS = 30;
@@ -92,20 +90,6 @@ export const SCORE_THRESHOLDS = {
     block: 70,
     review: 40,
 } as const;
-
-function appendTrace(
-    traceFile: string | null,
-    payload: Record<string, unknown>,
-): void {
-    if (!traceFile) return;
-    appendFileSync(
-        traceFile,
-        `${JSON.stringify({
-            timestamp: new Date().toISOString(),
-            ...payload,
-        })}\n`,
-    );
-}
 
 export function parseLLMResponse(
     content: string,
@@ -647,7 +631,9 @@ function loadApiKey(): string {
     const key = process.env.PLN_GITHUB_USER_SCORE_KEY;
     if (!key) {
         console.error("❌ PLN_GITHUB_USER_SCORE_KEY not set");
-        console.error("💡 Run: npm run decrypt-vars (local) or set the GitHub Actions secret (CI)");
+        console.error(
+            "💡 Run: npm run decrypt-vars (local) or set the GitHub Actions secret (CI)",
+        );
         process.exit(1);
     }
     return key.trim();
@@ -655,21 +641,11 @@ function loadApiKey(): string {
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
-
-    function getStr(flag: string, def: string): string {
-        const i = args.indexOf(flag);
-        return i >= 0 && args[i + 1] ? args[i + 1] : def;
-    }
-    function getNum(flag: string, def: number): number {
-        const v = getStr(flag, "");
-        return v ? parseInt(v, 10) : def;
-    }
+    const traceFile = getString(args, "--trace-file") ?? null;
 
     let cohortEmails: string[] | null = null;
-    const emailsFile = getStr("--emails-file", "");
-    const traceFile = getStr("--trace-file", "") || null;
     try {
-        cohortEmails = loadEmailCohort(emailsFile || undefined);
+        cohortEmails = loadEmailCohort(getString(args, "--emails-file"));
     } catch (error) {
         console.error(
             `❌ ${error instanceof Error ? error.message : String(error)}`,
@@ -678,8 +654,10 @@ function parseArguments(): ParsedArgs {
     }
 
     return {
-        userLimit: getNum("--limit", DEFAULT_USER_LIMIT),
-        storeStatus: args.includes("--store-status"),
+        userLimit:
+            getNumber(args, "--limit", DEFAULT_USER_LIMIT) ??
+            DEFAULT_USER_LIMIT,
+        storeStatus: hasFlag(args, "--store-status"),
         cohortEmails,
         traceFile,
     };

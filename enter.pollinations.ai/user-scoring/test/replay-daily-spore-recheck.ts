@@ -26,11 +26,12 @@ import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
+import { getNumber, getString, hasFlag } from "../shared/cli.ts";
 import {
+    type Environment,
     executeD1,
     parseEnvironmentArg,
     queryD1,
-    type Environment,
 } from "../shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
 import { loadDotenvEnv, runNpm } from "./shared/runtime.ts";
@@ -51,18 +52,9 @@ const dotenvPath = resolve(repoRoot, ".env");
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
-    const getString = (flag: string, fallback = ""): string => {
-        const index = args.indexOf(flag);
-        return index >= 0 && args[index + 1] ? args[index + 1] : fallback;
-    };
-    const getNumber = (flag: string): number | null => {
-        const value = getString(flag);
-        return value ? Number.parseInt(value, 10) : null;
-    };
-
     const env = parseEnvironmentArg(args);
 
-    const emailsFile = getString("--emails-file");
+    const emailsFile = getString(args, "--emails-file");
     if (!emailsFile) {
         console.error("❌ --emails-file is required");
         process.exit(1);
@@ -71,10 +63,10 @@ function parseArguments(): ParsedArgs {
     return {
         env,
         emailsFile,
-        skipPrepare: args.includes("--skip-prepare"),
-        passes: getNumber("--passes"),
-        dryRun: args.includes("--dry-run"),
-        traceFile: getString("--trace-file") || null,
+        skipPrepare: hasFlag(args, "--skip-prepare"),
+        passes: getNumber(args, "--passes") ?? null,
+        dryRun: hasFlag(args, "--dry-run"),
+        traceFile: getString(args, "--trace-file") ?? null,
     };
 }
 

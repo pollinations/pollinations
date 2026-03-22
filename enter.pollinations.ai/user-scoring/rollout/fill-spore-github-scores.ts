@@ -20,7 +20,12 @@ import {
     storeGithubScores,
     validateUserRecords,
 } from "../scoring/github-score.ts";
-import { parseEnvironmentArg, queryD1, type Environment } from "../shared/d1.ts";
+import { getNumber, hasFlag } from "../shared/cli.ts";
+import {
+    type Environment,
+    parseEnvironmentArg,
+    queryD1,
+} from "../shared/d1.ts";
 import { banUsersByGithubIds } from "../shared/github-identity.ts";
 
 interface ParsedArgs {
@@ -39,17 +44,9 @@ const DEFAULT_LIMIT = 1000;
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
-    const getString = (flag: string, fallback: string): string => {
-        const index = args.indexOf(flag);
-        return index >= 0 && args[index + 1] ? args[index + 1] : fallback;
-    };
-    const getNumber = (flag: string, fallback: number): number => {
-        const value = getString(flag, "");
-        return value ? Number.parseInt(value, 10) : fallback;
-    };
 
-    const limit = getNumber("--limit", DEFAULT_LIMIT);
-    const offset = getNumber("--offset", 0);
+    const limit = getNumber(args, "--limit", DEFAULT_LIMIT) ?? DEFAULT_LIMIT;
+    const offset = getNumber(args, "--offset", 0) ?? 0;
     if (limit <= 0) {
         console.error("❌ --limit must be greater than 0");
         process.exit(1);
@@ -58,7 +55,7 @@ function parseArguments(): ParsedArgs {
         console.error("❌ --offset must be 0 or greater");
         process.exit(1);
     }
-    const apply = args.includes("--apply");
+    const apply = hasFlag(args, "--apply");
     if (apply && offset !== 0) {
         console.error(
             "❌ Live runs must use --offset 0. The backlog shrinks as scores are stored, so non-zero offsets would skip users.",
@@ -69,7 +66,7 @@ function parseArguments(): ParsedArgs {
     return {
         env: parseEnvironmentArg(args),
         apply,
-        banDeleted: args.includes("--ban-deleted"),
+        banDeleted: hasFlag(args, "--ban-deleted"),
         limit,
         offset,
     };

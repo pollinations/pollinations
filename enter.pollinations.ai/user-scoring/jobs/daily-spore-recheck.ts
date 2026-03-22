@@ -21,7 +21,6 @@
  *   --trace-pass     Optional pass number for replay harness trace correlation
  */
 
-import { appendFileSync } from "node:fs";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
 import {
     bucketValidationResults,
@@ -32,11 +31,8 @@ import {
     storeGithubScores,
     validateUserRecords,
 } from "../scoring/github-score.ts";
-import {
-    executeD1,
-    getRuntimeEnvironment,
-    queryD1,
-} from "../shared/d1.ts";
+import { getNumber, getString, hasFlag } from "../shared/cli.ts";
+import { executeD1, getRuntimeEnvironment, queryD1 } from "../shared/d1.ts";
 import {
     buildEmailFilter,
     escapeSqlString,
@@ -48,6 +44,7 @@ import {
     GITHUB_ID_INVALID_REASON,
     PIPELINE_DB_BATCH_SIZE,
 } from "../shared/github-identity.ts";
+import { appendTrace } from "../shared/trace.ts";
 
 interface ParsedArgs {
     dryRun: boolean;
@@ -85,18 +82,12 @@ const MAX_USERS_PER_RUN = 8000;
 
 function parseArguments(): ParsedArgs {
     const args = process.argv.slice(2);
-    const getString = (flag: string): string | undefined => {
-        const index = args.indexOf(flag);
-        return index >= 0 && args[index + 1] ? args[index + 1] : undefined;
-    };
-    const emailsFile = getString("--emails-file");
-    const traceFile = getString("--trace-file") ?? null;
-    const tracePassRaw = getString("--trace-pass");
-    const tracePass = tracePassRaw ? Number.parseInt(tracePassRaw, 10) : null;
+    const traceFile = getString(args, "--trace-file") ?? null;
+    const tracePass = getNumber(args, "--trace-pass") ?? null;
 
     let cohortEmails: string[] | null = null;
     try {
-        cohortEmails = loadEmailCohort(emailsFile);
+        cohortEmails = loadEmailCohort(getString(args, "--emails-file"));
     } catch (error) {
         console.error(
             `❌ ${error instanceof Error ? error.message : String(error)}`,
@@ -105,12 +96,11 @@ function parseArguments(): ParsedArgs {
     }
 
     return {
-        dryRun: args.includes("--dry-run"),
-        verbose: args.includes("--verbose") || args.includes("-v"),
+        dryRun: hasFlag(args, "--dry-run"),
+        verbose: hasFlag(args, "--verbose") || hasFlag(args, "-v"),
         cohortEmails,
         traceFile,
-        tracePass:
-            tracePass !== null && Number.isFinite(tracePass) ? tracePass : null,
+        tracePass,
     };
 }
 
@@ -122,9 +112,11 @@ function fetchSporeCount(cohortEmails: string[] | null): number {
     return Number(rows[0]?.count ?? 0);
 }
 
-function fetchSporeSlice(
-    cohortEmails: string[] | null,
-): { rows: SporeRow[]; totalSpores: number; sliceSize: number } {
+function fetchSporeSlice(cohortEmails: string[] | null): {
+    rows: SporeRow[];
+    totalSpores: number;
+    sliceSize: number;
+} {
     const totalSpores = fetchSporeCount(cohortEmails);
     if (totalSpores === 0) {
         return { rows: [], totalSpores: 0, sliceSize: 0 };
@@ -187,20 +179,6 @@ function summarize(results: GitHubValidationResult[]): void {
             ) / results.length;
         console.log(`   Average score: ${average.toFixed(2)}`);
     }
-}
-
-function appendTrace(
-    traceFile: string | null,
-    payload: Record<string, unknown>,
-): void {
-    if (!traceFile) return;
-    appendFileSync(
-        traceFile,
-        `${JSON.stringify({
-            timestamp: new Date().toISOString(),
-            ...payload,
-        })}\n`,
-    );
 }
 
 function classifyDecision(
@@ -395,7 +373,6 @@ async function main(): Promise<void> {
         const results = await validateUserRecords(chunk);
         const {
             resultsByGithubId,
-            orderedResults,
             deletedGithubIds,
             unavailableGithubIds,
             scoreableResults,

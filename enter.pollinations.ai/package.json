@@ -37,7 +37,9 @@
         "user-pipeline:replay-daily": "tsx user-scoring/test/replay-daily-spore-recheck.ts",
         "user-pipeline:rollout-fill-spore-scores": "tsx user-scoring/rollout/fill-spore-github-scores.ts",
         "user-pipeline:rollout-bootstrap-trust": "tsx user-scoring/rollout/bootstrap-trust-scores.ts",
-        "user-pipeline:audit-github-accounts": "tsx user-scoring/jobs/audit-github-accounts.ts"
+        "user-pipeline:audit-github-accounts": "tsx user-scoring/jobs/audit-github-accounts.ts",
+        "user-pipeline:clone-prod-to-staging": "tsx user-scoring/test/clone-prod-to-staging.ts",
+        "user-pipeline:full-pipeline-test": "tsx user-scoring/test/full-pipeline-test.ts"
     },
     "dependencies": {
         "@ark-ui/react": "^5.29.1",

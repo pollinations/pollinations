@@ -18,6 +18,7 @@ scripts/abuse-detection/flagged-users*.md
 scripts/flagged-users*.csv
 scripts/flagged-users*.md
 scripts/user-pipeline/scoring/abuse-report*.csv
+user-scoring/scoring/abuse-report*.csv
 
 # Script outputs
 

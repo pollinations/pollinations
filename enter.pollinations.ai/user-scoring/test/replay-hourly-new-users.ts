@@ -177,7 +177,23 @@ function main(): void {
         console.log("\n⏭️ Skipping cohort preparation");
     }
 
-    console.log("\n🔍 Running trust gate...");
+    console.log("\n🔍 Step 1: GitHub check (devs → seed, deleted → ban)...");
+    const hourlyCommand = [
+        "run",
+        "user-pipeline:hourly-new-users",
+        "--",
+        "--emails-file",
+        config.emailsFile,
+        ...(config.traceFile ? ["--trace-file", config.traceFile] : []),
+    ];
+    if (config.hourlyDryRun) {
+        hourlyCommand.push("--dry-run");
+    }
+    runCommand(hourlyCommand, childEnv);
+
+    console.log(
+        "\n🔍 Step 2: Trust scoring (remaining microbe → spore or stay)...",
+    );
     runCommand(
         [
             "run",
@@ -190,20 +206,6 @@ function main(): void {
         ],
         childEnv,
     );
-
-    console.log("\n🌱 Running hourly new-user pipeline...");
-    const command = [
-        "run",
-        "user-pipeline:hourly-new-users",
-        "--",
-        "--emails-file",
-        config.emailsFile,
-        ...(config.traceFile ? ["--trace-file", config.traceFile] : []),
-    ];
-    if (config.hourlyDryRun) {
-        command.push("--dry-run");
-    }
-    runCommand(command, childEnv);
 
     printSummary(config.env, emails);
 }

@@ -24,6 +24,7 @@ import {
     writeFileSync,
 } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { TIER_POLLEN } from "../../src/tier-config.ts";
 import { executeD1, queryD1 } from "../shared/d1.ts";
 import {
     buildEmailFilter,
@@ -38,6 +39,7 @@ const SCORE_WINDOW = 30;
 const HOLD_BACK_USERS = 30;
 const MAX_WAIT_MINUTES = 90;
 const DEFAULT_USER_LIMIT = 5000;
+const TRUST_PASS_THRESHOLD = 50;
 
 const PROMPT_TEMPLATE = readFileSync(
     new URL("trust-score-prompt.md", import.meta.url),
@@ -109,7 +111,7 @@ export function parseLLMResponse(
     targetCount: number,
     options?: { strict?: boolean },
 ): Array<{ score: number; signals: string[] }> {
-    const strict = options?.strict ?? true;
+    const strict = options?.strict ?? false;
     const results: Array<{ score: number; signals: string[] }> = Array.from(
         { length: targetCount },
         () => ({ score: 0, signals: [] }),
@@ -124,7 +126,9 @@ export function parseLLMResponse(
         )
             continue;
 
-        const parts = line.split(",");
+        // Strip bracket prefixes like "[x39] " that some models add
+        const cleaned = line.replace(/^\[.*?\]\s*/, "");
+        const parts = cleaned.split(",");
         if (parts.length < 2) continue;
 
         const githubId = Number.parseInt(parts[0]?.trim(), 10);
@@ -223,12 +227,10 @@ function prepareChunkData(
     const idToIndex = new Map<number, number>();
     const targetEmails = new Set(targetUsers.map((user) => user.email));
     const csvRows = chunk.map((user) => {
-        const upgraded = user.tier !== "spore" && user.tier !== "microbe";
-        const role = targetEmails.has(user.email) ? "target" : "context";
-        if (role === "target") {
+        if (targetEmails.has(user.email)) {
             idToIndex.set(user.github_id, idToIndex.size);
         }
-        return `${user.github_id},${user.github_username ?? ""},${user.email},${formatDate(user.created_at)},${upgraded},${role}`;
+        return `${user.github_id},${user.github_username ?? ""},${user.email},${formatDate(user.created_at)}`;
     });
     return { csvRows, idToIndex };
 }
@@ -346,11 +348,56 @@ function fetchNeighborContext(
     return direction === "newer" ? rows.reverse() : rows;
 }
 
+function storeChunkTrustScores(scored: ScoredUser[]): void {
+    const batch = scored.slice(0, PIPELINE_DB_BATCH_SIZE);
+    if (batch.length === 0) return;
+
+    const cases = batch
+        .map((u) => `WHEN '${escapeSqlString(u.email)}' THEN ${100 - u.score}`)
+        .join(" ");
+    const emailList = batch
+        .map((u) => `'${escapeSqlString(u.email)}'`)
+        .join(", ");
+
+    if (
+        executeD1(
+            ENV,
+            `UPDATE user SET trust_score = CASE email ${cases} END WHERE email IN (${emailList})`,
+        )
+    ) {
+        console.log(`   💾 Stored ${batch.length} trust scores to D1`);
+    } else {
+        console.error(`   ❌ Failed to store ${batch.length} trust scores`);
+    }
+
+    // Promote trusted users to spore
+    const trusted = batch.filter((u) => 100 - u.score >= TRUST_PASS_THRESHOLD);
+    if (trusted.length === 0) return;
+
+    const trustedEmailList = trusted
+        .map((u) => `'${escapeSqlString(u.email)}'`)
+        .join(", ");
+
+    if (
+        executeD1(
+            ENV,
+            `UPDATE user SET tier = 'spore', tier_balance = ${TIER_POLLEN.spore}, last_tier_grant = ${Date.now()} WHERE tier = 'microbe' AND email IN (${trustedEmailList})`,
+        )
+    ) {
+        console.log(`   🍄 Promoted ${trusted.length} trusted users to spore`);
+    } else {
+        console.error(
+            `   ❌ Failed to promote ${trusted.length} users to spore`,
+        );
+    }
+}
+
 async function scoreUsers(
     users: User[],
     cohortEmails: string[] | null,
     traceFile: string | null,
     runId: string,
+    storeStatus = false,
 ): Promise<{ scoredUsers: ScoredUser[]; failedUsers: User[] }> {
     const apiKey = loadApiKey();
     console.log(
@@ -393,9 +440,19 @@ async function scoreUsers(
                 newerContextCount: newerContext.length,
                 olderContextCount: olderContext.length,
             });
+            const chunkScored: ScoredUser[] = [];
             for (const [index, user] of group.entries()) {
                 allScores.set(user.email, scores[index]);
                 failedEmails.delete(user.email);
+                chunkScored.push({
+                    ...user,
+                    score: scores[index].score,
+                    signals: scores[index].signals,
+                    action: getAction(scores[index].score),
+                });
+            }
+            if (storeStatus && chunkScored.length > 0) {
+                storeChunkTrustScores(chunkScored);
             }
         } catch (error) {
             console.error(
@@ -544,7 +601,9 @@ function fetchStoredTrustStatesByEmail(
 }
 
 function classifyTrustDecision(user: ScoredUser): TrustDecision {
-    return 100 - user.score >= 60 ? "trust_pass" : "trust_block";
+    return 100 - user.score >= TRUST_PASS_THRESHOLD
+        ? "trust_pass"
+        : "trust_block";
 }
 
 function reconcileTrustDecision(
@@ -555,13 +614,13 @@ function reconcileTrustDecision(
 
     switch (decision) {
         case "trust_pass":
-            return Number(state.trust_score ?? -1) >= 60
+            return Number(state.trust_score ?? -1) >= TRUST_PASS_THRESHOLD
                 ? null
-                : "expected_trust_score_gte_60";
+                : `expected_trust_score_gte_${TRUST_PASS_THRESHOLD}`;
         case "trust_block":
-            return Number(state.trust_score ?? 101) < 60
+            return Number(state.trust_score ?? 101) < TRUST_PASS_THRESHOLD
                 ? null
-                : "expected_trust_score_lt_60";
+                : `expected_trust_score_lt_${TRUST_PASS_THRESHOLD}`;
         case "defer_trust_chunk":
         case "holdback_context":
             return state.trust_score === null
@@ -582,7 +641,7 @@ function fetchPendingUsers(
     const emailFilter = buildEmailFilter("email", cohortEmails);
     const users = queryD1(
         ENV,
-        `SELECT email, github_id, github_username, created_at, tier FROM user WHERE COALESCE(banned, 0) = 0 AND trust_score IS NULL ${emailFilter} ORDER BY created_at DESC LIMIT ${limit}`,
+        `SELECT email, github_id, github_username, created_at, tier FROM user WHERE tier = 'microbe' AND COALESCE(banned, 0) = 0 AND trust_score IS NULL ${emailFilter} ORDER BY created_at DESC LIMIT ${limit}`,
     ) as unknown as User[];
     console.log(`✅ Fetched ${users.length} users`);
     return users;
@@ -741,10 +800,13 @@ async function main(): Promise<void> {
         config.cohortEmails,
         config.traceFile,
         runId,
+        config.storeStatus,
     );
 
     if (scoredUsers.length > 0) {
         exportResults(scoredUsers);
+        // Trust scores are now stored incrementally after each chunk.
+        // Final bulk store as safety net for any missed scores.
         if (config.storeStatus) storeTrustScores(scoredUsers);
     } else {
         console.log("⚠️  No users were successfully trust-scored");

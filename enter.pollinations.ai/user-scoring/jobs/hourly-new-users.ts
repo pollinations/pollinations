@@ -76,8 +76,8 @@ type HourlyDecision =
     | "ban_deleted"
     | "defer_unavailable"
     | "promote_seed"
-    | "promote_spore_below_threshold"
-    | "promote_spore_risk_blocked"
+    | "stay_microbe_below_threshold"
+    | "stay_microbe_risk_blocked"
     | "missing_result";
 
 function parseArguments(): ParsedArgs {
@@ -117,14 +117,14 @@ function parseArguments(): ParsedArgs {
     };
 }
 
-function fetchTrustedMicrobeUsers(
+function fetchNewMicrobeUsers(
     env: Environment,
     cohortEmails: string[] | null,
 ): TrustedUser[] {
     const emailFilter = buildEmailFilter("email", cohortEmails);
     return queryD1(
         env,
-        `SELECT email, github_id, trust_score FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0${emailFilter}`,
+        `SELECT email, github_id, trust_score FROM user WHERE tier = 'microbe' AND trust_score IS NULL AND COALESCE(banned, 0) = 0${emailFilter}`,
     ) as TrustedUser[];
 }
 
@@ -167,7 +167,7 @@ function applyTierUpdates(
         const idList = batch.join(", ");
         const ok = executeD1(
             env,
-            `UPDATE user SET tier = '${tier}', tier_balance = ${tierBalance} WHERE github_id IN (${idList}) AND tier = 'microbe'`,
+            `UPDATE user SET tier = '${tier}', tier_balance = ${tierBalance}, last_tier_grant = ${Date.now()} WHERE github_id IN (${idList}) AND tier = 'microbe'`,
         );
         if (ok) updated += batch.length;
     }
@@ -196,10 +196,10 @@ function classifyDecision(
     if (result.status === "github_account_deleted") return "ban_deleted";
     if (result.status === "unavailable") return "defer_unavailable";
     if (result.approved && result.risk_status === "suspicious") {
-        return "promote_spore_risk_blocked";
+        return "stay_microbe_risk_blocked";
     }
     if (result.approved) return "promote_seed";
-    return "promote_spore_below_threshold";
+    return "stay_microbe_below_threshold";
 }
 
 function fetchStoredUserStatesByEmail(
@@ -250,9 +250,9 @@ function reconcileDecision(
                 : "unexpected_state_for_unavailable";
         case "promote_seed":
             return state.tier === "seed" ? null : "expected_seed_tier";
-        case "promote_spore_below_threshold":
-        case "promote_spore_risk_blocked":
-            return state.tier === "spore" ? null : "expected_spore_tier";
+        case "stay_microbe_below_threshold":
+        case "stay_microbe_risk_blocked":
+            return state.tier === "microbe" ? null : "expected_microbe_tier";
         case "missing_result":
             return "missing_validation_result";
     }
@@ -273,10 +273,7 @@ async function main(): Promise<void> {
         console.log(`🧾 Trace file: ${config.traceFile}`);
     }
 
-    const trustedUsers = fetchTrustedMicrobeUsers(
-        config.env,
-        config.cohortEmails,
-    );
+    const trustedUsers = fetchNewMicrobeUsers(config.env, config.cohortEmails);
     appendTrace(config.traceFile, {
         stage: "hourly",
         type: "run_start",
@@ -286,7 +283,7 @@ async function main(): Promise<void> {
         cohort_size: config.cohortEmails?.length ?? null,
     });
     if (trustedUsers.length === 0) {
-        console.log("✅ No trusted microbe users ready for GitHub scoring");
+        console.log("✅ No new microbe users to process");
         appendTrace(config.traceFile, {
             stage: "hourly",
             type: "run_end",
@@ -297,7 +294,7 @@ async function main(): Promise<void> {
         return;
     }
 
-    console.log(`📊 Trusted microbe users: ${trustedUsers.length}`);
+    console.log(`📊 New microbe users: ${trustedUsers.length}`);
 
     const invalidUsers = trustedUsers.filter(
         (user) => !Number.isInteger(user.github_id) || user.github_id === null,
@@ -363,65 +360,109 @@ async function main(): Promise<void> {
         return;
     }
 
-    const results = await validateUserRecords(validUsers);
-    const resultsByGithubId = new Map(
-        results.flatMap((result) =>
-            Number.isInteger(result.github_id) && result.github_id > 0
-                ? [[result.github_id, result] as const]
-                : [],
-        ),
-    );
-    const orderedResults = validUsers.flatMap((user) => {
-        const result = resultsByGithubId.get(user.github_id);
-        return result ? [result] : [];
-    });
-    const resultsByEmail = new Map(
-        validUsers.flatMap((user) => {
+    // Process in chunks of 50 users, writing to D1 after each chunk
+    const GITHUB_CHUNK_SIZE = 50;
+    const resultsByEmail = new Map<string, GitHubValidationResult>();
+    const totals = {
+        deleted: 0,
+        unavailable: 0,
+        riskBlocked: 0,
+        seeded: 0,
+        stored: 0,
+    };
+
+    for (let ci = 0; ci < validUsers.length; ci += GITHUB_CHUNK_SIZE) {
+        const chunk = validUsers.slice(ci, ci + GITHUB_CHUNK_SIZE);
+        console.log(
+            `\n⚡ GitHub chunk ${Math.floor(ci / GITHUB_CHUNK_SIZE) + 1}/${Math.ceil(validUsers.length / GITHUB_CHUNK_SIZE)} (${chunk.length} users)`,
+        );
+
+        const results = await validateUserRecords(chunk);
+        const resultsByGithubId = new Map(
+            results.flatMap((result) =>
+                Number.isInteger(result.github_id) && result.github_id > 0
+                    ? [[result.github_id, result] as const]
+                    : [],
+            ),
+        );
+        const orderedResults = chunk.flatMap((user) => {
             const result = resultsByGithubId.get(user.github_id);
-            return result ? [[user.email, result] as const] : [];
-        }),
-    );
-    const deletedGithubIds = extractDeletedGithubIds(orderedResults);
-    const scoreableResults = orderedResults.filter(isScorableValidationResult);
-    const unavailableCount =
-        orderedResults.length -
-        deletedGithubIds.length -
-        scoreableResults.length;
-    const riskBlockedGithubIds =
-        extractRiskBlockedGithubUsers(scoreableResults);
-    const riskBlockedSet = new Set(riskBlockedGithubIds);
-    const approvedGithubIds = scoreableResults.flatMap((result) =>
-        result.approved &&
-        Number.isInteger(result.github_id) &&
-        !riskBlockedSet.has(result.github_id)
-            ? [result.github_id]
-            : [],
-    );
-    const sporeGithubIds = scoreableResults.flatMap((result) =>
-        Number.isInteger(result.github_id) &&
-        (!result.approved || riskBlockedSet.has(result.github_id))
-            ? [result.github_id]
-            : [],
-    );
+            return result ? [result] : [];
+        });
+
+        // Map results by email for tracing
+        for (const user of chunk) {
+            const result = resultsByGithubId.get(user.github_id);
+            if (result) resultsByEmail.set(user.email, result);
+        }
+
+        const deletedGithubIds = extractDeletedGithubIds(orderedResults);
+        const scoreableResults = orderedResults.filter(
+            isScorableValidationResult,
+        );
+        const unavailableCount =
+            orderedResults.length -
+            deletedGithubIds.length -
+            scoreableResults.length;
+        const riskBlockedGithubIds =
+            extractRiskBlockedGithubUsers(scoreableResults);
+        const riskBlockedSet = new Set(riskBlockedGithubIds);
+        const approvedGithubIds = scoreableResults.flatMap((result) =>
+            result.approved &&
+            Number.isInteger(result.github_id) &&
+            !riskBlockedSet.has(result.github_id)
+                ? [result.github_id]
+                : [],
+        );
+        totals.deleted += deletedGithubIds.length;
+        totals.unavailable += unavailableCount;
+        totals.riskBlocked += riskBlockedGithubIds.length;
+
+        if (config.dryRun) {
+            totals.seeded += approvedGithubIds.length;
+            continue;
+        }
+
+        // Write to D1 immediately after each chunk
+        if (deletedGithubIds.length > 0) {
+            const banned = banUsersByGithubIds(config.env, deletedGithubIds);
+            console.log(`   🚫 Banned ${banned} deleted accounts`);
+        }
+
+        const stored = storeGithubScores(
+            config.env,
+            "microbe",
+            scoreableResults,
+        );
+        totals.stored += stored;
+
+        const seeded = applyTierUpdates(
+            config.env,
+            approvedGithubIds,
+            "seed",
+            TIER_POLLEN.seed,
+        );
+        totals.seeded += seeded;
+
+        console.log(
+            `   💾 Chunk done: ${stored} scored, ${seeded} seed, ${deletedGithubIds.length} banned`,
+        );
+    }
 
     if (config.dryRun) {
-        if (deletedGithubIds.length > 0) {
+        if (totals.deleted > 0)
             console.log(
-                `🚫 Would ban ${deletedGithubIds.length} users with deleted GitHub accounts`,
+                `🚫 Would ban ${totals.deleted} users with deleted GitHub accounts`,
             );
-        }
-        if (riskBlockedGithubIds.length > 0) {
+        if (totals.riskBlocked > 0)
             console.log(
-                `🚩 Would keep ${riskBlockedGithubIds.length} trusted users at spore due to suspicious GitHub profiles`,
+                `🚩 Would keep ${totals.riskBlocked} trusted users at spore due to suspicious GitHub profiles`,
             );
-        }
-        if (unavailableCount > 0) {
+        if (totals.unavailable > 0)
             console.log(
-                `⏭️ Would defer ${unavailableCount} users because GitHub scoring was unavailable`,
+                `⏭️ Would defer ${totals.unavailable} users because GitHub scoring was unavailable`,
             );
-        }
-        console.log(`🌱 Would promote to seed: ${approvedGithubIds.length}`);
-        console.log(`🍄 Would promote to spore: ${sporeGithubIds.length}`);
+        console.log(`🌱 Would promote to seed: ${totals.seeded}`);
         for (const [index, user] of trustedUsers.entries()) {
             const result = resultsByEmail.get(user.email) ?? null;
             const decision =
@@ -454,41 +495,21 @@ async function main(): Promise<void> {
             type: "run_end",
             run_id: runId,
             selected_users: trustedUsers.length,
-            deleted_users: deletedGithubIds.length,
-            unavailable_users: unavailableCount,
-            risk_blocked_users: riskBlockedGithubIds.length,
-            seed_users: approvedGithubIds.length,
-            spore_users: sporeGithubIds.length,
+            deleted_users: totals.deleted,
+            unavailable_users: totals.unavailable,
+            risk_blocked_users: totals.riskBlocked,
+            seed_users: totals.seeded,
+            spore_users: 0,
             anomalies: 0,
         });
         return;
     }
 
-    if (deletedGithubIds.length > 0) {
-        const banned = banUsersByGithubIds(config.env, deletedGithubIds);
-        console.log(`🚫 Banned ${banned} users with deleted GitHub accounts`);
-    }
-
-    const stored = storeGithubScores(config.env, "microbe", scoreableResults);
-    const seeded = applyTierUpdates(
-        config.env,
-        approvedGithubIds,
-        "seed",
-        TIER_POLLEN.seed,
-    );
-    const spored = applyTierUpdates(
-        config.env,
-        sporeGithubIds,
-        "spore",
-        TIER_POLLEN.spore,
-    );
-
     console.log("\n📊 Summary:");
-    console.log(`   Scores stored: ${stored}`);
-    console.log(`   Risk-blocked from seed: ${riskBlockedGithubIds.length}`);
-    console.log(`   Deferred (GitHub unavailable): ${unavailableCount}`);
-    console.log(`   Microbe -> Seed: ${seeded}`);
-    console.log(`   Microbe -> Spore: ${spored}`);
+    console.log(`   Scores stored: ${totals.stored}`);
+    console.log(`   Risk-blocked from seed: ${totals.riskBlocked}`);
+    console.log(`   Deferred (GitHub unavailable): ${totals.unavailable}`);
+    console.log(`   Microbe -> Seed: ${totals.seeded}`);
 
     const storedStates = fetchStoredUserStatesByEmail(
         config.env,
@@ -537,11 +558,11 @@ async function main(): Promise<void> {
         type: "run_end",
         run_id: runId,
         selected_users: trustedUsers.length,
-        deleted_users: deletedGithubIds.length,
-        unavailable_users: unavailableCount,
-        risk_blocked_users: riskBlockedGithubIds.length,
-        seed_users: seeded,
-        spore_users: spored,
+        deleted_users: totals.deleted,
+        unavailable_users: totals.unavailable,
+        risk_blocked_users: totals.riskBlocked,
+        seed_users: totals.seeded,
+        spore_users: 0,
         anomalies,
     });
 }

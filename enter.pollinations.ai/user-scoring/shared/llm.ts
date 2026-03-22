@@ -1,14 +1,12 @@
 /**
  * Minimal LLM client for gen.pollinations.ai.
  *
- * Stateless wrapper around the OpenAI-compatible chat completions endpoint.
  * Requires a secret key (sk_) — publishable keys cannot access paid models.
  */
 
 const ENDPOINT = "https://gen.pollinations.ai/v1/chat/completions";
-const DEFAULT_MODEL = "gemini-fast";
-const REQUEST_TIMEOUT_MS = 120_000;
-const TIMEOUT_RESULT = Symbol("llm-timeout");
+const DEFAULT_MODEL = "claude";
+const REQUEST_TIMEOUT_MS = 30_000;
 
 export async function llmComplete(
     prompt: string,
@@ -21,22 +19,14 @@ export async function llmComplete(
     const { apiKey, model = DEFAULT_MODEL, temperature = 0.1 } = options;
 
     const controller = new AbortController();
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-    const timeoutPromise = new Promise<typeof TIMEOUT_RESULT>((resolve) => {
-        timeout = setTimeout(() => {
-            console.warn(`   ⏰ AbortController fired after 120s`);
-            controller.abort();
-            resolve(TIMEOUT_RESULT);
-        }, REQUEST_TIMEOUT_MS);
-    });
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-    const requestPromise = (async () => {
+    try {
         const response = await fetch(ENDPOINT, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${apiKey}`,
-                Connection: "close",
             },
             body: JSON.stringify({
                 model,
@@ -45,33 +35,36 @@ export async function llmComplete(
             }),
             signal: controller.signal,
         });
-        const body = await response.text();
 
-        if (!response.ok) {
-            throw new Error(
-                `LLM API HTTP ${response.status}: ${body.slice(0, 200)}`,
-            );
+        const text = await response.text();
+
+        if (!text.trim()) {
+            throw new Error("LLM request returned empty response");
         }
 
-        const data = JSON.parse(body) as {
+        const data = JSON.parse(text) as {
             choices?: Array<{ message?: { content?: string } }>;
+            error?: { message?: string };
         };
-        return data.choices?.[0]?.message?.content ?? "";
-    })();
 
-    try {
-        const result = await Promise.race([requestPromise, timeoutPromise]);
-        if (result === TIMEOUT_RESULT) {
-            const error = new Error(
-                `LLM request timed out after ${REQUEST_TIMEOUT_MS}ms`,
+        if (data.error) {
+            throw new Error(`LLM API error: ${data.error.message}`);
+        }
+
+        return data.choices?.[0]?.message?.content ?? "";
+    } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+            throw Object.assign(
+                new Error(
+                    `LLM request timed out after ${REQUEST_TIMEOUT_MS}ms`,
+                ),
+                {
+                    name: "AbortError",
+                },
             );
-            error.name = "AbortError";
-            throw error;
         }
-        return result;
+        throw err;
     } finally {
-        if (timeout) {
-            clearTimeout(timeout);
-        }
+        clearTimeout(timer);
     }
 }

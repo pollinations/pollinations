@@ -182,7 +182,7 @@ function generateLLMDoc(): string {
     lines.push("- duration (int, 1-10): Video duration in seconds");
     lines.push('- aspectRatio ("16:9"|"9:16"): Video only');
     lines.push(
-        "- audio (boolean, default: false): Video audio. wan/ltx-2 always have audio",
+        "- audio (boolean, default: false): Video audio. wan always has audio",
     );
     lines.push("");
 

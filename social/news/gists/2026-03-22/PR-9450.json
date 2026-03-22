@@ -1,0 +1,34 @@
+{
+  "pr_number": 9450,
+  "title": "fix: make qwen-large and qwen-vision free tier",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9450",
+  "merged_at": "2026-03-22T23:31:38Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Freeing the Qwens",
+    "blurb": "We've unlocked Qwen Large and Qwen Vision for the free tier. Go ahead and throw your biggest prompts and images at them—no Pollen required.",
+    "summary": "Removed the paid-only restriction from the qwen-large and qwen-vision models, making them accessible to all users on the free tier.",
+    "impact": "Free tier users can now generate text with Qwen 3.5 Plus and analyze images with Qwen 3 VL Plus without needing Pollen credits.",
+    "keywords": [
+      "qwen",
+      "free tier",
+      "models",
+      "vision",
+      "llm"
+    ],
+    "visual_concept": "Polly the bee handing out free glowing orbs (representing the newly free models) to the Monitor Robot. A 'FREE' sign emphasizes the update.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot handing out glowing free samples to a chunky monitor-head robot. Soft lime green (#ecf874) and lavender gradient background. The robot's screen shows a happy face. A sign reads 'FREE' in chunky pixel font. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-22/PR-9450.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot handing out glowing free samples to a chunky monitor-head robot. Soft lime green (#ecf874) and lavender gradient background. The robot's screen shows a happy face. A sign reads 'FREE' in chunky pixel font. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-03-22T23:32:42.689832+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9444,
+  "title": "feat: add alibaba qwen text and vision models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9444",
+  "merged_at": "2026-03-22T22:31:45Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Qwen joins the swarm",
+    "blurb": "We've added Alibaba's powerful Qwen models to the API, including dedicated coding and vision-language models. Time to give your apps some serious reasoning upgrades.",
+    "summary": "Added Alibaba's Qwen text, coder, and vision models to the API, while streamlining our available model list.",
+    "impact": "Developers can now access qwen-coder-large, qwen-large (with 1M context), and qwen-vision for advanced reasoning, coding, and image understanding tasks.",
+    "keywords": [
+      "models",
+      "qwen",
+      "vision",
+      "text",
+      "api"
+    ],
+    "visual_concept": "The bee and the monitor robot interacting with three distinct elements representing text, code, and vision. A multi-screen setup or three glowing floating tablets. The bee wearing wizard glasses for 'reasoning'.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny wizard glasses and a chunky monitor robot looking at three glowing screens showing code, text, and a picture. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-22/PR-9444.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny wizard glasses and a chunky monitor robot looking at three glowing screens showing code, text, and a picture. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-22T22:32:45.262142+00:00"
+}

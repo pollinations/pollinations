@@ -143,41 +143,6 @@ export function createFireworksModelConfig(
     );
 }
 
-export function createAirforceModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://api.airforce/v1",
-        process.env.AIRFORCE_API_KEY,
-        overrides,
-    );
-}
-
-export function createSeraphynModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://seraphyn.ai/api/v1",
-        process.env.SERAPHYN_API_KEY,
-        overrides,
-    );
-}
-
-/**
- * Creates a NomNom model configuration (community model with web search/scrape/crawl).
- * Uses user's API key for billing passthrough - NomNom calls Pollinations internally.
- */
-export function createNomNomConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return {
-        provider: "openai",
-        "custom-host": "https://scrape.pollinations.ai/v1",
-        useUserApiKey: true,
-        ...overrides,
-    };
-}
-
 /**
  * Creates a Polly model configuration (community model - Pollinations AI assistant).
  * Uses user's API key for billing passthrough - Polly calls Pollinations internally.

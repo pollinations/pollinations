@@ -154,33 +154,12 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
     },
     {
-        name: "nomnom",
-        config: portkeyConfig["nomnom"],
-    },
-    {
         name: "polly",
         config: portkeyConfig["polly"],
     },
     {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],
-    },
-    {
-        name: "qwen-character",
-        config: portkeyConfig["qwen-character"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.character),
-    },
-    {
-        name: "step-3.5-flash",
-        config: portkeyConfig["step-3.5-flash:free"],
-    },
-    {
-        name: "claude-airforce",
-        config: portkeyConfig["claude-sonnet-4.6"],
-    },
-    {
-        name: "openai-seraphyn",
-        config: portkeyConfig["seraphyn-gpt-5.4"],
     },
 ];
 

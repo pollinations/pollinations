@@ -1,17 +1,14 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
-    createAirforceModelConfig,
     createAnthropicConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
-    createNomNomConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
-    createSeraphynModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -181,23 +178,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Community Models -----------------------------------------------------
-    "nomnom": () =>
-        createNomNomConfig({
-            model: "nomnom",
-        }),
     "polly": () =>
         createPollyConfig({
             model: "polly",
         }),
-
-    // -- api.airforce ---------------------------------------------------------
-    "step-3.5-flash:free": () =>
-        createAirforceModelConfig({ model: "step-3.5-flash:free" }),
-    "qwen-character": () =>
-        createAirforceModelConfig({ model: "qwen-character" }),
-    "claude-sonnet-4.6": () =>
-        createAirforceModelConfig({ model: "claude-sonnet-4.6" }),
-
-    // -- seraphyn.ai ------------------------------------------------------
-    "seraphyn-gpt-5.4": () => createSeraphynModelConfig({ model: "gpt-5.4" }),
 };

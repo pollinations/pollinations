@@ -7,7 +7,6 @@ import {
     fetchFromLeastBusyServer,
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
-import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
@@ -1159,21 +1158,6 @@ const generateImage = async (
                 throw error;
             }
         }
-
-        case "flux-2-dev":
-        case "imagen-4":
-        case "grok-imagine":
-        case "dirtberry":
-        case "dirtberry-pro":
-            return await callAirforceImageAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-                safeParams.model === "dirtberry-pro"
-                    ? "special-berry"
-                    : safeParams.model,
-            );
 
         case "flux":
             progress.updateBar(

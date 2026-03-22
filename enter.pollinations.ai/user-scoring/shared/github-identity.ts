@@ -9,6 +9,7 @@ import { executeD1 } from "./d1.ts";
 import { escapeSqlString } from "./email-cohort.ts";
 
 type Environment = "staging" | "production";
+type Tier = "microbe" | "spore" | "seed" | "flower" | "nectar" | "router";
 
 export const PIPELINE_DB_BATCH_SIZE = 200;
 export const GITHUB_ACCOUNT_DELETED_REASON = "github_account_deleted";
@@ -43,6 +44,40 @@ export function banUsersByEmails(
     }
 
     return banned;
+}
+
+/**
+ * Batch-promote users by github_id from one tier to another.
+ * Only updates rows whose current tier matches `fromTier`.
+ */
+export function promoteUsersByGithubIds(
+    env: Environment,
+    githubIds: number[],
+    fromTier: Tier,
+    toTier: Tier,
+    tierBalance: number,
+): number {
+    const uniqueIds = Array.from(
+        new Set(
+            githubIds.filter(
+                (id): id is number => Number.isInteger(id) && id > 0,
+            ),
+        ),
+    );
+    let updated = 0;
+
+    for (let i = 0; i < uniqueIds.length; i += PIPELINE_DB_BATCH_SIZE) {
+        const batch = uniqueIds.slice(i, i + PIPELINE_DB_BATCH_SIZE);
+        if (batch.length === 0) continue;
+
+        const ok = executeD1(
+            env,
+            `UPDATE user SET tier = '${toTier}', tier_balance = ${tierBalance}, last_tier_grant = ${Date.now()} WHERE github_id IN (${batch.join(", ")}) AND tier = '${fromTier}'`,
+        );
+        if (ok) updated += batch.length;
+    }
+
+    return updated;
 }
 
 export function banUsersByGithubIds(

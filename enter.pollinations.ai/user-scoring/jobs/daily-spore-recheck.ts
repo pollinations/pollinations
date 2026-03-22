@@ -33,7 +33,6 @@ import {
 } from "../scoring/github-score.ts";
 import { getNumber, getString, hasFlag } from "../shared/cli.ts";
 import {
-    executeD1,
     fetchStoredUserStatesByEmail,
     getRuntimeEnvironment,
     queryD1,
@@ -44,6 +43,7 @@ import {
     banUsersByEmails,
     banUsersByGithubIds,
     GITHUB_ID_INVALID_REASON,
+    promoteUsersByGithubIds,
 } from "../shared/github-identity.ts";
 import { appendTrace } from "../shared/trace.ts";
 
@@ -120,34 +120,6 @@ function fetchSporeSlice(cohortEmails: string[] | null): {
     ) as SporeRow[];
 
     return { rows, totalSpores, sliceSize };
-}
-
-function upgradeUsers(githubIds: number[]): number {
-    const uniqueIds = Array.from(
-        new Set(
-            githubIds.filter(
-                (githubId): githubId is number =>
-                    Number.isInteger(githubId) && githubId > 0,
-            ),
-        ),
-    );
-    let upgraded = 0;
-
-    for (
-        let index = 0;
-        index < uniqueIds.length;
-        index += PIPELINE_DB_BATCH_SIZE
-    ) {
-        const batch = uniqueIds.slice(index, index + PIPELINE_DB_BATCH_SIZE);
-        if (batch.length === 0) continue;
-
-        const ok = executeD1(
-            `UPDATE user SET tier = 'seed', tier_balance = ${TIER_POLLEN.seed} WHERE github_id IN (${batch.join(", ")}) AND tier = 'spore'`,
-        );
-        if (ok) upgraded += batch.length;
-    }
-
-    return upgraded;
 }
 
 function summarize(results: GitHubValidationResult[]): void {
@@ -379,7 +351,13 @@ async function main(): Promise<void> {
         );
         totals.unavailableStored += unavailableStored;
 
-        const upgraded = upgradeUsers(approvedGithubIds);
+        const upgraded = promoteUsersByGithubIds(
+            env,
+            approvedGithubIds,
+            "spore",
+            "seed",
+            TIER_POLLEN.seed,
+        );
         totals.promoted += upgraded;
 
         console.log(

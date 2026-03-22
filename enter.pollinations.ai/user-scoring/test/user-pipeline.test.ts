@@ -5,33 +5,6 @@ vi.mock("../shared/d1.ts", () => ({
     queryD1: vi.fn(() => []),
 }));
 
-// trust-score.ts reads a .md file at module load time via readFileSync.
-// Mock it so the module can be imported in the Workers sandbox.
-vi.mock("node:fs", async (importOriginal) => {
-    const original = await importOriginal<typeof import("node:fs")>();
-    return {
-        ...original,
-        readFileSync: (path: unknown, ...args: unknown[]) => {
-            if (
-                typeof path === "string" &&
-                path.endsWith("trust-score-prompt.md")
-            ) {
-                return "mocked prompt";
-            }
-            if (
-                path instanceof URL &&
-                String(path).endsWith("trust-score-prompt.md")
-            ) {
-                return "mocked prompt";
-            }
-            return original.readFileSync(
-                path as Parameters<typeof original.readFileSync>[0],
-                ...(args as [never]),
-            );
-        },
-    };
-});
-
 import {
     parseLLMResponse,
     partitionPendingUsers,

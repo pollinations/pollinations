@@ -34,7 +34,6 @@ import {
 } from "../scoring/github-score.ts";
 import { getString, hasFlag } from "../shared/cli.ts";
 import {
-    executeD1,
     fetchStoredUserStatesByEmail,
     getRuntimeEnvironment,
     queryD1,
@@ -45,6 +44,7 @@ import {
     banUsersByEmails,
     banUsersByGithubIds,
     GITHUB_ID_INVALID_REASON,
+    promoteUsersByGithubIds,
 } from "../shared/github-identity.ts";
 import { appendTrace } from "../shared/trace.ts";
 
@@ -95,35 +95,6 @@ function fetchNewMicrobeUsers(cohortEmails: string[] | null): TrustedUser[] {
     return queryD1(
         `SELECT email, github_id, trust_score FROM user WHERE tier = 'microbe' AND trust_score IS NULL AND COALESCE(banned, 0) = 0${emailFilter}`,
     ) as TrustedUser[];
-}
-
-function applyTierUpdates(
-    githubIds: number[],
-    tier: "spore" | "seed",
-    tierBalance: number,
-): number {
-    const uniqueIds = Array.from(
-        new Set(
-            githubIds.filter(
-                (githubId): githubId is number =>
-                    Number.isInteger(githubId) && githubId > 0,
-            ),
-        ),
-    );
-    let updated = 0;
-
-    for (let i = 0; i < uniqueIds.length; i += PIPELINE_DB_BATCH_SIZE) {
-        const batch = uniqueIds.slice(i, i + PIPELINE_DB_BATCH_SIZE);
-        if (batch.length === 0) continue;
-
-        const idList = batch.join(", ");
-        const ok = executeD1(
-            `UPDATE user SET tier = '${tier}', tier_balance = ${tierBalance}, last_tier_grant = ${Date.now()} WHERE github_id IN (${idList}) AND tier = 'microbe'`,
-        );
-        if (ok) updated += batch.length;
-    }
-
-    return updated;
 }
 
 function classifyDecision(
@@ -323,8 +294,10 @@ async function main(): Promise<void> {
         const stored = storeGithubScores(env, "microbe", scoreableResults);
         totals.stored += stored;
 
-        const seeded = applyTierUpdates(
+        const seeded = promoteUsersByGithubIds(
+            env,
             approvedGithubIds,
+            "microbe",
             "seed",
             TIER_POLLEN.seed,
         );

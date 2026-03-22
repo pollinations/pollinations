@@ -121,7 +121,11 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
             events.forEach((event) => {
                 expect(event.modelUsed).toBeDefined();
                 expect(event.tokenCountPromptText).toBeGreaterThan(0);
-                expect(event.tokenCountCompletionText).toBeGreaterThan(0);
+                // Reasoning models may report 0 completionText but >0 completionReasoning
+                expect(
+                    (event.tokenCountCompletionText || 0) +
+                        (event.tokenCountCompletionReasoning || 0),
+                ).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
                 // Regression test: selectedMeterSlug must be captured AFTER next()
@@ -177,7 +181,11 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
             events.forEach((event) => {
                 expect(event.modelUsed).toBeDefined();
                 expect(event.tokenCountPromptText).toBeGreaterThan(0);
-                expect(event.tokenCountCompletionText).toBeGreaterThan(0);
+                // Reasoning models may report 0 completionText but >0 completionReasoning
+                expect(
+                    (event.tokenCountCompletionText || 0) +
+                        (event.tokenCountCompletionReasoning || 0),
+                ).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
                 // Regression test: selectedMeterSlug must be captured AFTER next()
@@ -223,7 +231,11 @@ describe("GET /text/:prompt", async () => {
             events.forEach((event) => {
                 expect(event.modelUsed).toBeDefined();
                 expect(event.tokenCountPromptText).toBeGreaterThan(0);
-                expect(event.tokenCountCompletionText).toBeGreaterThan(0);
+                // Reasoning models may report 0 completionText but >0 completionReasoning
+                expect(
+                    (event.tokenCountCompletionText || 0) +
+                        (event.tokenCountCompletionReasoning || 0),
+                ).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
                 // Regression test: selectedMeterSlug must be captured AFTER next()

@@ -317,7 +317,7 @@ async function processMessage(
         const now = Date.now();
         const recentBotMessages = recent.filter(
             (m) =>
-                m.author.id === client.user?.id &&
+                m.author.bot &&
                 now - m.createdTimestamp < RATE_WINDOW_MS,
         );
         if (recentBotMessages.size >= MAX_BOT_MESSAGES_PER_WINDOW) {

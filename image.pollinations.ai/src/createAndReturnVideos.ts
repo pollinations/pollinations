@@ -13,7 +13,7 @@ import {
     callVeoAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
-import { callWanAPI } from "./models/wanVideoModel.ts";
+import { callWan22API, callWanAPI } from "./models/wanVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 export type { VideoGenerationResult };
@@ -60,6 +60,14 @@ export async function createAndReturnVideo(
             break;
         case "wan":
             result = await callWanAPI(prompt, safeParams, progress, requestId);
+            break;
+        case "wan2.2":
+            result = await callWan22API(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
             break;
         case "p-video":
             result = await callPrunaVideoAPI(

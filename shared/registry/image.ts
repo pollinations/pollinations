@@ -267,6 +267,25 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "wan2.2": {
+        aliases: ["wan2.2-t2v", "wan-fast"],
+        modelId: "wan2.2",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            // Wan 2.2 - Alibaba DashScope international pricing
+            // T2V: $0.02/sec (480P), $0.10/sec (1080P)
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionVideoSeconds: 0.02, // $0.02 per second (480P base rate)
+                completionAudioSeconds: 0.02,
+            },
+        ],
+        description:
+            "Wan 2.2 - Alibaba fast text-to-video (2-15s, up to 1080P) via DashScope",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",

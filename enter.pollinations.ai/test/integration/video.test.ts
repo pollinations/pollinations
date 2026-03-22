@@ -302,6 +302,49 @@ describe("Wan Video Generation", () => {
 });
 
 /**
+ * Wan 2.2 (Alibaba) Video Generation Tests
+ *
+ * Cost considerations:
+ * - wan2.2: $0.02/sec (480P), $0.10/sec (1080P) - cheaper than Wan 2.6
+ * - Text-to-video only (no I2V support)
+ */
+describe("Wan 2.2 Video Generation", () => {
+    /**
+     * Test wan2.2 text-to-video (T2V)
+     */
+    test(
+        "wan2.2 T2V should return video/mp4",
+        { timeout: 180000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20beautiful%20sunset%20over%20the%20ocean?model=wan2.2&duration=5`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("Wan 2.2 T2V response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+});
+
+/**
  * Expensive video tests - skipped by default
  * Run manually with: npm test -- --grep "Veo"
  */

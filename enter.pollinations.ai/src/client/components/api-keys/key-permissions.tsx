@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
+import { SafetyInput } from "./safety-input.tsx";
 
 export interface KeyPermissions {
     allowedModels: string[] | null;
@@ -48,6 +49,8 @@ interface KeyPermissionsInputsProps {
     value: ReturnType<typeof useKeyPermissions>;
     disabled?: boolean;
     inline?: boolean;
+    safe?: string;
+    onSafeChange?: (value: string) => void;
 }
 
 /**
@@ -57,6 +60,8 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     value,
     disabled = false,
     inline = false,
+    safe,
+    onSafeChange,
 }) => {
     const {
         permissions,
@@ -80,6 +85,13 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 disabled={disabled}
                 inline={inline}
             />
+            {onSafeChange && (
+                <SafetyInput
+                    value={safe ?? ""}
+                    onChange={onSafeChange}
+                    disabled={disabled}
+                />
+            )}
             <AccountPermissionsInput
                 value={permissions.accountPermissions}
                 onChange={setAccountPermissions}

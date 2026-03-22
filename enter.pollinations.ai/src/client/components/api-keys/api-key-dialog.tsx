@@ -12,7 +12,6 @@ import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
-import { SafetyInput } from "./safety-input.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
 
 type ApiKeyDialogProps = {
@@ -349,19 +348,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 />
                             )}
 
-                            {!createdKey && (
-                                <SafetyInput
-                                    value={safe}
-                                    onChange={setSafe}
-                                    disabled={isSubmitting}
-                                />
-                            )}
-
                             {!simplified && !createdKey && (
                                 <KeyPermissionsInputs
                                     value={keyPermissions}
                                     disabled={isSubmitting}
                                     inline
+                                    safe={safe}
+                                    onSafeChange={setSafe}
                                 />
                             )}
                         </div>

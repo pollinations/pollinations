@@ -211,17 +211,19 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 />
                             )}
 
-                            <SafetyInput
-                                value={safe}
-                                onChange={setSafe}
-                                disabled={isSubmitting}
-                            />
-
-                            {!isAppKey && (
+                            {!isAppKey ? (
                                 <KeyPermissionsInputs
                                     value={keyPermissions}
                                     disabled={isSubmitting}
                                     inline
+                                    safe={safe}
+                                    onSafeChange={setSafe}
+                                />
+                            ) : (
+                                <SafetyInput
+                                    value={safe}
+                                    onChange={setSafe}
+                                    disabled={isSubmitting}
                                 />
                             )}
                         </div>

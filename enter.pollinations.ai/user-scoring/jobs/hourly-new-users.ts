@@ -387,57 +387,18 @@ async function main(): Promise<void> {
                 `⏭️ Would defer ${totals.unavailable} users because GitHub scoring was unavailable`,
             );
         console.log(`🌱 Would promote to seed: ${totals.seeded}`);
-        for (const [index, user] of trustedUsers.entries()) {
-            const result = resultsByEmail.get(user.email) ?? null;
-            const decision =
-                !Number.isInteger(user.github_id) || user.github_id === null
-                    ? "ban_invalid_id"
-                    : classifyDecision(result);
-            appendTrace(config.traceFile, {
-                stage: "hourly",
-                type: "user_decision",
-                run_id: runId,
-                selected_index: index + 1,
-                selected_total: trustedUsers.length,
-                email: user.email,
-                github_id: user.github_id,
-                pre_tier: "microbe",
-                trust_score: user.trust_score,
-                account_status: result?.status ?? "invalid_id",
-                approved: result?.approved ?? false,
-                score: result?.details?.total ?? null,
-                reason: result?.reason ?? null,
-                risk_status: result?.risk_status ?? null,
-                risk_flags: result?.risk_flags ?? [],
-                risk_details: result?.risk_details ?? null,
-                decision,
-                dry_run: true,
-            });
-        }
-        appendTrace(config.traceFile, {
-            stage: "hourly",
-            type: "run_end",
-            run_id: runId,
-            selected_users: trustedUsers.length,
-            deleted_users: totals.deleted,
-            unavailable_users: totals.unavailable,
-            risk_blocked_users: totals.riskBlocked,
-            seed_users: totals.seeded,
-            spore_users: 0,
-            anomalies: 0,
-        });
-        return;
+    } else {
+        console.log("\n📊 Summary:");
+        console.log(`   Scores stored: ${totals.stored}`);
+        console.log(`   Risk-blocked from seed: ${totals.riskBlocked}`);
+        console.log(`   Deferred (GitHub unavailable): ${totals.unavailable}`);
+        console.log(`   Microbe -> Seed: ${totals.seeded}`);
     }
 
-    console.log("\n📊 Summary:");
-    console.log(`   Scores stored: ${totals.stored}`);
-    console.log(`   Risk-blocked from seed: ${totals.riskBlocked}`);
-    console.log(`   Deferred (GitHub unavailable): ${totals.unavailable}`);
-    console.log(`   Microbe -> Seed: ${totals.seeded}`);
-
-    const storedStates = fetchStoredUserStatesByEmail(
-        trustedUsers.map((user) => user.email),
-    );
+    // Trace all user decisions (shared between dry-run and live)
+    const storedStates = config.dryRun
+        ? null
+        : fetchStoredUserStatesByEmail(trustedUsers.map((user) => user.email));
     let anomalies = 0;
 
     for (const [index, user] of trustedUsers.entries()) {
@@ -446,8 +407,10 @@ async function main(): Promise<void> {
             !Number.isInteger(user.github_id) || user.github_id === null
                 ? "ban_invalid_id"
                 : classifyDecision(result);
-        const state = storedStates.get(user.email);
-        const reconcileIssue = reconcileDecision(decision, state);
+        const state = storedStates?.get(user.email);
+        const reconcileIssue = state
+            ? reconcileDecision(decision, state)
+            : null;
         if (reconcileIssue) anomalies += 1;
         appendTrace(config.traceFile, {
             stage: "hourly",
@@ -467,11 +430,14 @@ async function main(): Promise<void> {
             risk_flags: result?.risk_flags ?? [],
             risk_details: result?.risk_details ?? null,
             decision,
-            post_tier: state?.tier ?? null,
-            post_banned: state?.banned ?? null,
-            post_ban_reason: state?.ban_reason ?? null,
-            post_score: state?.score ?? null,
-            post_score_checked_at: state?.score_checked_at ?? null,
+            dry_run: config.dryRun,
+            ...(state && {
+                post_tier: state.tier ?? null,
+                post_banned: state.banned ?? null,
+                post_ban_reason: state.ban_reason ?? null,
+                post_score: state.score ?? null,
+                post_score_checked_at: state.score_checked_at ?? null,
+            }),
             reconcile_issue: reconcileIssue,
         });
     }

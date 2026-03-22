@@ -453,50 +453,21 @@ async function main(): Promise<void> {
         console.log(
             `🌱 Dry run would upgrade ${totals.promoted} users to seed`,
         );
-
-        for (const [index, row] of rows.entries()) {
-            const result = resultsByEmail.get(row.email) ?? null;
-            const decision =
-                !Number.isInteger(row.github_id) || row.github_id === null
-                    ? "ban_invalid_id"
-                    : classifyDecision(result);
-            appendTrace(config.traceFile, {
-                type: "user_decision",
-                run_id: runId,
-                trace_pass: config.tracePass,
-                selected_index: index + 1,
-                selected_total: rows.length,
-                email: row.email,
-                github_id: row.github_id,
-                pre_tier: "spore",
-                account_status: result?.status ?? "invalid_id",
-                approved: result?.approved ?? false,
-                score: result?.details?.total ?? null,
-                reason: result?.reason ?? null,
-                risk_status: result?.risk_status ?? null,
-                risk_flags: result?.risk_flags ?? [],
-                risk_details: result?.risk_details ?? null,
-                decision,
-                dry_run: true,
-            });
-        }
-        appendTrace(config.traceFile, {
-            type: "run_end",
-            run_id: runId,
-            trace_pass: config.tracePass,
-            selected_users: rows.length,
-            deleted_users: totals.deleted,
-            unavailable_users: totals.unavailable,
-            risk_blocked_users: totals.riskBlocked,
-            promoted_users: totals.promoted,
-            anomalies: 0,
-        });
-        return;
+    } else {
+        console.log("\n📊 Results:");
+        console.log(`   Scores stored: ${totals.stored}`);
+        console.log(
+            `   Deferred check timestamps stored: ${totals.unavailableStored}`,
+        );
+        console.log(`   Risk-blocked from seed: ${totals.riskBlocked}`);
+        console.log(`   Deferred (GitHub unavailable): ${totals.unavailable}`);
+        console.log(`   Upgraded to seed: ${totals.promoted}`);
     }
 
-    const storedStates = fetchStoredUserStatesByEmail(
-        rows.map((row) => row.email),
-    );
+    // Trace all user decisions (shared between dry-run and live)
+    const storedStates = config.dryRun
+        ? null
+        : fetchStoredUserStatesByEmail(rows.map((row) => row.email));
     let anomalies = 0;
 
     for (const [index, row] of rows.entries()) {
@@ -505,11 +476,11 @@ async function main(): Promise<void> {
             !Number.isInteger(row.github_id) || row.github_id === null
                 ? "ban_invalid_id"
                 : classifyDecision(result);
-        const postState = storedStates.get(row.email);
-        const reconcileIssue = reconcileDecision(decision, postState);
-        if (reconcileIssue) {
-            anomalies += 1;
-        }
+        const postState = storedStates?.get(row.email);
+        const reconcileIssue = postState
+            ? reconcileDecision(decision, postState)
+            : null;
+        if (reconcileIssue) anomalies += 1;
 
         appendTrace(config.traceFile, {
             type: "user_decision",
@@ -528,13 +499,15 @@ async function main(): Promise<void> {
             risk_flags: result?.risk_flags ?? [],
             risk_details: result?.risk_details ?? null,
             decision,
-            post_tier: postState?.tier ?? null,
-            post_banned: postState?.banned ?? null,
-            post_ban_reason: postState?.ban_reason ?? null,
-            post_score: postState?.score ?? null,
-            post_score_checked_at: postState?.score_checked_at ?? null,
+            dry_run: config.dryRun,
+            ...(postState && {
+                post_tier: postState.tier ?? null,
+                post_banned: postState.banned ?? null,
+                post_ban_reason: postState.ban_reason ?? null,
+                post_score: postState.score ?? null,
+                post_score_checked_at: postState.score_checked_at ?? null,
+            }),
             reconcile_issue: reconcileIssue,
-            dry_run: false,
         });
     }
 
@@ -542,14 +515,6 @@ async function main(): Promise<void> {
         console.warn(`⚠️ Trace reconciliation found ${anomalies} anomaly(s)`);
     }
 
-    console.log("\n📊 Results:");
-    console.log(`   Scores stored: ${totals.stored}`);
-    console.log(
-        `   Deferred check timestamps stored: ${totals.unavailableStored}`,
-    );
-    console.log(`   Risk-blocked from seed: ${totals.riskBlocked}`);
-    console.log(`   Deferred (GitHub unavailable): ${totals.unavailable}`);
-    console.log(`   Upgraded to seed: ${totals.promoted}`);
     appendTrace(config.traceFile, {
         type: "run_end",
         run_id: runId,

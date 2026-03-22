@@ -147,14 +147,6 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nova",
-        config: portkeyConfig["nova-pro"],
-    },
-    {
-        name: "nova-lite",
-        config: portkeyConfig["nova-lite"],
-    },
-    {
-        name: "nova-2-lite",
         config: portkeyConfig["nova-2-lite"],
     },
     {

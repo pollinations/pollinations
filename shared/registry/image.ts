@@ -459,7 +459,6 @@ export const IMAGE_SERVICES = {
         aliases: ["amazon-nova-reel"],
         modelId: "nova-reel",
         provider: "aws",
-        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,

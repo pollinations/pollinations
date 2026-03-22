@@ -309,13 +309,14 @@ async function processMessage(
         }
     }
 
+    // Never respond to other bots — prevents feedback loops
     if (msg.author.bot) {
-        // Bot messages: always respond but with long delay (3-10 min)
-        const delay = Math.floor(Math.random() * 420) + 180;
-        log("Bot %s applying %ds delay (bot-to-bot)", config.name, delay);
-        await new Promise((r) => setTimeout(r, delay * 1000));
-    } else if (isConvoChannel && !isMentioned) {
-        // Human in shared channel, not mentioned: 30% chance, no delay
+        log("Ignoring bot message from %s", msg.author.username);
+        return;
+    }
+
+    if (isConvoChannel && !isMentioned) {
+        // Human in conversation channel, not mentioned: 30% chance
         if (Math.random() > 0.3) {
             log(
                 "Skipping human message in shared channel (30%% response rate)",
@@ -323,7 +324,7 @@ async function processMessage(
             return;
         }
     }
-    // Human mentions and DMs: always respond, no delay
+    // Human mentions and DMs: always respond
 
     log(
         "Processing message: %s (Mentioned: %s, Conversation Channel: %s, DM: %s)",

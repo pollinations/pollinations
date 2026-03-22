@@ -6,7 +6,7 @@
 
 const ENDPOINT = "https://gen.pollinations.ai/v1/chat/completions";
 const DEFAULT_MODEL = "claude";
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 60_000;
 
 export async function llmComplete(
     prompt: string,

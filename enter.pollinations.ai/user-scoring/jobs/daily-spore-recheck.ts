@@ -24,14 +24,19 @@
 import { appendFileSync } from "node:fs";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
 import {
-    extractDeletedGithubIds,
+    bucketValidationResults,
+    extractApprovedGithubIds,
+    extractRiskBlockedGithubIds,
     type GitHubValidationResult,
-    isScorableValidationResult,
     storeGithubCheckTimestamps,
     storeGithubScores,
     validateUserRecords,
 } from "../scoring/github-score.ts";
-import { executeD1, queryD1 } from "../shared/d1.ts";
+import {
+    executeD1,
+    getRuntimeEnvironment,
+    queryD1,
+} from "../shared/d1.ts";
 import {
     buildEmailFilter,
     escapeSqlString,
@@ -44,10 +49,7 @@ import {
     PIPELINE_DB_BATCH_SIZE,
 } from "../shared/github-identity.ts";
 
-type Environment = "staging";
-
 interface ParsedArgs {
-    env: Environment;
     dryRun: boolean;
     verbose: boolean;
     cohortEmails: string[] | null;
@@ -87,20 +89,10 @@ function parseArguments(): ParsedArgs {
         const index = args.indexOf(flag);
         return index >= 0 && args[index + 1] ? args[index + 1] : undefined;
     };
-    const envIndex = args.indexOf("--env");
-    const env =
-        envIndex >= 0 && args[envIndex + 1] ? args[envIndex + 1] : "staging";
     const emailsFile = getString("--emails-file");
     const traceFile = getString("--trace-file") ?? null;
     const tracePassRaw = getString("--trace-pass");
     const tracePass = tracePassRaw ? Number.parseInt(tracePassRaw, 10) : null;
-
-    if (env !== "staging") {
-        console.error(
-            `❌ Unsupported --env ${env}. This branch is locked to staging and cannot write to production.`,
-        );
-        process.exit(1);
-    }
 
     let cohortEmails: string[] | null = null;
     try {
@@ -113,7 +105,6 @@ function parseArguments(): ParsedArgs {
     }
 
     return {
-        env: "staging",
         dryRun: args.includes("--dry-run"),
         verbose: args.includes("--verbose") || args.includes("-v"),
         cohortEmails,
@@ -123,23 +114,18 @@ function parseArguments(): ParsedArgs {
     };
 }
 
-function fetchSporeCount(
-    env: Environment,
-    cohortEmails: string[] | null,
-): number {
+function fetchSporeCount(cohortEmails: string[] | null): number {
     const emailFilter = buildEmailFilter("email", cohortEmails);
     const rows = queryD1(
-        env,
         `SELECT COUNT(*) AS count FROM user WHERE tier = 'spore' AND COALESCE(banned, 0) = 0${emailFilter}`,
     );
     return Number(rows[0]?.count ?? 0);
 }
 
 function fetchSporeSlice(
-    env: Environment,
     cohortEmails: string[] | null,
 ): { rows: SporeRow[]; totalSpores: number; sliceSize: number } {
-    const totalSpores = fetchSporeCount(env, cohortEmails);
+    const totalSpores = fetchSporeCount(cohortEmails);
     if (totalSpores === 0) {
         return { rows: [], totalSpores: 0, sliceSize: 0 };
     }
@@ -147,46 +133,13 @@ function fetchSporeSlice(
     const sliceSize = Math.min(Math.ceil(totalSpores / 7), MAX_USERS_PER_RUN);
     const emailFilter = buildEmailFilter("email", cohortEmails);
     const rows = queryD1(
-        env,
         `SELECT email, github_id FROM user WHERE tier = 'spore' AND COALESCE(banned, 0) = 0${emailFilter} ORDER BY score_checked_at ASC, created_at ASC, email ASC LIMIT ${sliceSize}`,
     ) as SporeRow[];
 
     return { rows, totalSpores, sliceSize };
 }
 
-function extractRiskBlockedGithubIds(
-    results: GitHubValidationResult[],
-): number[] {
-    return Array.from(
-        new Set(
-            results.flatMap((result) =>
-                result.risk_status === "suspicious" &&
-                Number.isInteger(result.github_id) &&
-                result.github_id > 0
-                    ? [result.github_id]
-                    : [],
-            ),
-        ),
-    );
-}
-
-function extractUnavailableGithubIds(
-    results: GitHubValidationResult[],
-): number[] {
-    return Array.from(
-        new Set(
-            results.flatMap((result) =>
-                result.status === "unavailable" &&
-                Number.isInteger(result.github_id) &&
-                result.github_id > 0
-                    ? [result.github_id]
-                    : [],
-            ),
-        ),
-    );
-}
-
-function upgradeUsers(env: Environment, githubIds: number[]): number {
+function upgradeUsers(githubIds: number[]): number {
     const uniqueIds = Array.from(
         new Set(
             githubIds.filter(
@@ -206,7 +159,6 @@ function upgradeUsers(env: Environment, githubIds: number[]): number {
         if (batch.length === 0) continue;
 
         const ok = executeD1(
-            env,
             `UPDATE user SET tier = 'seed', tier_balance = ${TIER_POLLEN.seed} WHERE github_id IN (${batch.join(", ")}) AND tier = 'spore'`,
         );
         if (ok) upgraded += batch.length;
@@ -265,7 +217,6 @@ function classifyDecision(
 }
 
 function fetchStoredUserStatesByEmail(
-    env: Environment,
     emails: string[],
 ): Map<string, StoredUserState> {
     const states = new Map<string, StoredUserState>();
@@ -280,7 +231,6 @@ function fetchStoredUserStatesByEmail(
         if (batch.length === 0) continue;
 
         const rows = queryD1(
-            env,
             `SELECT email, github_id, tier, COALESCE(banned, 0) AS banned, ban_reason, score, score_checked_at FROM user WHERE email IN (${batch
                 .map((email) => `'${escapeSqlString(email)}'`)
                 .join(", ")})`,
@@ -341,13 +291,13 @@ function reconcileDecision(
 async function main(): Promise<void> {
     const config = parseArguments();
     const runId = `${Date.now()}-${process.pid}`;
+    const env = getRuntimeEnvironment();
     const { rows, totalSpores, sliceSize } = fetchSporeSlice(
-        config.env,
         config.cohortEmails,
     );
 
     console.log("🌱 Daily Spore Recheck");
-    console.log(`   Environment: ${config.env}`);
+    console.log(`   Environment: ${env}`);
     console.log(`   Mode: ${config.dryRun ? "DRY RUN" : "LIVE"}`);
     if (config.cohortEmails) {
         console.log(`   Email cohort: ${config.cohortEmails.length} users`);
@@ -397,7 +347,7 @@ async function main(): Promise<void> {
             );
         } else {
             const banned = banUsersByEmails(
-                config.env,
+                env,
                 invalidRows.map((row) => row.email),
                 GITHUB_ID_INVALID_REASON,
             );
@@ -443,48 +393,29 @@ async function main(): Promise<void> {
         );
 
         const results = await validateUserRecords(chunk);
-        const resultsByGithubId = new Map(
-            results.flatMap((result) =>
-                Number.isInteger(result.github_id) && result.github_id > 0
-                    ? [[result.github_id, result] as const]
-                    : [],
-            ),
-        );
-        const orderedResults = chunk.flatMap((row) => {
-            const result = resultsByGithubId.get(row.github_id);
-            return result ? [result] : [];
-        });
+        const {
+            resultsByGithubId,
+            orderedResults,
+            deletedGithubIds,
+            unavailableGithubIds,
+            scoreableResults,
+        } = bucketValidationResults(chunk, results);
 
         for (const row of chunk) {
             const result = resultsByGithubId.get(row.github_id);
             if (result) resultsByEmail.set(row.email, result);
         }
 
-        const deletedGithubIds = extractDeletedGithubIds(orderedResults);
-        const unavailableGithubIds =
-            extractUnavailableGithubIds(orderedResults);
-        const scoreableResults = orderedResults.filter(
-            isScorableValidationResult,
-        );
         allScoreableResults.push(...scoreableResults);
-        const unavailableCount =
-            orderedResults.length -
-            deletedGithubIds.length -
-            scoreableResults.length;
         const riskBlockedGithubIds =
             extractRiskBlockedGithubIds(scoreableResults);
-        const riskBlockedSet = new Set(riskBlockedGithubIds);
-        const approvedGithubIds = scoreableResults.flatMap((result) =>
-            result.approved &&
-            Number.isInteger(result.github_id) &&
-            result.github_id > 0 &&
-            !riskBlockedSet.has(result.github_id)
-                ? [result.github_id]
-                : [],
+        const approvedGithubIds = extractApprovedGithubIds(
+            scoreableResults,
+            riskBlockedGithubIds,
         );
 
         totals.deleted += deletedGithubIds.length;
-        totals.unavailable += unavailableCount;
+        totals.unavailable += unavailableGithubIds.length;
         totals.riskBlocked += riskBlockedGithubIds.length;
 
         if (config.dryRun) {
@@ -494,21 +425,21 @@ async function main(): Promise<void> {
 
         // Write to D1 immediately after each chunk
         if (deletedGithubIds.length > 0) {
-            const banned = banUsersByGithubIds(config.env, deletedGithubIds);
+            const banned = banUsersByGithubIds(env, deletedGithubIds);
             console.log(`   🚫 Banned ${banned} deleted accounts`);
         }
 
-        const stored = storeGithubScores(config.env, "spore", scoreableResults);
+        const stored = storeGithubScores(env, "spore", scoreableResults);
         totals.stored += stored;
 
         const unavailableStored = storeGithubCheckTimestamps(
-            config.env,
+            env,
             "spore",
             unavailableGithubIds,
         );
         totals.unavailableStored += unavailableStored;
 
-        const upgraded = upgradeUsers(config.env, approvedGithubIds);
+        const upgraded = upgradeUsers(approvedGithubIds);
         totals.promoted += upgraded;
 
         console.log(
@@ -587,7 +518,6 @@ async function main(): Promise<void> {
     }
 
     const storedStates = fetchStoredUserStatesByEmail(
-        config.env,
         rows.map((row) => row.email),
     );
     let anomalies = 0;

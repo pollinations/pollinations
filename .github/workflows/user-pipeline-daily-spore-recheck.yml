@@ -35,7 +35,8 @@ jobs:
 
       - name: Daily spore recheck (staging)
         env:
+          CLOUDFLARE_ENV: staging
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npm run user-pipeline:daily-spore-recheck -- --env staging
+        run: npm run user-pipeline:daily-spore-recheck

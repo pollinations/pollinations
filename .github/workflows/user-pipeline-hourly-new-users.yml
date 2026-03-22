@@ -35,13 +35,15 @@ jobs:
 
       - name: GitHub check - devs to seed, deleted banned (staging)
         env:
+          CLOUDFLARE_ENV: staging
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npm run user-pipeline:hourly-new-users -- --env staging
+        run: npm run user-pipeline:hourly-new-users
 
       - name: Trust scoring - remaining microbe to spore (staging)
         env:
+          CLOUDFLARE_ENV: staging
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

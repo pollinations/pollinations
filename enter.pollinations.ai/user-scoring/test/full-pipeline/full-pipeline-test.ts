@@ -356,6 +356,7 @@ function main(): void {
     }
 
     const childEnv = loadDotenvEnv();
+    childEnv.CLOUDFLARE_ENV = ENV;
 
     // Clear trace file
     if (existsSync(TRACE_PATH)) {

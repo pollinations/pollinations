@@ -15,9 +15,8 @@
  */
 
 import {
-    extractDeletedGithubIds,
+    bucketValidationResults,
     type GitHubValidationResult,
-    isScorableValidationResult,
     storeGithubScores,
     validateUserRecords,
 } from "../scoring/github-score.ts";
@@ -155,20 +154,8 @@ async function main(): Promise<void> {
     }
 
     const results = await validateUserRecords(rows);
-    const resultsByGithubId = new Map(
-        results.flatMap((result) =>
-            Number.isInteger(result.github_id) && result.github_id > 0
-                ? [[result.github_id, result] as const]
-                : [],
-        ),
-    );
-    const orderedResults = rows.flatMap((row) => {
-        if (!Number.isInteger(row.github_id) || row.github_id <= 0) return [];
-        const result = resultsByGithubId.get(row.github_id);
-        return result ? [result] : [];
-    });
-    const deletedGithubIds = extractDeletedGithubIds(orderedResults);
-    const scoreableResults = orderedResults.filter(isScorableValidationResult);
+    const { orderedResults, deletedGithubIds, scoreableResults } =
+        bucketValidationResults(rows, results);
 
     summarize(orderedResults);
 

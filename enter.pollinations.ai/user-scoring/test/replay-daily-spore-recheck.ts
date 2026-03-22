@@ -27,10 +27,13 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
-import { executeD1, queryD1 } from "../shared/d1.ts";
+import {
+    executeD1,
+    parseEnvironmentArg,
+    queryD1,
+    type Environment,
+} from "../shared/d1.ts";
 import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
-
-type Environment = "staging";
 
 interface ParsedArgs {
     env: Environment;
@@ -57,11 +60,7 @@ function parseArguments(): ParsedArgs {
         return value ? Number.parseInt(value, 10) : null;
     };
 
-    const env = getString("--env", "staging");
-    if (env !== "staging") {
-        console.error(`❌ Unsupported --env ${env}`);
-        process.exit(1);
-    }
+    const env = parseEnvironmentArg(args);
 
     const emailsFile = getString("--emails-file");
     if (!emailsFile) {
@@ -70,7 +69,7 @@ function parseArguments(): ParsedArgs {
     }
 
     return {
-        env: "staging",
+        env,
         emailsFile,
         skipPrepare: args.includes("--skip-prepare"),
         passes: getNumber("--passes"),
@@ -174,11 +173,14 @@ function main(): void {
     }
 
     if (cohortSize === 0) {
-        console.error("❌ No users matched the supplied emails on staging");
+        console.error(
+            `❌ No users matched the supplied emails in ${config.env}`,
+        );
         process.exit(1);
     }
 
     const childEnv = loadDotenvEnv();
+    childEnv.CLOUDFLARE_ENV = config.env;
 
     if (!config.skipPrepare) {
         console.log("\n🛠️ Preparing cohort for daily replay...");
@@ -197,8 +199,6 @@ function main(): void {
                 "run",
                 "user-pipeline:daily-spore-recheck",
                 "--",
-                "--env",
-                config.env,
                 "--dry-run",
                 "--emails-file",
                 config.emailsFile,
@@ -227,8 +227,6 @@ function main(): void {
                 "run",
                 "user-pipeline:daily-spore-recheck",
                 "--",
-                "--env",
-                config.env,
                 "--emails-file",
                 config.emailsFile,
                 ...(config.traceFile

@@ -40,6 +40,14 @@ interface InputRecord {
     github_id?: number | null;
 }
 
+export interface ValidationBuckets {
+    resultsByGithubId: Map<number, GitHubValidationResult>;
+    orderedResults: GitHubValidationResult[];
+    deletedGithubIds: number[];
+    unavailableGithubIds: number[];
+    scoreableResults: GitHubValidationResult[];
+}
+
 interface GitHubUserRestResponse {
     node_id?: string;
 }
@@ -536,6 +544,81 @@ export function extractDeletedGithubIds(
             ),
         ),
     );
+}
+
+export function extractUnavailableGithubIds(
+    results: Array<{ github_id: number | null; status: string }>,
+): number[] {
+    return Array.from(
+        new Set(
+            results.flatMap((result) =>
+                result.status === "unavailable" &&
+                Number.isInteger(result.github_id) &&
+                result.github_id > 0
+                    ? [result.github_id]
+                    : [],
+            ),
+        ),
+    );
+}
+
+export function extractRiskBlockedGithubIds(
+    results: Array<GitHubValidationResult>,
+): number[] {
+    return Array.from(
+        new Set(
+            results.flatMap((result) =>
+                result.risk_status === "suspicious" &&
+                Number.isInteger(result.github_id) &&
+                result.github_id > 0
+                    ? [result.github_id]
+                    : [],
+            ),
+        ),
+    );
+}
+
+export function extractApprovedGithubIds(
+    results: Array<GitHubValidationResult>,
+    excludedGithubIds: number[] = [],
+): number[] {
+    const excluded = new Set(excludedGithubIds);
+    return results.flatMap((result) =>
+        result.approved &&
+        Number.isInteger(result.github_id) &&
+        result.github_id > 0 &&
+        !excluded.has(result.github_id)
+            ? [result.github_id]
+            : [],
+    );
+}
+
+export function bucketValidationResults<T extends InputRecord>(
+    records: T[],
+    results: GitHubValidationResult[],
+): ValidationBuckets {
+    const resultsByGithubId = new Map(
+        results.flatMap((result) =>
+            Number.isInteger(result.github_id) && result.github_id > 0
+                ? [[result.github_id, result] as const]
+                : [],
+        ),
+    );
+    const orderedResults = records.flatMap((record) => {
+        if (!Number.isInteger(record.github_id) || record.github_id <= 0) {
+            return [];
+        }
+        const result = resultsByGithubId.get(record.github_id);
+        return result ? [result] : [];
+    });
+
+    return {
+        resultsByGithubId,
+        orderedResults,
+        deletedGithubIds: extractDeletedGithubIds(orderedResults),
+        unavailableGithubIds: extractUnavailableGithubIds(orderedResults),
+        scoreableResults: orderedResults.filter(isScorableValidationResult),
+    };
 }
 
 export function storeGithubScores(

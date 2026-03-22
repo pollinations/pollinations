@@ -20,7 +20,11 @@
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
-import { executeD1, queryD1 } from "../shared/d1.ts";
+import {
+    executeD1,
+    getRuntimeEnvironment,
+    queryD1,
+} from "../shared/d1.ts";
 import {
     buildEmailFilter,
     escapeSqlString,
@@ -29,17 +33,20 @@ import {
 import { PIPELINE_DB_BATCH_SIZE } from "../shared/github-identity.ts";
 import { llmComplete } from "../shared/llm.ts";
 
-const ENV = "staging";
 const SCORE_WINDOW = 30;
 const HOLD_BACK_USERS = 30;
 const MAX_WAIT_MINUTES = 90;
 const DEFAULT_USER_LIMIT = 5000;
 const TRUST_PASS_THRESHOLD = 50;
+let promptTemplate: string | null = null;
 
-const PROMPT_TEMPLATE = readFileSync(
-    new URL("trust-score-prompt.md", import.meta.url),
-    "utf-8",
-);
+function getPromptTemplate(): string {
+    promptTemplate ??= readFileSync(
+        new URL("trust-score-prompt.md", import.meta.url),
+        "utf-8",
+    );
+    return promptTemplate;
+}
 
 export interface User {
     email: string;
@@ -245,7 +252,7 @@ async function scoreChunk(
     },
 ): Promise<Array<{ score: number; signals: string[] }>> {
     const { csvRows, idToIndex } = prepareChunkData(chunk, targetUsers);
-    const prompt = PROMPT_TEMPLATE + csvRows.join("\n");
+    const prompt = getPromptTemplate() + csvRows.join("\n");
 
     for (let attempt = 1; attempt <= 3; attempt++) {
         const startedAt = Date.now();
@@ -336,7 +343,6 @@ function fetchNeighborContext(
     const comparison = direction === "newer" ? ">" : "<";
     const order = direction === "newer" ? "ASC" : "DESC";
     const rows = queryD1(
-        ENV,
         `SELECT email, github_id, github_username, created_at, tier FROM user WHERE COALESCE(banned, 0) = 0 AND created_at ${comparison} ${boundaryCreatedAt}${emailFilter}${exclusionFilter} ORDER BY created_at ${order} LIMIT ${limit}`,
     ) as unknown as User[];
 
@@ -356,7 +362,6 @@ function storeChunkTrustScores(scored: ScoredUser[]): void {
 
     if (
         executeD1(
-            ENV,
             `UPDATE user SET trust_score = CASE email ${cases} END WHERE email IN (${emailList})`,
         )
     ) {
@@ -375,7 +380,6 @@ function storeChunkTrustScores(scored: ScoredUser[]): void {
 
     if (
         executeD1(
-            ENV,
             `UPDATE user SET tier = 'spore', tier_balance = ${TIER_POLLEN.spore}, last_tier_grant = ${Date.now()} WHERE tier = 'microbe' AND email IN (${trustedEmailList})`,
         )
     ) {
@@ -548,7 +552,6 @@ function storeTrustScores(scored: ScoredUser[]): void {
 
         if (
             executeD1(
-                ENV,
                 `UPDATE user SET trust_score = CASE email ${cases} END WHERE email IN (${emailList})`,
             )
         ) {
@@ -581,7 +584,6 @@ function fetchStoredTrustStatesByEmail(
         if (batch.length === 0) continue;
 
         const rows = queryD1(
-            ENV,
             `SELECT email, trust_score, tier, COALESCE(banned, 0) AS banned FROM user WHERE email IN (${batch
                 .map((email) => `'${escapeSqlString(email)}'`)
                 .join(", ")})`,
@@ -635,7 +637,6 @@ function fetchPendingUsers(
 
     const emailFilter = buildEmailFilter("email", cohortEmails);
     const users = queryD1(
-        ENV,
         `SELECT email, github_id, github_username, created_at, tier FROM user WHERE tier = 'microbe' AND COALESCE(banned, 0) = 0 AND trust_score IS NULL ${emailFilter} ORDER BY created_at DESC LIMIT ${limit}`,
     ) as unknown as User[];
     console.log(`✅ Fetched ${users.length} users`);
@@ -687,11 +688,12 @@ function parseArguments(): ParsedArgs {
 async function main(): Promise<void> {
     const config = parseArguments();
     const runId = `${Date.now()}-${process.pid}`;
+    const env = getRuntimeEnvironment();
 
     console.log("🚀 New-User Trust Gate");
     console.log("=".repeat(50));
     console.log(
-        `📋 env=${ENV}, limit=${config.userLimit}, store=${config.storeStatus}, cohort=${config.cohortEmails?.length ?? "none"}`,
+        `📋 env=${env}, limit=${config.userLimit}, store=${config.storeStatus}, cohort=${config.cohortEmails?.length ?? "none"}`,
     );
     if (config.traceFile) {
         console.log(`🧾 Trace file: ${config.traceFile}`);

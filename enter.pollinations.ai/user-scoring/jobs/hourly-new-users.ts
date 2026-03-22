@@ -26,13 +26,18 @@
 import { appendFileSync } from "node:fs";
 import { TIER_POLLEN } from "../../src/tier-config.ts";
 import {
-    extractDeletedGithubIds,
+    bucketValidationResults,
+    extractApprovedGithubIds,
+    extractRiskBlockedGithubIds,
     type GitHubValidationResult,
-    isScorableValidationResult,
     storeGithubScores,
     validateUserRecords,
 } from "../scoring/github-score.ts";
-import { executeD1, queryD1 } from "../shared/d1.ts";
+import {
+    executeD1,
+    getRuntimeEnvironment,
+    queryD1,
+} from "../shared/d1.ts";
 import {
     buildEmailFilter,
     escapeSqlString,
@@ -45,10 +50,7 @@ import {
     PIPELINE_DB_BATCH_SIZE,
 } from "../shared/github-identity.ts";
 
-type Environment = "staging";
-
 interface ParsedArgs {
-    env: Environment;
     dryRun: boolean;
     cohortEmails: string[] | null;
     traceFile: string | null;
@@ -86,18 +88,8 @@ function parseArguments(): ParsedArgs {
         const index = args.indexOf(flag);
         return index >= 0 && args[index + 1] ? args[index + 1] : undefined;
     };
-    const envIndex = args.indexOf("--env");
-    const env =
-        envIndex >= 0 && args[envIndex + 1] ? args[envIndex + 1] : "staging";
     const emailsFile = getString("--emails-file");
     const traceFile = getString("--trace-file") ?? null;
-
-    if (env !== "staging") {
-        console.error(
-            `❌ Unsupported --env ${env}. This branch is locked to staging and cannot write to production.`,
-        );
-        process.exit(1);
-    }
 
     let cohortEmails: string[] | null = null;
     try {
@@ -110,42 +102,20 @@ function parseArguments(): ParsedArgs {
     }
 
     return {
-        env: "staging",
         dryRun: args.includes("--dry-run"),
         cohortEmails,
         traceFile,
     };
 }
 
-function fetchNewMicrobeUsers(
-    env: Environment,
-    cohortEmails: string[] | null,
-): TrustedUser[] {
+function fetchNewMicrobeUsers(cohortEmails: string[] | null): TrustedUser[] {
     const emailFilter = buildEmailFilter("email", cohortEmails);
     return queryD1(
-        env,
         `SELECT email, github_id, trust_score FROM user WHERE tier = 'microbe' AND trust_score IS NULL AND COALESCE(banned, 0) = 0${emailFilter}`,
     ) as TrustedUser[];
 }
 
-function extractRiskBlockedGithubUsers(
-    results: GitHubValidationResult[],
-): number[] {
-    return Array.from(
-        new Set(
-            results.flatMap((result) =>
-                result.risk_status === "suspicious" &&
-                Number.isInteger(result.github_id) &&
-                result.github_id > 0
-                    ? [result.github_id]
-                    : [],
-            ),
-        ),
-    );
-}
-
 function applyTierUpdates(
-    env: Environment,
     githubIds: number[],
     tier: "spore" | "seed",
     tierBalance: number,
@@ -166,7 +136,6 @@ function applyTierUpdates(
 
         const idList = batch.join(", ");
         const ok = executeD1(
-            env,
             `UPDATE user SET tier = '${tier}', tier_balance = ${tierBalance}, last_tier_grant = ${Date.now()} WHERE github_id IN (${idList}) AND tier = 'microbe'`,
         );
         if (ok) updated += batch.length;
@@ -203,7 +172,6 @@ function classifyDecision(
 }
 
 function fetchStoredUserStatesByEmail(
-    env: Environment,
     emails: string[],
 ): Map<string, StoredUserState> {
     const states = new Map<string, StoredUserState>();
@@ -218,7 +186,6 @@ function fetchStoredUserStatesByEmail(
         if (batch.length === 0) continue;
 
         const rows = queryD1(
-            env,
             `SELECT email, github_id, tier, COALESCE(banned, 0) AS banned, ban_reason, score, score_checked_at, trust_score FROM user WHERE email IN (${batch
                 .map((email) => `'${escapeSqlString(email)}'`)
                 .join(", ")})`,
@@ -261,10 +228,11 @@ function reconcileDecision(
 async function main(): Promise<void> {
     const config = parseArguments();
     const runId = `${Date.now()}-${process.pid}`;
+    const env = getRuntimeEnvironment();
 
     console.log("🚀 Hourly New-User Pipeline");
     console.log("=".repeat(50));
-    console.log(`📋 Environment: ${config.env}`);
+    console.log(`📋 Environment: ${env}`);
     if (config.dryRun) console.log("🔍 Mode: DRY RUN");
     if (config.cohortEmails) {
         console.log(`🎯 Email cohort: ${config.cohortEmails.length} users`);
@@ -273,7 +241,7 @@ async function main(): Promise<void> {
         console.log(`🧾 Trace file: ${config.traceFile}`);
     }
 
-    const trustedUsers = fetchNewMicrobeUsers(config.env, config.cohortEmails);
+    const trustedUsers = fetchNewMicrobeUsers(config.cohortEmails);
     appendTrace(config.traceFile, {
         stage: "hourly",
         type: "run_start",
@@ -311,7 +279,7 @@ async function main(): Promise<void> {
             );
         } else {
             const banned = banUsersByEmails(
-                config.env,
+                env,
                 invalidUsers.map((user) => user.email),
                 GITHUB_ID_INVALID_REASON,
             );
@@ -378,17 +346,12 @@ async function main(): Promise<void> {
         );
 
         const results = await validateUserRecords(chunk);
-        const resultsByGithubId = new Map(
-            results.flatMap((result) =>
-                Number.isInteger(result.github_id) && result.github_id > 0
-                    ? [[result.github_id, result] as const]
-                    : [],
-            ),
-        );
-        const orderedResults = chunk.flatMap((user) => {
-            const result = resultsByGithubId.get(user.github_id);
-            return result ? [result] : [];
-        });
+        const {
+            resultsByGithubId,
+            deletedGithubIds,
+            unavailableGithubIds,
+            scoreableResults,
+        } = bucketValidationResults(chunk, results);
 
         // Map results by email for tracing
         for (const user of chunk) {
@@ -396,26 +359,14 @@ async function main(): Promise<void> {
             if (result) resultsByEmail.set(user.email, result);
         }
 
-        const deletedGithubIds = extractDeletedGithubIds(orderedResults);
-        const scoreableResults = orderedResults.filter(
-            isScorableValidationResult,
-        );
-        const unavailableCount =
-            orderedResults.length -
-            deletedGithubIds.length -
-            scoreableResults.length;
         const riskBlockedGithubIds =
-            extractRiskBlockedGithubUsers(scoreableResults);
-        const riskBlockedSet = new Set(riskBlockedGithubIds);
-        const approvedGithubIds = scoreableResults.flatMap((result) =>
-            result.approved &&
-            Number.isInteger(result.github_id) &&
-            !riskBlockedSet.has(result.github_id)
-                ? [result.github_id]
-                : [],
+            extractRiskBlockedGithubIds(scoreableResults);
+        const approvedGithubIds = extractApprovedGithubIds(
+            scoreableResults,
+            riskBlockedGithubIds,
         );
         totals.deleted += deletedGithubIds.length;
-        totals.unavailable += unavailableCount;
+        totals.unavailable += unavailableGithubIds.length;
         totals.riskBlocked += riskBlockedGithubIds.length;
 
         if (config.dryRun) {
@@ -425,19 +376,14 @@ async function main(): Promise<void> {
 
         // Write to D1 immediately after each chunk
         if (deletedGithubIds.length > 0) {
-            const banned = banUsersByGithubIds(config.env, deletedGithubIds);
+            const banned = banUsersByGithubIds(env, deletedGithubIds);
             console.log(`   🚫 Banned ${banned} deleted accounts`);
         }
 
-        const stored = storeGithubScores(
-            config.env,
-            "microbe",
-            scoreableResults,
-        );
+        const stored = storeGithubScores(env, "microbe", scoreableResults);
         totals.stored += stored;
 
         const seeded = applyTierUpdates(
-            config.env,
             approvedGithubIds,
             "seed",
             TIER_POLLEN.seed,
@@ -512,7 +458,6 @@ async function main(): Promise<void> {
     console.log(`   Microbe -> Seed: ${totals.seeded}`);
 
     const storedStates = fetchStoredUserStatesByEmail(
-        config.env,
         trustedUsers.map((user) => user.email),
     );
     let anomalies = 0;

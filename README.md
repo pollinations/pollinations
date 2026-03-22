@@ -171,6 +171,12 @@ AI assistants can:
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
 
+### Documentation MCP (for AI Assistants)
+
+We also provide an MCP endpoint for searching the Pollinations API documentation. Any MCP-compatible client (Claude Desktop, Cursor, etc.) can use this to look up endpoints, models, and examples on the fly.
+
+**Manifest URL:** `https://enter.pollinations.ai/api/docs/mcp`
+
 ## 🔐 Authentication
 
 Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)

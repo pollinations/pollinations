@@ -6,15 +6,8 @@ import { handleDiscordError, withFatalErrorHandling, NetworkTimeoutError, FatalT
 const log = debug('app:bot');
 const HISTORY_LIMIT = 5;
 
-function getSystemPrompt(config: BotConfig, clientId?: string): string {
-  const inviteUrl = clientId
-    ? `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=274877908032&scope=bot%20applications.commands`
-    : null;
-
-  return `Your model is ${config.model}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>.
-
-Commands people can use: \`!invite\` \`!permissions\` \`!guilds\`
-${inviteUrl ? `Your invite link (share only if someone asks): ${inviteUrl}` : ''}`;
+function getSystemPrompt(config: BotConfig): string {
+  return `Your model is ${config.model}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>.`;
 }
 
 /**
@@ -50,7 +43,7 @@ async function generateResponseWithHistory(
   initialPrompt?: string
 ): Promise<string | null> {
   // Get system prompt based on bot configuration
-  const systemPrompt = getSystemPrompt(config, client.user?.id);
+  const systemPrompt = getSystemPrompt(config);
   
   // Fetch channel and history
   const channel = await discordApiCall(
@@ -288,40 +281,34 @@ async function processMessage(
     const isMentioned = msg.mentions.users?.has(client.user.id);
     const isConvoChannel = config.conversationChannelIds?.includes(msg.channelId);
 
-    // Check for !guilds command
-    if (msg.content.trim().toLowerCase() === '!guilds' && client.user) {
-      const guildCount = client.guilds.cache.size;
-      const guildList = Array.from(client.guilds.cache.values())
-        .map(guild => `${guild.name} (${guild.memberCount} members)`)
-        .join('\n- ');
-
-      const response = `I am in ${guildCount} servers:\n- ${guildList}`;
-      await discordApiCall(() => msg.reply(response), '!guilds reply', config.name);
-      log('Responded to !guilds command');
-      return;
-    }
-
-    // Check for !invite command
-    if (msg.content.trim().toLowerCase() === '!invite' && client.user) {
-      // Include both bot and applications.commands scopes for modern Discord bot requirements
-      const inviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${client.user.id}&permissions=274877908032&scope=bot%20applications.commands`;
-      const response = `🤖 **Invite me to your server!**\n\n[Click here to add ${config.name} to your Discord server](${inviteUrl})\n\n✨ I'll bring my ${config.model} AI powers to help your community!\n\n**What I can do:**\n• Respond to mentions and DMs instantly\n• Chat in conversation channels\n• Support future slash commands\n• Bring AI-powered conversations to your server\n\n*Requires "Manage Server" permission to add me.*`;
-      await discordApiCall(() => msg.reply(response), '!invite reply', config.name);
-      log('Responded to !invite command');
-      return;
-    }
-
-    // Check for !permissions command
-    if (msg.content.trim().toLowerCase() === '!permissions' && client.user) {
-      const response = `🔐 **Bot Permissions Explained**\n\n**Required Permissions (274877908032):**\n• **Send Messages** - To respond to you\n• **Read Message History** - For conversation context\n• **Use Slash Commands** - Future slash command support\n• **Add Reactions** - Interactive responses\n• **Embed Links** - Rich message formatting\n• **Attach Files** - Share images/files\n\n**OAuth2 Scopes:**\n• **bot** - Basic bot functionality\n• **applications.commands** - Slash command support\n\n*These permissions ensure I work properly while keeping your server secure!*`;
-      await discordApiCall(() => msg.reply(response), '!permissions reply', config.name);
-      log('Responded to !permissions command');
-      return;
-    }
-
     if (!isMentioned && !isConvoChannel && !isDM) {
       log('Message ignored: not mentioned, not in conversation channel, and not a DM');
       return;
+    }
+
+    // Commands only respond when mentioned, DM'd, or replied to
+    if (isMentioned || isDM) {
+      const cmd = msg.content.replace(/<@!?\d+>/g, '').trim().toLowerCase();
+
+      if (cmd === '!guilds' && client.user) {
+        const guildCount = client.guilds.cache.size;
+        const guildList = Array.from(client.guilds.cache.values())
+          .map(guild => `${guild.name} (${guild.memberCount} members)`)
+          .join('\n- ');
+        await discordApiCall(() => msg.reply(`I am in ${guildCount} servers:\n- ${guildList}`), '!guilds reply', config.name);
+        return;
+      }
+
+      if (cmd === '!invite' && client.user) {
+        const inviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${client.user.id}&permissions=274877908032&scope=bot%20applications.commands`;
+        await discordApiCall(() => msg.reply(`[Add me to your server](${inviteUrl})`), '!invite reply', config.name);
+        return;
+      }
+
+      if (cmd === '!permissions' && client.user) {
+        await discordApiCall(() => msg.reply(`**Permissions:** Send Messages, Read History, Embed Links, Attach Files, Add Reactions`), '!permissions reply', config.name);
+        return;
+      }
     }
 
     if (msg.author.bot) {
@@ -402,11 +389,6 @@ export async function runBot(config: BotConfig, generateText: GenerateTextWithHi
   await readyPromise;
   
   log('Bot %s is fully ready, starting message processing', config.name);
-
-  // Send initial proactive message
-  setTimeout(async () => {
-    await sendInitialMessage(client, config, generateText);
-  }, Math.random() * 2000 + 1000); // Shorter delay to stagger initial messages
 
   // Set up event-driven message processing (non-blocking)
   client.on(Events.MessageCreate, (msg: Message) => {

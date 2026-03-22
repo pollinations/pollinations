@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-03-22",
+  "period_start": "2026-03-15",
+  "period_end": "2026-03-21",
+  "generated_at": "2026-03-22T06:16:15.361378+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-22/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.42 — 61 PRs and hourly refills\n\nThe community went on an absolute shipping bender this week. 61 PRs merged. Here is what changed in the infrastructure to support it:\n\n→ HOURLY REFILLS\nSpore and Seed tier users now get hourly pollen refills via Cloudflare Cron. No more waiting until tomorrow because you accidentally left a while-loop running.\n\n→ NEW MODELS\nAdded Qwen3.5 397B via Fireworks. We also shipped multipart endpoint support for Klein multi-image editing.\n\n→ FRONTEND SPEED\nLazy-loading markdown, chunk splitting, and SWR caching. The enter page is noticeably faster. We also redesigned the model monitor so you can actually see what is happening under the hood.\n\n→ API HARDENING\nInvalidating KV cache when API key permissions change, and enforcing strict response content-type checks before SSE parsing. Boring but necessary.\n\n→ THE SHOWCASE\nOver 20 new community projects added, from AI city dioramas to ESP32 generators and Claude Code CLI plugins.\n\nEverything is open source.\nhttps://github.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools"
+}

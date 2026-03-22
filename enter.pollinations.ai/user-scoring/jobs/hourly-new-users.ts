@@ -2,7 +2,7 @@
 /**
  * Hourly new-user pipeline.
  *
- * Promotes trusted microbe users (trust_score >= 60) to seed or spore based on
+ * Promotes trusted microbe users (trust_score >= 50) to seed or spore based on
  * GitHub activity. Bans users with missing/invalid github_id, then scores
  * developer activity (age, repos, commits, stars) and applies a risk check.
  * Users above threshold go to seed; others go to spore. Deleted accounts are

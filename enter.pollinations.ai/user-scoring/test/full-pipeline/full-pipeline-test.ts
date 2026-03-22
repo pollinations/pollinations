@@ -178,7 +178,7 @@ function verify(snapshot: TierSnapshot | null): VerificationResult {
         `SELECT
 			COUNT(*) as total,
 			SUM(CASE WHEN trust_score IS NOT NULL THEN 1 ELSE 0 END) as has_trust,
-			SUM(CASE WHEN trust_score >= 60 THEN 1 ELSE 0 END) as trusted,
+			SUM(CASE WHEN trust_score >= 50 THEN 1 ELSE 0 END) as trusted,
 			SUM(CASE WHEN trust_score < 60 AND trust_score IS NOT NULL THEN 1 ELSE 0 END) as blocked,
 			SUM(CASE WHEN trust_score IS NULL AND COALESCE(banned, 0) = 0 AND github_id IS NOT NULL THEN 1 ELSE 0 END) as unscored,
 			SUM(CASE WHEN COALESCE(banned, 0) = 1 THEN 1 ELSE 0 END) as banned
@@ -196,7 +196,7 @@ function verify(snapshot: TierSnapshot | null): VerificationResult {
     // Check trusted users got promoted
     const trustedStillMicrobe = queryD1ForEnv(
         ENV,
-        "SELECT COUNT(*) as n FROM user WHERE tier = 'microbe' AND trust_score >= 60 AND COALESCE(banned, 0) = 0",
+        "SELECT COUNT(*) as n FROM user WHERE tier = 'microbe' AND trust_score >= 50 AND COALESCE(banned, 0) = 0",
     );
     const stuckCount = Number(trustedStillMicrobe[0]?.n ?? 0);
     check(

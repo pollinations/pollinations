@@ -81,7 +81,7 @@ npm run user-pipeline:full-pipeline-test -- --max-iterations 5 # limit loop coun
 ## Success Criteria
 
 1. All non-banned users have trust_score assigned
-2. All trusted users (trust_score >= 60) promoted to spore or seed
+2. All trusted users (trust_score >= 50) promoted to spore or seed
 3. Tier distribution roughly matches pre-reset (within ~10% variance)
 4. Zero hard-fail consistency violations
 5. Trace anomalies < 1% of total users

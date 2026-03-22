@@ -91,7 +91,7 @@ function printSummary(env: Environment, emails: string[]): void {
             SUM(CASE WHEN tier = 'spore' THEN 1 ELSE 0 END) AS spore_count,
             SUM(CASE WHEN tier = 'seed' THEN 1 ELSE 0 END) AS seed_count,
             SUM(CASE WHEN COALESCE(banned, 0) = 1 THEN 1 ELSE 0 END) AS banned_count,
-            SUM(CASE WHEN trust_score >= 60 THEN 1 ELSE 0 END) AS trusted_count,
+            SUM(CASE WHEN trust_score >= 50 THEN 1 ELSE 0 END) AS trusted_count,
             SUM(CASE WHEN trust_score < 60 AND trust_score IS NOT NULL THEN 1 ELSE 0 END) AS blocked_count
          FROM user
          WHERE 1=1${buildEmailFilter("email", emails)}`,

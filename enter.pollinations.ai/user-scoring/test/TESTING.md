@@ -112,7 +112,7 @@ npx tsx user-scoring/test/verify-results.ts
 
 Exits 0 if the current checks pass, exits 1 if any fail.
 
-Note: the hard-coded Group B `>= 60%` seed expectation is historical and may fail even when the daily pipeline itself is working correctly. Treat it as a cohort-quality signal, not as a guaranteed pass condition for this branch.
+Note: the hard-coded Group B `>= 50%` seed expectation is historical and may fail even when the daily pipeline itself is working correctly. Treat it as a cohort-quality signal, not as a guaranteed pass condition for this branch.
 
 ---
 
@@ -186,7 +186,7 @@ npm run user-pipeline:replay-daily -- --emails-file /tmp/cohort-daily.txt
 npx tsx user-scoring/test/verify-results.ts --group daily
 ```
 
-For this branch, interpret a Group B `>= 60%` miss as a cohort/expectation mismatch unless the replay itself shows scoring or state-update failures.
+For this branch, interpret a Group B `>= 50%` miss as a cohort/expectation mismatch unless the replay itself shows scoring or state-update failures.
 
 ## Dry Run (no D1 writes)
 

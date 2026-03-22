@@ -122,7 +122,7 @@ Send 30 newer context +
 30 targets + 30 older context
 Write trust_score only for targets"]
 
-    L --> M{"trust_score >= 60?"}
+    L --> M{"trust_score >= 50?"}
     M -->|No| N["Stay Microbe
 No automatic re-check"]
     M -->|Yes| O["GitHub Developer Scoring

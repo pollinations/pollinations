@@ -41,7 +41,7 @@ const SCORE_WINDOW = 30;
 const HOLD_BACK_USERS = 30;
 const MAX_WAIT_MINUTES = 90;
 const DEFAULT_USER_LIMIT = 5000;
-const TRUST_PASS_THRESHOLD = 50;
+export const TRUST_PASS_THRESHOLD = 50;
 let promptTemplate: string | null = null;
 
 function getPromptTemplate(): string {

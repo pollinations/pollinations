@@ -42,7 +42,7 @@ function queryGroup(emails: string[]): Record<string, number>[] {
             SUM(CASE WHEN tier = 'seed' THEN 1 ELSE 0 END) as seed,
             SUM(CASE WHEN COALESCE(banned, 0) = 1 THEN 1 ELSE 0 END) as banned,
             SUM(CASE WHEN trust_score IS NOT NULL THEN 1 ELSE 0 END) as has_trust,
-            SUM(CASE WHEN trust_score >= 60 THEN 1 ELSE 0 END) as trusted,
+            SUM(CASE WHEN trust_score >= 50 THEN 1 ELSE 0 END) as trusted,
             SUM(CASE WHEN score IS NOT NULL THEN 1 ELSE 0 END) as has_score,
             SUM(CASE WHEN score_checked_at IS NOT NULL AND score_checked_at > 0 THEN 1 ELSE 0 END) as checked
          FROM user WHERE 1=1${filter}`,

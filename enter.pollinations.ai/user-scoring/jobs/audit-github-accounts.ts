@@ -82,13 +82,17 @@ function loadReport(env: string): AuditReport {
 }
 
 function describeGithubAuth(): string {
-    if (process.env.GITHUB_APP_ID && process.env.GITHUB_APP_PRIVATE_KEY_PATH) {
+    if (
+        process.env.GITHUB_APP_ID &&
+        (process.env.GITHUB_APP_PRIVATE_KEY ||
+            process.env.GITHUB_APP_PRIVATE_KEY_PATH)
+    ) {
         return "GitHub App";
     }
     const tokenStr = process.env.GITHUB_TOKENS || process.env.GITHUB_TOKEN;
     if (!tokenStr) {
         console.error(
-            "❌ Set GITHUB_APP_ID+GITHUB_APP_PRIVATE_KEY_PATH or GITHUB_TOKEN",
+            "❌ Set GITHUB_APP_ID + GITHUB_APP_PRIVATE_KEY or GITHUB_TOKEN",
         );
         process.exit(1);
     }

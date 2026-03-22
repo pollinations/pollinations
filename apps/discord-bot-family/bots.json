@@ -1,0 +1,11 @@
+{
+  "channels": ["1370368057641533440", "1123617013433110578"],
+  "bots": [
+    { "model": "kimi", "channels": ["1485374528564760858"] },
+    { "model": "gemini-search", "channels": ["1485374325077971135"] },
+    { "model": "perplexity-fast", "channels": ["1485374426659684495"] },
+    { "model": "nova-fast" },
+    { "model": "deepseek", "channels": ["1485374269973204992"] },
+    { "model": "minimax", "channels": ["1485376399211499643"] }
+  ]
+}

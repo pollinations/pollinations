@@ -268,7 +268,12 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
     },
     "qwen-image": {
-        aliases: ["qwen-image-plus", "qwen-image-2512", "qwen-image-edit", "qwen-image-edit-plus"],
+        aliases: [
+            "qwen-image-plus",
+            "qwen-image-2512",
+            "qwen-image-edit",
+            "qwen-image-edit-plus",
+        ],
         modelId: "qwen-image",
         provider: "alibaba",
         cost: [

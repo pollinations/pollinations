@@ -13,9 +13,7 @@ import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
-import {
-    callQwenImageAPI,
-} from "./models/qwenImageModel.ts";
+import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import {
     callSeedream5API,
     callSeedreamAPI,
@@ -1176,7 +1174,6 @@ const generateImage = async (
                 throw error;
             }
         }
-
 
         case "flux":
             progress.updateBar(

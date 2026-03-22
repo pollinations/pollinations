@@ -1,0 +1,33 @@
+# Pollinations.ai
+
+> Open-source generative AI platform with free APIs for image, text, audio, and video generation. OpenAI-compatible endpoints at gen.pollinations.ai. No API key required for basic usage.
+
+## Getting Started
+- [API Documentation](https://github.com/pollinations/pollinations/blob/main/APIDOCS.md): Complete API reference with endpoints, parameters, and examples
+- [Dashboard](https://enter.pollinations.ai): Get API keys for higher rate limits and premium models
+
+## API Reference
+- [Image Generation](https://gen.pollinations.ai/image/a%20beautiful%20sunset): GET `gen.pollinations.ai/image/{prompt}` — models: flux, gptimage, seedream5, nanobanana, kontext
+- [Text Generation](https://gen.pollinations.ai/v1/chat/completions): POST OpenAI-compatible chat completions — models: openai, claude, gemini, deepseek, grok, mistral, and 20+ more
+- [Simple Text](https://gen.pollinations.ai/text/hello): GET `gen.pollinations.ai/text/{prompt}` — quick text generation
+- [Audio / TTS](https://gen.pollinations.ai/audio/hello): GET `gen.pollinations.ai/audio/{text}?voice=nova` — text-to-speech with 30+ voices
+- [Video Generation](https://gen.pollinations.ai/v1/chat/completions): POST with video models (seedance, veo) — 1-10 second clips
+- [Model Discovery](https://gen.pollinations.ai/v1/models): GET available models — always up to date
+
+## SDKs & Tools
+- [JavaScript SDK](https://www.npmjs.com/package/@pollinations_ai/sdk): `npm install @pollinations_ai/sdk` — image, text, audio, video generation
+- [React Hooks](https://www.npmjs.com/package/@pollinations/react): `npm install @pollinations/react` — usePollinationsImage, usePollinationsText, usePollinationsChat
+- [Python SDK](https://pypi.org/project/pollinations/): `pip install pollinations` — community-maintained Python client
+- [MCP Server](https://www.npmjs.com/package/@pollinations_ai/mcp): `npx @pollinations_ai/mcp` — Model Context Protocol server for AI coding tools
+
+## Example Apps
+- [Starter Template (React)](https://github.com/pollinations/pollinations/tree/main/apps/_templates/react): Minimal React + Vite app with Pollinations API
+- [Starter Template (HTML)](https://github.com/pollinations/pollinations/tree/main/apps/_templates/html): Single-file HTML app with image generation
+- [CatGPT](https://github.com/pollinations/pollinations/tree/main/apps/catgpt): Meme generator — vanilla JS
+- [AI Dungeon Master](https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master): Text RPG — React + Vite
+- [Chat](https://github.com/pollinations/pollinations/tree/main/apps/chat): Full chat interface — React + Vite
+- [Community Apps](https://github.com/pollinations/pollinations/blob/main/apps/APPS.md): 800+ community-built apps
+
+## Optional
+- [GitHub Repository](https://github.com/pollinations/pollinations): Source code, issues, and contributions
+- [Discord Community](https://discord.gg/pollinations-ai-885844321461485618): 17,500+ members

@@ -1,5 +1,9 @@
 # Pollinations Changelog Generator
 
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/pollinations/pollinations/tree/main/apps/changelog-generator)
+[![Open in Bolt](https://img.shields.io/badge/Open%20in-Bolt.new-black?style=flat-square&logo=stackblitz)](https://bolt.new/?prompt=Clone%20the%20Changelog%20Generator%20from%20https%3A%2F%2Fgithub.com%2Fpollinations%2Fpollinations%2Ftree%2Fmain%2Fapps%2Fchangelog-generator%20and%20set%20it%20up.%20React%20%2B%20Vite%20app%20using%20Pollinations%20API%20at%20gen.pollinations.ai.)
+[![Open in CodeSandbox](https://img.shields.io/badge/Open%20in-CodeSandbox-blue?style=flat-square&logo=codesandbox)](https://codesandbox.io/s/github/pollinations/pollinations/tree/main/apps/changelog-generator)
+
 A beautiful, AI-powered changelog generator that transforms technical git commits into human-readable updates for the Pollinations repository.
 
 ##  Features

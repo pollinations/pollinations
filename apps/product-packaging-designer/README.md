@@ -1,5 +1,10 @@
 # 📦 AI Packaging Designer
 
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/pollinations/pollinations/tree/main/apps/product-packaging-designer)
+[![Open in Bolt](https://img.shields.io/badge/Open%20in-Bolt.new-black?style=flat-square&logo=stackblitz)](https://bolt.new/?prompt=Clone%20AI%20Packaging%20Designer%20from%20https%3A%2F%2Fgithub.com%2Fpollinations%2Fpollinations%2Ftree%2Fmain%2Fapps%2Fproduct-packaging-designer%20and%20set%20it%20up.%20It%27s%20a%20React%20%2B%20Vite%20%2B%20TypeScript%20app%20for%20generating%20packaging%20mockups%20using%20the%20Pollinations%20API%20at%20gen.pollinations.ai.)
+[![Open in Lovable](https://img.shields.io/badge/Open%20in-Lovable-ff69b4?style=flat-square)](https://lovable.dev/?autosubmit=true#prompt=Build%20an%20AI%20product%20packaging%20designer.%20Users%20upload%20a%20product%20photo%20and%20choose%20a%20style%2C%20then%20AI%20generates%20professional%20packaging%20mockups.%20Use%20the%20Pollinations%20API%20at%20gen.pollinations.ai%20for%20image%20generation.%20React%20%2B%20Tailwind.%20No%20API%20key%20needed.)
+[![Open in CodeSandbox](https://img.shields.io/badge/Open%20in-CodeSandbox-blue?style=flat-square&logo=codesandbox)](https://codesandbox.io/s/github/pollinations/pollinations/tree/main/apps/product-packaging-designer)
+
 Transform your product photos into professional packaging mockups using AI. Upload an image, customize the style, and get stunning packaging designs in seconds!
 
 ## What It Does

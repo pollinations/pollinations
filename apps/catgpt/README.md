@@ -1,5 +1,10 @@
 # 🐱 CatGPT Meme Generator
 
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/pollinations/pollinations/tree/main/apps/catgpt)
+[![Open in Bolt](https://img.shields.io/badge/Open%20in-Bolt.new-black?style=flat-square&logo=stackblitz)](https://bolt.new/?prompt=Clone%20the%20CatGPT%20meme%20generator%20from%20https%3A%2F%2Fgithub.com%2Fpollinations%2Fpollinations%2Ftree%2Fmain%2Fapps%2Fcatgpt%20and%20set%20it%20up.%20It%27s%20a%20vanilla%20JS%20app%20that%20generates%20cat%20memes%20using%20the%20Pollinations%20API%20at%20gen.pollinations.ai.)
+[![Open in Lovable](https://img.shields.io/badge/Open%20in-Lovable-ff69b4?style=flat-square)](https://lovable.dev/?autosubmit=true#prompt=Build%20a%20CatGPT%20meme%20generator%20that%20transforms%20questions%20into%20sassy%20cat%20wisdom%20comics.%20Use%20the%20Pollinations%20API%20at%20gen.pollinations.ai%20for%20image%20generation%20with%20model%3Dgptimage.%20No%20API%20key%20needed.)
+[![Open in CodeSandbox](https://img.shields.io/badge/Open%20in-CodeSandbox-blue?style=flat-square&logo=codesandbox)](https://codesandbox.io/s/github/pollinations/pollinations/tree/main/apps/catgpt)
+
 Transform your questions into sassy cat wisdom! A collaboration between [pollinations.ai](https://pollinations.ai) and [Tanika Godbole](https://www.instagram.com/tanikagodbole/), the original creator of the CatGPT comic.
 
 ## 🌟 About

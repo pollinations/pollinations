@@ -4,9 +4,22 @@
  */
 
 import { execFileSync } from "node:child_process";
+import { escapeSqlString } from "./email-cohort.ts";
+import { PIPELINE_DB_BATCH_SIZE } from "./github-identity.ts";
 
 export type Environment = "staging" | "production";
 type D1Row = Record<string, string | number | null>;
+
+export interface StoredUserState {
+    email: string;
+    github_id: number | null;
+    tier: string | null;
+    banned: number | null;
+    ban_reason: string | null;
+    score: number | null;
+    score_checked_at: number | null;
+    trust_score: number | null;
+}
 
 interface D1JsonResponse {
     results?: D1Row[];
@@ -70,10 +83,7 @@ function normalizeD1Call(
 
 export function queryD1(sql: string): D1Row[];
 export function queryD1(env: Environment, sql: string): D1Row[];
-export function queryD1(
-    first: Environment | string,
-    second?: string,
-): D1Row[] {
+export function queryD1(first: Environment | string, second?: string): D1Row[] {
     const [env, sql] = normalizeD1Call(first, second);
     const output = execFileSync("npx", buildWranglerArgs(env, sql), {
         encoding: "utf-8",
@@ -88,7 +98,10 @@ export function queryD1(
 
 export function executeD1(sql: string): boolean;
 export function executeD1(env: Environment, sql: string): boolean;
-export function executeD1(first: Environment | string, second?: string): boolean {
+export function executeD1(
+    first: Environment | string,
+    second?: string,
+): boolean {
     const [env, sql] = normalizeD1Call(first, second);
     try {
         execFileSync("npx", buildWranglerArgs(env, sql), {
@@ -105,4 +118,32 @@ export function executeD1(first: Environment | string, second?: string): boolean
         );
         return false;
     }
+}
+
+export function fetchStoredUserStatesByEmail(
+    emails: string[],
+): Map<string, StoredUserState> {
+    const states = new Map<string, StoredUserState>();
+    const uniqueEmails = Array.from(new Set(emails));
+
+    for (
+        let index = 0;
+        index < uniqueEmails.length;
+        index += PIPELINE_DB_BATCH_SIZE
+    ) {
+        const batch = uniqueEmails.slice(index, index + PIPELINE_DB_BATCH_SIZE);
+        if (batch.length === 0) continue;
+
+        const rows = queryD1(
+            `SELECT email, github_id, tier, COALESCE(banned, 0) AS banned, ban_reason, score, score_checked_at, trust_score FROM user WHERE email IN (${batch
+                .map((email) => `'${escapeSqlString(email)}'`)
+                .join(", ")})`,
+        ) as StoredUserState[];
+
+        for (const row of rows) {
+            states.set(row.email, row);
+        }
+    }
+
+    return states;
 }

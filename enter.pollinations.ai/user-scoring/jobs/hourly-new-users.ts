@@ -33,17 +33,18 @@ import {
     validateUserRecords,
 } from "../scoring/github-score.ts";
 import { getString, hasFlag } from "../shared/cli.ts";
-import { executeD1, getRuntimeEnvironment, queryD1 } from "../shared/d1.ts";
 import {
-    buildEmailFilter,
-    escapeSqlString,
-    loadEmailCohort,
-} from "../shared/email-cohort.ts";
+    executeD1,
+    fetchStoredUserStatesByEmail,
+    getRuntimeEnvironment,
+    queryD1,
+    type StoredUserState,
+} from "../shared/d1.ts";
+import { buildEmailFilter, loadEmailCohort } from "../shared/email-cohort.ts";
 import {
     banUsersByEmails,
     banUsersByGithubIds,
     GITHUB_ID_INVALID_REASON,
-    PIPELINE_DB_BATCH_SIZE,
 } from "../shared/github-identity.ts";
 import { appendTrace } from "../shared/trace.ts";
 
@@ -56,17 +57,6 @@ interface ParsedArgs {
 interface TrustedUser {
     email: string;
     github_id: number | null;
-    trust_score: number | null;
-}
-
-interface StoredUserState {
-    email: string;
-    github_id: number | null;
-    tier: string | null;
-    banned: number | null;
-    ban_reason: string | null;
-    score: number | null;
-    score_checked_at: number | null;
     trust_score: number | null;
 }
 
@@ -147,34 +137,6 @@ function classifyDecision(
     }
     if (result.approved) return "promote_seed";
     return "stay_microbe_below_threshold";
-}
-
-function fetchStoredUserStatesByEmail(
-    emails: string[],
-): Map<string, StoredUserState> {
-    const states = new Map<string, StoredUserState>();
-    const uniqueEmails = Array.from(new Set(emails));
-
-    for (
-        let index = 0;
-        index < uniqueEmails.length;
-        index += PIPELINE_DB_BATCH_SIZE
-    ) {
-        const batch = uniqueEmails.slice(index, index + PIPELINE_DB_BATCH_SIZE);
-        if (batch.length === 0) continue;
-
-        const rows = queryD1(
-            `SELECT email, github_id, tier, COALESCE(banned, 0) AS banned, ban_reason, score, score_checked_at, trust_score FROM user WHERE email IN (${batch
-                .map((email) => `'${escapeSqlString(email)}'`)
-                .join(", ")})`,
-        ) as StoredUserState[];
-
-        for (const row of rows) {
-            states.set(row.email, row);
-        }
-    }
-
-    return states;
 }
 
 function reconcileDecision(

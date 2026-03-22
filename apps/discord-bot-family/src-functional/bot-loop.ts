@@ -12,6 +12,8 @@ import type { ApiMessage, BotConfig, GenerateTextWithHistory } from "./types";
 
 const log = debug("app:bot");
 const HISTORY_LIMIT = 8;
+const MAX_BOT_MESSAGES_PER_WINDOW = 2;
+const RATE_WINDOW_MS = 60_000; // 1 minute
 
 function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string): string {
     return `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;
@@ -309,13 +311,28 @@ async function processMessage(
         }
     }
 
-    // Never respond to other bots — prevents feedback loops
-    if (msg.author.bot) {
-        log("Ignoring bot message from %s", msg.author.username);
-        return;
+    // Stateless rate limit: check recent channel messages for bot spam
+    if ("messages" in msg.channel) {
+        const recent = await msg.channel.messages.fetch({ limit: 5 });
+        const now = Date.now();
+        const recentBotMessages = recent.filter(
+            (m) =>
+                m.author.id === client.user?.id &&
+                now - m.createdTimestamp < RATE_WINDOW_MS,
+        );
+        if (recentBotMessages.size >= MAX_BOT_MESSAGES_PER_WINDOW) {
+            log("Rate limited in channel %s (%d msgs in last minute), skipping", msg.channelId, recentBotMessages.size);
+            return;
+        }
     }
 
-    if (isConvoChannel && !isMentioned) {
+    if (msg.author.bot) {
+        // Bot messages in conversation channels: 10% chance, adds variety without loops
+        if (!isConvoChannel || Math.random() > 0.1) {
+            log("Ignoring bot message from %s", msg.author.username);
+            return;
+        }
+    } else if (isConvoChannel && !isMentioned) {
         // Human in conversation channel, not mentioned: 30% chance
         if (Math.random() > 0.3) {
             log(

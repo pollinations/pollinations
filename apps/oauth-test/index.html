@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollinations OAuth Test</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; min-height: 100vh; padding: 2rem; }
+        .container { max-width: 720px; margin: 0 auto; }
+        h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #fff; }
+        h2 { font-size: 1.1rem; margin: 1.5rem 0 0.75rem; color: #aaa; }
+
+        .config { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; }
+        .config label { font-size: 0.8rem; color: #888; min-width: 80px; }
+        .config input { flex: 1; padding: 0.5rem 0.75rem; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; font-size: 0.9rem; }
+        .config input:focus { outline: none; border-color: #7c3aed; }
+        .config input[readonly] { color: #666; }
+
+        button { padding: 0.5rem 1.25rem; background: #7c3aed; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: background 0.15s; }
+        button:hover { background: #6d28d9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.secondary { background: #333; }
+        button.secondary:hover { background: #444; }
+        button.danger { background: #dc2626; }
+        button.danger:hover { background: #b91c1c; }
+
+        .status { padding: 0.75rem 1rem; border-radius: 6px; margin: 0.75rem 0; font-size: 0.85rem; font-family: monospace; word-break: break-all; }
+        .status.info { background: #1e293b; border: 1px solid #334155; }
+        .status.success { background: #052e16; border: 1px solid #166534; }
+        .status.error { background: #2d0a0a; border: 1px solid #7f1d1d; color: #fca5a5; }
+
+        .token-box { background: #111; border: 1px solid #333; border-radius: 6px; padding: 1rem; margin: 0.5rem 0; overflow-x: auto; }
+        .token-box pre { font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; color: #a5f3fc; }
+        .token-box .label { font-size: 0.75rem; color: #888; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+        .claims-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; font-size: 0.85rem; }
+        .claims-grid .key { color: #888; font-family: monospace; }
+        .claims-grid .val { color: #e0e0e0; font-family: monospace; word-break: break-all; }
+
+        #generate-section { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #222; }
+        #generate-result { margin-top: 0.75rem; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pollinations OAuth 2.1 Test</h1>
+
+        <!-- Config -->
+        <div class="config">
+            <label>Server</label>
+            <input id="auth-server" type="text" value="http://localhost:3000" />
+        </div>
+        <div class="config">
+            <label>Redirect URI</label>
+            <input id="redirect-uri" type="text" readonly />
+        </div>
+
+        <div id="status-box" class="status info">Ready. Click Connect to start OAuth flow.</div>
+
+        <!-- Pre-auth: Connect button -->
+        <div id="pre-auth">
+            <div class="actions">
+                <button onclick="startOAuth()">Connect with Pollinations</button>
+                <button onclick="startDeviceFlow()" class="secondary">Device Flow</button>
+            </div>
+        </div>
+
+        <!-- Device flow: polling state -->
+        <div id="device-flow" class="hidden">
+            <h2>Device Authorization</h2>
+            <div class="token-box">
+                <div class="label">User Code</div>
+                <pre id="device-user-code" style="font-size: 1.5rem; text-align: center;"></pre>
+            </div>
+            <p style="margin: 0.75rem 0; font-size: 0.9rem;">
+                Visit <a id="device-verify-link" href="#" target="_blank" style="color: #a78bfa;"></a> and enter the code above.
+            </p>
+            <div id="device-status" class="status info">Waiting for authorization...</div>
+            <div class="actions">
+                <button onclick="cancelDeviceFlow()" class="danger">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Post-auth: Token display -->
+        <div id="post-auth" class="hidden">
+            <h2>JWT Claims</h2>
+            <div id="claims" class="claims-grid"></div>
+
+            <h2>Access Token</h2>
+            <div class="token-box">
+                <div class="label">access_token</div>
+                <pre id="access-token"></pre>
+            </div>
+
+            <div id="refresh-token-box" class="token-box hidden">
+                <div class="label">refresh_token</div>
+                <pre id="refresh-token"></pre>
+            </div>
+
+            <div id="id-token-box" class="token-box hidden">
+                <div class="label">id_token</div>
+                <pre id="id-token"></pre>
+            </div>
+
+            <div class="actions">
+                <button onclick="refreshTokens()" class="secondary">Refresh Tokens</button>
+                <button onclick="disconnect()" class="danger">Disconnect</button>
+            </div>
+
+            <!-- Test Generate -->
+            <div id="generate-section">
+                <h2>Test API Call</h2>
+                <div class="actions">
+                    <button onclick="testGenerate()">Test Chat Completion</button>
+                </div>
+                <div id="generate-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ── State ──
+    let tokens = null;
+
+    // ── Helpers ──
+    function $(id) { return document.getElementById(id); }
+
+    function setStatus(msg, type = 'info') {
+        const el = $('status-box');
+        el.className = `status ${type}`;
+        el.textContent = msg;
+    }
+
+    function base64url(buffer) {
+        return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function randomString(len) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+        const arr = crypto.getRandomValues(new Uint8Array(len));
+        return Array.from(arr, b => chars[b % chars.length]).join('');
+    }
+
+    function decodeJwtPayload(jwt) {
+        const part = jwt.split('.')[1];
+        const padded = part.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(padded));
+    }
+
+    function server() {
+        return $('auth-server').value.replace(/\/+$/, '');
+    }
+
+    // ── Client Registration (cached in sessionStorage) ──
+    async function getOrRegisterClient() {
+        const srv = server();
+        const cacheKey = `oauth_client_${srv}`;
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+            try { return JSON.parse(cached); } catch {}
+        }
+
+        setStatus('Registering OAuth client...');
+
+        const resp = await fetch(`${srv}/api/auth/oauth2/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                client_name: 'Pollinations OAuth Test App',
+                redirect_uris: [$('redirect-uri').value],
+                grant_types: ['authorization_code', 'refresh_token'],
+                response_types: ['code'],
+                token_endpoint_auth_method: 'none',
+            }),
+        });
+
+        if (!resp.ok) {
+            const err = await resp.text();
+            throw new Error(`Client registration failed: ${resp.status} ${err}`);
+        }
+
+        const client = await resp.json();
+        sessionStorage.setItem(cacheKey, JSON.stringify(client));
+        return client;
+    }
+
+    // ── OAuth Flow ──
+    async function startOAuth() {
+        try {
+            const client = await getOrRegisterClient();
+            const codeVerifier = randomString(64);
+            const state = randomString(32);
+
+            // PKCE: S256
+            const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier));
+            const codeChallenge = base64url(digest);
+
+            // Persist across redirect
+            sessionStorage.setItem('oauth_code_verifier', codeVerifier);
+            sessionStorage.setItem('oauth_state', state);
+            sessionStorage.setItem('oauth_server', server());
+
+            const params = new URLSearchParams({
+                client_id: client.client_id,
+                redirect_uri: $('redirect-uri').value,
+                response_type: 'code',
+                scope: 'openid profile generate',
+                code_challenge: codeChallenge,
+                code_challenge_method: 'S256',
+                state,
+            });
+
+            setStatus('Redirecting to authorization server...');
+            window.location.href = `${server()}/api/auth/oauth2/authorize?${params}`;
+        } catch (err) {
+            setStatus(err.message, 'error');
+        }
+    }
+
+    // ── Handle Callback ──
+    async function handleCallback() {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const state = params.get('state');
+        const error = params.get('error');
+
+        if (error) {
+            setStatus(`Authorization error: ${error} - ${params.get('error_description') || ''}`, 'error');
+            return;
+        }
+
+        if (!code) return; // Not a callback
+
+        // Restore server from before redirect
+        const saved = sessionStorage.getItem('oauth_server');
+        if (saved) $('auth-server').value = saved;
+
+        // Verify state
+        const savedState = sessionStorage.getItem('oauth_state');
+        if (state !== savedState) {
+            setStatus('State mismatch — possible CSRF attack', 'error');
+            return;
+        }
+
+        const codeVerifier = sessionStorage.getItem('oauth_code_verifier');
+        if (!codeVerifier) {
+            setStatus('Missing code_verifier — cannot complete exchange', 'error');
+            return;
+        }
+
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+
+        try {
+            setStatus('Exchanging authorization code for tokens...');
+
+            const client = await getOrRegisterClient();
+
+            const resp = await fetch(`${server()}/api/auth/oauth2/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    grant_type: 'authorization_code',
+                    code,
+                    redirect_uri: $('redirect-uri').value,
+                    client_id: client.client_id,
+                    code_verifier: codeVerifier,
+                }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.text();
+                throw new Error(`Token exchange failed: ${resp.status} ${err}`);
+            }
+
+            tokens = await resp.json();
+            sessionStorage.removeItem('oauth_code_verifier');
+            sessionStorage.removeItem('oauth_state');
+
+            displayTokens();
+        } catch (err) {
+            setStatus(err.message, 'error');
+        }
+    }
+
+    // ── Display ──
+    function displayTokens() {
+        $('pre-auth').classList.add('hidden');
+        $('post-auth').classList.remove('hidden');
+
+        $('access-token').textContent = tokens.access_token;
+
+        if (tokens.refresh_token) {
+            $('refresh-token').textContent = tokens.refresh_token;
+            $('refresh-token-box').classList.remove('hidden');
+        }
+
+        if (tokens.id_token) {
+            $('id-token').textContent = tokens.id_token;
+            $('id-token-box').classList.remove('hidden');
+        }
+
+        // Decode and display JWT claims (try access_token first, fall back to id_token)
+        const grid = $('claims');
+        grid.innerHTML = '';
+        let decoded = false;
+        for (const src of [tokens.access_token, tokens.id_token]) {
+            if (!src) continue;
+            try {
+                const claims = decodeJwtPayload(src);
+                for (const [key, val] of Object.entries(claims)) {
+                    const k = document.createElement('div');
+                    k.className = 'key';
+                    k.textContent = key;
+                    const v = document.createElement('div');
+                    v.className = 'val';
+                    v.textContent = typeof val === 'object' ? JSON.stringify(val) : String(val);
+                    grid.append(k, v);
+                }
+                decoded = true;
+                break;
+            } catch {}
+        }
+        setStatus(decoded ? 'Authenticated successfully!' : 'Authenticated (session token)', 'success');
+    }
+
+    // ── Refresh ──
+    async function refreshTokens() {
+        if (!tokens?.refresh_token) {
+            setStatus('No refresh token available', 'error');
+            return;
+        }
+        try {
+            setStatus('Refreshing tokens...');
+            const client = await getOrRegisterClient();
+
+            const resp = await fetch(`${server()}/api/auth/oauth2/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    grant_type: 'refresh_token',
+                    refresh_token: tokens.refresh_token,
+                    client_id: client.client_id,
+                }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.text();
+                throw new Error(`Refresh failed: ${resp.status} ${err}`);
+            }
+
+            tokens = await resp.json();
+            displayTokens();
+            setStatus('Tokens refreshed!', 'success');
+        } catch (err) {
+            setStatus(err.message, 'error');
+        }
+    }
+
+    // ── Disconnect ──
+    function disconnect() {
+        tokens = null;
+        sessionStorage.clear();
+        $('pre-auth').classList.remove('hidden');
+        $('post-auth').classList.add('hidden');
+        $('claims').innerHTML = '';
+        $('generate-result').innerHTML = '';
+        setStatus('Disconnected. Click Connect to start again.', 'info');
+    }
+
+    // ── Test Generate ──
+    async function testGenerate() {
+        if (!tokens?.access_token) {
+            setStatus('No access token', 'error');
+            return;
+        }
+        try {
+            const url = `${server()}/api/generate/v1/chat/completions`;
+            setStatus(`Calling ${url}...`);
+
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${tokens.access_token}`,
+                },
+                body: JSON.stringify({
+                    model: 'openai',
+                    messages: [{ role: 'user', content: 'Say "Hello from OAuth!" in one sentence.' }],
+                    max_tokens: 100,
+                }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.text();
+                throw new Error(`API call failed: ${resp.status} ${err}`);
+            }
+
+            const data = await resp.json();
+            const content = data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
+
+            const box = document.createElement('div');
+            box.className = 'token-box';
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.textContent = 'Response';
+            const pre = document.createElement('pre');
+            pre.textContent = content;
+            box.append(label, pre);
+            $('generate-result').replaceChildren(box);
+            setStatus('API call succeeded!', 'success');
+        } catch (err) {
+            setStatus(err.message, 'error');
+        }
+    }
+
+    // ── Device Flow ──
+    let devicePollTimer = null;
+
+    async function startDeviceFlow() {
+        try {
+            const client = await getOrRegisterClient();
+            setStatus('Starting device authorization flow...');
+
+            const resp = await fetch(`${server()}/api/device/code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    client_id: client.client_id,
+                    scope: 'openid profile generate',
+                }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.text();
+                throw new Error(`Device code request failed: ${resp.status} ${err}`);
+            }
+
+            const data = await resp.json();
+
+            $('pre-auth').classList.add('hidden');
+            $('device-flow').classList.remove('hidden');
+            $('device-user-code').textContent = data.user_code;
+
+            const verifyUrl = data.verification_uri_complete || data.verification_uri;
+            $('device-verify-link').href = verifyUrl;
+            $('device-verify-link').textContent = data.verification_uri;
+            $('device-status').className = 'status info';
+            $('device-status').textContent = 'Waiting for authorization...';
+
+            // Start polling
+            const interval = (data.interval || 5) * 1000;
+            devicePollTimer = setInterval(() => pollDeviceToken(client.client_id, data.device_code), interval);
+        } catch (err) {
+            setStatus(err.message, 'error');
+        }
+    }
+
+    async function pollDeviceToken(clientId, deviceCode) {
+        try {
+            const resp = await fetch(`${server()}/api/device/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+                    device_code: deviceCode,
+                    client_id: clientId,
+                }),
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok && data.access_token) {
+                // Success
+                clearInterval(devicePollTimer);
+                devicePollTimer = null;
+                tokens = data;
+                $('device-flow').classList.add('hidden');
+                displayTokens();
+                return;
+            }
+
+            // Handle polling errors
+            const error = data.error;
+            if (error === 'authorization_pending') {
+                $('device-status').textContent = 'Waiting for authorization...';
+            } else if (error === 'slow_down') {
+                $('device-status').textContent = 'Slowing down polling...';
+            } else if (error === 'expired_token') {
+                clearInterval(devicePollTimer);
+                devicePollTimer = null;
+                $('device-status').className = 'status error';
+                $('device-status').textContent = 'Device code expired. Please try again.';
+            } else if (error === 'access_denied') {
+                clearInterval(devicePollTimer);
+                devicePollTimer = null;
+                $('device-status').className = 'status error';
+                $('device-status').textContent = 'Access denied by user.';
+            } else {
+                clearInterval(devicePollTimer);
+                devicePollTimer = null;
+                $('device-status').className = 'status error';
+                $('device-status').textContent = `Error: ${data.error_description || error}`;
+            }
+        } catch (err) {
+            // Network error — keep polling
+            $('device-status').textContent = 'Network error, retrying...';
+        }
+    }
+
+    function cancelDeviceFlow() {
+        if (devicePollTimer) {
+            clearInterval(devicePollTimer);
+            devicePollTimer = null;
+        }
+        $('device-flow').classList.add('hidden');
+        $('pre-auth').classList.remove('hidden');
+        setStatus('Device flow cancelled.', 'info');
+    }
+
+    // ── Init ──
+    $('redirect-uri').value = window.location.origin + window.location.pathname;
+    handleCallback();
+    </script>
+</body>
+</html>

@@ -87,9 +87,7 @@ function PlayPage() {
 
                 <div className="mb-6">
                     <Body className="mb-3">
-                        {pageCopy.createDescriptionPrefix}{" "}
-                        <strong>{pageCopy.createDescriptionBold}</strong>
-                        {pageCopy.createDescriptionSuffix}
+                        {pageCopy.createDescription}
                     </Body>
                     <a
                         href={LINKS.enter}

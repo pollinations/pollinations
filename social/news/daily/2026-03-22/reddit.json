@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-22",
+  "period_start": "2026-03-22",
+  "period_end": "2026-03-22",
+  "generated_at": "2026-03-23T06:22:56.237825+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-22/images/reddit.jpg"
+    }
+  ],
+  "title": "Added Alibaba Qwen text and vision models to the free tier API",
+  "text": "Just merged a few PRs today to expand the model lineup. The main update is that Alibaba's Qwen models are now wired up for both text and vision.\n\nSpecifically, we added qwen-large and qwen-vision (PRs #9444 and #9450). We also set the flags to keep both of these on the free tier. If you are building something that needs vision capabilities but do not want to burn through paid API credits while testing, you can hit the endpoint now. It handles the standard image-to-text and visual QA tasks.\n\nOn the image generation side, we merged a PR adding LND Ai to the routing options (PR #9420). You can pass it through the standard image generation URL parameters.\n\nThat brings today's total to 3 merged PRs. Code is open as always. If you run into weird edge cases with the Qwen vision endpoint, drop an issue in the repo. We are keeping an eye on how it handles larger image payloads.\n\nDocs and endpoints are updated at github.com/pollinations/pollinations."
+}

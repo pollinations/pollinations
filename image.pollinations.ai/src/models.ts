@@ -150,7 +150,7 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // LTX-2 - Fast video generation with audio on Vast.ai
+    // LTX-2 - Fast video generation on Vast.ai
     "ltx-2": {
         type: "vastai-ltx2",
         enhance: false,

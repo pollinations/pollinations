@@ -159,6 +159,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["nova-micro-fallback"],
     },
     {
+        name: "nova",
+        config: portkeyConfig["nova-2-lite"],
+    },
+    {
         name: "glm",
         config: portkeyConfig["accounts/fireworks/models/glm-5"],
     },

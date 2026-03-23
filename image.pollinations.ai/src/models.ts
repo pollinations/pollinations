@@ -139,6 +139,13 @@ export const IMAGE_CONFIG = {
         defaultResolution: "480p",
     },
 
+    // Alibaba Qwen Image Plus - Text-to-image and image editing (auto-detects from image input)
+    "qwen-image": {
+        type: "alibaba-dashscope-image",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Z-Image - Fast 6B parameter image generation with SPAN 2x upscaling (IO.net)
     zimage: {
         type: "zimage",
@@ -158,6 +165,16 @@ export const IMAGE_CONFIG = {
         type: "modal-klein",
         enhance: false,
         defaultSideLength: 1024,
+    },
+
+    // LTX-2 - Fast video generation on Vast.ai
+    "ltx-2": {
+        type: "vastai-ltx2",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "720p",
     },
 
     // Pruna p-image - Text-to-image generation
@@ -181,6 +198,23 @@ export const IMAGE_CONFIG = {
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 10,
+        defaultResolution: "720p",
+    },
+
+    // Amazon Nova Canvas - Bedrock image generation
+    "nova-canvas": {
+        type: "nova-canvas",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Amazon Nova Reel - Bedrock video generation
+    "nova-reel": {
+        type: "nova-reel",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 6,
+        maxDuration: 30,
         defaultResolution: "720p",
     },
 } as const satisfies ImageModelsConfig;

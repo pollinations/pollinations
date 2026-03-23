@@ -129,6 +129,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         ],
     }),
+    "nova-2-lite": () =>
+        createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
     // -- Google Vertex AI (Gemini) --------------------------------------------
     "gemini-3-flash-preview": createVertexGeminiConfig(

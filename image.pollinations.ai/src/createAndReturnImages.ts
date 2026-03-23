@@ -9,10 +9,12 @@ import {
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
+import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
+import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import {
     callSeedream5API,
     callSeedreamAPI,
@@ -1154,6 +1156,36 @@ const generateImage = async (
                     "Pruna p-image-edit generation failed:",
                     error.message,
                 );
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "nova-canvas": {
+            try {
+                return await callNovaCanvasAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Nova Canvas generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "qwen-image": {
+            try {
+                return await callQwenImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Qwen image generation failed:", error.message);
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }

@@ -293,8 +293,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.01,
             },
         ],
-        description:
-            "LTX-2 - Fast text-to-video generation on Vast.ai",
+        description: "LTX-2 - Fast text-to-video generation on Vast.ai",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },

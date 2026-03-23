@@ -1,16 +1,6 @@
-# React + Vite
+# Chat
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![Fork it on Bolt.new](https://img.shields.io/badge/Fork%20it%20on-Bolt.new-black?style=flat-square&logo=stackblitz)](https://bolt.new/?prompt=Clone%20Chat%20from%20https%3A%2F%2Fgithub.com%2Fpollinations%2Fpollinations%2Ftree%2Fmain%2Fapps%2Fchat%20and%20set%20it%20up.%20It%27s%20a%20React%20%2B%20Vite%20chat%20interface%20using%20the%20Pollinations%20API%20at%20gen.pollinations.ai.)
+[![Created with Pollinations](https://img.shields.io/badge/Created%20with-Pollinations-35D89A?style=flat-square)](https://pollinations.ai)
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.                 
+Minimal AI chat interface powered by Pollinations.

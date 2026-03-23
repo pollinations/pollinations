@@ -1,6 +1,6 @@
 # 🎨 ReImagine - Transform Images with AI
 
-[![Powered by pollinations.ai](https://img.shields.io/badge/Powered%20by-pollinations.ai-35D89A)](https://pollinations.ai)
+[![Created with Pollinations](https://img.shields.io/badge/Created%20with-Pollinations-35D89A?style=flat-square)](https://pollinations.ai)
 [![React Native](https://img.shields.io/badge/React%20Native-61DAFB?logo=react&logoColor=black)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo-000020?logo=expo&logoColor=white)](https://expo.dev/)
 

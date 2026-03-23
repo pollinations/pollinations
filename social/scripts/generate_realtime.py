@@ -89,8 +89,6 @@ def lookup_newest_app() -> Optional[Dict]:
     APPS.md is sorted newest-first, so the first data row is the newest app.
     Returns {"app_name": str, "app_url": str} or None.
     """
-    import csv
-    import io
     import os
 
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

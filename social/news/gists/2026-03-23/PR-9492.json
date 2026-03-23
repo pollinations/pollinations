@@ -1,0 +1,34 @@
+{
+  "pr_number": 9492,
+  "title": "fix: spread spore-to-seed upgrade across 42 slots",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9492",
+  "merged_at": "2026-03-23T20:23:45Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Steady stream of seeds",
+    "blurb": "We've smoothed out the Spore-to-Seed upgrade process to run every four hours instead of all at once. No more traffic jams, just a steady, reliable stream of fresh seeds.",
+    "summary": "The automated Spore-to-Seed user upgrade process has been distributed across multiple daily time slots to prevent GitHub API rate limits and improve reliability.",
+    "impact": "New users will now see their accounts upgraded to the Seed tier more reliably and up to six times faster throughout the day.",
+    "keywords": [
+      "infrastructure",
+      "tiers",
+      "reliability",
+      "github-api",
+      "upgrades"
+    ],
+    "visual_concept": "Polly the bee managing a smooth, steady flow of seeds on a small conveyor belt or watering a neat row of tiny seed sprouts, representing the new paced-out upgrade slots. The Monitor Robot checking a schedule.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny conductor's hat, carefully organizing a steady, smooth line of glowing green seeds on a small wooden conveyor belt. The chunky Monitor Robot stands nearby holding a pixelated clipboard with a schedule. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9492.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny conductor's hat, carefully organizing a steady, smooth line of glowing green seeds on a small wooden conveyor belt. The chunky Monitor Robot stands nearby holding a pixelated clipboard with a schedule. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-23T20:25:57.111980+00:00"
+}

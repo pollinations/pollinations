@@ -369,6 +369,7 @@ export const IMAGE_SERVICES = {
         aliases: ["ltx2", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
         provider: "vastai",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-23").getTime(),

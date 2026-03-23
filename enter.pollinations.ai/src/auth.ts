@@ -1,4 +1,3 @@
-import { apiKey } from "@better-auth/api-key";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -8,7 +7,7 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
-import { admin, openAPI } from "better-auth/plugins";
+import { admin, apiKey, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";

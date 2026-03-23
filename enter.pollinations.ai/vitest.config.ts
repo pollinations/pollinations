@@ -44,7 +44,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                         include: [
                             "@polar-sh/sdk",
                             "better-auth",
-                            "@better-auth/api-key",
                             "kysely",
                             "drizzle-orm",
                             "hono-openapi",

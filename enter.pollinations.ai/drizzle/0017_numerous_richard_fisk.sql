@@ -12,5 +12,4 @@ CREATE TABLE `device_code` (
 --> statement-breakpoint
 CREATE INDEX `idx_device_code_device_code` ON `device_code` (`device_code`);--> statement-breakpoint
 CREATE INDEX `idx_device_code_user_code` ON `device_code` (`user_code`);--> statement-breakpoint
-DROP TABLE `event`;--> statement-breakpoint
-ALTER TABLE `apikey` ADD `pollen_balance` real;
+DROP TABLE IF EXISTS `event`;

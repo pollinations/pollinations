@@ -2,6 +2,7 @@ import debug from "debug";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:nova-canvas:ops");
 const logError = debug("pollinations:nova-canvas:error");
@@ -73,18 +74,27 @@ export async function callNovaCanvasAPI(
         safeParams.height || 1024,
     );
 
-    logOps("Calling Nova Canvas API:", {
+    // Check if image input is provided for editing mode
+    const rawImageUrl = safeParams.image
+        ? Array.isArray(safeParams.image)
+            ? safeParams.image[0]
+            : safeParams.image
+        : undefined;
+    const mode = rawImageUrl ? "IMAGE_VARIATION" : "TEXT_IMAGE";
+
+    logOps(`Calling Nova Canvas API (${mode}):`, {
         prompt: prompt.substring(0, 100),
         width,
         height,
         seed: safeParams.seed,
+        hasImage: !!rawImageUrl,
     });
 
     progress.updateBar(
         requestId,
         35,
         "Processing",
-        "Generating with Nova Canvas...",
+        `Generating with Nova Canvas (${mode === "IMAGE_VARIATION" ? "editing" : "text-to-image"})...`,
     );
 
     // Dynamic import to avoid requiring the SDK at module load time
@@ -100,19 +110,37 @@ export async function callNovaCanvasAPI(
         },
     });
 
-    const requestBody = {
-        taskType: "TEXT_IMAGE",
-        textToImageParams: {
-            text: prompt,
-        },
-        imageGenerationConfig: {
-            numberOfImages: 1,
-            height,
-            width,
-            cfgScale: 8.0,
-            ...(safeParams.seed != null ? { seed: safeParams.seed } : {}),
-        },
+    const imageGenerationConfig = {
+        numberOfImages: 1,
+        height,
+        width,
+        cfgScale: 8.0,
+        ...(safeParams.seed != null ? { seed: safeParams.seed } : {}),
     };
+
+    let requestBody: Record<string, unknown>;
+
+    if (rawImageUrl) {
+        // Image variation mode - download and convert to base64
+        const { base64 } = await downloadImageAsBase64(rawImageUrl);
+        requestBody = {
+            taskType: "IMAGE_VARIATION",
+            imageVariationParams: {
+                text: prompt,
+                images: [base64],
+                similarityStrength: 0.7,
+            },
+            imageGenerationConfig,
+        };
+    } else {
+        requestBody = {
+            taskType: "TEXT_IMAGE",
+            textToImageParams: {
+                text: prompt,
+            },
+            imageGenerationConfig,
+        };
+    }
 
     const command = new InvokeModelCommand({
         modelId: "amazon.nova-canvas-v1:0",

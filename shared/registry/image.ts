@@ -341,7 +341,7 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
-                completionVideoSeconds: 0.07, // $0.07 per second at 720p
+                completionVideoSeconds: 0.05, // $0.05 per second at 720p
             },
         ],
         description:
@@ -436,8 +436,8 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.04, // $0.04 per image
             },
         ],
-        description: "Amazon Nova Canvas - Bedrock Image Generation",
-        inputModalities: ["text"],
+        description: "Amazon Nova Canvas - Bedrock Image Generation & Editing",
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "nova-reel": {

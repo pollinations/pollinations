@@ -224,7 +224,7 @@ export const TEXT_SERVICES = {
             {
                 date: new Date("2026-03-22").getTime(),
                 promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
                 completionTextTokens: perMillion(0.5),
             },
         ],
@@ -244,7 +244,7 @@ export const TEXT_SERVICES = {
             {
                 date: new Date("2026-03-22").getTime(),
                 promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
                 completionTextTokens: perMillion(0.5),
             },
         ],
@@ -266,7 +266,7 @@ export const TEXT_SERVICES = {
             {
                 date: new Date("2026-03-22").getTime(),
                 promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
                 completionTextTokens: perMillion(0.5),
             },
         ],

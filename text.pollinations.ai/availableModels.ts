@@ -58,7 +58,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "grok",
-        config: portkeyConfig["myceli-grok-4-fast"],
+        config: portkeyConfig["grok-4-1-fast-non-reasoning"],
+    },
+    {
+        name: "grok-reasoning",
+        config: portkeyConfig["grok-4-1-fast-reasoning"],
+    },
+    {
+        name: "grok-legacy",
+        config: portkeyConfig["grok-4-fast-non-reasoning-legacy"],
     },
     {
         name: "openai-audio",

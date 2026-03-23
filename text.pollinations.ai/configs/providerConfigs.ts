@@ -103,6 +103,16 @@ export function createMyceliGrok4FastConfig(
     );
 }
 
+export function createAzureXaiModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://xai-models-resource.services.ai.azure.com/models",
+        process.env.AZURE_MYCELI_XAI_API_KEY,
+        overrides,
+    );
+}
+
 export function createPerplexityModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

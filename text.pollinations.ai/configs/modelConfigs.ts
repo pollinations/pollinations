@@ -2,6 +2,7 @@ import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAnthropicConfig,
     createAzureModelConfig,
+    createAzureXaiModelConfig,
     createBedrockNativeConfig,
     createDashScopeModelConfig,
     createFireworksModelConfig,
@@ -72,6 +73,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         2048,
     ),
     "myceli-grok-4-fast": createMyceliGrok4FastConfig,
+
+    // -- Azure (xAI Models Resource) ------------------------------------------
+    "grok-4-1-fast-non-reasoning": () =>
+        createAzureXaiModelConfig({ model: "grok-4-1-fast-non-reasoning" }),
+    "grok-4-1-fast-reasoning": () =>
+        createAzureXaiModelConfig({ model: "grok-4-1-fast-reasoning" }),
+    "grok-4-fast-non-reasoning-legacy": () =>
+        createAzureXaiModelConfig({ model: "grok-4-fast-non-reasoning" }),
 
     // -- Azure (PointsFlyer) --------------------------------------------------
     "gpt-5-nano-2025-08-07": createAzureWithMaxTokens(

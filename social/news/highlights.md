@@ -15,16 +15,16 @@
 - **2026-03-16** – **📱 Full Model Roster** The [models table](https://hello.pollinations.ai) now correctly fetches stats for all 200+ available models instead of giving up at 50. We also cleaned up the UI so you can easily spot new and alpha models.
 - **2026-03-16** – **🎨 Nanobanana Image Sizes** Requesting smaller images from nanobanana models now returns actual pixels instead of Vertex AI errors.
 - **2026-03-15** – **⚡ Frontend speed boost** We added lazy-loading and aggressive caching to the [main site](https://hello.pollinations.ai). Return visits now render near-instantly, because waiting for DOM elements is boring.
-- **2026-03-15** – **🤖 PromptPilot MCP Server** You can now generate images, video, and audio directly inside Claude, Cursor, or any other [MCP-compatible](https://mcp.sequa.ai/v1/pollinations/contribute) agent.
-- **2026-03-15** – **🎬 AI City Diorama Generator** New in the showcase: a fully automated n8n pipeline that hallucinates cinematic miniature cities and publishes them straight to YouTube Shorts.
-- **2026-03-15** – **📚 LoreLoom Storybooks** Also new in the community showcase: an interactive, narrated AI storybook generator for kids.
+- **2026-03-15** – **🤖 PromptPilot MCP Server** You can now generate images, video, and audio directly inside Claude, Cursor, or any other MCP-compatible agent.
+- **2026-03-15** – **🎬 AI City Diorama Generator** New in the showcase: a fully automated n8n pipeline that hallucinates cinematic miniature cities and publishes them straight to YouTube Shorts. [Try it](https://www.youtube.com/@WhatIF-KA/shorts) <!-- app -->
+- **2026-03-15** – **📚 LoreLoom Storybooks** Also new in the community showcase: an interactive, narrated AI storybook generator for kids. [Try it](https://loreloom.sprinthon.com) <!-- app -->
 - **2026-03-13** – **🎵 Voice acting via system prompt** Seraphyn joined as a community provider, bringing `qwen3-tts` to the [Unified API](https://gen.pollinations.ai). You can now style the voice output just by describing what you want in the system prompt.
 - **2026-03-13** – **🎨 Dirtberry Pro** Added `dirtberry-pro` to the image model roster. Pass it as your model parameter when you need high realism and complex scenes.
 - **2026-03-13** – **📊 Public user endpoint** We opened a restricted Tinybird pipe that safely exposes public profile and tier data. You can finally build those community leaderboards without leaking secrets.
 - **2026-03-13** – **🔗 Gratisfy integration** Pollinations is now hooked up to Gratisfy, letting you access our endpoints alongside other free AI providers through a single unified API.
 - **2026-03-11** – **🎨 GPT Images Liberated** We relocated `gpt-image-1-mini` and `gpt-image-1.5` to a new region to sidestep some overly enthusiastic content filters. Reliable, block-free generation is back on the [Unified API](https://gen.pollinations.ai).
 - **2026-03-10** – **🧠 New Models: Claude & Dirtberry** Claude Sonnet 4.6 is now available via the `claude-airforce` text endpoint, alongside `dirtberry` for quick realistic image generation. Hit the [Unified API](https://gen.pollinations.ai) to try them out.
-- **2026-03-10** – **🔑 Bring Your Own Pollen** The Product Packaging Designer and AI Dungeon Master community apps now support Pollinations SSO. Log in, spend your own Pollen balance, and bypass third-party media hosts with our native upload service.
+- **2026-03-10** – **🔑 Bring Your Own Pollen** The Product Packaging Designer and AI Dungeon Master community apps now support Pollinations SSO. Log in, spend your own Pollen balance, and bypass third-party media hosts with our native upload service. [View repos](https://github.com/pollinations/pollinations/tree/main/apps) <!-- app -->
 - **2026-03-09** – **🤖 Polly V2** Our [Discord](https://discord.gg/pollinations-ai-885844321461485618) bot got a brain transplant. Rebuilt with native internals for speed, she now features an adaptive personality that matches your tone, skips the sycophancy, and points you to the docs instead of dumping massive code blocks.
 - **2026-03-09** – **🎨 Unfiltered nanobanana** We took the training wheels off the nanobanana image model. Passing `safe=false` to the [API](https://gen.pollinations.ai) now properly bypasses native safety settings instead of relying on clunky prompt injections, resulting in fewer false-positive blocks on your creative prompts.
 - **2026-03-08** – **🎨 Fresh coat of pixels** The [main website](https://hello.pollinations.ai) has a new look. We replaced the old theming engine with a cohesive color palette and dynamic retro pixel art backgrounds. Much cozier.
@@ -32,13 +32,13 @@
 - **2026-03-06** – **🧠 Step-3.5-Flash Available** `step-3.5-flash` is now wired up and ready for chat completions via the [Unified API](https://gen.pollinations.ai).
 - **2026-03-06** – **💾 Media Storage Upgrades** Name tags for your files. Media downloads now preserve your original filenames, and re-uploading an existing file automatically resets its 14-day expiration timer.
 - **2026-03-05** – **🚀 GPT Image 1.5 Large** We unblocked the Azure endpoints and wired up the new 1.5 large model. Better pixels, fewer timeouts. Hit the [Unified API](https://gen.pollinations.ai) to try it.
-- **2026-03-05** – **✨ Unified Multimodal Chat** The community shipped `pollinations-ui`, a single interface that handles text, images, video, and audio without making you switch tabs.
-- **2026-03-05** – **🧩 Browser Extension** Generate images anywhere on the web using your own Pollen credits. No need to leave the tab you're supposed to be working in.
-- **2026-03-05** – **🎭 SillyTavern Avatars** A new community extension hooks into our image API to instantly generate and assign portraits to your roleplay characters based on their text descriptions.
-- **2026-03-05** – **🛡️ Skills-Sentinel-scan** Added a Dockerized security scanner to the dev tools ecosystem. Because you should probably check if your AI agent is leaking credentials before letting it loose.
+- **2026-03-05** – **✨ Unified Multimodal Chat** The community shipped `pollinations-ui`, a single interface that handles text, images, video, and audio without making you switch tabs. [Try it](https://pollinations-ui.vercel.app) <!-- app -->
+- **2026-03-05** – **🧩 Browser Extension** Generate images anywhere on the web using your own Pollen credits. No need to leave the tab you're supposed to be working in. [View repo](https://github.com/ChunkyPanda29/Pollinations_Browser_Extension/) <!-- app -->
+- **2026-03-05** – **🎭 SillyTavern Avatars** A new community extension hooks into our image API to instantly generate and assign portraits to your roleplay characters based on their text descriptions. [Try it](https://docs.sillytavern.app/) <!-- app -->
+- **2026-03-05** – **🛡️ Skills-Sentinel-scan** Added a Dockerized security scanner to the dev tools ecosystem. Because you should probably check if your AI agent is leaking credentials before letting it loose. [View repo](https://github.com/Amine-SGM/Skills-Sentinel-scan) <!-- app -->
 - **2026-03-04** – **🎨 Flux-2-dev gets eyes** You can now pass an `?image=<url>` parameter to the `flux-2-dev` model for image-to-image generation via our [Unified API](https://gen.pollinations.ai). Pixels in, different pixels out.
 - **2026-03-04** – **🔑 Name tags for your apps** Bring Your Own Pollen (BYOP) authorization screens now display your app name and GitHub handle. Users finally know exactly who they are sharing their pollen with.
-- **2026-03-04** – **🚀 Six new apps hit the showcase** The community shipped a massive batch of tools this week, including a prompt-to-code workspace (AiApps), a prompt engineering lab (PromptLab Studio), and a dedicated AI image gallery. The hive is busy.
+- **2026-03-04** – **🚀 Six new apps hit the showcase** The community shipped a massive batch of tools this week, including [AiApps](https://connor.ct.ws/aiapps/), [PromptLab Studio](https://promptlabstudio.vercel.app/), and a dedicated AI image gallery. <!-- app -->
 - **2026-03-03** – **🚀 Suno v5, Flux 2 Dev & Step 3.5 Flash** We wired up three new models. Generate music, pixels, and text through the [Unified API](https://gen.pollinations.ai) without changing your integration.
 - **2026-02-27** – **🎨 Seedream 5.0** New `seedream5` model added for image generation. It's lighter, newer, and available on the [Unified API](https://gen.pollinations.ai).
 - **2026-02-27** – **🚀 Gemini 3.1 Arrives** Upgraded `gemini-large` to 3.1 Pro and added `nanobanana-2` (Gemini 3.1 Flash) for high-speed image generation.
@@ -107,7 +107,7 @@
 - **2026-01-12** – **🎁 Free Tier Upgrades** Active users are now automatically upgraded to the Seed tier ($3/day) based on activity.
 - **2026-01-12** – **📱 New AI Apps** Try **Study Buzz** (study tools), **Onyx** (noir storyboards), and **Player or AI** (Roblox game).
 - **2026-01-12** – **🎥 Video Playback** Video generations now render with native players and improved tooltips.
-- **2026-01-05** – **🎵 React Audio Hook** New `usePollinationsAudio` hook for adding AI voice to your apps. [Docs](https://react-hooks.pollinations.ai)
+- **2026-01-05** – **🎵 React Audio Hook** New `usePollinationsAudio` hook for adding AI voice to your apps.
 - **2026-01-05** – **🤖 Gemini Agent Tools** Enable `google_search`, `code_execution`, and `url_context` on Gemini models. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2026-01-05** – **🚀 Qwen3-Coder** New `Qwen3-Coder-30B` model available for advanced code generation tasks.
 - **2026-01-05** – **🎨 Flux Returns** The popular `flux` model is back as a standalone option for image generation.
@@ -115,14 +115,11 @@
 - **2025-12-29** – **🚀 New Model: GPT Image Large** Access GPT Image 1.5 via the `gptimage-large` model ID for high-fidelity generations.
 - **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 model with reduced pricing and improved performance.
 - **2025-12-29** – **🎨 Image-to-Image Upgrades** Now supports multiple input images (pipe-separated) and automatic resizing for better results.
-- **2025-12-29** – **📱 New Community Apps** Try IDPhotoGen (ID photos), PromptPi (prompt engineering), and Nuvole AI Lite (iOS shortcut).
-- **2025-12-29** – **🚀 New Model: gptimage-large** Access GPT Image 1.5 for high-fidelity generations via the API. [API Docs](https://enter.pollinations.ai/api/docs)
-- **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 for smarter, faster chat responses. [Try it](https://hello.pollinations.ai)
+- **2025-12-29** – **📱 New Community Apps** Try [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev), [PromptPi](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk), and [Nuvole AI Lite](https://nuvoleai.com). <!-- app -->
 - **2025-12-29** – **🎥 Veo Image-to-Video** Turn images into videos using the updated `veo` model capabilities. [API Docs](https://enter.pollinations.ai/api/docs)
-- **2025-12-29** – **📱 New Creative Apps** Try **IDPhotoGen** (ID photos) and **PromptPi!** (prompt engineering) in our showcase. [See Apps](https://github.com/pollinations/pollinations/blob/master/apps/APPS.md)
 - **2025-12-22** – **🚀 New Models** Default `gemini` is now **Gemini 3 Flash**, plus added **Perplexity Sonar Reasoning Pro**. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2025-12-22** – **🎥 Veo Video Upgrades** Added **Image-to-Video** and **Frame Interpolation** (start/end frames) support for the `veo` model.
-- **2025-12-22** – **🔗 MCP Server v2.0** Major update adding video generation, analysis, and web search tools. [MCP Protocol](https://mcp.sequa.ai/v1/pollinations/contribute)
+- **2025-12-22** – **🔗 MCP Server v2.0** Major update adding video generation, analysis, and web search tools.
 - **2025-12-22** – **🎵 New Voices** Added 7 new voices (Coral, Verse, Sage, etc.) to the `openai-audio` model.
 - **2025-12-15** – **🚀 GPT-5.2 & Gemini Tools** Upgraded `openai-large` to GPT-5.2 and enabled Google Search & Code Execution by default for Gemini models.
 - **2025-12-15** – **🎨 Face-Aware Upscaling** Enhanced image generation with GFPGAN face restoration and MediaPipe detection for sharper portraits.
@@ -132,14 +129,12 @@
 - **2025-12-07** – **✨ Seedream 4.5** Upgraded image generation to **Seedream 4.5** supporting stunning 2K resolution.
 - **2025-12-07** – **🔍 Web Search** **Perplexity** and **Gemini** models can now access real-time web search results.
 - **2025-12-07** – **🚀 Amazon Nova Micro** Added `nova-micro` to text services for ultra-low-cost, high-speed inference.
-- **2025-12-07** – **🎥 Video Generation** Create videos from text or images using the new `veo` and `seedance` models. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2025-12-07** – **🎨 High-Res Upgrades** `seedream` updated to v4.5 (2K resolution) and `seedance` upgraded to Pro-Fast for superior quality.
 - **2025-12-07** – **📊 Richer Chat** The [Chat UI](https://chat.pollinations.ai) now renders data charts and supports video generation directly.
-- **2025-12-07** – **🤖 New Models** Added Amazon `nova-micro` and enabled web search for `gemini-search` and `perplexity` models.
 - **2025-11-29** – **🎨 Nano Banana Pro** New `nanobanana-pro` model (powered by Gemini 3 Pro) featuring 4K resolution support and built-in reasoning capabilities.
 - **2025-11-29** – **🤖 Claude Opus 4.5** Access the powerful new Claude Opus 4.5 model via the text API using the model ID `claude-xlarge`. Check the [API Docs](https://enter.pollinations.ai/api/docs).
 - **2025-11-29** – **🛠️ Advanced API Control** Added pass-through support for advanced parameters like `logprobs`, `logit_bias`, and `stream_options` for fine-grained generation control.
-- **2025-11-29** – **📱 PolliPalmTop App** A new Android app featuring AI chat, web search, and image generation has been added to the community showcase.
+- **2025-11-29** – **📱 PolliPalmTop App** A new Android app featuring AI chat, web search, and image generation. [Try it](https://aiworld.institute/server/pollipalmtopv1.apk) <!-- app -->
 - **2025-11-22** – **🚀 Massive Model Update** Added support for `Kimi K2 Thinking`, `Gemini Large`, `DeepSeek V3.1`, `Grok 4 Fast`, and `GPT-5 Nano`. Try them in the [Text API](https://enter.pollinations.ai).
 - **2025-11-22** – **🎤 Multimodal Audio API** Full support for OpenAI's Audio API features, including `input_audio` and mixed text/audio generation modalities.
 - **2025-11-22** – **🗳️ Vote for Models** You can now vote on which AI models we should add next directly in the pricing dashboard.
@@ -152,19 +147,19 @@
 - **2025-11-08** – **🎨 Exact Dimensions** Removed auto-scaling limits—generate images in specific resolutions (e.g., 1536x1024) without modification via the [Image API](https://enter.pollinations.ai).
 - **2025-11-08** – **🎵 Raw Output API** GET requests to text and audio endpoints now return raw text strings or MP3 files instead of JSON for easier browser usage.
 - **2025-11-01** – **🚀 Next-Gen Models** Access **GPT-5 Nano** and **GPT-4.1** via the text API, plus **Gemini 2.5 Flash** is now active. [Text API](https://enter.pollinations.ai)
-- **2025-11-01** – **📱 ReImagine Mobile App** A new open-source React Native application for transforming images on the go. [View PR](https://github.com/pollinations/pollinations/pull/4863)
-- **2025-11-01** – **🎨 Opposite Prompt Generator** A creative tool that generates the semantic opposite of your image prompts. [See the Code](https://github.com/pollinations/pollinations/pull/4633)
+- **2025-11-01** – **📱 ReImagine Mobile App** A new open-source React Native application for transforming images on the go. [Try it](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) <!-- app -->
+- **2025-11-01** – **🎨 Opposite Prompt Generator** A creative tool that generates the semantic opposite of your image prompts. [Try it](https://opposite-prompt-generator.pollinations.ai) <!-- app -->
 - **2025-11-01** – **⚡ Simplified Text API** Developers can now use `/api/generate/text/:prompt` for instant generation and pass auth tokens via URL parameters. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2025-10-25** – **🚀 Claude 4.5 Haiku** The new `claude-4.5-haiku` model is now live! Access it via the [Text API](https://enter.pollinations.ai) for faster, smarter responses.
 - **2025-10-25** – **🔗 Browser-Ready API** Added CORS support and standard `Authorization: Bearer` headers, enabling secure, direct API calls from browser applications.
 - **2025-10-25** – **📚 Docs Overhaul** A complete rewrite of our [API Documentation](https://enter.pollinations.ai/api/docs) features a new structure and expanded examples for Python, JS, and cURL.
-- **2025-10-25** – **🌐 Auto-Deploy Apps** Hacktoberfest projects now automatically deploy to `*.pollinations.ai` subdomains—try the new [AI Dungeon Master](https://github.com/pollinations/pollinations/pull/4506)
-- **2025-10-11** – **🎨 New Creative Apps** Launched three new AI tools: [Virtual Makeup Studio](https://github.com/pollinations/pollinations/pull/4442), [Packaging Designer](https://github.com/pollinations/pollinations/pull/4443), and [Map-to-3D](https://github.com/pollinations/pollinations/pull/4414) visualizer.
+- **2025-10-25** – **🌐 Auto-Deploy Apps** Hacktoberfest projects now automatically deploy to `*.pollinations.ai` subdomains — try the [View repo](https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master). <!-- app -->
+- **2025-10-11** – **🎨 New Creative Apps** Launched three new AI tools: Virtual Makeup Studio, Packaging Designer, and Map-to-3D visualizer. [View repos](https://github.com/pollinations/pollinations/tree/main/apps) <!-- app -->
 - **2025-10-11** – **🚀 Model Upgrades** `kontext` model now uses Azure Flux for superior img2img results. `openai-audio` input limit increased to 10k characters.
 - **2025-10-11** – **✨ Prompt Enhancer** The prompt enhancement system now supports image-based inputs to help refine your generation styles automatically.
-- **2025-10-11** – **🎮 Devil Summoner** A new procedural text RPG with combat and demon recruitment has been added to the [Games showcase](https://pollinations.ai).
+- **2025-10-11** – **🎮 Devil Summoner** A new procedural text RPG with combat and demon recruitment. [Play it](https://gamedemo-a65.pages.dev/) <!-- app -->
 - **2025-10-04** – **🤖 New Model: GPT-5 Mini** Added support for `gpt-5-mini` to the text generation API. Try it in your next request!
-- **2025-10-04** – **📚 Interactive API Docs** Launched new interactive documentation with request validation and schemas. Check it out at [enter.pollinations.ai/docs](https://enter.pollinations.ai/docs).
+- **2025-10-04** – **📚 Interactive API Docs** Launched new interactive documentation with request validation and schemas. Check it out at [enter.pollinations.ai/docs](https://enter.pollinations.ai/api/docs).
 - **2025-10-04** – **🎃 Hacktoberfest 2025** We are officially participating! Check our [Contributing Guide](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md) to join the open-source celebration.
 - **2025-10-04** – **🌟 Community Showcase** Added 20+ new projects to the showcase, including J.A.R.V.I.S., VOHU AI, and Interactive GeoMap.
 - **2025-09-27** – **🚀 GPT-5 Arrives** The `openai` and `openai-fast` endpoints are now powered by GPT-5 Mini and Nano models. [Text API](https://enter.pollinations.ai)
@@ -174,19 +169,19 @@
 - **2025-09-27** – **🔍 Live Search** The `gemini-search` model now features automatic Google Search grounding for real-time answers.
 - **2025-09-20** – **🔗 OpenAI Proxy** New drop-in replacement layer exposing OpenAI-compatible endpoints for pollinations.ai text, image, and audio services.
 - **2025-09-20** – **💻 VS Code Extension** Generate AI assets directly inside your IDE with the new Prompt2Image extension.
-- **2025-09-20** – **🎨 StoryWeaver AI** Create real-time comic book panels and storyboards in this new collaborative tool added to our showcase.
+- **2025-09-20** – **🎨 StoryWeaver AI** Create real-time comic book panels and storyboards. [Try it](https://storyweaver-ai-umber.vercel.app/) <!-- app -->
 - **2025-09-20** – **⚡ unpkg.ai** Generate JavaScript ESM modules on-demand using LLMs in this new developer tool.
 - **2025-09-13** – **💎 Pollen MVP** – Launched the foundation for user accounts and subscriptions with a new authentication system and [Polar.sh](https://polar.sh) integration.
-- **2025-09-13** – **🎨 New Community App** – Added **CapyIMG** to our showcase, a browser-based AI image generation tool powered by pollinations.ai.
+- **2025-09-13** – **🎨 New Community App** – Added **CapyIMG** to our showcase, a browser-based AI image generation tool powered by pollinations.ai. [Try it](https://capyuniverse.pages.dev/capyimg.html) <!-- app -->
 - **2025-09-06** – **🚀 GPT-5 Nano Support** The Text API now includes access to OpenAI's GPT-5 Nano model for next-gen performance. Check the [API Docs](https://enter.pollinations.ai/api/docs).
-- **2025-09-06** – **🤖 AI Agent Portal** A new multi-agent development environment for building complex projects is now available in the Hack & Build section.
-- **2025-09-06** – **🌍 CVRON AI Added** New Turkish-language focused image generator with `tr-TR` support added to the creative showcase.
+- **2025-09-06** – **🤖 AI Agent Portal** A new multi-agent development environment for building complex projects. [Try it](https://agent.makululinux.com/) <!-- app -->
+- **2025-09-06** – **🌍 CVRON AI Added** New Turkish-language focused image generator with `tr-TR` support. [Try it](https://cvronai.rf.gd) <!-- app -->
 - **2025-08-23** – **🚀 New AI Models** Added support for **GPT-5 Nano**, **Claude 3.5 Haiku**, **OpenAI o3**, and **Gemini 2.5 Flash Lite** to the [Text API](https://enter.pollinations.ai).
 - **2025-08-23** – **📊 Usage Statistics API** New endpoint to track hourly token usage, costs, and request counts with detailed filtering options. Check the [API Docs](https://enter.pollinations.ai/api/docs).
 - **2025-08-16** – **🤖 New Roleplay Model** Access the new `roblox-rp` model via the [Text API](https://enter.pollinations.ai), utilizing AWS Bedrock for varied and dynamic responses.
 - **2025-08-16** – **📊 Diagram Generation** Create Mermaid flowcharts and diagrams with the new EasyGen AI integration.
-- **2025-08-16** – **🌟 New Integration** Welcoming Pollix AI to the ecosystem of projects powered by pollinations.ai.
+- **2025-08-16** – **🌟 New Integration** Welcoming Pollix AI to the ecosystem of projects powered by pollinations.ai. [Try it](http://t.me/pollixrobot) <!-- app -->
 - **2025-08-09** – **⚡ Multilingual Caching** Upgraded semantic cache to the `bge-m3` model for smarter prompt matching across languages.
-- **2025-08-09** – **🌟 Community Showcase** Welcomed 8 new projects including [Island AI](https://islandai.app) and [Botzy](https://github.com/pollinations/pollinations/pull/3489) to the ecosystem.
+- **2025-08-09** – **🌟 Community Showcase** Welcomed 8 new projects including [Island AI](https://islandai.app) and [Botzy](https://botzy.hexabiz.com.pk) to the ecosystem. <!-- app -->
 - **2025-08-02** – **🚀 Hybrid Image Model** Upgraded image generation to use BPAIGen (1216px) as the primary engine with Kontext fallback for higher quality results. [Image API](https://image.pollinations.ai)
 - **2025-08-02** – **📚 OpenAPI Spec** Added official OpenAPI specification for the Image API to help developers build integrations faster. [API Docs](https://enter.pollinations.ai/api/docs)

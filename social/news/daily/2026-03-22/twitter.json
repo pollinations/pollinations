@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-03-22",
+  "period_start": "2026-03-22",
+  "period_end": "2026-03-22",
+  "generated_at": "2026-03-23T06:22:56.237825+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-22/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped alibaba's qwen models for text and vision. we put the large and vision variants on the free tier, so you can make api calls without doing accounting math. also added lnd ai to the image generator."
+}

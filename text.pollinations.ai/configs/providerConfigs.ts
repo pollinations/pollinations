@@ -113,6 +113,16 @@ export function createPerplexityModelConfig(
     };
 }
 
+export function createDashScopeModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+        process.env.DASHSCOPE_API_KEY,
+        overrides,
+    );
+}
+
 export function createOVHcloudModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

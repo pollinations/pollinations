@@ -445,10 +445,14 @@ test(
     },
 );
 
+// DashScope thinking-mode models don't support tool_choice: "required"
+const TOOL_CALL_EXCLUDED = ["qwen-coder-large", "qwen-large", "qwen-vision"];
+
 const toolCallTestCases = (): [ServiceId, number][] => {
     // Only test models that have tools: true in the registry
     return servicesToTest
         .filter((serviceId) => {
+            if (TOOL_CALL_EXCLUDED.includes(serviceId)) return false;
             const service = getServiceDefinition(serviceId);
             return service?.tools === true;
         })

@@ -129,6 +129,23 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
+    // Alibaba Wan 2.2 - Fast/cheap video generation (480P, 5s fixed)
+    "wan-fast": {
+        type: "alibaba-dashscope-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 5,
+        defaultResolution: "480p",
+    },
+
+    // Alibaba Qwen Image Plus - Text-to-image and image editing (auto-detects from image input)
+    "qwen-image": {
+        type: "alibaba-dashscope-image",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Grok Imagine - xAI official image generation
     "grok-imagine": {
         type: "xai-image",
@@ -174,6 +191,16 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
+    // LTX-2 - Fast video generation on Vast.ai
+    "ltx-2": {
+        type: "vastai-ltx2",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "720p",
+    },
+
     // Pruna p-image - Text-to-image generation
     "p-image": {
         type: "pruna",
@@ -195,6 +222,23 @@ export const IMAGE_CONFIG = {
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 10,
+        defaultResolution: "720p",
+    },
+
+    // Amazon Nova Canvas - Bedrock image generation
+    "nova-canvas": {
+        type: "nova-canvas",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Amazon Nova Reel - Bedrock video generation
+    "nova-reel": {
+        type: "nova-reel",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 6,
+        maxDuration: 30,
         defaultResolution: "720p",
     },
 } as const satisfies ImageModelsConfig;

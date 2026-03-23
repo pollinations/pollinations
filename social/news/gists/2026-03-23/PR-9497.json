@@ -1,0 +1,34 @@
+{
+  "pr_number": 9497,
+  "title": "fix: default audio to true for video generation",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9497",
+  "merged_at": "2026-03-23T21:49:52Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Videos get their voice",
+    "blurb": "We flipped the switch so video generation now includes audio by default for supported models. Time to let your moving pixels make some noise!",
+    "summary": "Updated the video generation API to default the audio parameter to true.",
+    "impact": "Videos generated with supported models like Wan will now automatically include sound, saving you an extra parameter flag.",
+    "keywords": [
+      "video",
+      "audio",
+      "api",
+      "wan",
+      "defaults"
+    ],
+    "visual_concept": "Polly the bee wearing tiny headphones, watching a retro TV or monitor that is playing a video with musical notes coming out of it to represent the new default audio feature.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny retro headphones, watching a chunky CRT television that has colorful pixelated musical notes floating out of its speakers. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9497.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny retro headphones, watching a chunky CRT television that has colorful pixelated musical notes floating out of its speakers. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-23T21:50:44.271726+00:00"
+}

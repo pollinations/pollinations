@@ -14,6 +14,7 @@ import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
+import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import {
     callSeedream5API,
     callSeedreamAPI,
@@ -1170,6 +1171,21 @@ const generateImage = async (
                 );
             } catch (error) {
                 logError("Nova Canvas generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "qwen-image": {
+            try {
+                return await callQwenImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Qwen image generation failed:", error.message);
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }

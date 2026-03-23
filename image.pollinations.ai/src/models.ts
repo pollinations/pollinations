@@ -129,6 +129,13 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
+    // Alibaba Qwen Image Plus - Text-to-image and image editing (auto-detects from image input)
+    "qwen-image": {
+        type: "alibaba-dashscope-image",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Z-Image - Fast 6B parameter image generation with SPAN 2x upscaling (IO.net)
     zimage: {
         type: "zimage",

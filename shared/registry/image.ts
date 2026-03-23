@@ -267,6 +267,26 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "qwen-image": {
+        aliases: [
+            "qwen-image-plus",
+            "qwen-image-2512",
+            "qwen-image-edit",
+            "qwen-image-edit-plus",
+        ],
+        modelId: "qwen-image",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.03, // $0.03 per image (international)
+            },
+        ],
+        description:
+            "Qwen Image Plus - Alibaba text-to-image and image editing via DashScope",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",

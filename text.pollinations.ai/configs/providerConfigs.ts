@@ -103,6 +103,16 @@ export function createMyceliGrok4FastConfig(
     );
 }
 
+export function createAzureXaiModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://xai-models-resource.services.ai.azure.com/models",
+        process.env.AZURE_MYCELI_XAI_API_KEY,
+        overrides,
+    );
+}
+
 export function createPerplexityModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
@@ -111,6 +121,16 @@ export function createPerplexityModelConfig(
         authKey: process.env.PERPLEXITY_API_KEY,
         ...overrides,
     };
+}
+
+export function createDashScopeModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+        process.env.DASHSCOPE_API_KEY,
+        overrides,
+    );
 }
 
 export function createOVHcloudModelConfig(

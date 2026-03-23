@@ -2,7 +2,9 @@ import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAnthropicConfig,
     createAzureModelConfig,
+    createAzureXaiModelConfig,
     createBedrockNativeConfig,
+    createDashScopeModelConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
     createOVHcloudMistralConfig,
@@ -72,6 +74,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "myceli-grok-4-fast": createMyceliGrok4FastConfig,
 
+    // -- Azure (xAI Models Resource) ------------------------------------------
+    "grok-4-1-fast-non-reasoning": () =>
+        createAzureXaiModelConfig({ model: "grok-4-1-fast-non-reasoning" }),
+    "grok-4-1-fast-reasoning": () =>
+        createAzureXaiModelConfig({ model: "grok-4-1-fast-reasoning" }),
+    "grok-4-fast-non-reasoning-legacy": () =>
+        createAzureXaiModelConfig({ model: "grok-4-fast-non-reasoning" }),
+
     // -- Azure (PointsFlyer) --------------------------------------------------
     "gpt-5-nano-2025-08-07": createAzureWithMaxTokens(
         process.env.AZURE_PF_GPT5NANO_API_KEY,
@@ -128,6 +138,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         ],
     }),
+    "nova-2-lite": () =>
+        createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
     // -- Google Vertex AI (Gemini) --------------------------------------------
     "gemini-3-flash-preview": createVertexGeminiConfig(
@@ -152,6 +164,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
+
+    // -- Alibaba DashScope (Qwen) ---------------------------------------------
+    "qwen3-coder-next": () =>
+        createDashScopeModelConfig({ model: "qwen3-coder-next" }),
+    "qwen3.5-plus": () => createDashScopeModelConfig({ model: "qwen3.5-plus" }),
+    "qwen3-vl-plus": () =>
+        createDashScopeModelConfig({ model: "qwen3-vl-plus" }),
 
     // -- OVHcloud (Qwen) ------------------------------------------------------
     "qwen3-coder-30b-a3b-instruct": () =>

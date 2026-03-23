@@ -8,6 +8,7 @@ import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
+import { mergeConsecutiveMessages } from "./transforms/mergeConsecutiveMessages.js";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import type { TransformFn } from "./types.js";
 
@@ -123,10 +124,12 @@ const models: ModelDefinition[] = [
     {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
+        transform: mergeConsecutiveMessages,
     },
     {
         name: "perplexity-reasoning",
         config: portkeyConfig["sonar-reasoning-pro"],
+        transform: mergeConsecutiveMessages,
     },
     {
         name: "kimi",

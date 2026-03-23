@@ -16,6 +16,8 @@ for i in $(seq 0 $((BOT_COUNT - 1))); do
     console.log([...c.channels, ...extra].join(','));
   ")
   REQUIRES_AUTH=$(node -e "console.log(require('./$CONFIG').bots[$i].requiresAuth ? 'true' : '')")
+  FREE_MODEL=$(node -e "console.log(require('./$CONFIG').bots[$i].freeModel || '')")
+  PAID_MODEL=$(node -e "console.log(require('./$CONFIG').bots[$i].paidModel || '')")
   TOKEN_VAR="BOT_TOKEN_$((i + 1))"
   TOKEN="${!TOKEN_VAR}"
 
@@ -28,9 +30,16 @@ for i in $(seq 0 $((BOT_COUNT - 1))); do
   if [ -n "$REQUIRES_AUTH" ]; then
     AUTH_FLAG="--requires-auth"
   fi
+  MODEL_FLAGS=""
+  if [ -n "$FREE_MODEL" ]; then
+    MODEL_FLAGS="$MODEL_FLAGS --free-model $FREE_MODEL"
+  fi
+  if [ -n "$PAID_MODEL" ]; then
+    MODEL_FLAGS="$MODEL_FLAGS --paid-model $PAID_MODEL"
+  fi
 
   echo "Starting $MODEL..."
-  DEBUG=app:* npx ts-node src-functional/cli.ts "$MODEL" "$TOKEN" --channels "$BOT_CHANNELS" --global-channels "$GLOBAL_CHANNELS" $AUTH_FLAG \
+  DEBUG=app:* npx ts-node src-functional/cli.ts "$MODEL" "$TOKEN" --channels "$BOT_CHANNELS" --global-channels "$GLOBAL_CHANNELS" $AUTH_FLAG $MODEL_FLAGS \
     2>&1 | tee "logs/$MODEL.log" &
   sleep 2
 done

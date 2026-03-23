@@ -11,6 +11,8 @@ export type BotConfig = {
     conversationChannelIds?: string[];
     globalChannelIds?: string[];
     requiresAuth?: boolean;
+    freeModel?: string;   // model to use without auth (hybrid bots)
+    paidModel?: string;   // model to use with auth (hybrid bots)
 };
 
 /**

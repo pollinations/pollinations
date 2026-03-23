@@ -19,6 +19,8 @@ function parseArgs(): {
     channels?: string[];
     globalChannels?: string[];
     requiresAuth?: boolean;
+    freeModel?: string;
+    paidModel?: string;
 } {
     const args = process.argv.slice(2);
 
@@ -51,6 +53,8 @@ Examples:
     let channels: string[] | undefined;
     let globalChannels: string[] | undefined;
     let requiresAuth = false;
+    let freeModel: string | undefined;
+    let paidModel: string | undefined;
 
     // Parse optional arguments
     for (let i = 2; i < args.length; i++) {
@@ -76,10 +80,16 @@ Examples:
             i++;
         } else if (arg === "--requires-auth") {
             requiresAuth = true;
+        } else if (arg === "--free-model" && i + 1 < args.length) {
+            freeModel = args[i + 1];
+            i++;
+        } else if (arg === "--paid-model" && i + 1 < args.length) {
+            paidModel = args[i + 1];
+            i++;
         }
     }
 
-    return { model, token, name, personality, channels, globalChannels, requiresAuth };
+    return { model, token, name, personality, channels, globalChannels, requiresAuth, freeModel, paidModel };
 }
 
 /**
@@ -110,6 +120,8 @@ function createBotConfig(args: ReturnType<typeof parseArgs>): BotConfig {
         conversationChannelIds: args.channels || globalChannels,
         globalChannelIds: args.globalChannels,
         requiresAuth: args.requiresAuth,
+        freeModel: args.freeModel,
+        paidModel: args.paidModel,
     };
 }
 

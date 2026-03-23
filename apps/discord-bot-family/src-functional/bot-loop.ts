@@ -1,5 +1,8 @@
 import debug from "debug";
 import {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
     ChannelType,
     Client,
     Events,
@@ -18,8 +21,14 @@ const RATE_WINDOW_MS = 60_000; // 1 minute
 const PROACTIVE_CHECK_INTERVAL_MS = 120_000; // 2 minutes
 const PROACTIVE_CHANCE = 0.2; // 20% chance to post when channel is quiet
 
-function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string): string {
-    return `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;
+function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string, usingFreeModel?: boolean): string {
+    const base = `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;
+
+    if (usingFreeModel && config.paidModel) {
+        return `${base}\n\nYou are currently running on the lighter ${config.freeModel} model. The user has been shown a login button to connect their Pollen account and unlock ${config.paidModel}. If they ask complex questions, you can mention they'll get better results once they connect their account. Keep it natural and brief.`;
+    }
+
+    return base;
 }
 
 /**
@@ -58,8 +67,12 @@ async function generateResponseWithHistory(
     initialPrompt?: string,
     userToken?: string,
 ): Promise<string | null> {
+    // Determine if using free model (no user token for hybrid bots)
+    const usingFreeModel = !!(config.requiresAuth && config.freeModel && !userToken);
+    const actualModel = usingFreeModel ? config.freeModel! : (config.paidModel || config.model);
+
     // Get system prompt based on bot configuration
-    const systemPrompt = getSystemPrompt(config, client.user?.username, client.user?.id);
+    const systemPrompt = getSystemPrompt(config, client.user?.username, client.user?.id, usingFreeModel);
 
     // Fetch channel and history
     const channel = await discordApiCall(
@@ -95,10 +108,10 @@ async function generateResponseWithHistory(
         log("Using initial prompt due to channel fetch error");
     }
 
-    // Generate response
+    // Generate response using the resolved model
     const response = await generateText(
         apiMessages,
-        config.model,
+        actualModel,
         systemPrompt,
         userToken,
     );
@@ -315,13 +328,9 @@ async function processMessage(
         }
     }
 
-    // Auth-required bots: check for user token or initiate device auth
-    if (config.requiresAuth && !msg.author.bot) {
-        const existingToken = getUserToken(msg.author.id);
-        if (!existingToken) {
-            await initiateDeviceAuth(msg, config);
-            return;
-        }
+    // Hybrid bots: if user isn't logged in, send login button + start background poll
+    if (config.requiresAuth && !msg.author.bot && !getUserToken(msg.author.id)) {
+        await sendLoginButton(msg, config, client, generateText);
     }
 
     // Stateless rate limit: only applies in global channels, not when directly addressed
@@ -397,16 +406,9 @@ async function processMessage(
     );
 
     if (response) {
-        let finalResponse = response;
-
-        // Upsell: gemini-fast suggests gemini-large for complex questions
-        if (config.model === "gemini-fast" && !msg.author.bot && shouldSuggestUpgrade(msg.content)) {
-            finalResponse += "\n\n💡 *For more complex tasks, try a premium model — connect your Pollen account at enter.pollinations.ai/device*";
-        }
-
-        log("Sending response: %s", finalResponse);
+        log("Sending response: %s", response);
         await discordApiCall(
-            () => msg.reply(finalResponse.slice(0, 1500)),
+            () => msg.reply(response.slice(0, 1500)),
             "message reply",
             config.name,
         );
@@ -415,89 +417,61 @@ async function processMessage(
     }
 }
 
-// Track in-progress auth flows to avoid spamming users
-const pendingAuthFlows = new Set<string>();
-
 /**
- * Initiate device auth flow: DM the user with a code and poll for approval.
+ * Send a login button and start background auth polling.
+ * On success, trigger a synthetic agent response welcoming the user.
  */
-async function initiateDeviceAuth(msg: Message, config: BotConfig): Promise<void> {
-    const userId = msg.author.id;
-
-    // Don't start multiple auth flows for the same user
-    if (pendingAuthFlows.has(userId)) {
-        await discordApiCall(
-            () => msg.reply("⏳ You already have a login in progress — check your DMs!"),
-            "auth pending reply",
-            config.name,
-        );
-        return;
-    }
-
-    pendingAuthFlows.add(userId);
-
+async function sendLoginButton(
+    msg: Message,
+    config: BotConfig,
+    client: Client,
+    generateText: GenerateTextWithHistory,
+): Promise<void> {
     try {
-        const { device_code, user_code, verification_uri_complete } = await requestDeviceCode();
+        const { device_code, verification_uri_complete } = await requestDeviceCode();
 
-        // Reply in channel + DM the user
+        const button = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder()
+                .setLabel("Connect Pollen Account")
+                .setStyle(ButtonStyle.Link)
+                .setURL(verification_uri_complete),
+        );
+
         await discordApiCall(
-            () => msg.reply(`🔐 **${config.model}** requires a Pollen account. Check your DMs to connect!`),
-            "auth prompt reply",
+            () => msg.reply({
+                content: `🔑 Connect your Pollen account to unlock **${config.paidModel}**`,
+                components: [button],
+            }),
+            "login button",
             config.name,
         );
 
-        const dm = await discordApiCall(
-            () => msg.author.send(
-                `To use **${config.model}**, connect your Pollen account:\n\n` +
-                `1️⃣ Go to: ${verification_uri_complete}\n` +
-                `2️⃣ Or visit \`enter.pollinations.ai/device\` and enter code: **${user_code}**\n\n` +
-                `⏰ This code expires in 30 minutes.`
-            ),
-            "auth DM",
-            config.name,
-        );
+        // Poll in background — don't block
+        pollForToken(device_code).then(async ({ accessToken, expiresIn }) => {
+            storeUserToken(msg.author.id, accessToken, expiresIn);
+            log("User %s authenticated successfully", msg.author.id);
 
-        if (!dm) {
-            await discordApiCall(
-                () => msg.reply(`❌ I couldn't DM you. Please enable DMs from server members, then try again.`),
-                "dm failed reply",
-                config.name,
+            // Trigger agent response for the login event
+            const response = await generateResponseWithHistory(
+                client,
+                config,
+                generateText,
+                msg.channelId,
+                `[System: User <@${msg.author.id}> just connected their Pollen account! They now have access to the full ${config.paidModel} model. Welcome them and let them know.]`,
+                accessToken,
             );
-            return;
-        }
-
-        // Poll in background
-        try {
-            const { accessToken, expiresIn } = await pollForToken(device_code);
-            storeUserToken(userId, accessToken, expiresIn);
-
-            await discordApiCall(
-                () => msg.author.send(`✅ Connected! You can now use **${config.model}**. Try messaging me again.`),
-                "auth success DM",
-                config.name,
-            );
-        } catch (err: any) {
-            log("Device auth failed for %s: %s", userId, err.message);
-            await discordApiCall(
-                () => msg.author.send(`❌ Login failed: ${err.message}. Try again by messaging ${config.model}.`),
-                "auth failure DM",
-                config.name,
-            );
-        }
+            if (response) {
+                const channel = await client.channels.fetch(msg.channelId);
+                if (channel && "send" in channel) {
+                    await (channel as any).send(response.slice(0, 1500));
+                }
+            }
+        }).catch((err) => {
+            log("Background auth poll failed for %s: %s", msg.author.id, err.message);
+        });
     } catch (err: any) {
-        log("Failed to start device auth for %s: %O", userId, err);
-    } finally {
-        pendingAuthFlows.delete(userId);
+        log("Failed to send login button for %s: %O", msg.author.id, err);
     }
-}
-
-/**
- * Heuristic: should we suggest upgrading to a premium model?
- */
-function shouldSuggestUpgrade(content: string): boolean {
-    if (content.length > 500) return true;
-    const keywords = /\b(code|analyze|write|debug|explain|refactor|implement|architecture|review)\b/i;
-    return keywords.test(content);
 }
 
 /**

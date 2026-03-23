@@ -4,6 +4,7 @@
  */
 
 import debug from "debug";
+import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
 import {
     callSeedanceAPI,
@@ -60,6 +61,9 @@ export async function createAndReturnVideo(
             break;
         case "wan":
             result = await callWanAPI(prompt, safeParams, progress, requestId);
+            break;
+        case "ltx-2":
+            result = await callLtx2API(prompt, safeParams, progress, requestId);
             break;
         case "p-video":
             result = await callPrunaVideoAPI(

@@ -592,7 +592,6 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3.5", "qwen3.5-plus"],
         modelId: "qwen3.5-plus",
         provider: "alibaba",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -613,7 +612,6 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3-vl", "qwen3-vl-plus", "qwen-vl"],
         modelId: "qwen3-vl-plus",
         provider: "alibaba",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),

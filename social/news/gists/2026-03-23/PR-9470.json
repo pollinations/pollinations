@@ -1,0 +1,34 @@
+{
+  "pr_number": 9470,
+  "title": "fix: add missing ltx-2 routing in video handler",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9470",
+  "merged_at": "2026-03-23T10:36:55Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Plugging LTX-2 back in",
+    "blurb": "We found a loose wire in our video routing! The LTX-2 video model is fully plugged back in and ready to generate your moving pixels.",
+    "summary": "Fixed a routing issue in the video generation handler that prevented the LTX-2 model from processing requests.",
+    "impact": "Users can once again generate videos using the ltx-2 model without encountering unsupported generation errors.",
+    "keywords": [
+      "video",
+      "ltx-2",
+      "bug-fix",
+      "api",
+      "routing"
+    ],
+    "visual_concept": "The bee mascot acting as a technician, fixing a loose cable or plugging a glowing wire into a retro video router or TV monitor. The monitor robot companion is present and happy.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, plugging a glowing lime green (#ecf874) cable into a chunky retro video router. A cute monitor robot nearby displays a happy face on its screen. Soft lavender and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9470.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, plugging a glowing lime green (#ecf874) cable into a chunky retro video router. A cute monitor robot nearby displays a happy face on its screen. Soft lavender and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-23T10:37:52.335475+00:00"
+}

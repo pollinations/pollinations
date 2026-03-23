@@ -10,6 +10,7 @@ Discord posting is handled separately by publish_realtime.py.
 See social/PIPELINE.md for full architecture.
 """
 
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -18,6 +19,7 @@ from typing import Dict, Optional
 from common import (
     load_prompt,
     get_env,
+    get_repo_root,
     call_pollinations_api,
     generate_image,
     commit_image_to_branch,
@@ -49,8 +51,8 @@ def fetch_pr_data(repo: str, pr_number: str, token: str) -> Dict:
     return resp.json()
 
 
-def fetch_pr_files(repo: str, pr_number: str, token: str) -> str:
-    """Fetch list of changed files as a formatted string."""
+def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
+    """Fetch list of changed files. Returns (formatted_string, list_of_filenames)."""
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
@@ -70,13 +72,63 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> str:
             break
         page += 1
 
+    filenames = [f.get("filename", "") for f in all_files]
     lines = []
     for f in all_files:
         status = f.get("status", "modified")
         filename = f.get("filename", "")
         changes = f.get("changes", 0)
         lines.append(f"  {status}: {filename} (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
-    return "\n".join(lines) if lines else "(no files changed)"
+    summary = "\n".join(lines) if lines else "(no files changed)"
+    return summary, filenames
+
+
+# ── APPS.md lookup ──────────────────────────────────────────────────
+
+def lookup_newest_app() -> Optional[Dict]:
+    """Read apps/APPS.md and return the newest app's name and URL.
+
+    APPS.md is sorted newest-first, so the first data row is the newest app.
+    Returns {"app_name": str, "app_url": str} or None.
+    """
+    repo_root = get_repo_root()
+    apps_path = os.path.join(repo_root, "apps", "APPS.md")
+    if not os.path.exists(apps_path):
+        return None
+
+    with open(apps_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    # Find the header and first data row (skip header + separator)
+    data_lines = [l.strip() for l in lines if l.strip().startswith("|") and not l.strip().startswith("| -")]
+    if len(data_lines) < 2:
+        return None
+
+    # Parse header to find column indices
+    header_cols = [c.strip() for c in data_lines[0].split("|")]
+    # First data row (newest app)
+    row_cols = [c.strip() for c in data_lines[1].split("|")]
+
+    def col_val(name):
+        try:
+            idx = header_cols.index(name)
+            return row_cols[idx] if idx < len(row_cols) else ""
+        except ValueError:
+            return ""
+
+    name = col_val("Name")
+    web_url = col_val("Web_URL")
+    github_repo_url = col_val("Github_Repository_URL")
+
+    if not name:
+        return None
+
+    # Prefer Web_URL, fall back to Github_Repository_URL
+    app_url = web_url or github_repo_url
+    if not app_url:
+        return None
+
+    return {"app_name": name, "app_url": app_url}
 
 
 # ── Step 1: AI analysis ─────────────────────────────────────────────
@@ -109,7 +161,7 @@ Changed files:
     return parse_json_response(response) if response else None
 
 
-def build_full_gist(pr_data: Dict, ai_analysis: Dict) -> Dict:
+def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Dict:
     """Build the complete gist object from PR data + AI analysis."""
     labels = [l["name"] for l in pr_data.get("labels", [])]
     author = pr_data.get("user", {}).get("login", "unknown")
@@ -129,14 +181,13 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict) -> Dict:
     # Apply hard rules for publish_tier
     gist["gist"]["publish_tier"] = apply_publish_tier_rules(gist)
 
-    # Extract app URL for app submission PRs
-    if "TIER-APP-REVIEW-PR" in labels:
-        body = pr_data.get("body") or ""
-        # PR body format: "- Adds [AppName](https://...) to category"
-        link_match = re.search(r"\[([^\]]+)\]\(([^)]+)\)", body)
-        if link_match:
-            gist["app_name"] = link_match.group(1)
-            gist["app_url"] = link_match.group(2)
+    # Detect app submissions: PR touches apps/APPS.md → look up the app
+    if "apps/APPS.md" in changed_files:
+        app_info = lookup_newest_app()
+        if app_info:
+            gist["app_name"] = app_info["app_name"]
+            gist["app_url"] = app_info["app_url"]
+            print(f"  App detected: {app_info['app_name']} → {app_info['app_url']}")
 
     return gist
 
@@ -185,7 +236,7 @@ def main():
     # ── Fetch PR data ────────────────────────────────────────────────
     print(f"\n[1/2] Analyzing PR #{pr_number}...")
     pr_data = fetch_pr_data(repo_full_name, pr_number, github_token)
-    files_summary = fetch_pr_files(repo_full_name, pr_number, github_token)
+    files_summary, changed_files = fetch_pr_files(repo_full_name, pr_number, github_token)
 
     # ── Step 1: AI analysis → gist JSON → commit ────────────────────
     ai_analysis = analyze_pr(pr_data, files_summary, pollinations_token)
@@ -193,7 +244,7 @@ def main():
         print(f"  FATAL: PR analysis failed with model {MODEL}")
         sys.exit(1)
 
-    gist = build_full_gist(pr_data, ai_analysis)
+    gist = build_full_gist(pr_data, ai_analysis, changed_files)
 
     errors = validate_gist(gist)
     if errors:

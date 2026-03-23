@@ -35,7 +35,12 @@ export async function callNovaReelAPI(
         );
     }
 
-    const durationSeconds = 6; // Nova Reel only supports 6s
+    // Duration must be a multiple of 6, max 30s. Default 6s.
+    const requestedDuration = safeParams.duration || 6;
+    const durationSeconds = Math.min(
+        30,
+        Math.max(6, Math.round(requestedDuration / 6) * 6),
+    );
     const imageParam = safeParams.image as string | string[] | undefined;
     const hasImage =
         imageParam &&
@@ -94,8 +99,11 @@ export async function callNovaReelAPI(
         ];
     }
 
+    // Use MULTI_SHOT_AUTOMATED for >6s, TEXT_VIDEO for 6s
+    const taskType =
+        durationSeconds > 6 ? "MULTI_SHOT_AUTOMATED" : "TEXT_VIDEO";
     const requestBody = {
-        taskType: "TEXT_VIDEO",
+        taskType,
         textToVideoParams,
         videoGenerationConfig: {
             durationSeconds,
@@ -107,7 +115,7 @@ export async function callNovaReelAPI(
     const s3OutputPrefix = `s3://${s3Bucket}/nova-reel/${requestId}/`;
 
     const startCommand = new StartAsyncInvokeCommand({
-        modelId: "amazon.nova-reel-v1:0",
+        modelId: "amazon.nova-reel-v1:1",
         modelInput: requestBody,
         outputDataConfig: {
             s3OutputDataConfig: {

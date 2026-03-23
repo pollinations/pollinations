@@ -465,7 +465,8 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.08, // $0.08 per second of video
             },
         ],
-        description: "Amazon Nova Reel - Bedrock Video Generation (6s, 720p)",
+        description:
+            "Amazon Nova Reel - Bedrock Video Generation (6-30s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

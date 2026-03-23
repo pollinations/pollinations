@@ -1,0 +1,34 @@
+{
+  "pr_number": 9501,
+  "title": "fix: improve seed upgrade scoring and logging",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9501",
+  "merged_at": "2026-03-23T22:46:51Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Better math for Seed upgrades",
+    "blurb": "We've tuned the GitHub activity scoring for automatic Seed upgrades. The commit window now looks back a full year, and we've squashed the bugs that were getting in the way of legitimate upgrades.",
+    "summary": "Improved the Spore-to-Seed auto-upgrade script by expanding the commit evaluation window to one year and fixing resource limit errors that caused false rejections.",
+    "impact": "Users with legitimate GitHub activity will now be reliably and fairly upgraded to the Seed tier without being incorrectly flagged due to API limits.",
+    "keywords": [
+      "seed tier",
+      "github",
+      "upgrades",
+      "scoring",
+      "bug fix"
+    ],
+    "visual_concept": "The PR is about upgrading users from Spore (mushroom) to Seed (sprout/plant) based on GitHub activity. Visuals: Polly the bee evaluating a small glowing seed or sprout, holding a clipboard or magnifying glass. A retro computer showing a green checkmark.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses and holding a clipboard, carefully inspecting a glowing green seed sprouting in a lime green (#ecf874) flower pot. A retro computer monitor in the background displays a green checkmark and chunky code. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9501.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses and holding a clipboard, carefully inspecting a glowing green seed sprouting in a lime green (#ecf874) flower pot. A retro computer monitor in the background displays a green checkmark and chunky code. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-03-23T22:48:56.328440+00:00"
+}

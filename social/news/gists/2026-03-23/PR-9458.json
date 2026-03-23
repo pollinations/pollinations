@@ -1,0 +1,34 @@
+{
+  "pr_number": 9458,
+  "title": "fix: add missing secrets for nova and qwen models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9458",
+  "merged_at": "2026-03-23T03:09:24Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Unlocking Nova and Qwen",
+    "blurb": "We've securely tucked the right API keys into our infrastructure so the Nova and Qwen models are back to buzzing smoothly. Time to get generating!",
+    "summary": "Added missing API keys to the text and image services to restore functionality for Qwen and Nova models.",
+    "impact": "Users can once again generate content using Qwen text models and Nova image/video models without encountering authorization errors.",
+    "keywords": [
+      "bugfix",
+      "models",
+      "qwen",
+      "nova",
+      "secrets"
+    ],
+    "visual_concept": "Polly the bee unlocking a secure server or vault with a glowing key, representing the addition of missing API secrets for the models.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security badge, inserting a glowing lime green (#ecf874) pixelated key into a retro server rack. A chunky monitor robot stands nearby, its screen showing a happy unlocked padlock icon. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9458.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security badge, inserting a glowing lime green (#ecf874) pixelated key into a retro server rack. A chunky monitor robot stands nearby, its screen showing a happy unlocked padlock icon. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-23T03:10:24.170589+00:00"
+}

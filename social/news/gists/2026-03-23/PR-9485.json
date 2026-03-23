@@ -1,0 +1,34 @@
+{
+  "pr_number": 9485,
+  "title": "fix: make cost estimation work as soon as data comes in",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9485",
+  "merged_at": "2026-03-23T16:04:52Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Real-time math",
+    "blurb": "Cost estimates now kick in almost instantly. No more waiting until tomorrow to see how much pollen your new model is sipping.",
+    "summary": "Updated the model stats pipeline to include current-day data, allowing cost estimations to calculate after just three successful requests.",
+    "impact": "Developers can now see accurate cost estimates for models in real-time instead of waiting for the next day's data.",
+    "keywords": [
+      "cost estimation",
+      "analytics",
+      "observability",
+      "billing",
+      "api"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot looking at a glowing real-time chart, with the robot printing a tiny receipt to represent instant cost calculations.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a glowing lime green (#ecf874) chart on a retro terminal. The robot is printing a tiny pixelated receipt. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9485.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a glowing lime green (#ecf874) chart on a retro terminal. The robot is printing a tiny pixelated receipt. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-03-23T16:06:08.581865+00:00"
+}

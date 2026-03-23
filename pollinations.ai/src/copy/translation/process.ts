@@ -32,7 +32,7 @@ Process all items now:`;
         `📝 [COPY] Processing ${items.length} items → ${targetLanguage}`,
     );
 
-    const response = await generateText(prompt);
+    const response = await generateText(prompt, undefined, "openai-fast");
     const result = parseJsonResponse(response, items);
     console.log(`✅ [COPY] Done`);
 

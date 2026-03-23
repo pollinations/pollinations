@@ -11,6 +11,7 @@ const logError = debug("pollinations:ltx2:error");
 
 // LTX-2 Vast.ai endpoint (instance 32608960 GPU 0)
 const LTX2_BASE_URL = process.env.LTX2_BASE_URL || "http://114.32.64.6:40161";
+const BACKEND_TOKEN = process.env.PLN_IMAGE_BACKEND_TOKEN || "";
 
 // Polling constants
 const POLL_INTERVAL_MS = 2000;
@@ -93,7 +94,10 @@ async function enqueueLtx2Job(
 
     const response = await fetch(`${LTX2_BASE_URL}/enqueue`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            ...(BACKEND_TOKEN && { "x-backend-token": BACKEND_TOKEN }),
+        },
         body: JSON.stringify(requestBody),
     });
 

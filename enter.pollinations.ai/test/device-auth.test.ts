@@ -99,6 +99,71 @@ describe("Device Authorization Flow", () => {
         expect(res.status).toBe(400);
     });
 
+    test("deny flow: token returns access_denied after deny", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("polar", "tinybird", "github");
+        const device = await insertDeviceCode();
+
+        const denyRes = await SELF.fetch(`${BASE}/api/device/deny`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ userCode: device.userCode }),
+        });
+        expect(denyRes.status).toBe(200);
+
+        const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: device.deviceCode }),
+        });
+        const body = (await tokenRes.json()) as { error: string };
+        expect(tokenRes.status).toBe(400);
+        expect(body.error).toBe("access_denied");
+    },
+    { timeout: 30000 });
+
+    test("expired code returns error on info and token", async () => {
+        const device = await insertDeviceCode({
+            expiresAt: new Date(Date.now() - 1000),
+        });
+
+        const infoRes = await SELF.fetch(
+            `${BASE}/api/device/info?user_code=${device.userCode}`,
+        );
+        expect(infoRes.status).toBe(400);
+        const infoBody = (await infoRes.json()) as { error: string };
+        expect(infoBody.error).toBe("expired_token");
+
+        const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: device.deviceCode }),
+        });
+        expect(tokenRes.status).toBe(400);
+        const tokenBody = (await tokenRes.json()) as { error: string };
+        expect(tokenBody.error).toBe("expired_token");
+    });
+
+    test("client_id mismatch returns invalid_client on token", async () => {
+        const device = await insertDeviceCode({ clientId: "app-a" });
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                device_code: device.deviceCode,
+                client_id: "app-b",
+            }),
+        });
+        const body = (await res.json()) as { error: string };
+        expect(res.status).toBe(400);
+        expect(body.error).toBe("invalid_client");
+    });
+
     test("POST /api/device/token before approval returns authorization_pending", async () => {
         const device = await insertDeviceCode();
         const res = await SELF.fetch(`${BASE}/api/device/token`, {

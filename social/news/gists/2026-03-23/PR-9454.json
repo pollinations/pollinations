@@ -1,0 +1,35 @@
+{
+  "pr_number": 9454,
+  "title": "feat: add wan-fast (wan2.2) free-tier video model",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9454",
+  "merged_at": "2026-03-23T00:59:55Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fast, free, and moving",
+    "blurb": "Video generation just got a new free tier. We added wan-fast to the API—powered by Alibaba's Wan2.2—so you can turn text and images into motion without spending a dime.",
+    "summary": "Added the wan-fast video model to the API, bringing free-tier text-to-video and image-to-video generation powered by Alibaba's Wan2.2.",
+    "impact": "Users can now generate 5-second 480P videos for free using the wan-fast model, which automatically routes between text-to-video and image-to-video based on the input.",
+    "keywords": [
+      "video",
+      "wan-fast",
+      "wan2.2",
+      "free-tier",
+      "api",
+      "models"
+    ],
+    "visual_concept": "Polly the bee as a movie director with a clapperboard, alongside the Monitor Robot displaying a moving video. Represents the new fast, free video generation model.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny director's beret and holding a clapperboard, standing next to a chunky Monitor Robot whose screen shows a fast-moving landscape video. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9454.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny director's beret and holding a clapperboard, standing next to a chunky Monitor Robot whose screen shows a fast-moving landscape video. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-23T01:00:57.864493+00:00"
+}

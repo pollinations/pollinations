@@ -294,7 +294,7 @@ function AuthorizeComponent() {
                 }
                 setDeviceOutcome("approved");
             } else {
-                const url = new URL(redirect_url);
+                const url = new URL(redirect_url!);
                 url.hash = `api_key=${key}`;
                 window.location.href = url.toString();
             }
@@ -320,7 +320,7 @@ function AuthorizeComponent() {
             }
             setDeviceOutcome("denied");
         } else if (parsedRedirectUrl) {
-            window.location.href = redirect_url;
+            window.location.href = redirect_url!;
         } else {
             navigate({ to: "/" });
         }

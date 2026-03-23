@@ -19,7 +19,7 @@ function isExpired(device: { expiresAt: Date }) {
 
 /** Look up a device code by user_code and verify it's pending + not expired. */
 async function requirePendingDevice(
-    db: ReturnType<typeof drizzle>,
+    db: ReturnType<typeof drizzle<typeof schema>>,
     userCode: string,
 ) {
     const device = await db.query.deviceCode.findFirst({

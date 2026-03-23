@@ -1,0 +1,34 @@
+{
+  "pr_number": 9480,
+  "title": "fix: app links in news pipeline + highlights cleanup",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9480",
+  "merged_at": "2026-03-23T14:04:25Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Connecting the dots",
+    "blurb": "Our internal news pipeline just got smarter at finding and linking community apps. Now we can shout out your creations with direct links automatically!",
+    "summary": "Updated the social media pipeline to automatically detect community app submissions in APPS.md and extract their URLs for daily changelogs.",
+    "impact": "Community apps featured in our daily news will now automatically include direct links to try them out or view their repositories.",
+    "keywords": [
+      "social",
+      "pipeline",
+      "apps",
+      "automation",
+      "changelog"
+    ],
+    "visual_concept": "The PR is about linking apps and news pipelines. Visual symbols: newspapers, links/chains, the bee mascot organizing papers or reading a newspaper. The robot companion could be printing out news.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, organizing a stack of pixelated newspapers with glowing lime green (#ecf874) links connecting them. A chunky retro robot companion prints out fresh code snippets. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9480.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, organizing a stack of pixelated newspapers with glowing lime green (#ecf874) links connecting them. A chunky retro robot companion prints out fresh code snippets. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-03-23T14:05:20.624704+00:00"
+}

@@ -1,8 +1,10 @@
 # 🎨 ReImagine - Transform Images with AI
 
-[![Created with Pollinations](https://img.shields.io/badge/Created%20with-Pollinations-35D89A?style=flat-square)](https://pollinations.ai)
-[![React Native](https://img.shields.io/badge/React%20Native-61DAFB?logo=react&logoColor=black)](https://reactnative.dev/)
-[![Expo](https://img.shields.io/badge/Expo-000020?logo=expo&logoColor=white)](https://expo.dev/)
+[![Open in Bolt](https://img.shields.io/badge/Open%20in-Bolt.new-black?style=flat-square&logo=stackblitz)](https://bolt.new/?prompt=Clone%20ReImagine%20from%20https%3A%2F%2Fgithub.com%2Fpollinations%2Fpollinations%2Ftree%2Fmain%2Fapps%2Freimagine.%20React%20Native%20%2B%20Expo%20app%20for%20AI%20image%20transformation%20using%20the%20Pollinations%20API%20at%20gen.pollinations.ai.)&nbsp;
+[![Open in Lovable](https://img.shields.io/badge/Open%20in-Lovable-ff69b4?style=flat-square)](https://lovable.dev/?autosubmit=true#prompt=Clone%20ReImagine%20from%20https%3A%2F%2Fgithub.com%2Fpollinations%2Fpollinations%2Ftree%2Fmain%2Fapps%2Freimagine.%20React%20Native%20%2B%20Expo%20app%20for%20AI%20image%20transformation%20using%20the%20Pollinations%20API%20at%20gen.pollinations.ai.)&nbsp;
+[![Created with Pollinations](https://img.shields.io/badge/Created%20with-Pollinations-35D89A?style=flat-square)](https://pollinations.ai)&nbsp;
+[![React Native](https://img.shields.io/badge/React%20Native-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactnative.dev/)&nbsp;
+[![Expo](https://img.shields.io/badge/Expo-000020?style=flat-square&logo=expo&logoColor=white)](https://expo.dev/)
 
 ReImagine is a mobile application that lets you transform images using powerful AI models from Pollinations. Browse and select images from the Civitai community or upload your own, then apply creative transformations with just a few taps!
 

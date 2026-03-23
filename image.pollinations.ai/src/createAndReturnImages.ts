@@ -1175,7 +1175,6 @@ const generateImage = async (
             }
         }
 
-
         case "flux":
             progress.updateBar(
                 requestId,

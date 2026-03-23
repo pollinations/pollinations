@@ -28,6 +28,7 @@ export const LAYOUT = {
     privacyLink: "Privacy",
     emailLink: "Email",
     copiedLabel: "Copied!",
+    llmsTxtLink: "llms.txt",
     footerBranding: "Pollinations.AI © 2026 Myceli AI OÜ",
     footerTagline: "Open source AI innovation",
 };

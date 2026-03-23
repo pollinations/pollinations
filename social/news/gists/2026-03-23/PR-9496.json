@@ -1,0 +1,34 @@
+{
+  "pr_number": 9496,
+  "title": "feat: split midijourney into free and large tiers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9496",
+  "merged_at": "2026-03-23T21:58:28Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Free the MIDI",
+    "blurb": "Midijourney is now available on the free tier! We've also added a heavy-duty 'large' variant for when you need to compose a digital symphony.",
+    "summary": "Split the Midijourney text model into a free base version powered by Claude Haiku and a new 'midijourney-large' variant powered by Claude Opus.",
+    "impact": "Everyone can now generate MIDI prompts for free, while power users retain access to a larger, more capable model for complex compositions.",
+    "keywords": [
+      "midijourney",
+      "models",
+      "claude",
+      "free tier",
+      "music"
+    ],
+    "visual_concept": "Music and MIDI generation split into two sizes. Polly the bee wearing headphones, interacting with two synthesizers or keyboards—one small and accessible, one large and complex. Musical notes floating around.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, playing a small lime green (#ecf874) MIDI keyboard synthesizer. Next to her is a larger, chunky retro synthesizer. Pixelated musical notes float in the air. Soft pastel lavender and peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9496.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, playing a small lime green (#ecf874) MIDI keyboard synthesizer. Next to her is a larger, chunky retro synthesizer. Pixelated musical notes float in the air. Soft pastel lavender and peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-23T21:59:28.698917+00:00"
+}

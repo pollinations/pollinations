@@ -283,6 +283,20 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "ltx-2": {
+        aliases: ["ltx2", "ltxvideo", "ltx-video"],
+        modelId: "ltx-2",
+        provider: "vastai",
+        cost: [
+            {
+                date: new Date("2026-03-23").getTime(),
+                completionVideoSeconds: 0.01,
+            },
+        ],
+        description: "LTX-2 - Fast text-to-video generation on Vast.ai",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
     "p-image": {
         aliases: ["pruna-image", "pruna"],
         modelId: "p-image",

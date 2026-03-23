@@ -62,6 +62,9 @@ export async function createAndReturnVideo(
         case "wan":
             result = await callWanAPI(prompt, safeParams, progress, requestId);
             break;
+        case "ltx-2":
+            result = await callLtx2API(prompt, safeParams, progress, requestId);
+            break;
         case "p-video":
             result = await callPrunaVideoAPI(
                 prompt,

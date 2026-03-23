@@ -267,6 +267,21 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "wan-fast": {
+        aliases: ["wan2.2", "wan-2.2"],
+        modelId: "wan-fast",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-03-23").getTime(),
+                completionVideoSeconds: 0.02, // $0.02/sec at 480P
+            },
+        ],
+        description:
+            "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P) via DashScope",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+    },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",

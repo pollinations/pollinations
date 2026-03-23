@@ -83,20 +83,14 @@ async function generateResponseWithHistory(
             );
             log("Fetched conversation history for channel %s", channelId);
         } else {
-            // Fallback to initial prompt or empty message
-            const content =
-                initialPrompt ||
-                "Hello! You just started up. Introduce yourself to the channel.";
-            apiMessages = [{ role: "user", content }];
-            log("Using fallback message due to history fetch error");
+            if (!initialPrompt) return null;
+            apiMessages = [{ role: "user", content: initialPrompt }];
+            log("Using initial prompt due to history fetch error");
         }
     } else {
-        // Fallback to initial prompt or empty message
-        const content =
-            initialPrompt ||
-            "Hello! You just started up. Introduce yourself to the channel.";
-        apiMessages = [{ role: "user", content }];
-        log("Using fallback message due to channel fetch error");
+        if (!initialPrompt) return null;
+        apiMessages = [{ role: "user", content: initialPrompt }];
+        log("Using initial prompt due to channel fetch error");
     }
 
     // Generate response
@@ -441,25 +435,26 @@ export async function runBot(
         });
     });
 
-    // Proactive posting: periodically check conversation channels for quiet periods
-    if (config.conversationChannelIds && config.conversationChannelIds.length > 0) {
+    // Proactive posting: only in global/shared channels, not bot-specific ones
+    if (config.globalChannelIds && config.globalChannelIds.length > 0) {
         setInterval(async () => {
             try {
-                // Pick a random conversation channel
-                const channelId = config.conversationChannelIds![
-                    Math.floor(Math.random() * config.conversationChannelIds!.length)
+                const channelId = config.globalChannelIds![
+                    Math.floor(Math.random() * config.globalChannelIds!.length)
                 ];
                 const channel = client.channels.cache.get(channelId);
                 if (!channel || !("messages" in channel)) return;
 
-                // Check recent activity
                 const recent = await channel.messages.fetch({ limit: 5 });
                 const now = Date.now();
                 const recentMessages = recent.filter(
                     (m) => now - m.createdTimestamp < PROACTIVE_CHECK_INTERVAL_MS,
                 );
 
-                // Only post if channel is quiet (0-1 messages) and 20% roll
+                // Skip if last message was from this bot (prevents self-reply loops)
+                const lastMsg = recent.first();
+                if (lastMsg && lastMsg.author.id === client.user?.id) return;
+
                 if (recentMessages.size <= 1 && Math.random() < PROACTIVE_CHANCE) {
                     log("Channel %s is quiet, proactively posting", channelId);
                     const response = await generateResponseWithHistory(

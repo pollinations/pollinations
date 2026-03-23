@@ -229,7 +229,11 @@ export const deviceRoutes = new Hono<Env>()
         }
 
         // Validate client_id matches what was used during code issuance (when provided)
-        if (device.clientId && body.client_id && body.client_id !== device.clientId) {
+        if (
+            device.clientId &&
+            body.client_id &&
+            body.client_id !== device.clientId
+        ) {
             return c.json(
                 {
                     error: "invalid_client",

@@ -99,33 +99,33 @@ describe("Device Authorization Flow", () => {
         expect(res.status).toBe(400);
     });
 
-    test("deny flow: token returns access_denied after deny", async ({
-        sessionToken,
-        mocks,
-    }) => {
-        await mocks.enable("polar", "tinybird", "github");
-        const device = await insertDeviceCode();
+    test(
+        "deny flow: token returns access_denied after deny",
+        async ({ sessionToken, mocks }) => {
+            await mocks.enable("polar", "tinybird", "github");
+            const device = await insertDeviceCode();
 
-        const denyRes = await SELF.fetch(`${BASE}/api/device/deny`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
-            body: JSON.stringify({ userCode: device.userCode }),
-        });
-        expect(denyRes.status).toBe(200);
+            const denyRes = await SELF.fetch(`${BASE}/api/device/deny`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({ userCode: device.userCode }),
+            });
+            expect(denyRes.status).toBe(200);
 
-        const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ device_code: device.deviceCode }),
-        });
-        const body = (await tokenRes.json()) as { error: string };
-        expect(tokenRes.status).toBe(400);
-        expect(body.error).toBe("access_denied");
-    },
-    { timeout: 30000 });
+            const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ device_code: device.deviceCode }),
+            });
+            const body = (await tokenRes.json()) as { error: string };
+            expect(tokenRes.status).toBe(400);
+            expect(body.error).toBe("access_denied");
+        },
+        { timeout: 30000 },
+    );
 
     test("expired code returns error on info and token", async () => {
         const device = await insertDeviceCode({

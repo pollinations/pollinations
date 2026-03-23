@@ -1,5 +1,8 @@
 import { redirect } from "@tanstack/react-router";
-import { apiKeyClient, inferAdditionalFields } from "better-auth/client/plugins";
+import {
+    apiKeyClient,
+    inferAdditionalFields,
+} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import type { createAuth } from "@/auth.ts";
 import { config } from "./config.ts";

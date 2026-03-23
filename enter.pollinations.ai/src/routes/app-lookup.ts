@@ -79,18 +79,13 @@ export const appLookupRoutes = new Hono<Env>().get(
         }
 
         // Strategy 2: Match redirect_url against registered appUrl values
+        // Uses SQL to check if redirect_url starts with the stored appUrl
         if (redirectUrl) {
-            const keys = await db.query.apikey.findMany({
-                where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL`,
+            const keyRow = await db.query.apikey.findFirst({
+                where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL AND ${redirectUrl} LIKE json_extract(${schema.apikey.metadata}, '$.appUrl') || '%'`,
             });
-            for (const key of keys) {
-                const meta = parseMetadata(key.metadata);
-                if (
-                    typeof meta.appUrl === "string" &&
-                    redirectUrl.startsWith(meta.appUrl)
-                ) {
-                    return c.json(await resolveAttribution(db, key));
-                }
+            if (keyRow) {
+                return c.json(await resolveAttribution(db, keyRow));
             }
         }
 

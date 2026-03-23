@@ -7,7 +7,6 @@ import {
     fetchFromLeastBusyServer,
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
-import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
@@ -562,8 +561,7 @@ interface AzureGPTImageConfig {
     modelName: string;
 }
 
-const GENERATIONS_API_VERSION = "2024-02-01";
-const EDITS_API_VERSION = "2025-04-01-preview";
+const AZURE_GPTIMAGE_API_VERSION = "2025-04-01-preview";
 
 const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
     gptimage: {
@@ -610,15 +608,11 @@ const callAzureGPTImageWithEndpoint = async (
 
     // Construct the full endpoint URL based on mode
     let endpoint: string;
-    if (isEditMode) {
-        endpoint = `${baseUrl}/images/edits?api-version=${EDITS_API_VERSION}`;
-        logCloudflare(`Using Azure ${config.modelName} in edit mode (img2img)`);
-    } else {
-        endpoint = `${baseUrl}/images/generations?api-version=${GENERATIONS_API_VERSION}`;
-        logCloudflare(
-            `Using Azure ${config.modelName} in generation mode (text2img)`,
-        );
-    }
+    const path = isEditMode ? "images/edits" : "images/generations";
+    endpoint = `${baseUrl}/${path}?api-version=${AZURE_GPTIMAGE_API_VERSION}`;
+    logCloudflare(
+        `Using Azure ${config.modelName} in ${isEditMode ? "edit" : "generation"} mode`,
+    );
 
     // Map safeParams to Azure API parameters
     // GPT Image 1.5 only supports: 1024x1024 (1:1), 1024x1536 (2:3), 1536x1024 (3:2)
@@ -1181,20 +1175,6 @@ const generateImage = async (
             }
         }
 
-        case "flux-2-dev":
-        case "imagen-4":
-        case "grok-imagine":
-        case "dirtberry":
-        case "dirtberry-pro":
-            return await callAirforceImageAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-                safeParams.model === "dirtberry-pro"
-                    ? "special-berry"
-                    : safeParams.model,
-            );
 
         case "flux":
             progress.updateBar(

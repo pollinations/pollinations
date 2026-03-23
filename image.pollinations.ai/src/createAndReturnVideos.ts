@@ -4,8 +4,6 @@
  */
 
 import debug from "debug";
-import { callAirforceVideoAPI } from "./models/airforceModel.ts";
-import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
 import {
@@ -63,18 +61,6 @@ export async function createAndReturnVideo(
             break;
         case "wan":
             result = await callWanAPI(prompt, safeParams, progress, requestId);
-            break;
-        case "ltx-2":
-            result = await callLtx2API(prompt, safeParams, progress, requestId);
-            break;
-        case "grok-video":
-            result = await callAirforceVideoAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-                "grok-imagine-video",
-            );
             break;
         case "p-video":
             result = await callPrunaVideoAPI(

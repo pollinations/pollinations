@@ -36,6 +36,19 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
+        name: "qwen-coder-large",
+        config: portkeyConfig["qwen3-coder-next"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.coding),
+    },
+    {
+        name: "qwen-large",
+        config: portkeyConfig["qwen3.5-plus"],
+    },
+    {
+        name: "qwen-vision",
+        config: portkeyConfig["qwen3-vl-plus"],
+    },
+    {
         name: "mistral",
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
     },
@@ -158,33 +171,12 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
     },
     {
-        name: "nomnom",
-        config: portkeyConfig["nomnom"],
-    },
-    {
         name: "polly",
         config: portkeyConfig["polly"],
     },
     {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],
-    },
-    {
-        name: "qwen-character",
-        config: portkeyConfig["qwen-character"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.character),
-    },
-    {
-        name: "step-3.5-flash",
-        config: portkeyConfig["step-3.5-flash:free"],
-    },
-    {
-        name: "claude-airforce",
-        config: portkeyConfig["claude-sonnet-4.6"],
-    },
-    {
-        name: "openai-seraphyn",
-        config: portkeyConfig["seraphyn-gpt-5.4"],
     },
 ];
 

@@ -101,23 +101,6 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         alpha: true,
     },
-    suno: {
-        aliases: ["suno-v5", "suno-music"],
-        modelId: "suno-v5",
-        provider: "airforce",
-        cost: [
-            {
-                date: new Date("2026-03-02").getTime(),
-                // Suno music: ~$0.001 per second of output audio
-                completionAudioSeconds: 0.001,
-            },
-        ],
-        description:
-            "Suno v5 (api.airforce) - AI music generation from text prompts",
-        inputModalities: ["text"],
-        outputModalities: ["audio"],
-        alpha: true,
-    },
     scribe: {
         aliases: ["scribe_v2", "scribe-v2"],
         modelId: "scribe_v2",
@@ -133,23 +116,6 @@ export const AUDIO_SERVICES = {
             "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
         inputModalities: ["audio"],
         outputModalities: ["text"],
-    },
-    "qwen3-tts": {
-        aliases: ["qwen-tts"],
-        modelId: "qwen3-tts",
-        provider: "seraphyn",
-        cost: [
-            {
-                date: new Date("2026-03-13").getTime(),
-                // Half of Alibaba's cheapest (qwen3-tts-flash $0.01/1K chars)
-                completionAudioTokens: 0.005 / 1000,
-            },
-        ],
-        description:
-            "Qwen3 TTS (seraphyn.ai) - Text-to-speech via community provider",
-        inputModalities: ["text"],
-        outputModalities: ["audio"],
-        alpha: true,
     },
 } satisfies Record<string, ServiceDefinition<string>>;
 

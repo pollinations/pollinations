@@ -25,7 +25,10 @@ from collections import defaultdict
 
 from common import (
     LINKEDIN_MAX_CHARS,
+    build_canonical_summary,
     build_linkedin_post_text,
+    join_summary_parts,
+    normalize_platform_post,
     load_prompt,
     load_format,
     get_env,
@@ -55,11 +58,14 @@ def _weekly_image_context() -> str:
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
-def get_week_range(override_start: Optional[str] = None):
-    """Return (week_start, week_end) as YYYY-MM-DD strings.
-    Covers a 7-day window: start through start+6.
-    When run by cron on Sunday 06:00 UTC, start = today-7 (last Sunday)
-    and end = today-1 (Saturday). NOTE: only correct when run on Sunday."""
+def get_week_dates(override_start: Optional[str] = None):
+    """Return (week_start, week_end, publish_date) as YYYY-MM-DD strings.
+    Coverage stays Sun→Sat, but weekly artifacts are keyed by the Sunday publish date.
+    When run by cron on Sunday 06:00 UTC:
+      - week_start = today-7 (last Sunday)
+      - week_end = today-1 (Saturday)
+      - publish_date = today (Sunday)
+    """
     if override_start:
         start = datetime.strptime(override_start, "%Y-%m-%d").date()
     else:
@@ -67,7 +73,56 @@ def get_week_range(override_start: Optional[str] = None):
         start = today - timedelta(days=7)
 
     end = start + timedelta(days=6)  # Saturday
-    return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+    publish_date = end + timedelta(days=1)  # Sunday
+    return (
+        start.strftime("%Y-%m-%d"),
+        end.strftime("%Y-%m-%d"),
+        publish_date.strftime("%Y-%m-%d"),
+    )
+
+
+
+def build_weekly_summary_artifact(
+    digest: Dict,
+    gists: List[Dict],
+    publish_date: str,
+    week_start: str,
+    week_end: str,
+    generated_at: str,
+) -> Dict:
+    """Build the canonical weekly summary stored on the news branch."""
+    arcs = digest.get("arcs") or []
+    theme = (digest.get("theme") or "").strip()
+    headline = next(
+        ((arc.get("headline") or "").strip() for arc in arcs if (arc.get("headline") or "").strip()),
+        "",
+    )
+    title = headline or theme or f"Week ending {week_end}"
+    arc_summaries = [
+        (arc.get("summary") or "").strip()
+        for arc in arcs[:4]
+        if (arc.get("summary") or "").strip()
+    ]
+    summary_text = join_summary_parts(
+        ([theme] if theme and theme != title else []) + arc_summaries
+    )
+    if not summary_text:
+        summary_text = theme or title
+
+    prs = [
+        {"number": gist.get("pr_number"), "date": (gist.get("merged_at") or "")[:10]}
+        for gist in gists
+    ]
+
+    return build_canonical_summary(
+        date=publish_date,
+        period_start=week_start,
+        period_end=week_end,
+        title=title,
+        summary=summary_text,
+        prs=prs,
+        generated_at=generated_at,
+    )
 
 
 def read_gists_for_week(week_start: str, week_end: str) -> List[Dict]:
@@ -191,14 +246,16 @@ def generate_reddit_post(digest: Dict, token: str) -> Optional[Dict]:
         extra_context=_weekly_image_context())
 
 
-def generate_discord_post(digest: Dict, token: str, week_end: str) -> Optional[Dict]:
+def generate_discord_post(
+    digest: Dict, token: str, publish_date: str
+) -> Optional[Dict]:
     """Generate weekly discord.json (special: uses date_str substitution in format)."""
     voice = load_prompt("tone/discord")
     pr_summary = digest.get("pr_summary", "")
     arc_titles = str([a["headline"] for a in digest.get("arcs", [])])
     pr_count = digest.get("pr_count", 0)
 
-    fmt = load_format("discord").replace("{date_str}", week_end)
+    fmt = load_format("discord").replace("{date_str}", publish_date)
     task = f"Write a Discord message about the latest updates.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}"
     if pr_count:
         task += f"\nTotal PRs merged: {pr_count}"
@@ -211,7 +268,7 @@ def generate_discord_post(digest: Dict, token: str, week_end: str) -> Optional[D
     text = response.strip()
     result = parse_json_response(text)
     if result:
-        result["date"] = week_end
+        result["date"] = publish_date
     return result
 
 
@@ -221,7 +278,7 @@ def generate_platform_images(
     twitter_post: Optional[Dict],
     linkedin_post: Optional[Dict],
     instagram_post: Optional[Dict],
-    week_end: str,
+    weekly_date: str,
     token: str,
     github_token: str,
     owner: str,
@@ -231,7 +288,7 @@ def generate_platform_images(
     discord_post: Optional[Dict] = None,
 ) -> None:
     """Generate images for all platforms and commit to branch."""
-    image_dir = f"{WEEKLY_REL_DIR}/{week_end}/images"
+    image_dir = f"{WEEKLY_REL_DIR}/{weekly_date}/images"
 
     # Twitter: 1 image
     if twitter_post and twitter_post.get("image_prompt"):
@@ -323,33 +380,36 @@ def generate_platform_images(
 # ── Step 4: Commit to news branch ─────────────────────────────────
 
 def commit_weekly_to_news(
+    weekly_date: str,
+    week_start: str,
     week_end: str,
+    summary_artifact: Dict,
     twitter_post: Optional[Dict],
     linkedin_post: Optional[Dict],
     instagram_post: Optional[Dict],
     discord_post: Optional[Dict],
+    generated_at: str,
     github_token: str,
     owner: str,
     repo: str,
     reddit_post: Optional[Dict] = None,
 ) -> bool:
     """Commit all weekly content directly to the news branch. Returns True on success."""
-    base_path = f"{WEEKLY_REL_DIR}/{week_end}"
+    base_path = f"{WEEKLY_REL_DIR}/{weekly_date}"
     pollinations_token = get_env("POLLINATIONS_TOKEN")
 
     # Generate images (commits them directly to news branch)
     print("\n  Generating platform images...")
     generate_platform_images(
         twitter_post, linkedin_post, instagram_post,
-        week_end, pollinations_token,
+        weekly_date, pollinations_token,
         github_token, owner, repo, GISTS_BRANCH,
         reddit_post=reddit_post,
         discord_post=discord_post,
     )
 
     # Add platform metadata and collect files
-    files_to_commit = []
-    now_iso = datetime.now(timezone.utc).isoformat()
+    files_to_commit = [(f"{base_path}/summary.json", summary_artifact)]
     for platform, post, filename in [
         ("twitter", twitter_post, "twitter.json"),
         ("linkedin", linkedin_post, "linkedin.json"),
@@ -359,29 +419,40 @@ def commit_weekly_to_news(
     ]:
         if not post:
             continue
-        post["date"] = week_end
-        post["generated_at"] = now_iso
-        post["platform"] = platform
         if platform == "linkedin":
-            # Rebuild and recheck here as a final guard before committing news artifacts.
+            # Recheck here as a final guard before committing news artifacts.
             # This catches any future caller that bypasses generate_linkedin_post().
             full_post = build_linkedin_post_text(post)
-            post["full_post"] = full_post
-            post["char_count"] = len(full_post)
-            if post["char_count"] > LINKEDIN_MAX_CHARS:
+            if len(full_post) > LINKEDIN_MAX_CHARS:
                 print(
-                    f"  FATAL: Weekly LinkedIn post is {post['char_count']} chars, exceeds Buffer limit of {LINKEDIN_MAX_CHARS}"
+                    f"  FATAL: Weekly LinkedIn post is {len(full_post)} chars, exceeds Buffer limit of {LINKEDIN_MAX_CHARS}"
                 )
                 sys.exit(1)
-        if platform == "instagram":
-            post["post_type"] = "carousel" if len(post.get("images", [])) > 1 else "post"
-        files_to_commit.append((f"{base_path}/{filename}", post))
+        files_to_commit.append((
+            f"{base_path}/{filename}",
+            normalize_platform_post(
+                platform=platform,
+                scope="weekly",
+                date=weekly_date,
+                period_start=week_start,
+                period_end=week_end,
+                generated_at=generated_at,
+                raw_post=post,
+            ),
+        ))
 
     if not files_to_commit:
         print("  No files to commit")
         return False
 
-    commit_files_to_branch(files_to_commit, GISTS_BRANCH, github_token, owner, repo, label=f"for week of {week_end}")
+    commit_files_to_branch(
+        files_to_commit,
+        GISTS_BRANCH,
+        github_token,
+        owner,
+        repo,
+        label=f"for weekly publish {weekly_date}",
+    )
     print(f"  Committed {len(files_to_commit)} files to {GISTS_BRANCH} branch")
     return True
 
@@ -397,8 +468,9 @@ def main():
     week_start_override = get_env("WEEK_START_DATE", required=False)
 
     owner, repo = repo_full.split("/")
-    week_start, week_end = get_week_range(week_start_override)
+    week_start, week_end, publish_date = get_week_dates(week_start_override)
     print(f"  Week: {week_start} to {week_end}")
+    print(f"  Publish date: {publish_date}")
 
     # ── Read gists ─────────────────────────────────────────────────────
     print(f"\n[1/4] Reading gists for {week_start} to {week_end}...")
@@ -419,6 +491,10 @@ def main():
         sys.exit(1)
     print(f"  Theme: {digest.get('theme', '')}")
     print(f"  {len(digest.get('arcs', []))} arcs, {digest.get('pr_count', 0)} PRs")
+    generated_at = datetime.now(timezone.utc).isoformat()
+    summary_artifact = build_weekly_summary_artifact(
+        digest, daily_gists, publish_date, week_start, week_end, generated_at
+    )
 
     # ── Generate platform posts ──────────────────────────────────────
     print(f"\n[3/4] Generating platform posts...")
@@ -464,7 +540,7 @@ def main():
         sys.exit(1)
 
     print("  Discord...")
-    discord_post = generate_discord_post(digest, pollinations_token, week_end)
+    discord_post = generate_discord_post(digest, pollinations_token, publish_date)
     if not discord_post:
         print("  FATAL: Weekly Discord post generation failed")
         sys.exit(1)
@@ -478,8 +554,12 @@ def main():
     # ── Commit to news branch ────────────────────────────────────────
     print(f"\n[4/4] Committing weekly content to news branch...")
     success = commit_weekly_to_news(
+        publish_date,
+        week_start,
         week_end,
+        summary_artifact,
         twitter_post, linkedin_post, instagram_post, discord_post,
+        generated_at,
         github_token, owner, repo,
         reddit_post=reddit_post,
     )

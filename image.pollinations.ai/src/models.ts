@@ -150,61 +150,6 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Flux 2 Dev - Next-gen Flux image generation via api.airforce
-    "flux-2-dev": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Imagen 4 - Google's latest image generation via api.airforce
-    "imagen-4": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Grok Imagine - xAI image generation via api.airforce
-    "grok-imagine": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Dirtberry - Quick realistic image generation via api.airforce
-    "dirtberry": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Dirtberry Pro - High quality realism, pixel art & complex scenes via api.airforce
-    "dirtberry-pro": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Grok Imagine Video - xAI video generation via api.airforce
-    "grok-video": {
-        type: "airforce-video",
-        enhance: false,
-        isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 10,
-        defaultResolution: "720p",
-    },
-
-    // LTX-2 - Fast video generation with audio on Modal
-    "ltx-2": {
-        type: "modal-ltx2",
-        enhance: false,
-        isVideo: true,
-        defaultDuration: 5, // 121 frames at 24 FPS
-        maxDuration: 10, // 241 frames
-        defaultResolution: "720p",
-    },
-
     // Pruna p-image - Text-to-image generation
     "p-image": {
         type: "pruna",

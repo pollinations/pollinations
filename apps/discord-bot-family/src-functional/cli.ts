@@ -18,6 +18,7 @@ function parseArgs(): {
     personality?: string;
     channels?: string[];
     globalChannels?: string[];
+    requiresAuth?: boolean;
 } {
     const args = process.argv.slice(2);
 
@@ -49,6 +50,7 @@ Examples:
     let personality: string | undefined;
     let channels: string[] | undefined;
     let globalChannels: string[] | undefined;
+    let requiresAuth = false;
 
     // Parse optional arguments
     for (let i = 2; i < args.length; i++) {
@@ -72,10 +74,12 @@ Examples:
                 .map((id) => id.trim())
                 .filter(Boolean);
             i++;
+        } else if (arg === "--requires-auth") {
+            requiresAuth = true;
         }
     }
 
-    return { model, token, name, personality, channels, globalChannels };
+    return { model, token, name, personality, channels, globalChannels, requiresAuth };
 }
 
 /**
@@ -105,6 +109,7 @@ function createBotConfig(args: ReturnType<typeof parseArgs>): BotConfig {
         personality: args.personality || "A helpful AI assistant",
         conversationChannelIds: args.channels || globalChannels,
         globalChannelIds: args.globalChannels,
+        requiresAuth: args.requiresAuth,
     };
 }
 

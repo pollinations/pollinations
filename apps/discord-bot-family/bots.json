@@ -6,6 +6,7 @@
     { "model": "perplexity-fast", "channels": ["1485374426659684495"] },
     { "model": "nova-fast" },
     { "model": "deepseek", "channels": ["1485374269973204992"] },
-    { "model": "minimax", "channels": ["1485376399211499643"] }
+    { "model": "minimax", "channels": ["1485376399211499643"] },
+    { "model": "gemini-large", "requiresAuth": true }
   ]
 }

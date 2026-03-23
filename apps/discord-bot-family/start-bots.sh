@@ -15,6 +15,7 @@ for i in $(seq 0 $((BOT_COUNT - 1))); do
     const extra = c.bots[$i].channels || [];
     console.log([...c.channels, ...extra].join(','));
   ")
+  REQUIRES_AUTH=$(node -e "console.log(require('./$CONFIG').bots[$i].requiresAuth ? 'true' : '')")
   TOKEN_VAR="BOT_TOKEN_$((i + 1))"
   TOKEN="${!TOKEN_VAR}"
 
@@ -23,8 +24,13 @@ for i in $(seq 0 $((BOT_COUNT - 1))); do
     continue
   fi
 
+  AUTH_FLAG=""
+  if [ -n "$REQUIRES_AUTH" ]; then
+    AUTH_FLAG="--requires-auth"
+  fi
+
   echo "Starting $MODEL..."
-  DEBUG=app:* npx ts-node src-functional/cli.ts "$MODEL" "$TOKEN" --channels "$BOT_CHANNELS" --global-channels "$GLOBAL_CHANNELS" \
+  DEBUG=app:* npx ts-node src-functional/cli.ts "$MODEL" "$TOKEN" --channels "$BOT_CHANNELS" --global-channels "$GLOBAL_CHANNELS" $AUTH_FLAG \
     2>&1 | tee "logs/$MODEL.log" &
   sleep 2
 done

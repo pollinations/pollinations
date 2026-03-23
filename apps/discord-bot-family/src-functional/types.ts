@@ -10,6 +10,7 @@ export type BotConfig = {
     personality: string;
     conversationChannelIds?: string[];
     globalChannelIds?: string[];
+    requiresAuth?: boolean;
 };
 
 /**
@@ -41,4 +42,5 @@ export type GenerateTextWithHistory = (
     messages: ApiMessage[],
     model: string,
     systemPrompt?: string,
+    userToken?: string,
 ) => Promise<string>;

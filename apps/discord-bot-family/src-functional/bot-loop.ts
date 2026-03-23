@@ -7,6 +7,7 @@ import {
     type Message,
     Partials,
 } from "discord.js";
+import { getUserToken, pollForToken, requestDeviceCode, storeUserToken } from "./device-auth";
 import { FatalTokenError, handleDiscordError } from "./errors";
 import type { ApiMessage, BotConfig, GenerateTextWithHistory } from "./types";
 
@@ -55,6 +56,7 @@ async function generateResponseWithHistory(
     generateText: GenerateTextWithHistory,
     channelId: string,
     initialPrompt?: string,
+    userToken?: string,
 ): Promise<string | null> {
     // Get system prompt based on bot configuration
     const systemPrompt = getSystemPrompt(config, client.user?.username, client.user?.id);
@@ -98,6 +100,7 @@ async function generateResponseWithHistory(
         apiMessages,
         config.model,
         systemPrompt,
+        userToken,
     );
 
     if (response && response.trim()) {
@@ -312,6 +315,15 @@ async function processMessage(
         }
     }
 
+    // Auth-required bots: check for user token or initiate device auth
+    if (config.requiresAuth && !msg.author.bot) {
+        const existingToken = getUserToken(msg.author.id);
+        if (!existingToken) {
+            await initiateDeviceAuth(msg, config);
+            return;
+        }
+    }
+
     // Stateless rate limit: only applies in global channels, not when directly addressed
     if (!isDirected && isGlobalChannel && "messages" in msg.channel) {
         const recent = await msg.channel.messages.fetch({ limit: 5 });
@@ -372,25 +384,120 @@ async function processMessage(
         initialPrompt = msg.content.replace(/<@!\d+>/g, "").trim();
     }
 
+    // Get user token for auth-required bots
+    const userToken = config.requiresAuth ? getUserToken(msg.author.id) || undefined : undefined;
+
     const response = await generateResponseWithHistory(
         client,
         config,
         generateText,
         msg.channelId,
         initialPrompt,
+        userToken,
     );
 
     if (response) {
-        log("Sending response: %s", response);
+        let finalResponse = response;
+
+        // Upsell: gemini-fast suggests gemini-large for complex questions
+        if (config.model === "gemini-fast" && !msg.author.bot && shouldSuggestUpgrade(msg.content)) {
+            finalResponse += "\n\n💡 *For more complex tasks, try a premium model — connect your Pollen account at enter.pollinations.ai/device*";
+        }
+
+        log("Sending response: %s", finalResponse);
         await discordApiCall(
-            () => msg.reply(response.slice(0, 1500)),
+            () => msg.reply(finalResponse.slice(0, 1500)),
             "message reply",
             config.name,
         );
     } else {
-        // If response is empty or null, don't send anything
         log("No response generated or empty response received");
     }
+}
+
+// Track in-progress auth flows to avoid spamming users
+const pendingAuthFlows = new Set<string>();
+
+/**
+ * Initiate device auth flow: DM the user with a code and poll for approval.
+ */
+async function initiateDeviceAuth(msg: Message, config: BotConfig): Promise<void> {
+    const userId = msg.author.id;
+
+    // Don't start multiple auth flows for the same user
+    if (pendingAuthFlows.has(userId)) {
+        await discordApiCall(
+            () => msg.reply("⏳ You already have a login in progress — check your DMs!"),
+            "auth pending reply",
+            config.name,
+        );
+        return;
+    }
+
+    pendingAuthFlows.add(userId);
+
+    try {
+        const { device_code, user_code, verification_uri_complete } = await requestDeviceCode();
+
+        // Reply in channel + DM the user
+        await discordApiCall(
+            () => msg.reply(`🔐 **${config.model}** requires a Pollen account. Check your DMs to connect!`),
+            "auth prompt reply",
+            config.name,
+        );
+
+        const dm = await discordApiCall(
+            () => msg.author.send(
+                `To use **${config.model}**, connect your Pollen account:\n\n` +
+                `1️⃣ Go to: ${verification_uri_complete}\n` +
+                `2️⃣ Or visit \`enter.pollinations.ai/device\` and enter code: **${user_code}**\n\n` +
+                `⏰ This code expires in 30 minutes.`
+            ),
+            "auth DM",
+            config.name,
+        );
+
+        if (!dm) {
+            await discordApiCall(
+                () => msg.reply(`❌ I couldn't DM you. Please enable DMs from server members, then try again.`),
+                "dm failed reply",
+                config.name,
+            );
+            return;
+        }
+
+        // Poll in background
+        try {
+            const { accessToken, expiresIn } = await pollForToken(device_code);
+            storeUserToken(userId, accessToken, expiresIn);
+
+            await discordApiCall(
+                () => msg.author.send(`✅ Connected! You can now use **${config.model}**. Try messaging me again.`),
+                "auth success DM",
+                config.name,
+            );
+        } catch (err: any) {
+            log("Device auth failed for %s: %s", userId, err.message);
+            await discordApiCall(
+                () => msg.author.send(`❌ Login failed: ${err.message}. Try again by messaging ${config.model}.`),
+                "auth failure DM",
+                config.name,
+            );
+        }
+    } catch (err: any) {
+        log("Failed to start device auth for %s: %O", userId, err);
+    } finally {
+        pendingAuthFlows.delete(userId);
+    }
+}
+
+/**
+ * Heuristic: should we suggest upgrading to a premium model?
+ */
+function shouldSuggestUpgrade(content: string): boolean {
+    if (content.length > 500) return true;
+    const keywords = /\b(code|analyze|write|debug|explain|refactor|implement|architecture|review)\b/i;
+    return keywords.test(content);
 }
 
 /**

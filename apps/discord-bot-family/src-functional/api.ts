@@ -25,6 +25,7 @@ export const createGenerateTextWithHistory = (
         messages: ApiMessage[],
         model: string,
         systemPrompt?: string,
+        userToken?: string,
     ): Promise<string> => {
         const url = `${baseUrl}/chat/completions`;
         const apiMessages = [
@@ -58,7 +59,7 @@ export const createGenerateTextWithHistory = (
                 headers: {
                     "Referer": "roblox",
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${process.env.TEXT_POLLINATIONS_TOKEN}`,
+                    "Authorization": `Bearer ${userToken || process.env.TEXT_POLLINATIONS_TOKEN}`,
                 },
             });
 

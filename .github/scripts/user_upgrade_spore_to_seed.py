@@ -8,7 +8,7 @@ Strategy (stateless, hourly slicing):
     1. Always check users created in the last 8 hours (new users, priority, overlapping window)
     2. For older users, use LIMIT/OFFSET with slot-based slicing (42 slots over 7 days)
        Runs every 4 hours, each run checks 1/42nd of older users.
-    3. Fetches 10 repos per user for quality filtering and fraud detection
+    3. Fetches 10 repos per user for quality filtering
 
 Usage:
     python user_upgrade_spore_to_seed.py              # Full run
@@ -258,12 +258,11 @@ def main():
     approved = [r["username"] for r in results if r["approved"]]
     rejected = [r for r in results if not r["approved"]]
 
-    fraud_rejected = [r for r in results if (r.get("details") or {}).get("fraud_flags")]
     not_found = [r for r in results if not r.get("details")]
     scored = [r for r in results if r.get("details")]
 
     print(f"\n📊 Summary: {len(approved)} approved, {len(rejected)} rejected (threshold {THRESHOLD})")
-    print(f"   Scored: {len(scored)} | Not found: {len(not_found)} | Fraud: {len(fraud_rejected)}")
+    print(f"   Scored: {len(scored)} | Not found: {len(not_found)}")
 
     # Score distribution
     if scored:
@@ -297,17 +296,9 @@ def main():
         print(f"\n   ⚠️  Borderline rejected ({len(borderline)}, within 1.5pts of threshold):")
         for r in borderline[:20]:
             d = r["details"]
-            fraud = " FRAUD:" + ",".join(d["fraud_flags"]) if d.get("fraud_flags") else ""
-            print(f"      {r['username']:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f}){fraud}")
+            print(f"      {r['username']:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})")
         if len(borderline) > 20:
             print(f"      ... and {len(borderline) - 20} more")
-
-    # Fraud-flagged details
-    if fraud_rejected:
-        print(f"\n   🚨 Fraud-flagged ({len(fraud_rejected)}):")
-        for r in fraud_rejected:
-            d = r["details"]
-            print(f"      {r['username']:<25} {d['total']:.1f}pts  flags: {', '.join(d['fraud_flags'])}")
 
     # Not found on GitHub
     if not_found:
@@ -318,7 +309,7 @@ def main():
             print(f"      ... and {len(not_found) - 20} more")
 
     # Sample low-score rejected
-    low_score = [r for r in scored if not r["approved"] and r["details"]["total"] < THRESHOLD - 1.5 and not r["details"].get("fraud_flags")]
+    low_score = [r for r in scored if not r["approved"] and r["details"]["total"] < THRESHOLD - 1.5]
     if low_score:
         print(f"\n   Sample low-score rejected ({len(low_score)} total):")
         for r in low_score[:5]:
@@ -337,13 +328,9 @@ def main():
             d = r.get("details")
             if d:
                 status = "✅" if r["approved"] else "❌"
-                fraud = " 🚨FRAUD" if d.get("fraud_flags") else ""
                 print(
-                    f"   {r['username']:<25} {d['age_days']:>4}d={d['age_pts']:.1f}pt  {d['repos']:>3}={d['repos_pts']:.1f}pt    {d['commits']:>4}={d['commits_pts']:.1f}pt   {d['stars']:>4}={d['stars_pts']:.1f}pt   {status}{d['total']:.1f}{fraud}"
+                    f"   {r['username']:<25} {d['age_days']:>4}d={d['age_pts']:.1f}pt  {d['repos']:>3}={d['repos_pts']:.1f}pt    {d['commits']:>4}={d['commits_pts']:.1f}pt   {d['stars']:>4}={d['stars_pts']:.1f}pt   {status}{d['total']:.1f}"
                 )
-                if d.get("fraud_flags"):
-                    for flag in d["fraud_flags"]:
-                        print(f"      🚨 {flag}")
             else:
                 print(f"   {r['username']:<25} (not found)")
 

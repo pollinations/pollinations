@@ -8,8 +8,7 @@ Points-based validation formula with quality filtering:
   - Threshold: >= 6.5 pts
 
 Quality filtering: empty repos (diskUsage == 0) are excluded from repo count
-and star totals. Fraud detection flags burst-created empty repos, suspicious
-star uniformity, and accounts dominated by empty repos.
+and star totals.
 """
 
 import json
@@ -17,9 +16,8 @@ import os
 import time
 import urllib.error
 import urllib.request
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from tqdm import tqdm
 
@@ -70,45 +68,6 @@ def build_query(usernames: list[str]) -> str:
     return f"query {{ {''.join(fragments)} }}"
 
 
-def detect_fraud(all_nodes: list[dict], total_count: int) -> list[str]:
-    """Detect gaming signals from repo data. Returns list of fraud flag strings."""
-    flags = []
-    cutoff = datetime.now(timezone.utc) - timedelta(days=7)
-
-    # 1. Burst empty repos: >= 5 repos created in last 7 days with diskUsage == 0
-    burst_empty = 0
-    for node in all_nodes:
-        created = datetime.fromisoformat(node["createdAt"].replace("Z", "+00:00"))
-        if created >= cutoff and node.get("diskUsage", 0) == 0:
-            burst_empty += 1
-    if burst_empty >= 5:
-        flags.append("burst_empty_repos")
-
-    # 2. Star uniformity: if 5+ starred repos share the same star count at > 60%
-    #    Exclude star count of 1 (too common naturally for small legit projects)
-    starred_counts = [
-        node["stargazerCount"] for node in all_nodes if node["stargazerCount"] > 1
-    ]
-    if len(starred_counts) >= 5:
-        counter = Counter(starred_counts)
-        _, most_common_freq = counter.most_common(1)[0]
-        if most_common_freq >= 5 and most_common_freq / len(starred_counts) > 0.6:
-            flags.append("star_uniformity")
-
-    # 3. Empty repo dominance: >= 5 fetched repos, > 80% empty, totalCount > 20
-    quality_count = sum(1 for node in all_nodes if node.get("diskUsage", 0) > 0)
-    if len(all_nodes) >= 5:
-        empty_count = len(all_nodes) - quality_count
-        if empty_count / len(all_nodes) > 0.8 and total_count > 20:
-            flags.append("empty_repo_dominance")
-
-    # 4. Repo quality gap: many total repos but almost none with code
-    #    Catches gaming even when empty repos don't appear in top-by-stars
-    if total_count > 20 and quality_count < 3:
-        flags.append("repo_quality_gap")
-
-    return flags
-
 
 def score_user(data: dict | None, username: str) -> dict:
     """Calculate score for a single user. Returns dict with username, approved, reason."""
@@ -154,11 +113,6 @@ def score_user(data: dict | None, username: str) -> dict:
     total_score = sum(scores.values())
     approved = total_score >= THRESHOLD
 
-    # Fraud detection: reject if gaming signals found, regardless of score
-    fraud_flags = detect_fraud(all_nodes, data["repositories"]["totalCount"])
-    if fraud_flags:
-        approved = False
-
     details = {
         "age_days": age_days,
         "age_pts": scores["age_days"],
@@ -174,17 +128,10 @@ def score_user(data: dict | None, username: str) -> dict:
         "total": total_score,
     }
 
-    if fraud_flags:
-        details["fraud_flags"] = fraud_flags
-
-    reason = f"{total_score:.1f} pts"
-    if fraud_flags:
-        reason += f" [FRAUD: {', '.join(fraud_flags)}]"
-
     return {
         "username": username,
         "approved": approved,
-        "reason": reason,
+        "reason": f"{total_score:.1f} pts",
         "details": details,
     }
 

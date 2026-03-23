@@ -1,0 +1,35 @@
+{
+  "pr_number": 9455,
+  "title": "fix: correct grok pricing and add nova-canvas editing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9455",
+  "merged_at": "2026-03-23T01:40:38Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Nova learns to paint over",
+    "blurb": "Grok is now cheaper because we like passing savings along, and Nova Canvas finally figured out how to look at an image before painting over it. Image-to-image generation is now live for Nova.",
+    "summary": "Updated Grok token and video pricing to reflect upstream reductions, and enabled image-to-image variation support for the Nova Canvas model.",
+    "impact": "Generations with Grok are now significantly cheaper, and developers can pass image inputs to Nova Canvas for AI-powered editing and variations.",
+    "keywords": [
+      "grok",
+      "pricing",
+      "nova-canvas",
+      "image-editing",
+      "image-to-image",
+      "models"
+    ],
+    "visual_concept": "Focus on the Nova Canvas image editing feature and the Grok price drop. Polly the bee as a painter working on a digital canvas, while the Monitor Robot holds a discounted price tag.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, happily painting on a glowing digital canvas. A chunky retro robot companion with a CRT monitor head holds up a green discount price tag. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9455.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, happily painting on a glowing digital canvas. A chunky retro robot companion with a CRT monitor head holds up a green discount price tag. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-23T01:42:14.647208+00:00"
+}

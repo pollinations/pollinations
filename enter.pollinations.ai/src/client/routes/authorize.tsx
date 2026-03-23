@@ -129,6 +129,15 @@ function AuthorizeComponent() {
 
     useScrollLock();
 
+    // Sync device scopes into key permissions when they arrive
+    useEffect(() => {
+        if (deviceScopes.length > 0) {
+            // Always include "profile", merge with device-requested scopes
+            const perms = Array.from(new Set(["profile", ...deviceScopes]));
+            keyPermissions.setAccountPermissions(perms);
+        }
+    }, [deviceScopes, keyPermissions.setAccountPermissions]);
+
     useEffect(() => {
         if (isDeviceMode) {
             if (device_scope) {

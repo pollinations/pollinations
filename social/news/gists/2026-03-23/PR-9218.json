@@ -1,0 +1,35 @@
+{
+  "pr_number": 9218,
+  "title": "feat: add Amazon Nova model family",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9218",
+  "merged_at": "2026-03-23T00:57:24Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A Nova in the garden",
+    "blurb": "We just planted the entire Amazon Nova model family in the garden. Text, images, and video generation are all blooming with new cosmic possibilities.",
+    "summary": "Added the Amazon Nova model family to the API, bringing Nova Pro for text, Nova Canvas for images, and Nova Reel for video generation.",
+    "impact": "Developers can now access Amazon's latest multimodal Nova models for text, image, and video generation through our standard endpoints.",
+    "keywords": [
+      "models",
+      "amazon nova",
+      "text",
+      "image",
+      "video",
+      "bedrock"
+    ],
+    "visual_concept": "Space/cosmic theme mixed with the cozy garden to represent 'Nova'. The bee mascot looking through a telescope at a glowing star (Nova), with the monitor robot holding a star chart.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot looking through a retro telescope at a glowing pastel supernova in the night sky. A chunky pixel robot with a CRT monitor head stands nearby holding a star chart, screen glowing lime green (#ecf874). Soft lavender and mint gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9218.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot looking through a retro telescope at a glowing pastel supernova in the night sky. A chunky pixel robot with a CRT monitor head stands nearby holding a star chart, screen glowing lime green (#ecf874). Soft lavender and mint gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-23T00:58:23.845131+00:00"
+}

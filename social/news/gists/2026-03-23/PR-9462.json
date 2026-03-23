@@ -1,0 +1,34 @@
+{
+  "pr_number": 9462,
+  "title": "Add Phicasso Chat to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9462",
+  "merged_at": "2026-03-23T05:34:45Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Phicasso joins the gallery",
+    "blurb": "Phicasso Chat just landed in the community showcase! It's a slick, fully browser-based chat app that keeps your conversations strictly on your device while running on Pollinations.",
+    "summary": "Added Phicasso Chat, a privacy-focused, browser-native chat application, to the community app showcase.",
+    "impact": "Users can now discover and use Phicasso Chat for secure, local-storage conversations powered by the Pollinations API.",
+    "keywords": [
+      "app",
+      "community",
+      "chat",
+      "privacy",
+      "browser"
+    ],
+    "visual_concept": "Phicasso Chat implies art (Picasso) + chat. Polly the bee wearing a painter's beret, painting a glowing chat bubble onto a canvas. A chunky retro robot companion watches happily.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting a glowing chat bubble onto a wooden canvas easel. A chunky retro robot companion with a CRT monitor head watches happily. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9462.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting a glowing chat bubble onto a wooden canvas easel. A chunky retro robot companion with a CRT monitor head watches happily. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-23T05:35:48.361940+00:00"
+}

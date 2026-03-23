@@ -370,6 +370,7 @@ export const IMAGE_SERVICES = {
         modelId: "ltx-2",
         provider: "vastai",
         alpha: true,
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-23").getTime(),

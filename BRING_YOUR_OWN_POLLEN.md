@@ -99,6 +99,13 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 
 Same authorize screen, but the user opens a browser separately. Your CLI polls for the key.
 
+**Where this fits:**
+- **Discord / Telegram / WhatsApp bots** — bot DMs the code, user approves in browser, bot gets their key
+- **CLI tools** — `pollinations login` opens a browser, CLI waits for approval
+- **MCP servers** — AI agent requests access, user approves from their browser
+- **Raspberry Pi / IoT** — headless device displays a code, user approves on their phone
+- **VS Code extensions** — extension shows the code, user approves in browser
+
 ```bash
 # 1. request a device code
 curl -X POST https://enter.pollinations.ai/api/device/code \

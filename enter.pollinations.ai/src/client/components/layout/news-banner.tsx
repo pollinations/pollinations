@@ -1,4 +1,4 @@
-import { type FC, useEffect, useState } from "react";
+import { type FC, type ReactNode, useEffect, useState } from "react";
 import { Panel } from "../ui/panel.tsx";
 
 const HIGHLIGHTS_RAW_URL =
@@ -30,10 +30,40 @@ const PINNED_NEWS: Highlight[] = [
     },
 ];
 
+/** Render markdown links [text](url) as clickable <a> tags, preserving surrounding text. */
+function renderWithLinks(text: string): ReactNode[] {
+    const parts: ReactNode[] = [];
+    const matches = [...text.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)];
+    let lastIndex = 0;
+    for (const match of matches) {
+        const idx = match.index ?? 0;
+        if (idx > lastIndex) {
+            parts.push(text.slice(lastIndex, idx));
+        }
+        parts.push(
+            <a
+                key={idx}
+                href={match[2]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-violet-600 hover:text-violet-800 hover:underline font-medium"
+            >
+                {match[1]}
+            </a>,
+        );
+        lastIndex = idx + match[0].length;
+    }
+    if (lastIndex < text.length) {
+        parts.push(text.slice(lastIndex));
+    }
+    return parts;
+}
+
 function parseHighlights(md: string): Highlight[] {
     return md
         .split("\n")
         .filter((line) => line.startsWith("- **"))
+        .filter((line) => !line.includes("<!-- app -->"))
         .map((line) => {
             const dateMatch = line.match(/^- \*\*(\d{4}-\d{2}-\d{2})\*\*/);
             const emojiTitleMatch = line.match(/– \*\*(\S+)\s+([^*]+)\*\*/);
@@ -80,11 +110,7 @@ export const NewsBanner: FC = () => {
                                     className="text-gray-900"
                                 >
                                     {h.emoji} <strong>{h.title}:</strong>{" "}
-                                    <span
-                                        dangerouslySetInnerHTML={{
-                                            __html: h.description,
-                                        }}
-                                    />
+                                    {renderWithLinks(h.description)}
                                 </li>
                             ))}
                         </ul>
@@ -98,7 +124,7 @@ export const NewsBanner: FC = () => {
                                 className="text-gray-600"
                             >
                                 {h.emoji} <strong>{h.title}:</strong>{" "}
-                                {h.description}
+                                {renderWithLinks(h.description)}
                             </li>
                         ))}
                     </ul>

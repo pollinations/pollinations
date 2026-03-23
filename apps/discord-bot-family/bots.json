@@ -4,7 +4,7 @@
     { "model": "kimi", "channels": ["1485374528564760858"] },
     { "model": "gemini-search", "channels": ["1485374325077971135"] },
     { "model": "perplexity-fast", "channels": ["1485374426659684495"] },
-    { "model": "gemini-hybrid", "requiresAuth": true, "freeModel": "gemini-fast", "paidModel": "claude-large" },
+    { "model": "gemini-hybrid", "requiresAuth": true, "freeModel": "gemini-fast", "paidModel": "claude-large", "noGlobalChannels": true },
     { "model": "deepseek", "channels": ["1485374269973204992"] },
     { "model": "minimax", "channels": ["1485376399211499643"] }
   ]

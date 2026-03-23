@@ -10,10 +10,12 @@ echo "🚀 Starting $BOT_COUNT bots..."
 
 for i in $(seq 0 $((BOT_COUNT - 1))); do
   MODEL=$(node -e "console.log(require('./$CONFIG').bots[$i].model)")
+  NO_GLOBAL=$(node -e "console.log(require('./$CONFIG').bots[$i].noGlobalChannels ? 'true' : '')")
   BOT_CHANNELS=$(node -e "
     const c = require('./$CONFIG');
     const extra = c.bots[$i].channels || [];
-    console.log([...c.channels, ...extra].join(','));
+    const global = c.bots[$i].noGlobalChannels ? [] : c.channels;
+    console.log([...global, ...extra].join(','));
   ")
   REQUIRES_AUTH=$(node -e "console.log(require('./$CONFIG').bots[$i].requiresAuth ? 'true' : '')")
   FREE_MODEL=$(node -e "console.log(require('./$CONFIG').bots[$i].freeModel || '')")
@@ -45,7 +47,11 @@ for i in $(seq 0 $((BOT_COUNT - 1))); do
   fi
 
   echo "Starting $MODEL..."
-  DEBUG=app:* npx ts-node src-functional/cli.ts "$MODEL" "$TOKEN" --channels "$BOT_CHANNELS" --global-channels "$GLOBAL_CHANNELS" $AUTH_FLAG $MODEL_FLAGS \
+  GLOBAL_FLAG=""
+  if [ -z "$NO_GLOBAL" ]; then
+    GLOBAL_FLAG="--global-channels $GLOBAL_CHANNELS"
+  fi
+  DEBUG=app:* npx ts-node src-functional/cli.ts "$MODEL" "$TOKEN" --channels "$BOT_CHANNELS" $GLOBAL_FLAG $AUTH_FLAG $MODEL_FLAGS \
     2>&1 | tee "logs/$MODEL.log" &
   sleep 2
 done

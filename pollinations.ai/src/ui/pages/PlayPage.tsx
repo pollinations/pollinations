@@ -86,9 +86,7 @@ function PlayPage() {
                 </div>
 
                 <div className="mb-6">
-                    <Body className="mb-3">
-                        {pageCopy.createDescription}
-                    </Body>
+                    <Body className="mb-3">{pageCopy.createDescription}</Body>
                     <a
                         href={LINKS.enter}
                         target="_blank"

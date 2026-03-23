@@ -1,0 +1,33 @@
+{
+  "pr_number": 9504,
+  "title": "fix: raise seed threshold to 7.0",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9504",
+  "merged_at": "2026-03-23T23:28:43Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Curating the garden",
+    "blurb": "We've fine-tuned the GitHub profile validation for the Seed tier to ensure our community garden grows with the highest quality contributors.",
+    "summary": "Adjusted the GitHub profile scoring threshold for automatic Seed tier upgrades to improve validation accuracy.",
+    "impact": "This ensures fairer usage of the platform's resources by refining the criteria for automatic tier upgrades, alongside updated frontend tooltips for clarity.",
+    "keywords": [
+      "seed tier",
+      "github validation",
+      "scoring",
+      "threshold"
+    ],
+    "visual_concept": "Polly the bee acting as a careful gardener, inspecting seeds with a magnifying glass to ensure only the best ones are planted. A cute robot companion holds a checklist.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, carefully inspecting glowing seeds with a magnifying glass. A chunky robot with a CRT monitor head stands nearby holding a pixelated checklist. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9504.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, carefully inspecting glowing seeds with a magnifying glass. A chunky robot with a CRT monitor head stands nearby holding a pixelated checklist. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-23T23:29:32.940580+00:00"
+}

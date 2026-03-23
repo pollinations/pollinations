@@ -15,12 +15,16 @@ const MODEL_ENDPOINTS = {
 
 // Tinybird pipes for different aggregation windows
 const TINYBIRD_PIPES = {
+    "7d": "model_health_7d",
+    "24h": "model_health_24h",
     "60m": "model_health_60m",
     "5m": "model_health",
 };
 
 // Poll intervals based on aggregation window
 const POLL_INTERVALS = {
+    "7d": 300000, // 5 minutes for 7-day view
+    "24h": 120000, // 2 minutes for 24-hour view
     "60m": 60000, // 1 minute for stable 60m view
     "5m": 15000, // 15 seconds for live 5m view
 };

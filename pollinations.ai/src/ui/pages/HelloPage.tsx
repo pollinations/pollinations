@@ -5,6 +5,7 @@ import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useHighlights } from "../../hooks/useHighlights";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
+import { useTranslateAndPrettify } from "../../hooks/useTranslateAndPrettify";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -17,6 +18,10 @@ import { Body, Heading, Title } from "../components/ui/typography";
 function HelloPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(HELLO_PAGE);
     const { highlights } = useHighlights();
+    const { processed: translatedHighlights } = useTranslateAndPrettify(
+        highlights,
+        "description",
+    );
     useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const { translated: translatedWhatYouGet } = useTranslate(
@@ -334,17 +339,17 @@ function HelloPage() {
                         {pageCopy.openTitle}
                     </Heading>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* What's New */}
+                    <div className="flex flex-col gap-6">
+                        {/* What's New — full-width, CSS columns for journal flow */}
                         <div className="bg-secondary-light border-r-2 border-b-2 border-dark p-5">
                             <Badge variant="highlight" className="mb-4">
                                 {pageCopy.recentUpdatesTitle}
                             </Badge>
-                            <div className="space-y-2">
-                                {highlights.map((item) => (
+                            <div className="md:columns-2 md:gap-6 space-y-2">
+                                {translatedHighlights.map((item) => (
                                     <div
                                         key={`${item.date}-${item.title}`}
-                                        className="py-1"
+                                        className="py-1 break-inside-avoid"
                                     >
                                         <p className="font-mono font-black text-xs text-dark">
                                             <span className="bg-primary-strong px-1.5 py-0.5">
@@ -363,28 +368,56 @@ function HelloPage() {
                                                     a: ({ node, ...props }) => (
                                                         <a
                                                             {...props}
-                                                            className="text-dark hover:underline font-bold"
+                                                            className="bg-accent-strong px-1 text-dark hover:underline"
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         />
                                                     ),
                                                     p: ({ node, ...props }) => (
-                                                        <span
+                                                        <p
                                                             {...props}
-                                                            className="inline"
+                                                            className="mb-1"
+                                                        />
+                                                    ),
+                                                    ul: ({
+                                                        node,
+                                                        ...props
+                                                    }) => (
+                                                        <ul
+                                                            {...props}
+                                                            className="list-disc list-inside mt-1 space-y-0.5"
+                                                        />
+                                                    ),
+                                                    li: ({
+                                                        node,
+                                                        ...props
+                                                    }) => (
+                                                        <li
+                                                            {...props}
+                                                            className="text-sm text-muted leading-relaxed"
                                                         />
                                                     ),
                                                 }}
                                             >
-                                                {
-                                                    item.description?.split(
-                                                        /(?<=[.!?])\s/,
-                                                    )[0]
-                                                }
+                                                {item.description}
                                             </LazyMarkdown>
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                            <div className="mt-4 flex justify-end">
+                                <a
+                                    href="https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
+                                >
+                                    More
+                                    <ExternalLinkIcon
+                                        className="w-3 h-3"
+                                        strokeWidth="4"
+                                    />
+                                </a>
                             </div>
                         </div>
 
@@ -393,14 +426,17 @@ function HelloPage() {
                             <Badge variant="highlight" className="mb-4">
                                 {pageCopy.roadmapLabel}
                             </Badge>
-                            <div className="space-y-2">
+                            <div className="md:columns-2 md:gap-6 space-y-2">
                                 {translatedRoadmap.map(
                                     (item: {
                                         emoji: string;
                                         title: string;
                                         description: string;
                                     }) => (
-                                        <div key={item.title} className="py-1">
+                                        <div
+                                            key={item.title}
+                                            className="py-1 break-inside-avoid"
+                                        >
                                             <p className="font-headline text-[10px] font-black text-dark">
                                                 <span className="mr-2">
                                                     {item.emoji}

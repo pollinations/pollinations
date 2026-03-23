@@ -1,0 +1,23 @@
+{
+  "date": "2026-03-22",
+  "period_start": "2026-03-22",
+  "period_end": "2026-03-22",
+  "title": "Alibaba's Qwen models arrive (and they're free)",
+  "summary": "Alibaba's Qwen models hit the text and vision endpoints for free, and the community showcase gets a new text-to-image app.\n\nWe wired up Alibaba's Qwen models to the text and vision endpoints. You now have access to qwen-coder-large for development, qwen-large with a massive 1M context window, and qwen-vision for image analysis. We also immediately dropped the paywall on qwen-large and qwen-vision, making them fully accessible on the free tier.\n\nThe community showcase keeps expanding. LND Ai, a new text-to-image generation tool built on the API, was just added to the garden.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 9420,
+      "date": "2026-03-22"
+    },
+    {
+      "number": 9444,
+      "date": "2026-03-22"
+    },
+    {
+      "number": 9450,
+      "date": "2026-03-22"
+    }
+  ],
+  "generated_at": "2026-03-23T06:22:56.237825+00:00"
+}

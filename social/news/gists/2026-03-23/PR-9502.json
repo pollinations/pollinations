@@ -1,0 +1,34 @@
+{
+  "pr_number": 9502,
+  "title": "fix: sync tier explanation with commit scoring changes",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9502",
+  "merged_at": "2026-03-23T22:54:16Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A year in review",
+    "blurb": "We've updated the tier explanation UI to reflect our new scoring system. Your open-source commits from the past year now count towards your Pollen tier, and they're worth more points!",
+    "summary": "Updated the tier explanation UI to accurately reflect that GitHub commits from the past year are now counted towards user scoring, with an increased maximum point value.",
+    "impact": "Users will now see the correct scoring criteria in the dashboard, making it clearer how their open-source contributions translate to Pollen credits.",
+    "keywords": [
+      "ui",
+      "scoring",
+      "tiers",
+      "github",
+      "commits"
+    ],
+    "visual_concept": "Polly the bee adjusting a calendar or a retro scoreboard to show the new '1 year' window and '3 points' max. The Monitor Robot pointing excitedly at the updated score.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny referee whistle, adjusting a retro glowing scoreboard that displays '1 YEAR' and '3 PTS'. A chunky pixel robot with a CRT monitor head points excitedly at the new score. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9502.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny referee whistle, adjusting a retro glowing scoreboard that displays '1 YEAR' and '3 PTS'. A chunky pixel robot with a CRT monitor head points excitedly at the new score. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-23T22:55:16.013665+00:00"
+}

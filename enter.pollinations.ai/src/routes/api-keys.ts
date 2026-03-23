@@ -65,7 +65,7 @@ async function requireOwnedKey(
     const key = await db.query.apikey.findFirst({
         where: and(
             eq(schema.apikey.id, keyId),
-            eq(schema.apikey.referenceId, userId),
+            eq(schema.apikey.userId, userId),
         ),
     });
     if (!key) {
@@ -164,7 +164,7 @@ export const apiKeysRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
 
             const keys = await db.query.apikey.findMany({
-                where: eq(schema.apikey.referenceId, user.id),
+                where: eq(schema.apikey.userId, user.id),
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
 

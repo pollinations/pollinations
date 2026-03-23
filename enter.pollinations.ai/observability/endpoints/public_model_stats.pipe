@@ -1,7 +1,7 @@
 DESCRIPTION >
-    Public model usage statistics for the last 7 complete days.
+    Public model usage statistics for the last 7 days including today.
     Returns aggregated stats per model including request counts, average costs, and response times.
-    Uses toStartOfDay for stable daily results (query results only change once per day).
+    Only includes models with at least 3 successful priced requests for reliable averages.
 
 TOKEN public_stats_read READ
 
@@ -14,13 +14,14 @@ SQL >
         round(avgIf(total_price, response_status >= 200 AND response_status < 300 AND total_price > 0), 6) as avg_cost_usd,
         round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_response_ms,
         countIf(response_status >= 200 AND response_status < 300) as success_count,
+        countIf(response_status >= 200 AND response_status < 300 AND total_price > 0) as priced_success_count,
         countIf(response_status >= 400) as error_count
     FROM generation_event
-    WHERE start_time >= toStartOfDay(now()) - INTERVAL 7 DAY
-    AND start_time < toStartOfDay(now())
+    WHERE start_time >= now() - INTERVAL 7 DAY
     AND resolved_model_requested != 'undefined'
     AND cache_hit = false
     GROUP BY resolved_model_requested
+    HAVING priced_success_count >= 3
     ORDER BY request_count DESC
     LIMIT {{Int32(limit, 50)}}
 

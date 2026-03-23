@@ -1,0 +1,33 @@
+{
+  "pr_number": 9457,
+  "title": "fix: correct gptimage-large text input pricing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9457",
+  "merged_at": "2026-03-23T02:34:28Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Cheaper words for big pictures",
+    "blurb": "We noticed text prompts for gptimage-large were accidentally wearing the premium image price tag. We've swapped it out, so your words are now cheaper to process.",
+    "summary": "Fixed a billing configuration where text inputs to the gptimage-large model were incorrectly charged at the higher image input rate.",
+    "impact": "Developers using gptimage-large will see reduced costs for their text prompts and cached text inputs.",
+    "keywords": [
+      "pricing",
+      "bug_fix",
+      "gptimage-large",
+      "billing"
+    ],
+    "visual_concept": "Polly the bee swapping a price tag on a glowing text block, with the Nomnom creature happily eating the old expensive price tag.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot swapping a price tag on a glowing block of text, while the round tan Nomnom creature happily eats the old expensive price tag. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9457.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot swapping a price tag on a glowing block of text, while the round tan Nomnom creature happily eats the old expensive price tag. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-23T02:35:48.453536+00:00"
+}

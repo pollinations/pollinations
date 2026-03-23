@@ -15,11 +15,17 @@ for i in $(seq 0 $((BOT_COUNT - 1))); do
     const extra = c.bots[$i].channels || [];
     console.log([...c.channels, ...extra].join(','));
   ")
-  TOKEN_VAR="BOT_TOKEN_$((i + 1))"
+  TOKEN_VAR="BOT_TOKEN_$(echo "$MODEL" | tr '[:lower:]-' '[:upper:]_')"
   TOKEN="${!TOKEN_VAR}"
 
+  SKIP=$(node -e "console.log(require('./$CONFIG').bots[$i].skip ? 'true' : '')")
+  if [ -n "$SKIP" ]; then
+    echo "⏭️  Skipping bot $((i + 1)) ($MODEL) — marked as skip"
+    continue
+  fi
+
   if [ -z "$TOKEN" ]; then
-    echo "⚠️  No token for bot $((i + 1)) ($MODEL), skipping"
+    echo "⚠️  No token for $MODEL (expected $TOKEN_VAR), skipping"
     continue
   fi
 

@@ -1,0 +1,35 @@
+{
+  "pr_number": 9446,
+  "title": "feat: upgrade grok text models to new xAI Azure endpoint",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9446",
+  "merged_at": "2026-03-23T01:23:58Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok learns to reason",
+    "blurb": "We've upgraded our Grok text models to the latest and greatest, including a brand new reasoning model that shows its work. Faster responses, massive 2M context windows, and deeper thoughts are now available at the text endpoint.",
+    "summary": "Upgraded the Grok text models to a new xAI Azure endpoint, introducing grok-reasoning with chain-of-thought capabilities and updating the default grok to a newer model with a 2M token context window.",
+    "impact": "Users can now access Grok's advanced reasoning capabilities and enjoy larger context windows for complex text generation tasks.",
+    "keywords": [
+      "grok",
+      "text",
+      "models",
+      "reasoning",
+      "xai",
+      "api"
+    ],
+    "visual_concept": "The PR adds 'reasoning' (chain of thought) and upgrades Grok models. Visual metaphor: deep thinking, processing complex thoughts. Polly the bee and the Monitor Robot examining a glowing, complex 'thought bubble' or intricate data structure emerging from a retro terminal.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, examining a glowing, complex thought bubble floating above a retro computer terminal. The chunky monitor robot stands nearby, its screen displaying a lime green (#ecf874) galaxy of data. Soft pastel lavender and cream gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9446.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, examining a glowing, complex thought bubble floating above a retro computer terminal. The chunky monitor robot stands nearby, its screen displaying a lime green (#ecf874) galaxy of data. Soft pastel lavender and cream gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-03-23T01:24:52.304194+00:00"
+}

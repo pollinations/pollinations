@@ -47,6 +47,7 @@ export function useNews(filePath: string): UseNewsReturn {
                 const newsItems: NewsItem[] = text
                     .split("\n")
                     .filter((line) => line.trim().startsWith("- "))
+                    .filter((line) => !line.includes("<!-- app -->"))
                     .map((line, index) => {
                         // Remove leading "- "
                         const content = line.trim().substring(2);

@@ -12,14 +12,10 @@ export const PLAY_PAGE_NO_TRANSLATE = new Set([
 
 export const PLAY_PAGE = {
     pageTitle: "play",
-    pageDescription:
-        "Generate images and text with AI — try models live in the playground",
+    pageDescription: "playground for poking at models",
     // Page titles and navigation
     createTitle: "Create",
-    createDescriptionPrefix: "🧪 Try any model.",
-    createDescriptionBold: "This is a fun demo playground",
-    createDescriptionSuffix:
-        "—not our main product, just a place to explore and experiment. 🎨",
+    createDescription: "playground for poking at models.",
     pricingLinkText: "See pricing",
 
     // PlayGenerator UI labels

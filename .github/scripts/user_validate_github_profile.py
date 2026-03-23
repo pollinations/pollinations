@@ -5,7 +5,7 @@ Points-based validation formula with quality filtering:
   - Commits (any repo): 0.1 pt each (max 2)
   - Public repos (quality only, diskUsage > 0): 0.5 pt each (max 1)
   - Stars (total across quality repos): 0.1 pt each (max 5)
-  - Threshold: >= 8 pts
+  - Threshold: >= 6.5 pts
 
 Quality filtering: empty repos (diskUsage == 0) are excluded from repo count
 and star totals. Fraud detection flags burst-created empty repos, suspicious
@@ -49,7 +49,7 @@ SCORING = [
         "max": 5.0,
     },  # 0.1pt each, max 5 (quality repos only)
 ]
-THRESHOLD = 8.0
+THRESHOLD = 6.5
 
 
 def build_query(usernames: list[str]) -> str:

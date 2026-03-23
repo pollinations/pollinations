@@ -16,7 +16,7 @@ DEAD URLs — NEVER suggest: `image.pollinations.ai/prompt/...` (404), `pollinat
 ## Models (use `/text/models` or `/image/models` for current list + pricing)
 
 Text (default: openai): openai|openai-fast|openai-large, claude-fast|claude|claude-large, gemini-fast|gemini|gemini-large, deepseek, grok, mistral, qwen-coder, kimi, glm, minimax, perplexity-fast|perplexity-reasoning, openai-audio, nova-fast, gemini-search
-Special: polly (YOU as API model), nomnom (deep research agent), midijourney, chickytutor, qwen-safety, qwen-character
+Special: polly (YOU as API model), nomnom (deep research agent), midijourney|midijourney-large, chickytutor, qwen-safety, qwen-character
 Image (default: zimage): flux, zimage, gptimage, klein|klein-large, imagen-4, grok-imagine, kontext, nanobanana|nanobanana-pro, seedream|seedream-pro, gptimage-large
 Video: seedance (free default), veo (audio), seedance-pro, wan (audio), ltx-2 (audio), grok-video
 Audio: elevenlabs (TTS), elevenmusic, whisper (STT alpha), scribe (STT 90+ lang)

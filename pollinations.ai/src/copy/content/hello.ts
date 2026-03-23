@@ -162,6 +162,12 @@ export const HELLO_PAGE = {
             title: "Discovery",
             description: "A place where people find what you built.",
         },
+        {
+            emoji: "⌨️",
+            title: "CLI",
+            description:
+                "Generate content and manage your developer account from the terminal.",
+        },
     ],
     comingFooterEmoji: "",
     comingFooterLine1: "",

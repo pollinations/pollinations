@@ -42,11 +42,7 @@ export async function callNovaReelAPI(
         Math.max(6, Math.round(requestedDuration / 6) * 6),
     );
     const imageParam = safeParams.image as string | string[] | undefined;
-    const hasImage =
-        imageParam &&
-        (Array.isArray(imageParam)
-            ? imageParam.length > 0
-            : imageParam.length > 0);
+    const hasImage = imageParam && imageParam.length > 0;
 
     logOps("Calling Nova Reel API:", {
         prompt: prompt.substring(0, 100),

@@ -98,7 +98,7 @@ function DeviceComponent() {
                         <img
                             src="/logo_text_black.svg"
                             alt="pollinations.ai"
-                            className="h-8 object-contain invert"
+                            className="h-8 object-contain"
                         />
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
@@ -80,11 +80,12 @@ export const appLookupRoutes = new Hono<Env>().get(
 
         // Strategy 2: Match redirect_url against registered appUrl values
         if (redirectUrl) {
-            const keys = await db.query.apikey.findMany();
+            const keys = await db.query.apikey.findMany({
+                where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL`,
+            });
             for (const key of keys) {
                 const meta = parseMetadata(key.metadata);
                 if (
-                    meta.keyType === "publishable" &&
                     typeof meta.appUrl === "string" &&
                     redirectUrl.startsWith(meta.appUrl)
                 ) {

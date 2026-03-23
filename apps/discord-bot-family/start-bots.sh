@@ -18,11 +18,17 @@ for i in $(seq 0 $((BOT_COUNT - 1))); do
   REQUIRES_AUTH=$(node -e "console.log(require('./$CONFIG').bots[$i].requiresAuth ? 'true' : '')")
   FREE_MODEL=$(node -e "console.log(require('./$CONFIG').bots[$i].freeModel || '')")
   PAID_MODEL=$(node -e "console.log(require('./$CONFIG').bots[$i].paidModel || '')")
-  TOKEN_VAR="BOT_TOKEN_$((i + 1))"
+  TOKEN_VAR="BOT_TOKEN_$(echo "$MODEL" | tr '[:lower:]-' '[:upper:]_')"
   TOKEN="${!TOKEN_VAR}"
 
+  SKIP=$(node -e "console.log(require('./$CONFIG').bots[$i].skip ? 'true' : '')")
+  if [ -n "$SKIP" ]; then
+    echo "⏭️  Skipping bot $((i + 1)) ($MODEL) — marked as skip"
+    continue
+  fi
+
   if [ -z "$TOKEN" ]; then
-    echo "⚠️  No token for bot $((i + 1)) ($MODEL), skipping"
+    echo "⚠️  No token for $MODEL (expected $TOKEN_VAR), skipping"
     continue
   fi
 

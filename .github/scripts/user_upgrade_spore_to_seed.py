@@ -29,7 +29,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-from user_validate_github_profile import validate_users
+from user_validate_github_profile import validate_users, THRESHOLD, SCORING
 
 # Max users to process per run (stay well under 1000 point/hour GitHub API limit)
 # With repos(first:10), each batch of 50 costs ~6 points, so 166 batches = 8,300 users
@@ -207,6 +207,7 @@ def main():
     print("🌱 Spore → Seed Upgrade Script")
     print(f"   Environment: {args.env}")
     print(f"   Mode: {'DRY RUN' if args.dry_run else 'LIVE'}")
+    print(f"   Threshold: {THRESHOLD} pts")
     print(f"   Slot: {slot}/42 ({now.strftime('%a %H:00')} UTC)")
     print()
 
@@ -230,10 +231,10 @@ def main():
         print("✅ No spore users to process")
         return 0
 
-    # Phase 1: Validate new users (last 24h)
+    # Phase 1: Validate new users (last 8h)
     new_results = []
     if new_users:
-        print(f"\n🔍 Phase 1: Validating {len(new_users)} NEW users (last 24h)...")
+        print(f"\n🔍 Phase 1: Validating {len(new_users)} NEW users (last 8h)...")
         new_results = validate_users(new_users)
         new_approved = sum(1 for r in new_results if r["approved"])
         print(
@@ -258,12 +259,39 @@ def main():
     rejected = [r for r in results if not r["approved"]]
 
     fraud_rejected = [r for r in results if (r.get("details") or {}).get("fraud_flags")]
-    print(f"\n📊 Total: {len(approved)} approved, {len(rejected)} rejected")
+    not_found = [r for r in results if not r.get("details")]
+    scored = [r for r in results if r.get("details")]
+
+    print(f"\n📊 Summary: {len(approved)} approved, {len(rejected)} rejected (threshold {THRESHOLD})")
+    print(f"   Not found on GitHub: {len(not_found)}")
     if fraud_rejected:
         print(f"   🚨 Fraud-flagged: {len(fraud_rejected)}")
 
+    # Score distribution
+    if scored:
+        from collections import Counter
+
+        buckets = Counter()
+        for r in scored:
+            buckets[int(r["details"]["total"])] += 1
+        dist = " | ".join(
+            f"{k}pts:{buckets[k]}" for k in sorted(buckets.keys())
+        )
+        print(f"   Score distribution: {dist}")
+
+    # Top approved
+    if approved:
+        top = sorted(
+            [r for r in scored if r["approved"]],
+            key=lambda r: -r["details"]["total"],
+        )
+        print(f"\n   Top approved ({len(approved)}):")
+        for r in top[:10]:
+            d = r["details"]
+            print(f"      {r['username']:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})")
+
     if rejected:
-        print("\n   Rejected users:")
+        print(f"\n   Sample rejected ({len(rejected)} total):")
         for r in rejected[:10]:
             print(f"      {r['username']}: {r['reason']}")
         if len(rejected) > 10:

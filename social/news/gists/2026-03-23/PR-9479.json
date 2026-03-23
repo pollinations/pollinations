@@ -1,0 +1,34 @@
+{
+  "pr_number": 9479,
+  "title": "feat: announce hourly refills for flower & nectar tiers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9479",
+  "merged_at": "2026-03-23T14:02:25Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A steady drip of pollen",
+    "blurb": "Flower and Nectar tiers now get their pollen refilled every single hour. No more waiting for the daily reset to keep building!",
+    "summary": "Updated the site's news banner to announce that Flower and Nectar tiers now receive hourly pollen refills instead of daily.",
+    "impact": "Users on the Flower and Nectar tiers will see a steady stream of credits throughout the day, making it easier to prototype without hitting sudden limits.",
+    "keywords": [
+      "billing",
+      "tiers",
+      "pollen",
+      "credits",
+      "frontend"
+    ],
+    "visual_concept": "The PR is about hourly refills of pollen/credits for the higher tiers (Flower and Nectar). Visual symbols: Pollen drops, hourglass/clock, flowers, nectar jars. Characters: Polly the bee. Scene: Polly watching a steady drip of glowing pollen into a jar, with a clock or hourglass motif.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny watch, happily catching glowing drops of golden pollen falling from a large pixelated hourglass into a nectar jar. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9479.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny watch, happily catching glowing drops of golden pollen falling from a large pixelated hourglass into a nectar jar. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-23T14:03:17.991515+00:00"
+}

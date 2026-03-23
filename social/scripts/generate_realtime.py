@@ -10,6 +10,7 @@ Discord posting is handled separately by publish_realtime.py.
 See social/PIPELINE.md for full architecture.
 """
 
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -18,6 +19,7 @@ from typing import Dict, Optional
 from common import (
     load_prompt,
     get_env,
+    get_repo_root,
     call_pollinations_api,
     generate_image,
     commit_image_to_branch,
@@ -89,9 +91,7 @@ def lookup_newest_app() -> Optional[Dict]:
     APPS.md is sorted newest-first, so the first data row is the newest app.
     Returns {"app_name": str, "app_url": str} or None.
     """
-    import os
-
-    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    repo_root = get_repo_root()
     apps_path = os.path.join(repo_root, "apps", "APPS.md")
     if not os.path.exists(apps_path):
         return None

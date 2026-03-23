@@ -7,18 +7,20 @@ import {
     fetchFromLeastBusyServer,
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
-import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
+import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
+import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import {
     callSeedream5API,
     callSeedreamAPI,
     callSeedreamProAPI,
 } from "./models/seedreamModel.ts";
+import { callXaiImageAPI } from "./models/xaiModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
@@ -1142,6 +1144,38 @@ const generateImage = async (
             }
         }
 
+        case "grok-imagine": {
+            try {
+                return await callXaiImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    "grok-imagine-image",
+                );
+            } catch (error) {
+                logError("Grok Imagine generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "grok-imagine-pro": {
+            try {
+                return await callXaiImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    "grok-imagine-image-pro",
+                );
+            } catch (error) {
+                logError("Grok Imagine Pro generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
         case "p-image-edit": {
             try {
                 return await callPrunaImageEditAPI(
@@ -1160,20 +1194,35 @@ const generateImage = async (
             }
         }
 
-        case "flux-2-dev":
-        case "imagen-4":
-        case "grok-imagine":
-        case "dirtberry":
-        case "dirtberry-pro":
-            return await callAirforceImageAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-                safeParams.model === "dirtberry-pro"
-                    ? "special-berry"
-                    : safeParams.model,
-            );
+        case "nova-canvas": {
+            try {
+                return await callNovaCanvasAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Nova Canvas generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "qwen-image": {
+            try {
+                return await callQwenImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Qwen image generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
 
         case "flux":
             progress.updateBar(

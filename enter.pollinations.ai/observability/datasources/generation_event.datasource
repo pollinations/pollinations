@@ -111,7 +111,7 @@ ENGINE_SORTING_KEY "start_time, environment, user_id, user_tier"
 ENGINE_PRIMARY_KEY "start_time, environment, user_id"
 
 FORWARD_QUERY >
-  SELECT 
+  SELECT
     event_id,
     event_processing_id,
     request_id,
@@ -131,8 +131,8 @@ FORWARD_QUERY >
     api_key_type,
     defaultValueOfTypeName('LowCardinality(String)') AS api_key_created_via,
     defaultValueOfTypeName('String') AS api_key_created_for_app,
-    selected_meter_id, 
-    selected_meter_slug, 
+    selected_meter_id,
+    selected_meter_slug,
     balances,
     referrer_url,
     referrer_domain,
@@ -180,5 +180,5 @@ FORWARD_QUERY >
     error_message,
     error_stack,
     error_details,
-    defaultValueOfTypeName('LowCardinality(String)') AS ip_subnet,
-    defaultValueOfTypeName('String') AS ip_hash
+    ip_subnet,
+    ip_hash

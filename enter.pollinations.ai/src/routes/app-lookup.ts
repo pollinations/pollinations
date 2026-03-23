@@ -1,10 +1,12 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
+import { z } from "zod";
 import { createAuth } from "../auth.ts";
 import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
+import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 async function resolveAttribution(
@@ -29,17 +31,35 @@ async function resolveAttribution(
  * Public endpoint to resolve an app_key or redirect_url to attribution info.
  * No auth required — used during the /authorize flow.
  */
+const AppLookupQuerySchema = z.object({
+    app_key: z
+        .string()
+        .startsWith("pk_")
+        .optional()
+        .describe(
+            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username instead of a generic hostname. Create one at enter.pollinations.ai → Create New App Key.",
+        ),
+    redirect_url: z
+        .string()
+        .url()
+        .optional()
+        .describe(
+            "The URL users return to after authorizing. If no app_key is provided, the system tries to match this URL against registered app URLs.",
+        ),
+});
+
 export const appLookupRoutes = new Hono<Env>().get(
     "/",
     describeRoute({
         tags: ["Account"],
         description:
-            "Look up app attribution by app_key or redirect_url. No auth required.",
+            "Look up app attribution by app_key or redirect_url. No auth required. Used during the /authorize BYOP flow to resolve the app name and author shown on the consent screen.",
         hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
     }),
+    validator("query", AppLookupQuerySchema),
     async (c) => {
-        const appKey = c.req.query("app_key");
-        const redirectUrl = c.req.query("redirect_url");
+        const { app_key: appKey, redirect_url: redirectUrl } =
+            c.req.valid("query");
         const db = drizzle(c.env.DB, { schema });
 
         // Strategy 1: Explicit app_key — verify via better-auth
@@ -59,17 +79,13 @@ export const appLookupRoutes = new Hono<Env>().get(
         }
 
         // Strategy 2: Match redirect_url against registered appUrl values
+        // Uses SQL to check if redirect_url starts with the stored appUrl
         if (redirectUrl) {
-            const keys = await db.query.apikey.findMany();
-            for (const key of keys) {
-                const meta = parseMetadata(key.metadata);
-                if (
-                    meta.keyType === "publishable" &&
-                    typeof meta.appUrl === "string" &&
-                    redirectUrl.startsWith(meta.appUrl)
-                ) {
-                    return c.json(await resolveAttribution(db, key));
-                }
+            const keyRow = await db.query.apikey.findFirst({
+                where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL AND ${redirectUrl} LIKE json_extract(${schema.apikey.metadata}, '$.appUrl') || '%'`,
+            });
+            if (keyRow) {
+                return c.json(await resolveAttribution(db, keyRow));
             }
         }
 

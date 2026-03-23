@@ -155,8 +155,8 @@ export const IMAGE_SERVICES = {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(8), // $8.00 per 1M input tokens (Azure)
-                promptCachedTokens: perMillion(2), // $2.00 per 1M cached input tokens (Azure)
+                promptTextTokens: perMillion(5), // $5.00 per 1M text input tokens (Azure)
+                promptCachedTokens: perMillion(1.25), // $1.25 per 1M cached text input tokens (Azure)
                 promptImageTokens: perMillion(8), // $8.00 per 1M image input tokens (Azure)
                 completionImageTokens: perMillion(32), // $32.00 per 1M output tokens (Azure)
             },
@@ -267,6 +267,88 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "wan-fast": {
+        aliases: ["wan2.2", "wan-2.2"],
+        modelId: "wan-fast",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-03-23").getTime(),
+                completionVideoSeconds: 0.01, // $0.01/sec (video)
+                completionAudioSeconds: 0.01, // $0.01/sec (audio)
+            },
+        ],
+        description:
+            "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P) via DashScope",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+    },
+    "qwen-image": {
+        aliases: [
+            "qwen-image-plus",
+            "qwen-image-2512",
+            "qwen-image-edit",
+            "qwen-image-edit-plus",
+        ],
+        modelId: "qwen-image",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.03, // $0.03 per image (international)
+            },
+        ],
+        description:
+            "Qwen Image Plus - Alibaba text-to-image and image editing via DashScope",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "grok-imagine": {
+        aliases: ["grok-imagine-image"],
+        modelId: "grok-imagine",
+        provider: "xai",
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.02, // $0.02 per image
+            },
+        ],
+        description: "Grok Imagine - xAI official image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "grok-imagine-pro": {
+        aliases: ["grok-aurora", "aurora", "grok-imagine-image-pro"],
+        modelId: "grok-imagine-pro",
+        provider: "xai",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.07, // $0.07 per image (pro)
+            },
+        ],
+        description:
+            "Grok Imagine Pro - xAI official pro image generation (Aurora)",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "grok-video-pro": {
+        aliases: ["grok-imagine-video"],
+        modelId: "grok-video-pro",
+        provider: "xai",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionVideoSeconds: 0.05, // $0.05 per second at 720p
+            },
+        ],
+        description:
+            "Grok Video Pro - xAI official video generation (720p, 1-15s)",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
@@ -283,114 +365,17 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
-    "imagen-4": {
-        aliases: ["imagen"],
-        modelId: "imagen-4",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                completionImageTokens: 0.0025, // $0.0025 per image
-            },
-        ],
-        description: "Imagen 4 (api.airforce) - Google's latest image gen",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "flux-2-dev": {
-        aliases: ["flux-2", "flux2-dev"],
-        modelId: "flux-2-dev",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-03-02").getTime(),
-                completionImageTokens: 0.001, // $0.001 per image
-            },
-        ],
-        description: "FLUX.2 Dev (api.airforce) - Flux 2 image generation",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-    },
-    "grok-imagine": {
-        aliases: [],
-        modelId: "grok-imagine",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-02-16").getTime(),
-                completionImageTokens: 0.0025, // $0.0025 per image
-            },
-        ],
-        description: "Grok Imagine (api.airforce) - xAI image gen",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "dirtberry": {
-        aliases: [],
-        modelId: "dirtberry",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-03-09").getTime(),
-                completionImageTokens: 0.001, // ~free via api.airforce
-            },
-        ],
-        description:
-            "Dirtberry (api.airforce) - Quick realistic image generation",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "dirtberry-pro": {
-        aliases: ["special-berry"],
-        modelId: "special-berry",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-03-13").getTime(),
-                completionImageTokens: 0.0015, // 1.5x dirtberry ($0.001)
-            },
-        ],
-        description:
-            "Dirtberry Pro (api.airforce) - High quality realism, pixel art & complex scenes",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "grok-video": {
-        aliases: ["grok-imagine-video"],
-        modelId: "grok-video",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                completionVideoSeconds: 0.0025, // $0.0025 per second
-            },
-        ],
-        description: "Grok Video (api.airforce) - xAI video gen",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
-    },
     "ltx-2": {
         aliases: ["ltx2", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
-        provider: "modal",
-        paidOnly: true,
+        provider: "vastai",
         cost: [
-            // LTX-2 on Modal H200 GPU
-            // Replicate's price (~$0.08/8s = $0.01/s)
-            // $0.05 per 5-second video
             {
-                date: new Date("2026-02-03").getTime(), // Launch date
-                completionVideoSeconds: 0.01, // $0.01/sec (Replicate's rate)
+                date: new Date("2026-03-23").getTime(),
+                completionVideoSeconds: 0.01,
             },
         ],
-        description:
-            "LTX-2 - Fast text-to-video generation with audio on Modal",
+        description: "LTX-2 - Fast text-to-video generation on Vast.ai",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },
@@ -437,6 +422,36 @@ export const IMAGE_SERVICES = {
         ],
         description:
             "Pruna p-video - Text/image-to-video generation (up to 1080p)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+    },
+    "nova-canvas": {
+        aliases: ["amazon-nova-canvas"],
+        modelId: "nova-canvas",
+        provider: "aws",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.04, // $0.04 per image
+            },
+        ],
+        description: "Amazon Nova Canvas - Bedrock Image Generation & Editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "nova-reel": {
+        aliases: ["amazon-nova-reel"],
+        modelId: "nova-reel",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.08, // $0.08 per second of video
+            },
+        ],
+        description:
+            "Amazon Nova Reel - Bedrock Video Generation (6-30s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

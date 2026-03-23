@@ -24,22 +24,32 @@ export const Route = createFileRoute("/")({
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [tierData, apiKeysResult, d1BalanceResult] = await Promise.all([
-            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
-            apiClient["api-keys"]
-                .$get()
-                .then((r) => (r.ok ? r.json() : { data: [] })),
-            apiClient.customer.balance
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-        ]);
+        const [tierData, apiKeysResult, d1BalanceResult, profileResult] =
+            await Promise.all([
+                apiClient.tiers.view
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                apiClient["api-keys"]
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : { data: [] })),
+                apiClient.customer.balance
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                apiClient.account.profile
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+            ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
         const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
+        // Prefer D1 — session (KV-cached) may hold a stale username after relog.
+        const githubUsername =
+            profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
 
         return {
             user: context.user,
+            githubUsername,
             apiKeys,
             tierData,
             tierBalance,
@@ -51,8 +61,15 @@ export const Route = createFileRoute("/")({
 
 function RouteComponent() {
     const router = useRouter();
-    const { user, apiKeys, tierData, tierBalance, packBalance, cryptoBalance } =
-        Route.useLoaderData();
+    const {
+        user,
+        githubUsername,
+        apiKeys,
+        tierData,
+        tierBalance,
+        packBalance,
+        cryptoBalance,
+    } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
@@ -213,7 +230,7 @@ function RouteComponent() {
             <div className="flex flex-col gap-20">
                 <Header>
                     <User
-                        githubUsername={user?.githubUsername || ""}
+                        githubUsername={githubUsername}
                         githubAvatarUrl={user?.image || ""}
                         onSignOut={handleSignOut}
                     />

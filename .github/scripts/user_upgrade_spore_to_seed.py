@@ -211,11 +211,11 @@ def main():
     print(f"   Slot: {slot}/42 ({now.strftime('%a %H:00')} UTC)")
     print()
 
-    # Fetch spore users (new + today's slice)
+    # Fetch spore users (new + this slot's slice)
     print("📥 Fetching spore users from D1...")
     new_users, slice_users, total_old = fetch_spore_users(args.env)
     print(f"   New users (last 8h): {len(new_users)}")
-    print(f"   Today's slice: {len(slice_users)} (of {total_old} total older users)")
+    print(f"   Slot slice: {len(slice_users)} (of {total_old} total older users)")
 
     # Combine: new users first (priority), then slice
     users = new_users + slice_users
@@ -263,9 +263,7 @@ def main():
     scored = [r for r in results if r.get("details")]
 
     print(f"\n📊 Summary: {len(approved)} approved, {len(rejected)} rejected (threshold {THRESHOLD})")
-    print(f"   Not found on GitHub: {len(not_found)}")
-    if fraud_rejected:
-        print(f"   🚨 Fraud-flagged: {len(fraud_rejected)}")
+    print(f"   Scored: {len(scored)} | Not found: {len(not_found)} | Fraud: {len(fraud_rejected)}")
 
     # Score distribution
     if scored:
@@ -279,23 +277,54 @@ def main():
         )
         print(f"   Score distribution: {dist}")
 
-    # Top approved
+    # All approved users with scores
     if approved:
         top = sorted(
             [r for r in scored if r["approved"]],
             key=lambda r: -r["details"]["total"],
         )
-        print(f"\n   Top approved ({len(approved)}):")
-        for r in top[:10]:
+        print(f"\n   ✅ All approved ({len(approved)}):")
+        for r in top:
             d = r["details"]
             print(f"      {r['username']:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})")
 
-    if rejected:
-        print(f"\n   Sample rejected ({len(rejected)} total):")
-        for r in rejected[:10]:
+    # Borderline rejected (close to threshold)
+    borderline = sorted(
+        [r for r in scored if not r["approved"] and r["details"]["total"] >= THRESHOLD - 1.5],
+        key=lambda r: -r["details"]["total"],
+    )
+    if borderline:
+        print(f"\n   ⚠️  Borderline rejected ({len(borderline)}, within 1.5pts of threshold):")
+        for r in borderline[:20]:
+            d = r["details"]
+            fraud = " FRAUD:" + ",".join(d["fraud_flags"]) if d.get("fraud_flags") else ""
+            print(f"      {r['username']:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f}){fraud}")
+        if len(borderline) > 20:
+            print(f"      ... and {len(borderline) - 20} more")
+
+    # Fraud-flagged details
+    if fraud_rejected:
+        print(f"\n   🚨 Fraud-flagged ({len(fraud_rejected)}):")
+        for r in fraud_rejected:
+            d = r["details"]
+            print(f"      {r['username']:<25} {d['total']:.1f}pts  flags: {', '.join(d['fraud_flags'])}")
+
+    # Not found on GitHub
+    if not_found:
+        print(f"\n   👻 Not found on GitHub ({len(not_found)}):")
+        for r in not_found[:20]:
+            print(f"      {r['username']}")
+        if len(not_found) > 20:
+            print(f"      ... and {len(not_found) - 20} more")
+
+    # Sample low-score rejected
+    low_score = [r for r in scored if not r["approved"] and r["details"]["total"] < THRESHOLD - 1.5 and not r["details"].get("fraud_flags")]
+    if low_score:
+        print(f"\n   Sample low-score rejected ({len(low_score)} total):")
+        for r in low_score[:5]:
             print(f"      {r['username']}: {r['reason']}")
-        if len(rejected) > 10:
-            print(f"      ... and {len(rejected) - 10} more")
+        if len(low_score) > 5:
+            print(f"      ... and {len(low_score) - 5} more")
 
     # Verbose: show score breakdown samples
     if args.verbose:

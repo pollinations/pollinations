@@ -2,7 +2,7 @@
 
 Points-based validation formula with quality filtering:
   - GitHub account age: 0.5 pt/month (max 6, so 12 months to max)
-  - Commits (any repo): 0.1 pt each (max 2)
+  - Commits (1yr window): 0.1 pt each (max 3)
   - Public repos (quality only, diskUsage > 0): 0.5 pt each (max 1)
   - Stars (total across quality repos): 0.1 pt each (max 5)
   - Threshold: >= 6.5 pts
@@ -25,7 +25,7 @@ from tqdm import tqdm
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
-BATCH_SIZE = 50
+BATCH_SIZE = 25
 MAX_BATCHES = None  # Set to a number to limit batches for testing
 
 # Quality filtering: repos and stars are counted from quality repos only (diskUsage > 0).
@@ -37,7 +37,7 @@ SCORING = [
         "multiplier": 0.5 / 30,
         "max": 6.0,
     },  # 0.5pt/month, max 6 (12 months)
-    {"field": "commits", "multiplier": 0.1, "max": 2.0},  # 0.1pt each, max 2
+    {"field": "commits", "multiplier": 0.1, "max": 3.0},  # 0.1pt each, max 3 (1yr window)
     {
         "field": "repos",
         "multiplier": 0.5,
@@ -54,9 +54,6 @@ THRESHOLD = 6.5
 
 def build_query(usernames: list[str]) -> str:
     """Build GraphQL query for multiple users."""
-    from_date = (datetime.now(timezone.utc) - timedelta(days=90)).strftime(
-        "%Y-%m-%dT00:00:00Z"
-    )
     fragments = []
     for i, username in enumerate(usernames):
         safe_username = username.replace("\\", "\\\\").replace('"', '\\"')
@@ -68,7 +65,7 @@ def build_query(usernames: list[str]) -> str:
             totalCount
             nodes {{ stargazerCount diskUsage createdAt }}
         }}
-        contributionsCollection(from: "{from_date}") {{ totalCommitContributions }}
+        contributionsCollection {{ totalCommitContributions }}
     }}''')
     return f"query {{ {''.join(fragments)} }}"
 
@@ -126,8 +123,17 @@ def score_user(data: dict | None, username: str) -> dict:
     created = datetime.fromisoformat(data["createdAt"].replace("Z", "+00:00"))
     age_days = (datetime.now(timezone.utc) - created).days
 
-    # Quality filtering: exclude None nodes and empty repos (diskUsage == 0)
-    all_nodes = [node for node in (data["repositories"].get("nodes") or []) if node]
+    # If nodes is null, GitHub hit RESOURCE_LIMITS_EXCEEDED — defer this user
+    raw_nodes = data["repositories"].get("nodes")
+    if raw_nodes is None and data["repositories"].get("totalCount", 0) > 0:
+        return {
+            "username": username,
+            "approved": False,
+            "reason": "Deferred (API resource limit, incomplete repo data)",
+            "details": None,
+        }
+
+    all_nodes = [node for node in (raw_nodes or []) if node]
     quality_nodes = [node for node in all_nodes if node.get("diskUsage", 0) > 0]
 
     metrics = {
@@ -223,6 +229,15 @@ def fetch_batch(
                 time.sleep(wait)
                 continue
             raise
+
+    # Check for RESOURCE_LIMITS_EXCEEDED errors
+    resource_errors = [
+        e for e in data.get("errors", [])
+        if e.get("type") == "RESOURCE_LIMITS_EXCEEDED"
+    ]
+    if resource_errors:
+        affected = {e["path"][0] for e in resource_errors if e.get("path")}
+        print(f"   ⚠️  RESOURCE_LIMITS_EXCEEDED for {len(affected)} users in batch of {len(usernames)} — consider reducing BATCH_SIZE")
 
     results = []
     for i, username in enumerate(usernames):

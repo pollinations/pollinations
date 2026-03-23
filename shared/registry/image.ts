@@ -274,7 +274,8 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-23").getTime(),
-                completionVideoSeconds: 0.02, // $0.02/sec at 480P
+                completionVideoSeconds: 0.01, // $0.01/sec (video)
+                completionAudioSeconds: 0.01, // $0.01/sec (audio)
             },
         ],
         description:

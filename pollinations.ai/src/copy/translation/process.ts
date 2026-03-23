@@ -6,11 +6,7 @@
 import { generateText } from "../../services/pollinationsAPI";
 import { memoizeAsync } from "../../utils";
 import { COPY_GUIDELINES } from "./guidelines";
-
-interface CopyItem {
-    id: string;
-    text: string;
-}
+import type { CopyItem } from "./types";
 
 /**
  * Translate copy items with natural, idiomatic rephrasing

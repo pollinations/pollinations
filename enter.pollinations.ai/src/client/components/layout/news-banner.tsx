@@ -63,6 +63,7 @@ function parseHighlights(md: string): Highlight[] {
     return md
         .split("\n")
         .filter((line) => line.startsWith("- **"))
+        .filter((line) => !line.includes("<!-- app -->"))
         .map((line) => {
             const dateMatch = line.match(/^- \*\*(\d{4}-\d{2}-\d{2})\*\*/);
             const emojiTitleMatch = line.match(/– \*\*(\S+)\s+([^*]+)\*\*/);
@@ -109,11 +110,7 @@ export const NewsBanner: FC = () => {
                                     className="text-gray-900"
                                 >
                                     {h.emoji} <strong>{h.title}:</strong>{" "}
-                                    <span
-                                        dangerouslySetInnerHTML={{
-                                            __html: h.description,
-                                        }}
-                                    />
+                                    {renderWithLinks(h.description)}
                                 </li>
                             ))}
                         </ul>

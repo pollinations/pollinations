@@ -4,13 +4,7 @@
  */
 
 import { generateText } from "../../services/pollinationsAPI";
-
-interface CopyItem {
-    id: string;
-    text: string;
-    name?: string;
-    titleEmoji?: string;
-}
+import type { CopyItem } from "./types";
 
 const PRETTIFY_PROMPT = `Rewrite this app description in zine-style for a creative AI showcase. Output ONLY the restyled description — no intro, no commentary, no numbering.
 
@@ -70,9 +64,10 @@ export async function prettifyCopy(
     if (items.length === 0) return items;
 
     console.log(`✨ [PRETTIFY] Processing ${items.length} descriptions`);
-    const results = await Promise.all(
-        items.map((item) => prettifyOne(item, apiKey)),
-    );
+    const results: CopyItem[] = [];
+    for (const item of items) {
+        results.push(await prettifyOne(item, apiKey));
+    }
     console.log(`✅ [PRETTIFY] Done — ${items.length} items`);
     return results;
 }

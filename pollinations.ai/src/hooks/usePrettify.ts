@@ -40,7 +40,8 @@ export function usePrettify<T, K extends keyof T>(
             titleEmoji: emojiField ? String(item[emojiField] ?? "") : undefined,
         }));
 
-        // Update UI progressively as each item completes
+        // Calls are fired without await — they enter fetchWithRetry's serial queue
+        // and execute one at a time. UI updates progressively as each resolves.
         let completed = 0;
         const results = [...items];
         for (const copyItem of copyItems) {

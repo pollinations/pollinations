@@ -1,16 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import type { CopyItem } from "../copy/translation/types";
 import { generateText } from "../services/pollinationsAPI";
 import { getBrowserLanguage, memoizeAsync } from "../utils";
 
 /** Feature flag — flip to false to disable globally */
 const ENABLED = true;
-
-interface CopyItem {
-    id: string;
-    text: string;
-    name?: string;
-    titleEmoji?: string;
-}
 
 const PRETTIFY_PROMPT = `Rewrite each description in zine-style. Output ONLY numbered entries — no intro, no commentary.
 

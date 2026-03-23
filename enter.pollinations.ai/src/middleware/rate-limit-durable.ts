@@ -1,9 +1,9 @@
 import { createMiddleware } from "hono/factory";
-import type { AuthVariables } from "./auth.ts";
-import { PollenRateLimiter } from "@/durable-objects/PollenRateLimiter.ts";
+import type { PollenRateLimiter } from "@/durable-objects/PollenRateLimiter.ts";
+import type { Env } from "@/env.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { safeRound } from "@/util.ts";
-import { Env } from "@/env.ts";
+import type { AuthVariables } from "./auth.ts";
 
 export type FrontendKeyRateLimitVariables = {
     // will be undefined when using a secret api key
@@ -38,7 +38,14 @@ export const frontendKeyRateLimit = createMiddleware<
 
     // Only apply to publishable keys
     const apiKey = c.var?.auth?.apiKey;
-    if (apiKey?.metadata?.keyType !== "publishable") {
+    if (!apiKey) {
+        log.debug("Skipping rate limit, no API key");
+        return next();
+    }
+    const apiKeyMetadata = apiKey.metadata as
+        | Record<string, unknown>
+        | undefined;
+    if (apiKeyMetadata?.keyType !== "publishable") {
         log.debug("Skipping rate limit, not a publishable key");
         return next();
     }

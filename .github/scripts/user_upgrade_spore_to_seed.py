@@ -4,10 +4,10 @@
 Fetches spore users from D1, validates GitHub profiles, and upgrades eligible users.
 Can be run locally or via GitHub Actions.
 
-Strategy (stateless, day-based slicing):
-    1. Always check users created in the last 24 hours (new users)
-    2. For older users, use LIMIT/OFFSET with day-of-week slicing
-       This ensures all users are checked once per week without tracking state.
+Strategy (stateless, hourly slicing):
+    1. Always check users created in the last 8 hours (new users, priority, overlapping window)
+    2. For older users, use LIMIT/OFFSET with slot-based slicing (42 slots over 7 days)
+       Runs every 4 hours, each run checks 1/42nd of older users.
     3. Fetches 10 repos per user for quality filtering and fraud detection
 
 Usage:
@@ -77,24 +77,27 @@ def run_d1_query(query: str, env: str = "production") -> list[dict] | None:
 
 
 def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], int]:
-    """Fetch spore users using day-based slicing strategy.
+    """Fetch spore users using hourly slicing strategy.
 
     Returns (new_users, slice_users, total_old) where:
-    - new_users: users created in the last 24 hours
-    - slice_users: today's slice of older users (1/7th, using LIMIT/OFFSET)
+    - new_users: users created in the last 8 hours (overlaps previous run for resilience)
+    - slice_users: this slot's slice of older users (1/42nd, cycling weekly)
     - total_old: total count of older spore users
     """
-    weekday = datetime.now(timezone.utc).weekday()
-    yesterday = int(
-        (datetime.now(timezone.utc).timestamp() - 86400) * 1000
-    )  # Unix timestamp in milliseconds (matches D1 schema)
+    now = datetime.now(timezone.utc)
+    # 42 slices = 7 days × 6 runs/day (every 4h), all users checked once per week
+    slot = now.weekday() * 6 + now.hour // 4
+    total_slots = 42
+    recent_cutoff = int(
+        (now.timestamp() - 8 * 3600) * 1000
+    )  # 8 hours ago in ms — overlaps previous run so missed slots don't lose users
 
-    # Get new users (created in last 24h)
+    # Get new users (created in last 4 hours)
     new_query = f"""
         SELECT github_username FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
-        AND created_at > {yesterday}
+        AND created_at > {recent_cutoff}
     """
     new_results = run_d1_query(new_query, env)
     new_users = [r["github_username"] for r in new_results] if new_results else []
@@ -104,20 +107,20 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
         SELECT COUNT(*) as count FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
-        AND created_at <= {yesterday}
+        AND created_at <= {recent_cutoff}
     """
     count_results = run_d1_query(count_query, env)
     total_old = count_results[0]["count"] if count_results else 0
 
-    # Get today's slice using LIMIT/OFFSET (equal partitions)
-    slice_size = (total_old + 6) // 7  # Ceiling division for 7 equal parts
-    offset = weekday * slice_size
+    # Get this hour's slice using LIMIT/OFFSET
+    slice_size = (total_old + total_slots - 1) // total_slots
+    offset = slot * slice_size
 
     slice_query = f"""
         SELECT github_username FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
-        AND created_at <= {yesterday}
+        AND created_at <= {recent_cutoff}
         ORDER BY created_at ASC
         LIMIT {slice_size} OFFSET {offset}
     """
@@ -198,19 +201,19 @@ def main():
     )
     args = parser.parse_args()
 
-    weekday = datetime.now(timezone.utc).weekday()
-    weekday_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    now = datetime.now(timezone.utc)
+    slot = now.weekday() * 6 + now.hour // 4
 
     print("🌱 Spore → Seed Upgrade Script")
     print(f"   Environment: {args.env}")
     print(f"   Mode: {'DRY RUN' if args.dry_run else 'LIVE'}")
-    print(f"   Day slice: {weekday_names[weekday]} (slice {weekday + 1}/7)")
+    print(f"   Slot: {slot}/42 ({now.strftime('%a %H:00')} UTC)")
     print()
 
     # Fetch spore users (new + today's slice)
     print("📥 Fetching spore users from D1...")
     new_users, slice_users, total_old = fetch_spore_users(args.env)
-    print(f"   New users (last 24h): {len(new_users)}")
+    print(f"   New users (last 8h): {len(new_users)}")
     print(f"   Today's slice: {len(slice_users)} (of {total_old} total older users)")
 
     # Combine: new users first (priority), then slice
@@ -241,7 +244,7 @@ def main():
     slice_results = []
     if slice_users:
         print(
-            f"\n🔍 Phase 2: Validating {len(slice_users)} SLICE users (day {weekday + 1}/7)..."
+            f"\n🔍 Phase 2: Validating {len(slice_users)} SLICE users (slot {slot}/42)..."
         )
         slice_results = validate_users(slice_users)
         slice_approved = sum(1 for r in slice_results if r["approved"])

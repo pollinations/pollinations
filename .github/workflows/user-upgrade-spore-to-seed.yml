@@ -2,7 +2,7 @@ name: User Upgrade Spore to Seed
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 */4 * * *'
   workflow_dispatch:
     inputs:
       dry_run:

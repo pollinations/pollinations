@@ -1,0 +1,33 @@
+{
+  "pr_number": 9503,
+  "title": "fix: remove fraud detection from seed upgrade",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9503",
+  "merged_at": "2026-03-23T23:06:40Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Trusting the Spores",
+    "blurb": "We've cleaned up the automated Spore-to-Seed upgrade scripts by removing some redundant checks. Faster processing, same great community.",
+    "summary": "Removed redundant fraud detection checks from the automated GitHub profile validation script.",
+    "impact": "The Spore-to-Seed upgrade process is now leaner and more efficient without affecting the quality of automated upgrades.",
+    "keywords": [
+      "infrastructure",
+      "github",
+      "automation",
+      "seed-tier"
+    ],
+    "visual_concept": "The PR is about removing redundant 'fraud' checks (weeds/security) from the 'seed' upgrade process. Visual symbols: seeds, gardening tools, removing weeds, the bee mascot. Let's use Nomnom eating an old checklist while Polly plants a seed.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a long paper checklist while the cute bee mascot plants a glowing green seed in a lime green (#ecf874) flower pot. Soft pastel lavender and cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-23/PR-9503.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a long paper checklist while the cute bee mascot plants a glowing green seed in a lime green (#ecf874) flower pot. Soft pastel lavender and cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-23T23:07:45.212177+00:00"
+}

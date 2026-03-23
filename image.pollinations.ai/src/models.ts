@@ -150,6 +150,16 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
+    // LTX-2 - Fast video generation on Vast.ai
+    "ltx-2": {
+        type: "vastai-ltx2",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "720p",
+    },
+
     // Pruna p-image - Text-to-image generation
     "p-image": {
         type: "pruna",

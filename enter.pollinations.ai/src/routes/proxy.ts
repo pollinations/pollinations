@@ -53,12 +53,7 @@ import {
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
-import {
-    generateMusic,
-    generateSeraphynTTS,
-    generateSpeech,
-    generateSunoMusic,
-} from "./audio.ts";
+import { generateMusic, generateSpeech } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
@@ -746,32 +741,6 @@ export const proxyRoutes = new Hono<Env>()
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
-            if (c.var.model.resolved === "qwen3-tts") {
-                const seraphynApiKey = (
-                    c.env as unknown as { SERAPHYN_API_KEY: string }
-                ).SERAPHYN_API_KEY;
-                const { voice } = c.req.valid("query" as never) as {
-                    voice: string;
-                };
-                return generateSeraphynTTS({
-                    text,
-                    voice: voice || "alloy",
-                    apiKey: seraphynApiKey,
-                    log,
-                });
-            }
-
-            if (c.var.model.resolved === "suno") {
-                const airforceApiKey = (
-                    c.env as unknown as { AIRFORCE_API_KEY: string }
-                ).AIRFORCE_API_KEY;
-                return generateSunoMusic({
-                    prompt: text,
-                    apiKey: airforceApiKey,
-                    log,
-                });
-            }
-
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(
                     "query" as never,
@@ -991,7 +960,19 @@ async function checkBalance(
     // Pre-check: reject if balance < estimated cost for this model
     // getModelStats is cached in KV for 1hr, so this is cheap
     const stats = await getModelStats(env.KV, log);
-    const estimatedCost = getEstimatedPrice(stats, model.resolved);
+    let estimatedCost = getEstimatedPrice(stats, model.resolved);
+
+    // Cap to guard against skewed Tinybird averages blocking users
+    if (estimatedCost > 5) {
+        log.warn(
+            "Estimated cost for {model} is suspiciously high ({cost}). Capping to 2.0",
+            {
+                model: model.resolved,
+                cost: estimatedCost,
+            },
+        );
+        estimatedCost = 2.0;
+    }
 
     if (estimatedCost > 0) {
         const userBalance = await balance.getBalance(auth.user.id);

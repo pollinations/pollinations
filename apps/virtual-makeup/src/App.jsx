@@ -10,10 +10,9 @@ import {
     Wand2,
     Zap,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useAuth } from "./hooks/useAuth.js";
 
-const APP_KEY = "pk_pollinations_virtual_makeup";
-const POLLINATIONS_AUTH_URL = "https://enter.pollinations.ai/authorize";
 const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
 const POLLINATIONS_IMAGE_API = "https://gen.pollinations.ai/image";
 
@@ -49,6 +48,7 @@ const MAKEUP_STYLES = [
 ];
 
 function App() {
+    const { apiKey, isLoggedIn, login, logout } = useAuth();
     const [uploadedImage, setUploadedImage] = useState(null);
     const [makeupImage, setMakeupImage] = useState(null);
     const [selectedStyle, setSelectedStyle] = useState("natural");
@@ -59,47 +59,7 @@ function App() {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [uploadedFile, setUploadedFile] = useState(null);
     const [errorMessage, setErrorMessage] = useState("");
-    const [apiKey, setApiKey] = useState(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const fileInputRef = useRef(null);
-
-    useEffect(() => {
-        const fragmentParams = new URLSearchParams(
-            window.location.hash.slice(1),
-        );
-        const keyFromUrl = fragmentParams.get("api_key");
-
-        if (keyFromUrl) {
-            sessionStorage.setItem("pollinations_api_key", keyFromUrl);
-            setApiKey(keyFromUrl);
-            setIsAuthenticated(true);
-            window.history.replaceState(
-                {},
-                document.title,
-                window.location.pathname,
-            );
-        } else {
-            const savedKey = sessionStorage.getItem("pollinations_api_key");
-            if (savedKey) {
-                setApiKey(savedKey);
-                setIsAuthenticated(true);
-            }
-        }
-    }, []);
-
-    const handleAuthenticate = () => {
-        const params = new URLSearchParams({
-            redirect_url: window.location.href,
-            app_key: APP_KEY,
-        });
-        window.location.href = `${POLLINATIONS_AUTH_URL}?${params}`;
-    };
-
-    const handleLogout = () => {
-        sessionStorage.removeItem("pollinations_api_key");
-        setApiKey(null);
-        setIsAuthenticated(false);
-    };
 
     const handleImageUpload = (event) => {
         const file = event.target.files?.[0];
@@ -250,14 +210,14 @@ function App() {
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            {isAuthenticated ? (
+                            {isLoggedIn ? (
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-emerald-400 font-medium">
                                         Authenticated
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={handleLogout}
+                                        onClick={logout}
                                         className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-white/20"
                                     >
                                         <LogOut className="w-4 h-4" />
@@ -269,7 +229,7 @@ function App() {
                             ) : (
                                 <button
                                     type="button"
-                                    onClick={handleAuthenticate}
+                                    onClick={login}
                                     className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-emerald-500 text-white rounded-xl font-semibold shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/40 transition-all"
                                 >
                                     <LogIn className="w-4 h-4" />
@@ -481,14 +441,10 @@ function App() {
 
                                 <button
                                     type="button"
-                                    onClick={
-                                        isAuthenticated
-                                            ? applyMakeup
-                                            : handleAuthenticate
-                                    }
+                                    onClick={isLoggedIn ? applyMakeup : login}
                                     disabled={
                                         isLoading ||
-                                        (isAuthenticated &&
+                                        (isLoggedIn &&
                                             useCustom &&
                                             !customPrompt.trim())
                                     }
@@ -501,7 +457,7 @@ function App() {
                                                 Transforming...
                                             </span>
                                         </>
-                                    ) : !isAuthenticated ? (
+                                    ) : !isLoggedIn ? (
                                         <>
                                             <LogIn className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                                             <span className="text-lg">

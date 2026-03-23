@@ -107,10 +107,10 @@ Same authorize screen, but the user opens a browser separately. Your CLI polls f
 - **VS Code extensions** — extension shows the code, user approves in browser
 
 ```bash
-# 1. request a device code
+# 1. request a device code (pass your app_key as client_id for attribution)
 curl -X POST https://enter.pollinations.ai/api/device/code \
   -H 'Content-Type: application/json' \
-  -d '{"client_id": "your-client-id", "scope": "generate"}'
+  -d '{"client_id": "pk_yourkey", "scope": "generate"}'
 # → { "device_code": "...", "user_code": "ABCD-1234", "verification_uri": "/device" }
 
 # 2. tell user: "go to enter.pollinations.ai/device and enter ABCD-1234"

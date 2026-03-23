@@ -74,7 +74,8 @@ interface DeviceCodeResponse {
  */
 export async function requestDeviceCode(): Promise<DeviceCodeResponse> {
     const res = await axios.post("https://enter.pollinations.ai/api/device/code", {
-        scope: "generate",
+        client_id: "pk_8EkDVRTvVGKlHxrA",
+        scope: "generate balance",
     });
     log("Device code response: %O", res.data);
     return res.data;
@@ -93,6 +94,7 @@ export async function pollForToken(deviceCode: string): Promise<{ accessToken: s
         try {
             const res = await axios.post("https://enter.pollinations.ai/api/device/token", {
                 device_code: deviceCode,
+                client_id: "pk_8EkDVRTvVGKlHxrA",
             });
             // Success
             return {

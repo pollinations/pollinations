@@ -1,3 +1,4 @@
+import axios from "axios";
 import debug from "debug";
 import {
     ActionRowBuilder,
@@ -22,10 +23,14 @@ const PROACTIVE_CHECK_INTERVAL_MS = 120_000; // 2 minutes
 const PROACTIVE_CHANCE = 0.2; // 20% chance to post when channel is quiet
 
 function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string, usingFreeModel?: boolean): string {
-    const base = `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;
+    const base = `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Respond like a real person in a Discord chat — max 2 short paragraphs, never walls of text. Use creative Discord markdown (bold, italic, strikethrough, quotes, code blocks, lists, etc). To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;
 
     if (usingFreeModel && config.paidModel) {
-        return `${base}\n\nYou are currently running on the lighter ${config.freeModel} model. The user has been shown a login button to connect their Pollen account and unlock ${config.paidModel}. If they ask complex questions, you can mention they'll get better results once they connect their account. Keep it natural and brief.`;
+        return `${base}\n\nYou are currently running on the lighter ${config.freeModel} model. If the user asks a complex question or you think they'd benefit from the full model, include [LOGIN] in your response. This will automatically render a login button for them. Only include [LOGIN] when relevant — don't push it. Example: "That's a great question! For the best answer, connect your Pollen account [LOGIN]"`;
+    }
+
+    if (!usingFreeModel && config.paidModel) {
+        return `${base}\n\nThe user just authenticated and unlocked YOU — ${config.paidModel}, the full-power model. Congratulate them in a fun, enthusiastic, slightly absurd Hitchhiker's Guide to the Galaxy style. Assure them this was one of the best decisions they've ever made, right up there with remembering where their towel is. From now on, just be helpful and confident — no need to mention login again after the first message.`;
     }
 
     return base;
@@ -96,6 +101,10 @@ async function generateResponseWithHistory(
                 client.user!.id,
                 config,
             );
+            // Append initialPrompt as a user message (e.g. synthetic login notification)
+            if (initialPrompt) {
+                apiMessages.push({ role: "user", content: initialPrompt });
+            }
             log("Fetched conversation history for channel %s", channelId);
         } else {
             if (!initialPrompt) return null;
@@ -187,10 +196,12 @@ function formatHistory(
             const name =
                 msg.author.id === botId ? config.model : msg.author.username;
             const id = msg.author.id === botId ? "" : ` <@${msg.author.id}>`;
+            // Strip model tags (e.g. "\n-# ⚡ gemini-fast") from history
+            const rawContent = msg.content.replace(/\n+-# .+$/s, "").trimEnd();
             const content =
-                msg.content.length > 4000
-                    ? msg.content.slice(0, 4000) + "..."
-                    : msg.content;
+                rawContent.length > 4000
+                    ? rawContent.slice(0, 4000) + "..."
+                    : rawContent;
 
             return {
                 role: msg.author.id === botId ? "assistant" : "user",
@@ -328,11 +339,6 @@ async function processMessage(
         }
     }
 
-    // Hybrid bots: if user isn't logged in, send login button + start background poll
-    if (config.requiresAuth && !msg.author.bot && !getUserToken(msg.author.id)) {
-        await sendLoginButton(msg, config, client, generateText);
-    }
-
     // Stateless rate limit: only applies in global channels, not when directly addressed
     if (!isDirected && isGlobalChannel && "messages" in msg.channel) {
         const recent = await msg.channel.messages.fetch({ limit: 5 });
@@ -406,71 +412,104 @@ async function processMessage(
     );
 
     if (response) {
-        log("Sending response: %s", response);
-        await discordApiCall(
-            () => msg.reply(response.slice(0, 1500)),
-            "message reply",
-            config.name,
-        );
+        // Append model indicator for hybrid bots
+        const usingFreeModel = !!(config.requiresAuth && config.freeModel && !userToken);
+        const activeModel = usingFreeModel ? config.freeModel! : (config.paidModel || config.model);
+        let balanceStr = "";
+        log("userToken for balance check: %s", userToken ? userToken.slice(0, 10) + "..." : "none");
+        if (userToken) {
+            try {
+                log("Fetching balance for user token %s...", userToken.slice(0, 10));
+                const res = await axios.get("https://gen.pollinations.ai/account/balance", {
+                    headers: { Authorization: `Bearer ${userToken}` },
+                });
+                log("Balance response: %O", res.data);
+                balanceStr = ` · 🌼 ${res.data.balance} pollen`;
+            } catch (err: any) {
+                log("Balance fetch failed: %s %O", err.message, err.response?.data);
+            }
+        }
+        const userStr = userToken ? ` · @${msg.author.username}` : "";
+        const modelTag = config.paidModel ? `\n\n-# ${usingFreeModel ? "⚡" : "🌟"} ${activeModel}${balanceStr}${userStr}` : "";
+        const tagged = response + modelTag;
+
+        log("Sending response: %s", tagged);
+
+        // If response contains [LOGIN], generate a device code and render a button
+        if (tagged.includes("[LOGIN]")) {
+            const text = tagged.replace(/\[LOGIN\]/g, "").trim().slice(0, 1500);
+            try {
+                const { device_code, verification_uri_complete } = await requestDeviceCode();
+                const button = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setLabel("Connect Pollen Account")
+                        .setStyle(ButtonStyle.Link)
+                        .setURL(verification_uri_complete),
+                );
+                await discordApiCall(
+                    () => msg.reply({ content: text, components: [button] }),
+                    "login button reply",
+                    config.name,
+                );
+                // Poll in background — on success, trigger a welcome response
+                pollForToken(device_code).then(async ({ accessToken, expiresIn }) => {
+                    storeUserToken(msg.author.id, accessToken, expiresIn);
+                    log("User %s authenticated via background poll", msg.author.id);
+                    // Show typing indicator
+                    if ("sendTyping" in msg.channel && typeof msg.channel.sendTyping === "function") {
+                        await discordApiCall(() => (msg.channel as any).sendTyping(), "typing indicator", config.name);
+                    }
+                    // Generate welcome using gemini-large, retry once on failure
+                    let welcome: string | null = null;
+                    for (let attempt = 0; attempt < 2 && !welcome; attempt++) {
+                        welcome = await generateResponseWithHistory(
+                            client,
+                            config,
+                            generateText,
+                            msg.channelId,
+                            `[User <@${msg.author.id}> just successfully connected their Pollen account and unlocked ${config.paidModel}]`,
+                            accessToken,
+                        );
+                    }
+                    if (welcome) {
+                        let balanceStr = "";
+                        try {
+                            log("Fetching welcome balance for token %s...", accessToken.slice(0, 10));
+                            const bal = await axios.get("https://gen.pollinations.ai/account/balance", {
+                                headers: { Authorization: `Bearer ${accessToken}` },
+                            });
+                            log("Welcome balance response: %O", bal.data);
+                            balanceStr = ` · 🌼 ${bal.data.balance} pollen`;
+                        } catch (err: any) {
+                            log("Welcome balance fetch failed: %s %O", err.message, err.response?.data);
+                        }
+                        const tagged = welcome + `\n\n-# 🌟 ${config.paidModel}${balanceStr} · @${msg.author.username}`;
+                        await discordApiCall(
+                            () => msg.reply(tagged.slice(0, 1500)),
+                            "welcome reply",
+                            config.name,
+                        );
+                    }
+                }).catch((err) => {
+                    log("Background auth poll expired for %s: %s", msg.author.id, err.message);
+                });
+            } catch (err: any) {
+                log("Failed to generate device code: %s", err.message);
+                await discordApiCall(
+                    () => msg.reply(text),
+                    "message reply",
+                    config.name,
+                );
+            }
+        } else {
+            await discordApiCall(
+                () => msg.reply(tagged.slice(0, 1500)),
+                "message reply",
+                config.name,
+            );
+        }
     } else {
         log("No response generated or empty response received");
-    }
-}
-
-/**
- * Send a login button and start background auth polling.
- * On success, trigger a synthetic agent response welcoming the user.
- */
-async function sendLoginButton(
-    msg: Message,
-    config: BotConfig,
-    client: Client,
-    generateText: GenerateTextWithHistory,
-): Promise<void> {
-    try {
-        const { device_code, verification_uri_complete } = await requestDeviceCode();
-
-        const button = new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder()
-                .setLabel("Connect Pollen Account")
-                .setStyle(ButtonStyle.Link)
-                .setURL(verification_uri_complete),
-        );
-
-        await discordApiCall(
-            () => msg.reply({
-                content: `🔑 Connect your Pollen account to unlock **${config.paidModel}**`,
-                components: [button],
-            }),
-            "login button",
-            config.name,
-        );
-
-        // Poll in background — don't block
-        pollForToken(device_code).then(async ({ accessToken, expiresIn }) => {
-            storeUserToken(msg.author.id, accessToken, expiresIn);
-            log("User %s authenticated successfully", msg.author.id);
-
-            // Trigger agent response for the login event
-            const response = await generateResponseWithHistory(
-                client,
-                config,
-                generateText,
-                msg.channelId,
-                `[System: User <@${msg.author.id}> just connected their Pollen account! They now have access to the full ${config.paidModel} model. Welcome them and let them know.]`,
-                accessToken,
-            );
-            if (response) {
-                const channel = await client.channels.fetch(msg.channelId);
-                if (channel && "send" in channel) {
-                    await (channel as any).send(response.slice(0, 1500));
-                }
-            }
-        }).catch((err) => {
-            log("Background auth poll failed for %s: %s", msg.author.id, err.message);
-        });
-    } catch (err: any) {
-        log("Failed to send login button for %s: %O", msg.author.id, err);
     }
 }
 

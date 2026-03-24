@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-03-23",
+  "period_start": "2026-03-23",
+  "period_end": "2026-03-23",
+  "generated_at": "2026-03-24T06:22:35.615045+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-23/images/twitter.jpg"
+    }
+  ],
+  "text": "24 prs merged. wired up amazon nova, qwen, grok, and wan2.2 video. added device auth (rfc 8628) for headless cli logins. also moved flower & nectar tier refills to hourly, because waiting a full day to generate a pixel bee is objectively too long."
+}

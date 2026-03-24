@@ -1,0 +1,34 @@
+{
+  "pr_number": 9526,
+  "title": "allow all tiers to submit apps, bot never rejects",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9526",
+  "merged_at": "2026-03-24T09:10:14Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No gatekeeping in the garden",
+    "blurb": "We've dropped the tier requirements for app submissions. Whether you're a brand new Spore or a veteran Nectar, you can now share your creations with the hive!",
+    "summary": "The app submission validation script has been updated to accept entries from all registered users regardless of their current tier.",
+    "impact": "Developers on the free tier can now submit their projects to the community showcase without being auto-rejected by the validation bot.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "tiers",
+      "submissions"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot opening a wooden garden gate to welcome a diverse group of tiny pixel creatures carrying little app icons and floppy disks. Represents removing barriers and welcoming all submissions.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sunhat and a chunky monitor-head robot opening a wooden garden gate to welcome a line of tiny pixel creatures holding floppy disks. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-24/PR-9526.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sunhat and a chunky monitor-head robot opening a wooden garden gate to welcome a line of tiny pixel creatures holding floppy disks. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-24T09:11:42.577086+00:00"
+}

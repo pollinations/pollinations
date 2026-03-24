@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-23",
+  "period_start": "2026-03-23",
+  "period_end": "2026-03-23",
+  "generated_at": "2026-03-24T06:22:35.615045+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-23/images/reddit.jpg"
+    }
+  ],
+  "title": "24 PRs: Nova, Qwen, Grok models, headless CLI auth, and hourly refills",
+  "text": "Just merged a batch of 24 PRs. The main focus was expanding the model roster and fixing some CLI and auth workflows.\n\nModels: We wired up Amazon Nova, Alibaba Qwen (image and editing), and added Wan2.2 (wan-fast) to the free-tier video generation. Grok text models were migrated to the new xAI Azure endpoint, and we added their official image and video models while fixing the underlying pricing calculations.\n\nAuth: Implemented RFC 8628 (Device Authorization Grant). If you are building CLI tools or headless apps on top of the API, you can now handle login without jumping through browser redirects on the same machine.\n\nTiers & Scoring: Flower and Nectar tiers now get hourly refills instead of daily chunks. We also fixed the GitHub scoring logic for auto-upgrading from Spore to Seed. It now spreads the upgrade checks across 42 slots to prevent bottlenecks and makes the scoring fairer based on commit history.\n\nAudio/Video: Video generation now defaults to having audio enabled. We also added an AI MIDI generator to the video/audio pipeline and split Midijourney into free and large tiers.\n\nEverything is live. Code is up at github.com/pollinations/pollinations. Let me know if the headless auth implementation gives anyone trouble."
+}

@@ -113,16 +113,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             <div className="flex gap-1 shrink-0 ml-2 items-center">
                                                 <button
                                                     type="button"
-                                                    className="w-6 h-6 flex items-center justify-center rounded bg-orange-50 hover:bg-orange-100 text-orange-400 hover:text-orange-600 transition-colors cursor-pointer"
-                                                    onClick={() =>
-                                                        setRotatingKey(apiKey)
-                                                    }
-                                                    title="Rotate key"
-                                                >
-                                                    ↻
-                                                </button>
-                                                <button
-                                                    type="button"
                                                     className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
                                                     onClick={() =>
                                                         setEditingKey(apiKey)
@@ -130,6 +120,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     title="Edit key"
                                                 >
                                                     ✎
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-orange-50 hover:bg-orange-100 text-orange-400 hover:text-orange-600 transition-colors cursor-pointer"
+                                                    onClick={() =>
+                                                        setRotatingKey(apiKey)
+                                                    }
+                                                    title="Rotate key"
+                                                >
+                                                    ↻
                                                 </button>
                                                 <button
                                                     type="button"

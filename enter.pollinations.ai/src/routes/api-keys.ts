@@ -333,9 +333,8 @@ export const apiKeysRoutes = new Hono<Env>()
             const existingMeta = existingKey.metadata
                 ? parseMetadata(existingKey.metadata)
                 : {};
-            const existingPermissions = existingKey.permissions
-                ? JSON.parse(existingKey.permissions as string)
-                : {};
+            const existingPermissions =
+                parsePermissions(existingKey.permissions as string) ?? {};
 
             const keyType =
                 (existingMeta.keyType as string) ||
@@ -365,9 +364,10 @@ export const apiKeysRoutes = new Hono<Env>()
             }
             await updateKeyMetadata(db, newKeyId, metadataPatch, null);
 
-            // Step 3: Copy permissions, budget, expiry, and preserve createdAt
+            // Step 3: Copy permissions, budget, expiry, prefix, and preserve createdAt
             const d1Updates: Record<string, unknown> = {
                 createdAt: existingKey.createdAt,
+                prefix,
             };
             if (existingKey.pollenBalance !== null) {
                 d1Updates.pollenBalance = existingKey.pollenBalance;

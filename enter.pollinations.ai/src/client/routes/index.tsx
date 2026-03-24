@@ -196,7 +196,9 @@ function RouteComponent() {
         router.invalidate();
     }
 
-    async function handleRotateApiKey(id: string): Promise<{ key: string }> {
+    async function handleRotateApiKey(
+        id: string,
+    ): Promise<{ key: string; warning?: string }> {
         const response = await fetch(`/api/api-keys/${id}/rotate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -211,7 +213,7 @@ function RouteComponent() {
         }
         const data = await response.json();
         router.invalidate();
-        return data as { key: string };
+        return data as { key: string; warning?: string };
     }
 
     async function handleUpdateApiKey(

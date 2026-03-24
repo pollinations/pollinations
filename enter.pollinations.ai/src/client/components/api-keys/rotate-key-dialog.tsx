@@ -8,7 +8,7 @@ import type { ApiKey } from "./types.ts";
 
 interface RotateKeyDialogProps {
     apiKey: ApiKey | null;
-    onRotate: (id: string) => Promise<{ key: string }>;
+    onRotate: (id: string) => Promise<{ key: string; warning?: string }>;
     onClose: () => void;
 }
 
@@ -21,6 +21,7 @@ export const RotateKeyDialog: FC<RotateKeyDialogProps> = ({
     const [newKey, setNewKey] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [warning, setWarning] = useState<string | null>(null);
 
     const isOpen = !!apiKey;
     const isSecret = apiKey?.metadata?.keyType !== "publishable";
@@ -30,6 +31,7 @@ export const RotateKeyDialog: FC<RotateKeyDialogProps> = ({
         setNewKey(null);
         setCopied(false);
         setError(null);
+        setWarning(null);
         setIsRotating(false);
         onClose();
     }
@@ -41,6 +43,9 @@ export const RotateKeyDialog: FC<RotateKeyDialogProps> = ({
         try {
             const result = await onRotate(apiKey.id);
             setNewKey(result.key);
+            if (result.warning) {
+                setWarning(result.warning);
+            }
         } catch (err) {
             setError(
                 err instanceof Error ? err.message : "Failed to rotate key",
@@ -114,6 +119,11 @@ export const RotateKeyDialog: FC<RotateKeyDialogProps> = ({
                     </div>
 
                     <div className="px-6 py-2 space-y-4">
+                        {warning && (
+                            <p className="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+                                ⚠️ {warning}
+                            </p>
+                        )}
                         {error && (
                             <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                                 {error}

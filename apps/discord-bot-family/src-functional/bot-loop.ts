@@ -14,8 +14,8 @@ const log = debug("app:bot");
 const HISTORY_LIMIT = 8;
 const MAX_BOT_MESSAGES_PER_WINDOW = 2;
 const RATE_WINDOW_MS = 60_000; // 1 minute
-const PROACTIVE_CHECK_INTERVAL_MS = 120_000; // 2 minutes
-const PROACTIVE_CHANCE = 0.2; // 20% chance to post when channel is quiet
+const PROACTIVE_CHECK_INTERVAL_MS = 240_000; // 4 minutes
+const PROACTIVE_CHANCE = 0.05; // 5% chance to post when channel is quiet
 
 function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string): string {
     return `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Short discord-style messages. Use markdown. To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;
@@ -328,14 +328,14 @@ async function processMessage(
     }
 
     if (msg.author.bot) {
-        // Bot messages in conversation channels: 10% chance, adds variety without loops
-        if (!isConvoChannel || Math.random() > 0.1) {
+        // Bot messages in conversation channels: 3% chance, adds variety without loops
+        if (!isConvoChannel || Math.random() > 0.03) {
             log("Ignoring bot message from %s", msg.author.username);
             return;
         }
-    } else if (isConvoChannel && !isDirected) {
-        // Human in conversation channel, not directly addressed: 30% chance
-        if (Math.random() > 0.3) {
+    } else if (isGlobalChannel && !isDirected) {
+        // Human in global/shared channel, not directly addressed: 8% chance
+        if (Math.random() > 0.08) {
             log(
                 "Skipping human message in shared channel (30%% response rate)",
             );

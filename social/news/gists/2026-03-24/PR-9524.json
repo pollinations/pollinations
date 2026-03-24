@@ -1,0 +1,34 @@
+{
+  "pr_number": 9524,
+  "title": "simplify app label pipeline: remove TIER-APP-REVIEW-PR and TIER-APP-COMPLETE",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9524",
+  "merged_at": "2026-03-24T08:38:48Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Trimming the pipeline",
+    "blurb": "We've simplified the app review pipeline by removing redundant labels and letting GitHub handle issue closing automatically. Less overhead, smoother sailing for maintainers.",
+    "summary": "Simplified the app review CI/CD pipeline by removing redundant labels and relying on branch name detection and GitHub's native auto-close features.",
+    "impact": "Maintainers have fewer labels to manage, and the automated app review process is more streamlined and less prone to workflow conflicts.",
+    "keywords": [
+      "ci/cd",
+      "github-actions",
+      "pipeline",
+      "labels",
+      "automation"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot cleaning up a factory conveyor belt, sweeping away excess colorful tags/labels to make the process smoother.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot sweeping away extra colorful pixelated tags from a glowing lime green (#ecf874) conveyor belt. A chunky robot with a CRT monitor head gives a thumbs up. Soft pastel gradient background. Cozy 8-bit pixel art aesthetic, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-24/PR-9524.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot sweeping away extra colorful pixelated tags from a glowing lime green (#ecf874) conveyor belt. A chunky robot with a CRT monitor head gives a thumbs up. Soft pastel gradient background. Cozy 8-bit pixel art aesthetic, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-24T08:39:39.288085+00:00"
+}

@@ -113,13 +113,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             <div className="flex gap-1 shrink-0 ml-2 items-center">
                                                 <button
                                                     type="button"
-                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer text-sm"
                                                     onClick={() =>
                                                         setEditingKey(apiKey)
                                                     }
                                                     title="Edit key"
                                                 >
-                                                    ✏
+                                                    ✎
                                                 </button>
                                                 <button
                                                     type="button"

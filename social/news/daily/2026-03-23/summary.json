@@ -1,0 +1,107 @@
+{
+  "date": "2026-03-23",
+  "period_start": "2026-03-23",
+  "period_end": "2026-03-23",
+  "title": "Massive model expansion: Nova, Qwen, Grok, and Wan2.2",
+  "summary": "A massive shipping day bringing Amazon Nova, Alibaba Qwen, and xAI Grok models to the API, alongside headless CLI auth and hourly Pollen refills.\n\nWe wired up Amazon Nova (text, image, video), Alibaba Qwen (with native CJK and multi-image editing), and xAI's Grok (now with reasoning, official image/video models, and a 2M context window). We also dropped in Wan2.2 for free-tier 5-second video generation, and fixed some routing and secret bugs that temporarily ghosted the new models.\n\nFlower and Nectar tiers now get their Pollen refilled hourly instead of daily, smoothing out burst limits for heavy tinkerers. We also overhauled the automated Spore-to-Seed upgrades: the script now evaluates a full year of GitHub commit history, runs 6x faster throughout the day, and won't fail on API rate limits. Plus, Grok and gptimage-large text inputs are now cheaper.\n\nImplemented the RFC 8628 Device Authorization Grant. You can now securely authenticate CLI tools and headless scripts without writing weird browser workarounds (and we fixed the scope inheritance). We also shipped a much cleaner model monitor UI with 24h/7d health aggregations, added BYOP attribution tracking, and scrubbed some lingering marketing copy from the Play page to keep things feeling like a hackerspace.",
+  "pr_count": 24,
+  "prs": [
+    {
+      "number": 9218,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9374,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9392,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9443,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9446,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9448,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9453,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9454,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9455,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9457,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9458,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9462,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9469,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9470,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9476,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9479,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9481,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9485,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9486,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9492,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9496,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9497,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9501,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9502,
+      "date": "2026-03-23"
+    }
+  ],
+  "generated_at": "2026-03-24T06:22:35.615045+00:00"
+}

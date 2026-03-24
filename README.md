@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🏷️ Metadatagenerator](https://metadatagenerator.online/) | Generate metadata and prompts for microstock marketplace with Metadatagenerator. | [@web](https://github.com/web) |
-| [🎓 VeroClass AI  Teacher Hub](https://teachers.veroclass.org) | Provides VeroClass AI  Teacher Hub to help Brazilian teachers create lessons, manage classes, and track student progress. | [@web](https://github.com/web) |
-| [🎹 AI MIDI GENERATOR](https://midi-aigenerator.vercel.app/) | Generate multitrack MIDI files from plain-language prompts in the browser with AI MIDI GENERATOR, a free tool for producers, songwriters, and game developers. | [@web](https://github.com/web) |
-| [🎬 Chorvanto](https://chorvanto.randever.com) | Generate original music videos with Chorvanto, an AI-powered platform that formats and distributes them to multiple social media platforms. | [@web](https://github.com/web) |
-| [🎬 StoryBoard Ai](https://ai-story-board-flax.vercel.app/) | Generate shot-by-shot cinematic storyboards with StoryBoard Ai, an open-source web app that transforms ideas into visualized frames using pollinations.ai for image generation. | [@web](https://github.com/web) |
-| [💬 Phicasso Chat](https://chat.phicasso.ai/) | Runs fully in the browser with no accounts or server-side storage; Phicasso Chat keeps conversations on the user's device and uses Pollinatio. | [@web](https://github.com/web) |
-| [🗣️ Practica un segundo idioma](https://proyectodescartes.org/IATools/131_Practica_el_segundo_idioma/) | Practica un segundo idioma con ejercicios de conversación, vocabulario y comprensión auditiva y seguimiento del progreso. | [@web](https://github.com/web) |
-| [🖼️ LND Ai](https://www.namansoni.in/text-to-image) | Generate text-to-image outputs and access multiple other AI tools on the LND Ai website, powered by pollination ai. | [@web](https://github.com/web) |
-| [🎨 Pollinations AI All-in-One Generation](https://mokindred.github.io/) | Generate images, music, and text with Pollinations AI All-in-One Generation using customizable prompts, style controls, and output format options. | [@web](https://github.com/web) |
-| [🖼️ Webcalypt Image Generator](https://img-webcalypt.ru/tools/text-to-img) | Generate AI images from natural language prompts using Webcalypt Image Generator. Describe the scene, style, or mood and the tool creates a matching image. | [@web](https://github.com/web) |
+| [🏷️ Metadatagenerator](https://metadatagenerator.online/) | Generate metadata and prompts for microstock marketplace with Metadatagenerator. | [@roni72640](https://github.com/roni72640) |
+| [🎓 VeroClass AI  Teacher Hub](https://teachers.veroclass.org) | Provides VeroClass AI  Teacher Hub to help Brazilian teachers create lessons, manage classes, and track student progress. | [@samucamg](https://github.com/samucamg) |
+| [🎹 AI MIDI GENERATOR](https://midi-aigenerator.vercel.app/) | Generate multitrack MIDI files from plain-language prompts in the browser with AI MIDI GENERATOR, a free tool for producers, songwriters, and game developers. | [@argyrisAEK](https://github.com/argyrisAEK) |
+| [🎬 Chorvanto](https://chorvanto.randever.com) | Generate original music videos with Chorvanto, an AI-powered platform that formats and distributes them to multiple social media platforms. | [@Johanu66](https://github.com/Johanu66) |
+| [🎬 StoryBoard Ai](https://ai-story-board-flax.vercel.app/) | Generate shot-by-shot cinematic storyboards with StoryBoard Ai, an open-source web app that transforms ideas into visualized frames using pollinations.ai for image generation. | [@GaurAk495](https://github.com/GaurAk495) |
+| [💬 Phicasso Chat](https://chat.phicasso.ai/) | Runs fully in the browser with no accounts or server-side storage; Phicasso Chat keeps conversations on the user's device and uses Pollinatio. | [@dariuszsikorski](https://github.com/dariuszsikorski) |
+| [🗣️ Practica un segundo idioma](https://proyectodescartes.org/IATools/131_Practica_el_segundo_idioma/) | Practica un segundo idioma con ejercicios de conversación, vocabulario y comprensión auditiva y seguimiento del progreso. | [@Juanrivera126](https://github.com/Juanrivera126) |
+| [🖼️ LND Ai](https://www.namansoni.in/text-to-image) | Generate text-to-image outputs and access multiple other AI tools on the LND Ai website, powered by pollination ai. | [@LND78](https://github.com/LND78) |
+| [🎨 Pollinations AI All-in-One Generation](https://mokindred.github.io/) | Generate images, music, and text with Pollinations AI All-in-One Generation using customizable prompts, style controls, and output format options. | [@MoKindred](https://github.com/MoKindred) |
+| [🖼️ Webcalypt Image Generator](https://img-webcalypt.ru/tools/text-to-img) | Generate AI images from natural language prompts using Webcalypt Image Generator. Describe the scene, style, or mood and the tool creates a matching image. | [@DoomedUser48](https://github.com/DoomedUser48) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -47,16 +47,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-03-23** – **🚀 Amazon Nova arrives** The Nova model family (Pro, Canvas, and Reel) is now wired up for text, image, and video generation. We also enabled image-to-image variation support for Canvas.
+- **2026-03-23** – **🧠 Grok learns to reason** Added official xAI integration for `grok-imagine` and `grok-video-pro`, plus upgraded text models featuring `grok-reasoning` with a casual 2M token context window.
+- **2026-03-23** – **🎨 Qwen image models** Added Alibaba's `qwen-image-plus` and `qwen-image-edit-plus`. Native CJK text rendering and multi-image editing are now on the menu.
+- **2026-03-23** – **🎬 Fast, free, and moving** Added `wan-fast` for free 5-second video generation. We also defaulted `audio=true` across the video API, so supported models will just generate sound automatically.
+- **2026-03-23** – **🔐 Headless in the hive** Implemented RFC 8628 Device Authorization Grant. You can now securely authenticate terminal tools and headless scripts without complex browser workarounds.
+- **2026-03-23** – **🎵 Free the MIDI** We split the `midijourney` text model into a free base version (Claude Haiku) and a large variant (Claude Opus) for complex compositions.
+- **2026-03-23** – **🌟 Showcase additions** Phicasso Chat (browser-native privacy) and AI MIDI Generator (text-to-multitrack) have joined the community showcase. [Try them](https://hello.pollinations.ai) <!-- app -->
 - **2026-03-22** – **🤖 Qwen Models & Vision** Alibaba's Qwen models (`qwen-coder-large`, `qwen-large`, and `qwen-vision`) are now live on the [Unified API](https://gen.pollinations.ai). 1M context windows and image understanding, completely unlocked for the free tier.
-- **2026-03-22** – **🎨 LND Ai Showcase** LND Ai has been added to the community showcase. Another solid text-to-image tool built entirely by hitting our [API](https://enter.pollinations.ai/api/docs).
+- **2026-03-22** – **🎨 LND Ai Showcase** LND Ai has been added to the community showcase. Another solid text-to-image tool built entirely by hitting our API. [Try it](https://www.namansoni.in/text-to-image). <!-- app -->
 - **2026-03-20** – **🎨 Klein Multi-Image Blending** The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending.
-- **2026-03-20** – **💻 PowerShell & .NET Integrations** You can now pipe text and image generation directly into your Windows scripting and Azure workflows. Because sometimes you just need to generate pixels from a terminal.
-- **2026-03-20** – **🌟 Showcase Explosion** The community directory is growing. New additions include a daily cryptid generator, a Turkish financial analysis bot, a markdown story exporter, and an AI bouquet designer. See what people are building on the [main website](https://hello.pollinations.ai).
-- **2026-03-19** – **🔗 OpenClaw Integration** Setting up OpenClaw with Pollinations is now faster and less prone to configuration errors thanks to native CLI onboarding for v2026.3.
-- **2026-03-18** – **🤖 Silicon meets pollen** Someone wired the API into an ESP32-S3 microcontroller (NEURGenerator). Hardware hackers now have a reference for bringing generation to physical devices.
-- **2026-03-18** – **📱 Pocket-sized infrastructure** Nova.ai just dropped into the showcase—a full iOS assistant with streaming chat and image generation built entirely on our endpoints.
-- **2026-03-18** – **📚 The hive writes a novel** NovelSeek-Pro-PC is now in the creative directory. It's a desktop tool that takes you from a blank page to a fully formatted ebook with generated cover art.
-- **2026-03-18** – **👾 Bot swarm** The community showcase on our [website](https://hello.pollinations.ai) absorbed over a dozen new apps this week, including Telegram model-routers and massive Discord bot presets.
 ---
 
 ## 🌱 Introduction

@@ -116,7 +116,7 @@ export const PLAY_PAGE = {
         "Never expose in client-side code, git repos, or public URLs",
     byopLabel: "Bring Your Own Pollen",
     byopDescription:
-        "Building an app? Let users pay for their own AI usage — you pay $0.",
+        "Building an app? Let users bring their own Pollen.",
     getKeyButton: "Get Your Key",
     byopButton: "Learn more",
 

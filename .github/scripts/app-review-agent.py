@@ -43,8 +43,9 @@ def load_description_prompt():
 def sanitize_string(s, max_length=100):
     if not s or not isinstance(s, str):
         return ""
-    # Allow letters, digits, common punctuation, accented chars — strip only control chars and pipes
-    safe_chars = re.sub(r'[\x00-\x1f|]', '', s)
+    # Allow letters, digits, common punctuation, accented chars
+    # Strip control chars, pipes (markdown table), backticks, angle brackets (HTML injection)
+    safe_chars = re.sub(r'[\x00-\x1f|`<>]', '', s)
     return safe_chars[:max_length].strip()
 
 def run_cmd(cmd_list, check=True):

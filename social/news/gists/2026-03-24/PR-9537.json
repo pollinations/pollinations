@@ -1,0 +1,34 @@
+{
+  "pr_number": 9537,
+  "title": "feat: BYOP dashboard overhaul and app owner tracking",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9537",
+  "merged_at": "2026-03-24T22:32:51Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Charting the hive",
+    "blurb": "We've leveled up our internal tracking to better understand how developers are using BYOP. More charts, better attribution, and a clearer picture of our ecosystem's growth.",
+    "summary": "Enhanced the event pipeline to track developer user IDs for BYOP requests and deployed a comprehensive overhaul of the internal BYOP monitoring dashboards.",
+    "impact": "This gives the core team better visibility into app ownership and usage patterns, helping us better support the developers building on our infrastructure.",
+    "keywords": [
+      "observability",
+      "dashboard",
+      "byop",
+      "tracking",
+      "metrics"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot analyzing data. Polly wearing tiny reading glasses, looking at glowing charts on the Robot's screen.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, looking at a cute chunky monitor robot whose screen displays colorful pie charts and bar graphs. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-24/PR-9537.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, looking at a cute chunky monitor robot whose screen displays colorful pie charts and bar graphs. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-24T22:34:00.478560+00:00"
+}

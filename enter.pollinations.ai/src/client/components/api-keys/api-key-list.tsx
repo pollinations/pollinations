@@ -57,6 +57,35 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 {apiKeys.length ? (
                     <Panel color="blue">
                         <div className="flex flex-col gap-3">
+                            <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4">
+                                <p className="font-semibold text-amber-900 mb-1">
+                                    Let your users pay for what they use
+                                </p>
+                                <p className="text-sm text-amber-800 mb-2.5">
+                                    Register an <strong>App Key</strong> to
+                                    enable cross-platform login for your end
+                                    users — web apps, chatbots, CLIs, anything.
+                                    Usage from your app is tracked to your
+                                    account automatically.
+                                </p>
+                                <div className="flex items-center gap-4">
+                                    <ApiKeyDialog
+                                        onSubmit={onCreate}
+                                        onComplete={() => {}}
+                                        triggerLabel="+ Register App Key"
+                                        triggerColor="amber"
+                                        simplified
+                                    />
+                                    <a
+                                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-amber-700 hover:text-amber-900 underline underline-offset-2"
+                                    >
+                                        Read the guide
+                                    </a>
+                                </div>
+                            </div>
                             {sortedKeys.map((apiKey) => {
                                 const isPublishable =
                                     apiKey.metadata?.keyType === "publishable";

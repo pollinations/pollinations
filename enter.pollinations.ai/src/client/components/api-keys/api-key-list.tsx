@@ -119,7 +119,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     }
                                                     title="Edit key"
                                                 >
-                                                    ✎
+                                                    ✏
                                                 </button>
                                                 <button
                                                     type="button"

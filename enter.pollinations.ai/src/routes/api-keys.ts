@@ -212,9 +212,8 @@ export const apiKeysRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const existingKey = await requireOwnedKey(db, id, user.id);
 
-            const existingPermissions = existingKey.permissions
-                ? JSON.parse(existingKey.permissions as string)
-                : {};
+            const existingPermissions =
+                parsePermissions(existingKey.permissions as string) ?? {};
 
             const updatedPermissions = buildUpdatedPermissions(
                 existingPermissions,

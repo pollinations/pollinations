@@ -30,7 +30,6 @@ jobs:
         (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') && github.event.comment.user.type != 'Bot')) &&
        !contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW') &&
        !contains(github.event.issue.labels.*.name, 'TIER-APP-APPROVED') &&
-       !contains(github.event.issue.labels.*.name, 'TIER-APP-COMPLETE') &&
        !contains(github.event.issue.labels.*.name, 'TIER-APP-REJECTED') &&
        github.event.issue.state == 'open')
     runs-on: ubuntu-latest

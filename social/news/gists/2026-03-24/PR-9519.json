@@ -1,0 +1,36 @@
+{
+  "pr_number": 9519,
+  "title": "Add VeroClass AI  Teacher Hub to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9519",
+  "merged_at": "2026-03-24T07:17:50Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Class is in session",
+    "blurb": "VeroClass AI Teacher Hub just joined the ecosystem. It's a neat new tool helping Brazilian teachers create lessons, manage classes, and track student progress without losing their minds.",
+    "summary": "Added VeroClass AI Teacher Hub to the community apps showcase, providing AI-powered tools for Brazilian educators.",
+    "impact": "Teachers can now discover and utilize VeroClass to streamline their lesson planning and classroom management directly from the community hub.",
+    "keywords": [
+      "community",
+      "app",
+      "education",
+      "teachers",
+      "showcase"
+    ],
+    "visual_concept": "Education and teaching theme. Polly the bee acting as a teacher or helping out in a cozy classroom setting. A chalkboard or retro computer showing lesson plans, with the Monitor Robot acting as an eager student.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, pointing at a glowing retro chalkboard with a pointer stick while a chunky monitor robot sits at a desk happily taking notes. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Cute pixel bee and robot characters with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'A+'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-24/PR-9519.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, pointing at a glowing retro chalkboard with a pointer stick while a chunky monitor robot sits at a desk happily taking notes. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Cute pixel bee and robot characters with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'A+'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-24T07:18:46.973310+00:00",
+  "app_name": "VeroClass AI  Teacher Hub",
+  "app_url": "https://teachers.veroclass.org"
+}

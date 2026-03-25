@@ -1,0 +1,34 @@
+{
+  "pr_number": 9538,
+  "title": "Add App Key info banner to Keys section",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9538",
+  "merged_at": "2026-03-25T12:28:27Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Unlocking App Keys",
+    "blurb": "We've added a handy new banner to the dashboard's Keys section to help you set up App Keys. Now it's easier than ever to let your users bring their own pollen to your web apps, chatbots, and CLIs!",
+    "summary": "Added an informational banner to the dashboard's Keys section to guide developers on using App Keys for cross-platform end-user login.",
+    "impact": "Developers will now see a clear call-to-action and guide link for registering App Keys directly above their API key cards.",
+    "keywords": [
+      "dashboard",
+      "ui",
+      "api-keys",
+      "byop",
+      "app-keys"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot interacting with a giant glowing golden key and an amber dashboard panel, representing the new App Keys banner.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing golden key next to a chunky retro robot with a CRT monitor head. The robot's screen displays a bright amber dashboard panel. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'APP KEYS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9538.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing golden key next to a chunky retro robot with a CRT monitor head. The robot's screen displays a bright amber dashboard panel. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'APP KEYS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-25T12:29:19.523895+00:00"
+}

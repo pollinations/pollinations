@@ -22,11 +22,11 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-03-27",
+        date: "2026-03-26",
         emoji: "⏱️",
         title: "Flower & Nectar: Daily → Hourly Refills",
         description:
-            "Starting Thursday, March 27 — Flower 0.4p/hr, Nectar 0.8p/hr. Need more? Grab a Pollen Pack below!",
+            "Starting Thursday, March 26 — Flower 0.4p/hr, Nectar 0.8p/hr. Need more? Grab a Pollen Pack below!",
     },
 ];
 

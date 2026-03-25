@@ -1,146 +1,169 @@
-# io.net GPU Instances
+# GPU Instances
 
-Last updated: 2026-01-30
+Last updated: 2026-03-22 (verified via SSH + Vast.ai CLI + EC2 gateway)
+
+## Provider: Vast.ai
+
+All GPU instances run on Vast.ai. Manage via `vastai` CLI (API key in `~/.vast_api_key`).
+
+```bash
+vastai show instances          # list all instances
+vastai show instances --raw    # JSON with full details (ports, IPs)
+vastai ssh-url <instance_id>   # get SSH URL
+```
 
 ## Active Instances
 
-### Primary Instance (vmaas-d24ab335) - 8x L40 GPUs
+### Instance 30826995 — Flux (`76.69.188.175`)
 
-| GPU | Service | Port | Endpoint | Status |
-|-----|---------|------|----------|--------|
-| GPU 0 | Z-Image | 8080 | http://38.128.232.183:8080 | ✅ Working |
-| GPU 1 | Z-Image | 8081 | http://38.128.232.183:8081 | ✅ Working |
-| GPU 2 | Z-Image | 8082 | http://38.128.232.183:8082 | ✅ Working |
-| GPU 3 | Flux | 8769 | http://38.128.232.183:8769 | ✅ Working |
-| GPU 4 | Flux | 8768 | http://38.128.232.183:8768 | ✅ Working |
-| GPU 5 | Flux | 8767 | http://38.128.232.183:8767 | ✅ Working |
-| GPU 6 | Flux | 8766 | http://38.128.232.183:8766 | ✅ Working |
-| GPU 7 | Flux | 8765 | http://38.128.232.183:8765 | ✅ Working |
+- **Machine**: 24391 | **GPUs**: 4x RTX 5090 (32GB each) | **Cost**: $1.68/hr
+- **SSH**: `ssh -i ~/.ssh/pollinations_services_2026 -p 26994 root@ssh2.vast.ai`
+- **Running since**: Feb 1, 2026
+- **Process manager**: `screen` sessions (`flux-gpu0` through `flux-gpu3`)
 
-**Instance Details:**
-- **IP**: 38.128.232.183
-- **SSH**: `ssh -i ~/.ssh/pollinations_services_2026 ionet@38.128.232.183`
-- **GPUs**: 8x NVIDIA L40
-- **Storage**: `/ephemeral` (6.3TB) - all services installed here
-- **Direct Access**: Yes (no port mapping needed)
+| GPU | Screen Session | CUDA Device | Internal Port | Public Port | Public Endpoint |
+|-----|---------------|-------------|---------------|-------------|-----------------|
+| 0 | flux-gpu0 | 0 | 8765 | 21011 | http://76.69.188.175:21011 |
+| 1 | flux-gpu1 | 1 | 8766 | 21057 | http://76.69.188.175:21057 |
+| 2 | flux-gpu2 | 2 | 8767 | 21050 | http://76.69.188.175:21050 |
+| 3 | flux-gpu3 | 3 | 8768 | 21059 | http://76.69.188.175:21059 |
 
-### Legacy Instances (May be inactive)
+**Code**: `/workspace/flux` with Python venv, runs `server.py`
 
-| Instance | Public IP | SSH Port | Model | GPU Ports | GPUs | Status |
-|----------|-----------|----------|-------|-----------|------|--------|
-| Flux 1 (vmaas-22e58f05) | 3.21.229.114 | 23655 | flux | 20071, 23942 | 2x RTX 4090 | ⚠️ Check |
-| Flux 2 (vmaas-41e2e564) | 3.21.229.114 | 24671 | flux | 26596, 31706 | 2x RTX 4090 | ❌ Down |
-| Z-Image 1 (vmaas-46665737) | 54.185.175.109 | 20033 | zimage | 24946, 21753 | 2x RTX 4090 | ❌ Down |
-| Z-Image 2 (vmaas-8afc966b) | 54.185.175.109 | 28816 | zimage | 24088, 30215 | 2x RTX 4090 | ❌ Down |
+### Instance 30937024 — Z-Image + Sana (`211.72.13.202`)
 
-## SSH Access
+- **Machine**: 47454 | **GPUs**: 4x RTX 5090 (32GB each) | **Cost**: $1.66/hr
+- **SSH**: `ssh -i ~/.ssh/pollinations_services_2026 -p 17024 root@ssh3.vast.ai`
+- **Running since**: Mar 8, 2026
+- **Process manager**: `screen` sessions
 
-```bash
-# Primary instance (8x L40 GPUs)
-ssh -i ~/.ssh/pollinations_services_2026 ionet@38.128.232.183
+| GPU | Screen Session | CUDA Device | Internal Port | Public Port | Public Endpoint | Service |
+|-----|---------------|-------------|---------------|-------------|-----------------|---------|
+| 0 | sana-gpu0 | 0 | 8765 | 47190 | http://211.72.13.202:47190 | **Sana** (not registered with EC2) |
+| 1 | zimage-gpu1 | 1 | 8766 | 47162 | http://211.72.13.202:47162 | Z-Image |
+| 2 | zimage-gpu2 | 2 | 8767 | 47174 | http://211.72.13.202:47174 | Z-Image |
+| 3 | zimage-gpu3 | 3 | 8768 | 47158 | http://211.72.13.202:47158 | Z-Image |
 
-# Legacy instances (may be inactive)
-ssh -p 23655 -i ~/.ssh/thomashkey ionet@3.21.229.114   # Flux 1
-ssh -p 24671 -i ~/.ssh/thomashkey ionet@3.21.229.114   # Flux 2
-ssh -p 20033 -i ~/.ssh/thomashkey ionet@54.185.175.109  # Z-Image 1
-ssh -p 28816 -i ~/.ssh/thomashkey ionet@54.185.175.109  # Z-Image 2
-```
+### Instance 32608960 — Z-Image (`114.32.64.6`)
 
-## Docker Images
+- **Machine**: 23978 | **GPUs**: 4x RTX 5090 (32GB each) | **Cost**: $1.55/hr
+- **SSH**: `ssh -i ~/.ssh/pollinations_services_2026 -p 18960 root@ssh3.vast.ai`
+- **Running since**: Mar 9, 2026
+- **Process manager**: `screen` sessions
+- **Code**: `/root/pollinations/image.pollinations.ai/z-image` with venv at `/root/venv-zimage`
 
-| Model | Docker Image | Internal Port |
-|-------|--------------|---------------|
-| zimage | Native Python (venv) | 8080-8082 |
-| flux | pollinations/flux-svdquant:latest | 8765 |
+| GPU | Screen Session | CUDA Device | Internal Port | Public Port | Public Endpoint | Service |
+|-----|---------------|-------------|---------------|-------------|-----------------|---------|
+| 0 | — | — | — | — | — | **IDLE** (2 MiB VRAM) |
+| 1 | zimage-gpu1 | 1 | 8766 | 40160 | http://114.32.64.6:40160 | Z-Image |
+| 2 | zimage-gpu2 | 2 | 8767 | 40184 | http://114.32.64.6:40184 | Z-Image |
+| 3 | zimage-gpu3 | 3 | 8768 | 40151 | http://114.32.64.6:40151 | Z-Image |
 
-## Heartbeat Registration
+### LTX-2 Video (Modal — separate provider)
 
-All instances send heartbeats to the EC2 endpoint:
-- **URL**: `http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register`
-- **Payload**: `{"url": "http://IP:PORT", "type": "flux|zimage"}`
+- **Provider**: Modal (workspace `myceli-ai`)
+- **GPU**: H200 (auto-scaling: min=0, max=1)
+- **Endpoints**: `https://myceli-ai--ltx2-comfyui-api-distilled-{enqueue,status,result}.modal.run/`
+- **Auth**: `MODAL_LTX2_TOKEN_ID` / `MODAL_LTX2_TOKEN_SECRET`
+- **Config**: `video_gen_ltx2modal/ltx2-t2v-distilled/comfyapp_ltx_distilled.py`
 
-**Note**: The EC2 endpoint blocks external access. Heartbeats must be sent from within the io.net instances or via SSH tunnel.
+## Exited/Unused Vast.ai Instances
 
-## Service Management
+These are still in the Vast.ai account but not running:
 
-### Primary Instance (38.128.232.183)
+| Instance ID | Machine | GPUs | Public IP | Cost/hr | Status |
+|-------------|---------|------|-----------|---------|--------|
+| 30829799 | 9754 | 1x RTX 5090 | 78.44.170.162 | $0.31 | exited |
+| 30939919 | 51714 | 2x RTX 5090 | 108.255.76.60 | $0.84 | exited |
+| 31080854 | 17419 | 1x RTX 5090 | 108.55.118.247 | $0.35 | exited |
+| 32506004 | 51612 | 1x RTX 4090 | 38.117.87.45 | $0.32 | exited |
 
-**Z-Image Services (systemd)**:
-```bash
-# Check status
-sudo systemctl status zimage-gpu0 zimage-gpu1 zimage-gpu2
+### Other Running (non-Pollinations?)
 
-# View logs
-sudo journalctl -u zimage-gpu0 -f
-
-# Restart
-sudo systemctl restart zimage-gpu0 zimage-gpu1 zimage-gpu2
-```
-
-**Flux Services (Docker)**:
-```bash
-# Check status
-docker ps --filter "name=flux-gpu"
-
-# View logs
-docker logs flux-gpu7 -f
-
-# Restart
-docker restart flux-gpu7 flux-gpu6 flux-gpu5 flux-gpu4 flux-gpu3
-```
-
-### Deploying New Flux Containers
-
-```bash
-# SSH into the instance
-ssh -i ~/.ssh/pollinations_services_2026 ionet@38.128.232.183
-
-# Deploy Flux to a specific GPU (example: GPU 3 on port 8769)
-docker run -d --gpus '"device=3"' --name flux-gpu3 \
-  -p 8769:8765 \
-  -v /ephemeral/hf-cache:/root/.cache/huggingface \
-  -e PORT=8765 \
-  -e PUBLIC_IP=38.128.232.183 \
-  -e PUBLIC_PORT=8769 \
-  -e SERVICE_TYPE=flux \
-  -e REGISTER_URL='http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register' \
-  -e PLN_ENTER_TOKEN=$PLN_ENTER_TOKEN \
-  -e HF_TOKEN=$HF_TOKEN \
-  --restart unless-stopped \
-  pollinations/flux-svdquant:latest
-```
-
-**Important**: 
-- Use `-v /ephemeral/hf-cache:/root/.cache/huggingface` to share model cache across containers
-- Get tokens from `enter.pollinations.ai/.testingtokens` (never commit tokens to code)
-
-### Deploying New Z-Image Services
-
-Z-Image uses native Python with systemd. See `z-image/setup-ionet.sh` for the full setup script.
-
-Required environment variables:
-- `PLN_ENTER_TOKEN` - Authentication token (required, no default)
-- `HF_TOKEN` - Hugging Face token for model downloads
-- `PUBLIC_IP` - Instance public IP
-- `PUBLIC_PORT` - Port for this GPU's service
-
-## Storage Configuration
-
-The primary instance uses `/ephemeral` (6.3TB) for all data:
-- `/ephemeral/pollinations` - Git repo and Z-Image venv
-- `/ephemeral/hf-cache` - Shared Hugging Face model cache for Flux
-- Docker configured to use `/ephemeral/docker` for container storage
+| Instance ID | Machine | GPUs | Public IP | Cost/hr | Notes |
+|-------------|---------|------|-----------|---------|-------|
+| 30994805 | 46531 | 1x RTX 5090 | 108.255.76.60 | $0.44 | Port 10002 exposed, unknown purpose |
 
 ## Capacity Summary
 
-| Model | GPUs | GPU Type | Instance |
-|-------|------|----------|----------|
-| Z-Image | 3 | L40 | 38.128.232.183 (GPU 0-2) |
-| Flux | 5 | L40 | 38.128.232.183 (GPU 3-7) |
-| **Total** | **8** | L40 | Primary instance |
+| Model | Workers | GPUs | Host(s) | Vast Instance |
+|-------|---------|------|---------|---------------|
+| Flux | 4 | 4x RTX 5090 | 76.69.188.175 | 30826995 |
+| Z-Image | 6 | 6x RTX 5090 | 211.72.13.202, 114.32.64.6 | 30937024, 32608960 |
+| Sana | 1 | 1x RTX 5090 | 211.72.13.202 | 30937024 |
+| LTX-2 | 0-1 | H200 | Modal | — |
+| **IDLE** | — | **1x RTX 5090** | **114.32.64.6 GPU 0** | **32608960** |
+| **Total active** | **11** | **11x RTX 5090 + 1x H200** | | |
 
-### Legacy Capacity (if active)
+**Monthly cost** (running instances): ~$4.89/hr = **~$3,520/mo**
 
-| Model | GPUs | GPU Type | Instance |
-|-------|------|----------|----------|
-| Flux | 2 | RTX 4090 | 3.21.229.114 (Flux 1) |
+## SSH Access
+
+All instances use the `pollinations_services_2026` SSH key:
+
+```bash
+# Flux (76.69.188.175)
+ssh -i ~/.ssh/pollinations_services_2026 -p 26994 root@ssh2.vast.ai
+
+# Z-Image + Sana (211.72.13.202)
+ssh -i ~/.ssh/pollinations_services_2026 -p 17024 root@ssh3.vast.ai
+
+# Z-Image (114.32.64.6)
+ssh -i ~/.ssh/pollinations_services_2026 -p 18960 root@ssh3.vast.ai
+```
+
+## Heartbeat Registration
+
+All GPU workers send heartbeats to the EC2 gateway:
+- **URL**: `http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register`
+- **Payload**: `{"url": "http://IP:PORT", "type": "flux|zimage"}`
+
+To check currently registered servers:
+```bash
+curl -s http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register
+```
+
+## Service Management
+
+Workers run in `screen` sessions. Common commands:
+
+```bash
+# List sessions
+screen -ls
+
+# Attach to a session
+screen -r flux-gpu0
+
+# Detach: Ctrl+A, D
+
+# View logs
+tail -f /tmp/flux-gpu0.log      # Flux instance
+tail -f /tmp/zimage-gpu1.log    # Z-Image (211.72.13.202)
+tail -f /root/zimage-gpu1.log   # Z-Image (114.32.64.6)
+
+# Start a new worker (example: Flux on GPU 0)
+screen -dmS flux-gpu0 bash -c "export CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=<IP> PUBLIC_PORT=<PORT> SERVICE_TYPE=flux PLN_IMAGE_BACKEND_TOKEN=<TOKEN> && cd /workspace/flux && source venv/bin/activate && python server.py 2>&1 | tee /tmp/flux-gpu0.log"
+```
+
+## Required Environment Variables
+
+- `PLN_IMAGE_BACKEND_TOKEN` — Auth token for EC2 gateway heartbeat
+- `HF_TOKEN` — Hugging Face token for model downloads
+- `PUBLIC_IP` — Instance public IP (from Vast.ai)
+- `PUBLIC_PORT` — Vast.ai mapped port for this worker
+- `SERVICE_TYPE` — `flux` or `zimage`
+- `REGISTER_URL` — EC2 heartbeat URL
+- `CUDA_VISIBLE_DEVICES` — GPU index (0-3)
+- `PORT` — Internal port (8765-8768)
+
+## Defunct io.net Instances
+
+Previously hosted on io.net, all dead since ~Jan 2026:
+
+| Instance | IP | Previous Role |
+|----------|----|---------------|
+| vmaas-d24ab335 | 38.128.232.183 | 8x L40 (3 Z-Image + 5 Flux) |
+| vmaas-22e58f05 | 3.21.229.114:23655 | 2x RTX 4090 Flux |
+| vmaas-41e2e564 | 3.21.229.114:24671 | 2x RTX 4090 Flux |
+| vmaas-46665737 | 54.185.175.109:20033 | 2x RTX 4090 Z-Image |
+| vmaas-8afc966b | 54.185.175.109:28816 | 2x RTX 4090 Z-Image |

@@ -43,7 +43,9 @@ def load_description_prompt():
 def sanitize_string(s, max_length=100):
     if not s or not isinstance(s, str):
         return ""
-    safe_chars = re.sub(r'[^a-zA-Z0-9\s\-_\.]', '', s)
+    # Allow letters, digits, common punctuation, accented chars
+    # Strip control chars, pipes (markdown table), backticks, angle brackets (HTML injection)
+    safe_chars = re.sub(r'[\x00-\x1f|`<>]', '', s)
     return safe_chars[:max_length].strip()
 
 def run_cmd(cmd_list, check=True):
@@ -178,13 +180,20 @@ def infer_platform(name, url, description):
 
 def parse_issue(body):
     """Parse issue body to extract app details."""
-    def extract(pattern, default=""):
-        match = re.search(pattern, body, re.IGNORECASE | re.MULTILINE)
+    def extract(pattern, default="", dotall=False):
+        flags = re.IGNORECASE | re.MULTILINE
+        if dotall:
+            flags |= re.DOTALL
+        match = re.search(pattern, body, flags)
         return match.group(1).strip() if match else default
+
+    # Capture full multi-line description, collapse to single line for downstream use
+    raw_desc = extract(r"### App Description\s*\n(.+?)(?=\n###|$)", "", dotall=True)
+    description = " ".join(raw_desc.split())
 
     return {
         "name": sanitize_string(extract(r"### App Name\s*\n(.+?)(?:\n|$)"), 50),
-        "description": sanitize_string(extract(r"### App Description\s*\n(.+?)(?:\n###|$)", ""), 200),
+        "description": sanitize_string(description, 500),
         "url": extract(r"### App URL\s*\n(.+?)(?:\n|$)"),
         "repo": extract(r"### GitHub.*Repository.*URL\s*\n(.+?)(?:\n|$)"),
         "discord": extract(r"### Discord.*\s*\n(.+?)(?:\n|$)"),

@@ -2,14 +2,13 @@
 
 Points-based validation formula with quality filtering:
   - GitHub account age: 0.5 pt/month (max 6, so 12 months to max)
-  - Commits (any repo): 0.1 pt each (max 2)
+  - Commits (1yr window): 0.1 pt each (max 3)
   - Public repos (quality only, diskUsage > 0): 0.5 pt each (max 1)
   - Stars (total across quality repos): 0.1 pt each (max 5)
-  - Threshold: >= 8 pts
+  - Threshold: >= 7.0 pts
 
 Quality filtering: empty repos (diskUsage == 0) are excluded from repo count
-and star totals. Fraud detection flags burst-created empty repos, suspicious
-star uniformity, and accounts dominated by empty repos.
+and star totals.
 """
 
 import json
@@ -17,15 +16,14 @@ import os
 import time
 import urllib.error
 import urllib.request
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from tqdm import tqdm
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
-BATCH_SIZE = 50
+BATCH_SIZE = 25
 MAX_BATCHES = None  # Set to a number to limit batches for testing
 
 # Quality filtering: repos and stars are counted from quality repos only (diskUsage > 0).
@@ -37,7 +35,7 @@ SCORING = [
         "multiplier": 0.5 / 30,
         "max": 6.0,
     },  # 0.5pt/month, max 6 (12 months)
-    {"field": "commits", "multiplier": 0.1, "max": 2.0},  # 0.1pt each, max 2
+    {"field": "commits", "multiplier": 0.1, "max": 3.0},  # 0.1pt each, max 3 (1yr window)
     {
         "field": "repos",
         "multiplier": 0.5,
@@ -49,14 +47,11 @@ SCORING = [
         "max": 5.0,
     },  # 0.1pt each, max 5 (quality repos only)
 ]
-THRESHOLD = 8.0
+THRESHOLD = 7.0
 
 
 def build_query(usernames: list[str]) -> str:
     """Build GraphQL query for multiple users."""
-    from_date = (datetime.now(timezone.utc) - timedelta(days=90)).strftime(
-        "%Y-%m-%dT00:00:00Z"
-    )
     fragments = []
     for i, username in enumerate(usernames):
         safe_username = username.replace("\\", "\\\\").replace('"', '\\"')
@@ -68,49 +63,10 @@ def build_query(usernames: list[str]) -> str:
             totalCount
             nodes {{ stargazerCount diskUsage createdAt }}
         }}
-        contributionsCollection(from: "{from_date}") {{ totalCommitContributions }}
+        contributionsCollection {{ totalCommitContributions }}
     }}''')
     return f"query {{ {''.join(fragments)} }}"
 
-
-def detect_fraud(all_nodes: list[dict], total_count: int) -> list[str]:
-    """Detect gaming signals from repo data. Returns list of fraud flag strings."""
-    flags = []
-    cutoff = datetime.now(timezone.utc) - timedelta(days=7)
-
-    # 1. Burst empty repos: >= 5 repos created in last 7 days with diskUsage == 0
-    burst_empty = 0
-    for node in all_nodes:
-        created = datetime.fromisoformat(node["createdAt"].replace("Z", "+00:00"))
-        if created >= cutoff and node.get("diskUsage", 0) == 0:
-            burst_empty += 1
-    if burst_empty >= 5:
-        flags.append("burst_empty_repos")
-
-    # 2. Star uniformity: if 5+ starred repos share the same star count at > 60%
-    #    Exclude star count of 1 (too common naturally for small legit projects)
-    starred_counts = [
-        node["stargazerCount"] for node in all_nodes if node["stargazerCount"] > 1
-    ]
-    if len(starred_counts) >= 5:
-        counter = Counter(starred_counts)
-        _, most_common_freq = counter.most_common(1)[0]
-        if most_common_freq >= 5 and most_common_freq / len(starred_counts) > 0.6:
-            flags.append("star_uniformity")
-
-    # 3. Empty repo dominance: >= 5 fetched repos, > 80% empty, totalCount > 20
-    quality_count = sum(1 for node in all_nodes if node.get("diskUsage", 0) > 0)
-    if len(all_nodes) >= 5:
-        empty_count = len(all_nodes) - quality_count
-        if empty_count / len(all_nodes) > 0.8 and total_count > 20:
-            flags.append("empty_repo_dominance")
-
-    # 4. Repo quality gap: many total repos but almost none with code
-    #    Catches gaming even when empty repos don't appear in top-by-stars
-    if total_count > 20 and quality_count < 3:
-        flags.append("repo_quality_gap")
-
-    return flags
 
 
 def score_user(data: dict | None, username: str) -> dict:
@@ -126,8 +82,17 @@ def score_user(data: dict | None, username: str) -> dict:
     created = datetime.fromisoformat(data["createdAt"].replace("Z", "+00:00"))
     age_days = (datetime.now(timezone.utc) - created).days
 
-    # Quality filtering: exclude None nodes and empty repos (diskUsage == 0)
-    all_nodes = [node for node in (data["repositories"].get("nodes") or []) if node]
+    # If nodes is null, GitHub hit RESOURCE_LIMITS_EXCEEDED — defer this user
+    raw_nodes = data["repositories"].get("nodes")
+    if raw_nodes is None and data["repositories"].get("totalCount", 0) > 0:
+        return {
+            "username": username,
+            "approved": False,
+            "reason": "Deferred (API resource limit, incomplete repo data)",
+            "details": None,
+        }
+
+    all_nodes = [node for node in (raw_nodes or []) if node]
     quality_nodes = [node for node in all_nodes if node.get("diskUsage", 0) > 0]
 
     metrics = {
@@ -148,11 +113,6 @@ def score_user(data: dict | None, username: str) -> dict:
     total_score = sum(scores.values())
     approved = total_score >= THRESHOLD
 
-    # Fraud detection: reject if gaming signals found, regardless of score
-    fraud_flags = detect_fraud(all_nodes, data["repositories"]["totalCount"])
-    if fraud_flags:
-        approved = False
-
     details = {
         "age_days": age_days,
         "age_pts": scores["age_days"],
@@ -168,17 +128,10 @@ def score_user(data: dict | None, username: str) -> dict:
         "total": total_score,
     }
 
-    if fraud_flags:
-        details["fraud_flags"] = fraud_flags
-
-    reason = f"{total_score:.1f} pts"
-    if fraud_flags:
-        reason += f" [FRAUD: {', '.join(fraud_flags)}]"
-
     return {
         "username": username,
         "approved": approved,
-        "reason": reason,
+        "reason": f"{total_score:.1f} pts",
         "details": details,
     }
 
@@ -223,6 +176,15 @@ def fetch_batch(
                 time.sleep(wait)
                 continue
             raise
+
+    # Check for RESOURCE_LIMITS_EXCEEDED errors
+    resource_errors = [
+        e for e in data.get("errors", [])
+        if e.get("type") == "RESOURCE_LIMITS_EXCEEDED"
+    ]
+    if resource_errors:
+        affected = {e["path"][0] for e in resource_errors if e.get("path")}
+        print(f"   ⚠️  RESOURCE_LIMITS_EXCEEDED for {len(affected)} users in batch of {len(usernames)} — consider reducing BATCH_SIZE")
 
     results = []
     for i, username in enumerate(usernames):

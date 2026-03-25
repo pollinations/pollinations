@@ -117,7 +117,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        config: portkeyConfig["gpt-5.2-2025-12-11"],
+        config: portkeyConfig["claude-haiku-4-5"],
+        transform: createMessageTransform(midijourneyPrompt),
+    },
+    {
+        name: "midijourney-large",
+        config: portkeyConfig["claude-opus-4-6"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {

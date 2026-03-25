@@ -16,7 +16,7 @@ const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
 
 const SeedTooltipContent = () => (
     <div className="w-72">
-        <p className="font-semibold text-gray-900 mb-2">Dev Points (need 8+)</p>
+        <p className="font-semibold text-gray-900 mb-2">Dev Points (need 7+)</p>
         <table className="w-full text-left text-[11px]">
             <tbody>
                 <tr className="border-b border-gray-100">
@@ -29,10 +29,10 @@ const SeedTooltipContent = () => (
                 </tr>
                 <tr className="border-b border-gray-100">
                     <td className="py-1 pr-2 text-gray-600 leading-tight">
-                        Public commits (last 90 days)
+                        Public commits (last year)
                     </td>
                     <td className="py-1 text-right text-gray-800 whitespace-nowrap">
-                        0.1pt each (max 2)
+                        0.1pt each (max 3)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
@@ -105,7 +105,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <p className="text-xs text-gray-500">
                             <Tooltip content={<SeedTooltipContent />}>
                                 <span className="underline decoration-dotted cursor-help">
-                                    8+ dev points
+                                    7+ dev points
                                 </span>
                             </Tooltip>
                         </p>

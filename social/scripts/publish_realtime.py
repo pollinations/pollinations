@@ -160,13 +160,13 @@ def main():
 
     author_link = f"[{author}](<https://github.com/{author}>)"
 
-    # App submission PRs: link to the app instead of the PR
+    # App submission PRs: embed app link in the description, keep PR link in footer
     app_url = gist.get("app_url")
     app_name = gist.get("app_name")
     if app_url and app_name:
-        source_link = f"🔗 [{app_name}](<{app_url}>)"
-    else:
-        source_link = f"[PR #{pr_number}](<{pr_url}>)"
+        snippet += f"\n\n🔗 [{app_name}](<{app_url}>)"
+
+    source_link = f"[PR #{pr_number}](<{pr_url}>)"
 
     footer = f"\n\n{source_link} | By {author_link}{timestamp_str}"
 

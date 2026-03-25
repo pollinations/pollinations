@@ -181,8 +181,11 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
     # Apply hard rules for publish_tier
     gist["gist"]["publish_tier"] = apply_publish_tier_rules(gist)
 
-    # Detect app submissions: PR touches apps/APPS.md → look up the app
-    if "apps/APPS.md" in changed_files:
+    # Detect app submissions: only add app link when a new app was actually added
+    # App submission branches are "auto/app-{issue}-{slug}", metrics are "auto/app-metrics-{date}"
+    branch = pr_data.get("head", {}).get("ref", "")
+    is_app_pr = "apps/APPS.md" in changed_files and re.match(r"auto/app-\d+", branch)
+    if is_app_pr:
         app_info = lookup_newest_app()
         if app_info:
             gist["app_name"] = app_info["app_name"]

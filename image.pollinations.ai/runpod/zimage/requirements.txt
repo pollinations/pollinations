@@ -1,0 +1,10 @@
+diffusers
+accelerate
+transformers
+safetensors
+huggingface-hub
+pillow
+requests
+spandrel
+numpy
+runpod

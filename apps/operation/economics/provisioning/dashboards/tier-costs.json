@@ -310,7 +310,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Breakdown of registered users by their subscription tier. Tiers determine free usage limits: Microbe ($0), Spore ($1.5/wk), Seed ($3/day), Flower ($0.4/hr), Nectar ($0.8/hr).",
+      "description": "Breakdown of registered users by their subscription tier. Tiers determine free usage limits: Microbe ($0), Spore ($0.01/hr), Seed ($0.15/hr), Flower ($0.4/hr), Nectar ($0.8/hr).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -381,7 +381,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "THEORETICAL MAXIMUM daily cost if every user fully consumed their tier allowance. Calculated as: (Microbe users × $0) + (Spore × $1.5/week) + (Seed × $3) + (Flower × $10) + (Nectar × $20). In practice, actual costs are much lower.",
+      "description": "THEORETICAL MAXIMUM daily cost if every user fully consumed their tier allowance. Calculated as: (Microbe users × $0) + (Spore × $0.01/hr) + (Seed × $0.15/hr) + (Flower × $0.4/hr) + (Nectar × $0.8/hr) + (Router × $10/hr). In practice, actual costs are much lower.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -536,7 +536,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Spore ($1.5/week)"
+                "value": "Spore ($0.01/hr)"
               },
               {
                 "id": "color",
@@ -555,7 +555,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Seed ($3/day)"
+                "value": "Seed ($0.15/hr)"
               },
               {
                 "id": "color",
@@ -905,7 +905,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "EFFICIENCY METRIC: What percentage of their allowance do users actually consume? Lower % = users don't use their full allocation = we save money. Example: If Spore users get $1.5/week (~$0.21/day) but only use $0.07 on average, that's 33% usage rate.",
+      "description": "EFFICIENCY METRIC: What percentage of their allowance do users actually consume? Lower % = users don't use their full allocation = we save money. Example: If Spore users get $0.01/hr but only use a fraction, that's a low usage rate.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -954,7 +954,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Spore ($1.5/week)"
+                "value": "Spore ($0.01/hr)"
               }
             ]
           },
@@ -966,7 +966,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Seed ($3/day)"
+                "value": "Seed ($0.15/hr)"
               }
             ]
           },
@@ -1727,7 +1727,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Spore ($1.5/week)"
+                "value": "Spore ($0.01/hr)"
               },
               {
                 "id": "color",
@@ -1746,7 +1746,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Seed ($3/day)"
+                "value": "Seed ($0.15/hr)"
               },
               {
                 "id": "color",

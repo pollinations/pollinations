@@ -14,9 +14,9 @@ const log = debug("app:bot");
 const HISTORY_LIMIT = 8;
 const MAX_BOT_MESSAGES_PER_WINDOW = 2;
 const RATE_WINDOW_MS = 60_000; // 1 minute
-const PROACTIVE_MIN_MS = 180_000; // 3 minutes minimum
-const PROACTIVE_MAX_MS = 480_000; // 8 minutes maximum
-const PROACTIVE_CHANCE = 0.05; // 5% chance to post when channel is quiet
+const PROACTIVE_MIN_MS = 600_000; // 10 minutes minimum
+const PROACTIVE_MAX_MS = 1_800_000; // 30 minutes maximum
+const PROACTIVE_CHANCE = 0.02; // 2% chance to post when channel is quiet
 
 function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string): string {
     return `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Respond like a real person in a Discord chat — max 2 short paragraphs, never walls of text. Use creative Discord markdown. To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;
@@ -28,6 +28,7 @@ function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string
 function cleanResponse(response: string, modelName: string): string {
     // Remove <think>...</think> tags
     let cleaned = response.replace(/<think>.*?<\/think>/gs, "");
+
 
     // Remove model name prefixes like "[modelName]:\n"
     const escapedName = modelName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -254,7 +255,8 @@ async function processMessage(
     const isReplyToBot = msg.reference?.messageId
         ? (await msg.channel.messages.fetch(msg.reference.messageId).catch(() => null))?.author?.id === client.user.id
         : false;
-    const isDirected = isMentioned || isReplyToBot || isDM;
+    // Bot mentions/replies don't count as directed — treat them like any other message
+    const isDirected = msg.author.bot ? false : (isMentioned || isReplyToBot || isDM);
     const isConvoChannel = config.conversationChannelIds?.includes(
         msg.channelId,
     );
@@ -327,16 +329,14 @@ async function processMessage(
     }
 
     if (msg.author.bot) {
-        // Bot messages in conversation channels: 3% chance, adds variety without loops
-        if (!isConvoChannel || Math.random() > 0.03) {
-            log("Ignoring bot message from %s", msg.author.username);
-            return;
-        }
+        // Never respond to other bots — prevents self-sustaining loops
+        log("Ignoring bot message from %s", msg.author.username);
+        return;
     } else if (isGlobalChannel && !isDirected) {
-        // Human in global/shared channel, not directly addressed: 8% chance
-        if (Math.random() > 0.08) {
+        // Human in global/shared channel, not directly addressed: 2% chance
+        if (Math.random() > 0.02) {
             log(
-                "Skipping human message in shared channel (8%% response rate)",
+                "Skipping human message in shared channel (2%% response rate)",
             );
             return;
         }

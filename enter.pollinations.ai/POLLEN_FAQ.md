@@ -21,7 +21,7 @@ Pollen is our **prepaid credit system**. **$1 ≈ 1 Pollen** *(pricing may evolv
 There are **three ways**:
 
 1. 💳 **Buy It** — Purchase Pollen packs with a credit card. Goes into your wallet and *never expires*. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
-2. 🎁 **Grants** — All tiers receive free Pollen that refills hourly or daily depending on tier.
+2. 🎁 **Grants** — All tiers receive free Pollen that refills every hour.
 3. 🏆 **Earn It** — Contribute to the ecosystem — code, docs, community support, publishing apps — and unlock higher tiers with bigger grants.
 
 ## 🆓 Can I try it for free?
@@ -29,7 +29,7 @@ There are **three ways**:
 **Yes!** Register, grab an API key, and start building — **no credit card required**.
 
 - ✅ Every account gets **free Pollen** that refills hourly
-- 📈 Contribute to unlock higher tiers with **bigger grants** (up to 20 pollen/day)
+- 📈 Contribute to unlock higher tiers with **bigger grants** (up to 0.8 pollen/hour)
 
 ## 💳 What payment methods do you accept?
 
@@ -56,23 +56,23 @@ Registration gives you **instant access** to the Pollinations API. Create API ke
 
 You get **one central wallet** for all your applications. It holds two types of Pollen:
 
-- 🔄 **Tier Pollen** — Free pollen from your tier, refilled automatically (hourly or daily depending on tier). Does not carry over between refills.
+- 🔄 **Tier Pollen** — Free pollen from your tier, refilled automatically every hour. Does not carry over between refills.
 - 💎 **Purchased Pollen** — From packs you've bought. **Never expires.** Top up anytime.
 
 ⚡ Tier Pollen is always spent **first**, then purchased Pollen kicks in. Some models marked with 💎 **Paid Only** require purchased Pollen and skip tier grants.
 
-⏰ Pollen refills every hour for Spore/Seed tiers. If a request costs slightly more than estimated, your balance may go briefly negative — the **next refill covers the difference** automatically.
+⏰ Pollen refills every hour. If a request costs slightly more than estimated, your balance may go briefly negative — the **next refill covers the difference** automatically.
 
 ## 🏅 What are tiers?
 
-| Tier | Pollen | Refill |
-|------|--------|--------|
-| 🍄 Spore | 0.01/hour | Hourly |
-| 🌱 Seed | 0.15/hour | Hourly |
-| 🌸 Flower | 10/day | Daily (midnight UTC) |
-| 🍯 Nectar | 20/day | Daily (midnight UTC) |
+| Tier | Pollen/hour |
+|------|-------------|
+| 🍄 Spore | 0.01 |
+| 🌱 Seed | 0.15 |
+| 🌸 Flower | 0.4 |
+| 🍯 Nectar | 0.8 |
 
-Everyone starts at Spore. The more you build and contribute, the bigger your grants:
+All tiers refill every hour. Everyone starts at Spore — the more you build and contribute, the bigger your grants:
 - **Seed** — Automatic, based on GitHub activity (8+ dev points)
 - **Flower** — Publish an app to the showcase
 - **Nectar** — Coming soon

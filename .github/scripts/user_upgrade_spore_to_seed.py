@@ -4,6 +4,9 @@
 Fetches spore users from D1, validates GitHub profiles, and upgrades eligible users.
 Can be run locally or via GitHub Actions.
 
+All lookups use github_id (not username) — immune to GitHub account renames.
+Strategy: D1 github_id → REST /user/:id (get node_id) → GraphQL node(id:) scoring.
+
 Strategy (stateless, hourly slicing):
     1. Always check users created in the last 8 hours (new users, priority, overlapping window)
     2. For older users, use LIMIT/OFFSET with slot-based slicing (42 slots over 7 days)
@@ -24,16 +27,16 @@ Environment variables:
 import argparse
 import json
 import os
-import re
 import subprocess
 import sys
 from datetime import datetime, timezone
 
 from user_validate_github_profile import validate_users, THRESHOLD, SCORING
 
-# Max users to process per run (stay well under 1000 point/hour GitHub API limit)
-# With repos(first:10), each batch of 50 costs ~6 points, so 166 batches = 8,300 users
-MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
+# Max users to process per run.
+# Each user costs 1 REST request to /user/:id (5,000/hour for GitHub App tokens).
+# 3 concurrent workers, so ~4,500 keeps us safely under the limit.
+MAX_USERS_PER_RUN = 4500
 
 
 def run_d1_query(query: str, env: str = "production") -> list[dict] | None:
@@ -76,12 +79,12 @@ def run_d1_query(query: str, env: str = "production") -> list[dict] | None:
         return None
 
 
-def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], int]:
+def fetch_spore_users(env: str = "production") -> tuple[list[int], list[int], int]:
     """Fetch spore users using hourly slicing strategy.
 
-    Returns (new_users, slice_users, total_old) where:
-    - new_users: users created in the last 8 hours (overlaps previous run for resilience)
-    - slice_users: this slot's slice of older users (1/42nd, cycling weekly)
+    Returns (new_ids, slice_ids, total_old) where:
+    - new_ids: github_ids of users created in the last 8 hours
+    - slice_ids: this slot's slice of older users (1/42nd, cycling weekly)
     - total_old: total count of older spore users
     """
     now = datetime.now(timezone.utc)
@@ -92,21 +95,23 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
         (now.timestamp() - 8 * 3600) * 1000
     )  # 8 hours ago in ms — overlaps previous run so missed slots don't lose users
 
-    # Get new users (created in last 4 hours)
+    # Get new users (created in last 8 hours)
     new_query = f"""
-        SELECT github_username FROM user
+        SELECT github_id FROM user
         WHERE tier = 'spore'
-        AND github_username IS NOT NULL
+        AND github_id IS NOT NULL
+        AND (banned = 0 OR banned IS NULL)
         AND created_at > {recent_cutoff}
     """
     new_results = run_d1_query(new_query, env)
-    new_users = [r["github_username"] for r in new_results] if new_results else []
+    new_ids = [r["github_id"] for r in new_results] if new_results else []
 
     # Count total older users
     count_query = f"""
         SELECT COUNT(*) as count FROM user
         WHERE tier = 'spore'
-        AND github_username IS NOT NULL
+        AND github_id IS NOT NULL
+        AND (banned = 0 OR banned IS NULL)
         AND created_at <= {recent_cutoff}
     """
     count_results = run_d1_query(count_query, env)
@@ -117,43 +122,44 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
     offset = slot * slice_size
 
     slice_query = f"""
-        SELECT github_username FROM user
+        SELECT github_id FROM user
         WHERE tier = 'spore'
-        AND github_username IS NOT NULL
+        AND github_id IS NOT NULL
+        AND (banned = 0 OR banned IS NULL)
         AND created_at <= {recent_cutoff}
         ORDER BY created_at ASC
         LIMIT {slice_size} OFFSET {offset}
     """
     slice_results = run_d1_query(slice_query, env)
-    slice_users = [r["github_username"] for r in slice_results] if slice_results else []
+    slice_ids = [r["github_id"] for r in slice_results] if slice_results else []
 
-    return new_users, slice_users, total_old
+    return new_ids, slice_ids, total_old
 
 
 def batch_upgrade_users(
-    usernames: list[str], env: str = "production"
+    github_ids: list[int], env: str = "production"
 ) -> tuple[int, int, bool]:
-    """Upgrade users to seed tier in batch SQL. Returns (upgraded, skipped, failed)."""
+    """Upgrade users to seed tier in batch SQL using github_id. Returns (upgraded, skipped, failed)."""
     BATCH_SQL_SIZE = 500
     total_upgraded = 0
     total_skipped = 0
 
     failed = False
 
-    for i in range(0, len(usernames), BATCH_SQL_SIZE):
-        batch = usernames[i : i + BATCH_SQL_SIZE]
-        # Sanitize: GitHub usernames are [a-zA-Z0-9-] only
-        safe_batch = [u for u in batch if re.match(r"^[a-zA-Z0-9-]+$", u)]
+    for i in range(0, len(github_ids), BATCH_SQL_SIZE):
+        batch = github_ids[i : i + BATCH_SQL_SIZE]
+        # Sanitize: github_id must be a positive integer
+        safe_batch = [gid for gid in batch if isinstance(gid, int) and gid > 0]
         if len(safe_batch) != len(batch):
-            print(f"   ⚠️  Skipped {len(batch) - len(safe_batch)} invalid usernames")
+            print(f"   ⚠️  Skipped {len(batch) - len(safe_batch)} invalid github_ids")
         if not safe_batch:
             continue
-        username_list = ", ".join(f"'{u}'" for u in safe_batch)
+        id_list = ", ".join(str(gid) for gid in safe_batch)
 
         # Count users that will be skipped (already at higher tier)
         count_query = f"""
             SELECT COUNT(*) as count FROM user
-            WHERE github_username IN ({username_list})
+            WHERE github_id IN ({id_list})
             AND tier NOT IN ('spore', 'microbe')
             AND tier IS NOT NULL
         """
@@ -162,10 +168,10 @@ def batch_upgrade_users(
         total_skipped += skipped
 
         # Batch update - only upgrade spore/microbe users
-        # tier_balance is NOT set here — the daily cron refill at midnight UTC handles it
+        # tier_balance is NOT set here — the hourly cron refill handles it
         update_query = f"""
             UPDATE user SET tier = 'seed'
-            WHERE github_username IN ({username_list})
+            WHERE github_id IN ({id_list})
             AND (tier IN ('spore', 'microbe') OR tier IS NULL)
         """
         result = run_d1_query(update_query, env)
@@ -183,6 +189,41 @@ def batch_upgrade_users(
         )
 
     return total_upgraded, total_skipped, failed
+
+
+def ban_deleted_accounts(
+    github_ids: list[int], env: str = "production"
+) -> tuple[int, bool]:
+    """Ban users whose GitHub accounts were deleted. Returns (banned_count, had_failures)."""
+    BATCH_SQL_SIZE = 500
+    total_banned = 0
+    failed = False
+
+    for i in range(0, len(github_ids), BATCH_SQL_SIZE):
+        batch = github_ids[i : i + BATCH_SQL_SIZE]
+        safe_batch = [gid for gid in batch if isinstance(gid, int) and gid > 0]
+        if not safe_batch:
+            continue
+        id_list = ", ".join(str(gid) for gid in safe_batch)
+
+        query = f"""
+            UPDATE user SET banned = 1, ban_reason = 'github_account_deleted'
+            WHERE github_id IN ({id_list})
+            AND (banned = 0 OR banned IS NULL)
+        """
+        result = run_d1_query(query, env)
+        if result is not None:
+            total_banned += len(safe_batch)
+        else:
+            failed = True
+            print(f"   ❌ Ban batch {i // BATCH_SQL_SIZE + 1} failed")
+
+    return total_banned, failed
+
+
+def _display_name(r: dict) -> str:
+    """Get display name for a result: login if available, else github_id."""
+    return r.get("login") or str(r.get("github_id", "?"))
 
 
 def main():
@@ -213,29 +254,33 @@ def main():
 
     # Fetch spore users (new + this slot's slice)
     print("📥 Fetching spore users from D1...")
-    new_users, slice_users, total_old = fetch_spore_users(args.env)
-    print(f"   New users (last 8h): {len(new_users)}")
-    print(f"   Slot slice: {len(slice_users)} (of {total_old} total older users)")
+    new_ids, slice_ids, total_old = fetch_spore_users(args.env)
+    print(f"   New users (last 8h): {len(new_ids)}")
+    print(f"   Slot slice: {len(slice_ids)} (of {total_old} total older users)")
 
-    # Combine: new users first (priority), then slice
-    users = new_users + slice_users
+    # Combine: new users first (priority), then slice — apply cap to combined list
+    all_ids = new_ids + slice_ids
 
-    # Apply max limit
-    if len(users) > MAX_USERS_PER_RUN:
-        print(f"   ⚠️  Limiting to {MAX_USERS_PER_RUN} users (was {len(users)})")
-        users = users[:MAX_USERS_PER_RUN]
+    if len(all_ids) > MAX_USERS_PER_RUN:
+        print(f"   ⚠️  Limiting to {MAX_USERS_PER_RUN} users (was {len(all_ids)})")
+        all_ids = all_ids[:MAX_USERS_PER_RUN]
 
-    print(f"   Total to process: {len(users)}")
+    # Re-split after cap, preserving priority order (new users first)
+    capped_new_count = min(len(new_ids), len(all_ids))
+    new_ids = all_ids[:capped_new_count]
+    slice_ids = all_ids[capped_new_count:]
 
-    if not new_users and not slice_users:
+    print(f"   Total to process: {len(all_ids)}")
+
+    if not all_ids:
         print("✅ No spore users to process")
         return 0
 
     # Phase 1: Validate new users (last 8h)
     new_results = []
-    if new_users:
-        print(f"\n🔍 Phase 1: Validating {len(new_users)} NEW users (last 8h)...")
-        new_results = validate_users(new_users)
+    if new_ids:
+        print(f"\n🔍 Phase 1: Validating {len(new_ids)} NEW users (last 8h)...")
+        new_results = validate_users(new_ids)
         new_approved = sum(1 for r in new_results if r["approved"])
         print(
             f"   ✅ Approved: {new_approved}/{len(new_results)} ({100 * new_approved / len(new_results):.0f}%)"
@@ -243,11 +288,11 @@ def main():
 
     # Phase 2: Validate slice of older users
     slice_results = []
-    if slice_users:
+    if slice_ids:
         print(
-            f"\n🔍 Phase 2: Validating {len(slice_users)} SLICE users (slot {slot}/42)..."
+            f"\n🔍 Phase 2: Validating {len(slice_ids)} SLICE users (slot {slot}/42)..."
         )
-        slice_results = validate_users(slice_users)
+        slice_results = validate_users(slice_ids)
         slice_approved = sum(1 for r in slice_results if r["approved"])
         print(
             f"   ✅ Approved: {slice_approved}/{len(slice_results)} ({100 * slice_approved / len(slice_results):.0f}%)"
@@ -255,14 +300,29 @@ def main():
 
     # Combine results
     results = new_results + slice_results
-    approved = [r["username"] for r in results if r["approved"]]
+    approved = [r for r in results if r["approved"]]
     rejected = [r for r in results if not r["approved"]]
 
     not_found = [r for r in results if not r.get("details")]
     scored = [r for r in results if r.get("details")]
+    deleted = [r for r in results if r.get("reason") == "GitHub account deleted"]
+
+    approved_ids = [r["github_id"] for r in approved if r.get("github_id")]
+
+    # Ban users with deleted GitHub accounts
+    ban_failures = False
+    if deleted and not args.dry_run:
+        deleted_ids = [r["github_id"] for r in deleted if r.get("github_id")]
+        if deleted_ids:
+            banned, ban_failures = ban_deleted_accounts(deleted_ids, args.env)
+            print(f"\n🚫 Banned {banned} users with deleted GitHub accounts")
+            if ban_failures:
+                print("   ❌ Some ban batches failed — check logs above")
+    elif deleted and args.dry_run:
+        print(f"\n🚫 DRY RUN - would ban {len(deleted)} users with deleted GitHub accounts")
 
     print(f"\n📊 Summary: {len(approved)} approved, {len(rejected)} rejected (threshold {THRESHOLD})")
-    print(f"   Scored: {len(scored)} | Not found: {len(not_found)}")
+    print(f"   Scored: {len(scored)} | Not found: {len(not_found)} | Deleted: {len(deleted)}")
 
     # Score distribution
     if scored:
@@ -285,7 +345,8 @@ def main():
         print(f"\n   ✅ All approved ({len(approved)}):")
         for r in top:
             d = r["details"]
-            print(f"      {r['username']:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})")
+            name = _display_name(r)
+            print(f"      {name:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})")
 
     # Borderline rejected (close to threshold)
     borderline = sorted(
@@ -296,7 +357,8 @@ def main():
         print(f"\n   ⚠️  Borderline rejected ({len(borderline)}, within 1.5pts of threshold):")
         for r in borderline[:20]:
             d = r["details"]
-            print(f"      {r['username']:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})")
+            name = _display_name(r)
+            print(f"      {name:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})")
         if len(borderline) > 20:
             print(f"      ... and {len(borderline) - 20} more")
 
@@ -304,7 +366,7 @@ def main():
     if not_found:
         print(f"\n   👻 Not found on GitHub ({len(not_found)}):")
         for r in not_found[:20]:
-            print(f"      {r['username']}")
+            print(f"      {_display_name(r)}")
         if len(not_found) > 20:
             print(f"      ... and {len(not_found) - 20} more")
 
@@ -313,7 +375,7 @@ def main():
     if low_score:
         print(f"\n   Sample low-score rejected ({len(low_score)} total):")
         for r in low_score[:5]:
-            print(f"      {r['username']}: {r['reason']}")
+            print(f"      {_display_name(r)}: {r['reason']}")
         if len(low_score) > 5:
             print(f"      ... and {len(low_score) - 5} more")
 
@@ -321,34 +383,35 @@ def main():
     if args.verbose:
         print("\n📊 Score breakdown samples (first 20):")
         print(
-            f"   {'Username':<25} {'Age':<12} {'Repos':<12} {'Commits':<12} {'Stars':<12} {'Total':<8}"
+            f"   {'User':<25} {'Age':<12} {'Repos':<12} {'Commits':<12} {'Stars':<12} {'Total':<8}"
         )
         print(f"   {'-' * 25} {'-' * 12} {'-' * 12} {'-' * 12} {'-' * 12} {'-' * 8}")
         for r in results[:20]:
             d = r.get("details")
             if d:
                 status = "✅" if r["approved"] else "❌"
+                name = _display_name(r)
                 print(
-                    f"   {r['username']:<25} {d['age_days']:>4}d={d['age_pts']:.1f}pt  {d['repos']:>3}={d['repos_pts']:.1f}pt    {d['commits']:>4}={d['commits_pts']:.1f}pt   {d['stars']:>4}={d['stars_pts']:.1f}pt   {status}{d['total']:.1f}"
+                    f"   {name:<25} {d['age_days']:>4}d={d['age_pts']:.1f}pt  {d['repos']:>3}={d['repos_pts']:.1f}pt    {d['commits']:>4}={d['commits_pts']:.1f}pt   {d['stars']:>4}={d['stars_pts']:.1f}pt   {status}{d['total']:.1f}"
                 )
             else:
-                print(f"   {r['username']:<25} (not found)")
+                print(f"   {_display_name(r):<25} (not found)")
 
-    if not approved:
+    if not approved_ids:
         print("\n✅ No users approved for upgrade")
-        return 0
+        return 1 if ban_failures else 0
 
     # Upgrade approved users
     if args.dry_run:
-        print(f"\n🔍 DRY RUN - would upgrade {len(approved)} users:")
-        for username in approved[:20]:
-            print(f"   • {username}")
+        print(f"\n🔍 DRY RUN - would upgrade {len(approved_ids)} users:")
+        for r in approved[:20]:
+            print(f"   • {_display_name(r)}")
         if len(approved) > 20:
             print(f"   ... and {len(approved) - 20} more")
         return 0
 
-    print(f"\n⬆️  Upgrading {len(approved)} users via batch SQL...")
-    upgraded, skipped, had_failures = batch_upgrade_users(approved, args.env)
+    print(f"\n⬆️  Upgrading {len(approved_ids)} users via batch SQL...")
+    upgraded, skipped, had_failures = batch_upgrade_users(approved_ids, args.env)
 
     print("\n📊 Results:")
     print(f"   ✅ Upgraded: {upgraded}")
@@ -356,7 +419,7 @@ def main():
     if had_failures:
         print("   ❌ Some batches failed — check logs above")
 
-    return 1 if had_failures else 0
+    return 1 if (had_failures or ban_failures) else 0
 
 
 if __name__ == "__main__":

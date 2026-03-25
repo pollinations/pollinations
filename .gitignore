@@ -1,4 +1,7 @@
 
+# Temp test scripts (may contain API keys)
+temp/
+
 # Crush
 .crush/
 

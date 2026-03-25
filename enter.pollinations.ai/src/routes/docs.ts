@@ -935,7 +935,7 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
         tier: "seed",
         displayTier: "Seed",
         createdAt: "2024-01-15T10:30:00.000Z",
-        nextResetAt: "2024-02-15T00:00:00.000Z",
+        nextResetAt: "2024-02-15T14:00:00.000Z",
     },
     "get /account/key": {
         valid: true,

@@ -131,8 +131,8 @@ export const Pricing: FC<PricingProps> = ({ packBalance }) => {
                             </div>
                             <div className="space-y-1 text-xs text-gray-500">
                                 <div>
-                                    1. Tier grants (refilled hourly or daily)
-                                    are used first
+                                    1. Tier grants (refilled hourly) are used
+                                    first
                                 </div>
                                 <div>
                                     2. Purchased pollen is used after tier

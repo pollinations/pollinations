@@ -9,10 +9,10 @@ The pollinations.ai tier system rewards contributors with increasing API credits
 | Microbe* | 0 | — | Internal: Account under review |
 | Spore* | 0.01 | Hourly | Internal: Verified account |
 | **Seed** | 0.15 | Hourly | Automatic via GitHub activity |
-| **Flower** | 10 | Daily | Contributor (app submission) |
-| **Nectar** | 20 | Daily | Coming soon |
+| **Flower** | 0.4 | Hourly | Contributor (app submission) |
+| **Nectar** | 0.8 | Hourly | Coming soon |
 
-> **Note:** *Microbe/Spore are internal-only. Spore and Seed refill hourly. Flower/Nectar refill daily at midnight UTC. No rollover.
+> **Note:** *Microbe/Spore are internal-only. All tiers refill hourly. No rollover.
 
 ---
 
@@ -56,7 +56,7 @@ Example: A 12-month-old account (6 pts) with 20 commits (2 pts) qualifies.
 - **Script:** `tier-update-user.ts` (in `enter.pollinations.ai`)
 - **Action:** For each approved user:
   1. Updates D1 database: `tier = 'seed'`
-  2. Balance refills automatically at next refill cycle (hourly for Spore/Seed, daily for Flower+)
+  2. Balance refills automatically at next refill cycle (hourly for all tiers)
 - **Rate limiting:** 1 second delay between upgrades
 
 ### Scripts
@@ -259,7 +259,7 @@ The `app-approve` job in `app-review-submission.yml` parses the `APP_REVIEW_DATA
 >
 > **🌸 Flower Tier Activated!**
 >
-> @user, you've been upgraded to **Flower tier** (10 pollen/day)!
+> @user, you've been upgraded to **Flower tier** (0.4 pollen/hour)!
 >
 > Check your balance at enter.pollinations.ai 🌻
 
@@ -340,7 +340,7 @@ npx tsx scripts/tier-update-user.ts verify-tier \
 This script updates:
 - **D1 database** (Cloudflare) - `tier` column in `user` table
 
-> Balance refills automatically at next refill cycle (hourly for Spore/Seed, daily for Flower+).
+> Balance refills automatically at next refill cycle (hourly for all tiers).
 
 ---
 

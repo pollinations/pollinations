@@ -310,7 +310,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Breakdown of registered users by their subscription tier. Tiers determine free usage limits: Microbe ($0), Spore ($1.5/wk), Seed ($3/day), Flower ($10/day), Nectar ($20/day).",
+      "description": "Breakdown of registered users by their subscription tier. Tiers determine free usage limits: Microbe ($0), Spore ($1.5/wk), Seed ($3/day), Flower ($0.4/hr), Nectar ($0.8/hr).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -574,7 +574,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Flower ($10/day)"
+                "value": "Flower ($0.4/hr)"
               },
               {
                 "id": "color",
@@ -593,7 +593,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Nectar ($20/day)"
+                "value": "Nectar ($0.8/hr)"
               },
               {
                 "id": "color",
@@ -978,7 +978,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Flower ($10/day)"
+                "value": "Flower ($0.4/hr)"
               }
             ]
           },
@@ -990,7 +990,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Nectar ($20/day)"
+                "value": "Nectar ($0.8/hr)"
               }
             ]
           }
@@ -1765,7 +1765,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Flower ($10/day)"
+                "value": "Flower ($0.4/hr)"
               },
               {
                 "id": "color",
@@ -1784,7 +1784,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Nectar ($20/day)"
+                "value": "Nectar ($0.8/hr)"
               },
               {
                 "id": "color",

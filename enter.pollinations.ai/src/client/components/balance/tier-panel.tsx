@@ -70,7 +70,7 @@ const cadenceLabel = (cadence: "daily" | "hourly") =>
 
 const cadenceDescription = (cadence: "daily" | "hourly") => {
     if (cadence === "hourly") return "Pollen refills every hour";
-    return "Resets daily at 00:00 UTC. Unused pollen does not carry over.";
+    return "Pollen refills every hour";
 };
 
 const TierScreen: FC<{

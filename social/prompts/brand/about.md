@@ -35,5 +35,5 @@ Think: the tone of a well-written README, a CCC talk abstract, or a Phrack artic
 Contributors level up organically:
 - **Spore** 🍄 (0.01 pollen/hour) — you showed up
 - **Seed** 🌱 (0.15 pollen/hour) — auto-upgraded from GitHub activity
-- **Flower** 🌸 (10 pollen/day) — submit an app to the showcase
-- **Nectar** 🍯 (20 pollen/day) — maintainers and major contributors
+- **Flower** 🌸 (0.4 pollen/hour) — submit an app to the showcase
+- **Nectar** 🍯 (0.8 pollen/hour) — maintainers and major contributors

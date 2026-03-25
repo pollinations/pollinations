@@ -11,21 +11,15 @@ import {
 import type { ApiKeyType } from "@/db/schema/event.ts";
 import { getTierCadence, tierNames } from "@/tier-config.ts";
 
-// Calculate next tier refill time based on cadence (null for tiers with no refill)
+// Calculate next tier refill time (null for tiers with no refill)
 function getNextRefillAt(tier?: string | null): string | null {
     const cadence = tier ? getTierCadence(tier) : "none";
     if (cadence === "none") return null;
     const now = new Date();
-    if (cadence === "hourly") {
-        const nextHour = new Date(now);
-        nextHour.setUTCMinutes(0, 0, 0);
-        nextHour.setUTCHours(nextHour.getUTCHours() + 1);
-        return nextHour.toISOString();
-    }
-    const tomorrow = new Date(now);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-    tomorrow.setUTCHours(0, 0, 0, 0);
-    return tomorrow.toISOString();
+    const nextHour = new Date(now);
+    nextHour.setUTCMinutes(0, 0, 0);
+    nextHour.setUTCHours(nextHour.getUTCHours() + 1);
+    return nextHour.toISOString();
 }
 
 import type { Env } from "../env.ts";

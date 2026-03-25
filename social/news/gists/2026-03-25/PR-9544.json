@@ -1,0 +1,34 @@
+{
+  "pr_number": 9544,
+  "title": "fix: support image-to-video in grok-video-pro",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9544",
+  "merged_at": "2026-03-25T02:00:36Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok gets the picture",
+    "blurb": "We've wired up image-to-video support for grok-video-pro. Hand it a starting frame, add a prompt, and watch your static pixels spring to life.",
+    "summary": "Updated the grok-video-pro model integration to accept image inputs, enabling image-to-video generation via the xAI API.",
+    "impact": "Users can now provide an initial image URL alongside their text prompts to guide video generation with grok-video-pro.",
+    "keywords": [
+      "video",
+      "grok",
+      "xai",
+      "image-to-video",
+      "api"
+    ],
+    "visual_concept": "Polly the bee handing a static picture (a painted canvas or polaroid) to the Monitor Robot. The Robot's screen shows that same picture coming to life with motion/video elements. Represents taking a static image and turning it into video.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot handing a small painted polaroid to a chunky robot with a CRT monitor head. The robot's screen glows with a moving, animated version of the picture. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9544.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot handing a small painted polaroid to a chunky robot with a CRT monitor head. The robot's screen glows with a moving, animated version of the picture. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-25T02:01:28.930251+00:00"
+}

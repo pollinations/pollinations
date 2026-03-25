@@ -85,7 +85,7 @@ export async function callXaiVideoAPI(
     if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
 
     if (safeParams.image?.length) {
-        requestBody.image_url = safeParams.image[0];
+        requestBody.image = safeParams.image[0];
     }
 
     logOps("Request body:", JSON.stringify(requestBody));

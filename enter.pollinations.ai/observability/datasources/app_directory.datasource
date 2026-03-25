@@ -1,0 +1,29 @@
+TOKEN app_directory_append APPEND
+TOKEN grafana_generation_read READ
+
+DESCRIPTION >
+    APPS.md directory synced daily — all community apps with categories, platforms, and metadata
+
+SCHEMA >
+    `emoji` String `json:$.emoji`,
+    `name` String `json:$.name`,
+    `web_url` String `json:$.web_url`,
+    `description` String `json:$.description`,
+    `language` String `json:$.language`,
+    `category` String `json:$.category`,
+    `platform` String `json:$.platform`,
+    `github_username` String `json:$.github_username`,
+    `github_user_id` String `json:$.github_user_id`,
+    `github_repository_url` String `json:$.github_repository_url`,
+    `github_repository_stars` String `json:$.github_repository_stars`,
+    `discord_username` String `json:$.discord_username`,
+    `other` String `json:$.other`,
+    `submitted_date` String `json:$.submitted_date`,
+    `issue_url` String `json:$.issue_url`,
+    `approved_date` String `json:$.approved_date`,
+    `byop` String `json:$.byop`,
+    `requests_24h` String `json:$.requests_24h`,
+    `health` String `json:$.health`
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "github_user_id, category"

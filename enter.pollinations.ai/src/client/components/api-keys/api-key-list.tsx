@@ -57,6 +57,26 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 {apiKeys.length ? (
                     <Panel color="blue">
                         <div className="flex flex-col gap-3">
+                            <div className="rounded-xl bg-amber-50/80 p-4">
+                                <p className="font-semibold text-amber-900 mb-1">
+                                    🐝 Let your users bring their own Pollen
+                                </p>
+                                <p className="text-sm text-amber-800">
+                                    Register an <strong>App Key</strong> so
+                                    users can sign in with their own
+                                    Pollinations account — web apps, chatbots,
+                                    CLIs, anything. Track usage and activity in
+                                    your app.{" "}
+                                    <a
+                                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-amber-700 hover:text-amber-900 underline underline-offset-2"
+                                    >
+                                        Read the guide
+                                    </a>
+                                </p>
+                            </div>
                             {sortedKeys.map((apiKey) => {
                                 const isPublishable =
                                     apiKey.metadata?.keyType === "publishable";

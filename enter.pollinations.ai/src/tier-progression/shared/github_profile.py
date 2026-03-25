@@ -1,5 +1,7 @@
 """GitHub user validation for Seed tier eligibility.
 
+Used by automated tier progression flows.
+
 Points-based validation formula with quality filtering:
   - GitHub account age: 0.5 pt/month (max 6, so 12 months to max)
   - Commits (90-day window): 0.1 pt each (max 3)

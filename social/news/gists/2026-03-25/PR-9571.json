@@ -1,0 +1,34 @@
+{
+  "pr_number": 9571,
+  "title": "Add Rooms Vision to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9571",
+  "merged_at": "2026-03-25T17:54:12Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Redecorate the hive",
+    "blurb": "Rooms Vision just landed in the community greenhouse! Upload a photo of your room and let AI reimagine it in Minimalist, Industrial, or Bohemian styles.",
+    "summary": "Added Rooms Vision to the community app showcase, a tool for visualizing architectural and stylistic changes to room photos.",
+    "impact": "Users can now explore AI-powered interior design by applying different style layers to their own room photos while preserving structural integrity.",
+    "keywords": [
+      "community",
+      "app",
+      "image",
+      "interior-design",
+      "rooms-vision"
+    ],
+    "visual_concept": "The PR is about an interior design app that changes room styles. The bee (Polly) should be acting as an interior designer, wearing a tiny painter's beret or holding a blueprint/color palette. The scene is a cozy room being transformed, with the robot companion helping out.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a color palette while looking at a glowing blueprint of a cozy room. A chunky retro robot companion holds up a picture frame showing a beautifully redesigned bohemian living room. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9571.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a color palette while looking at a glowing blueprint of a cozy room. A chunky retro robot companion holds up a picture frame showing a beautifully redesigned bohemian living room. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-25T17:55:06.518591+00:00",
+  "app_name": "Rooms Vision",
+  "app_url": "https://roomsvision.lovable.app/"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9554,
+  "title": "deduplicate APPS.md — remove 473 old-format duplicate rows",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9554",
+  "merged_at": "2026-03-25T10:47:17Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the App Garden",
+    "blurb": "We swept through the community app showcase and cleared out over 400 duplicate entries. The garden is looking much tidier now!",
+    "summary": "Cleaned up the community showcase by removing 473 duplicate entries caused by mixed table formats.",
+    "impact": "The APPS.md showcase is now much easier to read and navigate without duplicate or misformatted rows.",
+    "keywords": [
+      "apps",
+      "showcase",
+      "cleanup",
+      "community",
+      "markdown"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature cleaning up a messy archive. Nomnom eating duplicate paper records to tidy up the space.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and the round tan Nomnom creature in a cozy wooden archive room. Nomnom is happily eating a tall stack of duplicate paper records while the bee organizes a neat bookshelf. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9554.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and the round tan Nomnom creature in a cozy wooden archive room. Nomnom is happily eating a tall stack of duplicate paper records while the bee organizes a neat bookshelf. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-25T10:48:21.768117+00:00"
+}

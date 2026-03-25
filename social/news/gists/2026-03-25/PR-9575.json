@@ -1,0 +1,34 @@
+{
+  "pr_number": 9575,
+  "title": "Add Vector AI Agent to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9575",
+  "merged_at": "2026-03-25T18:06:27Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Shortcuts to the hive",
+    "blurb": "Mincoffical and Elc29 just dropped Vector AI Agent into the greenhouse. It's a free Apple Shortcut that juggles multitasking AI requests across multiple Pollinations models right from your device.",
+    "summary": "Added the Vector AI Agent, a free Apple Shortcut built by community members Mincoffical and Elc29, to the community app showcase.",
+    "impact": "iOS and Mac users can now easily run multitasking AI requests across multiple models directly from their devices using a native shortcut.",
+    "keywords": [
+      "community",
+      "bots",
+      "apple-shortcuts",
+      "ios",
+      "multitasking"
+    ],
+    "visual_concept": "The PR adds an Apple Shortcut bot called 'Vector AI Agent'. Visual symbols: a glowing smartphone or shortcut blocks, a robot representing the agent, and Polly the bee. Scene: Polly and the Monitor Robot marveling at a glowing smartphone running shortcut blocks in a cozy digital garden.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and a cute chunky robot with a CRT monitor head looking at a glowing smartphone displaying colorful stacked shortcut blocks. They are sitting in a lush digital garden with code-plants sprouting from lime green (#ecf874) flower pots. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9575.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee and a cute chunky robot with a CRT monitor head looking at a glowing smartphone displaying colorful stacked shortcut blocks. They are sitting in a lush digital garden with code-plants sprouting from lime green (#ecf874) flower pots. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-25T18:07:20.437047+00:00",
+  "app_name": "Vector AI Agent",
+  "app_url": "https://routinehub.co/shortcut/24957/"
+}

@@ -1,0 +1,33 @@
+{
+  "pr_number": 9555,
+  "title": "fix: restore missing header row in APPS.md",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9555",
+  "merged_at": "2026-03-25T10:51:23Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Table manners",
+    "blurb": "We accidentally knocked the top shelf off our apps showcase table. It's been glued back together and is looking sharp again.",
+    "summary": "Restored the missing table header and separator rows in the APPS.md showcase file.",
+    "impact": "The community apps list is properly formatted and readable again.",
+    "keywords": [
+      "docs",
+      "markdown",
+      "apps",
+      "fix"
+    ],
+    "visual_concept": "The bee mascot (Polly) fixing a broken wooden table or shelf, maybe holding a hammer or some glue. Nomnom creature eating the old broken pieces. Cozy pixel art style.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, fixing a broken wooden table with a hammer. The round tan nomnom creature happily eats the broken wood splinters nearby. Soft lime green (#ecf874) and pastel peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9555.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, fixing a broken wooden table with a hammer. The round tan nomnom creature happily eats the broken wood splinters nearby. Soft lime green (#ecf874) and pastel peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-25T10:52:24.444193+00:00"
+}

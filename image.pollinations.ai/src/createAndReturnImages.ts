@@ -208,20 +208,20 @@ export const callSelfHostedServer = async (
 
         // Single attempt - no retry logic
         try {
-            // Route to RunPod serverless if configured, otherwise Vast.ai pools
-            const useRunPod = !!process.env.RUNPOD_API_KEY;
+            // Route per model: use RunPod if endpoint ID is configured, otherwise Vast.ai
+            const hasRunPodKey = !!process.env.RUNPOD_API_KEY;
             let fetchFunction: (opts: RequestInit) => Promise<Response>;
 
-            if (useRunPod) {
+            if (safeParams.model === "zimage") {
                 fetchFunction =
-                    safeParams.model === "zimage"
+                    hasRunPodKey && process.env.RUNPOD_ZIMAGE_ENDPOINT_ID
                         ? fetchFromRunPodZImage
-                        : fetchFromRunPodFlux;
+                        : (opts: RequestInit) =>
+                              fetchFromLeastBusyServer("zimage", opts);
             } else {
                 fetchFunction =
-                    safeParams.model === "zimage"
-                        ? (opts: RequestInit) =>
-                              fetchFromLeastBusyServer("zimage", opts)
+                    hasRunPodKey && process.env.RUNPOD_FLUX_ENDPOINT_ID
+                        ? fetchFromRunPodFlux
                         : fetchFromLeastBusyFluxServer;
             }
 

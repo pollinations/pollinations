@@ -1,0 +1,15 @@
+# Same deps as nunchaku server + runpod SDK
+accelerate>=1.9
+diffusers>=0.35
+transformers>=4.50
+safetensors
+sentencepiece
+protobuf
+peft
+einops
+pillow
+numpy
+tqdm
+requests
+huggingface-hub
+runpod

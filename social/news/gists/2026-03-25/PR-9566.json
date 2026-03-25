@@ -1,0 +1,34 @@
+{
+  "pr_number": 9566,
+  "title": "Add DSEA to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9566",
+  "merged_at": "2026-03-25T15:22:20Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Catching digital dreams",
+    "blurb": "DSEA just landed in the greenhouse! It's an AI-powered dream journal that helps you record and visualize your midnight adventures.",
+    "summary": "Added DSEA, an AI-powered dream journal web app, to the community showcase under the writing category.",
+    "impact": "Users can now discover and use DSEA to record and visualize their dreams using pollinations.ai infrastructure.",
+    "keywords": [
+      "community",
+      "showcase",
+      "app",
+      "dreams",
+      "journal"
+    ],
+    "visual_concept": "A dream journal theme. Polly the bee sleeping or writing in a journal with dream-like elements (clouds, stars, thought bubbles) to represent the DSEA dream journal app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny nightcap, sleeping peacefully on a fluffy cloud while a glowing dream journal rests nearby. A thought bubble above her shows a tiny pixelated starry night sky. Soft lime green (#ecf874) and deep lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9566.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny nightcap, sleeping peacefully on a fluffy cloud while a glowing dream journal rests nearby. A thought bubble above her shows a tiny pixelated starry night sky. Soft lime green (#ecf874) and deep lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-25T15:23:23.321661+00:00",
+  "app_name": "DSEA",
+  "app_url": "https://dsea.vercel.app/"
+}

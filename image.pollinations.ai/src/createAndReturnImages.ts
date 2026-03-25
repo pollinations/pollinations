@@ -23,6 +23,10 @@ import {
 import { callXaiImageAPI } from "./models/xaiModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
+import {
+    fetchFromRunPodFlux,
+    fetchFromRunPodZImage,
+} from "./runpodDispatch.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
 import {
     analyzeImageSafety,
@@ -204,12 +208,23 @@ export const callSelfHostedServer = async (
 
         // Single attempt - no retry logic
         try {
-            // Route to appropriate server pool based on model
-            const fetchFunction =
-                safeParams.model === "zimage"
-                    ? (opts: RequestInit) =>
-                          fetchFromLeastBusyServer("zimage", opts)
-                    : fetchFromLeastBusyFluxServer;
+            // Route to RunPod serverless if configured, otherwise Vast.ai pools
+            const useRunPod = !!process.env.RUNPOD_API_KEY;
+            let fetchFunction: (opts: RequestInit) => Promise<Response>;
+
+            if (useRunPod) {
+                fetchFunction =
+                    safeParams.model === "zimage"
+                        ? fetchFromRunPodZImage
+                        : fetchFromRunPodFlux;
+            } else {
+                fetchFunction =
+                    safeParams.model === "zimage"
+                        ? (opts: RequestInit) =>
+                              fetchFromLeastBusyServer("zimage", opts)
+                        : fetchFromLeastBusyFluxServer;
+            }
+
             response = await fetchFunction({
                 method: "POST",
                 headers: {

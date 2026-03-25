@@ -100,6 +100,7 @@ def fetch_spore_users(env: str = "production") -> tuple[list[int], list[int], in
         SELECT github_id FROM user
         WHERE tier = 'spore'
         AND github_id IS NOT NULL
+        AND (banned = 0 OR banned IS NULL)
         AND created_at > {recent_cutoff}
     """
     new_results = run_d1_query(new_query, env)
@@ -110,6 +111,7 @@ def fetch_spore_users(env: str = "production") -> tuple[list[int], list[int], in
         SELECT COUNT(*) as count FROM user
         WHERE tier = 'spore'
         AND github_id IS NOT NULL
+        AND (banned = 0 OR banned IS NULL)
         AND created_at <= {recent_cutoff}
     """
     count_results = run_d1_query(count_query, env)
@@ -123,6 +125,7 @@ def fetch_spore_users(env: str = "production") -> tuple[list[int], list[int], in
         SELECT github_id FROM user
         WHERE tier = 'spore'
         AND github_id IS NOT NULL
+        AND (banned = 0 OR banned IS NULL)
         AND created_at <= {recent_cutoff}
         ORDER BY created_at ASC
         LIMIT {slice_size} OFFSET {offset}
@@ -186,6 +189,36 @@ def batch_upgrade_users(
         )
 
     return total_upgraded, total_skipped, failed
+
+
+def ban_deleted_accounts(
+    github_ids: list[int], env: str = "production"
+) -> tuple[int, bool]:
+    """Ban users whose GitHub accounts were deleted. Returns (banned_count, had_failures)."""
+    BATCH_SQL_SIZE = 500
+    total_banned = 0
+    failed = False
+
+    for i in range(0, len(github_ids), BATCH_SQL_SIZE):
+        batch = github_ids[i : i + BATCH_SQL_SIZE]
+        safe_batch = [gid for gid in batch if isinstance(gid, int) and gid > 0]
+        if not safe_batch:
+            continue
+        id_list = ", ".join(str(gid) for gid in safe_batch)
+
+        query = f"""
+            UPDATE user SET banned = 1, ban_reason = 'github_account_deleted'
+            WHERE github_id IN ({id_list})
+            AND (banned = 0 OR banned IS NULL)
+        """
+        result = run_d1_query(query, env)
+        if result is not None:
+            total_banned += len(safe_batch)
+        else:
+            failed = True
+            print(f"   ❌ Ban batch {i // BATCH_SQL_SIZE + 1} failed")
+
+    return total_banned, failed
 
 
 def _display_name(r: dict) -> str:
@@ -272,11 +305,24 @@ def main():
 
     not_found = [r for r in results if not r.get("details")]
     scored = [r for r in results if r.get("details")]
+    deleted = [r for r in results if r.get("reason") == "GitHub account deleted"]
 
     approved_ids = [r["github_id"] for r in approved if r.get("github_id")]
 
+    # Ban users with deleted GitHub accounts
+    ban_failures = False
+    if deleted and not args.dry_run:
+        deleted_ids = [r["github_id"] for r in deleted if r.get("github_id")]
+        if deleted_ids:
+            banned, ban_failures = ban_deleted_accounts(deleted_ids, args.env)
+            print(f"\n🚫 Banned {banned} users with deleted GitHub accounts")
+            if ban_failures:
+                print("   ❌ Some ban batches failed — check logs above")
+    elif deleted and args.dry_run:
+        print(f"\n🚫 DRY RUN - would ban {len(deleted)} users with deleted GitHub accounts")
+
     print(f"\n📊 Summary: {len(approved)} approved, {len(rejected)} rejected (threshold {THRESHOLD})")
-    print(f"   Scored: {len(scored)} | Not found: {len(not_found)}")
+    print(f"   Scored: {len(scored)} | Not found: {len(not_found)} | Deleted: {len(deleted)}")
 
     # Score distribution
     if scored:
@@ -353,7 +399,7 @@ def main():
 
     if not approved_ids:
         print("\n✅ No users approved for upgrade")
-        return 0
+        return 1 if ban_failures else 0
 
     # Upgrade approved users
     if args.dry_run:
@@ -373,7 +419,7 @@ def main():
     if had_failures:
         print("   ❌ Some batches failed — check logs above")
 
-    return 1 if had_failures else 0
+    return 1 if (had_failures or ban_failures) else 0
 
 
 if __name__ == "__main__":

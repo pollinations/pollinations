@@ -1,0 +1,34 @@
+{
+  "pr_number": 9563,
+  "title": "Add Kingshot to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9563",
+  "merged_at": "2026-03-25T14:47:36Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Kingshot enters the greenhouse",
+    "blurb": "The Kingshot Discord bot just sprouted in our community showcase. It uses Gemini to manage alliances and translate game queries, proving once again that AI's true purpose is optimizing our gaming habits.",
+    "summary": "Added the Kingshot Discord bot to the community apps showcase, highlighting its use of Gemini models for game query resolution and translation.",
+    "impact": "Users can now discover the Kingshot bot in our greenhouse and use it to manage game alliances and redeem gift codes.",
+    "keywords": [
+      "community",
+      "discord bot",
+      "kingshot",
+      "gemini",
+      "showcase"
+    ],
+    "visual_concept": "The PR is about adding a game-related Discord bot ('Kingshot') to the community greenhouse. Visual symbols: Polly the bee, a greenhouse or garden setting, a tiny king's crown or royal game piece to represent 'Kingshot', and a robot to represent the Discord bot.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny king's crown, watering a new glowing code-plant in a digital greenhouse. A chunky retro robot companion stands nearby holding a game controller. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9563.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny king's crown, watering a new glowing code-plant in a digital greenhouse. A chunky retro robot companion stands nearby holding a game controller. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-25T14:48:26.391367+00:00",
+  "app_name": "Kingshot",
+  "app_url": "https://ptb.discord.com/oauth2/authorize?client_id=1474107930155421831"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9570,
+  "title": "Add image-gen-editor.vercel.app to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9570",
+  "merged_at": "2026-03-25T17:50:34Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh pixels in the greenhouse",
+    "blurb": "Someone built a slick Next.js image editor powered by our API, so we put it in the greenhouse. Go make some pixels.",
+    "summary": "Added the image-gen-editor app to the community showcase, featuring a Next.js 14 web interface for generating and editing images via the Pollinations API.",
+    "impact": "Users can now discover and use a new community-built web interface for creating and tweaking AI images.",
+    "keywords": [
+      "community",
+      "app",
+      "image-generation",
+      "nextjs",
+      "showcase"
+    ],
+    "visual_concept": "The PR adds an image generation and editing app to the community greenhouse. Visuals should feature Polly the bee as an artist in a greenhouse setting, interacting with a digital canvas or editing interface.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, painting on a glowing digital canvas inside a lush greenhouse filled with code-plants. A chunky Monitor Robot stands nearby holding a palette of soft pastel colors. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9570.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, painting on a glowing digital canvas inside a lush greenhouse filled with code-plants. A chunky Monitor Robot stands nearby holding a palette of soft pastel colors. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-25T17:51:28.794197+00:00",
+  "app_name": "image-gen-editor.vercel.app",
+  "app_url": "https://image-gen-editor.vercel.app"
+}

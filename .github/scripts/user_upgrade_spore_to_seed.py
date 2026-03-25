@@ -225,17 +225,21 @@ def main():
     print(f"   New users (last 8h): {len(new_ids)}")
     print(f"   Slot slice: {len(slice_ids)} (of {total_old} total older users)")
 
-    # Combine: new users first (priority), then slice
+    # Combine: new users first (priority), then slice — apply cap to combined list
     all_ids = new_ids + slice_ids
 
-    # Apply max limit
     if len(all_ids) > MAX_USERS_PER_RUN:
         print(f"   ⚠️  Limiting to {MAX_USERS_PER_RUN} users (was {len(all_ids)})")
         all_ids = all_ids[:MAX_USERS_PER_RUN]
 
+    # Re-split after cap, preserving priority order (new users first)
+    capped_new_count = min(len(new_ids), len(all_ids))
+    new_ids = all_ids[:capped_new_count]
+    slice_ids = all_ids[capped_new_count:]
+
     print(f"   Total to process: {len(all_ids)}")
 
-    if not new_ids and not slice_ids:
+    if not all_ids:
         print("✅ No spore users to process")
         return 0
 

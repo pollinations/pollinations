@@ -29,7 +29,7 @@ const SeedTooltipContent = () => (
                 </tr>
                 <tr className="border-b border-gray-100">
                     <td className="py-1 pr-2 text-gray-600 leading-tight">
-                        Public commits (last year)
+                        Public commits (last 90 days)
                     </td>
                     <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.1pt each (max 3)

@@ -165,7 +165,7 @@ function formatHistory(
     botId: string,
     config: BotConfig,
 ): ApiMessage[] {
-    return messages
+    const raw = messages
         .filter((msg) => msg.content?.trim() && !msg.system)
         .map((msg) => {
             const name =
@@ -177,10 +177,21 @@ function formatHistory(
                     : msg.content;
 
             return {
-                role: msg.author.id === botId ? "assistant" : "user",
+                role: (msg.author.id === botId ? "assistant" : "user") as "assistant" | "user",
                 content: `[${name}${id}]:\n${content}`,
             };
         });
+
+    // Merge consecutive same-role messages (some APIs require strict alternation)
+    const merged: ApiMessage[] = [];
+    for (const msg of raw) {
+        if (merged.length > 0 && merged[merged.length - 1].role === msg.role) {
+            merged[merged.length - 1].content += `\n\n${msg.content}`;
+        } else {
+            merged.push(msg);
+        }
+    }
+    return merged;
 }
 
 /**

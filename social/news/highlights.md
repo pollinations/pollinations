@@ -1,3 +1,7 @@
+- **2026-03-24** – **🔓 Open App Submissions** The gates are open—developers on the free tier can now submit their projects to the [Community App Showcase](https://hello.pollinations.ai) without being auto-rejected by the validation bot.
+- **2026-03-24** – **🍎 VeroClass AI Teacher Hub** AI-powered tools for educators to streamline lesson planning and classroom management. [Try it](https://teachers.veroclass.org) <!-- app -->
+- **2026-03-24** – **🏷️ Metadatagenerator** A new community tool for generating metadata and prompts for microstock marketplaces. [Try it](https://metadatagenerator.online/) <!-- app -->
+- **2026-03-24** – **✈️ TelegramChannelAI** Automate your Telegram channel management with this new community-built content generation pipeline. [View repo](https://github.com/rrs1979/TelegramChannelAI) <!-- app -->
 - **2026-03-23** – **🚀 Amazon Nova arrives** The Nova model family (Pro, Canvas, and Reel) is now wired up for text, image, and video generation. We also enabled image-to-image variation support for Canvas.
 - **2026-03-23** – **🧠 Grok learns to reason** Added official xAI integration for `grok-imagine` and `grok-video-pro`, plus upgraded text models featuring `grok-reasoning` with a casual 2M token context window.
 - **2026-03-23** – **🎨 Qwen image models** Added Alibaba's `qwen-image-plus` and `qwen-image-edit-plus`. Native CJK text rendering and multi-image editing are now on the menu.

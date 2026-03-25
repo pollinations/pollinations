@@ -65,14 +65,14 @@ You get **one central wallet** for all your applications. It holds two types of 
 
 ## 🏅 What are tiers?
 
-| Tier | Pollen | Refill |
-|------|--------|--------|
-| 🍄 Spore | 0.01/hour | Hourly |
-| 🌱 Seed | 0.15/hour | Hourly |
-| 🌸 Flower | 0.4/hour | Hourly |
-| 🍯 Nectar | 0.8/hour | Hourly |
+| Tier | Pollen/hour |
+|------|-------------|
+| 🍄 Spore | 0.01 |
+| 🌱 Seed | 0.15 |
+| 🌸 Flower | 0.4 |
+| 🍯 Nectar | 0.8 |
 
-Everyone starts at Spore. The more you build and contribute, the bigger your grants:
+All tiers refill every hour. Everyone starts at Spore — the more you build and contribute, the bigger your grants:
 - **Seed** — Automatic, based on GitHub activity (8+ dev points)
 - **Flower** — Publish an app to the showcase
 - **Nectar** — Coming soon

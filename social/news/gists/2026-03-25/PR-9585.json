@@ -1,0 +1,34 @@
+{
+  "pr_number": 9585,
+  "title": "Switch spore-to-seed upgrade to github_id-based lookups",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9585",
+  "merged_at": "2026-03-25T22:43:03Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A seed by any other name",
+    "blurb": "We've upgraded the Spore-to-Seed auto-leveling system to use GitHub IDs instead of usernames. Go ahead and change your handle—your Pollen credits will still find you!",
+    "summary": "The Spore-to-Seed auto-upgrade pipeline now uses immutable GitHub IDs instead of usernames, making the system immune to account renames.",
+    "impact": "Users can now change their GitHub usernames without breaking their automatic Seed tier upgrades, which now evaluate commit activity over a focused 90-day window.",
+    "keywords": [
+      "github",
+      "seed tier",
+      "upgrades",
+      "billing",
+      "pipeline"
+    ],
+    "visual_concept": "The Spore-to-Seed upgrade represents growth. The GitHub ID change means identity is fixed even if the 'name tag' changes. Polly the bee looking at a Seed with a permanent ID tag, while the Nomnom creature eats old name tags.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot placing a glowing permanent ID tag on a sprouting green seed in a lime green (#ecf874) flower pot. The round tan nomnom creature happily eats a pile of old discarded name tags nearby. Soft pastel gradient background, chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9585.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot placing a glowing permanent ID tag on a sprouting green seed in a lime green (#ecf874) flower pot. The round tan nomnom creature happily eats a pile of old discarded name tags nearby. Soft pastel gradient background, chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-25T22:44:27.804019+00:00"
+}

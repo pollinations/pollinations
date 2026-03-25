@@ -22,7 +22,7 @@ const TierStatusSchema = z.object({
         tier: z.literal([...tierNames, "none"]),
         displayName: z.string(),
         pollen: z.number(),
-        cadence: z.enum(["daily", "hourly", "none"]),
+        cadence: z.enum(["hourly", "none"]),
     }),
 });
 

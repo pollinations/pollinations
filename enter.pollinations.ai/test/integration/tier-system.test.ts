@@ -22,7 +22,7 @@ async function triggerTierRefill() {
 }
 
 describe("Tier System End-to-End", () => {
-    describe("Daily Usage Pattern", () => {
+    describe("Hourly Usage Pattern", () => {
         test("user exhausts tier balance and falls back to pack balance", async () => {
             const db = drizzle(env.DB);
             const _executionContext = createExecutionContext();
@@ -102,7 +102,7 @@ describe("Tier System End-to-End", () => {
             const _executionContext = createExecutionContext();
 
             // Setup diverse user base
-            // All tiers get hourly incremental add; router gets daily reset
+            // All tiers get hourly incremental refill
             const users = [
                 {
                     id: "free-user",

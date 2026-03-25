@@ -1,6 +1,9 @@
 # Apps
 
 > Community apps built with pollinations.ai. Newest first.
+
+| Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h | Health |
+| ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | 📣 | TelegramChannelAI |  | Automates Telegram channel management using TelegramChannelAI and an AI-powered content pipeline. | en,uk,ru | bots | telegram | @rrs1979 | 1386883 | https://github.com/rrs1979/TelegramChannelAI | |  | | 2026-03-22 | https://github.com/pollinations/pollinations/issues/9433 | 2026-03-24 |  | 171 |  |
 | 🏷️ | Metadatagenerator | https://metadatagenerator.online/ | Generate metadata and prompts for microstock marketplace with Metadatagenerator. | en | image | web | @roni72640 | 62124746 |  | | creativekingroni | | 2026-03-13 | https://github.com/pollinations/pollinations/issues/9075 | 2026-03-24 |  | 30 |  |
 | 🎓 | VeroClass AI  Teacher Hub | https://teachers.veroclass.org | Provides VeroClass AI  Teacher Hub to help Brazilian teachers create lessons, manage classes, and track student progress. | pt-BR, en-US | learn | web | @samucamg | 21285687 | https://github.com/samucamg | |  | | 2026-03-24 | https://github.com/pollinations/pollinations/issues/9511 | 2026-03-24 |  | 64 |  |

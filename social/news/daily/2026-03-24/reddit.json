@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-24",
+  "period_start": "2026-03-24",
+  "period_end": "2026-03-24",
+  "generated_at": "2026-03-25T06:20:54.804814+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-24/images/reddit.jpg"
+    }
+  ],
+  "title": "Validation bot disabled: app submissions open to all tiers, BYOP tracking added",
+  "text": "We merged 5 PRs today. The main change is how we handle community app submissions.\n\nPreviously, our validation bot would reject showcase submissions from lower-tier accounts. We realized this was backwards for an open infrastructure project, so we disabled that check in PR #9526. App submissions are now open to everyone. If you build something using the API, you can submit it to the directory, and the bot will let it through regardless of your tier.\n\nWe also pushed an overhaul to the BYOP dashboard (PR #9537). If you're managing your own keys or pollen credits, you now have app owner tracking. It gives much better visibility into where your usage is actually going rather than just showing a flat total.\n\nA few new community apps made it into the showcase today:\n- VeroClass AI Teacher Hub (education tools)\n- A new metadata generator for images\n- TelegramChannelAI bot\n\nCode and the full list of community apps are at github.com/pollinations/pollinations. If you build something, open a PR. The bot won't bite anymore."
+}

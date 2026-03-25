@@ -14,7 +14,8 @@ const log = debug("app:bot");
 const HISTORY_LIMIT = 8;
 const MAX_BOT_MESSAGES_PER_WINDOW = 2;
 const RATE_WINDOW_MS = 60_000; // 1 minute
-const PROACTIVE_CHECK_INTERVAL_MS = 240_000; // 4 minutes
+const PROACTIVE_MIN_MS = 180_000; // 3 minutes minimum
+const PROACTIVE_MAX_MS = 480_000; // 8 minutes maximum
 const PROACTIVE_CHANCE = 0.05; // 5% chance to post when channel is quiet
 
 function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string): string {
@@ -56,8 +57,8 @@ async function generateResponseWithHistory(
     channelId: string,
     initialPrompt?: string,
 ): Promise<string | null> {
-    // Get system prompt based on bot configuration
-    const systemPrompt = getSystemPrompt(config, client.user?.username, client.user?.id);
+    // Build instructions
+    const instructions = getSystemPrompt(config, client.user?.username, client.user?.id);
 
     // Fetch channel and history
     const channel = await discordApiCall(
@@ -66,7 +67,7 @@ async function generateResponseWithHistory(
         config.name,
     );
 
-    let apiMessages: ApiMessage[];
+    let transcript = "";
 
     if (channel && "messages" in channel) {
         const history = await discordApiCall(
@@ -76,7 +77,7 @@ async function generateResponseWithHistory(
         );
 
         if (history) {
-            apiMessages = formatHistory(
+            transcript = formatHistory(
                 Array.from(history.values()).reverse(),
                 client.user!.id,
                 config,
@@ -84,20 +85,19 @@ async function generateResponseWithHistory(
             log("Fetched conversation history for channel %s", channelId);
         } else {
             if (!initialPrompt) return null;
-            apiMessages = [{ role: "user", content: initialPrompt }];
-            log("Using initial prompt due to history fetch error");
         }
     } else {
         if (!initialPrompt) return null;
-        apiMessages = [{ role: "user", content: initialPrompt }];
-        log("Using initial prompt due to channel fetch error");
     }
 
-    // Generate response
+    // Pack everything into a single user message
+    const parts = [instructions, transcript, initialPrompt].filter(Boolean);
+    const apiMessages: ApiMessage[] = [{ role: "user", content: parts.join("\n\n") }];
+
+    // Generate response — no system prompt, everything in the user message
     const response = await generateText(
         apiMessages,
         config.model,
-        systemPrompt,
     );
 
     if (response && response.trim()) {
@@ -158,40 +158,28 @@ function handleMessageError(error: any, config: BotConfig, messageId: string) {
 }
 
 /**
- * Format conversation history for API
+ * Format conversation history as a single user message with chat transcript.
+ * This avoids alternation issues across all APIs and preserves base model personality.
  */
 function formatHistory(
     messages: Message[],
     botId: string,
     config: BotConfig,
-): ApiMessage[] {
-    const raw = messages
+): string {
+    return messages
         .filter((msg) => msg.content?.trim() && !msg.system)
         .map((msg) => {
-            const name =
-                msg.author.id === botId ? config.model : msg.author.username;
-            const id = msg.author.id === botId ? "" : ` <@${msg.author.id}>`;
+            const isBot = msg.author.id === botId;
+            const name = isBot ? config.model : msg.author.username;
+            const id = isBot ? "" : ` <@${msg.author.id}>`;
+            const tag = isBot ? "bot" : "human";
             const content =
                 msg.content.length > 4000
                     ? msg.content.slice(0, 4000) + "..."
                     : msg.content;
-
-            return {
-                role: (msg.author.id === botId ? "assistant" : "user") as "assistant" | "user",
-                content: `[${name}${id}]:\n${content}`,
-            };
-        });
-
-    // Merge consecutive same-role messages (some APIs require strict alternation)
-    const merged: ApiMessage[] = [];
-    for (const msg of raw) {
-        if (merged.length > 0 && merged[merged.length - 1].role === msg.role) {
-            merged[merged.length - 1].content += `\n\n${msg.content}`;
-        } else {
-            merged.push(msg);
-        }
-    }
-    return merged;
+            return `[${name}${id}] (${tag}): ${content}`;
+        })
+        .join("\n");
 }
 
 /**
@@ -348,12 +336,19 @@ async function processMessage(
         // Human in global/shared channel, not directly addressed: 8% chance
         if (Math.random() > 0.08) {
             log(
-                "Skipping human message in shared channel (30%% response rate)",
+                "Skipping human message in shared channel (8%% response rate)",
             );
             return;
         }
     }
     // Human mentions and DMs: always respond
+
+    // Random delay in global channels to desynchronize bots (2-15s)
+    if (isGlobalChannel && !isDirected) {
+        const delay = 2000 + Math.random() * 13000;
+        log("Delaying response by %dms to avoid burst", Math.round(delay));
+        await new Promise((r) => setTimeout(r, delay));
+    }
 
     log(
         "Processing message: %s (Mentioned: %s, Conversation Channel: %s, DM: %s)",
@@ -446,42 +441,38 @@ export async function runBot(
         });
     });
 
-    // Proactive posting: only in global/shared channels, not bot-specific ones
+    // Proactive posting: only in global/shared channels, randomized intervals
     if (config.globalChannelIds && config.globalChannelIds.length > 0) {
-        setInterval(async () => {
-            try {
-                const channelId = config.globalChannelIds![
-                    Math.floor(Math.random() * config.globalChannelIds!.length)
-                ];
-                const channel = client.channels.cache.get(channelId);
-                if (!channel || !("messages" in channel)) return;
-
-                const recent = await channel.messages.fetch({ limit: 5 });
-                const now = Date.now();
-                const recentMessages = recent.filter(
-                    (m) => now - m.createdTimestamp < PROACTIVE_CHECK_INTERVAL_MS,
-                );
-
-                // Skip if last message was from this bot (prevents self-reply loops)
-                const lastMsg = recent.first();
-                if (lastMsg && lastMsg.author.id === client.user?.id) return;
-
-                if (recentMessages.size <= 1 && Math.random() < PROACTIVE_CHANCE) {
-                    log("Channel %s is quiet, proactively posting", channelId);
-                    const response = await generateResponseWithHistory(
-                        client,
-                        config,
-                        generateText,
-                        channelId,
-                    );
-                    if (response && "send" in channel) {
-                        await (channel as any).send(response.slice(0, 1500));
+        const scheduleProactive = () => {
+            const delay = PROACTIVE_MIN_MS + Math.random() * (PROACTIVE_MAX_MS - PROACTIVE_MIN_MS);
+            setTimeout(async () => {
+                try {
+                    const channelId = config.globalChannelIds![
+                        Math.floor(Math.random() * config.globalChannelIds!.length)
+                    ];
+                    const channel = client.channels.cache.get(channelId);
+                    if (channel && "messages" in channel) {
+                        const recent = await channel.messages.fetch({ limit: 5 });
+                        const now = Date.now();
+                        const recentMessages = recent.filter(
+                            (m) => now - m.createdTimestamp < PROACTIVE_MIN_MS,
+                        );
+                        const lastMsg = recent.first();
+                        if (lastMsg?.author.id !== client.user?.id && recentMessages.size <= 1 && Math.random() < PROACTIVE_CHANCE) {
+                            log("Channel %s is quiet, proactively posting", channelId);
+                            const response = await generateResponseWithHistory(client, config, generateText, channelId);
+                            if (response && "send" in channel) {
+                                await (channel as any).send(response.slice(0, 1500));
+                            }
+                        }
                     }
+                } catch (error) {
+                    log("Error in proactive posting for %s: %O", config.name, error);
                 }
-            } catch (error) {
-                log("Error in proactive posting for %s: %O", config.name, error);
-            }
-        }, PROACTIVE_CHECK_INTERVAL_MS);
+                scheduleProactive();
+            }, delay);
+        };
+        scheduleProactive();
     }
 
     // Keep the bot alive - the event handlers will process messages

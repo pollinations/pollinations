@@ -24,13 +24,9 @@ export const createGenerateTextWithHistory = (
     return async (
         messages: ApiMessage[],
         model: string,
-        systemPrompt?: string,
     ): Promise<string> => {
         const url = `${baseUrl}/chat/completions`;
-        const apiMessages = [
-            ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
-            ...messages,
-        ];
+        const apiMessages = [...messages];
 
         const requestData = { model, messages: apiMessages };
 

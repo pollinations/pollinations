@@ -9,9 +9,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
     python3.12 \
     python3.12-venv \
-    python3-pip \
+    python3.12-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
 

@@ -34,9 +34,8 @@ from datetime import datetime, timezone
 from user_validate_github_profile import validate_users, THRESHOLD, SCORING
 
 # Max users to process per run.
-# REST /user/:id costs 1 request each (5,000/hour limit for GitHub App tokens).
-# GraphQL batches cost ~1 point each (5,000/hour separate budget).
-# REST is the bottleneck — cap at 4,500 to stay safely under 5,000/hour.
+# Each user costs 1 REST request to /user/:id (5,000/hour for GitHub App tokens).
+# 3 concurrent workers, so ~4,500 keeps us safely under the limit.
 MAX_USERS_PER_RUN = 4500
 
 

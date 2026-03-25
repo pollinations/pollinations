@@ -28,7 +28,7 @@ export const createGenerateTextWithHistory = (
     ): Promise<string> => {
         const url = `${baseUrl}/chat/completions`;
         const apiMessages = [
-            ...(systemPrompt ? [{ role: "user", content: systemPrompt }] : []),
+            ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
             ...messages,
         ];
 

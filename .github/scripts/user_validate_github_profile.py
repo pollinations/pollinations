@@ -129,7 +129,17 @@ def lookup_accounts(github_ids: list[int]) -> list[dict]:
             for i, gid in enumerate(github_ids)
         }
         for future in as_completed(futures):
-            index, result = future.result()
+            try:
+                index, result = future.result()
+            except Exception as e:
+                index = futures[future]
+                print(f"   ⚠️  REST lookup failed for github_id {github_ids[index]}: {e}")
+                result = {
+                    "github_id": github_ids[index],
+                    "node_id": None,
+                    "login": None,
+                    "status": "unavailable",
+                }
             results[index] = result
 
     return results

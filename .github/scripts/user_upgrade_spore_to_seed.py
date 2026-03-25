@@ -250,7 +250,7 @@ def main():
         new_results = validate_users(new_ids)
         new_approved = sum(1 for r in new_results if r["approved"])
         print(
-            f"   ✅ Approved: {new_approved}/{len(new_results)} ({100 * new_approved / len(new_results):.0f}%)"
+            f"   ✅ Approved: {new_approved}/{len(new_results) or 1} ({100 * new_approved / (len(new_results) or 1):.0f}%)"
         )
 
     # Phase 2: Validate slice of older users
@@ -262,7 +262,7 @@ def main():
         slice_results = validate_users(slice_ids)
         slice_approved = sum(1 for r in slice_results if r["approved"])
         print(
-            f"   ✅ Approved: {slice_approved}/{len(slice_results)} ({100 * slice_approved / len(slice_results):.0f}%)"
+            f"   ✅ Approved: {slice_approved}/{len(slice_results) or 1} ({100 * slice_approved / (len(slice_results) or 1):.0f}%)"
         )
 
     # Combine results

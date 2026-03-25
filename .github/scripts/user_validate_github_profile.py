@@ -73,6 +73,8 @@ def _github_rest_request(url: str, retries: int = 3) -> tuple[dict | None, int]:
             if attempt < retries - 1 and error.code in (502, 503, 504):
                 time.sleep(5 * (attempt + 1))
                 continue
+            if error.code in (401,):
+                raise RuntimeError(f"GitHub REST auth failed (HTTP {error.code}) — check GITHUB_TOKEN")
             if attempt < retries - 1 and error.code in (403, 429):
                 retry_after = error.headers.get("Retry-After")
                 reset_at = error.headers.get("X-RateLimit-Reset")
@@ -264,6 +266,15 @@ def fetch_graphql_batch(
                 continue
             raise
 
+    # Check for RESOURCE_LIMITS_EXCEEDED errors
+    resource_errors = [
+        e for e in data.get("errors", [])
+        if e.get("type") == "RESOURCE_LIMITS_EXCEEDED"
+    ]
+    if resource_errors:
+        affected = {e["path"][0] for e in resource_errors if e.get("path")}
+        print(f"   ⚠️  RESOURCE_LIMITS_EXCEEDED for {len(affected)} users in batch of {len(accounts)}")
+
     results = []
     for i, account in enumerate(accounts):
         user_data = data.get("data", {}).get(f"u{i}")
@@ -288,6 +299,14 @@ def validate_users(github_ids: list[int]) -> list[dict]:
         print(f"   Deleted accounts: {len(deleted)}")
     if unavailable:
         print(f"   Unavailable accounts: {len(unavailable)}")
+
+    # Fail loudly if too many REST lookups failed — likely auth or GitHub outage
+    unavailable_pct = len(unavailable) / len(github_ids) * 100 if github_ids else 0
+    if len(unavailable) > 5 and unavailable_pct > 50:
+        raise RuntimeError(
+            f"REST lookup failure rate too high: {len(unavailable)}/{len(github_ids)} "
+            f"({unavailable_pct:.0f}%) unavailable — likely auth error or GitHub outage"
+        )
 
     # Build results for non-scoreable accounts
     results = []

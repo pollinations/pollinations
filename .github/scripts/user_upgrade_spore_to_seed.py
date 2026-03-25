@@ -33,9 +33,11 @@ from datetime import datetime, timezone
 
 from user_validate_github_profile import validate_users, THRESHOLD, SCORING
 
-# Max users to process per run (stay well under 1000 point/hour GitHub API limit)
-# REST lookups cost 1 point each, GraphQL batches ~1 point each
-MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
+# Max users to process per run.
+# REST /user/:id costs 1 request each (5,000/hour limit for GitHub App tokens).
+# GraphQL batches cost ~1 point each (5,000/hour separate budget).
+# REST is the bottleneck — cap at 4,500 to stay safely under 5,000/hour.
+MAX_USERS_PER_RUN = 4500
 
 
 def run_d1_query(query: str, env: str = "production") -> list[dict] | None:

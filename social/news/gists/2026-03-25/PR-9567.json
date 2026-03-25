@@ -1,0 +1,35 @@
+{
+  "pr_number": 9567,
+  "title": "Add Talking with Unity to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9567",
+  "merged_at": "2026-03-25T17:37:54Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Game engines can talk now",
+    "blurb": "Talking with Unity just landed in the greenhouse. It's a voice AI assistant for Unity projects, because your NPCs have been quiet for too long.",
+    "summary": "Added 'Talking with Unity' to the community showcase, bringing voice AI, speech recognition, and text-to-speech capabilities to Unity projects.",
+    "impact": "Game developers have a new reference app for integrating voice-driven interactions directly into their Unity games.",
+    "keywords": [
+      "unity",
+      "voice",
+      "tts",
+      "speech recognition",
+      "gamedev",
+      "community"
+    ],
+    "visual_concept": "The pollinations bee mascot wearing a tiny gamer headset and holding a microphone, interacting with a classic 3D game engine cube. Represents voice AI meeting game development.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gamer headset and holding a microphone, hovering next to a glowing 3D game engine cube. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9567.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gamer headset and holding a microphone, hovering next to a glowing 3D game engine cube. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-25T17:39:06.237215+00:00",
+  "app_name": "Talking with Unity",
+  "app_url": "https://www.ai-ministries.com/apps/talking-unity/"
+}

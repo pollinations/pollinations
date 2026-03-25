@@ -63,6 +63,7 @@ def _github_rest_request(url: str, retries: int = 3) -> tuple[dict | None, int]:
             "Accept": "application/vnd.github+json",
         },
     )
+    last_error = None
     for attempt in range(retries):
         try:
             with urllib.request.urlopen(request, timeout=15) as response:
@@ -70,11 +71,12 @@ def _github_rest_request(url: str, retries: int = 3) -> tuple[dict | None, int]:
         except urllib.error.HTTPError as error:
             if error.code == 404:
                 return None, 404
+            if error.code == 401:
+                raise RuntimeError("GitHub REST auth failed (HTTP 401) — check GITHUB_TOKEN")
             if attempt < retries - 1 and error.code in (502, 503, 504):
                 time.sleep(5 * (attempt + 1))
+                last_error = error
                 continue
-            if error.code in (401,):
-                raise RuntimeError(f"GitHub REST auth failed (HTTP {error.code}) — check GITHUB_TOKEN")
             if attempt < retries - 1 and error.code in (403, 429):
                 retry_after = error.headers.get("Retry-After")
                 reset_at = error.headers.get("X-RateLimit-Reset")
@@ -86,9 +88,15 @@ def _github_rest_request(url: str, retries: int = 3) -> tuple[dict | None, int]:
                     wait = 60
                 print(f"   ⏳ REST rate limited (HTTP {error.code}), waiting {wait}s...")
                 time.sleep(wait)
+                last_error = error
                 continue
             return None, error.code
-    return None, 0
+        except (urllib.error.URLError, TimeoutError, OSError) as error:
+            last_error = error
+            if attempt < retries - 1:
+                time.sleep(5 * (attempt + 1))
+                continue
+    raise RuntimeError(f"GitHub REST request failed after {retries} retries: {last_error}")
 
 
 def lookup_accounts(github_ids: list[int]) -> list[dict]:
@@ -129,17 +137,7 @@ def lookup_accounts(github_ids: list[int]) -> list[dict]:
             for i, gid in enumerate(github_ids)
         }
         for future in as_completed(futures):
-            try:
-                index, result = future.result()
-            except Exception as e:
-                index = futures[future]
-                print(f"   ⚠️  REST lookup failed for github_id {github_ids[index]}: {e}")
-                result = {
-                    "github_id": github_ids[index],
-                    "node_id": None,
-                    "login": None,
-                    "status": "unavailable",
-                }
+            index, result = future.result()
             results[index] = result
 
     return results

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **668** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **669** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -15,13 +15,13 @@
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@cli](https://github.com/cli) |  | 🫧 |
 | [💤 DSEA](https://dsea.vercel.app/) | Record and visualize dreams with DSEA, an AI-powered dream journal web app. | [@web](https://github.com/web) |  | 🫧 |
 | [👑 Kingshot](https://ptb.discord.com/oauth2/authorize?client_id=1474107930155421831) | Manage Kingshot alliances and redeem giftcodes via the Kingshot discord bot, using gemini-fast for translations and gemini-search to answer kingshot game queries. | [@discord](https://github.com/discord) |  | 🫧 |
+| [🧠 AnkiTect](158578469) | Generates Anki CLI decks from word lists for language learning. AnkiTect creates multimedia flashcards and uses the pollinations.ai API to add context-relevant images. | [@cli](https://github.com/cli) |  | 🫧 |
 | [🎙️ Talking with Unity](https://www.ai-ministries.com/apps/talking-unity/) | Talking with Unity provides a voice AI assistant for Unity projects, enabling speech recognition, text-to-speech, and voice-driven interactions for apps and games. | [@web](https://github.com/web) |  | 🫧 |
 | [🎓 VeroClass AI  Teacher Hub](https://teachers.veroclass.org) | Provides VeroClass AI  Teacher Hub to help Brazilian teachers create lessons, manage classes, and track student progress. | [@web](https://github.com/web) |  | 🫧 |
 | [🎹 AI MIDI GENERATOR](https://midi-aigenerator.vercel.app/) | Generate multitrack MIDI files from plain-language prompts in the browser with AI MIDI GENERATOR, a free tool for producers, songwriters, and game developers. | [@web](https://github.com/web) |  | 🫧 |
 | [💬 Phicasso Chat](https://chat.phicasso.ai/) | Runs fully in the browser with no accounts or server-side storage; Phicasso Chat keeps conversations on the user's device and uses Pollinatio. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 Chorvanto](https://chorvanto.randever.com) | Generate original music videos with Chorvanto, an AI-powered platform that formats and distributes them to multiple social media platforms. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 StoryBoard Ai](https://ai-story-board-flax.vercel.app/) | Generate shot-by-shot cinematic storyboards with StoryBoard Ai, an open-source web app that transforms ideas into visualized frames using pollinations.ai for image generation. | [@web](https://github.com/web) |  | 🫧 |
-| [📣 TelegramChannelAI](1386883) | Automates Telegram channel management using TelegramChannelAI and an AI-powered content pipeline. | [@telegram](https://github.com/telegram) |  | 🫧 |
 
 ---
 
@@ -524,6 +524,7 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🧠 AnkiTect](158578469) | Generates Anki CLI decks from word lists for language learning. AnkiTect creates multimedia flashcards and uses the pollinations.ai API to add context-relevant images. | [@cli](https://github.com/cli) |  | 🫧 |
 | [🎓 VeroClass AI  Teacher Hub](https://teachers.veroclass.org) | Provides VeroClass AI  Teacher Hub to help Brazilian teachers create lessons, manage classes, and track student progress. | [@web](https://github.com/web) |  | 🫧 |
 | [🗣️ Practica un segundo idioma](https://proyectodescartes.org/IATools/131_Practica_el_segundo_idioma/) | Practica un segundo idioma con ejercicios de conversación, vocabulario y comprensión auditiva y seguimiento del progreso. | [@web](https://github.com/web) |  | 🫧 |
 | [🧬 Benchside](https://benchside.vercel.app/) | Provides AI biomedical assistance via Benchside for researchers and medical professionals, offering research tools, document analysis, and pharmaceutical expertise. | [@web](https://github.com/web) |  | 🫧 |
@@ -533,12 +534,12 @@
 | [📚 StudyCcc](https://mddecn.github.io/Studing-site-by-Dannzss.-/) | Provides study tools in beta as StudyCcc; created by Dannszz. | [@web](https://github.com/web) |  | 🫧 |
 | [🎓 Al-Subtain University Questions Bank webite](https://sums-questions-bank.vercel.app/) | Browse sums-questions-bank.vercel.app to view and practice past exam questions; each question includes an Explain with AI option for AI-generated explanations. | [@web](https://github.com/web) |  | 🫧 |
 | [🧮 BhaskarMath](https://bhaskarmath.github.io/BhaskarMath/) | Math lessons, practice problems, and step-by-step solutions across algebra, calculus, and geometry for study and exam preparation. | [@web](https://github.com/web) |  | 🫧 |
-| [🎬 MLALab.ai](https://mlalab.ai) | Multi-language video dubbing tool that generates AI videos in 21 languages with captions, audio tracks, and subtitles using Pollinations for scene image generation. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 50 apps</summary>
+<details><summary>Show all 51 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🎬 MLALab.ai](https://mlalab.ai) | Multi-language video dubbing tool that generates AI videos in 21 languages with captions, audio tracks, and subtitles using Pollinations for scene image generation. | [@web](https://github.com/web) |  | 🫧 |
 | [🔍 ExplainMyBigO](https://explain-my-bigo.vercel.app/) | AI tool that estimates Big-O time and space complexity of your algorithms instantly. | [@web](https://github.com/web) |  | 🫧 |
 | [📖 Tiny Tales](https://tiny-tales.nathanconnor.dev) | Generates child-friendly 4-page stories with adjustable max word length. | [@web](https://github.com/web) |  | 🫧 |
 | [📚 Cryonex](https://www.cryonex.app/app) | All-in-one study assistant replacing tabs to save students money. | [@web](https://github.com/web) |  | 🫧 |

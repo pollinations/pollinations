@@ -1,0 +1,34 @@
+{
+  "pr_number": 9572,
+  "title": "Add PollinationsAiPS to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9572",
+  "merged_at": "2026-03-25T17:58:57Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "PowerShell gets pollinated",
+    "blurb": "You can now generate images, text, and audio directly from your PowerShell scripts thanks to the new PollinationsAiPS integration. Time to make those admin scripts a lot more creative!",
+    "summary": "Added PollinationsAiPS to the community showcase, enabling developers to generate AI content directly from PowerShell scripts.",
+    "impact": "Windows power users and sysadmins can now easily integrate AI generation capabilities into their command-line workflows.",
+    "keywords": [
+      "powershell",
+      "community",
+      "cli",
+      "integration",
+      "scripts"
+    ],
+    "visual_concept": "PowerShell is represented by a classic blue terminal screen. Polly the bee acting as a sysadmin, interacting with a retro computer terminal to symbolize command-line scripting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sysadmin tie, typing on a retro computer terminal with a glowing blue command-line screen. Soft lime green (#ecf874) and pastel blue gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9572.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sysadmin tie, typing on a retro computer terminal with a glowing blue command-line screen. Soft lime green (#ecf874) and pastel blue gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-25T17:59:53.578103+00:00",
+  "app_name": "PollinationsAiPS",
+  "app_url": "https://github.com/BananaAcid/PollinationsAiPS/"
+}

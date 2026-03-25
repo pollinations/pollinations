@@ -1,0 +1,34 @@
+{
+  "pr_number": 9545,
+  "title": "fix: correct xAI video API parameter from image_url to image",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9545",
+  "merged_at": "2026-03-25T02:04:30Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Grok gets the picture",
+    "blurb": "Fixed a tiny typo in our xAI video integration so image-to-video generation works perfectly. Time to bring those pixels to life!",
+    "summary": "Corrected the image parameter name in the xAI video model integration to align with their API documentation.",
+    "impact": "Users can now successfully generate videos from images using the Grok video model without encountering parameter errors.",
+    "keywords": [
+      "xai",
+      "grok",
+      "video",
+      "bugfix",
+      "api"
+    ],
+    "visual_concept": "Polly the bee acting as a mechanic, fixing a video film strip. Represents fixing the image-to-video pipeline for the xAI model.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, using a wrench to fix a glowing film strip. A retro computer monitor in the background shows a static image transforming into a moving video. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9545.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, using a wrench to fix a glowing film strip. A retro computer monitor in the background shows a static image transforming into a moving video. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-25T02:05:20.958598+00:00"
+}

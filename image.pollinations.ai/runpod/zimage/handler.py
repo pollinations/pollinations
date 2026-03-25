@@ -17,10 +17,26 @@ logger = logging.getLogger(__name__)
 
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
-SPAN_MODEL_PATH = "model_cache/span/2xNomosUni_span_multijpg.safetensors"
+SPAN_MODEL_URL = "https://github.com/the-database/traiNNer-redux/releases/download/pretrained-models/2x-NomosUni_span_multijpg.pth"
+SPAN_MODEL_PATH = "model_cache/span/2xNomosUni_span_multijpg.pth"
 UPSCALE_FACTOR = 2
 MAX_GEN_PIXELS = 768 * 768
 MAX_FINAL_PIXELS = 768 * 768 * 4
+
+# --- Download SPAN model if not present ---
+
+def download_span_model():
+    if os.path.exists(SPAN_MODEL_PATH):
+        return
+    os.makedirs(os.path.dirname(SPAN_MODEL_PATH), exist_ok=True)
+    logger.info(f"Downloading SPAN upscaler from {SPAN_MODEL_URL}...")
+    import requests
+    response = requests.get(SPAN_MODEL_URL, stream=True)
+    response.raise_for_status()
+    with open(SPAN_MODEL_PATH, "wb") as f:
+        for chunk in response.iter_content(8192):
+            f.write(chunk)
+    logger.info("SPAN upscaler downloaded")
 
 # --- Model loading (runs once at container start) ---
 
@@ -32,6 +48,7 @@ pipe = ZImagePipeline.from_pretrained(
     low_cpu_mem_usage=False,
 ).to("cuda")
 
+download_span_model()
 logger.info("Loading SPAN upscaler...")
 upscaler = ModelLoader().load_from_file(SPAN_MODEL_PATH)
 assert isinstance(upscaler, ImageModelDescriptor)

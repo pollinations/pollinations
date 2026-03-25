@@ -84,6 +84,10 @@ export async function callXaiVideoAPI(
     const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
     if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
 
+    if (safeParams.image?.length) {
+        requestBody.image_url = safeParams.image[0];
+    }
+
     logOps("Request body:", JSON.stringify(requestBody));
 
     const submitResponse = await fetch(XAI_VIDEO_API_URL, {

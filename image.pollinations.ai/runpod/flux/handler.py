@@ -6,7 +6,7 @@ import logging
 import torch
 import runpod
 from diffusers import FluxPipeline
-from nunchaku import NunchakuFluxTransformer2dModel
+from nunchaku.models import NunchakuFluxTransformer2dModel
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-24",
+  "period_start": "2026-03-24",
+  "period_end": "2026-03-24",
+  "generated_at": "2026-03-25T06:20:54.804814+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-24/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-24/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-24/images/instagram-3.jpg"
+    }
+  ],
+  "text": "The validation bot has officially been retired. App submissions to the showcase are now open to everyone across all tiers. If you build something cool, we want to see it.\n\nWe also pushed a massive overhaul to the BYOP dashboard so you can actually track your app's usage without squinting at raw logs. Plus, shoutout to the three newest apps in the ecosystem: VeroClass AI Teacher Hub, Metadatagenerator, and TelegramChannelAI.\n\nCode is updated, garden is growing. 🌸🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #aiart",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

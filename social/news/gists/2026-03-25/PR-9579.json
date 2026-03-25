@@ -1,0 +1,34 @@
+{
+  "pr_number": 9579,
+  "title": "fix: rotate Azure GPT image API keys",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9579",
+  "merged_at": "2026-03-25T18:44:25Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fresh Keys for the Image Forge",
+    "blurb": "Rotated the Azure GPT image API keys to keep our image generation pipelines secure and running smoothly.",
+    "summary": "Rotated the Azure GPT image endpoints and API keys to a new deployment region.",
+    "impact": "Ensures continued, uninterrupted access to GPT image models for all users.",
+    "keywords": [
+      "infrastructure",
+      "security",
+      "api-keys",
+      "azure",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee holding a shiny new golden key, flying next to the Monitor Robot who is happily displaying a generated image on its screen, representing the refreshed access to the image models.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a shiny golden key next to a chunky robot with a CRT monitor head displaying a beautiful landscape. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9579.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a shiny golden key next to a chunky robot with a CRT monitor head displaying a beautiful landscape. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-25T18:45:24.147683+00:00"
+}

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
-SPAN_MODEL_URL = "https://github.com/the-database/traiNNer-redux/releases/download/pretrained-models/2x-NomosUni_span_multijpg.pth"
+SPAN_GDRIVE_ID = "1PCYo-4R6MgM-cXAsTuMO-tH4tEcO8A8P"
 SPAN_MODEL_PATH = "model_cache/span/2xNomosUni_span_multijpg.pth"
 UPSCALE_FACTOR = 2
 MAX_GEN_PIXELS = 768 * 768
@@ -29,9 +29,18 @@ def download_span_model():
     if os.path.exists(SPAN_MODEL_PATH):
         return
     os.makedirs(os.path.dirname(SPAN_MODEL_PATH), exist_ok=True)
-    logger.info(f"Downloading SPAN upscaler from {SPAN_MODEL_URL}...")
     import requests
-    response = requests.get(SPAN_MODEL_URL, stream=True)
+    # Google Drive direct download URL
+    url = f"https://drive.google.com/uc?export=download&id={SPAN_GDRIVE_ID}"
+    logger.info(f"Downloading SPAN upscaler from Google Drive ({SPAN_GDRIVE_ID})...")
+    session = requests.Session()
+    response = session.get(url, stream=True)
+    # Handle Google Drive virus scan confirmation for large files
+    for key, value in response.cookies.items():
+        if key.startswith("download_warning"):
+            url = f"https://drive.google.com/uc?export=download&confirm={value}&id={SPAN_GDRIVE_ID}"
+            response = session.get(url, stream=True)
+            break
     response.raise_for_status()
     with open(SPAN_MODEL_PATH, "wb") as f:
         for chunk in response.iter_content(8192):

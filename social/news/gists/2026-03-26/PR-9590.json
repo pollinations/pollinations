@@ -1,0 +1,34 @@
+{
+  "pr_number": 9590,
+  "title": "fix: route dedicated audio models through /v1/audio/speech in Play page",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9590",
+  "merged_at": "2026-03-26T00:00:35Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Music to our ears",
+    "blurb": "Fixed a bug where dedicated audio models were getting lost on their way to the Play page. The tunes are back and routing perfectly.",
+    "summary": "Corrected API routing in the Play page so dedicated audio models use the proper speech endpoint instead of the chat completions endpoint.",
+    "impact": "Generating music and text-to-speech from the Play page works flawlessly again without 'model not found' errors.",
+    "keywords": [
+      "audio",
+      "bug-fix",
+      "play-page",
+      "routing",
+      "elevenlabs"
+    ],
+    "visual_concept": "The PR fixes audio routing (music/speech) on the Play page. Visual symbols: headphones, musical notes, audio cables, a retro boombox or DJ setup. Characters: Polly the bee wearing headphones, plugging in an audio cable to fix the 'routing'.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, plugging a glowing audio cable into a chunky retro boombox. Colorful musical notes float in the air. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-26/PR-9590.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, plugging a glowing audio cable into a chunky retro boombox. Colorful musical notes float in the air. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-26T00:01:26.978520+00:00"
+}

@@ -1,6 +1,5 @@
 #!/bin/bash
 # LTX-2 Video Generation Setup for Vast.ai RTX 5090
-# Deploy on GPU 0 of instance 32608960 (114.32.64.6)
 #
 # Usage:
 #   screen -S ltx2
@@ -10,9 +9,9 @@
 set -e
 
 INSTALL_DIR="/root/ltx2"
-COMFYUI_ROOT="$INSTALL_DIR/ComfyUI"
+COMFYUI_ROOT="/root/comfy/ComfyUI"
 MODELS_DIR="$COMFYUI_ROOT/models"
-HF_TOKEN="${HF_TOKEN:?Set HF_TOKEN env var}"
+HF_TOKEN="${HF_TOKEN:-}"
 
 echo "=== LTX-2 Setup on Vast.ai ==="
 echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
@@ -29,8 +28,9 @@ source "$INSTALL_DIR/venv/bin/activate"
 
 # Step 3: Install ComfyUI via comfy-cli
 echo ">>> Installing comfy-cli and ComfyUI..."
-pip install -q comfy-cli==1.5.4 huggingface-hub==0.36.0 websocket-client==1.8.0 fastapi[standard]==0.115.4 uvicorn aiohttp requests
-comfy --skip-prompt install --nvidia --version 0.8.1 --comfyui-home "$COMFYUI_ROOT"
+pip install -q comfy-cli==1.5.4 huggingface-hub==0.36.0 websocket-client==1.8.0 "fastapi[standard]==0.115.4" uvicorn aiohttp requests
+comfy --skip-prompt set-default "$COMFYUI_ROOT" 2>/dev/null || true
+comfy --skip-prompt install --nvidia --version 0.18.2
 
 # Step 4: Download models (fp4 text encoder for 32GB VRAM)
 echo ">>> Downloading models..."
@@ -41,12 +41,12 @@ import os
 from huggingface_hub import hf_hub_download
 
 cache_dir = "/root/ltx2/hf-cache"
-models_dir = os.environ.get("MODELS_DIR", "/root/ltx2/ComfyUI/models")
-token = os.environ.get("HF_TOKEN")
+models_dir = os.environ.get("MODELS_DIR", "/root/comfy/ComfyUI/models")
+token = os.environ.get("HF_TOKEN") or None
 
 MODEL_MAP = [
     {"repo": "Lightricks/LTX-2", "filename": "ltx-2-19b-distilled-fp8.safetensors", "dest": "checkpoints/ltx-2-19b-distilled-fp8.safetensors"},
-    {"repo": "Comfy-Org/ltx-2", "filename": "split_files/text_encoders/gemma_3_12B_it_fp8_scaled.safetensors", "dest": "text_encoders/gemma_3_12B_it_fp8_scaled.safetensors"},
+    {"repo": "Comfy-Org/ltx-2", "filename": "split_files/text_encoders/gemma_3_12B_it_fp4_mixed.safetensors", "dest": "text_encoders/gemma_3_12B_it_fp4_mixed.safetensors"},
     {"repo": "Lightricks/LTX-2", "filename": "ltx-2-spatial-upscaler-x2-1.0.safetensors", "dest": "latent_upscale_models/ltx-2-spatial-upscaler-x2-1.0.safetensors"},
 ]
 

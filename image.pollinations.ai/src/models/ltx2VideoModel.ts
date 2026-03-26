@@ -9,8 +9,8 @@ import type { VideoGenerationResult } from "./veoVideoModel.ts";
 const logOps = debug("pollinations:ltx2:ops");
 const logError = debug("pollinations:ltx2:error");
 
-// LTX-2 Vast.ai endpoint (instance 32608960 GPU 0)
-const LTX2_BASE_URL = process.env.LTX2_BASE_URL || "http://114.32.64.6:40161";
+// LTX-2 Vast.ai endpoint (instance 33569731, 1x RTX 5090, California)
+const LTX2_BASE_URL = process.env.LTX2_BASE_URL || "http://142.171.48.138:33049";
 
 // Polling constants
 const POLL_INTERVAL_MS = 2000;

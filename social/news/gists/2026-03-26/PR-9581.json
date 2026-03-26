@@ -1,0 +1,34 @@
+{
+  "pr_number": 9581,
+  "title": "feat: sync Vast.ai deployment code with running servers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9581",
+  "merged_at": "2026-03-26T00:14:16Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Reality check",
+    "blurb": "We've synced our repository with the actual code running on our Vast.ai instances. Just doing some spring cleaning to make sure our blueprints match the building!",
+    "summary": "Synchronized the repository's deployment scripts and server code with the actual configurations running on Vast.ai instances for Sana, Z-Image, and LTX-2.",
+    "impact": "This ensures our infrastructure is reproducible and secure, with hardcoded tokens removed and deployment scripts fully up to date.",
+    "keywords": [
+      "infrastructure",
+      "vast.ai",
+      "deployment",
+      "sync",
+      "cleanup"
+    ],
+    "visual_concept": "The pollinations bee and the monitor robot comparing a blueprint to a glowing server rack, representing syncing the codebase with running infrastructure.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot comparing a glowing digital blueprint to a humming server rack. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-26/PR-9581.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot comparing a glowing digital blueprint to a humming server rack. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-26T00:15:04.038707+00:00"
+}

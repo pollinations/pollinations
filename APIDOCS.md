@@ -133,7 +133,7 @@ Get user profile info (name, email, GitHub username, tier, createdAt, nextResetA
 
 - **`nextResetAt` (required)**
 
-  `object` — Next daily pollen reset timestamp (ISO 8601)
+  `object` — Next hourly pollen refill timestamp (ISO 8601)
 
 - **`tier` (required)**
 

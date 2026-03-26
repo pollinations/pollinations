@@ -31,6 +31,7 @@ export function usePrettify<T, K extends keyof T>(
     useEffect(() => {
         if (!PRETTIFY_ENABLED || items.length === 0) return;
 
+        let aborted = false;
         setIsPrettifying(true);
 
         const copyItems = items.map((item, i) => ({
@@ -48,6 +49,7 @@ export function usePrettify<T, K extends keyof T>(
             const idx = copyItems.indexOf(copyItem);
             prettifyCopy([copyItem], apiKey)
                 .then(([processed]) => {
+                    if (aborted) return;
                     if (processed?.text) {
                         results[idx] = {
                             ...items[idx],
@@ -58,10 +60,15 @@ export function usePrettify<T, K extends keyof T>(
                 })
                 .catch(() => {}) // keep original on failure
                 .finally(() => {
+                    if (aborted) return;
                     completed++;
                     if (completed === copyItems.length) setIsPrettifying(false);
                 });
         }
+
+        return () => {
+            aborted = true;
+        };
     }, [itemsKey, field, apiKey]);
 
     return { prettified, isPrettifying };

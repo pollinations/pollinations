@@ -27,7 +27,7 @@ Tool calling supported: openai (all), claude (all), gemini (non-search), deepsee
 
 ## Tiers (must progress in order — CANNOT skip)
 
-Microbe(0)→Spore(0.01/hr)→Seed(0.15/hr)→Flower(10/day)→Nectar(20/day)→Router(500/day)
+Microbe(0)→Spore(0.01/hr)→Seed(0.15/hr)→Flower(0.4/hr)→Nectar(0.8/hr)→Router(10/hr)
 - Spore: log in at enter.pollinations.ai | Seed: auto (age+activity+commits) | Flower: submit app OR merged PR (requires Seed!) | Nectar: significant contributions (requires Flower!)
 - Grant pollen spent BEFORE purchased | Unused grants EXPIRE each period | Purchased pollen NEVER expires
 - Paid-only models CANNOT use tier grant pollen — only purchased/crypto

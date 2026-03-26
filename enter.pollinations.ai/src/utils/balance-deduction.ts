@@ -1,6 +1,9 @@
 import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { user as userTable } from "../db/schema/better-auth.ts";
+import {
+    apikey as apiKeyTable,
+    user as userTable,
+} from "../db/schema/better-auth.ts";
 
 /**
  * Atomically deducts pollen from user balance.
@@ -53,7 +56,6 @@ export async function atomicDeductUserBalance(
  */
 export async function atomicDeductApiKeyBalance(
     db: DrizzleD1Database,
-    apiKeyTable: any,
     apiKeyId: string,
     amount: number,
 ): Promise<void> {
@@ -64,6 +66,25 @@ export async function atomicDeductApiKeyBalance(
 		SET pollen_balance = pollen_balance - ${amount}
 		WHERE id = ${apiKeyId}
 		AND pollen_balance IS NOT NULL
+	`);
+}
+
+/**
+ * Atomically deducts pollen from tier balance only.
+ *
+ * Used by API keys that must never spill into paid balances.
+ */
+export async function atomicDeductTierBalance(
+    db: DrizzleD1Database,
+    userId: string,
+    amount: number,
+): Promise<void> {
+    if (amount <= 0) return;
+
+    await db.run(sql`
+		UPDATE ${userTable}
+		SET tier_balance = COALESCE(tier_balance, 0) - ${amount}
+		WHERE id = ${userId}
 	`);
 }
 

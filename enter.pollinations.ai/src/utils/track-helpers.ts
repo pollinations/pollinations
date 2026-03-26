@@ -2,10 +2,14 @@ import { getLogger } from "@logtape/logtape";
 import type { ServiceId } from "@shared/registry/registry.ts";
 import { getServiceDefinition } from "@shared/registry/registry.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { apikey as apikeyTable } from "@/db/schema/better-auth.ts";
+import {
+    DEFAULT_SPEND_POLICY,
+    type SpendPolicy,
+} from "@/utils/spend-policy.ts";
 import {
     atomicDeductApiKeyBalance,
     atomicDeductPaidBalance,
+    atomicDeductTierBalance,
     atomicDeductUserBalance,
     getUserBalances,
     identifyDeductionSource,
@@ -20,6 +24,7 @@ interface DeductionParams {
     userId?: string;
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
+    spendPolicy?: SpendPolicy;
     modelResolved?: string;
 }
 
@@ -36,6 +41,7 @@ export async function handleBalanceDeduction(
         userId,
         apiKeyId,
         apiKeyPollenBalance,
+        spendPolicy,
         modelResolved,
     } = params;
 
@@ -48,7 +54,13 @@ export async function handleBalanceDeduction(
 
     // Handle user balance deduction
     if (userId) {
-        await deductUserBalance(db, userId, totalPrice, modelResolved);
+        await deductUserBalance(
+            db,
+            userId,
+            totalPrice,
+            modelResolved,
+            spendPolicy,
+        );
     }
 }
 
@@ -64,7 +76,7 @@ async function deductApiKeyBalance(
     amount: number,
 ): Promise<void> {
     try {
-        await atomicDeductApiKeyBalance(db, apikeyTable, apiKeyId, amount);
+        await atomicDeductApiKeyBalance(db, apiKeyId, amount);
         log.debug("Decremented {price} pollen from API key {keyId} budget", {
             price: amount,
             keyId: apiKeyId,
@@ -82,6 +94,7 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelResolved?: string,
+    spendPolicy = DEFAULT_SPEND_POLICY,
 ): Promise<void> {
     try {
         const isPaidOnly = modelResolved
@@ -89,10 +102,19 @@ async function deductUserBalance(
               false)
             : false;
 
-        if (isPaidOnly) {
+        if (spendPolicy === "tier_only") {
+            await atomicDeductTierBalance(db, userId, amount);
+            log.debug(
+                "Decremented {price} pollen from user {userId} (tier-only key)",
+                { price: amount, userId },
+            );
+            return;
+        }
+
+        if (isPaidOnly || spendPolicy === "paid_only") {
             await atomicDeductPaidBalance(db, userId, amount);
             log.debug(
-                "Decremented {price} pollen from user {userId} (paid-only model, tier excluded)",
+                "Decremented {price} pollen from user {userId} (paid balances only)",
                 { price: amount, userId },
             );
             return;

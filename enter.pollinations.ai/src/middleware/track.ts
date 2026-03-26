@@ -222,6 +222,7 @@ export const track = (eventType: EventType) =>
                     userId: userTracking.userId,
                     apiKeyId: c.var.auth?.apiKey?.id,
                     apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                    spendPolicy: c.var.auth?.apiKey?.spendPolicy,
                     modelResolved: c.var.model?.resolved,
                 });
             })(),

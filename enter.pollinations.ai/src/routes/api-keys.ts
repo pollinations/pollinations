@@ -8,6 +8,7 @@ import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
+import { parseSpendPolicy, SPEND_POLICIES } from "../utils/spend-policy.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 /**
@@ -111,6 +112,10 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe("Pollen budget cap for this key. null = unlimited"),
+    spendPolicy: z
+        .enum(SPEND_POLICIES)
+        .optional()
+        .describe("How this key spends free vs paid pollen"),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -181,6 +186,9 @@ export const apiKeysRoutes = new Hono<Env>()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    spendPolicy: parseSpendPolicy(
+                        parseMetadata(key.metadata).spendPolicy,
+                    ),
                 })),
             });
         },
@@ -205,6 +213,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name,
                 allowedModels,
                 pollenBudget,
+                spendPolicy,
                 accountPermissions,
                 expiresAt,
             } = c.req.valid("json");
@@ -237,6 +246,12 @@ export const apiKeysRoutes = new Hono<Env>()
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
+            if (spendPolicy !== undefined) {
+                d1Updates.metadata = JSON.stringify({
+                    ...parseMetadata(existingKey.metadata),
+                    spendPolicy,
+                });
+            }
 
             if (Object.keys(d1Updates).length > 0) {
                 await db
@@ -261,6 +276,9 @@ export const apiKeysRoutes = new Hono<Env>()
                 name: keyForCache?.name,
                 permissions: keyForCache?.permissions,
                 pollenBalance: keyForCache?.pollenBalance ?? null,
+                spendPolicy: parseSpendPolicy(
+                    parseMetadata(keyForCache?.metadata).spendPolicy,
+                ),
                 expiresAt: keyForCache?.expiresAt ?? null,
             });
         },

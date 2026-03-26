@@ -1,0 +1,34 @@
+{
+  "pr_number": 9626,
+  "title": "Add Apiction to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9626",
+  "merged_at": "2026-03-26T17:01:27Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Apiction joins the hive",
+    "blurb": "Apiction has landed in our community showcase! Now you can chat with any AI model from any provider—including Pollinations—all from one cozy interface.",
+    "summary": "Added Apiction to the community app showcase, highlighting a new platform for chatting with multiple AI models.",
+    "impact": "Users can now discover Apiction in the ecosystem to seamlessly interact with Pollinations alongside other AI providers.",
+    "keywords": [
+      "community",
+      "app",
+      "chat",
+      "apiction",
+      "showcase"
+    ],
+    "visual_concept": "Apiction is a multi-model chat interface. The scene should depict Polly the bee and the Monitor Robot happily chatting or looking at a chat interface together. A cozy cafe or communication hub setting represents the 'chat with any provider' aspect.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor robot sitting at a small cafe table, happily chatting. The robot's screen glows with a colorful chat interface. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-26/PR-9626.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor robot sitting at a small cafe table, happily chatting. The robot's screen glows with a colorful chat interface. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-26T17:02:31.327947+00:00",
+  "app_name": "Apiction",
+  "app_url": "https://apiction.site/"
+}

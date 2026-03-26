@@ -1,0 +1,33 @@
+{
+  "pr_number": 9633,
+  "title": "polish dashboard UI: gauge, key CTA, consistent styles",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9633",
+  "merged_at": "2026-03-26T22:36:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Dashboard glow-up",
+    "blurb": "The dashboard got a little polish. Pollen gauges are now actually readable regardless of your balance, and we added some friendly pointers for generating your first API keys.",
+    "summary": "Updated the dashboard UI to ensure pollen balance gauges remain visible at all values and added explanatory empty states for API keys.",
+    "impact": "Navigating your account is smoother, with clearer visual feedback on your pollen usage and better onboarding for new developers.",
+    "keywords": [
+      "dashboard",
+      "ui",
+      "api-keys",
+      "pollen-balance"
+    ],
+    "visual_concept": "The PR is about UI polish, specifically a dashboard, gauges/meters, and keys. The bee mascot (Polly) could be painting or polishing a dashboard/control panel. A gauge or meter showing pollen levels. A shiny golden key.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, polishing a retro control panel with a glowing lime green (#ecf874) pollen gauge. A shiny golden key rests on the console. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-26/PR-9633.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, polishing a retro control panel with a glowing lime green (#ecf874) pollen gauge. A shiny golden key rests on the console. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-26T22:37:03.223242+00:00"
+}

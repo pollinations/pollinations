@@ -259,9 +259,9 @@ export async function transcribeWithElevenLabs(opts: {
     log.info("ElevenLabs transcription: format={format}, size={size}", {
         format: responseFormat,
         size: file.size,
-     });
+    });
 
-     const formData = new FormData();
+    const formData = new FormData();
     formData.append("file", file);
     formData.append("model_id", "scribe_v2");
     if (language) {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9622,
+  "title": "Add Tofu to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9622",
+  "merged_at": "2026-03-26T16:08:14Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Terminal Tofu",
+    "blurb": "Tofu has joined the Pollinations ecosystem. It's a rich AI chat client for your terminal, because sometimes you just want to talk to a language model without leaving the command line.",
+    "summary": "Added Tofu, a rich terminal-based AI chat client, to the Pollinations app ecosystem.",
+    "impact": "Developers can now chat with Pollinations models directly from their terminal using Tofu's formatted CLI interface.",
+    "keywords": [
+      "terminal",
+      "cli",
+      "chat",
+      "tofu",
+      "community-app"
+    ],
+    "visual_concept": "A literal block of tofu functioning as a retro computer terminal. Polly the bee interacting with it in a cozy hacker setup.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hacker hoodie, typing on a retro computer terminal that looks like a chunky block of white tofu. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-26/PR-9622.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hacker hoodie, typing on a retro computer terminal that looks like a chunky block of white tofu. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-26T16:09:13.762338+00:00",
+  "app_name": "Tofu",
+  "app_url": "https://crates.io/crates/tofu-llm"
+}

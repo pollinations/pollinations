@@ -1,0 +1,70 @@
+/* =========================================
+ FLOOR BACKGROUND - LOTTIE VERSION
+ ========================================= */
+
+.floor-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #0a0a0f;
+}
+
+/* Lottie Wrapper - Fixed 1280x720 viewport */
+.floor-lottie-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+}
+
+/* Target the canvas inside DotLottieReact - exact dimensions */
+.floor-lottie-wrapper canvas {
+  width: 1280px !important;
+  height: 720px !important;
+}
+
+/* PNG Wrapper - Full Screen */
+.floor-png-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.floor-png-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Vignette Overlay */
+.floor-vignette {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Floor Indicator */
+.floor-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  font-family: 'Courier New', monospace;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #22d3ee;
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  z-index: 2;
+}

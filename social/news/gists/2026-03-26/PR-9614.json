@@ -1,0 +1,33 @@
+{
+  "pr_number": 9614,
+  "title": "fix: remove file-based IP logging (grew to 22GB)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9614",
+  "merged_at": "2026-03-26T14:52:59Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The 22GB diet",
+    "blurb": "We put our IP logging on a strict diet after it ate 22GB of disk space. The hive is feeling much lighter now!",
+    "summary": "Removed file-based IP logging that was causing disk space issues by growing to 22GB.",
+    "impact": "Improves server stability and prevents disk exhaustion by relying on console logs instead of a massive local file.",
+    "keywords": [
+      "logging",
+      "disk space",
+      "bug fix",
+      "infrastructure"
+    ],
+    "visual_concept": "The Nomnom creature eating a massive stack of paper logs representing the 22GB file, with Polly the bee holding a broom to clean up the mess.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a massive, towering stack of paper logs while the bee mascot watches amused holding a tiny broom. Retro terminal nearby glows lime green (#ecf874). Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-26/PR-9614.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature happily eating a massive, towering stack of paper logs while the bee mascot watches amused holding a tiny broom. Retro terminal nearby glows lime green (#ecf874). Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "generated_at": "2026-03-26T14:53:54.994336+00:00"
+}

@@ -46,10 +46,16 @@ export function useTranslate<T, K extends keyof T>(
                 }));
                 setTranslated(result);
             })
-            .catch(() => { if (!aborted) setTranslated(items); })
-            .finally(() => { if (!aborted) setIsTranslating(false); });
+            .catch(() => {
+                if (!aborted) setTranslated(items);
+            })
+            .finally(() => {
+                if (!aborted) setIsTranslating(false);
+            });
 
-        return () => { aborted = true; };
+        return () => {
+            aborted = true;
+        };
     }, [items, itemsKey, field, language]);
 
     return { translated, isTranslating };

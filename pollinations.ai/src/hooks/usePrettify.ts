@@ -66,7 +66,9 @@ export function usePrettify<T, K extends keyof T>(
                 });
         }
 
-        return () => { aborted = true; };
+        return () => {
+            aborted = true;
+        };
     }, [itemsKey, field, apiKey]);
 
     return { prettified, isPrettifying };

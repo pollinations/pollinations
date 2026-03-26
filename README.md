@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🌸 OrchidLLM](https://orchidllm.vercel.app) | Generate images, text, video, audio, and transcriptions with OrchidLLM. | [@web](https://github.com/web) |
-| [🤖 Vector AI Agent](https://routinehub.co/shortcut/24957/) | Vector AI Agent handles multitasking AI requests using pollinations with multiple models, implemented entirely in apple shortcuts by Mincoffical and Elc29 and free to use. | [@ios](https://github.com/ios) |
-| [🧮 excelformula.pro](https://excelformula.pro/) | Generate Excel formulas from natural language or sample data using excelformula.pro, returning ready-to-use formulas with cell references and brief explanations. | [@web](https://github.com/web) |
-| [⚡ PollinationsAiPS](1894723) | Integrate Pollinations.ai into PowerShell using PollinationsAiPS to generate images, text, and audio from scripts. | [@cli](https://github.com/cli) |
-| [🛋️ Rooms Vision](https://roomsvision.lovable.app/) | Visualize architectural and stylistic changes by uploading a room photo and applying design layers like Minimalist, Industrial, or Bohemian with Rooms Vision while preserving structural integrity. | [@web](https://github.com/web) |
-| [🖼️ image-gen-editor.vercel.app](https://image-gen-editor.vercel.app) | image-gen-editor.vercel.app generates and edits images via the Pollinations AI API and provides a web interface built with Next.js 14 and TypeScript. | [@web](https://github.com/web) |
-| [🧠 AnkiTect](158578469) | Generates Anki CLI decks from word lists for language learning. AnkiTect creates multimedia flashcards and uses the pollinations.ai API to add context-relevant images. | [@cli](https://github.com/cli) |
-| [🎙️ Talking with Unity](https://www.ai-ministries.com/apps/talking-unity/) | Talking with Unity provides a voice AI assistant for Unity projects, enabling speech recognition, text-to-speech, and voice-driven interactions for apps and games. | [@web](https://github.com/web) |
-| [💤 DSEA](https://dsea.vercel.app/) | Record and visualize dreams with DSEA, an AI-powered dream journal web app. | [@web](https://github.com/web) |
-| [👑 Kingshot](https://ptb.discord.com/oauth2/authorize?client_id=1474107930155421831) | Manage Kingshot alliances and redeem giftcodes via the Kingshot discord bot, using gemini-fast for translations and gemini-search to answer kingshot game queries. | [@discord](https://github.com/discord) |
+| [🌸 OrchidLLM](https://orchidllm.vercel.app) | Generate images, text, video, audio, and transcriptions with OrchidLLM. | [@vendouple](https://github.com/vendouple) |
+| [🤖 Vector AI Agent](https://routinehub.co/shortcut/24957/) | Vector AI Agent handles multitasking AI requests using pollinations with multiple models, implemented entirely in apple shortcuts by Mincoffical and Elc29 and free to use. | [@morriszdweck](https://github.com/morriszdweck) |
+| [🧮 excelformula.pro](https://excelformula.pro/) | Generate Excel formulas from natural language or sample data using excelformula.pro, returning ready-to-use formulas with cell references and brief explanations. | [@kreggscode](https://github.com/kreggscode) |
+| ⚡ PollinationsAiPS | Integrate Pollinations.ai into PowerShell using PollinationsAiPS to generate images, text, and audio from scripts. | [@BananaAcid](https://github.com/BananaAcid) |
+| [🛋️ Rooms Vision](https://roomsvision.lovable.app/) | Visualize architectural and stylistic changes by uploading a room photo and applying design layers like Minimalist, Industrial, or Bohemian with Rooms Vision while preserving structural integrity. | [@AbdulHameedAnofi](https://github.com/AbdulHameedAnofi) |
+| [🖼️ image-gen-editor.vercel.app](https://image-gen-editor.vercel.app) | image-gen-editor.vercel.app generates and edits images via the Pollinations AI API and provides a web interface built with Next.js 14 and TypeScript. | [@namandhakad712](https://github.com/namandhakad712) |
+| 🧠 AnkiTect | Generates Anki CLI decks from word lists for language learning. AnkiTect creates multimedia flashcards and uses the pollinations.ai API to add context-relevant images. | [@Dunkchump](https://github.com/Dunkchump) |
+| [🎙️ Talking with Unity](https://www.ai-ministries.com/apps/talking-unity/) | Talking with Unity provides a voice AI assistant for Unity projects, enabling speech recognition, text-to-speech, and voice-driven interactions for apps and games. | [@G-Fourteen](https://github.com/G-Fourteen) |
+| [💤 DSEA](https://dsea.vercel.app/) | Record and visualize dreams with DSEA, an AI-powered dream journal web app. | [@chaejiwrr](https://github.com/chaejiwrr) |
+| [👑 Kingshot](https://ptb.discord.com/oauth2/authorize?client_id=1474107930155421831) | Manage Kingshot alliances and redeem giftcodes via the Kingshot discord bot, using gemini-fast for translations and gemini-search to answer kingshot game queries. | [@Aurki01](https://github.com/Aurki01) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -47,16 +47,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-03-25** – **🎬 Grok gets the picture** You can now pass an initial image URL to `grok-video-pro` to guide video generation. Image-to-video via xAI is officially live.
+- **2026-03-25** – **💻 PowerShell gets pollinated** Generate AI content directly from your Windows command line with the new PollinationsAiPS module. [View repo](https://github.com/BananaAcid/PollinationsAiPS/) <!-- app -->
+- **2026-03-25** – **🎮 Game engines can talk** 'Talking with Unity' brings our voice AI, speech recognition, and text-to-speech directly into Unity projects. [Try it](https://www.ai-ministries.com/apps/talking-unity/) <!-- app -->
+- **2026-03-25** – **📱 Native iOS multitasking** Vector AI Agent is a free Apple Shortcut that routes requests across multiple models directly from your Mac or iPhone. [Try it](https://routinehub.co/shortcut/24957/) <!-- app -->
+- **2026-03-24** – **🔓 Open App Submissions** The gates are open—developers on the free tier can now submit their projects to the [Community App Showcase](https://hello.pollinations.ai) without being auto-rejected by the validation bot.
+- **2026-03-24** – **🍎 VeroClass AI Teacher Hub** AI-powered tools for educators to streamline lesson planning and classroom management. [Try it](https://teachers.veroclass.org) <!-- app -->
+- **2026-03-24** – **🏷️ Metadatagenerator** A new community tool for generating metadata and prompts for microstock marketplaces. [Try it](https://metadatagenerator.online/) <!-- app -->
+- **2026-03-24** – **✈️ TelegramChannelAI** Automate your Telegram channel management with this new community-built content generation pipeline. [View repo](https://github.com/rrs1979/TelegramChannelAI) <!-- app -->
 - **2026-03-23** – **🚀 Amazon Nova arrives** The Nova model family (Pro, Canvas, and Reel) is now wired up for text, image, and video generation. We also enabled image-to-image variation support for Canvas.
 - **2026-03-23** – **🧠 Grok learns to reason** Added official xAI integration for `grok-imagine` and `grok-video-pro`, plus upgraded text models featuring `grok-reasoning` with a casual 2M token context window.
-- **2026-03-23** – **🎨 Qwen image models** Added Alibaba's `qwen-image-plus` and `qwen-image-edit-plus`. Native CJK text rendering and multi-image editing are now on the menu.
-- **2026-03-23** – **🎬 Fast, free, and moving** Added `wan-fast` for free 5-second video generation. We also defaulted `audio=true` across the video API, so supported models will just generate sound automatically.
-- **2026-03-23** – **🔐 Headless in the hive** Implemented RFC 8628 Device Authorization Grant. You can now securely authenticate terminal tools and headless scripts without complex browser workarounds.
-- **2026-03-23** – **🎵 Free the MIDI** We split the `midijourney` text model into a free base version (Claude Haiku) and a large variant (Claude Opus) for complex compositions.
-- **2026-03-23** – **🌟 Showcase additions** Phicasso Chat (browser-native privacy) and AI MIDI Generator (text-to-multitrack) have joined the community showcase. [Try them](https://hello.pollinations.ai) <!-- app -->
-- **2026-03-22** – **🤖 Qwen Models & Vision** Alibaba's Qwen models (`qwen-coder-large`, `qwen-large`, and `qwen-vision`) are now live on the [Unified API](https://gen.pollinations.ai). 1M context windows and image understanding, completely unlocked for the free tier.
-- **2026-03-22** – **🎨 LND Ai Showcase** LND Ai has been added to the community showcase. Another solid text-to-image tool built entirely by hitting our API. [Try it](https://www.namansoni.in/text-to-image). <!-- app -->
-- **2026-03-20** – **🎨 Klein Multi-Image Blending** The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending.
 ---
 
 ## 🌱 Introduction

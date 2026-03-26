@@ -1,0 +1,35 @@
+{
+  "pr_number": 9625,
+  "title": "Add Storymake to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9625",
+  "merged_at": "2026-03-26T16:55:54Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Director's chair",
+    "blurb": "Storymake just landed in the ecosystem! Now you can spin up studio-quality TikToks, Reels, and Shorts from a simple text prompt.",
+    "summary": "Added Storymake to the community app showcase, enabling users to generate short-form videos from text prompts.",
+    "impact": "Creators can now easily discover and use Storymake to automate their TikTok, Reel, and YouTube Short production directly from text.",
+    "keywords": [
+      "storymake",
+      "video",
+      "community",
+      "app",
+      "shorts",
+      "tiktok"
+    ],
+    "visual_concept": "The PR is about 'Storymake', an AI video creation platform for short-form content. Visual symbols: a director's clapperboard, film reels, a smartphone showing a video, the pollinations bee acting as a movie director.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, holding a pixelated clapperboard next to a glowing smartphone screen showing a short video. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-26/PR-9625.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, holding a pixelated clapperboard next to a glowing smartphone screen showing a short video. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-26T16:56:54.396689+00:00",
+  "app_name": "Storymake",
+  "app_url": "https://storymake.io"
+}

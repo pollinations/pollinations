@@ -95,7 +95,6 @@ https://image.pollinations.ai/prompt/[encoded-prompt]/?model=[model]&image=[imag
     note : create a form carry to https://formcarry.com/ and get a form url id
    ADMIN_EMAIL=your-admin-email
    FROM_EMAIL=your-from-email
-   IMGBB_API_KEY=your-imgbb-api-key
    APP_REFERER=referer url
    COOLDOWN_SECONDS=30
    MAX_GENERATIONS_PER_DAY=10

@@ -13,7 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["node"]
+    "types": []
   },
   "include": ["./**/*.ts", "./**/*.js"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]

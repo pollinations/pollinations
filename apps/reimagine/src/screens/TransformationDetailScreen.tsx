@@ -18,7 +18,7 @@ import { OptimizedImage } from '../components/OptimizedImage';
 import ReportImageModal from '../components/ReportImageModal';
 import TransformationService from '../services/TransformationService';
 import ImageUploadService from '../services/ImageUploadService';
-import { TransformationChain, TransformationVersion } from '../types/transformation';
+import { TransformationChain } from '../types/transformation';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
@@ -164,11 +164,11 @@ export default function TransformationDetailScreen({
       setUploadingForReport(true);
       const imageUri = currentVersion.resultUrl;
 
-      // Check if image is local (file://) - need to upload to ImgBB
+      // Check if image is local (file://) - need to upload image
       if (imageUri.startsWith('file://')) {
-        console.log('🔄 Local image detected, uploading to ImgBB for report...');
+        console.log('🔄 Local image detected, uploading image for report...');
 
-        const uploadResult = await ImageUploadService.uploadToImgBB(imageUri);
+        const uploadResult = await ImageUploadService.uploadImage(imageUri);
 
         if (!uploadResult.success || !uploadResult.url) {
           throw new Error(uploadResult.error || 'Failed to upload image');
@@ -356,7 +356,7 @@ export default function TransformationDetailScreen({
             </Text>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeline}>
-              {chain.versions.map((version, index) => {
+              {chain.versions.map((version) => {
                 const isActive = version.id === currentVersionId;
                 return (
                     <TouchableOpacity

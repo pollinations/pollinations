@@ -7,7 +7,7 @@ export interface UploadResult {
   error?: string;
 }
 
-export interface ImgBBResponse {
+export interface imageResponse {
   data: {
     id: string;
     title: string;
@@ -40,27 +40,27 @@ export interface ImgBBResponse {
 }
 
 export const getConfig = () => {
-  const { IMGBB_API_KEY } = Constants.expoConfig.extra;
-  return { IMGBB_API_KEY };
+  const { image_API_KEY } = Constants.expoConfig.extra;
+  return { image_API_KEY };
 };
 
 export class ImageUploadService {
 
-  private static get IMGBB_API_KEY(): string {
-    const apiKey = Constants.expoConfig?.extra?.IMGBB_API_KEY;
+  private static get image_API_KEY(): string {
+    const apiKey = Constants.expoConfig?.extra?.image_API_KEY;
     if (!apiKey) {
-      console.error('❌ IMGBB_API_KEY not found in expo config, using fallback');
+      console.error('❌ image_API_KEY not found in expo config, using fallback');
       return 'xxxxxxxxxxxxxxxxxxxxxxx';
     }
     return apiKey;
   }
 
-  private static get IMGBB_UPLOAD_URL(): string {
-    return `https://api.imgbb.com/1/upload?key=${this.IMGBB_API_KEY}`;
+  private static get image_UPLOAD_URL(): string {
+    return `https://api.image.com/1/upload?key=${this.image_API_KEY}`;
   }
 
   /**
-   * Complete flow: select and upload image to ImgBB
+   * Complete flow: select and upload image to image
    */
   static async selectAndUploadImage(): Promise<UploadResult> {
     try {
@@ -97,8 +97,8 @@ export class ImageUploadService {
         fileSize: selectedImage.fileSize
       });
 
-      // Upload to ImgBB
-      return await this.uploadToImgBB(selectedImage.uri);
+      // Upload to image
+      return await this.uploadToimage(selectedImage.uri);
     } catch (error) {
       console.error('❌ Error in selectAndUploadImage:', error);
       return {
@@ -109,13 +109,13 @@ export class ImageUploadService {
   }
 
   /**
-   * Upload to ImgBB - MÉTHODE PUBLIQUE pour ReImagine
+   * Upload to image - MÉTHODE PUBLIQUE pour ReImagine
    * Reproduit exactement ce qui marche dans Postman
    */
-  static async uploadToImgBB(imageUri: string): Promise<UploadResult> {
+  static async uploadToimage(imageUri: string): Promise<UploadResult> {
     try {
-      console.log('📡 Uploading to ImgBB...');
-      console.log('📡 Using API URL:', this.IMGBB_UPLOAD_URL);
+      console.log('📡 Uploading to image...');
+      console.log('📡 Using API URL:', this.image_UPLOAD_URL);
       console.log('📡 Image URI:', imageUri);
 
       // Generate filename with proper extension
@@ -143,7 +143,7 @@ export class ImageUploadService {
       };
 
       console.log('📤 Sending request...');
-      const uploadResponse = await fetch(this.IMGBB_UPLOAD_URL, requestOptions);
+      const uploadResponse = await fetch(this.image_UPLOAD_URL, requestOptions);
 
       console.log('📊 Response status:', uploadResponse.status);
       console.log('📊 Response headers:', Object.fromEntries(uploadResponse.headers.entries()));
@@ -151,13 +151,13 @@ export class ImageUploadService {
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text();
         console.error('📊 Error response body:', errorText);
-        throw new Error(`ImgBB upload failed: ${uploadResponse.status} ${uploadResponse.statusText}. Response: ${errorText}`);
+        throw new Error(`image upload failed: ${uploadResponse.status} ${uploadResponse.statusText}. Response: ${errorText}`);
       }
 
       const responseText = await uploadResponse.text();
       console.log('📊 Raw response text:', responseText);
 
-      let responseJson: ImgBBResponse;
+      let responseJson: imageResponse;
       try {
         responseJson = JSON.parse(responseText);
       } catch (parseError) {
@@ -168,12 +168,12 @@ export class ImageUploadService {
       console.log('📊 Parsed response:', JSON.stringify(responseJson, null, 2));
 
       if (!responseJson.success || !responseJson.data) {
-        throw new Error('ImgBB upload failed: Invalid response format');
+        throw new Error('image upload failed: Invalid response format');
       }
 
       const imageUrl = responseJson.data.display_url;
 
-      console.log('✅ ImgBB upload successful!');
+      console.log('✅ image upload successful!');
       console.log('🎯 Display URL:', imageUrl);
       console.log('📋 Image details:', {
         id: responseJson.data.id,
@@ -184,7 +184,7 @@ export class ImageUploadService {
 
       // Validate URL format
       if (!imageUrl || !imageUrl.startsWith('https://')) {
-        throw new Error(`Invalid URL received from ImgBB: "${imageUrl}"`);
+        throw new Error(`Invalid URL received from image: "${imageUrl}"`);
       }
 
       // Test if the URL is accessible
@@ -204,7 +204,7 @@ export class ImageUploadService {
         url: imageUrl
       };
     } catch (error) {
-      console.error('❌ ImgBB upload error:', error);
+      console.error('❌ image upload error:', error);
 
       // Return more detailed error information
       return {
@@ -233,8 +233,8 @@ export class ImageUploadService {
    * Set API key dynamically (if needed)
    */
   static setApiKey(apiKey: string): void {
-    (this as any).IMGBB_API_KEY = apiKey;
-    (this as any).IMGBB_UPLOAD_URL = `https://api.imgbb.com/1/upload?key=${apiKey}`;
+    (this as any).image_API_KEY = apiKey;
+    (this as any).image_UPLOAD_URL = `https://api.image.com/1/upload?key=${apiKey}`;
   }
 }
 

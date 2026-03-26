@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import Navigation from './src/navigation';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -6,6 +6,7 @@ import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import TransformationService from './src/services/TransformationService';
+import { AuthProvider } from './src/context/AuthContext';
 
 function AppContent() {
   const { isDark } = useTheme();
@@ -39,9 +40,11 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
         <SafeAreaProvider>
-          <ThemeProvider>
-            <AppContent />
-          </ThemeProvider>
+          <AuthProvider>
+            <ThemeProvider>
+              <AppContent />
+            </ThemeProvider>
+          </AuthProvider>
         </SafeAreaProvider>
       </ErrorBoundary>
     </GestureHandlerRootView>

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-25",
+  "period_start": "2026-03-25",
+  "period_end": "2026-03-25",
+  "generated_at": "2026-03-26T06:23:31.861505+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-25/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-25/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-25/images/instagram-3.jpg"
+    }
+  ],
+  "text": "17 PRs merged this week. The big ones: Pollen credits now refill hourly, so you don't have to wait as long to keep building. Grok image-to-video is wired up and working. We also cleared out some dashboard clutter to make room for 9 new community apps in the ecosystem. Tier upgrades are a bit smarter now too. Keep making weird things. Link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #generativeai",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

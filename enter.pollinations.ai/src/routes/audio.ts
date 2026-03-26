@@ -1,4 +1,4 @@
-import type { Logger } from "@logtape/logtape";
+﻿import type { Logger } from "@logtape/logtape";
 import {
     ELEVENLABS_VOICES,
     resolveElevenLabsVoiceId,
@@ -68,7 +68,7 @@ function parseMp4Duration(buffer: ArrayBuffer): number | null {
         duration = view.getUint32(offset + 20);
     } else {
         timescale = view.getUint32(offset + 24);
-        // Read 64-bit duration — for practical music lengths, low 32 bits suffice
+        // Read 64-bit duration â€” for practical music lengths, low 32 bits suffice
         duration = Number(view.getBigUint64(offset + 28));
     }
 
@@ -332,7 +332,7 @@ export async function transcribeWithElevenLabs(opts: {
             words: elevenLabsData.words?.map((w) => ({
                 word: w.text,
                 start: w.start,
-                end: w.end,
+                end: w.end,`r`n speaker: w.speaker,
             })),
             segments: [
                 {
@@ -421,7 +421,7 @@ export async function generateMusic(opts: {
 
     // Buffer response and extract duration
     const audioBuffer = await response.arrayBuffer();
-    // MP3 only — parseMp4Duration falsely matches random bytes in compressed audio
+    // MP3 only â€” parseMp4Duration falsely matches random bytes in compressed audio
     const estimatedDuration = audioBuffer.byteLength / 16000;
 
     const usageHeaders = buildUsageHeaders(
@@ -449,10 +449,10 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/speech",
         describeRoute({
-            tags: ["🔊 Audio Generation"],
+            tags: ["ðŸ”Š Audio Generation"],
             summary: "Text to Speech (OpenAI-compatible)",
             description: [
-                "Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.",
+                "Generate speech or music from text. Compatible with the OpenAI TTS API â€” use any OpenAI SDK.",
                 "",
                 "Set `model` to `elevenmusic` to generate music instead of speech.",
                 "",
@@ -528,7 +528,7 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/transcriptions",
         describeRoute({
-            tags: ["🔊 Audio Generation"],
+            tags: ["ðŸ”Š Audio Generation"],
             summary: "Transcribe Audio",
             description: [
                 "Transcribe audio files to text. Compatible with the OpenAI Whisper API.",
@@ -536,9 +536,9 @@ export const audioRoutes = new Hono<Env>()
                 "**Supported audio formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
                 "",
                 "**Models:**",
-                "- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
-                "- `whisper-1` — Alias for whisper-large-v3",
-                "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
+                "- `whisper-large-v3` (default) â€” OpenAI Whisper via OVHcloud",
+                "- `whisper-1` â€” Alias for whisper-large-v3",
+                "- `scribe` â€” ElevenLabs Scribe (90+ languages, word-level timestamps)",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -731,3 +731,4 @@ function extractWhisperUsage(responseBody: string, log: Logger): number {
     log.debug("Whisper usage: {duration}s", { duration });
     return duration;
 }
+

@@ -54,9 +54,23 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         />
                     </div>
                 </div>
-                {apiKeys.length ? (
-                    <Panel color="blue">
-                        <div className="flex flex-col gap-3">
+                <Panel color="blue">
+                    <div className="flex flex-col gap-3">
+                        {!apiKeys.length && (
+                            <div className="rounded-xl bg-white/80 p-6 text-center">
+                                <p className="text-2xl mb-2">🔑</p>
+                                <p className="font-semibold text-gray-900 text-lg mb-2">
+                                    Create your first key
+                                </p>
+                                <p className="text-sm text-gray-600 mb-1">
+                                    <strong>🔒 API Key</strong> — access models with your pollen
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                    <strong>🖥️ App Key</strong> — users bring their own pollen into your app
+                                </p>
+                            </div>
+                        )}
+                        {apiKeys.length > 0 && (
                             <div className="rounded-xl bg-amber-50/80 p-4">
                                 <p className="font-semibold text-amber-900 mb-1">
                                     🐝 Let your users bring their own Pollen
@@ -77,7 +91,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     </a>
                                 </p>
                             </div>
-                            {sortedKeys.map((apiKey) => {
+                        )}
+                        {sortedKeys.map((apiKey) => {
                                 const isPublishable =
                                     apiKey.metadata?.keyType === "publishable";
                                 const plaintextKey = apiKey.metadata
@@ -249,7 +264,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             </p>
                         )}
                     </Panel>
-                ) : null}
             </div>
             <DeleteConfirmation
                 deleteId={deleteId}

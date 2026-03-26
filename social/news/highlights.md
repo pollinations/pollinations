@@ -1,3 +1,7 @@
+- **2026-03-25** – **🎬 Grok gets the picture** You can now pass an initial image URL to `grok-video-pro` to guide video generation. Image-to-video via xAI is officially live.
+- **2026-03-25** – **💻 PowerShell gets pollinated** Generate AI content directly from your Windows command line with the new PollinationsAiPS module. [View repo](https://github.com/BananaAcid/PollinationsAiPS/) <!-- app -->
+- **2026-03-25** – **🎮 Game engines can talk** 'Talking with Unity' brings our voice AI, speech recognition, and text-to-speech directly into Unity projects. [Try it](https://www.ai-ministries.com/apps/talking-unity/) <!-- app -->
+- **2026-03-25** – **📱 Native iOS multitasking** Vector AI Agent is a free Apple Shortcut that routes requests across multiple models directly from your Mac or iPhone. [Try it](https://routinehub.co/shortcut/24957/) <!-- app -->
 - **2026-03-24** – **🔓 Open App Submissions** The gates are open—developers on the free tier can now submit their projects to the [Community App Showcase](https://hello.pollinations.ai) without being auto-rejected by the validation bot.
 - **2026-03-24** – **🍎 VeroClass AI Teacher Hub** AI-powered tools for educators to streamline lesson planning and classroom management. [Try it](https://teachers.veroclass.org) <!-- app -->
 - **2026-03-24** – **🏷️ Metadatagenerator** A new community tool for generating metadata and prompts for microstock marketplaces. [Try it](https://metadatagenerator.online/) <!-- app -->

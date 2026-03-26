@@ -232,6 +232,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     pollenBudget={
                                                         apiKey.pollenBalance
                                                     }
+                                                    spendPolicy={
+                                                        apiKey.spendPolicy
+                                                    }
                                                 />
                                                 <span className="flex items-center gap-1">
                                                     <span className="text-gray-400">

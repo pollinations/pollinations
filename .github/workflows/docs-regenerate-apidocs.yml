@@ -9,16 +9,22 @@ on:
       - 'enter.pollinations.ai/src/routes/**/*.ts'
       - 'enter.pollinations.ai/scripts/generate-apidocs.ts'
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   regenerate-docs:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ORG_BOSS_APP_ID }}
+          private-key: ${{ secrets.ORG_BOSS_PRIVATE_KEY }}
+          owner: pollinations
+
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ steps.token.outputs.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -58,4 +64,4 @@ jobs:
             --base main \
             --head "$BRANCH"
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.token.outputs.token }}

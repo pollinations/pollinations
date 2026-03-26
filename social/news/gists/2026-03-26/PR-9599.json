@@ -1,0 +1,34 @@
+{
+  "pr_number": 9599,
+  "title": "Add OrchidLLM to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9599",
+  "merged_at": "2026-03-26T05:38:45Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new bloom in the greenhouse",
+    "blurb": "OrchidLLM just sprouted in our community showcase! It's a beautiful new app for generating images, text, video, audio, and transcriptions all in one place.",
+    "summary": "Added OrchidLLM to the community app showcase and greenhouse.",
+    "impact": "Users can now discover OrchidLLM, a new multi-modal generation app built by the community.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "orchidllm",
+      "multimodal"
+    ],
+    "visual_concept": "The PR adds 'OrchidLLM' to the community 'Greenhouse'. The visual should feature a beautiful pixel-art orchid flower growing in a cozy greenhouse setting, with Polly the bee happily watering or tending to it.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, watering a glowing digital orchid plant inside a glass greenhouse. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'ORCHID LLM'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-26/PR-9599.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, watering a glowing digital orchid plant inside a glass greenhouse. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'ORCHID LLM'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-26T05:39:40.248607+00:00",
+  "app_name": "OrchidLLM",
+  "app_url": "https://orchidllm.vercel.app"
+}

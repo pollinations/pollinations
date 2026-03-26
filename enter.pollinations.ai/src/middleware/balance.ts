@@ -96,8 +96,13 @@ export type BalanceVariables = {
         requirePositiveBalance: (
             userId: string,
             message?: string,
+            balances?: UserBalance,
         ) => Promise<void>;
-        requirePaidBalance: (userId: string, message?: string) => Promise<void>;
+        requirePaidBalance: (
+            userId: string,
+            message?: string,
+            balances?: UserBalance,
+        ) => Promise<void>;
         getBalance: (userId: string) => Promise<UserBalance>;
         balanceCheckResult?: BalanceCheckResult;
     };
@@ -171,8 +176,13 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         return { source: "pack", slug: "v1:meter:pack" };
     };
 
-    const requirePositiveBalance = async (userId: string, message?: string) => {
-        const balances = await fetchBalanceWithErrorHandling(userId);
+    const requirePositiveBalance = async (
+        userId: string,
+        message?: string,
+        prefetchedBalance?: UserBalance,
+    ) => {
+        const balances =
+            prefetchedBalance ?? (await fetchBalanceWithErrorHandling(userId));
         const spendPolicy =
             c.var.auth.apiKey?.spendPolicy ?? DEFAULT_SPEND_POLICY;
         const accessibleBalances = getAccessibleBalances(
@@ -223,8 +233,13 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         });
     };
 
-    const requirePaidBalance = async (userId: string, message?: string) => {
-        const balances = await fetchBalanceWithErrorHandling(userId);
+    const requirePaidBalance = async (
+        userId: string,
+        message?: string,
+        prefetchedBalance?: UserBalance,
+    ) => {
+        const balances =
+            prefetchedBalance ?? (await fetchBalanceWithErrorHandling(userId));
         const spendPolicy =
             c.var.auth.apiKey?.spendPolicy ?? DEFAULT_SPEND_POLICY;
         const accessibleBalances = getAccessibleBalances(

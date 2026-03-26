@@ -7,6 +7,7 @@ import {
     balance,
     getAvailableBalance,
     getSpendPolicyError,
+    type UserBalance,
 } from "@/middleware/balance.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -959,6 +960,7 @@ async function checkBalance(
 
     const serviceDefinition = getServiceDefinition(model.resolved);
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
+    let userBalance: UserBalance | undefined;
 
     // Pre-check: reject if balance < estimated cost for this model
     // getModelStats is cached in KV for 1hr, so this is cheap
@@ -978,7 +980,7 @@ async function checkBalance(
     }
 
     if (estimatedCost > 0) {
-        const userBalance = await balance.getBalance(auth.user.id);
+        userBalance = await balance.getBalance(auth.user.id);
         const spendPolicy = auth.apiKey?.spendPolicy ?? DEFAULT_SPEND_POLICY;
         const available = getAvailableBalance(
             userBalance,
@@ -1002,11 +1004,13 @@ async function checkBalance(
         await balance.requirePaidBalance(
             auth.user.id,
             "This model requires a paid balance. Tier balance cannot be used.",
+            userBalance,
         );
     } else {
         await balance.requirePositiveBalance(
             auth.user.id,
             "Insufficient pollen balance to use this model",
+            userBalance,
         );
     }
 }

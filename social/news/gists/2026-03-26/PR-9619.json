@@ -1,0 +1,37 @@
+{
+  "pr_number": 9619,
+  "title": "Add opencode-pollinations-conf to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9619",
+  "merged_at": "2026-03-26T15:59:51Z",
+  "labels": [
+    "API",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "OpenCode meets the hive",
+    "blurb": "A sweet new community integration just dropped! You can now easily generate an opencode.json config file packed with all your favorite Pollinations text models.",
+    "summary": "Added the opencode-pollinations-conf tool to the community showcase, which automatically generates OpenCode configurations using Pollinations text models.",
+    "impact": "Developers can now quickly set up OpenCode environments pre-configured with Pollinations' diverse range of text generation models.",
+    "keywords": [
+      "community",
+      "opencode",
+      "configuration",
+      "text-models",
+      "integration"
+    ],
+    "visual_concept": "The PR is about OpenCode and JSON configuration files. Visual symbols: a glowing blueprint or JSON file, code-plants. Characters: Polly the bee and the Monitor Robot working together to configure a system.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a glowing lime green (#ecf874) blueprint of a JSON configuration file. The robot's screen shows pixelated text models. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-26/PR-9619.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a glowing lime green (#ecf874) blueprint of a JSON configuration file. The robot's screen shows pixelated text models. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-03-26T16:00:44.691553+00:00",
+  "app_name": "opencode-pollinations-conf",
+  "app_url": "https://github.com/onatrain/opencode-pollinations-conf"
+}

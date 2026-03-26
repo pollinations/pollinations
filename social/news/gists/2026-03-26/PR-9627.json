@@ -1,0 +1,34 @@
+{
+  "pr_number": 9627,
+  "title": "Add visiona to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9627",
+  "merged_at": "2026-03-26T17:23:11Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Visiona joins the garden",
+    "blurb": "The greenhouse is growing! Visiona just sprouted in our community apps garden, bringing intelligent, AI-powered web experiences to the ecosystem.",
+    "summary": "Added Visiona, a new AI-powered responsive web interface, to the community apps showcase.",
+    "impact": "Users can now explore Visiona in the community gallery to see a great example of real-time AI integration in web tools.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "visiona",
+      "web"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener in the Greenhouse, watering a new 'Visiona' plant that has a glowing screen or eye, representing the new web interface app.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron, watering a glowing new code-plant in a lush digital greenhouse. The plant has a small retro monitor for a flower, displaying a bright eye. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-26/PR-9627.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron, watering a glowing new code-plant in a lush digital greenhouse. The plant has a small retro monitor for a flower, displaying a bright eye. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-26T17:24:09.892791+00:00",
+  "app_name": "visiona",
+  "app_url": "https://visiona-wheat.vercel.app/"
+}

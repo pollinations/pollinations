@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-25",
+  "period_start": "2026-03-25",
+  "period_end": "2026-03-25",
+  "generated_at": "2026-03-26T06:23:31.861505+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-25/images/reddit.jpg"
+    }
+  ],
+  "title": "Hourly API credit refills, Grok image-to-video, and dashboard consolidation",
+  "text": "Merged 17 PRs today. Mostly infrastructure cleanup, fixing some API quirks, and adjusting how rate limits work.\n\nFirst, all tiers now refill Pollen (API credits) on an hourly schedule instead of daily. It makes usage more predictable and prevents the classic \"accidentally burned my daily allowance on a broken while loop\" problem.\n\nOn the video side, Grok's image-to-video is now supported via the `grok-video-pro` model. The xAI endpoint was expecting an `image` parameter instead of `image_url`. That's fixed and routing correctly now.\n\nWe also cleaned up the frontend. The three separate dashboards were getting messy, so we consolidated them into a single App Ecosystem and App Leaderboard view. Nine new community apps were added to the directory today, including a Unity chat integration and a vector AI bot.\n\nFinally, we tightened up the automated tier upgrades. The system now uses stable GitHub IDs instead of usernames to handle Spore-to-Seed upgrades, and automatically skips deleted or banned GitHub accounts so ghost accounts aren't accumulating API credits.\n\nCode and open roadmap are on [GitHub](https://github.com/pollinations/pollinations). All models are accessible via standard HTTP calls at [pollinations.ai](https://pollinations.ai)."
+}

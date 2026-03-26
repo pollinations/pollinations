@@ -1,0 +1,79 @@
+{
+  "date": "2026-03-25",
+  "period_start": "2026-03-25",
+  "period_end": "2026-03-25",
+  "title": "Pollen credits now refill hourly",
+  "summary": "Hourly Pollen refills, Grok image-to-video support, and a massive wave of nine new community apps hitting the showcase.\n\nWe moved all tiers from a single daily drop to hourly Pollen refills. If you burn through your allocation experimenting, you no longer have to wait until tomorrow to keep building. The backend just quietly tops you up every hour.\n\nThe grok-video-pro model integration now properly supports image inputs. We wired it up and fixed a parameter naming mismatch with xAI's docs, so you can now pass a starting image URL alongside your text prompt to guide the video generation.\n\nA massive day for the community showcase. We merged nine new projects built on the infrastructure, including a PowerShell AI integration, voice-driven Unity NPCs, an Apple Shortcut agent, an AI dream journal, and tools for Excel formulas, Anki flashcards, and interior design.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 9538,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9540,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9544,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9545,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9546,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9562,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9563,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9566,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9567,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9568,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9570,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9571,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9572,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9573,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9575,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9585,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9587,
+      "date": "2026-03-25"
+    }
+  ],
+  "generated_at": "2026-03-26T06:23:31.861505+00:00"
+}

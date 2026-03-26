@@ -12,23 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "headline": "Pollen by the hour",
-    "blurb": "We've switched all tiers to an hourly pollen refill system. No more waiting until midnight for your next batch of credits—just a steady, continuous drip of creative juice.",
-    "summary": "All user tiers now receive their pollen credits via an hourly refill system rather than a single daily drop.",
-    "impact": "Users will see their pollen balances replenish continuously throughout the day, providing a smoother and more predictable generation experience.",
+    "headline": "A steady drip of pollen",
+    "blurb": "We've switched all our tiers from daily dumps to a steady hourly drip of Pollen. No more waiting until midnight to get your creative juices flowing again!",
+    "summary": "All user tiers now receive Pollen credit refills on an hourly basis rather than a single daily drop, streamlining the backend and providing a smoother experience.",
+    "impact": "Users will now see their Pollen balances top up every hour, meaning you never have to wait a full day to resume generating.",
     "keywords": [
       "billing",
-      "pollen",
       "tiers",
+      "pollen",
       "credits",
-      "refill"
+      "infrastructure"
     ],
-    "visual_concept": "The PR is about hourly refills of pollen (credits). Visual symbols: clocks, hourglasses, dripping honey/nectar, pollen grains. Characters: Polly the bee checking a timepiece or managing a steady drip of pollen.",
-    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny watchmaker's magnifying glass, adjusting a large, glowing lime green (#ecf874) hourglass filled with sparkling pollen. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "Polly the bee managing a steady, continuous flow of pollen. An hourglass or a dripping honey dipper represents the hourly aspect. Glowing lime green pollen drops falling into a jar.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wristwatch, happily watching glowing lime green (#ecf874) pollen drops fall from a retro hourglass into a glass jar. Soft lavender and peach pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-25/PR-9540.jpg",
-    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny watchmaker's magnifying glass, adjusting a large, glowing lime green (#ecf874) hourglass filled with sparkling pollen. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wristwatch, happily watching glowing lime green (#ecf874) pollen drops fall from a retro hourglass into a glass jar. Soft lavender and peach pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-03-25T23:59:18.512329+00:00"
+  "generated_at": "2026-03-26T00:05:35.545293+00:00"
 }

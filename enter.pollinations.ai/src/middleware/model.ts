@@ -16,11 +16,18 @@ export type ModelVariables = {
     formData?: FormData;
 };
 
+type ResolveModelOptions = {
+    defaultModel?: string;
+};
+
 /**
  * Middleware that extracts, defaults, and resolves the model from the request.
  * Must run before auth and track middlewares.
  */
-export function resolveModel(eventType: EventType) {
+export function resolveModel(
+    eventType: EventType,
+    options?: ResolveModelOptions,
+) {
     return createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
@@ -50,11 +57,12 @@ export function resolveModel(eventType: EventType) {
 
         // Apply default based on event type
         const defaultModel =
-            eventType === "generate.text"
+            options?.defaultModel ||
+            (eventType === "generate.text"
                 ? DEFAULT_TEXT_MODEL
                 : eventType === "generate.audio"
                   ? DEFAULT_AUDIO_MODEL
-                  : DEFAULT_IMAGE_MODEL;
+                  : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
 
         // Resolve alias to canonical service ID

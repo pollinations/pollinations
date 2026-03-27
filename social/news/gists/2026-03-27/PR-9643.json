@@ -1,0 +1,34 @@
+{
+  "pr_number": 9643,
+  "title": "Change API key and text model in api.config.ts",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9643",
+  "merged_at": "2026-03-27T12:16:06Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Swapping the defaults",
+    "blurb": "Updated our internal configuration for default API keys and text models. Just keeping the gears turning smoothly behind the scenes.",
+    "summary": "Updated the default API key and text model configuration in the frontend.",
+    "impact": "Ensures the frontend uses the latest default credentials and models for text generation.",
+    "keywords": [
+      "config",
+      "api-key",
+      "models",
+      "frontend",
+      "chore"
+    ],
+    "visual_concept": "The bee mascot adjusting some gears or swapping out a glowing cartridge (representing a model/key) in a retro terminal. Nomnom creature eating the old config file.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot swapping a glowing lime green (#ecf874) cartridge into a retro computer terminal. The round tan nomnom creature happily eats a stack of old paper configs nearby. Soft pastel gradient background, chunky sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-27/PR-9643.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot swapping a glowing lime green (#ecf874) cartridge into a retro computer terminal. The round tan nomnom creature happily eats a stack of old paper configs nearby. Soft pastel gradient background, chunky sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-03-27T12:16:50.625570+00:00"
+}

@@ -10,6 +10,24 @@ import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
+function setPrivateNoStoreHeaders(c: {
+    header: (name: string, value: string) => void;
+}): void {
+    c.header("Cache-Control", "private, no-store, max-age=0");
+    c.header("Pragma", "no-cache");
+}
+
+async function invalidateApiKeyCache(
+    kv: KVNamespace,
+    key: { id: string; userId: string; key?: string | null },
+): Promise<void> {
+    await Promise.all([
+        kv.delete(`auth:api-key:by-id:${key.id}`),
+        kv.delete(`auth:api-key:by-user:${key.userId}`),
+        key.key ? kv.delete(`auth:api-key:${key.key}`) : Promise.resolve(),
+    ]);
+}
+
 /**
  * Build updated permissions object based on changes.
  * Returns undefined if no permission fields were provided.
@@ -162,6 +180,7 @@ export const apiKeysRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
+            setPrivateNoStoreHeaders(c);
 
             const keys = await db.query.apikey.findMany({
                 where: eq(schema.apikey.userId, user.id),
@@ -250,10 +269,8 @@ export const apiKeysRoutes = new Hono<Env>()
                 where: eq(schema.apikey.id, id),
             });
 
-            await c.env.KV.delete(`auth:api-key:${id}`);
-
-            if (keyForCache?.key) {
-                await c.env.KV.delete(`auth:api-key:${keyForCache.key}`);
+            if (keyForCache) {
+                await invalidateApiKeyCache(c.env.KV, keyForCache);
             }
 
             return c.json({

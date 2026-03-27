@@ -4,10 +4,12 @@ import { test } from "../fixtures.ts";
 
 const base = "http://localhost:3000/api/stripe";
 const checkoutAmounts = [
+    "/checkout/2",
     "/checkout/5",
     "/checkout/10",
     "/checkout/20",
     "/checkout/50",
+    "/checkout/100",
 ];
 
 test.for(
@@ -38,10 +40,18 @@ test("GET /api/stripe/products returns pack list", async () => {
     expect(response.status).toBe(200);
 
     const data = (await response.json()) as {
-        packs: { amount: number; description: string }[];
+        packs: {
+            amount: number;
+            bonusPollen: number;
+            pollenGrant: number;
+            description: string;
+        }[];
     };
-    expect(data.packs).toHaveLength(4);
-    expect(data.packs.map((p) => p.amount)).toEqual([5, 10, 20, 50]);
+    expect(data.packs).toHaveLength(6);
+    expect(data.packs.map((p) => p.amount)).toEqual([2, 5, 10, 20, 50, 100]);
+    expect(data.packs.map((p) => p.pollenGrant)).toEqual([
+        2.5, 7, 15, 30, 90, 200,
+    ]);
 });
 
 test("GET /api/stripe/checkout/invalid returns 400 for invalid amount", async ({

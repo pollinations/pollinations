@@ -1,5 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -282,42 +283,29 @@ function RouteComponent() {
                                 id="buy-pollen"
                                 className="flex flex-wrap gap-2"
                             >
-                                <Button
-                                    as="button"
-                                    color="violet"
-                                    weight="light"
-                                    onClick={() => handleBuyPollen(5)}
-                                    className="btn-shimmer"
-                                >
-                                    💎 $5
-                                </Button>
-                                <Button
-                                    as="button"
-                                    color="violet"
-                                    weight="light"
-                                    onClick={() => handleBuyPollen(10)}
-                                    className="btn-shimmer"
-                                >
-                                    💎 $10
-                                </Button>
-                                <Button
-                                    as="button"
-                                    color="violet"
-                                    weight="light"
-                                    onClick={() => handleBuyPollen(20)}
-                                    className="btn-shimmer"
-                                >
-                                    💎 $20
-                                </Button>
-                                <Button
-                                    as="button"
-                                    color="violet"
-                                    weight="light"
-                                    onClick={() => handleBuyPollen(50)}
-                                    className="btn-shimmer"
-                                >
-                                    💎 $50
-                                </Button>
+                                {POLLEN_PACKS.map((pack) => (
+                                    <Button
+                                        key={pack.amountUsd}
+                                        as="button"
+                                        color="violet"
+                                        weight="light"
+                                        onClick={() =>
+                                            handleBuyPollen(pack.amountUsd)
+                                        }
+                                        title={`${formatPollenPackValue(pack.pollenGrant)} pollen total (+${formatPollenPackValue(pack.bonusPollen)} bonus)`}
+                                        className="btn-shimmer whitespace-nowrap"
+                                    >
+                                        <span className="font-semibold">
+                                            💎 ${pack.amountUsd}
+                                        </span>
+                                        <span className="ml-1 text-violet-800/80">
+                                            -&gt;{" "}
+                                            {formatPollenPackValue(
+                                                pack.pollenGrant,
+                                            )}
+                                        </span>
+                                    </Button>
+                                ))}
                             </div>
                         )}
                         {activeTab === "usage" && (

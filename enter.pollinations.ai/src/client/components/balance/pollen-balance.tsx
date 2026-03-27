@@ -1,4 +1,5 @@
 import { type FC, useState } from "react";
+import { describePollenPack, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { getTierEmoji } from "@/tier-config.ts";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -67,6 +68,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
     const tierEmoji = getTierEmoji(tier);
+    const packSummary = POLLEN_PACKS.map(describePollenPack).join(", ");
 
     const copyEmail = () => {
         navigator.clipboard.writeText("billing@pollinations.ai");
@@ -137,8 +139,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             {/* Purchase info */}
             <Card color="purple" className="mt-4 !border-transparent">
                 <p className="text-sm font-medium text-purple-900">
-                    🎁 During beta, we double your pollen! ($5 → 10💎, $10 →
-                    20💎, $20 → 40💎, $50 → 100💎)
+                    🎁 Beta pack bonus: {packSummary}
                 </p>
                 <p className="text-sm font-medium text-purple-900 mt-2">
                     💳 Want to pay with a different method?{" "}

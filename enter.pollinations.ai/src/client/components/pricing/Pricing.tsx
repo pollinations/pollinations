@@ -1,4 +1,5 @@
 import { type FC, useEffect } from "react";
+import { describePollenPack, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -26,6 +27,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance }) => {
     const videoModels = allModels.filter((m) => m.type === "video");
     const audioModels = allModels.filter((m) => m.type === "audio");
     const textModels = allModels.filter((m) => m.type === "text");
+    const packSummary = POLLEN_PACKS.map(describePollenPack).join(", ");
 
     return (
         <div id="models" className="flex flex-col gap-2">
@@ -155,9 +157,10 @@ export const Pricing: FC<PricingProps> = ({ packBalance }) => {
                                 <div className="flex items-center gap-1">
                                     <span>💎</span>
                                     <span className="font-medium">
-                                        2x pollen on every purchase!
+                                        Bonus scales with pack size.
                                     </span>
                                 </div>
+                                <div>{packSummary}</div>
                                 <div className="flex items-center gap-3 flex-wrap">
                                     <a
                                         href="#buy-pollen"
@@ -183,7 +186,8 @@ export const Pricing: FC<PricingProps> = ({ packBalance }) => {
                                     </svg>
                                 </div>
                                 <div className="text-purple-700 text-xs mt-1">
-                                    Prices may adjust during beta.
+                                    Stripe checkout now shows the current pack
+                                    bonus for each option.
                                 </div>
                             </div>
                         </Card>

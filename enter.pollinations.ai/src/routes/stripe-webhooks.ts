@@ -2,12 +2,10 @@ import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
+import { getPollenPack } from "@/pollen-packs.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
-
-// BETA PROMOTION: Double all pack purchases (remove after beta)
-const BETA_MULTIPLIER = 2;
 
 interface StripeEventData {
     eventType: string;
@@ -75,7 +73,7 @@ async function sendStripeEventToTinybird(
 /**
  * Handle successful checkout session completion
  * Credits pollen to user's packBalance
- * Pollen amount is derived from payment amount ($1 = 1 pollen)
+ * Pollen amount is derived from the selected pack metadata.
  */
 const handleCheckoutSessionCompleted = async (
     session: Stripe.Checkout.Session,
@@ -89,18 +87,23 @@ const handleCheckoutSessionCompleted = async (
     }
 
     const userId = metadata.userId;
+    const pack = metadata.packAmount
+        ? getPollenPack(metadata.packAmount)
+        : undefined;
 
-    // Derive pollen from product price ($1 = 1 pollen)
-    // Use amount_subtotal (before tax) not amount_total (includes tax)
-    // This ensures customers get pollen based on product price, not tax
-    const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
-
-    if (amountPaid <= 0) {
-        console.error("Invalid payment amount:", session.amount_total);
-        return { success: false, message: "Invalid payment amount" };
+    if (!pack) {
+        console.error("Missing or invalid packAmount in checkout session:", {
+            sessionId: session.id,
+            packAmount: metadata.packAmount,
+        });
+        return {
+            success: false,
+            message: "Missing or invalid pack metadata",
+        };
     }
 
-    const creditsToAdd = amountPaid * BETA_MULTIPLIER;
+    const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
+    const creditsToAdd = pack.pollenGrant;
 
     const db = drizzle(env.DB);
 
@@ -125,7 +128,7 @@ const handleCheckoutSessionCompleted = async (
         .where(eq(userTable.id, userId));
 
     console.log(
-        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (paid: $${amountPaid}, session: ${session.id})`,
+        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: $${amountPaid}, session: ${session.id})`,
     );
 
     return {

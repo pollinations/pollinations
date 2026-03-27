@@ -30,6 +30,31 @@ function addKeyPrefix(key: string) {
     return `auth:${key}`;
 }
 
+type ApiKeyCacheRef = {
+    id: string;
+    userId: string;
+    key?: string | null;
+};
+
+export async function invalidateApiKeyCache(
+    env: Pick<Cloudflare.Env, "KV">,
+    key: ApiKeyCacheRef,
+): Promise<void> {
+    const cacheKeys = [
+        `api-key:by-id:${key.id}`,
+        `api-key:by-user:${key.userId}`,
+        ...(key.key ? [`api-key:${key.key}`] : []),
+    ];
+
+    await Promise.all(
+        cacheKeys.map((cacheKey) => {
+            const prefixedKey = addKeyPrefix(cacheKey);
+            kvWrittenKeys.delete(prefixedKey);
+            return env.KV.delete(prefixedKey);
+        }),
+    );
+}
+
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
 

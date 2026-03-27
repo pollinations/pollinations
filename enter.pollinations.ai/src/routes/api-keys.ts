@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
+import { invalidateApiKeyCache } from "../auth.ts";
 import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
@@ -15,17 +16,6 @@ function setPrivateNoStoreHeaders(c: {
 }): void {
     c.header("Cache-Control", "private, no-store, max-age=0");
     c.header("Pragma", "no-cache");
-}
-
-async function invalidateApiKeyCache(
-    kv: KVNamespace,
-    key: { id: string; userId: string; key?: string | null },
-): Promise<void> {
-    await Promise.all([
-        kv.delete(`auth:api-key:by-id:${key.id}`),
-        kv.delete(`auth:api-key:by-user:${key.userId}`),
-        key.key ? kv.delete(`auth:api-key:${key.key}`) : Promise.resolve(),
-    ]);
 }
 
 /**
@@ -270,7 +260,7 @@ export const apiKeysRoutes = new Hono<Env>()
             });
 
             if (keyForCache) {
-                await invalidateApiKeyCache(c.env.KV, keyForCache);
+                await invalidateApiKeyCache(c.env, keyForCache);
             }
 
             return c.json({
@@ -322,6 +312,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 metadataUpdate,
                 existingKey.metadata,
             );
+            await invalidateApiKeyCache(c.env, existingKey);
 
             return c.json({ id, metadata });
         },

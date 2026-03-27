@@ -1,0 +1,51 @@
+{
+  "date": "2026-03-26",
+  "period_start": "2026-03-26",
+  "period_end": "2026-03-26",
+  "title": "Seven new community apps hit the showcase",
+  "summary": "A massive influx of community apps, a crucial fix for audio generation on the Play page, and some much-needed dashboard polish.\n\nThe ecosystem is growing rapidly. We merged seven new community-built tools today, headlined by Storymake, which automates short-form video generation for TikTok and Reels from text prompts. The showcase also picked up Tofu (a slick terminal-based chat client), TranslateIt (context-aware translation), OrchidLLM, Apiction, Visiona, and a tool for generating OpenCode configurations.\n\nIf you were getting 'model not found' errors when trying to generate music or text-to-speech on the Play page, that's fixed. Dedicated audio models were accidentally being routed through the chat completions endpoint. They now correctly hit /v1/audio/speech where they belong.\n\nCleaned up a few frontend annoyances. Pollen balance gauges now render correctly at all values, and the API key section has proper empty states for new developers. We also added abort flags to the prettify and translate hooks so you don't see flashes of stale text when rapidly clicking through app categories.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 9542,
+      "date": "2026-03-26"
+    },
+    {
+      "number": 9590,
+      "date": "2026-03-26"
+    },
+    {
+      "number": 9599,
+      "date": "2026-03-26"
+    },
+    {
+      "number": 9619,
+      "date": "2026-03-26"
+    },
+    {
+      "number": 9620,
+      "date": "2026-03-26"
+    },
+    {
+      "number": 9622,
+      "date": "2026-03-26"
+    },
+    {
+      "number": 9625,
+      "date": "2026-03-26"
+    },
+    {
+      "number": 9626,
+      "date": "2026-03-26"
+    },
+    {
+      "number": 9627,
+      "date": "2026-03-26"
+    },
+    {
+      "number": 9633,
+      "date": "2026-03-26"
+    }
+  ],
+  "generated_at": "2026-03-27T06:24:30.576814+00:00"
+}

@@ -1,3 +1,10 @@
+- **2026-03-26** – **🌸 OrchidLLM** New multimodal generation app in the showcase. Send text, get whatever. [Try it](https://orchidllm.vercel.app) <!-- app -->
+- **2026-03-26** – **⚙️ OpenCode Configurator** Auto-configure OpenCode environments with our text models. Less boilerplate, more building. [View repo](https://github.com/onatrain/opencode-pollinations-conf) <!-- app -->
+- **2026-03-26** – **📝 TranslateIt** Context-aware AI translation tool. Because literal translations are usually terrible. [Try it](https://connor.ct.ws/translateit) <!-- app -->
+- **2026-03-26** – **🖥️ Tofu** A rich terminal-based chat client. For when you absolutely refuse to leave the command line. [Try it](https://crates.io/crates/tofu-llm) <!-- app -->
+- **2026-03-26** – **🎞️ Storymake** Generate short-form videos from text prompts. The content mill demands to be fed. [Try it](https://storymake.io) <!-- app -->
+- **2026-03-26** – **🤖 Apiction** A new platform for chatting with multiple AI models side-by-side. [Try it](https://apiction.site/) <!-- app -->
+- **2026-03-26** – **🎨 Visiona** A clean, responsive web interface for real-time AI chatting. [Try it](https://visiona-wheat.vercel.app/) <!-- app -->
 - **2026-03-25** – **🎬 Grok gets the picture** You can now pass an initial image URL to `grok-video-pro` to guide video generation. Image-to-video via xAI is officially live.
 - **2026-03-25** – **💻 PowerShell gets pollinated** Generate AI content directly from your Windows command line with the new PollinationsAiPS module. [View repo](https://github.com/BananaAcid/PollinationsAiPS/) <!-- app -->
 - **2026-03-25** – **🎮 Game engines can talk** 'Talking with Unity' brings our voice AI, speech recognition, and text-to-speech directly into Unity projects. [Try it](https://www.ai-ministries.com/apps/talking-unity/) <!-- app -->

@@ -8,6 +8,7 @@ import { usageCommand, pollenCommand } from "./commands/usage.js";
 import { modelsCommand } from "./commands/models.js";
 import { textCommand } from "./commands/text.js";
 import { imageCommand } from "./commands/image.js";
+import { editCommand } from "./commands/edit.js";
 import { audioCommand } from "./commands/audio.js";
 import { videoCommand } from "./commands/video.js";
 import { chatCommand } from "./commands/chat.js";
@@ -64,6 +65,7 @@ program.addCommand(tierCommand);
 // Generation — top-level for dead-simple usage
 program.addCommand(textCommand);
 program.addCommand(imageCommand);
+program.addCommand(editCommand);
 program.addCommand(audioCommand);
 program.addCommand(videoCommand);
 program.addCommand(chatCommand);

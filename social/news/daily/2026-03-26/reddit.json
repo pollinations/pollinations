@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-26",
+  "period_start": "2026-03-26",
+  "period_end": "2026-03-26",
+  "generated_at": "2026-03-27T06:24:30.576814+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-26/images/reddit.jpg"
+    }
+  ],
+  "title": "10 PRs merged: audio endpoint routing, race condition fixes, 7 new apps",
+  "text": "Cleared out 10 PRs today. Mostly fixing some annoying edge cases and merging a backlog of community apps.\n\nFirst, we routed the dedicated audio models through the proper /v1/audio/speech endpoint on the Play page. Previously, trying to pipe them through standard text completion endpoints was causing predictable headaches. That is sorted.\n\nAlso squashed a classic race condition (#9542). If you switched categories while a prettify or translate job was still running in the background, the stale state would eventually resolve and overwrite your new view. We now properly cancel those stale jobs on category switch.\n\nThe dashboard got some minor UI polish as well—better gauges, consistent styling, and a cleaner primary CTA.\n\nOn the community side, seven new apps hit the showcase. Tofu, Apiction, and visiona for chat; TranslateIt for writing; Storymake for video/audio; plus OrchidLLM and opencode-pollinations-conf. The ecosystem is moving faster than we can review PRs right now, which is a good problem to have.\n\nCode, issues, and roadmap are open at github.com/pollinations/pollinations."
+}

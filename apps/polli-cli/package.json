@@ -1,0 +1,43 @@
+{
+  "name": "@pollinations_ai/cli",
+  "version": "0.1.0",
+  "description": "The Pollinations CLI — for humans, AI agents, and everything in between",
+  "type": "module",
+  "bin": {
+    "polli": "./bin/polli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check --write src/",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist/",
+    "bin/"
+  ],
+  "keywords": [
+    "pollinations",
+    "ai",
+    "cli",
+    "mcp",
+    "image-generation",
+    "text-generation"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.1",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "open": "^11.0.0",
+    "ora": "^8.2.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

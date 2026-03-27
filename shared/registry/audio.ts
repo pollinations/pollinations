@@ -71,6 +71,7 @@ export const AUDIO_SERVICES = {
         aliases: ["music"],
         modelId: "music_v1",
         provider: "elevenlabs",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),

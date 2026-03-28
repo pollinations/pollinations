@@ -1,0 +1,33 @@
+{
+  "pr_number": 9686,
+  "title": "Add PezzAI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9686",
+  "merged_at": "2026-03-28T11:11:43Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "PezzAI joins the greenhouse",
+    "blurb": "PezzAI just landed in the community showcase. It's a free suite of AI tools built and funded by a single dev, which is exactly the kind of indie energy we love to see.",
+    "summary": "Added PezzAI, an indie-developed suite of free AI tools, to the community app directory.",
+    "impact": "The community showcase grows by one more indie project, making it easier for users to discover PezzAI's chat tools.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "indie-dev"
+    ],
+    "visual_concept": "Polly the bee watering a new seedling in the greenhouse. Emphasize the solo-dev/indie nature with a cozy, small-scale gardening vibe, representing a new app taking root in the ecosystem.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, carefully watering a new glowing seedling in a lime green (#ecf874) flower pot. A chunky retro computer monitor in the background displays a chat interface. Soft lavender and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9686.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, carefully watering a new glowing seedling in a lime green (#ecf874) flower pot. A chunky retro computer monitor in the background displays a chat interface. Soft lavender and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T11:12:32.962966+00:00",
+  "app_name": "PezzAI",
+  "app_url": "chat.pezzai.com"
+}

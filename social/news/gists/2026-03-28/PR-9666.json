@@ -1,0 +1,34 @@
+{
+  "pr_number": 9666,
+  "title": "Add Cadavre Exquis Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9666",
+  "merged_at": "2026-03-28T08:11:01Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Exquisite corpse, pixel perfect",
+    "blurb": "The Cadavre Exquis Generator has sprouted in the greenhouse! Mix and match prompts to generate wild, tri-style collaborative artworks.",
+    "summary": "Added the Cadavre Exquis Generator to the community app showcase, a tool for generating tri-style composite AI images.",
+    "impact": "Creators can now discover and use this new community-built app to experiment with multi-style image generation.",
+    "keywords": [
+      "community",
+      "apps",
+      "image-generation",
+      "art",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot collaborating on a three-part 'exquisite corpse' painting on a canvas, representing the tri-style image generation of the new app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting on a tall canvas alongside a chunky monitor-head robot. The canvas shows a funny three-part 'exquisite corpse' drawing with different styles in each section. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9666.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting on a tall canvas alongside a chunky monitor-head robot. The canvas shows a funny three-part 'exquisite corpse' drawing with different styles in each section. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T08:11:56.932095+00:00",
+  "app_name": "Cadavre Exquis Generator",
+  "app_url": "https://baran-sd.github.io/cadavre-exquis/"
+}

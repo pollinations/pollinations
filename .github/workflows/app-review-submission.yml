@@ -182,7 +182,6 @@ jobs:
       github.event_name == 'issues' &&
       github.event.action == 'labeled' &&
       github.event.label.name == 'TIER-APP-APPROVED' &&
-      contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW') &&
       github.event.issue.state == 'open'
     runs-on: ubuntu-latest
     permissions:

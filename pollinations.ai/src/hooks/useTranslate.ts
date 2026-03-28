@@ -29,6 +29,7 @@ export function useTranslate<T, K extends keyof T>(
 
         if (items.length === 0 || language === "en") return;
 
+        let aborted = false;
         setIsTranslating(true);
 
         const copyItems = items.map((item, i) => ({
@@ -38,14 +39,23 @@ export function useTranslate<T, K extends keyof T>(
 
         processCopy(copyItems, language)
             .then((processed) => {
+                if (aborted) return;
                 const result = items.map((item, i) => ({
                     ...item,
                     [field]: processed[i]?.text || item[field],
                 }));
                 setTranslated(result);
             })
-            .catch(() => setTranslated(items))
-            .finally(() => setIsTranslating(false));
+            .catch(() => {
+                if (!aborted) setTranslated(items);
+            })
+            .finally(() => {
+                if (!aborted) setIsTranslating(false);
+            });
+
+        return () => {
+            aborted = true;
+        };
     }, [items, itemsKey, field, language]);
 
     return { translated, isTranslating };

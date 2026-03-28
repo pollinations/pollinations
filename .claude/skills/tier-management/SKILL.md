@@ -23,8 +23,8 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 | microbe | 🦠 | 0 | none | Account under review |
 | spore | 🍄 | 0.01 | hourly | Verified accounts |
 | seed | 🌱 | 0.15 | hourly | GitHub engagement |
-| flower | 🌸 | 10 | daily | Contributor |
-| nectar | 🍯 | 20 | daily | Coming soon |
+| flower | 🌸 | 0.4 | hourly | Contributor |
+| nectar | 🍯 | 0.8 | hourly | Coming soon |
 
 ---
 
@@ -74,7 +74,7 @@ gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '
 
 ## How Tiers Work Now
 
-- **Tier balance refills** hourly for spore/seed, daily at midnight UTC for flower+
+- **Tier balance refills** hourly for all tiers
 - **No rollover** - balance resets to tier amount each period
 - **Just update D1** - no external subscription system needed
 
@@ -93,13 +93,13 @@ npx wrangler d1 execute DB --remote --env production \
   --command "UPDATE user SET tier='TIER' WHERE github_username='USERNAME';"
 ```
 
-Balance will update automatically at next refill cycle (hourly for spore/seed, daily for flower/nectar).
+Balance will update automatically at next hourly refill cycle.
 
 ### Step 3 (Optional): Immediate balance update
 ```bash
-# Set balance immediately (e.g., flower = 10 pollen)
+# Set balance immediately (e.g., flower = 0.4 pollen)
 npx wrangler d1 execute DB --remote --env production \
-  --command "UPDATE user SET tier='flower', tier_balance=10 WHERE github_username='USERNAME';"
+  --command "UPDATE user SET tier='flower', tier_balance=0.4 WHERE github_username='USERNAME';"
 
 ## Step 4: Notify user on GitHub
 ```
@@ -185,6 +185,6 @@ export TIER_EVAL_GIST_ID=your_gist_id  # optional
 
 # Notes
 
-- **Tier balance refills** hourly for spore/seed, daily at midnight UTC for flower+; no rollover
+- **Tier balance refills** hourly for all tiers; no rollover
 - New users get `spore` tier + 0.01 pollen/hour
 - Tier upgrades take effect on next refill (or set `tier_balance` manually)

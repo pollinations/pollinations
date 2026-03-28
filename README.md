@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🤖 Vector AI Agent](https://routinehub.co/shortcut/24957/) | Vector AI Agent handles multitasking AI requests using pollinations with multiple models, implemented entirely in apple shortcuts by Mincoffical and Elc29 and free to use. | [@ios](https://github.com/ios) |
-| [🧮 excelformula.pro](https://excelformula.pro/) | Generate Excel formulas from natural language or sample data using excelformula.pro, returning ready-to-use formulas with cell references and brief explanations. | [@web](https://github.com/web) |
-| [⚡ PollinationsAiPS](1894723) | Integrate Pollinations.ai into PowerShell using PollinationsAiPS to generate images, text, and audio from scripts. | [@cli](https://github.com/cli) |
-| [🛋️ Rooms Vision](https://roomsvision.lovable.app/) | Visualize architectural and stylistic changes by uploading a room photo and applying design layers like Minimalist, Industrial, or Bohemian with Rooms Vision while preserving structural integrity. | [@web](https://github.com/web) |
-| [🖼️ image-gen-editor.vercel.app](https://image-gen-editor.vercel.app) | image-gen-editor.vercel.app generates and edits images via the Pollinations AI API and provides a web interface built with Next.js 14 and TypeScript. | [@web](https://github.com/web) |
-| [🧠 AnkiTect](158578469) | Generates Anki CLI decks from word lists for language learning. AnkiTect creates multimedia flashcards and uses the pollinations.ai API to add context-relevant images. | [@cli](https://github.com/cli) |
-| [🎙️ Talking with Unity](https://www.ai-ministries.com/apps/talking-unity/) | Talking with Unity provides a voice AI assistant for Unity projects, enabling speech recognition, text-to-speech, and voice-driven interactions for apps and games. | [@web](https://github.com/web) |
-| [💤 DSEA](https://dsea.vercel.app/) | Record and visualize dreams with DSEA, an AI-powered dream journal web app. | [@web](https://github.com/web) |
-| [👑 Kingshot](https://ptb.discord.com/oauth2/authorize?client_id=1474107930155421831) | Manage Kingshot alliances and redeem giftcodes via the Kingshot discord bot, using gemini-fast for translations and gemini-search to answer kingshot game queries. | [@discord](https://github.com/discord) |
-| [📣 TelegramChannelAI](1386883) | Automates Telegram channel management using TelegramChannelAI and an AI-powered content pipeline. | [@telegram](https://github.com/telegram) |
+| [🤖 SentIQGPT](https://sentiqgpt.sentiqlabs.com/) | Provides browser-based AI assistant features in SentIQGPT, including chat memory, file analysis, and image generation. | [@web](https://github.com/web) |
+| [🧰 Pollinations Tools Hub](https://lokiodinson.netlify.app/ai) | A free open-source collection of 3 browser-based AI tools powered entirely by Pollinations.ai  no sign-up no installation required. Includes a Document Translator Gemini 2.5 Flash-Lite Voice Studio tt | [@web](https://github.com/web) |
+| [🌱 Pollinations Seed Plan Qualification](https://app-j.pl/Pollinations/) | Analyze a public GitHub user profile with Pollinations Seed Plan Qualification to calculate points per the Pollinations Seed Plan scoring system and display the score and breakdown. | [@web](https://github.com/web) |
+| [🏫 Niyam School](https://niyam.school/) | Manage daily school operations with Niyam School by tracking attendance, schedules, communications, and administrative tasks. | [@web](https://github.com/web) |
+| [💡 IdeaPulley](https://ideapulley.indevs.in) | Generate, validate, and evolve ideas with IdeaPulley using AI-driven multi-agent reasoning systems to support individuals and teams. | [@web](https://github.com/web) |
+| [🎬 Aladiah Gen](https://aladiah-gen.vercel.app/) | Generate TikTok Shop, Instagram Reels, and YouTube Shorts prompt ideas for creators, affiliates, and shop owners using Aladiah Gen. | [@web](https://github.com/web) |
+| [💬 PolliChatter](https://pollichatter.netlify.app/) | Enable PolliChatter, a dark-themed chat interface for Pollinations.ai, to use Pollinations text, image, and audio APIs for interacting with all available models in one place. | [@web](https://github.com/web) |
+| [📰 Sera Ai News](https://t.me/SeraNew) | Sera Ai News generates images for news items on a Telegram channel using Pollinations.ai. | [@telegram](https://github.com/telegram) |
+| [🤖 Samina 🍂](https://t.me/iSaminaBot) | Provides a telegram chatbot Samina 🍂 with entertainment features and image generation via pollinations.ai. Use the /img command to generate images. | [@telegram](https://github.com/telegram) |
+| [🌼 PollenStudio: AI Variation Gallery](https://souravhchoursiya.github.io/pollen-gallery/) | Showcases PollenStudio: AI Variation Gallery. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

@@ -94,7 +94,7 @@ describe("Tier Balance Management", () => {
                 TIER_POLLEN.seed, // 0.15
             );
 
-            // Daily tiers: additive refill (capped at max)
+            // Flower/Nectar tiers: additive refill (capped at max)
             expect(users.find((u) => u.id === "user-flower")?.tierBalance).toBe(
                 TIER_POLLEN.flower,
             );
@@ -217,11 +217,11 @@ describe("Tier Balance Management", () => {
             expect(
                 users.find((u) => u.id === "neg-seed")?.tierBalance,
             ).toBeCloseTo(-0.5 + TIER_POLLEN.seed, 4);
-            // Flower: MIN(-5 + 10, 10) = 5 (recovers in one daily refill)
+            // Flower: MIN(-5 + 0.4, 0.4) = -4.6 (recovers over multiple hourly refills)
             expect(
                 users.find((u) => u.id === "neg-flower")?.tierBalance,
             ).toBeCloseTo(-5 + TIER_POLLEN.flower, 4);
-            // Nectar: MIN(-15 + 20, 20) = 5 (recovers in one daily refill)
+            // Nectar: MIN(-15 + 0.8, 0.8) = -14.2 (recovers over multiple hourly refills)
             expect(
                 users.find((u) => u.id === "neg-nectar")?.tierBalance,
             ).toBeCloseTo(-15 + TIER_POLLEN.nectar, 4);

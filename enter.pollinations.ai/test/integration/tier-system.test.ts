@@ -22,13 +22,13 @@ async function triggerTierRefill() {
 }
 
 describe("Tier System End-to-End", () => {
-    describe("Daily Usage Pattern", () => {
+    describe("Hourly Usage Pattern", () => {
         test("user exhausts tier balance and falls back to pack balance", async () => {
             const db = drizzle(env.DB);
             const _executionContext = createExecutionContext();
             const userId = "heavy-user";
 
-            // User starts with flower tier (10 pollen/day) and bought a pack (50 pollen)
+            // User starts with flower tier (0.4 pollen/hour) and bought a pack (50 pollen)
             await db
                 .insert(userTable)
                 .values({
@@ -36,7 +36,7 @@ describe("Tier System End-to-End", () => {
                     email: "heavy@test.com",
                     name: "Heavy User",
                     tier: "flower",
-                    tierBalance: 10,
+                    tierBalance: 0.4,
                     packBalance: 50,
                     cryptoBalance: 0,
                     lastTierGrant: Date.now() - 86400000, // Yesterday
@@ -47,7 +47,7 @@ describe("Tier System End-to-End", () => {
                     target: userTable.id,
                     set: {
                         tier: "flower",
-                        tierBalance: 10,
+                        tierBalance: 0.4,
                         packBalance: 50,
                         cryptoBalance: 0,
                         lastTierGrant: Date.now() - 86400000,
@@ -70,10 +70,10 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Single-bucket deduction: tier absorbs [3,2,4,5]=14, going to -4;
-            // remaining [2,3,1]=6 deducted from pack (first positive bucket)
-            expect(afterUsage[0]?.tierBalance).toBe(-4);
-            expect(afterUsage[0]?.packBalance).toBe(44);
+            // Single-bucket deduction: tier absorbs first 3 (0.4-3=-2.6), going negative;
+            // remaining [2,4,5,2,3,1]=17 deducted from pack (first positive bucket)
+            expect(afterUsage[0]?.tierBalance).toBeCloseTo(-2.6, 4);
+            expect(afterUsage[0]?.packBalance).toBe(33);
 
             // Trigger tier refill
             await triggerTierRefill();
@@ -89,9 +89,9 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Tier should be refilled (hard SET), pack unchanged
-            expect(afterRefill[0]?.tierBalance).toBe(10);
-            expect(afterRefill[0]?.packBalance).toBe(44);
+            // Tier should be refilled (additive: MIN(-2.6 + 0.4, 0.4) = -2.2), pack unchanged
+            expect(afterRefill[0]?.tierBalance).toBeCloseTo(-2.2, 4);
+            expect(afterRefill[0]?.packBalance).toBe(33);
             expect(afterRefill[0]?.lastTierGrant).toBeGreaterThan(
                 Date.now() - 5000,
             );
@@ -102,7 +102,7 @@ describe("Tier System End-to-End", () => {
             const _executionContext = createExecutionContext();
 
             // Setup diverse user base
-            // Hourly tiers (spore, seed) get incremental add; daily tiers get hard reset
+            // All tiers get hourly incremental refill
             const users = [
                 {
                     id: "free-user",
@@ -110,9 +110,9 @@ describe("Tier System End-to-End", () => {
                     expectedPollen: 0.01,
                 },
                 { id: "basic-user", tier: "seed", expectedPollen: 0.15 },
-                { id: "pro-user", tier: "flower", expectedPollen: 10 },
-                { id: "enterprise-user", tier: "nectar", expectedPollen: 20 },
-                { id: "router-user", tier: "router", expectedPollen: 500 },
+                { id: "pro-user", tier: "flower", expectedPollen: 0.4 },
+                { id: "enterprise-user", tier: "nectar", expectedPollen: 0.8 },
+                { id: "router-user", tier: "router", expectedPollen: 10 },
             ];
 
             // Create all users with depleted balances
@@ -342,7 +342,7 @@ describe("Tier System End-to-End", () => {
     });
 
     describe("Tier Migration Integrity", () => {
-        test("users migrated from Polar maintain their tier and get daily refills", async () => {
+        test("users migrated from Polar maintain their tier and get hourly refills", async () => {
             const db = drizzle(env.DB);
             const _executionContext = createExecutionContext();
 
@@ -394,7 +394,7 @@ describe("Tier System End-to-End", () => {
                     });
             }
 
-            // Run daily refill
+            // Run hourly refill
             await triggerTierRefill();
 
             // Verify correct refills
@@ -407,7 +407,7 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = 'migrated-active'`)
                 .limit(1);
 
-            expect(activeUser[0]?.tierBalance).toBe(20); // Nectar tier
+            expect(activeUser[0]?.tierBalance).toBe(0.8); // Nectar tier (additive: MIN(15 + 0.8, 0.8) = 0.8, capped)
             expect(activeUser[0]?.packBalance).toBe(200); // Unchanged
 
             const depletedUser = await db
@@ -419,7 +419,7 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = 'migrated-depleted'`)
                 .limit(1);
 
-            expect(depletedUser[0]?.tierBalance).toBe(10); // Flower tier
+            expect(depletedUser[0]?.tierBalance).toBe(0.4); // Flower tier (additive: MIN(0 + 0.4, 0.4) = 0.4)
             expect(depletedUser[0]?.packBalance).toBe(50); // Unchanged
         });
     });
@@ -458,17 +458,17 @@ describe("Tier System End-to-End", () => {
                 .set({ tier: "flower" })
                 .where(sql`${userTable.id} = ${userId}`);
 
-            // Run daily refill
+            // Run hourly refill
             await triggerTierRefill();
 
-            // User should get flower tier amount (10), not seed (3)
+            // User should get flower tier amount (0.4), not seed (0.15)
             const result = await db
                 .select({ tierBalance: userTable.tierBalance })
                 .from(userTable)
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            expect(result[0]?.tierBalance).toBe(10);
+            expect(result[0]?.tierBalance).toBe(0.4);
         });
 
         test("crypto balance is consumed before pack balance", async () => {

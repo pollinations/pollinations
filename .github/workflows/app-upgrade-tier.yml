@@ -238,20 +238,20 @@ jobs:
               if (result.success === true) {
                 // === CELEBRATE ON PR (always - for both apps and code) ===
                 const prMessage = result.type === 'app'
-                  ? `## 🎉 App Added & Verified!\n\nThis PR added **@${result.user}**'s app to the [pollinations.ai showcase](https://pollinations.ai).\n\n### 🌸 Flower Tier Activated!\n\nUser upgraded to **Flower tier** (10 pollen/day).\n\nSee issue #${targetNumber} for full details.`
-                  : `## 🎉 Contribution Merged & Verified!\n\nThank you **@${result.user}** for your contribution to pollinations.ai!\n\n### 🌸 Flower Tier Activated!\n\nYou've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`;
-                
+                  ? `## 🎉 App Added & Verified!\n\nThis PR added **@${result.user}**'s app to the [pollinations.ai showcase](https://pollinations.ai).\n\n### 🌸 Flower Tier Activated!\n\nUser upgraded to **Flower tier** (0.4 pollen/hour).\n\nSee issue #${targetNumber} for full details.`
+                  : `## 🎉 Contribution Merged & Verified!\n\nThank you **@${result.user}** for your contribution to pollinations.ai!\n\n### 🌸 Flower Tier Activated!\n\nYou've been upgraded to **Flower tier** which grants you **0.4 pollen per hour**!\n\n⏰ **How it works:** Your pollen balance refills every hour. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`;
+
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
                   body: prMessage
                 });
-                
+
 
                 // === CELEBRATE ON ISSUE + CLOSE (apps only) ===
                 if (isIssue) {
-                  const issueMessage = `## 🎉 App Approved & Verified!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to pollinations.ai! 🌻`;
+                  const issueMessage = `## 🎉 App Approved & Verified!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **0.4 pollen per hour**!\n\n⏰ **How it works:** Your pollen balance refills every hour. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to pollinations.ai! 🌻`;
 
                   await github.rest.issues.createComment({
                     owner: context.repo.owner,
@@ -275,7 +275,7 @@ jobs:
                 }
               } else {
                 // User not registered
-                const failMessage = `### ⚠️ Action Required: Claim Your Flower Tier\n\n@${result.user}, your contribution has been merged but we couldn't find your account to upgrade your tier.\n\n**To claim your 🌸 Flower tier (10 pollen/day):**\n1. Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) using GitHub\n2. Reply to this ${isIssue ? 'issue' : 'PR'} once you've signed up\n\nWe'll upgrade your tier once you're registered. Thanks for contributing! 🌻`;
+                const failMessage = `### ⚠️ Action Required: Claim Your Flower Tier\n\n@${result.user}, your contribution has been merged but we couldn't find your account to upgrade your tier.\n\n**To claim your 🌸 Flower tier (0.4 pollen/hour):**\n1. Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) using GitHub\n2. Reply to this ${isIssue ? 'issue' : 'PR'} once you've signed up\n\nWe'll upgrade your tier once you're registered. Thanks for contributing! 🌻`;
                 
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,

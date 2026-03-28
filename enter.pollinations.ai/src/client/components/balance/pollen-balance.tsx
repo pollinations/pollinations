@@ -48,13 +48,13 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
             style={style}
             title={title}
         >
-            {percentage > 15 && (
-                <div className="absolute inset-0 flex items-center justify-center gap-1">
-                    <span className={`${textColor} font-bold text-sm`}>
-                        {label} {formatPollen(value)}
-                    </span>
-                </div>
-            )}
+            <div className="absolute inset-0 flex items-center justify-center gap-1">
+                <span
+                    className={`${textColor} font-bold text-sm whitespace-nowrap`}
+                >
+                    {label} {formatPollen(value)}
+                </span>
+            </div>
         </div>
     );
 };
@@ -83,14 +83,21 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     }
 
     const rawPaidPercentage = calculatePercentage(displayPaid, totalPollen);
-    const rawFreePercentage = calculatePercentage(displayTier, totalPollen);
 
-    // Ensure paid segment is always visible (min 18% width to fit label)
-    const MIN_SEGMENT = 18;
-    const paidPercentage =
-        totalPollen > 0 ? Math.max(MIN_SEGMENT, rawPaidPercentage) : 50;
-    const freePercentage =
-        totalPollen > 0 ? Math.min(100 - MIN_SEGMENT, rawFreePercentage) : 50;
+    // Ensure both segments are always visible (min width to fit labels)
+    const MIN_SEGMENT = 20;
+    let paidPercentage: number;
+    let freePercentage: number;
+    if (totalPollen > 0) {
+        paidPercentage = Math.max(
+            MIN_SEGMENT,
+            Math.min(100 - MIN_SEGMENT, rawPaidPercentage),
+        );
+        freePercentage = 100 - paidPercentage;
+    } else {
+        paidPercentage = 50;
+        freePercentage = 50;
+    }
 
     return (
         <Panel color="purple">

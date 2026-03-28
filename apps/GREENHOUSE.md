@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **701** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **703** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -199,17 +199,18 @@
 | [🎹 AI MIDI GENERATOR](https://midi-aigenerator.vercel.app/) | Generate multitrack MIDI files from plain-language prompts in the browser with AI MIDI GENERATOR, a free tool for producers, songwriters, and game developers. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 Chorvanto](https://chorvanto.randever.com) | Generate original music videos with Chorvanto, an AI-powered platform that formats and distributes them to multiple social media platforms. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 Aladiah Gen](https://aladiah-gen.vercel.app/) | Generate TikTok Shop, Instagram Reels, and YouTube Shorts prompt ideas for creators, affiliates, and shop owners using Aladiah Gen. | [@web](https://github.com/web) |  | 🫧 |
+| [🧰 Pollinations Tools Hub](https://lokiodinson.netlify.app/ai) | A free open-source collection of 3 browser-based AI tools powered entirely by Pollinations.ai  no sign-up no installation required. Includes a Document Translator Gemini 2.5 Flash-Lite Voice Studio tt | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 SRTAudio  Video IA Pro](https://spiffy-licorice-92706f.netlify.app) | SRTAudio  Video IA Pro generates browser-based videos from uploaded MP3/WAV audio or SRT files and uses Pollinations Audio API and Whisper for transcription and timing. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 AI City Diorama Generator](https://www.youtube.com/@WhatIF-KA/shorts) | Generates cinematic miniature city dioramas using the AI City Diorama Generator and automates an n8n workflow to publish the results to YouTube Shorts. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 Generador y Editor de Imgenes y Videos con Pollina](https://juanrivera126.github.io/Generador-y-Editor-de-Im-genes-y-Videos-con-Pollinations/) | Genera y edita imágenes y videos con modelos y plantillas. Generador y Editor de Imgenes y Videos con Pollina exporta en PNG, JPG y MP4, ajusta resolución, recorta clips y aplica filtros. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 CINESONICS](https://cinesonics.vercel.app/) | Generate cinematic soundtrack concepts by describing a movie vibe to get AI tracklist and album cover. | [@web](https://github.com/web) |  | 🫧 |
 | [🎛️ Mharomo.systems](https://mharomo.systems) | Generate AI images, music, videos, and voice content from simple prompts. | [@web](https://github.com/web) |  | 🫧 |
-| [🎬 AI Clip Master](https://ai-clip-master-4f3tdvgjr3zcg3hmj8phy7.streamlit.app/) | AI-powered modular video processing tool for content creators. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 27 apps</summary>
+<details><summary>Show all 28 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🎬 AI Clip Master](https://ai-clip-master-4f3tdvgjr3zcg3hmj8phy7.streamlit.app/) | AI-powered modular video processing tool for content creators. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 P2S](https://github.com/Rakesh-ada/P2S) | Image consistency engine for AI filmmaking with scene memory and auto-repair. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 AI TikTok Video Generator](https://tiktok.pixpal.chat) | AI tool that generates catchy hooks and applies trending effects in-browser. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 AvaTube](https://avatube.ai/) | AI-powered social media where avatars create content without cameras. | [@web](https://github.com/web) |  | 🫧 |
@@ -333,6 +334,7 @@
 | [🚀 HyperRush AI](https://hyperrushnet.github.io/hrn-ai/) | Produces short-form videos and social clips from scripts, images, and audio; HyperRush AI automates editing, captioning, aspect-ratio conversion, and export. | [@web](https://github.com/web) |  | 🫧 |
 | [💬 PolliChatter](https://pollichatter.netlify.app/) | Enable PolliChatter, a dark-themed chat interface for Pollinations.ai, to use Pollinations text, image, and audio APIs for interacting with all available models in one place. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 PezzAI](chat.pezzai.com) | Provides free AI tools via a website under the name PezzAI, funded and maintained by a single developer. | [@web](https://github.com/web) |  | 🫧 |
+| [🤖 SentIQGPT](https://sentiqgpt.sentiqlabs.com/) | Provides browser-based AI assistant features in SentIQGPT, including chat memory, file analysis, and image generation. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 Nothinq](nothinq.vercel.app) | Generate text, image, and video with 30 AI models in Nothinq, a unified chat workspace. All generation is routed through the Pollinations.ai API and supports BYOP. | [@web](https://github.com/web) |  | 🫧 |
 
 <details><summary>Show all 130 apps</summary>
@@ -675,14 +677,15 @@
 | [🌸 OrchidLLM](https://orchidllm.vercel.app) | Generate images, text, video, audio, and transcriptions with OrchidLLM. | [@web](https://github.com/web) |  | 🫧 |
 | [⚡ PollinationsAiPS](1894723) | Integrate Pollinations.ai into PowerShell using PollinationsAiPS to generate images, text, and audio from scripts. | [@cli](https://github.com/cli) |  | 🫧 |
 | [🛠️ opencode-pollinations-conf](194648035) | Generate an opencode.json configuration file using opencode-pollinations-conf, populated with text models from Pollinations.aihttpsenter.pollinations | [@cli](https://github.com/cli) |  | 🫧 |
+| [🌱 Pollinations Seed Plan Qualification](https://app-j.pl/Pollinations/) | Analyze a public GitHub user profile with Pollinations Seed Plan Qualification to calculate points per the Pollinations Seed Plan scoring system and display the score and breakdown. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 NEURGenerator for ESP32-S3](113021062) | Uses Pollinations.aihttpspollinations.ai API on ESP32-S3 with PSRAM and WDT support in NEURGenerator for ESP32-S3. | [@library](https://github.com/library) |  | 🫧 |
 | [🧭 Gratisfy](https://gratisfy.xyz/) | Gratisfy allows brings all the free AI inference providers including pollinations in to one place. Whether its a unified API access point Benchmark data or just finding new free providers Gratisfy is | [@web](https://github.com/web) |  | 🫧 |
-| [🤖 PromptPilot MCP Server](https://promptpilot.club/mcp) | Generate images, video, and audio directly in Claude, Code, Cursor, Windsurf, or any MCP-compatible AI agent. Powered by Pollinations API with 20 models including Flux GPT-Image-1 Imagen. | [@api](https://github.com/api) |  | 🫧 |
 
-<details><summary>Show all 123 apps</summary>
+<details><summary>Show all 124 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🤖 PromptPilot MCP Server](https://promptpilot.club/mcp) | Generate images, video, and audio directly in Claude, Code, Cursor, Windsurf, or any MCP-compatible AI agent. Powered by Pollinations API with 20 models including Flux GPT-Image-1 Imagen. | [@api](https://github.com/api) |  | 🫧 |
 | [🗃️ Vibe DB](16942845) | Manage and query datasets in Vibe DB. This entry is the developer's second app submission. | [@web](https://github.com/web) |  | 🫧 |
 | [🔁 OpenRelay](https://cazyundee.github.io/OpenRelay) | Lightweight Windows desktop overlay routing queries to multiple AI models via Pollinations API with text generation across 9 models and image generation across 4 models. | [@windows](https://github.com/windows) |  | 🫧 |
 | [🤖 AiApps](https://connor.ct.ws/aiapps/) | Generates projects in the browser from a few prompts using AiApps and pollinations.ai, provides a virtual project workspace and lets users download project files. | [@web](https://github.com/web) |  | 🫧 |

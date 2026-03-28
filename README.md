@@ -21,6 +21,9 @@
 | Name | Description | Author |
 |------|-------------|--------|
 | [🤖 PezzAI](chat.pezzai.com) | Provides free AI tools via a website under the name PezzAI, funded and maintained by a single developer. | [@web](https://github.com/web) |
+| [🤖 SentIQGPT](https://sentiqgpt.sentiqlabs.com/) | Provides browser-based AI assistant features in SentIQGPT, including chat memory, file analysis, and image generation. | [@web](https://github.com/web) |
+| [🧰 Pollinations Tools Hub](https://lokiodinson.netlify.app/ai) | A free open-source collection of 3 browser-based AI tools powered entirely by Pollinations.ai  no sign-up no installation required. Includes a Document Translator Gemini 2.5 Flash-Lite Voice Studio tt | [@web](https://github.com/web) |
+| [🌱 Pollinations Seed Plan Qualification](https://app-j.pl/Pollinations/) | Analyze a public GitHub user profile with Pollinations Seed Plan Qualification to calculate points per the Pollinations Seed Plan scoring system and display the score and breakdown. | [@web](https://github.com/web) |
 | [🏫 Niyam School](https://niyam.school/) | Manage daily school operations with Niyam School by tracking attendance, schedules, communications, and administrative tasks. | [@web](https://github.com/web) |
 | [💡 IdeaPulley](https://ideapulley.indevs.in) | Generate, validate, and evolve ideas with IdeaPulley using AI-driven multi-agent reasoning systems to support individuals and teams. | [@web](https://github.com/web) |
 | [🎬 Aladiah Gen](https://aladiah-gen.vercel.app/) | Generate TikTok Shop, Instagram Reels, and YouTube Shorts prompt ideas for creators, affiliates, and shop owners using Aladiah Gen. | [@web](https://github.com/web) |

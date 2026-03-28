@@ -13,7 +13,6 @@ export const AVAILABLE_MODELS = [
   { id: 'kimi', label: 'Kimi' },
   { id: 'gemini-fast', label: 'Gemini' },
   { id: 'claude-fast', label: 'Claude' },
-  { id: 'glm', label: 'GLM' },
 ] as const;
 
 export function getStoredApiKey(): string | null {

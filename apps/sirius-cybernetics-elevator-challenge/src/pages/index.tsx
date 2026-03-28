@@ -24,6 +24,7 @@ export default function Index() {
     const gameState = useGameState(messages);
     const [inputPrompt, setInputPrompt] = useState("");
     const { apiKey, login, logout } = useBYOP();
+    const [guideLoading, setGuideLoading] = useState(false);
 
     useGuideMessages(gameState, messages, addMessage);
     useAutonomousConversation(gameState, messages, addMessage);
@@ -208,19 +209,23 @@ export default function Index() {
                     {getInstructionMessage()}
 
                     <Button
-                        onClick={
-                            gameState.conversationMode === "autonomous"
-                                ? handlePersonaSwitch
-                                : handleGuideAdvice
-                        }
+                        onClick={async () => {
+                            if (gameState.conversationMode === "autonomous") {
+                                handlePersonaSwitch();
+                            } else {
+                                setGuideLoading(true);
+                                await handleGuideAdvice();
+                                setGuideLoading(false);
+                            }
+                        }}
                         className={`${
                             gameState.conversationMode === "autonomous"
                                 ? "bg-yellow-600 hover:bg-yellow-700 text-white"
                                 : "bg-gray-700 text-green-400 hover:bg-gray-600"
                         } text-xs py-1 px-2`}
-                        disabled={gameState.isLoading}
+                        disabled={guideLoading || gameState.isLoading}
                     >
-                        {gameState.isLoading
+                        {guideLoading
                             ? "Consulting the Guide..."
                             : gameState.conversationMode === "autonomous"
                                 ? "Rewind Time"

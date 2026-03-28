@@ -1,0 +1,33 @@
+{
+  "pr_number": 9663,
+  "title": "Add vicharlok to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9663",
+  "merged_at": "2026-03-28T07:54:34Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "VicharLok joins the garden",
+    "blurb": "VicharLok has sprouted in our community greenhouse! It's a fresh community feed app where users can browse and chat about topics from tech to sports.",
+    "summary": "Added VicharLok, a community feed and discussion platform, to the pollinations.ai app showcase.",
+    "impact": "Users can now discover and explore VicharLok's topic-based community feeds directly from our app directory.",
+    "keywords": [
+      "community",
+      "app showcase",
+      "vicharlok",
+      "social feed"
+    ],
+    "visual_concept": "VicharLok is a community feed/forum app. Visualizing this as a cozy community bulletin board or public square where the bee is reading or pinning topics (tech, sports, world news).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, looking at a wooden community bulletin board covered in colorful pixelated notes and pictures. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9663.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, looking at a wooden community bulletin board covered in colorful pixelated notes and pictures. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T07:55:26.451962+00:00",
+  "app_name": "vicharlok",
+  "app_url": "https://www.vicharlok.com/"
+}

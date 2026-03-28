@@ -1,0 +1,33 @@
+{
+  "pr_number": 9578,
+  "title": "fix: remove phantom LiteAI entry from APPS.md",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9578",
+  "merged_at": "2026-03-28T11:14:38Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the app garden",
+    "blurb": "We did a little weeding in the app showcase and removed a phantom entry. Keeping the community garden fresh, accurate, and full of real projects!",
+    "summary": "Removed a non-existent 'LiteAI' entry from the community apps showcase.",
+    "impact": "The community showcase is now more accurate, ensuring users only discover active and real projects.",
+    "keywords": [
+      "apps",
+      "showcase",
+      "cleanup",
+      "community"
+    ],
+    "visual_concept": "Polly the bee doing some gardening, removing a dead plant (representing the dead link) from a vibrant garden of glowing code-plants. Nomnom creature helping by eating the dead plant.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, pulling a small withered pixel plant from a vibrant digital garden of glowing code-plants. The round Nomnom creature happily eats the withered leaves. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9578.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, pulling a small withered pixel plant from a vibrant digital garden of glowing code-plants. The round Nomnom creature happily eats the withered leaves. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T11:15:28.450858+00:00"
+}

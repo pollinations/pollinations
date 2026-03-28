@@ -1,0 +1,34 @@
+{
+  "pr_number": 9662,
+  "title": "Add AI-Image-Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9662",
+  "merged_at": "2026-03-28T07:52:33Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh pixels in the greenhouse",
+    "blurb": "A new AI Image Generator app just sprouted in the community greenhouse. Built with React and Cloudflare Workers, it features deterministic seed generation for smooth pixel-pushing.",
+    "summary": "Added the AI-Image-Generator app to the community showcase, featuring a React frontend and Cloudflare Workers backend.",
+    "impact": "Users can explore a new community-built image generation tool with deterministic seeds and built-in rate limiting.",
+    "keywords": [
+      "community",
+      "app",
+      "image-generation",
+      "react",
+      "cloudflare"
+    ],
+    "visual_concept": "A new app added to the 'Greenhouse' (community apps). Depict Polly the bee as a gardener in a greenhouse, tending to a new plant that grows a glowing picture frame (representing the image generator).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, watering a glowing code-plant inside a glass greenhouse. The plant is blooming into a tiny, colorful picture frame. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9662.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, watering a glowing code-plant inside a glass greenhouse. The plant is blooming into a tiny, colorful picture frame. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T07:53:47.561388+00:00",
+  "app_name": "AI-Image-Generator",
+  "app_url": "https://main.ai-image-generator-5li.pages.dev/"
+}

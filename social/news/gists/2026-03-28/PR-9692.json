@@ -1,0 +1,34 @@
+{
+  "pr_number": 9692,
+  "title": "fix: websim use gen.pollinations.ai with claude-large",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9692",
+  "merged_at": "2026-03-28T15:59:52Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Websim gets a brain transplant",
+    "blurb": "Websim just got a major upgrade. It now defaults to Claude-large and features a new landing page where you can pick your preferred AI model before spinning up a simulation.",
+    "summary": "The Websim app has been updated to use the gen.pollinations.ai endpoint, defaulting to claude-large, and now features a landing page with a model selector.",
+    "impact": "You can now choose your preferred model—including Claude, Gemini, GLM, and Kimi—right from the new starting interface.",
+    "keywords": [
+      "websim",
+      "claude",
+      "models",
+      "ui",
+      "api"
+    ],
+    "visual_concept": "Websim is about generating web interfaces, and this PR adds a model selector and switches the default to Claude. The visual should feature Polly the bee and the Monitor Robot interacting with a retro computer that displays a dropdown menu or a selection of glowing 'brains' or gems representing different models.",
+    "image_prompt": "Cozy pixel art scene of a cute pixel art bee mascot (yellow body, dark brown stripes, pink blush, small blue wings) and a chunky monitor-head robot looking at a retro computer screen displaying a dropdown menu of different glowing gems. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9692.jpg",
+    "prompt": "Cozy pixel art scene of a cute pixel art bee mascot (yellow body, dark brown stripes, pink blush, small blue wings) and a chunky monitor-head robot looking at a retro computer screen displaying a dropdown menu of different glowing gems. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-28T16:00:38.489176+00:00"
+}

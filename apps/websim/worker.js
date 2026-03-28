@@ -22,6 +22,50 @@ Links to subpages should always be relative without a leading slash. Don't use J
 You are targeting modern browsers.
 Please include open-graph metatags and use a Pollinations image for the thumbnail / image preview. include 'og:image:width' and 'og:image:height`;
 
+function landingPage() {
+    return new Response(
+        `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>websim</title>
+<style>
+body{font-family:monospace;padding:2em}
+textarea,select,button{display:block;margin-bottom:8px}
+textarea{width:100%;max-width:480px;height:100px}
+</style>
+</head>
+<body>
+<form onsubmit="go(event)">
+<textarea name="prompt" placeholder="describe anything..." autofocus required></textarea>
+<select name="model">
+<option value="claude-large">claude-large</option>
+<option value="gemini">gemini</option>
+<option value="gemini-fast">gemini-fast</option>
+<option value="glm">glm</option>
+<option value="kimi">kimi</option>
+</select>
+<button type="submit">generate</button>
+</form>
+<p style="margin-top:2em;font-size:0.85em">
+<a href="https://pollinations.ai">pollinations.ai</a> · <a href="https://github.com/pollinations/pollinations/tree/main/apps/websim">source code</a>
+</p>
+<script>
+function go(e){
+e.preventDefault();
+const f=e.target;
+const p=encodeURIComponent(f.prompt.value);
+const m=f.model.value;
+location.href='/'+p+'/?model='+m;
+}
+</script>
+</body>
+</html>`,
+        { headers: { "Content-Type": "text/html; charset=utf-8" } },
+    );
+}
+
 // Main handler function
 export default {
     async fetch(request, env) {
@@ -50,12 +94,7 @@ async function handleRequest(request, env) {
 
     // Extract prompt from path
     const prompt = extractPromptFromPath(path);
-    if (!prompt) {
-        return new Response("Pass a prompt after /", {
-            status: 400,
-            headers: getCorsHeaders(),
-        });
-    }
+    if (!prompt) return landingPage();
 
     // Generate HTML from prompt
     return generateHtml(prompt, request, env);
@@ -196,7 +235,7 @@ async function generateHtml(prompt, request, env) {
  */
 function fetchFromTextApi(prompt, url, env) {
     // Get model from query parameter or use default
-    const model = url.searchParams.get("model") || "openai-large";
+    const model = url.searchParams.get("model") || "claude-large";
 
     // Prepare headers with Bearer token
     const headers = {
@@ -208,7 +247,7 @@ function fetchFromTextApi(prompt, url, env) {
         headers["Authorization"] = `Bearer ${env.TEXT_API_TOKEN}`;
     }
 
-    return fetch("https://text.pollinations.ai/v1/chat/completions", {
+    return fetch("https://gen.pollinations.ai/v1/chat/completions", {
         method: "POST",
         headers,
         body: JSON.stringify({

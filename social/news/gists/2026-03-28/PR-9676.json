@@ -1,0 +1,33 @@
+{
+  "pr_number": 9676,
+  "title": "fix: remove TIER-APP-REVIEW dependency from app-approve",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9676",
+  "merged_at": "2026-03-28T08:58:38Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Rubber stamp ready",
+    "blurb": "Fixed a tiny hiccup in our app approval workflow. Now, adding the approved label works perfectly every time, even if the review label goes missing.",
+    "summary": "Removed the dependency on the TIER-APP-REVIEW label for the app approval GitHub Actions workflow to trigger.",
+    "impact": "Maintainers can now approve community apps more smoothly without workflow skips caused by missing labels.",
+    "keywords": [
+      "github-actions",
+      "workflow",
+      "bug-fix",
+      "app-review"
+    ],
+    "visual_concept": "Polly the bee holding a rubber stamp to approve a document, while the Nomnom creature eats an old 'review' label. Represents fixing the approval workflow dependency.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny rubber stamp, approving a digital document on a clipboard. The round tan nomnom creature happily eats a red 'review' tag nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9676.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny rubber stamp, approving a digital document on a clipboard. The round tan nomnom creature happily eats a red 'review' tag nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-28T08:59:38.921604+00:00"
+}

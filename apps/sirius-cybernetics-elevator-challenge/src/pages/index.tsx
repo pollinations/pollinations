@@ -185,7 +185,7 @@ export default function Index() {
                                 onClick={login}
                                 className="bg-green-700 text-green-100 hover:bg-green-600 border border-green-400 text-sm py-2 px-4"
                             >
-                                Register on Sub-Etha Net
+                                Register on Sub-Etha Net via Pollinations
                             </Button>
                             <p className="text-xs text-gray-500">
                                 DON'T PANIC — it's free and takes 10 seconds.
@@ -218,10 +218,13 @@ export default function Index() {
                                 ? "bg-yellow-600 hover:bg-yellow-700 text-white"
                                 : "bg-gray-700 text-green-400 hover:bg-gray-600"
                         } text-xs py-1 px-2`}
+                        disabled={gameState.isLoading}
                     >
-                        {gameState.conversationMode === "autonomous"
-                            ? "Rewind Time"
-                            : "Don't Panic!"}
+                        {gameState.isLoading
+                            ? "Consulting the Guide..."
+                            : gameState.conversationMode === "autonomous"
+                                ? "Rewind Time"
+                                : "Don't Panic!"}
                     </Button>
                 </div>
 

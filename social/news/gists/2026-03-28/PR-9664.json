@@ -1,0 +1,34 @@
+{
+  "pr_number": 9664,
+  "title": "Add PollenQuill to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9664",
+  "merged_at": "2026-03-28T08:01:54Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "PollenQuill joins the garden",
+    "blurb": "The community greenhouse just got a little more literary. PollenQuill has officially been added to our app showcase!",
+    "summary": "Added the community-built PollenQuill app to the official apps directory and greenhouse.",
+    "impact": "Users can now discover PollenQuill and explore its core features directly from the community showcase.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "pollenquill",
+      "greenhouse"
+    ],
+    "visual_concept": "The name 'PollenQuill' evokes writing, journaling, and feather pens. The visual should feature Polly the bee acting as a writer or interacting with a magical quill pen, symbolizing the new app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny writer's beret, holding a glowing feather quill pen and writing in a chunky digital journal. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9664.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny writer's beret, holding a glowing feather quill pen and writing in a chunky digital journal. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-28T08:03:00.402395+00:00",
+  "app_name": "PollenQuill",
+  "app_url": "https://zevrinbuilds.github.io/Pollendash-engine/"
+}

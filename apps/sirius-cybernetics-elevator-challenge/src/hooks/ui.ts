@@ -1,32 +1,37 @@
 import { useRef, useEffect, useState } from 'react';
 import { Message } from '@/types';
 
-// --- BYOP Auth (following CatGPT pattern) ---
-
 const AUTH_KEY = 'pollinations_api_key';
-const ENTER = 'https://enter.pollinations.ai';
+const ENTER_URL = 'https://enter.pollinations.ai';
+const API_KEY_PREFIX = /^(sk_|plln_pk_|pk_)/;
 
-export const getStoredApiKey = (): string | null => {
+export function getStoredApiKey(): string | null {
   try { return localStorage.getItem(AUTH_KEY); } catch { return null; }
-};
-const storeApiKey = (key: string) => localStorage.setItem(AUTH_KEY, key);
-const clearApiKey = () => localStorage.removeItem(AUTH_KEY);
+}
+
+function storeApiKey(key: string): void {
+  localStorage.setItem(AUTH_KEY, key);
+}
+
+function clearApiKey(): void {
+  localStorage.removeItem(AUTH_KEY);
+}
 
 function extractApiKeyFromFragment(): string | null {
   const hash = window.location.hash.substring(1);
   if (!hash) return null;
   try {
     const key = new URLSearchParams(hash).get('api_key');
-    return key && /^(sk_|plln_pk_|pk_)/.test(key) ? key : null;
+    return key && API_KEY_PREFIX.test(key) ? key : null;
   } catch { return null; }
 }
 
 function getAuthorizeUrl(): string {
   const redirect = window.location.href.split('#')[0];
-  return `${ENTER}/authorize?${new URLSearchParams({ redirect_url: redirect })}`;
+  return `${ENTER_URL}/authorize?${new URLSearchParams({ redirect_url: redirect })}`;
 }
 
-export const useBYOP = () => {
+export function useBYOP() {
   const [apiKey, setApiKey] = useState<string | null>(getStoredApiKey);
 
   useEffect(() => {
@@ -37,25 +42,23 @@ export const useBYOP = () => {
     window.history.replaceState({}, '', window.location.pathname + window.location.search);
   }, []);
 
-  const login = () => { window.location.href = getAuthorizeUrl(); };
-  const logout = () => { clearApiKey(); setApiKey(null); };
+  function login() { window.location.href = getAuthorizeUrl(); }
+  function logout() { clearApiKey(); setApiKey(null); }
 
   return { apiKey, login, logout };
-};
+}
 
-// --- UI Hooks ---
+// UI Hooks
 
-// Scroll management hook
-export const useMessageScroll = (messages: Message[]) => {
+export function useMessageScroll(messages: Message[]) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     ref.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   return ref;
-};
+}
 
-// Input focus management hook
-export const useInput = (isLoading: boolean) => {
+export function useInput(isLoading: boolean) {
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (!isLoading && ref.current) {
@@ -63,4 +66,4 @@ export const useInput = (isLoading: boolean) => {
     }
   }, [isLoading]);
   return { inputRef: ref };
-};
+}

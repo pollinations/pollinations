@@ -5,23 +5,22 @@ import {
 } from '@/types';
 import { getStoredApiKey } from '@/hooks/ui';
 
-const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => {
+function createFetchRequest(messages: PollingsMessage[], jsonMode = true): RequestInit {
   const apiKey = getStoredApiKey();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
   return {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}),
-  },
-  body: JSON.stringify({
-    messages,
-    model: 'openai',
-    response_format: jsonMode ? { type: "json_object" } : undefined,
-    // temperature: 1.2,
-    seed: Math.floor(Math.random() * 1000000)
-  })
-};
-};
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      messages,
+      model: 'openai',
+      response_format: jsonMode ? { type: "json_object" } : undefined,
+      seed: Math.floor(Math.random() * 1000000),
+    }),
+  };
+}
 
 const FALLBACK_RESPONSE: PollingsResponse = {
   choices: [{

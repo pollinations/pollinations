@@ -1,0 +1,34 @@
+{
+  "pr_number": 9687,
+  "title": "Add Pollinations Tools Hub to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9687",
+  "merged_at": "2026-03-28T10:10:14Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The Swiss Army Knife of the hive",
+    "blurb": "Someone built a whole suite of tools using our API and dropped it in the greenhouse. The Pollinations Tools Hub packs a document translator, voice studio, and Gemini chat into one neat, browser-based package.",
+    "summary": "Added the community-built Pollinations Tools Hub to the app showcase, featuring three browser-based AI tools powered by the API.",
+    "impact": "Users can now access a free, open-source suite of tools including a document translator and voice studio without any sign-ups.",
+    "keywords": [
+      "community",
+      "showcase",
+      "tools",
+      "voice",
+      "translation"
+    ],
+    "visual_concept": "A cozy workshop or greenhouse hub representing the 'Tools Hub'. Polly the bee wearing a toolbelt, standing next to a workbench with 3 distinct glowing tools (a microphone for voice, a document/scroll for translation, and a glowing gem for Gemini).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny toolbelt, standing proudly at a wooden workbench in a glowing greenhouse. On the bench are three glowing items: a retro microphone, a glowing document, and a shiny gem. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9687.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny toolbelt, standing proudly at a wooden workbench in a glowing greenhouse. On the bench are three glowing items: a retro microphone, a glowing document, and a shiny gem. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T10:11:03.311170+00:00",
+  "app_name": "Pollinations Tools Hub",
+  "app_url": "https://lokiodinson.netlify.app/ai"
+}

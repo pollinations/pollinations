@@ -45,7 +45,14 @@ function parseApps() {
         if (cols.length < 15) continue;
 
         const name = cols[1];
-        const url = cols[2];
+        const webUrl = cols[2];
+        const repo = cols[9] || "";
+        // Use web URL if available, otherwise fall back to repo URL
+        const url = webUrl?.startsWith("http")
+            ? webUrl
+            : repo?.startsWith("http")
+              ? repo
+              : null;
         apps.push({ lineIndex: i, name, url });
     }
 

@@ -47,8 +47,8 @@ jobs:
           else
             echo "changed=true" >> $GITHUB_OUTPUT
 
-            # Extract dead app list for PR body
-            DEAD_LIST=$(grep '^ ' /tmp/dead-apps.log | grep '|' | sed 's/^ */- /' || true)
+            # Extract dead app list for PR body (only lines after the 🗑️ marker)
+            DEAD_LIST=$(sed -n '/Dead apps:/,/^$/p' /tmp/dead-apps.log | grep '|' | sed 's/^ */- /' || true)
             COUNT=$(git diff apps/APPS.md | grep '^-|' | grep -v '^\-\-\-' | wc -l | tr -d ' ')
 
             {

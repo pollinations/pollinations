@@ -26,6 +26,10 @@ NOWPAYMENTS_ENV=sandbox
 TESTING_REFERRER=optional_testing_referrer
 PLN_ENTER_TOKEN=optional_pln_enter_token
 
+# x402 Crypto Payments (https://x402.org)
+# USDC receiving address on Base
+X402_SERVER_ADDRESS=0x717906d95394B73B2508A56E21bBe7457788A83f
+
 # ElevenLabs (text-to-speech)
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
 

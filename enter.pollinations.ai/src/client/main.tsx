@@ -1,6 +1,7 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { type FC, type PropsWithChildren, StrictMode } from "react";
 import ReactDOM from "react-dom/client";
+import { Web3Provider } from "./web3-provider";
 import { routeTree } from "./routeTree.gen";
 
 // Register the router instance for type safety
@@ -15,7 +16,11 @@ const router = createRouter({
 });
 
 const App: FC<PropsWithChildren> = () => {
-    return <RouterProvider router={router} />;
+    return (
+        <Web3Provider>
+            <RouterProvider router={router} />
+        </Web3Provider>
+    );
 };
 
 const rootElement = document.getElementById("root");

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9671,
+  "title": "Add Flowra to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9671",
+  "merged_at": "2026-03-28T08:23:57Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Flowra blooms in the greenhouse",
+    "blurb": "Flowra has taken root in our app ecosystem! You can now wire up beautiful, node-based AI workflows for your real-world projects.",
+    "summary": "Added Flowra, a visual node-based AI workflow builder, to the community apps showcase.",
+    "impact": "Creators can now discover and use Flowra to visually map out and execute complex AI tasks.",
+    "keywords": [
+      "community",
+      "apps",
+      "flowra",
+      "workflows",
+      "nodes"
+    ],
+    "visual_concept": "Flowra implies flora/plants, and node-based workflows imply graphs and connections. Depict Polly the bee in a cozy greenhouse, connecting glowing nodes that look like blooming flowers or vines.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot in a digital greenhouse, connecting glowing lime green (#ecf874) nodes together with glowing vines to build a workflow. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9671.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot in a digital greenhouse, connecting glowing lime green (#ecf874) nodes together with glowing vines to build a workflow. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T08:25:06.618972+00:00",
+  "app_name": "Flowra",
+  "app_url": "https://flowra-8mj.pages.dev/"
+}

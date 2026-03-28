@@ -1,0 +1,34 @@
+{
+  "pr_number": 9683,
+  "title": "Add IdeaPulley to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9683",
+  "merged_at": "2026-03-28T09:57:08Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A pulley for your thoughts",
+    "blurb": "IdeaPulley just landed in the greenhouse! It uses multi-agent reasoning to help you generate, validate, and evolve your next big idea.",
+    "summary": "Added IdeaPulley, an AI-driven multi-agent reasoning system for generating and validating ideas, to the community showcase.",
+    "impact": "Users can now discover IdeaPulley in the apps directory to help brainstorm and evolve their projects.",
+    "keywords": [
+      "community",
+      "showcase",
+      "ideapulley",
+      "agents",
+      "brainstorming"
+    ],
+    "visual_concept": "IdeaPulley suggests mechanics, lifting, and ideas (lightbulbs). The scene should feature Polly the bee operating a literal pulley system to hoist a glowing lightbulb (idea) out of a garden, assisted by tiny robot agents.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny inventor's apron, operating a wooden pulley system that hoists a glowing giant lightbulb out of a lime green (#ecf874) flower bed. Several tiny robot helpers are analyzing the lightbulb. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9683.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny inventor's apron, operating a wooden pulley system that hoists a glowing giant lightbulb out of a lime green (#ecf874) flower bed. Several tiny robot helpers are analyzing the lightbulb. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-03-28T09:57:58.935727+00:00",
+  "app_name": "IdeaPulley",
+  "app_url": "https://ideapulley.indevs.in"
+}

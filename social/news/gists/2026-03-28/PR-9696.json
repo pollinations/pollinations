@@ -1,0 +1,34 @@
+{
+  "pr_number": 9696,
+  "title": "chore: replace health check with simple dead app removal",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9696",
+  "merged_at": "2026-03-28T17:52:49Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the app garden",
+    "blurb": "We've simplified how we keep the app directory fresh. Instead of a complex health scoring system, we now have a friendly weekly bot that gently prunes apps that have gone offline.",
+    "summary": "Replaced the complex daily app health check system with a simpler weekly workflow that identifies and removes dead links after multiple verification attempts.",
+    "impact": "Maintains a cleaner, more reliable app directory for the community by automatically pruning broken projects while reducing unnecessary CI noise.",
+    "keywords": [
+      "infrastructure",
+      "cleanup",
+      "app-directory",
+      "github-actions",
+      "maintenance"
+    ],
+    "visual_concept": "The PR is about removing dead apps/links and cleaning up the directory. Metaphor: Pruning dead leaves/plants from a garden. Characters: Polly the bee wearing a gardener's hat, and the Nomnom creature eating the dead leaves/code.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, gently pruning withered brown code-plants from a lime green (#ecf874) flower box. The round tan nomnom creature sits nearby, happily eating the dried leaves. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9696.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, gently pruning withered brown code-plants from a lime green (#ecf874) flower box. The round tan nomnom creature sits nearby, happily eating the dried leaves. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-28T17:53:39.620893+00:00"
+}

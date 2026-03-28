@@ -1,0 +1,34 @@
+{
+  "pr_number": 9702,
+  "title": "fix: CatGPT URL model param + code cleanup",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9702",
+  "merged_at": "2026-03-28T22:53:15Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Purr-fecting CatGPT",
+    "blurb": "Fixed a pesky bug in CatGPT where URL model parameters were getting overwritten. Plus, we gave the codebase a nice little grooming session to keep things running smoothly.",
+    "summary": "Fixed an issue in CatGPT where the URL model parameter was being overwritten during authentication initialization, alongside general code cleanup.",
+    "impact": "Users can now reliably link to specific models in CatGPT using URL parameters without them resetting on load.",
+    "keywords": [
+      "catgpt",
+      "bugfix",
+      "url-parameters",
+      "cleanup",
+      "refactor"
+    ],
+    "visual_concept": "CatGPT is represented by a cute pixel cat. The bug fix and code cleanup are represented by Polly the Bee doing some light sweeping/cleaning around the cat's retro computer setup.",
+    "image_prompt": "Cozy pixel art scene of a cute 8-bit cat sitting on a retro computer monitor, holding a glowing URL link in its paws. The pollinations.ai bee mascot hovers nearby wearing a tiny bandana, sweeping up small pixelated bugs with a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9702.jpg",
+    "prompt": "Cozy pixel art scene of a cute 8-bit cat sitting on a retro computer monitor, holding a glowing URL link in its paws. The pollinations.ai bee mascot hovers nearby wearing a tiny bandana, sweeping up small pixelated bugs with a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-28T22:54:02.191935+00:00"
+}

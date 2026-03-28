@@ -6,7 +6,12 @@ export type PollenPack = {
     pollenGrant: number;
     checkoutName: string;
     checkoutDescription: string;
+    checkoutImageUrl: string;
+    taxCode: string;
 };
+
+const CHECKOUT_IMAGE_URL = "https://enter.pollinations.ai/icon-512.png";
+const POLLEN_TAX_CODE = "txcd_10103001";
 
 const BASE_POLLEN_PACKS: ReadonlyArray<{
     amountUsd: number;
@@ -42,8 +47,10 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
             amountUsd,
             bonusPollen,
             pollenGrant,
-            checkoutName: `${formatPollenPackValue(pollenGrant)} Pollen`,
-            checkoutDescription: `${formatPollenPackValue(amountUsd)} base + ${formatPollenPackValue(bonusPollen)} bonus during beta.`,
+            checkoutName: `🐝 ${formatPollenPackValue(amountUsd)} Pollen + ${formatPollenPackValue(bonusPollen)} BONUS`,
+            checkoutDescription: `Tiny bits of creative energy for the pollinations.ai ecosystem. During beta this pack includes ${formatPollenPackValue(bonusPollen)} bonus pollen, for ${formatPollenPackValue(pollenGrant)} total.`,
+            checkoutImageUrl: CHECKOUT_IMAGE_URL,
+            taxCode: POLLEN_TAX_CODE,
         };
     },
 );

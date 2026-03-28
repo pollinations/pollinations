@@ -68,6 +68,8 @@ export const stripeRoutes = new Hono<Env>()
                             product_data: {
                                 name: pack.checkoutName,
                                 description: pack.checkoutDescription,
+                                images: [pack.checkoutImageUrl],
+                                tax_code: pack.taxCode,
                             },
                         },
                         quantity: 1,

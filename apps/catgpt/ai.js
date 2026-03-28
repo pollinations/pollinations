@@ -6,7 +6,6 @@ const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
 const SELFIE_CATGPT = "https://media.pollinations.ai/a84b58d293d69f35";
-const DEFAULT_KEY = "pk_w3kAO902fOeFYiNm";
 const AUTH_KEY = "pollinations_api_key";
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
@@ -21,7 +20,7 @@ export const getStoredApiKey = () => {
 export const storeApiKey = (key) => localStorage.setItem(AUTH_KEY, key);
 export const clearApiKey = () => localStorage.removeItem(AUTH_KEY);
 export const isLoggedIn = () => !!getStoredApiKey();
-const getActiveKey = () => getStoredApiKey() || DEFAULT_KEY;
+const getActiveKey = () => getStoredApiKey();
 
 export function extractApiKeyFromFragment() {
     const hash = window.location.hash.substring(1);
@@ -39,7 +38,7 @@ export function getAuthorizeUrl() {
     return `${ENTER}/authorize?${new URLSearchParams({
         redirect_url: redirect,
         budget: "5",
-        models: "nanobanana,nanobanana-2,nanobanana-pro,gptimage,gptimage-large",
+        models: "gptimage,nanobanana",
         permissions: "profile,balance",
     })}`;
 }
@@ -81,20 +80,38 @@ export function createImageGenerationPrompt(
         : `${base} Human with bob hair.`;
 }
 
-export function generateImageURL(prompt, imageUrl = null) {
+export function generateImageURL(prompt, model, imageUrl = null) {
     const key = getActiveKey();
-    const loggedIn = isLoggedIn();
-    const model = loggedIn ? "nanobanana" : "gptimage";
     let url = `${API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&key=${encodeURIComponent(key)}`;
 
     if (imageUrl) {
         url += `&enhance=false&image=${encodeURIComponent(`${imageUrl},${SELFIE_CATGPT}`)}`;
-    } else if (loggedIn) {
-        url += `&enhance=true&image=${encodeURIComponent(ORIGINAL_CATGPT)}`;
     } else {
-        url += "&enhance=true";
+        url += `&enhance=true&image=${encodeURIComponent(ORIGINAL_CATGPT)}`;
     }
     return url;
+}
+
+// ── Models ──────────────────────────────────────────────────────────────────
+
+const PREFERRED_MODEL = "nanobanana";
+const FALLBACK_MODEL = "gptimage";
+
+export async function pickModel(apiKey) {
+    try {
+        const res = await fetch(`https://gen.pollinations.ai/image/models`, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (!res.ok) return { model: FALLBACK_MODEL, isPremium: false };
+        const models = await res.json();
+        const names = models.map((m) => m.name);
+        if (names.includes(PREFERRED_MODEL)) {
+            return { model: PREFERRED_MODEL, isPremium: true };
+        }
+        return { model: FALLBACK_MODEL, isPremium: false };
+    } catch {
+        return { model: FALLBACK_MODEL, isPremium: false };
+    }
 }
 
 // ── Media Upload ─────────────────────────────────────────────────────────────

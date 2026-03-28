@@ -12,6 +12,7 @@ import {
     getStoredApiKey,
     handleImageUpload,
     isLoggedIn,
+    pickModel,
     storeApiKey,
 } from "./ai.js";
 
@@ -119,21 +120,37 @@ function notify(message, type = "info") {
 
 function getURLParams() {
     const p = new URLSearchParams(window.location.search);
-    return { prompt: p.get("prompt"), image: p.get("image") };
+    return {
+        prompt: p.get("prompt"),
+        image: p.get("image"),
+        model: p.get("model"),
+    };
 }
 
 function setURLPrompt(prompt) {
     const url = new URL(window.location);
     if (prompt) {
         url.searchParams.set("prompt", prompt);
+        url.searchParams.set("model", activeModel);
         uploadedImageUrl
             ? url.searchParams.set("image", uploadedImageUrl)
             : url.searchParams.delete("image");
     } else {
         url.searchParams.delete("prompt");
+        url.searchParams.delete("model");
         url.searchParams.delete("image");
     }
     window.history.replaceState({}, "", url);
+}
+
+// ── Model ───────────────────────────────────────────────────────────────────
+
+const MODEL_STORAGE_KEY = "catgpt-model";
+let activeModel = localStorage.getItem(MODEL_STORAGE_KEY) || "gptimage";
+
+function setActiveModel(model) {
+    activeModel = model;
+    localStorage.setItem(MODEL_STORAGE_KEY, model);
 }
 
 // ── Storage ──────────────────────────────────────────────────────────────────
@@ -151,7 +168,7 @@ function getSavedMemes() {
 function saveGeneratedMeme(prompt, url) {
     const saved = getSavedMemes();
     const updated = [
-        { prompt, url },
+        { prompt, url, model: activeModel },
         ...saved.filter((m) => m.prompt !== prompt),
     ].slice(0, 8);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -339,7 +356,7 @@ function loadExamples() {
         const card = createMemeCard(
             q,
             i,
-            generateImageURL(createImageGenerationPrompt(q)),
+            generateImageURL(createImageGenerationPrompt(q), activeModel),
         );
         if (card) dom.examplesGrid.appendChild(card);
     });
@@ -368,6 +385,7 @@ async function generateMeme() {
 
     const imageUrl = generateImageURL(
         createImageGenerationPrompt(question, !!uploadedImageUrl),
+        activeModel,
         uploadedImageUrl,
     );
     let cancelled = false;
@@ -385,7 +403,10 @@ async function generateMeme() {
                 const ct = response.headers.get("content-type") || "";
                 if (ct.includes("json")) {
                     const d = await response.json();
-                    msg = d.error || d.message || msg;
+                    msg =
+                        typeof d.error === "string"
+                            ? d.error
+                            : JSON.stringify(d, null, 2);
                 } else {
                     const t = await response.text();
                     if (t) msg = t.slice(0, 200);
@@ -477,7 +498,7 @@ async function updateAuthUI() {
     $("authLogoutBtn").onclick = () => {
         clearApiKey();
         updateAuthUI();
-        notify("Logged out. Using free tier now.");
+        notify("Logged out. Log in to use CatGPT.");
     };
 
     const generatorSection = document.querySelector(".generator-section");
@@ -498,6 +519,19 @@ async function updateAuthUI() {
 
     const apiKey = getStoredApiKey();
     $("authApiKey").textContent = `${apiKey.substring(0, 4)}••••••••`;
+
+    // Pick best available model
+    pickModel(apiKey).then(({ model, isPremium }) => {
+        setActiveModel(model);
+        const upsellEl = $("modelUpsell");
+        if (upsellEl) {
+            if (isPremium) {
+                upsellEl.classList.add("hidden");
+            } else {
+                upsellEl.classList.remove("hidden");
+            }
+        }
+    });
 
     try {
         const [profile, balance] = await Promise.all([
@@ -600,7 +634,8 @@ document.addEventListener("DOMContentLoaded", () => {
     addFloatingEmojis();
 
     // Handle URL prompt (auto-generate if shared link)
-    const { prompt, image } = getURLParams();
+    const { prompt, image, model } = getURLParams();
+    if (model) setActiveModel(model);
     if (image) {
         const safe = sanitizeUrl(image);
         if (safe) {

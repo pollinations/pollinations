@@ -16,13 +16,14 @@ import {
     useMessageHandlers,
     useMessages,
 } from "@/game/logic";
-import { useInput, useMessageScroll } from "@/hooks/ui";
+import { useBYOP, useInput, useMessageScroll } from "@/hooks/ui";
 import type { Message } from "@/types";
 
 export default function Index() {
     const { messages, addMessage, setMessages } = useMessages();
     const gameState = useGameState(messages);
     const [inputPrompt, setInputPrompt] = useState("");
+    const { apiKey, login, logout } = useBYOP();
 
     useGuideMessages(gameState, messages, addMessage);
     useAutonomousConversation(gameState, messages, addMessage);
@@ -155,6 +156,40 @@ export default function Index() {
                         Happy Vertical People Transporter
                     </h2>
 
+                    {/* BYOP Auth */}
+                    <div className="flex items-center justify-center space-x-2">
+                        {apiKey ? (
+                            <>
+                                <span className="text-xs text-green-400">
+                                    Connected: ...{apiKey.slice(-5)}
+                                </span>
+                                <Button
+                                    onClick={logout}
+                                    className="bg-red-900 text-red-300 hover:bg-red-800 text-xs py-0.5 px-2"
+                                >
+                                    Disconnect
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                onClick={login}
+                                className="bg-yellow-600 text-black hover:bg-yellow-500 text-xs py-0.5 px-2"
+                            >
+                                Connect with Pollinations
+                            </Button>
+                        )}
+                    </div>
+
+                    {!apiKey && (
+                        <p className="text-sm text-gray-400">
+                            Connect with Pollinations to start the game.
+                        </p>
+                    )}
+                </div>
+
+                {apiKey && (
+                <>
+                <div className="text-center space-y-4">
                     {/* Add moves remaining display */}
                     {messages.length > 0 && (
                         <div className="text-sm text-yellow-400">
@@ -299,6 +334,8 @@ export default function Index() {
                             </div>
                         )}
                     </>
+                )}
+                </>
                 )}
             </Card>
 

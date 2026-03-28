@@ -1,14 +1,17 @@
-import { 
-  PollingsMessage, 
-  PollingsResponse, 
-  API_CONFIG 
+import {
+  PollingsMessage,
+  PollingsResponse,
+  API_CONFIG
 } from '@/types';
+import { getStoredApiKey } from '@/hooks/ui';
 
-const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => ({
+const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => {
+  const apiKey = getStoredApiKey();
+  return {
   method: 'POST',
-  headers: { 
+  headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${API_CONFIG.API_KEY}`
+    ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}),
   },
   body: JSON.stringify({
     messages,
@@ -17,7 +20,8 @@ const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => ({
     // temperature: 1.2,
     seed: Math.floor(Math.random() * 1000000)
   })
-});
+};
+};
 
 const FALLBACK_RESPONSE: PollingsResponse = {
   choices: [{

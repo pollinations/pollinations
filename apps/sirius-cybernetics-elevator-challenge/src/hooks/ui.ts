@@ -10,10 +10,9 @@ export const DEFAULT_MODEL = 'deepseek';
 
 export const AVAILABLE_MODELS = [
   { id: 'deepseek', label: 'DeepSeek' },
-  { id: 'openai', label: 'GPT-4o mini' },
   { id: 'kimi', label: 'Kimi' },
-  { id: 'gemini-fast', label: 'Gemini Flash' },
-  { id: 'claude-fast', label: 'Claude Haiku' },
+  { id: 'gemini-fast', label: 'Gemini' },
+  { id: 'claude-fast', label: 'Claude' },
   { id: 'glm', label: 'GLM' },
 ] as const;
 

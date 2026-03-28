@@ -1,0 +1,34 @@
+{
+  "pr_number": 9691,
+  "title": "fix: catgpt require login, auto-pick model, artist credit",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9691",
+  "merged_at": "2026-03-28T15:20:04Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The cats demand credit",
+    "blurb": "CatGPT now automatically selects the best model for your account and properly credits artist Tanika Godbole. We also fixed that weird `[object Object]` error, because cats don't speak JavaScript.",
+    "summary": "Updated the CatGPT app to authenticate users, auto-select between free and premium image models, and integrate artist revenue sharing.",
+    "impact": "Creators get proper credit and revenue share, while users get automatically routed to the highest quality model their account supports.",
+    "keywords": [
+      "catgpt",
+      "apps",
+      "models",
+      "artist-credit",
+      "bug-fix"
+    ],
+    "visual_concept": "CatGPT update focusing on artist credit and model routing. Visuals should include Polly the bee and a cute pixel cat, perhaps with art supplies or a canvas to represent the artist credit, interacting with a retro terminal.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, sitting next to a chunky pixel art cat at a glowing retro computer terminal. The screen glows with soft lime green (#ecf874) light, showing a small digital canvas. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9691.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, sitting next to a chunky pixel art cat at a glowing retro computer terminal. The screen glows with soft lime green (#ecf874) light, showing a small digital canvas. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-03-28T15:20:58.222792+00:00"
+}

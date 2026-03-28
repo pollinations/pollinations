@@ -2,8 +2,20 @@ import { useRef, useEffect, useState } from 'react';
 import { Message } from '@/types';
 
 const AUTH_KEY = 'pollinations_api_key';
+const MODEL_KEY = 'pollinations_model';
 const ENTER_URL = 'https://enter.pollinations.ai';
 const API_KEY_PREFIX = /^(sk_|plln_pk_|pk_)/;
+
+export const DEFAULT_MODEL = 'deepseek';
+
+export const AVAILABLE_MODELS = [
+  { id: 'deepseek', label: 'DeepSeek' },
+  { id: 'openai', label: 'GPT-4o mini' },
+  { id: 'kimi', label: 'Kimi' },
+  { id: 'gemini-fast', label: 'Gemini Flash' },
+  { id: 'claude-fast', label: 'Claude Haiku' },
+  { id: 'glm', label: 'GLM' },
+] as const;
 
 export function getStoredApiKey(): string | null {
   try { return localStorage.getItem(AUTH_KEY); } catch { return null; }
@@ -46,6 +58,21 @@ export function useBYOP() {
   function logout() { clearApiKey(); setApiKey(null); }
 
   return { apiKey, login, logout };
+}
+
+export function getStoredModel(): string {
+  try { return localStorage.getItem(MODEL_KEY) || DEFAULT_MODEL; } catch { return DEFAULT_MODEL; }
+}
+
+export function useModelSelector() {
+  const [model, setModelState] = useState<string>(getStoredModel);
+
+  function setModel(m: string) {
+    localStorage.setItem(MODEL_KEY, m);
+    setModelState(m);
+  }
+
+  return { model, setModel };
 }
 
 // UI Hooks

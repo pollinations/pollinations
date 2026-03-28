@@ -16,7 +16,7 @@ import {
     useMessageHandlers,
     useMessages,
 } from "@/game/logic";
-import { useBYOP, useInput, useMessageScroll } from "@/hooks/ui";
+import { AVAILABLE_MODELS, useBYOP, useInput, useMessageScroll, useModelSelector } from "@/hooks/ui";
 import type { Message } from "@/types";
 
 export default function Index() {
@@ -24,6 +24,7 @@ export default function Index() {
     const gameState = useGameState(messages);
     const [inputPrompt, setInputPrompt] = useState("");
     const { apiKey, login, logout } = useBYOP();
+    const { model, setModel } = useModelSelector();
     const [guideLoading, setGuideLoading] = useState(false);
 
     useGuideMessages(gameState, messages, addMessage);
@@ -191,6 +192,28 @@ export default function Index() {
                             <p className="text-xs text-gray-500">
                                 DON'T PANIC — it's free and takes 10 seconds.
                             </p>
+                        </div>
+                    )}
+
+                    {/* Model Selector — shown when logged in, before game starts */}
+                    {apiKey && messages.length <= 1 && (
+                        <div className="space-y-2">
+                            <p className="text-xs text-gray-500">Select your Deep Thought:</p>
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {AVAILABLE_MODELS.map((m) => (
+                                    <button
+                                        key={m.id}
+                                        onClick={() => setModel(m.id)}
+                                        className={`text-xs px-3 py-1 border rounded ${
+                                            model === m.id
+                                                ? "border-green-400 text-green-400 bg-green-900/30"
+                                                : "border-gray-600 text-gray-500 hover:border-gray-400 hover:text-gray-300"
+                                        }`}
+                                    >
+                                        {m.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>

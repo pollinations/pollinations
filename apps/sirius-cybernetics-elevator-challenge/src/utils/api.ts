@@ -3,7 +3,7 @@ import {
   PollingsResponse,
   API_CONFIG
 } from '@/types';
-import { getStoredApiKey } from '@/hooks/ui';
+import { getStoredApiKey, getStoredModel } from '@/hooks/ui';
 
 function createFetchRequest(messages: PollingsMessage[], jsonMode = true): RequestInit {
   const apiKey = getStoredApiKey();
@@ -15,7 +15,7 @@ function createFetchRequest(messages: PollingsMessage[], jsonMode = true): Reque
     headers,
     body: JSON.stringify({
       messages,
-      model: 'openai',
+      model: getStoredModel(),
       response_format: jsonMode ? { type: "json_object" } : undefined,
       seed: Math.floor(Math.random() * 1000000),
     }),

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9673,
+  "title": "Add Alara AI to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9673",
+  "merged_at": "2026-03-28T08:37:19Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Alara AI takes root",
+    "blurb": "A new seedling in the community greenhouse. Alara AI wires up Flux, LTX-2, and Gemini into one neat package.",
+    "summary": "Added Alara AI to the community app showcase, highlighting its integration of image, video, and chat generation.",
+    "impact": "The community can now explore Alara AI in the greenhouse as a reference for building multi-modal applications.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "greenhouse",
+      "multi-modal"
+    ],
+    "visual_concept": "The community greenhouse. Polly the bee tending to a new plant that represents Alara AI's multi-modal features (images, video, chat).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, watering a glowing new code-plant in a lime green (#ecf874) pot inside a lush digital greenhouse. The plant sprouts tiny pixelated polaroids, film strips, and chat bubbles. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy 8-bit aesthetic, chunky retro sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9673.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, watering a glowing new code-plant in a lime green (#ecf874) pot inside a lush digital greenhouse. The plant sprouts tiny pixelated polaroids, film strips, and chat bubbles. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy 8-bit aesthetic, chunky retro sprites, emotionally warm."
+  },
+  "generated_at": "2026-03-28T08:38:51.744556+00:00",
+  "app_name": "Alara AI",
+  "app_url": "alara-ai.vercel.app"
+}

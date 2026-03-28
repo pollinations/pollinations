@@ -1,0 +1,34 @@
+{
+  "pr_number": 9679,
+  "title": "Add Samina 🍂 to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9679",
+  "merged_at": "2026-03-28T09:33:41Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Say hello to Samina 🍂",
+    "blurb": "A new Telegram bot named Samina just sprouted in our community greenhouse. It brings entertainment features and generates images right in your chats using the /img command.",
+    "summary": "Added the Samina Telegram bot to the community apps showcase, featuring entertainment tools and integrated image generation.",
+    "impact": "Users can now discover and interact with Samina on Telegram to easily generate images via Pollinations.",
+    "keywords": [
+      "community",
+      "telegram",
+      "bot",
+      "showcase",
+      "image-generation"
+    ],
+    "visual_concept": "A Telegram bot named Samina (with an autumn leaf motif) added to the greenhouse. Visuals: paper airplane (Telegram), autumn leaves, greenhouse setting, Polly the bee welcoming the new addition.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny autumn leaf scarf, happily flying alongside a pixelated paper airplane inside a warm, glowing greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9679.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny autumn leaf scarf, happily flying alongside a pixelated paper airplane inside a warm, glowing greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T09:34:44.251231+00:00",
+  "app_name": "Samina 🍂",
+  "app_url": "https://t.me/iSaminaBot"
+}

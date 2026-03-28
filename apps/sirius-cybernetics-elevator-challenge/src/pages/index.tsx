@@ -185,7 +185,7 @@ export default function Index() {
                                 onClick={login}
                                 className="bg-green-700 text-green-100 hover:bg-green-600 border border-green-400 text-sm py-2 px-4"
                             >
-                                Register on Sub-Etha Net via Pollinations
+                                Register via Pollinations
                             </Button>
                             <p className="text-xs text-gray-500">
                                 DON'T PANIC — it's free and takes 10 seconds.

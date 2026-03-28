@@ -19,8 +19,6 @@ export const getStoredApiKey = () => {
 };
 export const storeApiKey = (key) => localStorage.setItem(AUTH_KEY, key);
 export const clearApiKey = () => localStorage.removeItem(AUTH_KEY);
-export const isLoggedIn = () => !!getStoredApiKey();
-const getActiveKey = () => getStoredApiKey();
 
 export function extractApiKeyFromFragment() {
     const hash = window.location.hash.substring(1);
@@ -43,21 +41,16 @@ export function getAuthorizeUrl() {
     })}`;
 }
 
-export async function fetchProfile(apiKey) {
-    const res = await fetch(`${ENTER}/api/account/profile`, {
+async function fetchAccount(apiKey, path) {
+    const res = await fetch(`${ENTER}/api/account/${path}`, {
         headers: { Authorization: `Bearer ${apiKey}` },
     });
-    if (!res.ok) throw new Error(`Profile fetch failed: ${res.status}`);
+    if (!res.ok) throw new Error(`${path} fetch failed: ${res.status}`);
     return res.json();
 }
 
-export async function fetchBalance(apiKey) {
-    const res = await fetch(`${ENTER}/api/account/balance`, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    if (!res.ok) throw new Error(`Balance fetch failed: ${res.status}`);
-    return res.json();
-}
+export const fetchProfile = (apiKey) => fetchAccount(apiKey, "profile");
+export const fetchBalance = (apiKey) => fetchAccount(apiKey, "balance");
 
 // ── Prompts ──────────────────────────────────────────────────────────────────
 
@@ -76,12 +69,12 @@ export function createImageGenerationPrompt(
         : "";
     const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply.${pollinationsRule} Black and white comic style.`;
     return hasUploadedImage
-        ? `${base} The human character should be a slight caricature of the person in the uploaded selfie, maintaining their gender, ethnicity, and unique characteristics.`
+        ? `${base} Replace the human on the left with a caricature of the person in the uploaded image. Incorporate visible elements or landmarks from the uploaded image. Maintain their gender, ethnicity, and unique characteristics.`
         : `${base} Human with bob hair.`;
 }
 
 export function generateImageURL(prompt, model, imageUrl = null) {
-    const key = getActiveKey();
+    const key = getStoredApiKey();
     let url = `${API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&key=${encodeURIComponent(key)}`;
 
     if (imageUrl) {
@@ -129,7 +122,7 @@ export async function handleImageUpload(file, notify) {
         form.append("file", file);
         const res = await fetch(MEDIA_UPLOAD, {
             method: "POST",
-            headers: { Authorization: `Bearer ${getActiveKey()}` },
+            headers: { Authorization: `Bearer ${getStoredApiKey()}` },
             body: form,
         });
         if (!res.ok) throw new Error("Upload failed");

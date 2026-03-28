@@ -198,7 +198,7 @@ export default function Index() {
                     {/* Model Selector — shown when logged in, before game starts */}
                     {apiKey && messages.length <= 1 && (
                         <div className="space-y-2">
-                            <p className="text-xs text-gray-500">Select your Deep Thought:</p>
+                            <p className="text-xs text-gray-500">Deep Thought Personality&trade;</p>
                             <div className="flex flex-wrap justify-center gap-2">
                                 {AVAILABLE_MODELS.map((m) => (
                                     <button

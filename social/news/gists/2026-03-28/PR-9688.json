@@ -1,0 +1,34 @@
+{
+  "pr_number": 9688,
+  "title": "Add SentIQGPT to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9688",
+  "merged_at": "2026-03-28T10:17:03Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "SentIQGPT enters the chat",
+    "blurb": "SentIQGPT just sprouted in our community greenhouse! It's a slick browser-based AI assistant packed with chat memory, file analysis, and image generation.",
+    "summary": "Added SentIQGPT, a new browser-based AI assistant with chat memory and file analysis, to the community apps showcase.",
+    "impact": "Users can now discover and explore SentIQGPT's advanced chat and image generation features directly from our community directory.",
+    "keywords": [
+      "community",
+      "apps",
+      "chat",
+      "assistant",
+      "showcase"
+    ],
+    "visual_concept": "SentIQGPT implies intelligence and chat capabilities. The scene should feature a greenhouse (referencing GREENHOUSE.md) where smart chat features are growing. Polly the bee will be wearing reading glasses (IQ/smart theme) and watering a plant that grows chat bubbles.",
+    "image_prompt": "Cozy pixel art scene of a lush greenhouse where a smart AI assistant is growing. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing tiny reading glasses and watering a glowing digital plant that sprouts colorful chat bubbles. A chunky retro monitor nearby displays a friendly interface. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9688.jpg",
+    "prompt": "Cozy pixel art scene of a lush greenhouse where a smart AI assistant is growing. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing tiny reading glasses and watering a glowing digital plant that sprouts colorful chat bubbles. A chunky retro monitor nearby displays a friendly interface. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T10:17:54.513928+00:00",
+  "app_name": "SentIQGPT",
+  "app_url": "https://sentiqgpt.sentiqlabs.com/"
+}

@@ -173,7 +173,7 @@ export const useGuideMessages = (
             message: getFloorMessage(gameState),
             action: gameState.currentFloor === 1 ? "show_instructions" : "none",
         });
-    }, [gameState.currentFloor, addMessage, gameState]);
+    }, [gameState.currentFloor, addMessage]);
 };
 
 // Autonomous conversation hook

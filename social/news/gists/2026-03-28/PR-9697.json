@@ -1,0 +1,33 @@
+{
+  "pr_number": 9697,
+  "title": "cleanup: fix moved app URLs, remove 13 dead entries",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9697",
+  "merged_at": "2026-03-28T18:04:10Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the community garden",
+    "blurb": "We did some light pruning in the community showcase, updating moved links and clearing out dead URLs to keep the garden fresh and reliable.",
+    "summary": "Cleaned up the community apps showcase by updating moved repository URLs and removing inactive entries.",
+    "impact": "Visitors exploring the showcase will experience fewer broken links, ensuring a smoother discovery process for community projects.",
+    "keywords": [
+      "community",
+      "showcase",
+      "cleanup",
+      "apps"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener, pruning dead leaves (dead links) from a healthy code-plant, while the Nomnom creature happily eats the discarded leaves to keep the garden clean.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, pruning dead leaves from a glowing code-plant in a lime green (#ecf874) flower pot. The round tan nomnom creature happily eats the discarded brown leaves. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9697.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, pruning dead leaves from a glowing code-plant in a lime green (#ecf874) flower pot. The round tan nomnom creature happily eats the discarded brown leaves. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-28T18:05:01.685869+00:00"
+}

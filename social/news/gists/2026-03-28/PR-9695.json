@@ -1,0 +1,33 @@
+{
+  "pr_number": 9695,
+  "title": "cleanup: remove dead apps from APPS.md",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9695",
+  "merged_at": "2026-03-28T16:58:55Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the garden",
+    "blurb": "We've pruned some dead links from the community app showcase to keep everything fresh and working perfectly.",
+    "summary": "Cleaned up the community apps list by removing inactive projects and fixing broken links.",
+    "impact": "The community app showcase is now fully up-to-date, ensuring all featured projects are active and accessible.",
+    "keywords": [
+      "community",
+      "showcase",
+      "cleanup",
+      "apps"
+    ],
+    "visual_concept": "A garden cleanup theme. Polly the bee wearing a gardener's hat, sweeping up dead leaves (representing dead links), while the Nomnom creature eats the debris to keep the garden tidy.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, sweeping up dead pixelated leaves, while the round tan nomnom creature happily eats broken link icons. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9695.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, sweeping up dead pixelated leaves, while the round tan nomnom creature happily eats broken link icons. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T16:59:48.791426+00:00"
+}

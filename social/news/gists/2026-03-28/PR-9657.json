@@ -1,0 +1,34 @@
+{
+  "pr_number": 9657,
+  "title": "Add FlowAI Bot to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9657",
+  "merged_at": "2026-03-28T03:59:00Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Going with the Flow",
+    "blurb": "FlowAI Bot just landed in the greenhouse! Built with TypeScript, it uses our API to automate workflows and sprinkle some creative automation into your data.",
+    "summary": "Added FlowAI Bot to the community showcase, a TypeScript-based tool for automating workflows and creative data enrichment.",
+    "impact": "Users can now discover and use FlowAI Bot from the community apps directory to streamline their collaborative workflows.",
+    "keywords": [
+      "community",
+      "bot",
+      "showcase",
+      "automation",
+      "typescript"
+    ],
+    "visual_concept": "Represent FlowAI Bot as the recurring Monitor Robot, working collaboratively with Polly the bee to automate a workflow. They can be organizing glowing data blocks or watering a flowing stream of code-plants.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot working together to organize glowing data blocks on a conveyor belt. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9657.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot working together to organize glowing data blocks on a conveyor belt. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-28T03:59:45.902146+00:00",
+  "app_name": "FlowAI Bot",
+  "app_url": "https://github.com/CloudCompile/flow"
+}

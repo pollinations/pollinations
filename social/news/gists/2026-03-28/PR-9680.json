@@ -1,0 +1,34 @@
+{
+  "pr_number": 9680,
+  "title": "Add Sera Ai News to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9680",
+  "merged_at": "2026-03-28T09:38:29Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Breaking news from the hive",
+    "blurb": "Sera AI News just landed in the greenhouse! This clever Telegram bot uses Pollinations to generate fresh images for daily news items.",
+    "summary": "Added Sera AI News, a Telegram bot that generates images for news items, to the community showcase.",
+    "impact": "Users can now discover and interact with Sera AI News in our community app directory.",
+    "keywords": [
+      "community",
+      "telegram",
+      "bot",
+      "news",
+      "showcase"
+    ],
+    "visual_concept": "News and broadcasting theme. Polly the bee acting as a retro journalist or newsie, interacting with a Telegram-style paper airplane or a newspaper. The robot companion displaying news on its screen.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny 1920s reporter hat with a 'PRESS' card tucked in the band, reading a freshly printed pixelated newspaper. A chunky retro robot companion with a CRT monitor head displays a glowing paper airplane icon. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9680.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny 1920s reporter hat with a 'PRESS' card tucked in the band, reading a freshly printed pixelated newspaper. A chunky retro robot companion with a CRT monitor head displays a glowing paper airplane icon. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-28T09:39:24.685111+00:00",
+  "app_name": "Sera Ai News",
+  "app_url": "https://t.me/SeraNew"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9628,
+  "title": "Add FuerzaNeta to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9628",
+  "merged_at": "2026-03-28T08:05:06Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Do you even lift, Polly?",
+    "blurb": "FuerzaNeta just joined the greenhouse! It's a new app built with Pollinations that helps coaches plan, track, and log strength training sessions.",
+    "summary": "Added FuerzaNeta, a strength training planning and tracking tool for coaches, to the community app showcase.",
+    "impact": "The community can now discover FuerzaNeta in the greenhouse and see how Pollinations is being used to power fitness and coaching applications.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "fitness",
+      "fuerzaneta"
+    ],
+    "visual_concept": "The PR is about a strength training/fitness app for coaches. Polly the bee should be doing some cute, tiny weightlifting or wearing a sweatband, next to a clipboard for the coaching aspect. A cozy pixel art gym or garden setting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny pink sweatband and lifting a small pixelated dumbbell. A chunky retro monitor in the background displays a workout plan on a glowing screen. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9628.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny pink sweatband and lifting a small pixelated dumbbell. A chunky retro monitor in the background displays a workout plan on a glowing screen. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-28T08:05:59.582595+00:00",
+  "app_name": "FuerzaNeta",
+  "app_url": "https://www.fuerzaneta.es/"
+}

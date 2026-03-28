@@ -1,0 +1,34 @@
+{
+  "pr_number": 9658,
+  "title": "Add URL to Markdown to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9658",
+  "merged_at": "2026-03-28T04:07:18Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Webpages, but readable",
+    "blurb": "The greenhouse just got a new tool: URL to Markdown. Feed it a messy webpage, get clean Markdown back. Perfect for feeding context to your favorite LLM.",
+    "summary": "Added the 'URL to Markdown' community app to the showcase, which uses AI to extract and format web content.",
+    "impact": "Users can now instantly convert cluttered webpages into clean Markdown documents for easier reading or LLM processing.",
+    "keywords": [
+      "app",
+      "community",
+      "markdown",
+      "tools",
+      "scraping"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot processing web data. A retro machine taking in messy web elements and outputting clean, structured Markdown documents.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot feeding a messy web page into a retro machine that prints out clean Markdown documents. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The bee wears tiny reading glasses, and a chunky monitor robot happily catches the neat pages. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9658.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot feeding a messy web page into a retro machine that prints out clean Markdown documents. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The bee wears tiny reading glasses, and a chunky monitor robot happily catches the neat pages. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T04:08:09.242181+00:00",
+  "app_name": "URL to Markdown",
+  "app_url": "https://pollinations-url-text.vercel.app/"
+}

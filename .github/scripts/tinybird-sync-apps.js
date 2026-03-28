@@ -46,7 +46,6 @@ const COLUMN_MAP = [
     ["Approved_Date", "approved_date"],
     ["BYOP", "byop"],
     ["Requests_24h", "requests_24h"],
-    ["Health", "health"],
 ];
 
 function parseAppsMarkdown() {

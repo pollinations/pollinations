@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [📝 URL to Markdown](https://pollinations-url-text.vercel.app/) | Convert any webpage to clean Markdown using AI. | [@web](https://github.com/web) |
-| [🤖 FlowAI Bot](201248601) | Automates workflows and collaboration using FlowAI Bot, built in TypeScript and integrating the pollinations.ai API to process dynamic content for data enrichment and creative automation. | [@library](https://github.com/library) |
-| [🤖 visiona](https://visiona-wheat.vercel.app/) | Delivers intelligent, interactive web experiences via an AI-powered responsive interface; visiona demonstrates AI integration into web tools for real-time user interaction. | [@web](https://github.com/web) |
-| [🤖 Apiction](https://apiction.site/) | Talk to any AI model from any provider, including Pollinations, using Apiction. | [@web](https://github.com/web) |
-| [🎬 Storymake](https://storymake.io) | Generate studio-quality short-form videos (TikToks, Reels, and YouTube Shorts) from a simple text prompt using Storymake, an AI-powered automated video creation platform. | [@web](https://github.com/web) |
-| [💬 Tofu](https://crates.io/crates/tofu-llm) | Tofu provides a rich AI chat client for the terminal with a formatted interface to make communicating with LLMs quick and easy. | [@cli](https://github.com/cli) |
-| [🌐 TranslateIt](https://connor.ct.ws/translateit) | Translate text with TranslateIt, using AI to generate translations based on sentence context. | [@web](https://github.com/web) |
-| [🛠️ opencode-pollinations-conf](194648035) | Generate an opencode.json configuration file using opencode-pollinations-conf, populated with text models from Pollinations.aihttpsenter.pollinations | [@cli](https://github.com/cli) |
-| [🌸 OrchidLLM](https://orchidllm.vercel.app) | Generate images, text, video, audio, and transcriptions with OrchidLLM. | [@web](https://github.com/web) |
-| [🤖 Vector AI Agent](https://routinehub.co/shortcut/24957/) | Vector AI Agent handles multitasking AI requests using pollinations with multiple models, implemented entirely in apple shortcuts by Mincoffical and Elc29 and free to use. | [@ios](https://github.com/ios) |
+| [📝 URL to Markdown](https://pollinations-url-text.vercel.app/) | Convert any webpage to clean Markdown using AI. | [@kanfred](https://github.com/kanfred) |
+| 🤖 FlowAI Bot | Automates workflows and collaboration using FlowAI Bot, built in TypeScript and integrating the pollinations.ai API to process dynamic content for data enrichment and creative automation. | [@CloudCompile](https://github.com/CloudCompile) |
+| [🤖 visiona](https://visiona-wheat.vercel.app/) | Delivers intelligent, interactive web experiences via an AI-powered responsive interface; visiona demonstrates AI integration into web tools for real-time user interaction. | [@Rafayalmani](https://github.com/Rafayalmani) |
+| [🤖 Apiction](https://apiction.site/) | Talk to any AI model from any provider, including Pollinations, using Apiction. | [@abhish-shrivastava](https://github.com/abhish-shrivastava) |
+| [🎬 Storymake](https://storymake.io) | Generate studio-quality short-form videos (TikToks, Reels, and YouTube Shorts) from a simple text prompt using Storymake, an AI-powered automated video creation platform. | [@hammadahamed](https://github.com/hammadahamed) |
+| [💬 Tofu](https://crates.io/crates/tofu-llm) | Tofu provides a rich AI chat client for the terminal with a formatted interface to make communicating with LLMs quick and easy. | [@teccdev](https://github.com/teccdev) |
+| [🌐 TranslateIt](https://connor.ct.ws/translateit) | Translate text with TranslateIt, using AI to generate translations based on sentence context. | [@ConnorDoingStuff](https://github.com/ConnorDoingStuff) |
+| 🛠️ opencode-pollinations-conf | Generate an opencode.json configuration file using opencode-pollinations-conf, populated with text models from Pollinations.aihttpsenter.pollinations | [@onatrain](https://github.com/onatrain) |
+| [🌸 OrchidLLM](https://orchidllm.vercel.app) | Generate images, text, video, audio, and transcriptions with OrchidLLM. | [@vendouple](https://github.com/vendouple) |
+| [🤖 Vector AI Agent](https://routinehub.co/shortcut/24957/) | Vector AI Agent handles multitasking AI requests using pollinations with multiple models, implemented entirely in apple shortcuts by Mincoffical and Elc29 and free to use. | [@morriszdweck](https://github.com/morriszdweck) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -47,16 +47,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-03-23** – **🚀 Amazon Nova arrives** The Nova model family (Pro, Canvas, and Reel) is now wired up for text, image, and video generation. We also enabled image-to-image variation support for Canvas.
-- **2026-03-23** – **🧠 Grok learns to reason** Added official xAI integration for `grok-imagine` and `grok-video-pro`, plus upgraded text models featuring `grok-reasoning` with a casual 2M token context window.
-- **2026-03-23** – **🎨 Qwen image models** Added Alibaba's `qwen-image-plus` and `qwen-image-edit-plus`. Native CJK text rendering and multi-image editing are now on the menu.
-- **2026-03-23** – **🎬 Fast, free, and moving** Added `wan-fast` for free 5-second video generation. We also defaulted `audio=true` across the video API, so supported models will just generate sound automatically.
-- **2026-03-23** – **🔐 Headless in the hive** Implemented RFC 8628 Device Authorization Grant. You can now securely authenticate terminal tools and headless scripts without complex browser workarounds.
-- **2026-03-23** – **🎵 Free the MIDI** We split the `midijourney` text model into a free base version (Claude Haiku) and a large variant (Claude Opus) for complex compositions.
-- **2026-03-23** – **🌟 Showcase additions** Phicasso Chat (browser-native privacy) and AI MIDI Generator (text-to-multitrack) have joined the community showcase. [Try them](https://hello.pollinations.ai) <!-- app -->
-- **2026-03-22** – **🤖 Qwen Models & Vision** Alibaba's Qwen models (`qwen-coder-large`, `qwen-large`, and `qwen-vision`) are now live on the [Unified API](https://gen.pollinations.ai). 1M context windows and image understanding, completely unlocked for the free tier.
-- **2026-03-22** – **🎨 LND Ai Showcase** LND Ai has been added to the community showcase. Another solid text-to-image tool built entirely by hitting our API. [Try it](https://www.namansoni.in/text-to-image). <!-- app -->
-- **2026-03-20** – **🎨 Klein Multi-Image Blending** The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending.
+- **2026-03-26** – **🌸 OrchidLLM** New multimodal generation app in the showcase. Send text, get whatever. [Try it](https://orchidllm.vercel.app) <!-- app -->
+- **2026-03-26** – **⚙️ OpenCode Configurator** Auto-configure OpenCode environments with our text models. Less boilerplate, more building. [View repo](https://github.com/onatrain/opencode-pollinations-conf) <!-- app -->
+- **2026-03-26** – **📝 TranslateIt** Context-aware AI translation tool. Because literal translations are usually terrible. [Try it](https://connor.ct.ws/translateit) <!-- app -->
+- **2026-03-26** – **🖥️ Tofu** A rich terminal-based chat client. For when you absolutely refuse to leave the command line. [Try it](https://crates.io/crates/tofu-llm) <!-- app -->
+- **2026-03-26** – **🎞️ Storymake** Generate short-form videos from text prompts. The content mill demands to be fed. [Try it](https://storymake.io) <!-- app -->
+- **2026-03-26** – **🤖 Apiction** A new platform for chatting with multiple AI models side-by-side. [Try it](https://apiction.site/) <!-- app -->
+- **2026-03-26** – **🎨 Visiona** A clean, responsive web interface for real-time AI chatting. [Try it](https://visiona-wheat.vercel.app/) <!-- app -->
+- **2026-03-25** – **🎬 Grok gets the picture** You can now pass an initial image URL to `grok-video-pro` to guide video generation. Image-to-video via xAI is officially live.
+- **2026-03-25** – **💻 PowerShell gets pollinated** Generate AI content directly from your Windows command line with the new PollinationsAiPS module. [View repo](https://github.com/BananaAcid/PollinationsAiPS/) <!-- app -->
+- **2026-03-25** – **🎮 Game engines can talk** 'Talking with Unity' brings our voice AI, speech recognition, and text-to-speech directly into Unity projects. [Try it](https://www.ai-ministries.com/apps/talking-unity/) <!-- app -->
 ---
 
 ## 🌱 Introduction

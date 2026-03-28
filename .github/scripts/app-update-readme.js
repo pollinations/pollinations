@@ -31,7 +31,7 @@ const simplifiedRows = last10.map((row) => {
     // Remove first and last empty strings from split (matches parseApps.ts pattern)
     cols.shift();
     cols.pop();
-    // cols: [emoji, name, web_url, desc, language, category, platform, github, github_id, repo, stars, discord, other, submitted_date, issue_url, approved_date, byop, requests_24h, health]
+    // cols: [emoji, name, web_url, desc, language, category, platform, github, github_id, repo, stars, discord, other, submitted_date, issue_url, approved_date, byop, requests_24h]
     const emoji = cols[0];
     const name = cols[1];
     const url = cols[2];

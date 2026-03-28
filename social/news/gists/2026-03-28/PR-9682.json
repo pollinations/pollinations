@@ -1,0 +1,34 @@
+{
+  "pr_number": 9682,
+  "title": "Add Aladiah Gen to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9682",
+  "merged_at": "2026-03-28T09:54:57Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive goes Hollywood",
+    "blurb": "Aladiah Gen just landed in the community showcase. It's a neat little tool for spinning up prompt ideas for TikTok, Reels, and Shorts—because staring at a blank script is the worst part of making videos.",
+    "summary": "Added Aladiah Gen to the community app directory, providing creators with a dedicated tool for generating short-form video prompts.",
+    "impact": "Content creators and shop owners can now find inspiration for their next viral clip directly from our community showcase.",
+    "keywords": [
+      "community",
+      "app",
+      "video",
+      "prompts",
+      "creators"
+    ],
+    "visual_concept": "The PR is about a video prompt generator for social media (TikTok, Reels, Shorts). Visuals should include Polly the bee acting as a movie director, holding a clapperboard or a script, next to a glowing smartphone or retro camera. Cozy studio or garden stage setting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret and holding a clapperboard next to a glowing retro smartphone displaying a video script. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9682.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret and holding a clapperboard next to a glowing retro smartphone displaying a video script. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T09:55:48.617280+00:00",
+  "app_name": "Aladiah Gen",
+  "app_url": "https://aladiah-gen.vercel.app/"
+}

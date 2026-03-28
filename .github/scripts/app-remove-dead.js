@@ -11,6 +11,7 @@
  */
 
 const fs = require("node:fs");
+const { execFile } = require("node:child_process");
 
 const APPS_FILE = "apps/APPS.md";
 const ROUNDS = 3;
@@ -33,13 +34,11 @@ function parseApps() {
     }
 
     const apps = [];
-    const dataRows = lines
-        .slice(headerIdx + 2)
-        .filter((l) => l.startsWith("|"));
+    for (let i = headerIdx + 2; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.startsWith("|")) continue;
 
-    for (let i = 0; i < dataRows.length; i++) {
-        const row = dataRows[i];
-        const cols = row
+        const cols = line
             .split("|")
             .slice(1, -1)
             .map((c) => c.trim());
@@ -47,7 +46,7 @@ function parseApps() {
 
         const name = cols[1];
         const url = cols[2];
-        apps.push({ lineIndex: headerIdx + 2 + i, name, url });
+        apps.push({ lineIndex: i, name, url });
     }
 
     return { apps, lines };
@@ -60,7 +59,6 @@ function checkUrl(url) {
             return;
         }
 
-        const { execFile } = require("node:child_process");
         execFile(
             "curl",
             [

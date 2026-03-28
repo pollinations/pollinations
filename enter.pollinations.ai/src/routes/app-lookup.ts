@@ -86,6 +86,8 @@ export const appLookupRoutes = new Hono<Env>().get(
                 where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL`,
             });
             // Find the best match: longest appUrl that is a prefix of redirectUrl
+            // Case-insensitive to handle mixed-case registrations
+            const redirectLower = redirectUrl.toLowerCase();
             let bestMatch: (typeof candidates)[number] | null = null;
             let bestLen = 0;
             for (const row of candidates) {
@@ -93,7 +95,7 @@ export const appLookupRoutes = new Hono<Env>().get(
                 const appUrl = meta.appUrl as string;
                 if (
                     appUrl &&
-                    redirectUrl.startsWith(appUrl) &&
+                    redirectLower.startsWith(appUrl.toLowerCase()) &&
                     appUrl.length > bestLen
                 ) {
                     bestMatch = row;

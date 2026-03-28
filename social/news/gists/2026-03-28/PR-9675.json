@@ -1,0 +1,34 @@
+{
+  "pr_number": 9675,
+  "title": "Add PollenStudio: AI Variation Gallery to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9675",
+  "merged_at": "2026-03-28T08:55:01Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The gallery expands",
+    "blurb": "Another beautiful addition to the Greenhouse. PollenStudio is a new AI variation gallery built by the community, perfect for when you need to see your prompt from every possible angle.",
+    "summary": "Added PollenStudio, a new AI variation gallery built by souravhchoursiya, to the community apps showcase.",
+    "impact": "Users can now explore and generate image variations through the newly featured PollenStudio app in the Greenhouse.",
+    "keywords": [
+      "community",
+      "app",
+      "gallery",
+      "image",
+      "showcase"
+    ],
+    "visual_concept": "An art gallery setting representing 'PollenStudio'. Polly the bee acting as a curator or artist, showing off framed variations of an image to the Monitor Robot. Emphasizes the 'variation gallery' aspect.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, guiding a chunky monitor-head robot through a warm, wooden art gallery. The walls are lined with framed pixel-art variations of glowing landscapes. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9675.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, guiding a chunky monitor-head robot through a warm, wooden art gallery. The walls are lined with framed pixel-art variations of glowing landscapes. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T08:55:58.696103+00:00",
+  "app_name": "PollenStudio: AI Variation Gallery",
+  "app_url": "https://souravhchoursiya.github.io/pollen-gallery/"
+}

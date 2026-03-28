@@ -1,0 +1,33 @@
+{
+  "pr_number": 9670,
+  "title": "Add HatimPro to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9670",
+  "merged_at": "2026-03-28T08:16:42Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "HatimPro joins the garden",
+    "blurb": "HatimPro has sprouted in our community greenhouse! It's a beautiful new app built by the community for tracking reading progress and joining communal rooms.",
+    "summary": "Added HatimPro, a comprehensive lifestyle application for tracking reading progress and daily habits, to the community showcase.",
+    "impact": "The community can now discover and explore HatimPro in the apps directory.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "greenhouse"
+    ],
+    "visual_concept": "The PR adds a community app (HatimPro) focused on reading, tracking progress, and communal rooms. Visuals: Polly the bee reading a beautifully bound book in a cozy greenhouse setting, surrounded by blooming code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, peacefully reading a beautifully bound book inside a warm, glowing greenhouse. Lush code-plants sprout from lime green (#ecf874) flower pots around her. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-28/PR-9670.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, peacefully reading a beautifully bound book inside a warm, glowing greenhouse. Lush code-plants sprout from lime green (#ecf874) flower pots around her. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-28T08:17:33.992614+00:00",
+  "app_name": "HatimPro",
+  "app_url": "https://hatimpro.vercel.app"
+}

@@ -11,7 +11,6 @@ import {
     getAuthorizeUrl,
     getStoredApiKey,
     handleImageUpload,
-    isLoggedIn,
     pickModel,
     storeApiKey,
 } from "./ai.js";
@@ -62,6 +61,8 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // ── DOM ──────────────────────────────────────────────────────────────────────
 
 const $ = (id) => document.getElementById(id);
+const show = (el) => el?.classList.remove("hidden");
+const hide = (el) => el?.classList.add("hidden");
 
 const dom = {
     userInput: $("userInput"),
@@ -252,7 +253,7 @@ function setInputsDisabled(disabled) {
 
 function setButtonLoading() {
     dom.generateBtn.classList.add("generating");
-    dom.resultSection.classList.add("hidden");
+    hide(dom.resultSection);
     progressStep = 0;
     setButtonMessage(PROGRESS_MESSAGES[0]);
     startCatAnimation();
@@ -380,7 +381,7 @@ async function generateMeme() {
     setURLPrompt(question);
     setButtonLoading();
     setInputsDisabled(true);
-    dom.generateError.classList.add("hidden");
+    hide(dom.generateError);
     dom.generateError.textContent = "";
 
     const imageUrl = generateImageURL(
@@ -398,29 +399,17 @@ async function generateMeme() {
         if (cancelled) return;
 
         if (!response.ok) {
-            let msg = `Error ${response.status}`;
-            try {
-                const ct = response.headers.get("content-type") || "";
-                if (ct.includes("json")) {
-                    const d = await response.json();
-                    msg =
-                        typeof d.error === "string"
-                            ? d.error
-                            : JSON.stringify(d, null, 2);
-                } else {
-                    const t = await response.text();
-                    if (t) msg = t.slice(0, 200);
-                }
-            } catch {}
-            throw new Error(msg);
+            const text = await response.text().catch(() => "");
+            throw new Error(text.slice(0, 200) || `Error ${response.status}`);
         }
 
-        const blob = await response.blob();
+        // Use the pollinations URL directly (shareable, cacheable)
+        await response.blob(); // ensure the image is fully loaded
         if (cancelled) return;
-        dom.generatedMeme.src = URL.createObjectURL(blob);
+        dom.generatedMeme.src = imageUrl;
 
         resetButton();
-        dom.resultSection.classList.remove("hidden");
+        show(dom.resultSection);
         scrollToGenerator();
         celebrate();
         saveGeneratedMeme(question, imageUrl);
@@ -431,7 +420,7 @@ async function generateMeme() {
         resetButton();
         dom.generateError.textContent =
             error.message || "Failed to generate meme. Please try again.";
-        dom.generateError.classList.remove("hidden");
+        show(dom.generateError);
     }
 }
 
@@ -487,7 +476,7 @@ function handleAuthRedirect() {
     notify("Logged in! Using your Pollen balance now.", "success");
 }
 
-async function updateAuthUI() {
+async function updateAuthUI({ skipModelPick = false } = {}) {
     const loggedOutEl = $("authLoggedOut");
     const loggedInEl = $("authLoggedIn");
     if (!loggedOutEl || !loggedInEl) return;
@@ -504,34 +493,29 @@ async function updateAuthUI() {
     const generatorSection = document.querySelector(".generator-section");
     const heroHeader = document.querySelector("header");
 
-    if (!isLoggedIn()) {
-        loggedOutEl.classList.remove("hidden");
-        loggedInEl.classList.add("hidden");
-        if (generatorSection) generatorSection.classList.add("hidden");
-        if (heroHeader) heroHeader.classList.remove("hidden");
+    const apiKey = getStoredApiKey();
+    if (!apiKey) {
+        show(loggedOutEl);
+        hide(loggedInEl);
+        hide(generatorSection);
+        show(heroHeader);
         return;
     }
 
-    loggedOutEl.classList.add("hidden");
-    loggedInEl.classList.remove("hidden");
-    if (generatorSection) generatorSection.classList.remove("hidden");
-    if (heroHeader) heroHeader.classList.add("hidden");
-
-    const apiKey = getStoredApiKey();
+    hide(loggedOutEl);
+    show(loggedInEl);
+    show(generatorSection);
+    hide(heroHeader);
     $("authApiKey").textContent = `${apiKey.substring(0, 4)}••••••••`;
 
-    // Pick best available model
-    pickModel(apiKey).then(({ model, isPremium }) => {
-        setActiveModel(model);
-        const upsellEl = $("modelUpsell");
-        if (upsellEl) {
-            if (isPremium) {
-                upsellEl.classList.add("hidden");
-            } else {
-                upsellEl.classList.remove("hidden");
-            }
-        }
-    });
+    // Pick best available model (skip if URL param already set one)
+    if (!skipModelPick) {
+        pickModel(apiKey).then(({ model, isPremium }) => {
+            setActiveModel(model);
+            const upsellEl = $("modelUpsell");
+            isPremium ? hide(upsellEl) : show(upsellEl);
+        });
+    }
 
     try {
         const [profile, balance] = await Promise.all([
@@ -548,11 +532,11 @@ async function updateAuthUI() {
             const avatarFallback = $("authAvatarFallback");
             if (profile.image) {
                 avatarImg.src = profile.image;
-                avatarImg.classList.remove("hidden");
-                avatarFallback.classList.add("hidden");
+                show(avatarImg);
+                hide(avatarFallback);
             } else {
-                avatarImg.classList.add("hidden");
-                avatarFallback.classList.remove("hidden");
+                hide(avatarImg);
+                show(avatarFallback);
                 avatarFallback.textContent = name.charAt(0).toUpperCase();
             }
 
@@ -592,16 +576,16 @@ function setupEventListeners() {
         if (url) {
             uploadedImageUrl = url;
             dom.imageThumbnail.src = URL.createObjectURL(file);
-            dom.imageUploadContainer.classList.add("hidden");
-            dom.imageThumbnailContainer.classList.remove("hidden");
+            hide(dom.imageUploadContainer);
+            show(dom.imageThumbnailContainer);
         }
     });
 
     dom.removeImageBtn.addEventListener("click", () => {
         uploadedImageUrl = null;
         dom.imageUpload.value = "";
-        dom.imageThumbnailContainer.classList.add("hidden");
-        dom.imageUploadContainer.classList.remove("hidden");
+        hide(dom.imageThumbnailContainer);
+        show(dom.imageUploadContainer);
     });
 
     // Konami code easter egg
@@ -628,21 +612,22 @@ function setupEventListeners() {
 
 document.addEventListener("DOMContentLoaded", () => {
     handleAuthRedirect();
-    updateAuthUI();
+
+    // Read URL params first so model choice isn't overwritten by pickModel
+    const { prompt, image, model } = getURLParams();
+    if (model) setActiveModel(model);
+
+    updateAuthUI({ skipModelPick: !!model });
     loadUserMemes();
     loadExamples();
     addFloatingEmojis();
-
-    // Handle URL prompt (auto-generate if shared link)
-    const { prompt, image, model } = getURLParams();
-    if (model) setActiveModel(model);
     if (image) {
         const safe = sanitizeUrl(image);
         if (safe) {
             uploadedImageUrl = safe;
             dom.imageThumbnail.src = safe;
-            dom.imageUploadContainer.classList.add("hidden");
-            dom.imageThumbnailContainer.classList.remove("hidden");
+            hide(dom.imageUploadContainer);
+            show(dom.imageThumbnailContainer);
         }
     }
     if (prompt) {

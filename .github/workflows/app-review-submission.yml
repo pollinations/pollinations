@@ -271,7 +271,7 @@ jobs:
             run(`git checkout -b ${branch} origin/main`);
 
             // Build the row (stars left empty — daily metrics fills it)
-            const row = `| ${d.emoji} | ${d.name} | ${d.web_url} | ${d.description} | ${d.language} | ${d.category} | ${d.platform} | ${d.github_username} | ${d.github_user_id} | ${d.repo_url} | | ${d.discord} | | ${d.submitted_date} | ${d.issue_url} | ${today} |  |  |  |`;
+            const row = `| ${d.emoji} | ${d.name} | ${d.web_url} | ${d.description} | ${d.language} | ${d.category} | ${d.platform} | ${d.github_username} | ${d.github_user_id} | ${d.repo_url} | | ${d.discord} | | ${d.submitted_date} | ${d.issue_url} | ${today} |  |  |`;
 
             run('node .github/scripts/app-prepend-row.js', { NEW_ROW: row });
             run('node .github/scripts/app-update-greenhouse.js');

@@ -138,7 +138,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance }) => {
                                     grants are depleted
                                 </div>
                                 <div className="text-purple-700 mt-2">
-                                    ⚠️ <strong>Exception:</strong> 💎 Paid Only
+                                    ⚠️ <strong>Exception:</strong> 🐝 Paid Only
                                     models require purchased pollen only
                                 </div>
                             </div>
@@ -152,7 +152,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance }) => {
                             </div>
                             <div className="space-y-2 text-xs text-gray-500">
                                 <div className="flex items-center gap-1">
-                                    <span>💎</span>
+                                    <span>🐝</span>
                                     <span className="font-medium">
                                         Beta ladder is live on pack purchases.
                                     </span>

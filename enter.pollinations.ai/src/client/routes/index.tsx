@@ -1,6 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -222,10 +221,6 @@ function RouteComponent() {
         router.invalidate();
     }
 
-    function handleBuyPollen(amount: number): void {
-        window.location.href = `/api/stripe/checkout/${amount}`;
-    }
-
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-20">
@@ -278,30 +273,6 @@ function RouteComponent() {
                                 )}
                             </button>
                         </h2>
-                        {activeTab === "balance" && (
-                            <div
-                                id="buy-pollen"
-                                className="grid w-full grid-cols-3 gap-2 sm:w-auto sm:min-w-[280px]"
-                            >
-                                {POLLEN_PACKS.map((pack) => (
-                                    <Button
-                                        key={pack.amountUsd}
-                                        as="button"
-                                        color="violet"
-                                        weight="light"
-                                        onClick={() =>
-                                            handleBuyPollen(pack.amountUsd)
-                                        }
-                                        title={`Buy $${pack.amountUsd} pollen pack`}
-                                        className="btn-shimmer min-w-[74px] whitespace-nowrap text-center sm:min-w-[86px]"
-                                    >
-                                        <span className="font-semibold tabular-nums tracking-tight">
-                                            ${pack.amountUsd}
-                                        </span>
-                                    </Button>
-                                ))}
-                            </div>
-                        )}
                         {activeTab === "usage" && (
                             <div ref={downloadRef} className="relative">
                                 <Button

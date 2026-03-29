@@ -1,5 +1,7 @@
 import { type FC, useState } from "react";
+import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { getTierEmoji } from "@/tier-config.ts";
+import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
@@ -115,9 +117,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             <PollenGaugeSegment
                                 percentage={paidPercentage}
                                 value={displayPaid}
-                                label="💎"
+                                label="🐝"
                                 color="purple"
-                                title={`💎 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 💎 Paid Only models; used after tier grants for others`}
+                                title={`🐝 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🐝 Paid Only models; used after tier grants for others`}
                                 position="left"
                             />
                             {/* Free Pollen - Soft teal for free */}
@@ -126,7 +128,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={displayTier}
                                 label={tierEmoji}
                                 color="teal"
-                                title={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 💎 Paid Only models`}
+                                title={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 🐝 Paid Only models`}
                                 position="right"
                                 offset={paidPercentage}
                             />
@@ -141,48 +143,73 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 className="mt-4 !border-transparent shadow-[0_18px_50px_-32px_rgba(76,29,149,0.35)]"
             >
                 <div className="space-y-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-violet-600">
-                            <span>🎁</span>
-                            <span>Beta Bonus</span>
-                        </div>
-                        <p className="text-sm font-medium text-violet-800">
-                            Bigger packs unlock stronger bonus during beta.
+                    <div className="space-y-1 text-center">
+                        <h3 className="text-lg font-semibold text-green-950 sm:text-xl">
+                            Buy Pollen
+                        </h3>
+                        <p className="text-sm text-violet-800">
+                            Choose a pack below. 🧪 Beta bonus is already
+                            included, with larger packs getting more.
                         </p>
                     </div>
 
-                    <div className="grid gap-3 border-t border-violet-100 pt-4 text-sm text-purple-900 lg:grid-cols-2">
-                        <p className="font-medium">
-                            💳 Want to pay with a different method?{" "}
-                            <a
-                                href="https://github.com/pollinations/pollinations/issues/4826"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline hover:text-purple-700"
+                    <div
+                        id="buy-pollen"
+                        className="mx-auto grid w-fit [grid-template-columns:repeat(3,max-content)] gap-2.5"
+                    >
+                        {POLLEN_PACKS.map((pack) => (
+                            <Button
+                                key={pack.amountUsd}
+                                as="a"
+                                href={`/api/stripe/checkout/${pack.amountUsd}`}
+                                color="purple"
+                                weight="light"
+                                title={`Buy $${pack.amountUsd} pollen pack`}
+                                className="btn-shimmer w-[132px] justify-self-center whitespace-nowrap border border-purple-400 bg-purple-200 px-3 py-2 text-center text-xs text-purple-900 shadow-sm hover:bg-purple-300 sm:text-sm"
                             >
-                                Vote for your preferred option
-                            </a>
-                        </p>
-                        <p className="text-purple-800">
-                            💬 Payment issue or missing pollen?{" "}
-                            <Tooltip
-                                content={
-                                    emailCopied ? "Copied!" : "Click to copy"
-                                }
-                                onClick={copyEmail}
-                            >
-                                <span className="underline hover:text-purple-700">
-                                    {emailCopied
-                                        ? "Copied!"
-                                        : "billing@pollinations.ai"}
+                                <span className="font-semibold text-purple-900">
+                                    ${pack.amountUsd}
                                 </span>
-                            </Tooltip>{" "}
-                            — we reply same day.
-                        </p>
+                                <span className="mx-2 text-violet-300">/</span>
+                                <span className="font-medium text-purple-900">
+                                    🐝 {formatPollenPackValue(pack.pollenGrant)}
+                                </span>
+                            </Button>
+                        ))}
+                    </div>
+
+                    <div className="pt-2">
+                        <PaymentTrustBadge className="mt-0 pt-0" />
                     </div>
                 </div>
             </Card>
-            <PaymentTrustBadge />
+            <div className="mt-4 space-y-3 text-sm text-purple-900">
+                <p className="font-medium">
+                    💳 Want to pay with a different method?{" "}
+                    <a
+                        href="https://github.com/pollinations/pollinations/issues/4826"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-purple-700"
+                    >
+                        Vote for your preferred option
+                    </a>
+                </p>
+                <p className="text-purple-800">
+                    💬 Payment issue or missing pollen?{" "}
+                    <Tooltip
+                        content={emailCopied ? "Copied!" : "Click to copy"}
+                        onClick={copyEmail}
+                    >
+                        <span className="underline hover:text-purple-700">
+                            {emailCopied
+                                ? "Copied!"
+                                : "billing@pollinations.ai"}
+                        </span>
+                    </Tooltip>{" "}
+                    — we reply same day.
+                </p>
+            </div>
         </Panel>
     );
 };

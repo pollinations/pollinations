@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-03-29",
+  "period_start": "2026-03-22",
+  "period_end": "2026-03-28",
+  "generated_at": "2026-03-29T06:22:53.391278+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-29/images/discord.jpg"
+    }
+  ],
+  "text": "## Weekly Update - 2026-03-29\n\nHey <@&1424461167883194418>, 86 PRs merged this week. We ripped out some marketing copy, added a ridiculous amount of models, and rewired how pollen flows.\n\n🤖 **The Frontier Model Avalanche**\n- Added Alibaba Qwen (text, vision, image). `qwen-large` and `qwen-vision` are on the free tier.\n- Amazon Nova model family is live.\n- xAI upgrades: Grok text moved to Azure, plus official xAI image and video models.\n- Added `wan-fast` (Wan 2.2) as a free-tier video model.\n\n💧 **Hourly Drips & Fairer Upgrades**\n- All tiers now get hourly pollen refills. No more waiting forever if you burn through your stack.\n- Spore-to-Seed upgrades are now fairer, using GitHub ID lookups and spread across 42 slots.\n- App submissions are now open to all tiers. The bot won't reject you anymore.\n\n🔑 **Headless Auth & BYOP Visibility**\n- Added Device Authorization Grant (RFC 8628) for CLI/headless logins.\n- Nuked the three separate dashboards. We now have a clean App Ecosystem + App Leaderboard.\n- BYOP apps now track attribution properly via Tinybird.\n\n🧹 **De-corporatizing the UI**\n- Toned down the \"earning\" language. We're an open-source hackerspace, not a side-hustle bootcamp. The Play page description reflects that now.\n\nShoutout to the community for shipping over 30 new apps this week. Go build something weird."
+}

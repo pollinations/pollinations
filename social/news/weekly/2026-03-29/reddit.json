@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-03-29",
+  "period_start": "2026-03-22",
+  "period_end": "2026-03-28",
+  "generated_at": "2026-03-29T06:22:53.391278+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-29/images/reddit.jpg"
+    }
+  ],
+  "title": "86 PRs merged: Qwen & Nova, headless auth, and hourly API refills",
+  "text": "Merged 86 PRs this week. Mostly focused on expanding the model roster, fixing auth for CLI users, and ripping out some lingering marketing copy.\n\n**Models**\nAdded Alibaba Qwen (text, vision, image gen, editing) and the Amazon Nova family. `qwen-large` and `qwen-vision` are on the free tier. We also wired up Wan-fast (wan2.2) for free-tier video generation and migrated Grok to the new xAI Azure endpoint (including their official image and video models).\n\n**Auth & Infrastructure**\nShipped Device Authorization Grant (RFC 8628) support. You can now authenticate headless or via CLI without jumping through browser hoops. We also overhauled the BYOP (Bring Your Own Prompt) dashboard and started tracking app attribution properly in Tinybird.\n\n**Tiers & Hourly Refills**\nMoved all tiers to hourly Pollen refills instead of daily. The Spore-to-Seed auto-upgrade script was getting gamed, so it now uses `github_id` lookups and actively skips deleted or banned GitHub accounts. Upgrades are now spread out to avoid hammering the API.\n\n**UI & Ecosystem**\nToned down the \"earning\" language across the site and replaced the fluff on the Play page with something that reads more like a hackerspace. Consolidated three messy dashboards into an App Ecosystem and Leaderboard view. Also merged about 30 community apps into the showcase.\n\nCode and ongoing discussions are in the repo."
+}

@@ -27,10 +27,10 @@ test("pack descriptions stay aligned with the shared catalog", () => {
 
     expect(POLLEN_PACKS[0]?.checkoutName).toBe("🐝 2 Pollen + 0.5 FREE");
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(
-        "Tiny bits of creative energy you can use across the pollinations.ai ecosystem",
+        "Tiny bits of creative energy for pollinations.ai",
     );
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(
-        "We’re still in beta, the product isn’t perfect yet, so for now you get 0.5 extra Pollen when you buy 2 pollen.",
+        "We’re still in beta, so this pack includes 0.5 extra Pollen when you buy 2.",
     );
     expect(POLLEN_PACKS[0]?.checkoutImageUrl).toBe(
         "https://files.stripe.com/links/MDB8YWNjdF8xU3JZM3E3cmNqUzNsN3RyfGZsX2xpdmVfeHNhUG5CUTRSYnBLUzJod0pPaUtZUzZz00Ebmbm0f1",

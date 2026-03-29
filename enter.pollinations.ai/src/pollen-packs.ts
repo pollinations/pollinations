@@ -13,10 +13,7 @@ export type PollenPack = {
 const CHECKOUT_IMAGE_URL =
     "https://files.stripe.com/links/MDB8YWNjdF8xU3JZM3E3cmNqUzNsN3RyfGZsX2xpdmVfeHNhUG5CUTRSYnBLUzJod0pPaUtZUzZz00Ebmbm0f1";
 const POLLEN_TAX_CODE = "txcd_10103001";
-const CHECKOUT_DESCRIPTION_PREFIX =
-    "Tiny bits of creative energy you can use across the pollinations.ai ecosystem 🌱 ";
-const CHECKOUT_DESCRIPTION_SUFFIX =
-    " We hope it helps you create more, explore more, and tell us what feels off. If you want to share feedback, ideas, or bugs, come hang out with us on Discord — we’re listening. 💬 https://discord.gg/z5uMbEYK";
+const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 
 const BASE_POLLEN_PACKS: ReadonlyArray<{
     amountUsd: number;
@@ -53,9 +50,7 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
             bonusPollen,
             pollenGrant,
             checkoutName: `🐝 ${formatPollenPackValue(amountUsd)} Pollen + ${formatPollenPackValue(bonusPollen)} FREE`,
-            checkoutDescription:
-                `${CHECKOUT_DESCRIPTION_PREFIX}We’re still in beta, the product isn’t perfect yet, so for now you get ${formatPollenPackValue(bonusPollen)} extra Pollen when you buy ${formatPollenPackValue(amountUsd)} pollen.` +
-                CHECKOUT_DESCRIPTION_SUFFIX,
+            checkoutDescription: `Tiny bits of creative energy for pollinations.ai 🌱 We’re still in beta, so this pack includes ${formatPollenPackValue(bonusPollen)} extra Pollen when you buy ${formatPollenPackValue(amountUsd)}. Feedback: ${CHECKOUT_FEEDBACK_URL}`,
             checkoutImageUrl: CHECKOUT_IMAGE_URL,
             taxCode: POLLEN_TAX_CODE,
         };

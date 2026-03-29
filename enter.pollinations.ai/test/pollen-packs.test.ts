@@ -33,7 +33,7 @@ test("pack descriptions stay aligned with the shared catalog", () => {
         "We’re still in beta, so this pack includes 0.5 extra Pollen when you buy 2.",
     );
     expect(POLLEN_PACKS[0]?.checkoutImageUrl).toBe(
-        "https://files.stripe.com/links/MDB8YWNjdF8xU3JZM3E3cmNqUzNsN3RyfGZsX2xpdmVfeHNhUG5CUTRSYnBLUzJod0pPaUtZUzZz00Ebmbm0f1",
+        "https://enter.pollinations.ai/checkout/pollen-pack.png",
     );
     expect(POLLEN_PACKS[0]?.taxCode).toBe("txcd_10103001");
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(

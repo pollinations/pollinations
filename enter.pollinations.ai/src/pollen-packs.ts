@@ -11,7 +11,7 @@ export type PollenPack = {
 };
 
 const CHECKOUT_IMAGE_URL =
-    "https://files.stripe.com/links/MDB8YWNjdF8xU3JZM3E3cmNqUzNsN3RyfGZsX2xpdmVfeHNhUG5CUTRSYnBLUzJod0pPaUtZUzZz00Ebmbm0f1";
+    "https://enter.pollinations.ai/checkout/pollen-pack.png";
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 

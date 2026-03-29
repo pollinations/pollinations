@@ -1,6 +1,6 @@
 # FAQ
 
-## 💎 What is Pollen?
+## 🐝 What is Pollen?
 
 Pollen is our **prepaid credit system**. **$1 ≈ 1 Pollen** *(pricing may evolve)*.
 

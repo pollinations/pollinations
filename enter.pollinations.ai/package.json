@@ -21,7 +21,7 @@
         "migrate:development": "wrangler d1 migrations apply DB --local",
         "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
         "build:production": "CLOUDFLARE_ENV=production vite build --mode=production",
-        "deploy:staging": "npm run build:staging && wrangler deploy",
+        "deploy:staging": "npm run build:staging && wrangler deploy --env staging",
         "deploy:production": "npm run build:production && wrangler deploy",
         "decrypt-vars:dev": "sops decrypt secrets/dev.vars.json --output-type dotenv > .dev.vars",
         "decrypt-vars:production": "sops decrypt secrets/prod.vars.json --output-type dotenv > .dev.vars",

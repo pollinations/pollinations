@@ -27,14 +27,17 @@ test("pack descriptions stay aligned with the shared catalog", () => {
 
     expect(POLLEN_PACKS[0]?.checkoutName).toBe("🐝 2 Pollen + 0.5 FREE");
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(
-        "0.5 extra Pollen when you buy 2 Pollen, for 2.5 total.",
+        "Tiny bits of creative energy you can use across the pollinations.ai ecosystem",
+    );
+    expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(
+        "We’re still in beta, the product isn’t perfect yet, so for now you get 0.5 extra Pollen when you buy 2 pollen.",
     );
     expect(POLLEN_PACKS[0]?.checkoutImageUrl).toBe(
-        "https://enter.pollinations.ai/checkout/pollen-pack.png",
+        "https://files.stripe.com/links/MDB8YWNjdF8xU3JZM3E3cmNqUzNsN3RyfGZsX2xpdmVfeHNhUG5CUTRSYnBLUzJod0pPaUtZUzZz00Ebmbm0f1",
     );
     expect(POLLEN_PACKS[0]?.taxCode).toBe("txcd_10103001");
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(
-        "come hang out with us on Discord",
+        "https://discord.gg/z5uMbEYK",
     );
     expect(describePollenPack(lastPack)).toBe(
         "$100 -> 200 pollen (+100 bonus)",

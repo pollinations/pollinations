@@ -224,11 +224,10 @@ function AuthorizeComponent() {
                 keyType: "secret",
                 createdVia: isDeviceMode ? "device-flow" : "redirect-auth",
                 ...(isDeviceMode && { deviceUserCode: user_code }),
-                ...(!isDeviceMode &&
-                    attribution?.found && {
-                        createdForUserId: attribution.userId,
-                        createdForApp: attribution.appName,
-                    }),
+                ...(attribution?.found && {
+                    createdForUserId: attribution.userId,
+                    createdForApp: attribution.appName,
+                }),
             },
         });
 

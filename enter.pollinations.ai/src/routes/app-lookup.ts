@@ -79,13 +79,31 @@ export const appLookupRoutes = new Hono<Env>().get(
         }
 
         // Strategy 2: Match redirect_url against registered appUrl values
-        // Uses SQL to check if redirect_url starts with the stored appUrl
+        // Fetch all publishable keys with appUrl and match in JS
+        // (D1 rejects the LIKE pattern at scale with "pattern too complex")
         if (redirectUrl) {
-            const keyRow = await db.query.apikey.findFirst({
-                where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL AND ${redirectUrl} LIKE json_extract(${schema.apikey.metadata}, '$.appUrl') || '%'`,
+            const candidates = await db.query.apikey.findMany({
+                where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL`,
             });
-            if (keyRow) {
-                return c.json(await resolveAttribution(db, keyRow));
+            // Find the best match: longest appUrl that is a prefix of redirectUrl
+            // Case-insensitive to handle mixed-case registrations
+            const redirectLower = redirectUrl.toLowerCase();
+            let bestMatch: (typeof candidates)[number] | null = null;
+            let bestLen = 0;
+            for (const row of candidates) {
+                const meta = parseMetadata(row.metadata);
+                const appUrl = meta.appUrl as string;
+                if (
+                    appUrl &&
+                    redirectLower.startsWith(appUrl.toLowerCase()) &&
+                    appUrl.length > bestLen
+                ) {
+                    bestMatch = row;
+                    bestLen = appUrl.length;
+                }
+            }
+            if (bestMatch) {
+                return c.json(await resolveAttribution(db, bestMatch));
             }
         }
 

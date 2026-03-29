@@ -1,0 +1,35 @@
+{
+  "pr_number": 9710,
+  "title": "chore: update app metrics 2026-03-29",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9710",
+  "merged_at": "2026-03-29T04:58:21Z",
+  "labels": [
+    "WEB",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the Greenhouse",
+    "blurb": "Our automated bot just finished its daily rounds, updating health metrics and stats for all the community apps in the greenhouse.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse status.",
+    "impact": "Keeps the app showcase and greenhouse documentation up-to-date with the latest health and usage statistics.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "health-check"
+    ],
+    "visual_concept": "The PR is about automated daily metrics and health checks for the 'greenhouse' (community apps). Visuals: The robot companion (automated bot) checking clipboards in a greenhouse, with Polly the bee watering plants.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a clipboard, checking on glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby with a tiny watering can. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-29/PR-9710.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a clipboard, checking on glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby with a tiny watering can. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic."
+  },
+  "generated_at": "2026-03-29T04:59:06.318426+00:00"
+}

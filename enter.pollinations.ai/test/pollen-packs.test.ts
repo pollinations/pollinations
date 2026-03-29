@@ -25,14 +25,17 @@ test("pack lookup validates supported checkout amounts", () => {
 test("pack descriptions stay aligned with the shared catalog", () => {
     const lastPack = POLLEN_PACKS[POLLEN_PACKS.length - 1];
 
-    expect(POLLEN_PACKS[0]?.checkoutName).toBe("🐝 2 Pollen + 0.5 BONUS");
+    expect(POLLEN_PACKS[0]?.checkoutName).toBe("🐝 2 Pollen + 0.5 FREE");
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(
-        "0.5 bonus pollen, for 2.5 total",
+        "0.5 extra Pollen when you buy 2 Pollen, for 2.5 total.",
     );
     expect(POLLEN_PACKS[0]?.checkoutImageUrl).toBe(
         "https://enter.pollinations.ai/icon-512.png",
     );
     expect(POLLEN_PACKS[0]?.taxCode).toBe("txcd_10103001");
+    expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(
+        "come hang out with us on Discord",
+    );
     expect(describePollenPack(lastPack)).toBe(
         "$100 -> 200 pollen (+100 bonus)",
     );

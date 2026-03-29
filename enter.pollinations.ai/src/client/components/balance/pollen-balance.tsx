@@ -1,5 +1,4 @@
 import { type FC, useState } from "react";
-import { describePollenPack, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { getTierEmoji } from "@/tier-config.ts";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -68,7 +67,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
     const tierEmoji = getTierEmoji(tier);
-    const packSummary = POLLEN_PACKS.map(describePollenPack).join(", ");
 
     const copyEmail = () => {
         navigator.clipboard.writeText("billing@pollinations.ai");
@@ -137,35 +135,52 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
             {/* Purchase info */}
-            <Card color="purple" className="mt-4 !border-transparent">
-                <p className="text-sm font-medium text-purple-900">
-                    🎁 Beta pack bonus: {packSummary}
-                </p>
-                <p className="text-sm font-medium text-purple-900 mt-2">
-                    💳 Want to pay with a different method?{" "}
-                    <a
-                        href="https://github.com/pollinations/pollinations/issues/4826"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline hover:text-purple-700"
-                    >
-                        Vote for your preferred option
-                    </a>
-                </p>
-                <p className="text-sm text-purple-800 mt-2">
-                    💬 Payment issue or missing pollen?{" "}
-                    <Tooltip
-                        content={emailCopied ? "Copied!" : "Click to copy"}
-                        onClick={copyEmail}
-                    >
-                        <span className="underline hover:text-purple-700">
-                            {emailCopied
-                                ? "Copied!"
-                                : "billing@pollinations.ai"}
-                        </span>
-                    </Tooltip>{" "}
-                    — we reply same day.
-                </p>
+            <Card
+                color="purple"
+                bg="bg-gradient-to-br from-white via-violet-50/90 to-emerald-50/80"
+                className="mt-4 !border-transparent shadow-[0_18px_50px_-32px_rgba(76,29,149,0.35)]"
+            >
+                <div className="space-y-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-violet-600">
+                            <span>🎁</span>
+                            <span>Beta Bonus</span>
+                        </div>
+                        <p className="text-sm font-medium text-violet-800">
+                            Bigger packs unlock stronger bonus during beta.
+                        </p>
+                    </div>
+
+                    <div className="grid gap-3 border-t border-violet-100 pt-4 text-sm text-purple-900 lg:grid-cols-2">
+                        <p className="font-medium">
+                            💳 Want to pay with a different method?{" "}
+                            <a
+                                href="https://github.com/pollinations/pollinations/issues/4826"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline hover:text-purple-700"
+                            >
+                                Vote for your preferred option
+                            </a>
+                        </p>
+                        <p className="text-purple-800">
+                            💬 Payment issue or missing pollen?{" "}
+                            <Tooltip
+                                content={
+                                    emailCopied ? "Copied!" : "Click to copy"
+                                }
+                                onClick={copyEmail}
+                            >
+                                <span className="underline hover:text-purple-700">
+                                    {emailCopied
+                                        ? "Copied!"
+                                        : "billing@pollinations.ai"}
+                                </span>
+                            </Tooltip>{" "}
+                            — we reply same day.
+                        </p>
+                    </div>
+                </div>
             </Card>
             <PaymentTrustBadge />
         </Panel>

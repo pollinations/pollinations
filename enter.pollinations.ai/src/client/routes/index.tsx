@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
+import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -281,7 +281,7 @@ function RouteComponent() {
                         {activeTab === "balance" && (
                             <div
                                 id="buy-pollen"
-                                className="flex flex-wrap gap-2"
+                                className="grid w-full grid-cols-3 gap-2 sm:w-auto sm:min-w-[280px]"
                             >
                                 {POLLEN_PACKS.map((pack) => (
                                     <Button
@@ -292,17 +292,11 @@ function RouteComponent() {
                                         onClick={() =>
                                             handleBuyPollen(pack.amountUsd)
                                         }
-                                        title={`${formatPollenPackValue(pack.pollenGrant)} pollen total (+${formatPollenPackValue(pack.bonusPollen)} bonus)`}
-                                        className="btn-shimmer whitespace-nowrap"
+                                        title={`Buy $${pack.amountUsd} pollen pack`}
+                                        className="btn-shimmer min-w-[74px] whitespace-nowrap text-center sm:min-w-[86px]"
                                     >
-                                        <span className="font-semibold">
-                                            💎 ${pack.amountUsd}
-                                        </span>
-                                        <span className="ml-1 text-violet-800/80">
-                                            -&gt;{" "}
-                                            {formatPollenPackValue(
-                                                pack.pollenGrant,
-                                            )}
+                                        <span className="font-semibold tabular-nums tracking-tight">
+                                            ${pack.amountUsd}
                                         </span>
                                     </Button>
                                 ))}

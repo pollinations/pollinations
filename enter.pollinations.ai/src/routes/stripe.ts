@@ -65,6 +65,7 @@ export const stripeRoutes = new Hono<Env>()
                         price_data: {
                             currency: "usd",
                             unit_amount: pack.amountUsd * 100,
+                            tax_behavior: "inclusive",
                             product_data: {
                                 name: pack.checkoutName,
                                 description: pack.checkoutDescription,
@@ -89,6 +90,11 @@ export const stripeRoutes = new Hono<Env>()
                 // Invoice creation after payment
                 invoice_creation: {
                     enabled: true,
+                    invoice_data: {
+                        rendering_options: {
+                            amount_tax_display: "include_inclusive_tax",
+                        },
+                    },
                 },
                 // Metadata links the completed checkout back to the shared pack
                 // definition used by the webhook.

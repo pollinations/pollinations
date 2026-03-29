@@ -11,7 +11,7 @@ test("pollen pack catalog includes the stepped beta bonus ladder", () => {
         2, 5, 10, 20, 50, 100,
     ]);
     expect(POLLEN_PACKS.map((pack) => pack.pollenGrant)).toEqual([
-        2.5, 7, 15, 30, 90, 200,
+        2.5, 7, 15, 30, 80, 200,
     ]);
 });
 

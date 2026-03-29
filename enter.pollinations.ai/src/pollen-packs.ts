@@ -23,7 +23,7 @@ const BASE_POLLEN_PACKS: ReadonlyArray<{
     { amountUsd: 5, bonusPollen: 2 },
     { amountUsd: 10, bonusPollen: 5 },
     { amountUsd: 20, bonusPollen: 10 },
-    { amountUsd: 50, bonusPollen: 40 },
+    { amountUsd: 50, bonusPollen: 30 },
     { amountUsd: 100, bonusPollen: 100 },
 ];
 

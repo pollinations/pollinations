@@ -21,6 +21,8 @@ interface StripeEventData {
     payload: Stripe.Event;
 }
 
+const LEGACY_BETA_MULTIPLIER = 2;
+
 async function sendStripeEventToTinybird(
     env: CloudflareBindings,
     data: StripeEventData,
@@ -87,11 +89,17 @@ const handleCheckoutSessionCompleted = async (
     }
 
     const userId = metadata.userId;
+    const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
     const pack = metadata.packAmount
         ? getPollenPack(metadata.packAmount)
         : undefined;
 
-    if (!pack) {
+    if (amountPaid <= 0) {
+        console.error("Invalid payment amount:", session.amount_total);
+        return { success: false, message: "Invalid payment amount" };
+    }
+
+    if (!pack && metadata.packAmount) {
         console.error("Missing or invalid packAmount in checkout session:", {
             sessionId: session.id,
             packAmount: metadata.packAmount,
@@ -102,8 +110,19 @@ const handleCheckoutSessionCompleted = async (
         };
     }
 
-    const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
-    const creditsToAdd = pack.pollenGrant;
+    const creditsToAdd = pack
+        ? pack.pollenGrant
+        : amountPaid * LEGACY_BETA_MULTIPLIER;
+
+    if (!pack) {
+        console.warn(
+            "Legacy Stripe checkout session missing packAmount; applying 2x fallback",
+            {
+                sessionId: session.id,
+                amountPaid,
+            },
+        );
+    }
 
     const db = drizzle(env.DB);
 
@@ -128,7 +147,9 @@ const handleCheckoutSessionCompleted = async (
         .where(eq(userTable.id, userId));
 
     console.log(
-        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: $${amountPaid}, session: ${session.id})`,
+        pack
+            ? `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: $${amountPaid}, session: ${session.id})`
+            : `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (legacy fallback, paid: $${amountPaid}, session: ${session.id})`,
     );
 
     return {

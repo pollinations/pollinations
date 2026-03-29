@@ -85,6 +85,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     }
 
     const rawPaidPercentage = calculatePercentage(displayPaid, totalPollen);
+    const gaugeHeightClass = "h-[30px] sm:h-[34px]";
 
     // Ensure both segments are always visible (min width to fit labels)
     const MIN_SEGMENT = 20;
@@ -112,7 +113,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     </span>
                     {/* Gauge */}
                     <div className="w-full max-w-[540px]">
-                        <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden border border-purple-400">
+                        <div
+                            className={`relative ${gaugeHeightClass} bg-gray-200 rounded-full overflow-hidden border border-purple-400`}
+                        >
                             {/* Paid Pollen - Soft purple for paid (pack + crypto) */}
                             <PollenGaugeSegment
                                 percentage={paidPercentage}
@@ -165,7 +168,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 color="purple"
                                 weight="light"
                                 title={`Buy $${pack.amountUsd} pollen pack`}
-                                className="btn-shimmer w-[132px] justify-self-center whitespace-nowrap border border-purple-400 bg-purple-200 px-3 py-2 text-center text-xs text-purple-900 shadow-sm hover:bg-purple-300 sm:text-sm"
+                                className="btn-shimmer w-[132px] justify-self-center whitespace-nowrap bg-purple-200 px-3 text-center text-xs text-purple-900 shadow-sm hover:bg-purple-300 sm:text-sm"
                             >
                                 <span className="font-semibold text-purple-900">
                                     ${pack.amountUsd}

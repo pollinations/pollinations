@@ -30,7 +30,7 @@ test("pack descriptions stay aligned with the shared catalog", () => {
         "0.5 extra Pollen when you buy 2 Pollen, for 2.5 total.",
     );
     expect(POLLEN_PACKS[0]?.checkoutImageUrl).toBe(
-        "https://enter.pollinations.ai/icon-512.png",
+        "https://enter.pollinations.ai/checkout/pollen-pack.png",
     );
     expect(POLLEN_PACKS[0]?.taxCode).toBe("txcd_10103001");
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(

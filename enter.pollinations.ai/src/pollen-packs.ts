@@ -10,7 +10,8 @@ export type PollenPack = {
     taxCode: string;
 };
 
-const CHECKOUT_IMAGE_URL = "https://enter.pollinations.ai/icon-512.png";
+const CHECKOUT_IMAGE_URL =
+    "https://enter.pollinations.ai/checkout/pollen-pack.png";
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_DESCRIPTION_PREFIX =
     "We're still in beta, and we want to thank you for trying our services!\n";

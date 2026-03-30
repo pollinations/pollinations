@@ -1,0 +1,34 @@
+{
+  "pr_number": 9740,
+  "title": "Add Persona AI Application to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9740",
+  "merged_at": "2026-03-30T05:32:54Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Crafting new personas",
+    "blurb": "Persona AI just landed in the app showcase! It's a neat new tool for creators and storytellers to engineer the perfect character prompts.",
+    "summary": "Added Persona AI to the community app showcase, providing specialized character prompt engineering tools for creators.",
+    "impact": "Users can now discover and use Persona AI to craft precise, creative character prompts directly from the community showcase.",
+    "keywords": [
+      "community",
+      "app-showcase",
+      "persona-ai",
+      "prompt-engineering",
+      "chat"
+    ],
+    "visual_concept": "The PR introduces a character prompt engineering app. Visually, this can be represented by Polly the bee acting as a creator or storyteller, perhaps holding theatrical masks or character sheets, surrounded by creative tools.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, holding a small theatrical mask. A retro computer monitor nearby glows with lime green (#ecf874) text showing character profiles. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-30/PR-9740.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, holding a small theatrical mask. A retro computer monitor nearby glows with lime green (#ecf874) text showing character profiles. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-30T05:33:44.477107+00:00",
+  "app_name": "Persona AI Application",
+  "app_url": "https://personaai.app/"
+}

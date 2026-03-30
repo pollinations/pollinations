@@ -1,0 +1,35 @@
+{
+  "pr_number": 9746,
+  "title": "Add Noyaku to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9746",
+  "merged_at": "2026-03-30T06:28:22Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Translating the webtoonverse",
+    "blurb": "Noyaku just joined the community showcase. It's a clever new app that uses AI to translate webtoons, manhwa, and novels on the fly.",
+    "summary": "Added Noyaku, an AI-powered translation tool for webtoons and comics, to the community app showcase.",
+    "impact": "Users can now discover Noyaku in the writing section to help translate their favorite manhwa, novels, and web content.",
+    "keywords": [
+      "community",
+      "showcase",
+      "app",
+      "translation",
+      "comics",
+      "webtoons"
+    ],
+    "visual_concept": "The PR is about translating webtoons/comics. Visual symbols: comic books, manga pages, translation symbols. Characters: Polly the bee reading a comic book with reading glasses, with speech bubbles showing different languages.",
+    "image_prompt": "A cozy pixel art scene of a tiny bee reading a glowing comic book while floating speech bubbles translate symbols. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. Polly the bee mascot wearing tiny reading glasses with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-30/PR-9746.jpg",
+    "prompt": "A cozy pixel art scene of a tiny bee reading a glowing comic book while floating speech bubbles translate symbols. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. Polly the bee mascot wearing tiny reading glasses with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-30T06:29:51.068624+00:00",
+  "app_name": "Noyaku",
+  "app_url": "https://play.google.com/store/apps/details?id=com.kickerai.noyaku"
+}

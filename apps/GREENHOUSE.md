@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **660** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **661** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -18,10 +18,10 @@
 | [🐱 MonaChat.jp](https://monachat.jp) | MonaChat.jp is a real-time character chat service in Japan featuring unique Avatar/AA (ASCII Art) interactions. We have integrated the pollinations.ai API to allow users to generate and share images i | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Nexus AI](https://mddecn.github.io/Nexus-AI/#) | Create images, videos, audios, and other media on Nexus AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ AI Image Generator](https://moh65-debug.github.io/pollinations-image-generator/pollinations-image-generator.html) | Generate images with AI Image Generator using Pollinations AI and BYOP; users supply API keys from enter.pollinations.ai, pay only for what they generate, and the developer pays $0. | [@web](https://github.com/web) |  | 🫧 |
+| [🔎 Zairok AI Discovery App](https://zairok.web.app) | Discover AI tools and resources with Zairok AI Discovery App, a free hub for browsing models and services. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 Samina 🍂](https://t.me/iSaminaBot) | Provides a telegram chatbot Samina 🍂 with entertainment features and image generation via pollinations.ai. Use the /img command to generate images. | [@telegram](https://github.com/telegram) |  | 🫧 |
 | [🌼 PollenStudio: AI Variation Gallery](https://souravhchoursiya.github.io/pollen-gallery/) | Showcases PollenStudio: AI Variation Gallery. | [@web](https://github.com/web) |  | 🫧 |
 | [🛠️ Copilot ++](https://marketplace.visualstudio.com/items?itemName=OEvortex.better-copilot-chat) | Copilot ++ is a VS Code extension that enhances GitHub Copilot Chat with support for 30+ AI providers including Pollinations AI. It enables users to seamlessly switch between providers, manage multipl | [@desktop](https://github.com/desktop) |  | 🫧 |
-| [🧩 Flowra](https://flowra-8mj.pages.dev/) | Edit node-based AI workflows for real-world with Flowra. | [@web](https://github.com/web) |  | 🫧 |
 
 ---
 
@@ -513,6 +513,7 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🔎 Zairok AI Discovery App](https://zairok.web.app) | Discover AI tools and resources with Zairok AI Discovery App, a free hub for browsing models and services. | [@web](https://github.com/web) |  | 🫧 |
 | [🕌 HatimPro](https://hatimpro.vercel.app) | This is a comprehensive Islamic lifestyle application designed to help users track their Quran reading progress, perform daily Dhikr (remembrance of Allah), and join communal reading rooms (Hatim). It | [@web](https://github.com/web) |  | 🫧 |
 | [💪 FuerzaNeta](https://www.fuerzaneta.es/) | Ofrece herramientas para planificar, seguir y registrar entrenamientos de fuerza destinados a entrenadores. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 AnkiTect](https://github.com/Dunkchump/AnkiTect_Functional) | Generates Anki CLI decks from word lists for language learning. AnkiTect creates multimedia flashcards and uses the pollinations.ai API to add context-relevant images. | [@cli](https://github.com/cli) |  | 🫧 |
@@ -522,12 +523,12 @@
 | [⚛️ Physics study with AI](https://physicsatlas.github.io/PhysicsAtlas/) | Practice physics problems and receive step-by-step solutions and explanations with Physics study with AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🏫 Niyam School](https://niyam.school/) | Manage daily school operations with Niyam School by tracking attendance, schedules, communications, and administrative tasks. | [@web](https://github.com/web) |  | 🫧 |
 | [📐 Proyecto Descartes](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html) | STEM education initiative integrating Pollinations AI | [@web](https://github.com/web) |  |  |
-| [📚 lstation.co Children Story Creator and Player Plat](https://lstation.co) | Create and play interactive stories for children using lstation.co Children Story Creator and Player Plat with AI-powered storytelling and educational features. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 46 apps</summary>
+<details><summary>Show all 47 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [📚 lstation.co Children Story Creator and Player Plat](https://lstation.co) | Create and play interactive stories for children using lstation.co Children Story Creator and Player Plat with AI-powered storytelling and educational features. | [@web](https://github.com/web) |  | 🫧 |
 | [📚 StudyCcc](https://mddecn.github.io/Studing-site-by-Dannzss.-/) | Provides study tools in beta as StudyCcc; created by Dannszz. | [@web](https://github.com/web) |  | 🫧 |
 | [🎓 Al-Subtain University Questions Bank webite](https://sums-questions-bank.vercel.app/) | Browse sums-questions-bank.vercel.app to view and practice past exam questions; each question includes an Explain with AI option for AI-generated explanations. | [@web](https://github.com/web) |  | 🫧 |
 | [🧮 BhaskarMath](https://bhaskarmath.github.io/BhaskarMath/) | Math lessons, practice problems, and step-by-step solutions across algebra, calculus, and geometry for study and exam preparation. | [@web](https://github.com/web) |  | 🫧 |

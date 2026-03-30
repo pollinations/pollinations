@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🌐 Noyaku](https://play.google.com/store/apps/details?id=com.kickerai.noyaku) | Translate Webtoons, manhwa, novels, comics, and web content using AI with Noyaku. | [@android](https://github.com/android) |
+| [🎓 Learnty](https://learnty.site) | Learnty generates personalized learning games with AI, creating interactive exercises that help users engage with information and learn basic concepts. | [@web](https://github.com/web) |
+| [✒️ Onyx Sign](https://onyxsign.vercel.app/) | Generate minimalist flat 2D signatures with Onyx Sign and export handwriting-ready vector files converting AI designs into physical handwriting formats. | [@web](https://github.com/web) |
+| [✨ WishCraft](https://wishcraft-app.web.app) | Generate AI-driven affirmations and goal visualizations with WishCraft, producing daily prompts, visualization boards, and progress tracking. | [@web](https://github.com/web) |
+| [🌐 XUnity.AutoPollinationTranslator](10445004) | Provides a translation endpoint for XUnity.AutoTranslator via XUnity.AutoPollinationTranslator using Pollinations AI to deliver free, uncensored translations for Unity games. | [@library](https://github.com/library) |
+| [🏪 Website Studio](https://website-studio.onrender.com/) | **Website Studio** is a comprehensive resource and review platform designed to help local business owners—primarily across the USA—find the absolute best website building platforms for their specific | [@web](https://github.com/web) |
+| [🎭 Persona AI Application](https://personaai.app/) | Provides character prompt engineering tools in Persona AI Application for creators, artists, and storytellers, enabling precise and creative prompts. | [@web](https://github.com/web) |
+| [🧊 3D Icon Generator](https://icon.scripted.my.id/) | Create 3D icons in various styles with 3D Icon Generator. | [@web](https://github.com/web) |
+| [🔎 Zairok AI Discovery App](https://zairok.web.app) | Discover AI tools and resources with Zairok AI Discovery App, a free hub for browsing models and services. | [@web](https://github.com/web) |
 | [🤖 Architecture-updated-](https://joyful-jalebi-81f7b7.netlify.app/) | Provide AI chat functionality via Architecture-updated-. | [@web](https://github.com/web) |
-| [🐱 MonaChat.jp](https://monachat.jp) | MonaChat.jp is a real-time character chat service in Japan featuring unique Avatar/AA (ASCII Art) interactions. We have integrated the pollinations.ai API to allow users to generate and share images i | [@web](https://github.com/web) |
-| [🔀 AI router](https://twangymoney.xyz/docs/ai-router) | Routes API requests through other services using AI router's system to create API keys and spend tokens via my service for responses, similar to OpenRouter. | [@api](https://github.com/api) |
-| [🖼️ AI Image Generator](https://moh65-debug.github.io/pollinations-image-generator/pollinations-image-generator.html) | Generate images with AI Image Generator using Pollinations AI and BYOP; users supply API keys from enter.pollinations.ai, pay only for what they generate, and the developer pays $0. | [@web](https://github.com/web) |
-| [🎨 Nexus AI](https://mddecn.github.io/Nexus-AI/#) | Create images, videos, audios, and other media on Nexus AI. | [@web](https://github.com/web) |
-| [🤖 PezzAI](https://chat.pezzai.com) | Provides free AI tools via a website under the name PezzAI, funded and maintained by a single developer. | [@web](https://github.com/web) |
-| [🤖 SentIQGPT](https://sentiqgpt.sentiqlabs.com/) | Provides browser-based AI assistant features in SentIQGPT, including chat memory, file analysis, and image generation. | [@web](https://github.com/web) |
-| [🧰 Pollinations Tools Hub](https://lokiodinson.netlify.app/ai) | A free open-source collection of 3 browser-based AI tools powered entirely by Pollinations.ai  no sign-up no installation required. Includes a Document Translator Gemini 2.5 Flash-Lite Voice Studio tt | [@web](https://github.com/web) |
-| [🌱 Pollinations Seed Plan Qualification](https://app-j.pl/Pollinations/) | Analyze a public GitHub user profile with Pollinations Seed Plan Qualification to calculate points per the Pollinations Seed Plan scoring system and display the score and breakdown. | [@web](https://github.com/web) |
-| [🏫 Niyam School](https://niyam.school/) | Manage daily school operations with Niyam School by tracking attendance, schedules, communications, and administrative tasks. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

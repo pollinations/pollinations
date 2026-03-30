@@ -14,6 +14,11 @@ on:
         description: 'Git ref to regenerate docs from'
         required: false
         default: main
+      create_pr:
+        description: 'Create a docs PR if APIDOCS.md changes'
+        required: false
+        default: false
+        type: boolean
   repository_dispatch:
     types:
       - regenerate-apidocs
@@ -61,7 +66,7 @@ jobs:
           fi
 
       - name: Create PR with updated docs
-        if: steps.changes.outputs.changed == 'true'
+        if: ${{ steps.changes.outputs.changed == 'true' && (github.event_name == 'push' || inputs.create_pr || github.event.client_payload.create_pr) }}
         run: |
           BRANCH="docs/regenerate-apidocs-$(date +%s)"
           git config user.name "github-actions[bot]"

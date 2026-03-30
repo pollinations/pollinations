@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🌐 Noyaku](https://play.google.com/store/apps/details?id=com.kickerai.noyaku) | Translate Webtoons, manhwa, novels, comics, and web content using AI with Noyaku. | [@android](https://github.com/android) |
-| [🎓 Learnty](https://learnty.site) | Learnty generates personalized learning games with AI, creating interactive exercises that help users engage with information and learn basic concepts. | [@web](https://github.com/web) |
-| [✒️ Onyx Sign](https://onyxsign.vercel.app/) | Generate minimalist flat 2D signatures with Onyx Sign and export handwriting-ready vector files converting AI designs into physical handwriting formats. | [@web](https://github.com/web) |
-| [✨ WishCraft](https://wishcraft-app.web.app) | Generate AI-driven affirmations and goal visualizations with WishCraft, producing daily prompts, visualization boards, and progress tracking. | [@web](https://github.com/web) |
-| [🌐 XUnity.AutoPollinationTranslator](10445004) | Provides a translation endpoint for XUnity.AutoTranslator via XUnity.AutoPollinationTranslator using Pollinations AI to deliver free, uncensored translations for Unity games. | [@library](https://github.com/library) |
-| [🏪 Website Studio](https://website-studio.onrender.com/) | **Website Studio** is a comprehensive resource and review platform designed to help local business owners—primarily across the USA—find the absolute best website building platforms for their specific | [@web](https://github.com/web) |
-| [🎭 Persona AI Application](https://personaai.app/) | Provides character prompt engineering tools in Persona AI Application for creators, artists, and storytellers, enabling precise and creative prompts. | [@web](https://github.com/web) |
-| [🧊 3D Icon Generator](https://icon.scripted.my.id/) | Create 3D icons in various styles with 3D Icon Generator. | [@web](https://github.com/web) |
-| [🔎 Zairok AI Discovery App](https://zairok.web.app) | Discover AI tools and resources with Zairok AI Discovery App, a free hub for browsing models and services. | [@web](https://github.com/web) |
-| [🤖 Architecture-updated-](https://joyful-jalebi-81f7b7.netlify.app/) | Provide AI chat functionality via Architecture-updated-. | [@web](https://github.com/web) |
+| [🌐 Noyaku](https://play.google.com/store/apps/details?id=com.kickerai.noyaku) | Translate Webtoons, manhwa, novels, comics, and web content using AI with Noyaku. | [@dragneel2074](https://github.com/dragneel2074) |
+| [🎓 Learnty](https://learnty.site) | Learnty generates personalized learning games with AI, creating interactive exercises that help users engage with information and learn basic concepts. | [@Sebfranklin](https://github.com/Sebfranklin) |
+| [✒️ Onyx Sign](https://onyxsign.vercel.app/) | Generate minimalist flat 2D signatures with Onyx Sign and export handwriting-ready vector files converting AI designs into physical handwriting formats. | [@phumchai-d](https://github.com/phumchai-d) |
+| [✨ WishCraft](https://wishcraft-app.web.app) | Generate AI-driven affirmations and goal visualizations with WishCraft, producing daily prompts, visualization boards, and progress tracking. | [@romankurnovskii](https://github.com/romankurnovskii) |
+| 🌐 XUnity.AutoPollinationTranslator | Provides a translation endpoint for XUnity.AutoTranslator via XUnity.AutoPollinationTranslator using Pollinations AI to deliver free, uncensored translations for Unity games. | [@kikyo2006](https://github.com/kikyo2006) |
+| [🏪 Website Studio](https://website-studio.onrender.com/) | **Website Studio** is a comprehensive resource and review platform designed to help local business owners—primarily across the USA—find the absolute best website building platforms for their specific | [@Necro-Rohan](https://github.com/Necro-Rohan) |
+| [🎭 Persona AI Application](https://personaai.app/) | Provides character prompt engineering tools in Persona AI Application for creators, artists, and storytellers, enabling precise and creative prompts. | [@kikyo2006](https://github.com/kikyo2006) |
+| [🧊 3D Icon Generator](https://icon.scripted.my.id/) | Create 3D icons in various styles with 3D Icon Generator. | [@ajphotoinc-png](https://github.com/ajphotoinc-png) |
+| [🔎 Zairok AI Discovery App](https://zairok.web.app) | Discover AI tools and resources with Zairok AI Discovery App, a free hub for browsing models and services. | [@aarushlohit](https://github.com/aarushlohit) |
+| [🤖 Architecture-updated-](https://joyful-jalebi-81f7b7.netlify.app/) | Provide AI chat functionality via Architecture-updated-. | [@shnayderfds](https://github.com/shnayderfds) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -47,16 +47,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-03-23** – **🚀 Amazon Nova arrives** The Nova model family (Pro, Canvas, and Reel) is now wired up for text, image, and video generation. We also enabled image-to-image variation support for Canvas.
-- **2026-03-23** – **🧠 Grok learns to reason** Added official xAI integration for `grok-imagine` and `grok-video-pro`, plus upgraded text models featuring `grok-reasoning` with a casual 2M token context window.
-- **2026-03-23** – **🎨 Qwen image models** Added Alibaba's `qwen-image-plus` and `qwen-image-edit-plus`. Native CJK text rendering and multi-image editing are now on the menu.
-- **2026-03-23** – **🎬 Fast, free, and moving** Added `wan-fast` for free 5-second video generation. We also defaulted `audio=true` across the video API, so supported models will just generate sound automatically.
-- **2026-03-23** – **🔐 Headless in the hive** Implemented RFC 8628 Device Authorization Grant. You can now securely authenticate terminal tools and headless scripts without complex browser workarounds.
-- **2026-03-23** – **🎵 Free the MIDI** We split the `midijourney` text model into a free base version (Claude Haiku) and a large variant (Claude Opus) for complex compositions.
-- **2026-03-23** – **🌟 Showcase additions** Phicasso Chat (browser-native privacy) and AI MIDI Generator (text-to-multitrack) have joined the community showcase. [Try them](https://hello.pollinations.ai) <!-- app -->
-- **2026-03-22** – **🤖 Qwen Models & Vision** Alibaba's Qwen models (`qwen-coder-large`, `qwen-large`, and `qwen-vision`) are now live on the [Unified API](https://gen.pollinations.ai). 1M context windows and image understanding, completely unlocked for the free tier.
-- **2026-03-22** – **🎨 LND Ai Showcase** LND Ai has been added to the community showcase. Another solid text-to-image tool built entirely by hitting our API. [Try it](https://www.namansoni.in/text-to-image). <!-- app -->
-- **2026-03-20** – **🎨 Klein Multi-Image Blending** The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending.
+- **2026-03-26** – **🌸 OrchidLLM** New multimodal generation app in the showcase. Send text, get whatever. [Try it](https://orchidllm.vercel.app) <!-- app -->
+- **2026-03-26** – **⚙️ OpenCode Configurator** Auto-configure OpenCode environments with our text models. Less boilerplate, more building. [View repo](https://github.com/onatrain/opencode-pollinations-conf) <!-- app -->
+- **2026-03-26** – **📝 TranslateIt** Context-aware AI translation tool. Because literal translations are usually terrible. [Try it](https://connor.ct.ws/translateit) <!-- app -->
+- **2026-03-26** – **🖥️ Tofu** A rich terminal-based chat client. For when you absolutely refuse to leave the command line. [Try it](https://crates.io/crates/tofu-llm) <!-- app -->
+- **2026-03-26** – **🎞️ Storymake** Generate short-form videos from text prompts. The content mill demands to be fed. [Try it](https://storymake.io) <!-- app -->
+- **2026-03-26** – **🤖 Apiction** A new platform for chatting with multiple AI models side-by-side. [Try it](https://apiction.site/) <!-- app -->
+- **2026-03-26** – **🎨 Visiona** A clean, responsive web interface for real-time AI chatting. [Try it](https://visiona-wheat.vercel.app/) <!-- app -->
+- **2026-03-25** – **🎬 Grok gets the picture** You can now pass an initial image URL to `grok-video-pro` to guide video generation. Image-to-video via xAI is officially live.
+- **2026-03-25** – **💻 PowerShell gets pollinated** Generate AI content directly from your Windows command line with the new PollinationsAiPS module. [View repo](https://github.com/BananaAcid/PollinationsAiPS/) <!-- app -->
+- **2026-03-25** – **🎮 Game engines can talk** 'Talking with Unity' brings our voice AI, speech recognition, and text-to-speech directly into Unity projects. [Try it](https://www.ai-ministries.com/apps/talking-unity/) <!-- app -->
 ---
 
 ## 🌱 Introduction

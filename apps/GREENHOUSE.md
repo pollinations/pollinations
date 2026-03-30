@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **663** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **664** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -13,6 +13,7 @@
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@cli](https://github.com/cli) |  | 🫧 |
+| [🏪 Website Studio](https://website-studio.onrender.com/) | **Website Studio** is a comprehensive resource and review platform designed to help local business owners—primarily across the USA—find the absolute best website building platforms for their specific | [@web](https://github.com/web) |  | 🫧 |
 | [🎭 Persona AI Application](https://personaai.app/) | Provides character prompt engineering tools in Persona AI Application for creators, artists, and storytellers, enabling precise and creative prompts. | [@web](https://github.com/web) |  | 🫧 |
 | [🧊 3D Icon Generator](https://icon.scripted.my.id/) | Create 3D icons in various styles with 3D Icon Generator. | [@web](https://github.com/web) |  | 🫧 |
 | [🔀 AI router](https://twangymoney.xyz/docs/ai-router) | Routes API requests through other services using AI router's system to create API keys and spend tokens via my service for responses, similar to OpenRouter. | [@api](https://github.com/api) |  | 🫧 |
@@ -21,7 +22,6 @@
 | [🎨 Nexus AI](https://mddecn.github.io/Nexus-AI/#) | Create images, videos, audios, and other media on Nexus AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ AI Image Generator](https://moh65-debug.github.io/pollinations-image-generator/pollinations-image-generator.html) | Generate images with AI Image Generator using Pollinations AI and BYOP; users supply API keys from enter.pollinations.ai, pay only for what they generate, and the developer pays $0. | [@web](https://github.com/web) |  | 🫧 |
 | [🔎 Zairok AI Discovery App](https://zairok.web.app) | Discover AI tools and resources with Zairok AI Discovery App, a free hub for browsing models and services. | [@web](https://github.com/web) |  | 🫧 |
-| [🤖 Samina 🍂](https://t.me/iSaminaBot) | Provides a telegram chatbot Samina 🍂 with entertainment features and image generation via pollinations.ai. Use the /img command to generate images. | [@telegram](https://github.com/telegram) |  | 🫧 |
 
 ---
 
@@ -768,6 +768,7 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🏪 Website Studio](https://website-studio.onrender.com/) | **Website Studio** is a comprehensive resource and review platform designed to help local business owners—primarily across the USA—find the absolute best website building platforms for their specific | [@web](https://github.com/web) |  | 🫧 |
 | [🧮 excelformula.pro](https://excelformula.pro/) | Generate Excel formulas from natural language or sample data using excelformula.pro, returning ready-to-use formulas with cell references and brief explanations. | [@web](https://github.com/web) |  | 🫧 |
 | [💡 IdeaPulley](https://ideapulley.indevs.in) | Generate, validate, and evolve ideas with IdeaPulley using AI-driven multi-agent reasoning systems to support individuals and teams. | [@web](https://github.com/web) |  | 🫧 |
 | [🏃 Spix - Personal Fitness Companion](85549951) | Track workouts, activity, and health metrics with Spix - Personal Fitness Companion, built with React Native 0.81 Expo TypeScript and designed to keep your data local and private. | [@android](https://github.com/android) |  | 🫧 |
@@ -777,12 +778,12 @@
 | [🛒 THISX](https://www.thisx.ai/en) | AI platform for e-commerce: store fixes and Meta AI-driven ads. | [@web](https://github.com/web) |  | 🫧 |
 | [🛠️ SimpleTools](https://simpletools.lol/) | Utilities: automatic citation generator, AI humanizer, and scrambler. | [@web](https://github.com/web) |  | 🫧 |
 | [💼 FeedHire](https://feedhire.me/) | AI job aggregator that filters postings from Telegram, Reddit and other sources | [@web](https://github.com/web) |  | 🫧 |
-| [🍳 PantrySage](https://pantrysage.app) | AI-powered meal planning app with recipe generator and pantry management. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 36 apps</summary>
+<details><summary>Show all 37 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🍳 PantrySage](https://pantrysage.app) | AI-powered meal planning app with recipe generator and pantry management. | [@web](https://github.com/web) |  | 🫧 |
 | [🛍️ SnapSell](202450182) | Generate AI-powered product listings for Facebook, Shopify, eBay, and more. | [@api](https://github.com/api) |  | 🫧 |
 | [⚙️ Productivity Gears](http://productivitygears.com/) | Suite of 100+ free productivity tools: AI assistants, converters, PDF editors. | [@web](https://github.com/web) |  | 🫧 |
 | [🛠️ convertorz.com](https://www.convertorz.com/) | Web portal with AI image generation, file conversion, text summarization, and productivity tools | [@web](https://github.com/web) |  | 🫧 |

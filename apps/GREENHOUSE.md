@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **669** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **670** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -13,6 +13,7 @@
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@cli](https://github.com/cli) |  | 🫧 |
+| [📝 YoutubeToBlog](10759187) | Displays YoutubeToBlog. | [@web](https://github.com/web) |  | 🫧 |
 | [🏪 Website Studio](https://website-studio.onrender.com/) | **Website Studio** is a comprehensive resource and review platform designed to help local business owners—primarily across the USA—find the absolute best website building platforms for their specific | [@web](https://github.com/web) |  | 🫧 |
 | [🎭 Persona AI Application](https://personaai.app/) | Provides character prompt engineering tools in Persona AI Application for creators, artists, and storytellers, enabling precise and creative prompts. | [@web](https://github.com/web) |  | 🫧 |
 | [🌐 XUnity.AutoPollinationTranslator](10445004) | Provides a translation endpoint for XUnity.AutoTranslator via XUnity.AutoPollinationTranslator using Pollinations AI to deliver free, uncensored translations for Unity games. | [@library](https://github.com/library) |  | 🫧 |
@@ -21,7 +22,6 @@
 | [🤖 Architecture-updated-](https://joyful-jalebi-81f7b7.netlify.app/) | Provide AI chat functionality via Architecture-updated-. | [@web](https://github.com/web) |  | 🫧 |
 | [🐱 MonaChat.jp](https://monachat.jp) | MonaChat.jp is a real-time character chat service in Japan featuring unique Avatar/AA (ASCII Art) interactions. We have integrated the pollinations.ai API to allow users to generate and share images i | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Nexus AI](https://mddecn.github.io/Nexus-AI/#) | Create images, videos, audios, and other media on Nexus AI. | [@web](https://github.com/web) |  | 🫧 |
-| [🖼️ AI Image Generator](https://moh65-debug.github.io/pollinations-image-generator/pollinations-image-generator.html) | Generate images with AI Image Generator using Pollinations AI and BYOP; users supply API keys from enter.pollinations.ai, pay only for what they generate, and the developer pays $0. | [@web](https://github.com/web) |  | 🫧 |
 
 ---
 
@@ -231,6 +231,7 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [📝 YoutubeToBlog](10759187) | Displays YoutubeToBlog. | [@web](https://github.com/web) |  | 🫧 |
 | [📝 URL to Markdown](https://pollinations-url-text.vercel.app/) | Convert any webpage to clean Markdown using AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🌐 TranslateIt](https://connor.ct.ws/translateit) | Translate text with TranslateIt, using AI to generate translations based on sentence context. | [@web](https://github.com/web) |  | 🫧 |
 | [💤 DSEA](https://dsea.vercel.app/) | Record and visualize dreams with DSEA, an AI-powered dream journal web app. | [@web](https://github.com/web) |  | 🫧 |
@@ -240,12 +241,12 @@
 | [📚 NovelCraft AI](https://mrlearner1606.github.io/novelcraftai/) | Write novels in your browser using NovelCraft AI; it runs entirely on your device with no account, no installation, and no server. | [@web](https://github.com/web) |  | 🫧 |
 | [📖 Fantasy Story Generator](https://bringtone.github.io/ChildrenStory/) | Generate fantasy stories by specifying characters, settings, themes, and length with Fantasy Story Generator. Export story text for editing, saving, or sharing. | [@web](https://github.com/web) |  | 🫧 |
 | [📝 Noted](https://app-noted.netlify.app/) | Create and organize markdown notes, to-do lists, and expense records with AI image and text generation. | [@web](https://github.com/web) |  | 🫧 |
-| [✍️ TeleChars AI](https://telecharsai.x10.mx) | AI character creation platform for Telegram with memory, image/audio understanding, and BYOP key support. | [@telegram](https://github.com/telegram) |  | 🫧 |
 
-<details><summary>Show all 69 apps</summary>
+<details><summary>Show all 70 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [✍️ TeleChars AI](https://telecharsai.x10.mx) | AI character creation platform for Telegram with memory, image/audio understanding, and BYOP key support. | [@telegram](https://github.com/telegram) |  | 🫧 |
 | [📚 PollenPages](https://pollen-pages.vercel.app/) | Generate illustrated children's books and fantasy tales from prompts with PollenPages. Users pick a genre and describe a concept to get AI-produced text narratives and illustrations. | [@web](https://github.com/web) |  | 🫧 |
 | [✨ Quick Explainer](https://quick-explainer.pages.dev/) | Transforms complex text into clear, simple explanations using Pollinations AI. | [@web](https://github.com/web) |  | 🫧 |
 | [📝 StoryTale](https://storytale.onrender.com/) | Export StoryTale stories to Markdown for editing and publishing, preserving headings, links, images, and basic formatting. | [@web](https://github.com/web) |  | 🫧 |

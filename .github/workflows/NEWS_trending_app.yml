@@ -1,0 +1,55 @@
+name: NEWS - Trending App of the Week
+
+on:
+  schedule:
+    - cron: '0 6 * * 3'  # Wednesday 06:00 UTC
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  generate-trending-app:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to commit to news branch
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Overlay news branch data
+        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
+
+      - name: Generate trending app post
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+          TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_TRENDING_WEBHOOK_URL }}
+        run: python social/scripts/generate_trending_app.py
+
+      - name: Commit artifacts to news branch
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add social/news/
+          git diff --staged --quiet || git commit -m "chore(news): trending app of the week $(date +%Y-%m-%d)"
+          git push origin HEAD:news || echo "Push failed (branch may be protected)"

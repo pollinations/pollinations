@@ -1,0 +1,20 @@
+# Pipe: app_top_weekly
+# Description: Top apps by request count over the last 7 days
+# Returns: hostname, username, request_count, last_seen
+
+NODE endpoint
+SQL >
+    SELECT 
+        hostname,
+        github_username as username,
+        COUNT(*) as request_count,
+        MAX(timestamp) as last_seen
+    FROM pollinations_generations
+    WHERE timestamp > now() - INTERVAL 7 DAY
+        AND hostname IS NOT NULL
+        AND hostname != ''
+        AND hostname NOT LIKE '%pollinations.ai%'
+        AND hostname NOT LIKE '%localhost%'
+    GROUP BY hostname, github_username
+    ORDER BY request_count DESC
+    LIMIT 10

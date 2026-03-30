@@ -1,13 +1,19 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
+import { createHmac } from "node:crypto";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import { user as userTable } from "@/db/schema/better-auth.ts";
 import { test } from "../fixtures.ts";
 
 const base = "http://localhost:3000/api/stripe";
 const checkoutAmounts = [
+    "/checkout/2",
     "/checkout/5",
     "/checkout/10",
     "/checkout/20",
     "/checkout/50",
+    "/checkout/100",
 ];
 
 test.for(
@@ -38,10 +44,18 @@ test("GET /api/stripe/products returns pack list", async () => {
     expect(response.status).toBe(200);
 
     const data = (await response.json()) as {
-        packs: { amount: number; description: string }[];
+        packs: {
+            amount: number;
+            bonusPollen: number;
+            pollenGrant: number;
+            description: string;
+        }[];
     };
-    expect(data.packs).toHaveLength(4);
-    expect(data.packs.map((p) => p.amount)).toEqual([5, 10, 20, 50]);
+    expect(data.packs).toHaveLength(6);
+    expect(data.packs.map((p) => p.amount)).toEqual([2, 5, 10, 20, 50, 100]);
+    expect(data.packs.map((p) => p.pollenGrant)).toEqual([
+        2.5, 7, 15, 30, 80, 200,
+    ]);
 });
 
 test("GET /api/stripe/checkout/invalid returns 400 for invalid amount", async ({
@@ -91,4 +105,76 @@ test("POST /api/webhooks/stripe rejects invalid stripe-signature header", async 
     // Returns 400 (invalid signature) or 500 (webhook secret not configured)
     // Both are valid rejections - the important thing is it doesn't process the event
     expect(response.status).toBeOneOf([400, 500]);
+});
+
+test("POST /api/webhooks/stripe credits legacy sessions without packAmount using 2x fallback", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id, packBalance: userTable.packBalance })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) {
+        throw new Error("Expected seeded test user");
+    }
+
+    await db
+        .update(userTable)
+        .set({ packBalance: 0 })
+        .where(eq(userTable.id, user.id));
+
+    const payload = JSON.stringify({
+        id: "evt_test_legacy_checkout",
+        type: "checkout.session.completed",
+        livemode: false,
+        data: {
+            object: {
+                id: "cs_test_legacy_checkout",
+                object: "checkout.session",
+                metadata: {
+                    userId: user.id,
+                },
+                payment_status: "paid",
+                amount_subtotal: 500,
+                amount_total: 500,
+                currency: "usd",
+                customer_email: "legacy@example.com",
+                payment_method_types: ["card"],
+            },
+        },
+    });
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    const signature = createHmac("sha256", env.STRIPE_WEBHOOK_SECRET)
+        .update(`${timestamp}.${payload}`, "utf8")
+        .digest("hex");
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/webhooks/stripe",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "stripe-signature": `t=${timestamp},v1=${signature}`,
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: payload,
+        },
+    );
+
+    expect(response.status).toBe(200);
+
+    const [updatedUser] = await db
+        .select({ packBalance: userTable.packBalance })
+        .from(userTable)
+        .where(eq(userTable.id, user.id))
+        .limit(1);
+
+    expect(updatedUser?.packBalance).toBe(10);
 });

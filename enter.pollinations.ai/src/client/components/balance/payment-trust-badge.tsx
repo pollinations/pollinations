@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { cn } from "../../../util.ts";
 
 const paymentMethods = [
     { name: "Visa", src: "/payment-icons/visa.svg" },
@@ -25,9 +26,20 @@ const LockIcon: FC = () => (
     </svg>
 );
 
-export const PaymentTrustBadge: FC = () => {
+type PaymentTrustBadgeProps = {
+    className?: string;
+};
+
+export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
+    className,
+}) => {
     return (
-        <div className="flex flex-col items-center gap-3 pt-6 mt-2">
+        <div
+            className={cn(
+                "flex flex-col items-center gap-3 pt-6 mt-2",
+                className,
+            )}
+        >
             <div className="flex flex-wrap justify-center items-center gap-2">
                 {paymentMethods.map((method) => (
                     <img

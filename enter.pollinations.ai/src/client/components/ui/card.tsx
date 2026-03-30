@@ -5,6 +5,7 @@ const cardColors = {
     amber: "border-amber-300",
     blue: "border-blue-300",
     green: "border-green-300",
+    orange: "border-orange-300",
     violet: "border-violet-200",
     purple: "border-purple-300",
     teal: "border-teal-200",

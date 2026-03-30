@@ -5,10 +5,11 @@ const badgeColors = {
     gray: "bg-gray-200 text-gray-900",
     green: "bg-green-200 text-gray-900",
     pink: "bg-pink-200 text-gray-900",
-    amber: "bg-orange-200 text-gray-900",
+    amber: "bg-amber-200 text-amber-950",
+    orange: "bg-orange-300 text-orange-950",
     blue: "bg-blue-200 text-gray-900",
     purple: "bg-purple-200 text-gray-900",
-    violet: "bg-violet-200 text-gray-900",
+    violet: "bg-violet-200 text-violet-950",
     teal: "bg-teal-200 text-gray-900",
     yellow: "bg-yellow-200 text-gray-900",
 } as const;

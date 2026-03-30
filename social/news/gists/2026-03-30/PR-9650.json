@@ -1,0 +1,34 @@
+{
+  "pr_number": 9650,
+  "title": "fix: update stripe pollen packs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9650",
+  "merged_at": "2026-03-30T10:46:40Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh pollen packs",
+    "blurb": "We've revamped our checkout with a shiny new ladder of Pollen packs. Grab exactly what you need to keep your digital garden blooming, complete with sweet bonus tiers!",
+    "summary": "Updated the Stripe checkout system to introduce a new catalog of Pollen packs ranging from $2 to $100, complete with built-in bonus grants.",
+    "impact": "Users can now purchase specific Pollen packs with clear bonus tiers directly from the updated balance and pricing pages.",
+    "keywords": [
+      "billing",
+      "stripe",
+      "pollen",
+      "pricing",
+      "checkout"
+    ],
+    "visual_concept": "The PR is about buying 'Pollen packs' (credits) via Stripe. Visuals: The bee mascot (Polly) at a cute little market stall or exchange counter, trading coins for glowing jars of golden pollen/nectar. A chunky robot companion holding a receipt or a shopping basket.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot running a tiny wooden market stall, trading shiny coins for glowing jars of golden nectar. A chunky robot with a CRT monitor head holds a small shopping basket. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Text in pixel font: 'POLLEN PACKS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-30/PR-9650.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot running a tiny wooden market stall, trading shiny coins for glowing jars of golden nectar. A chunky robot with a CRT monitor head holds a small shopping basket. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Text in pixel font: 'POLLEN PACKS'."
+  },
+  "generated_at": "2026-03-30T10:47:35.625413+00:00"
+}

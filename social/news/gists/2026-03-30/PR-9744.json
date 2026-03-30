@@ -1,0 +1,35 @@
+{
+  "pr_number": 9744,
+  "title": "Add Onyx Sign to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9744",
+  "merged_at": "2026-03-30T05:40:38Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sign on the dotted line",
+    "blurb": "Onyx Sign just landed in the app showcase. Turn AI-generated minimalist signatures into handwriting-ready vector files, because sometimes you need a robot to forge your autograph.",
+    "summary": "Onyx Sign has been added to the Pollinations app ecosystem, providing a tool to generate minimalist 2D signatures and export them as handwriting-ready vector files.",
+    "impact": "Creators can now seamlessly convert AI-designed signatures into physical handwriting formats for their projects.",
+    "keywords": [
+      "app",
+      "showcase",
+      "image",
+      "signatures",
+      "vector",
+      "onyx sign"
+    ],
+    "visual_concept": "Polly the bee holding a tiny quill or fountain pen, signing a digital document on a glowing tablet or parchment. The Monitor Robot is holding the paper, displaying a minimalist signature. Soft lime green and pastel background.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a pixelated quill pen and signing a glowing digital parchment. A chunky retro robot with a CRT monitor head holds the document, its screen showing a minimalist signature. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-30/PR-9744.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a pixelated quill pen and signing a glowing digital parchment. A chunky retro robot with a CRT monitor head holds the document, its screen showing a minimalist signature. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-03-30T05:41:45.429638+00:00",
+  "app_name": "Onyx Sign",
+  "app_url": "https://onyxsign.vercel.app/"
+}

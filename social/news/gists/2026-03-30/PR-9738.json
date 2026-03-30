@@ -1,0 +1,34 @@
+{
+  "pr_number": 9738,
+  "title": "Add Zairok AI Discovery App to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9738",
+  "merged_at": "2026-03-30T05:24:35Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Zairok joins the greenhouse",
+    "blurb": "The community garden grows again. Zairok AI Discovery App just landed in the showcase—a neat little hub for finding AI tools and models.",
+    "summary": "Added the Zairok AI Discovery App to the community showcase and greenhouse directory.",
+    "impact": "Users can now find Zairok in our app directory, providing a new community-built hub to browse AI models and services.",
+    "keywords": [
+      "community",
+      "showcase",
+      "app",
+      "discovery",
+      "greenhouse"
+    ],
+    "visual_concept": "The PR adds a 'Discovery App' to the community 'Greenhouse'. The visual should feature Polly the bee acting as an explorer or researcher in a lush, plant-filled greenhouse, discovering something new.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny explorer's hat, looking through a magnifying glass at a glowing digital seed inside a lush greenhouse. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-30/PR-9738.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny explorer's hat, looking through a magnifying glass at a glowing digital seed inside a lush greenhouse. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-30T05:25:27.768856+00:00",
+  "app_name": "Zairok AI Discovery App",
+  "app_url": "https://zairok.web.app"
+}

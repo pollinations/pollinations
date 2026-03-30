@@ -247,7 +247,7 @@ function RouteComponent() {
                                 onClick={() => setActiveTab("balance")}
                                 className={`font-bold ${
                                     activeTab === "balance"
-                                        ? "text-green-950"
+                                        ? "text-amber-900"
                                         : "text-gray-400 hover:text-gray-600 cursor-pointer"
                                 }`}
                             >
@@ -259,7 +259,7 @@ function RouteComponent() {
                                 onClick={() => setActiveTab("usage")}
                                 className={`font-bold ${
                                     activeTab === "usage"
-                                        ? "text-green-950"
+                                        ? "text-amber-900"
                                         : "text-gray-400 hover:text-gray-600 cursor-pointer"
                                 }`}
                             >
@@ -273,147 +273,160 @@ function RouteComponent() {
                                 )}
                             </button>
                         </h2>
-                        {activeTab === "usage" && (
-                            <div ref={downloadRef} className="relative">
-                                <Button
-                                    as="button"
-                                    color="violet"
-                                    weight="light"
-                                    onClick={() =>
-                                        setDownloadOpen(!downloadOpen)
-                                    }
-                                    className="flex items-center gap-1.5"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
+                        <div className="flex flex-wrap items-center gap-2">
+                            {activeTab === "usage" && (
+                                <div ref={downloadRef} className="relative">
+                                    <Button
+                                        as="button"
+                                        color="amber"
+                                        weight="light"
+                                        onClick={() =>
+                                            setDownloadOpen(!downloadOpen)
+                                        }
+                                        className="flex items-center gap-1.5"
                                     >
-                                        <title>Download</title>
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                    Download
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="12"
-                                        height="12"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`}
-                                    >
-                                        <title>Toggle</title>
-                                        <polyline points="6 9 12 15 18 9" />
-                                    </svg>
-                                </Button>
-                                {downloadOpen && (
-                                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                                        <button
-                                            type="button"
-                                            onClick={async () => {
-                                                try {
-                                                    const res = await fetch(
-                                                        "/api/account/usage/daily?format=csv",
-                                                    );
-                                                    if (!res.ok)
-                                                        throw new Error(
-                                                            "Failed to fetch",
-                                                        );
-                                                    const blob =
-                                                        await res.blob();
-                                                    const url =
-                                                        URL.createObjectURL(
-                                                            blob,
-                                                        );
-                                                    const a =
-                                                        document.createElement(
-                                                            "a",
-                                                        );
-                                                    a.href = url;
-                                                    a.download =
-                                                        "usage-daily.csv";
-                                                    a.click();
-                                                    URL.revokeObjectURL(url);
-                                                } catch (e) {
-                                                    console.error(
-                                                        "Download failed:",
-                                                        e,
-                                                    );
-                                                } finally {
-                                                    setDownloadOpen(false);
-                                                }
-                                            }}
-                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
                                         >
-                                            Daily Summary
-                                            <span className="block text-xs text-gray-400">
-                                                Aggregated by day
-                                            </span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={async () => {
-                                                setDownloadingDetailed(true);
-                                                try {
-                                                    const res = await fetch(
-                                                        "/api/account/usage?format=csv&limit=50000",
-                                                    );
-                                                    if (!res.ok)
-                                                        throw new Error(
-                                                            "Failed to fetch",
+                                            <title>Download</title>
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="7 10 12 15 17 10" />
+                                            <line
+                                                x1="12"
+                                                y1="15"
+                                                x2="12"
+                                                y2="3"
+                                            />
+                                        </svg>
+                                        Download
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="12"
+                                            height="12"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`}
+                                        >
+                                            <title>Toggle</title>
+                                            <polyline points="6 9 12 15 18 9" />
+                                        </svg>
+                                    </Button>
+                                    {downloadOpen && (
+                                        <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-44 rounded-lg border border-amber-200 bg-white shadow-lg py-1 z-10">
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    try {
+                                                        const res = await fetch(
+                                                            "/api/account/usage/daily?format=csv",
                                                         );
-                                                    const blob =
-                                                        await res.blob();
-                                                    const url =
-                                                        URL.createObjectURL(
-                                                            blob,
+                                                        if (!res.ok)
+                                                            throw new Error(
+                                                                "Failed to fetch",
+                                                            );
+                                                        const blob =
+                                                            await res.blob();
+                                                        const url =
+                                                            URL.createObjectURL(
+                                                                blob,
+                                                            );
+                                                        const a =
+                                                            document.createElement(
+                                                                "a",
+                                                            );
+                                                        a.href = url;
+                                                        a.download =
+                                                            "usage-daily.csv";
+                                                        a.click();
+                                                        URL.revokeObjectURL(
+                                                            url,
                                                         );
-                                                    const a =
-                                                        document.createElement(
-                                                            "a",
+                                                    } catch (e) {
+                                                        console.error(
+                                                            "Download failed:",
+                                                            e,
                                                         );
-                                                    a.href = url;
-                                                    a.download =
-                                                        "usage-detailed.csv";
-                                                    a.click();
-                                                    URL.revokeObjectURL(url);
-                                                } catch (e) {
-                                                    console.error(
-                                                        "Download failed:",
-                                                        e,
-                                                    );
-                                                } finally {
+                                                    } finally {
+                                                        setDownloadOpen(false);
+                                                    }
+                                                }}
+                                                className="w-full px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-50"
+                                            >
+                                                Daily Summary
+                                                <span className="block text-xs text-amber-500">
+                                                    Aggregated by day
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
                                                     setDownloadingDetailed(
-                                                        false,
+                                                        true,
                                                     );
-                                                    setDownloadOpen(false);
-                                                }
-                                            }}
-                                            disabled={downloadingDetailed}
-                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                                        >
-                                            {downloadingDetailed
-                                                ? "Downloading..."
-                                                : "Detailed Usage"}
-                                            <span className="block text-xs text-gray-400">
-                                                Per-request data
-                                            </span>
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                                    try {
+                                                        const res = await fetch(
+                                                            "/api/account/usage?format=csv&limit=50000",
+                                                        );
+                                                        if (!res.ok)
+                                                            throw new Error(
+                                                                "Failed to fetch",
+                                                            );
+                                                        const blob =
+                                                            await res.blob();
+                                                        const url =
+                                                            URL.createObjectURL(
+                                                                blob,
+                                                            );
+                                                        const a =
+                                                            document.createElement(
+                                                                "a",
+                                                            );
+                                                        a.href = url;
+                                                        a.download =
+                                                            "usage-detailed.csv";
+                                                        a.click();
+                                                        URL.revokeObjectURL(
+                                                            url,
+                                                        );
+                                                    } catch (e) {
+                                                        console.error(
+                                                            "Download failed:",
+                                                            e,
+                                                        );
+                                                    } finally {
+                                                        setDownloadingDetailed(
+                                                            false,
+                                                        );
+                                                        setDownloadOpen(false);
+                                                    }
+                                                }}
+                                                disabled={downloadingDetailed}
+                                                className="w-full px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-50 disabled:opacity-50"
+                                            >
+                                                {downloadingDetailed
+                                                    ? "Downloading..."
+                                                    : "Detailed Usage"}
+                                                <span className="block text-xs text-amber-500">
+                                                    Per-request data
+                                                </span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                     {activeTab === "balance" && (
                         <PollenBalance

@@ -112,7 +112,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     disabled
                         ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60"
                         : open
-                          ? "bg-green-950 border-green-950"
+                          ? "bg-amber-950 border-amber-950"
                           : "bg-gray-100 border-gray-100 hover:bg-gray-200",
                 )}
             >
@@ -122,7 +122,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         disabled
                             ? "text-gray-400"
                             : open
-                              ? "text-green-100"
+                              ? "text-amber-100"
                               : "text-gray-600",
                     )}
                 >
@@ -131,7 +131,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 <svg
                     className={cn(
                         "w-3 h-3 transition-transform",
-                        open ? "text-green-100 rotate-180" : "text-gray-400",
+                        open ? "text-amber-100 rotate-180" : "text-gray-400",
                     )}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -172,7 +172,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             className={cn(
                                 "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                 isAllSelected
-                                    ? "bg-green-950 text-green-100 font-medium"
+                                    ? "bg-amber-950 text-amber-100 font-medium"
                                     : "text-gray-600 hover:bg-gray-100",
                             )}
                         >
@@ -180,7 +180,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 className={cn(
                                     "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
                                     isAllSelected
-                                        ? "bg-green-950 border-green-950 text-green-100"
+                                        ? "bg-amber-950 border-amber-950 text-amber-100"
                                         : "border-gray-300",
                                 )}
                             >
@@ -198,7 +198,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     className={cn(
                                         "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                         isChecked
-                                            ? "bg-green-950 text-green-100"
+                                            ? "bg-amber-950 text-amber-100"
                                             : "text-gray-600 hover:bg-gray-100",
                                     )}
                                 >
@@ -206,7 +206,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                         className={cn(
                                             "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
                                             isChecked
-                                                ? "bg-green-950 border-green-950 text-green-100"
+                                                ? "bg-amber-950 border-amber-950 text-amber-100"
                                                 : "border-gray-300",
                                         )}
                                     >

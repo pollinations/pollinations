@@ -49,7 +49,7 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
             amountUsd,
             bonusPollen,
             pollenGrant,
-            checkoutName: `🐝 ${formatPollenPackValue(amountUsd)} Pollen + ${formatPollenPackValue(bonusPollen)} FREE`,
+            checkoutName: `🪷 ${formatPollenPackValue(amountUsd)} Pollen + ${formatPollenPackValue(bonusPollen)} FREE`,
             checkoutDescription: `Tiny bits of creative energy for pollinations.ai 🌱 We’re still in beta, so this pack includes ${formatPollenPackValue(bonusPollen)} extra Pollen when you buy ${formatPollenPackValue(amountUsd)}. Feedback: ${CHECKOUT_FEEDBACK_URL}`,
             checkoutImageUrl: CHECKOUT_IMAGE_URL,
             taxCode: POLLEN_TAX_CODE,

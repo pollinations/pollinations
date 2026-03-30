@@ -66,7 +66,7 @@ jobs:
           fi
 
       - name: Create PR with updated docs
-        if: ${{ steps.changes.outputs.changed == 'true' && (github.event_name == 'push' || inputs.create_pr || github.event.client_payload.create_pr) }}
+        if: ${{ steps.changes.outputs.changed == 'true' && (github.event_name == 'push' || inputs.create_pr || github.event.client_payload.create_pr == true || github.event.client_payload.create_pr == 'true') }}
         run: |
           BRANCH="docs/regenerate-apidocs-$(date +%s)"
           git config user.name "github-actions[bot]"

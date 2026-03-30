@@ -25,7 +25,7 @@ test("pack lookup validates supported checkout amounts", () => {
 test("pack descriptions stay aligned with the shared catalog", () => {
     const lastPack = POLLEN_PACKS[POLLEN_PACKS.length - 1];
 
-    expect(POLLEN_PACKS[0]?.checkoutName).toBe("🐝 2 Pollen + 0.5 FREE");
+    expect(POLLEN_PACKS[0]?.checkoutName).toBe("🪷 2 Pollen + 0.5 FREE");
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(
         "Tiny bits of creative energy for pollinations.ai",
     );

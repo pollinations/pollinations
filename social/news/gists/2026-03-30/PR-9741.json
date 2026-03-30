@@ -1,0 +1,34 @@
+{
+  "pr_number": 9741,
+  "title": "Add Website Studio to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9741",
+  "merged_at": "2026-03-30T05:35:06Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Building the builders",
+    "blurb": "Website Studio just landed in our community greenhouse. It's a neat new resource helping local businesses find the perfect website builder for their needs.",
+    "summary": "Added Website Studio to the community apps showcase, providing a resource for local businesses to evaluate website building platforms.",
+    "impact": "The community directory now features Website Studio, expanding our showcase of business-focused tools built with Pollinations.",
+    "keywords": [
+      "community",
+      "showcase",
+      "app",
+      "website-studio",
+      "business"
+    ],
+    "visual_concept": "The PR is about 'Website Studio', a tool for finding website builders for local businesses. Visuals: A cozy pixel art studio or workshop. The bee mascot (Polly) wearing a little toolbelt or hardhat, looking at a blueprint or a tiny pixelated storefront/website mockup alongside the monitor-head robot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hardhat, looking at a glowing blueprint of a storefront with the chunky monitor-head robot. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'STUDIO'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-30/PR-9741.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hardhat, looking at a glowing blueprint of a storefront with the chunky monitor-head robot. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'STUDIO'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-30T05:35:58.172315+00:00",
+  "app_name": "Website Studio",
+  "app_url": "https://website-studio.onrender.com/"
+}

@@ -75,7 +75,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         {apiKeys.length > 0 && (
                             <div className="rounded-xl bg-amber-50/80 p-4">
                                 <p className="font-semibold text-amber-900 mb-1">
-                                    🐝 Let your users bring their own Pollen
+                                    🪷 Let your users bring their own Pollen
                                 </p>
                                 <p className="text-sm text-amber-800">
                                     Register an <strong>App Key</strong> so

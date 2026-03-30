@@ -1,0 +1,34 @@
+{
+  "pr_number": 9752,
+  "title": "fix: wrap pollen pack buttons on mobile",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9752",
+  "merged_at": "2026-03-30T11:07:11Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pocket-sized pollen packs",
+    "blurb": "Fixed a layout bug that was causing pollen pack buttons to overflow on mobile screens. Everything stacks neatly now, just as nature intended.",
+    "summary": "Updated the pollen purchase grid to use responsive columns, fixing an overflow issue on mobile screens.",
+    "impact": "Mobile users can now comfortably view and select pollen packs without horizontal scrolling or broken layouts.",
+    "keywords": [
+      "mobile",
+      "ui",
+      "bugfix",
+      "pollen",
+      "responsive"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot organizing tiny glowing boxes (representing pollen packs) into neat, responsive columns on a giant smartphone screen.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot organizing tiny glowing boxes into neat columns on a large smartphone screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-30/PR-9752.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot organizing tiny glowing boxes into neat columns on a large smartphone screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-30T11:08:42.576830+00:00"
+}

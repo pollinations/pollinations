@@ -12,19 +12,20 @@ on:
 jobs:
   regenerate-docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
     steps:
       - name: Generate GitHub App token
         id: token
         uses: actions/create-github-app-token@v1
         with:
-          app-id: ${{ secrets.ORG_BOSS_APP_ID }}
-          private-key: ${{ secrets.ORG_BOSS_PRIVATE_KEY }}
-          owner: pollinations
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
 
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ steps.token.outputs.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9753,
+  "title": "Add YoutubeToBlog to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9753",
+  "merged_at": "2026-03-30T11:15:41Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "From stream to script",
+    "blurb": "YoutubeToBlog just sprouted in the community greenhouse! Turn your favorite video essays into readable posts with a single click.",
+    "summary": "Added the community-built YoutubeToBlog app to the writing tools showcase.",
+    "impact": "Users can now easily discover and use YoutubeToBlog to convert YouTube videos into written blog posts.",
+    "keywords": [
+      "community",
+      "app",
+      "writing",
+      "youtube",
+      "blog"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot collaborating. The robot represents the YouTube video (CRT screen with a play button), while Polly represents the blogging aspect (typing on a retro typewriter with paper coming out).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot typing on a tiny retro typewriter while sitting next to a chunky robot with a CRT monitor head. The robot's screen shows a red play button, and paper blog posts are printing out of the typewriter. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-30/PR-9753.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot typing on a tiny retro typewriter while sitting next to a chunky robot with a CRT monitor head. The robot's screen shows a red play button, and paper blog posts are printing out of the typewriter. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-30T11:16:32.452316+00:00",
+  "app_name": "YoutubeToBlog",
+  "app_url": "https://github.com/CarlosHSantos/YoutubeToBlog"
+}

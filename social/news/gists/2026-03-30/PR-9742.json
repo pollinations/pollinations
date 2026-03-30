@@ -1,0 +1,34 @@
+{
+  "pr_number": 9742,
+  "title": "Add XUnity.AutoPollinationTranslator to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9742",
+  "merged_at": "2026-03-30T05:36:54Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Unity in translation",
+    "blurb": "The community just wired up Pollinations to translate Unity games on the fly. Free, uncensored text generation right in your favorite games.",
+    "summary": "Added XUnity.AutoPollinationTranslator to the community showcase, enabling free real-time translations for Unity games via the Pollinations API.",
+    "impact": "Gamers and modders can now seamlessly translate Unity games on the fly using our text generation endpoints.",
+    "keywords": [
+      "community",
+      "app",
+      "translation",
+      "unity",
+      "gaming"
+    ],
+    "visual_concept": "The PR is about translating Unity games. Visuals should include gaming elements (retro TV, controller) and translation metaphors (speech bubbles with different symbols). Polly the bee should be playing a game or acting as the translator.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gamer headset, sitting on a comfy cushion in front of a retro TV screen showing a pixelated video game. Glowing speech bubbles with different language characters float from the TV. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-30/PR-9742.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gamer headset, sitting on a comfy cushion in front of a retro TV screen showing a pixelated video game. Glowing speech bubbles with different language characters float from the TV. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-30T05:37:46.045569+00:00",
+  "app_name": "XUnity.AutoPollinationTranslator",
+  "app_url": "https://github.com/kikyo2006/XUnity.AutoPollinationTranslator"
+}

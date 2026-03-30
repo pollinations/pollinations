@@ -8,6 +8,15 @@ on:
       - 'enter.pollinations.ai/src/routes/docs.ts'
       - 'enter.pollinations.ai/src/routes/**/*.ts'
       - 'enter.pollinations.ai/scripts/generate-apidocs.ts'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to regenerate docs from'
+        required: false
+        default: main
+  repository_dispatch:
+    types:
+      - regenerate-apidocs
 
 jobs:
   regenerate-docs:
@@ -26,6 +35,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.event.client_payload.ref || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

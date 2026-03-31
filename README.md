@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🌸 OrchidLLM](https://orchidllm.vercel.app) | Generate images, text, video, audio, and transcriptions with OrchidLLM. | [@web](https://github.com/web) |
-| [🤖 Vector AI Agent](https://routinehub.co/shortcut/24957/) | Vector AI Agent handles multitasking AI requests using pollinations with multiple models, implemented entirely in apple shortcuts by Mincoffical and Elc29 and free to use. | [@ios](https://github.com/ios) |
-| [🧮 excelformula.pro](https://excelformula.pro/) | Generate Excel formulas from natural language or sample data using excelformula.pro, returning ready-to-use formulas with cell references and brief explanations. | [@web](https://github.com/web) |
-| [⚡ PollinationsAiPS](1894723) | Integrate Pollinations.ai into PowerShell using PollinationsAiPS to generate images, text, and audio from scripts. | [@cli](https://github.com/cli) |
-| [🛋️ Rooms Vision](https://roomsvision.lovable.app/) | Visualize architectural and stylistic changes by uploading a room photo and applying design layers like Minimalist, Industrial, or Bohemian with Rooms Vision while preserving structural integrity. | [@web](https://github.com/web) |
-| [🖼️ image-gen-editor.vercel.app](https://image-gen-editor.vercel.app) | image-gen-editor.vercel.app generates and edits images via the Pollinations AI API and provides a web interface built with Next.js 14 and TypeScript. | [@web](https://github.com/web) |
-| [🧠 AnkiTect](158578469) | Generates Anki CLI decks from word lists for language learning. AnkiTect creates multimedia flashcards and uses the pollinations.ai API to add context-relevant images. | [@cli](https://github.com/cli) |
-| [🎙️ Talking with Unity](https://www.ai-ministries.com/apps/talking-unity/) | Talking with Unity provides a voice AI assistant for Unity projects, enabling speech recognition, text-to-speech, and voice-driven interactions for apps and games. | [@web](https://github.com/web) |
-| [💤 DSEA](https://dsea.vercel.app/) | Record and visualize dreams with DSEA, an AI-powered dream journal web app. | [@web](https://github.com/web) |
-| [👑 Kingshot](https://ptb.discord.com/oauth2/authorize?client_id=1474107930155421831) | Manage Kingshot alliances and redeem giftcodes via the Kingshot discord bot, using gemini-fast for translations and gemini-search to answer kingshot game queries. | [@discord](https://github.com/discord) |
+| [📚 vocamax](https://play.google.com/store/apps/details?id=com.musiclearns.music_app) | Enriches vocamax vocabulary sets using n8n and the enter.pollinations.ai API to add meanings, expand vocabulary, generate images, and provide grammar support for each set. | [@android](https://github.com/android) |
+| [🤖 Exovia Destek](https://discord.com/invite/3BF7NH4fKN (in my discord its the your ai that uses in " #?・soru "channel)) | Displays the image referenced in Exovia Destek with src https://github.com/user-attachments/assets/859fcf85-5bd4-495b-a5fa-f4bc53177368 and attributes width=1271 height=921 alt='Image'. | [@discord](https://github.com/discord) |
+| [🥞 Martabak Gresik](https://martabakgresik.my.id) | Connects customers to Martabak Gresik and its handmade Sweet Martabak and Savory Egg Martabak; launched in 2020 in Gresik, East Java as a web designer-led digital transformation project. | [@web](https://github.com/web) |
+| [🧩 Puzzle Hexagonal Simétrico](https://proyectodescartes.org/IATools/146_Puzles_hexagonales/) | Play Puzzle Hexagonal Simétrico. | [@web](https://github.com/web) |
+| [🔬 labol lens](https://labol-lens.streamlit.app/) | Implements labol-lens in labol lens. | [@web](https://github.com/web) |
+| [🍳 مطبخي الذكي AI](https://matbaki.vercel.app) | Offers مطبخي الذكي AI, an AI-driven culinary platform that uses Pollinations AI to dynamically generate images for every recipe, including desserts, traditional main courses, and pastries. | [@web](https://github.com/web) |
+| [📝 YoutubeToBlog](10759187) | Displays YoutubeToBlog. | [@web](https://github.com/web) |
+| [🌐 Noyaku](https://play.google.com/store/apps/details?id=com.kickerai.noyaku) | Translate Webtoons, manhwa, novels, comics, and web content using AI with Noyaku. | [@android](https://github.com/android) |
+| [🎓 Learnty](https://learnty.site) | Learnty generates personalized learning games with AI, creating interactive exercises that help users engage with information and learn basic concepts. | [@web](https://github.com/web) |
+| [✒️ Onyx Sign](https://onyxsign.vercel.app/) | Generate minimalist flat 2D signatures with Onyx Sign and export handwriting-ready vector files converting AI designs into physical handwriting formats. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

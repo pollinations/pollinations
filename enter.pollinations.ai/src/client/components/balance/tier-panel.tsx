@@ -9,26 +9,32 @@ import { TierExplanation } from "./tier-explanation";
 const APPEAL_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml";
 
-// Map tier color to Badge component color (Badge doesn't support "red", use "blue" for router)
 function getBadgeColor(
     tier: TierStatus,
-): "gray" | "green" | "pink" | "amber" | "blue" {
+): "gray" | "green" | "pink" | "amber" | "blue" | "orange" | "violet" {
     const tierColor = tier === "none" ? "gray" : getTierColor(tier);
-    // Badge component doesn't have "red" variant, map router's "red" to "blue"
-    if (tierColor === "red") return "blue";
-    // All other tier colors (gray, blue, green, pink, amber) are valid Badge colors
-    return tierColor as "gray" | "green" | "pink" | "amber" | "blue";
+    return tierColor as
+        | "gray"
+        | "green"
+        | "pink"
+        | "amber"
+        | "blue"
+        | "orange"
+        | "violet";
 }
 
-// Map tier color to Panel component color (Panel doesn't support "red", use "blue" for router)
 function getPanelColor(
     tier: TierStatus,
-): "blue" | "amber" | "green" | "pink" | "gray" {
+): "blue" | "amber" | "orange" | "green" | "pink" | "gray" | "violet" {
     const tierColor = tier === "none" ? "gray" : getTierColor(tier);
-    // Panel component doesn't have "red" variant, map router's "red" to "blue"
-    if (tierColor === "red") return "blue";
-    // All other tier colors (gray, blue, green, pink, amber) are valid Panel colors
-    return tierColor as "blue" | "amber" | "green" | "pink" | "gray";
+    return tierColor as
+        | "blue"
+        | "amber"
+        | "orange"
+        | "green"
+        | "pink"
+        | "gray"
+        | "violet";
 }
 
 const BetaNoticeText: FC = () => (

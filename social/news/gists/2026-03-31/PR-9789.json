@@ -1,0 +1,35 @@
+{
+  "pr_number": 9789,
+  "title": "fix(sirius): responsive Lottie backgrounds for pollinations.ai",
+  "author": "ChunkyPanda29",
+  "url": "https://github.com/pollinations/pollinations/pull/9789",
+  "merged_at": "2026-03-31T16:37:20Z",
+  "labels": [
+    "WEB",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Responsive elevator rides",
+    "blurb": "The Sirius Cybernetics Elevator Challenge just got a responsive tune-up. Lottie animated backgrounds now scale perfectly whether you're on desktop or mobile.",
+    "summary": "Fixed a CSS bug in the Sirius Cybernetics Elevator Challenge app where Lottie animations were not resizing dynamically with the browser window.",
+    "impact": "Players will now experience perfectly scaled animated backgrounds across all devices and screen sizes.",
+    "keywords": [
+      "bug-fix",
+      "css",
+      "responsive-design",
+      "lottie",
+      "apps"
+    ],
+    "visual_concept": "The PR fixes responsive scaling for Lottie animations in an elevator-themed app. Visual symbols: an elevator, resizing/scaling frames, animations. Characters: Polly the bee adjusting a frame or window.",
+    "image_prompt": "Cozy pixel art scene of a cute 8-bit bee mascot wearing a tiny tool belt, adjusting a glowing lime green (#ecf874) picture frame inside a retro elevator. The frame is magically stretching to fit the wall. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-31/PR-9789.jpg",
+    "prompt": "Cozy pixel art scene of a cute 8-bit bee mascot wearing a tiny tool belt, adjusting a glowing lime green (#ecf874) picture frame inside a retro elevator. The frame is magically stretching to fit the wall. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-31T16:38:22.869625+00:00"
+}

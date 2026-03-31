@@ -1,0 +1,34 @@
+{
+  "pr_number": 9771,
+  "title": "Add مطبخي الذكي AI to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9771",
+  "merged_at": "2026-03-31T06:09:01Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Cooking up pixels",
+    "blurb": "مطبخي الذكي AI (My Smart Kitchen AI) just joined the showcase. It uses Pollinations to dynamically generate mouth-watering images for every recipe, from pastries to traditional mains.",
+    "summary": "Added 'مطبخي الذكي AI', an AI-driven culinary platform, to the community app showcase.",
+    "impact": "The community can now explore a new project that leverages our image generation API to visualize recipes dynamically.",
+    "keywords": [
+      "community",
+      "showcase",
+      "app",
+      "recipes",
+      "image-generation"
+    ],
+    "visual_concept": "A cozy kitchen scene representing the 'Smart Kitchen AI' app. Polly the bee wearing a chef's hat, looking at a retro monitor or recipe book that displays pixelated food/pastries.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny chef's hat, hovering in a warm rustic kitchen. She is looking at a retro computer monitor displaying a delicious pixelated pastry. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-31/PR-9771.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny chef's hat, hovering in a warm rustic kitchen. She is looking at a retro computer monitor displaying a delicious pixelated pastry. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-31T06:09:50.494361+00:00",
+  "app_name": "مطبخي الذكي AI",
+  "app_url": "https://matbaki.vercel.app"
+}

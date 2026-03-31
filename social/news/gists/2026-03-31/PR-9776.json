@@ -1,0 +1,34 @@
+{
+  "pr_number": 9776,
+  "title": "Add vocamax to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9776",
+  "merged_at": "2026-03-31T06:42:51Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Vocamax joins the greenhouse",
+    "blurb": "Vocamax just landed in the community showcase. It uses our API and n8n to automatically enrich vocabulary sets with meanings, images, and grammar support.",
+    "summary": "Added Vocamax, a language learning app that uses the Pollinations API for content generation, to the community app directory.",
+    "impact": "The community can now discover Vocamax in the showcase and see a practical example of using the API for educational tools.",
+    "keywords": [
+      "community",
+      "showcase",
+      "education",
+      "app",
+      "n8n"
+    ],
+    "visual_concept": "A language learning and vocabulary theme. The bee mascot studying or reading, surrounded by flashcards or books, representing the 'Vocamax' app joining the ecosystem.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at glowing vocabulary flashcards sprouting from a lime green (#ecf874) flower pot. A chunky retro robot companion holds a small open book. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-31/PR-9776.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at glowing vocabulary flashcards sprouting from a lime green (#ecf874) flower pot. A chunky retro robot companion holds a small open book. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-31T06:43:40.092652+00:00",
+  "app_name": "vocamax",
+  "app_url": "https://play.google.com/store/apps/details?id=com.musiclearns.music_app"
+}

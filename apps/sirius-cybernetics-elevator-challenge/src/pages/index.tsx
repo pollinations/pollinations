@@ -19,7 +19,6 @@ import {
     useMessages,
 } from "@/game/logic";
 import { useSettings } from "@/hooks/settings";
-import { useInput, useMessageScroll } from "@/hooks/ui";
 import {
     AVAILABLE_MODELS,
     useBYOP,

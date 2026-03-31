@@ -1,0 +1,34 @@
+{
+  "pr_number": 9787,
+  "title": "Add AI · RPG Engine to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9787",
+  "merged_at": "2026-03-31T16:18:29Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Roll for initiative",
+    "blurb": "The AI · RPG Engine has officially joined the Pollinations arcade. Time to roll some digital dice and embark on a new AI-powered adventure.",
+    "summary": "Added the AI · RPG Engine to the community games showcase.",
+    "impact": "Users can now discover and play the AI · RPG Engine directly from our community apps directory.",
+    "keywords": [
+      "community",
+      "games",
+      "rpg",
+      "showcase",
+      "apps"
+    ],
+    "visual_concept": "RPG and tabletop gaming theme. The Pollinations bee dressed as a classic RPG character (like a tiny wizard) playing a game with the Monitor Robot. Dice, fantasy maps, and cozy retro gaming vibes.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, rolling a 20-sided die on a wooden tavern table. A chunky retro robot with a CRT monitor head sits across the table, displaying a pixelated fantasy map on its screen. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-31/PR-9787.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, rolling a 20-sided die on a wooden tavern table. A chunky retro robot with a CRT monitor head sits across the table, displaying a pixelated fantasy map on its screen. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-31T16:19:20.048179+00:00",
+  "app_name": "AI · RPG Engine",
+  "app_url": "https://yuuki8763.github.io/en/index.html"
+}

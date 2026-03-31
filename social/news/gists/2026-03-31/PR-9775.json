@@ -1,0 +1,34 @@
+{
+  "pr_number": 9775,
+  "title": "Add Exovia Destek to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9775",
+  "merged_at": "2026-03-31T06:40:50Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Exovia Destek joins the hive",
+    "blurb": "A new Discord bot powered by Pollinations just landed in the greenhouse! Say hello to Exovia Destek, the latest community creation.",
+    "summary": "Added the Exovia Destek Discord bot to the community app showcase.",
+    "impact": "The community directory now features Exovia Destek, highlighting another creative way developers are using Pollinations in Discord.",
+    "keywords": [
+      "community",
+      "bot",
+      "discord",
+      "showcase",
+      "greenhouse"
+    ],
+    "visual_concept": "A new Discord bot being added to the 'greenhouse'. Depict the Pollinations bee welcoming a cute robot (representing the bot) into a literal greenhouse filled with plants and glowing screens.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot welcoming a chunky little robot friend into a lush digital greenhouse filled with glowing code-plants. The robot has a soft pastel blue screen. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-31/PR-9775.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot welcoming a chunky little robot friend into a lush digital greenhouse filled with glowing code-plants. The robot has a soft pastel blue screen. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-31T06:41:56.402568+00:00",
+  "app_name": "Exovia Destek",
+  "app_url": "https://discord.com/invite/3BF7NH4fKN (in my discord its the your ai that uses in \" #?・soru \"channel)"
+}

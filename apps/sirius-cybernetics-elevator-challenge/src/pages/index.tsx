@@ -20,7 +20,6 @@ import {
 } from "@/game/logic";
 import { useSettings } from "@/hooks/settings";
 import {
-    AVAILABLE_MODELS,
     useBYOP,
     useInput,
     useMessageScroll,

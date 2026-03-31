@@ -111,5 +111,4 @@ export function useInput(isLoading: boolean) {
         }
     }, [isLoading]);
     return { inputRef: ref };
-};
-
+}

@@ -18,6 +18,17 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  /* Prevent page scroll jumps on itch.io */
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Ensure root container handles all scrolling */
+#root {
+  height: 100vh;
+  width: 100vw;
+  overflow: auto;
 }
 
 @layer base {

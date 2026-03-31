@@ -1,0 +1,35 @@
+{
+  "pr_number": 9747,
+  "title": "chore: remove 1 dead apps (2026-03-30)",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9747",
+  "merged_at": "2026-03-31T13:59:31Z",
+  "labels": [
+    "WEB",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the garden",
+    "blurb": "Our automated bot did a little spring cleaning, removing a broken link from the community app showcase to keep the garden tidy.",
+    "summary": "Automated removal of an inactive community app link from the showcase directory.",
+    "impact": "Ensures the community app showcase only features active, working projects.",
+    "keywords": [
+      "apps",
+      "showcase",
+      "cleanup",
+      "bot",
+      "maintenance"
+    ],
+    "visual_concept": "The pollinations bee and the Nomnom creature cleaning up the digital garden. Nomnom eating a dead leaf or a broken link (404 paper) to represent removing dead apps.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a crumpled paper with '404' written on it, while the bee mascot sweeps up nearby with a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-31/PR-9747.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature happily eating a crumpled paper with '404' written on it, while the bee mascot sweeps up nearby with a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-31T14:00:35.249217+00:00"
+}

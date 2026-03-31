@@ -1,5 +1,7 @@
 # Pipe: app_top_weekly
 # Description: Top apps by request count over the last 7 days
+# Schema note: Assumes pollinations_generations table has github_username field
+# for BYOP attribution. If field doesn't exist, use hostname parsing instead.
 # Returns: hostname, username, request_count, last_seen
 
 NODE endpoint

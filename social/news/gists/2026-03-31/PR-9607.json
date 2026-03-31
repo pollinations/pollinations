@@ -1,0 +1,35 @@
+{
+  "pr_number": 9607,
+  "title": "feat(sirius): itch.io compatibility fixes and UI enhancements",
+  "author": "ChunkyPanda29",
+  "url": "https://github.com/pollinations/pollinations/pull/9607",
+  "merged_at": "2026-03-31T14:38:30Z",
+  "labels": [
+    "WEB",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Next floor: itch.io",
+    "blurb": "The Sirius Cybernetics Elevator now successfully reaches itch.io without throwing 403 errors. We also added floor animations, because staring at a static wall while riding an elevator is just a bit too realistic.",
+    "summary": "Community contributor ChunkyPanda29 fixed itch.io deployment issues and added Lottie-based floor animations to the Sirius Cybernetics Elevator challenge.",
+    "impact": "Players get a smoother, glitch-free web experience with polished visual effects and background animations for each floor.",
+    "keywords": [
+      "community",
+      "itch.io",
+      "gaming",
+      "animations",
+      "ui"
+    ],
+    "visual_concept": "The PR is about an elevator game/app ('Sirius Cybernetics Elevator') getting itch.io compatibility and floor animations. Visuals should include a retro elevator interior, gaming vibes, and the pollinations bee enjoying the ride with the monitor robot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bellhop hat and a chunky monitor-head robot riding a retro futuristic elevator with glowing floor numbers. The elevator interior features soft lime green (#ecf874) and pastel lavender lighting. Large visible pixels, lo-fi 8-bit aesthetic, warm lighting, cozy vibes like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-31/PR-9607.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bellhop hat and a chunky monitor-head robot riding a retro futuristic elevator with glowing floor numbers. The elevator interior features soft lime green (#ecf874) and pastel lavender lighting. Large visible pixels, lo-fi 8-bit aesthetic, warm lighting, cozy vibes like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-03-31T14:39:56.716777+00:00"
+}

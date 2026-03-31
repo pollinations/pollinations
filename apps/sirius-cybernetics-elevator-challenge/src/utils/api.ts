@@ -5,20 +5,6 @@ import {
     type PollingsResponse,
 } from "@/types";
 
-const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => ({
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${API_CONFIG.API_KEY}`,
-    },
-    body: JSON.stringify({
-        messages,
-        model: "openai",
-        response_format: jsonMode ? { type: "json_object" } : undefined,
-        // temperature: 1.2,
-        seed: Math.floor(Math.random() * 1000000),
-    }),
-});
 function createFetchRequest(
     messages: PollingsMessage[],
     jsonMode = true,

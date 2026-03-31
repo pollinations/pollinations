@@ -1080,59 +1080,76 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 return c.text(LLM_DOC_TEXT);
             })
             /**
-             * GET /api/docs/mcp
-             * Returns the MCP manifest for the Pollinations API documentation.
+             * GET /api/docs/search
+             * Returns metadata about the documentation search API.
              */
-            .get("/mcp", (c) => {
+            .get("/search", (c) => {
                 return c.json({
-                    server: {
-                        name: "Pollinations API Documentation",
-                        version: "1.0.0",
-                        transport: "http",
-                    },
-                    capabilities: {
-                        tools: {
-                            search_documentation_pollinations: {
-                                name: "search_documentation_pollinations",
-                                description:
-                                    "Search across the Pollinations API documentation to find relevant information, code examples, API references, and guides. " +
-                                    "Use this tool when you need to answer questions about image, text, audio, or video generation, " +
-                                    "find specific endpoints, understand how models and authentication work, or locate implementation details. " +
-                                    "The search returns contextual content with titles and direct links to the documentation pages.",
-                                inputSchema: {
-                                    type: "object",
-                                    properties: {
-                                        query: {
-                                            type: "string",
-                                            description:
-                                                "A query to search the content with.",
-                                        },
-                                    },
-                                    required: ["query"],
+                    name: "Pollinations Documentation Search",
+                    version: "1.0.0",
+                    description:
+                        "Search across the Pollinations API documentation to find relevant information, code examples, API references, and guides.",
+                    endpoints: {
+                        search: {
+                            method: "POST",
+                            path: "/api/docs/search",
+                            description:
+                                "Keyword search over API documentation sections. Returns the top matching sections.",
+                            body: {
+                                query: {
+                                    type: "string",
+                                    required: true,
+                                    description:
+                                        "A search query to match against documentation sections.",
                                 },
-                                operationId:
-                                    "search_documentation_pollinations",
                             },
                         },
-                        resources: [],
-                        prompts: [],
+                        llm_txt: {
+                            method: "GET",
+                            path: "/api/docs/llm.txt",
+                            description:
+                                "Full LLM-optimized documentation in plain text.",
+                        },
                     },
                 });
             })
 
             /**
-             * POST /api/docs/mcp/search
-             * Search endpoint for the Pollinations MCP tool.
+             * POST /api/docs/search
+             * Keyword search over API documentation sections.
              */
-            .post("/mcp/search", async (c) => {
-                const { query } = (await c.req.json()) as { query: string };
+            .post("/search", async (c) => {
+                let body: unknown;
+                try {
+                    body = await c.req.json();
+                } catch {
+                    return c.json(
+                        { error: "Invalid JSON in request body" },
+                        400,
+                    );
+                }
 
-                if (!query) {
-                    return c.json({
-                        content: [
-                            { type: "text", text: "Please provide a query." },
-                        ],
-                    });
+                if (
+                    !body ||
+                    typeof body !== "object" ||
+                    !("query" in body) ||
+                    typeof (body as Record<string, unknown>).query !== "string"
+                ) {
+                    return c.json(
+                        {
+                            error: 'Missing or invalid "query" field. Expected a non-empty string.',
+                        },
+                        400,
+                    );
+                }
+
+                const { query } = body as { query: string };
+
+                if (query.trim().length === 0) {
+                    return c.json(
+                        { error: "query must be a non-empty string" },
+                        400,
+                    );
                 }
 
                 // Split the LLM-optimized docs into sections by headers

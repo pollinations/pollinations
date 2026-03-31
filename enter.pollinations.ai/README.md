@@ -5,7 +5,7 @@ Provides authentication, payment infrastructure and authorizing API gateway that
 
 - **[API Authentication Guide](./API_AUTHENTICATION.md)** - How to use API keys for server-to-server requests
 - **[API Documentation](https://enter.pollinations.ai/api/docs)** - Interactive API reference
-- **[MCP Endpoint](https://enter.pollinations.ai/api/docs/mcp)** - Model Context Protocol manifest for AI assistants to search the docs
+- **[Docs Search API](https://enter.pollinations.ai/api/docs/search)** - Search API for AI assistants to query the documentation
 - **[FAQ](./POLLEN_FAQ.md)** - Frequently asked questions about Pollen and pricing 
 
 # Local development

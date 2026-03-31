@@ -1,0 +1,34 @@
+{
+  "pr_number": 9788,
+  "title": "Add Soy Cosmo to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9788",
+  "merged_at": "2026-03-31T16:22:05Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Cosmo joins the chat",
+    "blurb": "Say hola to Soy Cosmo, a new WhatsApp personal assistant powered by Pollinations! It generates images and audio right in your chats.",
+    "summary": "Added Soy Cosmo, a WhatsApp-based personal assistant that uses Pollinations for image and audio generation, to the community showcase.",
+    "impact": "Users can now discover and try out Soy Cosmo directly from our community apps list.",
+    "keywords": [
+      "community",
+      "whatsapp",
+      "bot",
+      "showcase",
+      "assistant"
+    ],
+    "visual_concept": "Soy Cosmo is a WhatsApp bot. Visuals should include a smartphone, chat bubbles, and a space/cosmos theme for 'Cosmo'. The bee mascot interacts with the phone.",
+    "image_prompt": "Cozy pixel art scene of a chunky retro smartphone displaying a green chat bubble, with a cute little robot named Cosmo waving from the screen. The friendly bee mascot hovers nearby holding a tiny paintbrush. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-31/PR-9788.jpg",
+    "prompt": "Cozy pixel art scene of a chunky retro smartphone displaying a green chat bubble, with a cute little robot named Cosmo waving from the screen. The friendly bee mascot hovers nearby holding a tiny paintbrush. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-03-31T16:22:54.888820+00:00",
+  "app_name": "Soy Cosmo",
+  "app_url": "https://soy-cosmo.web.app"
+}

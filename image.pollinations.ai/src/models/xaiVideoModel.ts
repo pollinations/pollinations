@@ -88,6 +88,11 @@ export async function callXaiVideoAPI(
         requestBody.image = safeParams.image[0];
     }
 
+    // Pass mode parameter if provided (fun, normal, spicy)
+    if (safeParams.mode) {
+        requestBody.mode = safeParams.mode;
+    }
+
     logOps("Request body:", JSON.stringify(requestBody));
 
     const submitResponse = await fetch(XAI_VIDEO_API_URL, {

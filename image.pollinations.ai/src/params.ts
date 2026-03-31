@@ -83,7 +83,8 @@ export const ImageParamsSchema = z
         guidance_scale: z.coerce.number().optional().catch(undefined),
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),
-        aspectRatio: z.enum(["16:9", "9:16"]).optional(),
+        aspectRatio: z.enum(["16:9", "9:16", "1:1"]).optional(),
+        mode: z.enum(["fun", "normal", "spicy"]).optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
     })
     .transform((data) => {

@@ -110,8 +110,15 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by width/height.",
+            "Video aspect ratio (`16:9`, `9:16`, or `1:1`). Only applies to video models. `1:1` currently supported by `grok-video-pro` only. If not set, determined by width/height.",
     }),
+    mode: z
+        .enum(["fun", "normal", "spicy"] as const)
+        .optional()
+        .meta({
+            description:
+                "Generation mode for `grok-video-pro`. `fun` = playful/creative, `normal` = balanced (default), `spicy` = more intense. Only applies to `grok-video-pro`.",
+        }),
     audio: z.coerce.boolean().optional().default(false).meta({
         description:
             "Generate audio for the video. Only applies to video models. Note: `wan` generates audio regardless of this flag. For `veo`, set to `true` to enable audio.",

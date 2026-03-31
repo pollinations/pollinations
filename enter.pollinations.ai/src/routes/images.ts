@@ -26,6 +26,7 @@ const PASSTHROUGH_PARAMS = [
     "transparent",
     "negative_prompt",
     "guidance_scale",
+    "mode",
 ] as const;
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {

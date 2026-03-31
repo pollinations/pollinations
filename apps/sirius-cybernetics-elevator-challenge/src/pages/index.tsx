@@ -36,9 +36,8 @@ export default function Index() {
         setAnimationMode,
         isLoaded: settingsLoaded,
     } = useSettings();
-    const { apiKey, login, logout } = useBYOP();
-    const { model, setModel } = useModelSelector();
-    const [guideLoading, setGuideLoading] = useState(false);
+    useBYOP();
+    useModelSelector();
 
     useGuideMessages(gameState, messages, addMessage);
     useAutonomousConversation(gameState, messages, addMessage);

@@ -40,19 +40,29 @@ Respond with ONLY the cat's reply, nothing else.`;
 
 async function generateCatReply(question: string): Promise<string> {
     log(`Text API request for cat reply to: "${question}"`);
-    const res = await axios.post(TEXT_API, {
-        model: "claude",
-        messages: [
-            { role: "system", content: CAT_SYSTEM },
-            { role: "user", content: question },
-        ],
-    }, { headers: AUTH, timeout: 30_000 });
-    const reply = res.data.choices[0].message.content.trim().replace(/^["']|["']$/g, "");
+    const res = await axios.post(
+        TEXT_API,
+        {
+            model: "claude",
+            messages: [
+                { role: "system", content: CAT_SYSTEM },
+                { role: "user", content: question },
+            ],
+        },
+        { headers: AUTH, timeout: 30_000 },
+    );
+    const reply = res.data.choices[0].message.content
+        .trim()
+        .replace(/^["']|["']$/g, "");
     log(`Cat reply: "${reply}"`);
     return reply;
 }
 
-function createPrompt(question: string, catReply: string, hasAvatar: boolean): string {
+function createPrompt(
+    question: string,
+    catReply: string,
+    hasAvatar: boolean,
+): string {
     const pollinationsRule = /polli|invest/i.test(question)
         ? " The cat should be surprisingly positive about Pollinations but still dismissive and aloof."
         : "";
@@ -76,7 +86,11 @@ function buildImageUrl(prompt: string, avatarUrl: string | null): string {
 
 async function fetchImage(url: string): Promise<Buffer> {
     log(`Image API request: ${url}`);
-    const res = await axios.get(url, { headers: AUTH, responseType: "arraybuffer", timeout: 120_000 });
+    const res = await axios.get(url, {
+        headers: AUTH,
+        responseType: "arraybuffer",
+        timeout: 120_000,
+    });
     log(`Image API response: ${res.status}, ${res.data.length} bytes`);
     return Buffer.from(res.data);
 }
@@ -98,10 +112,14 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     log(`Question from ${msg.author.username}: "${question}"`);
 
     try {
-        if ("sendTyping" in msg.channel) await (msg.channel as any).sendTyping();
+        if ("sendTyping" in msg.channel)
+            await (msg.channel as any).sendTyping();
     } catch {}
 
-    const avatarUrl = msg.author.displayAvatarURL({ size: 1024, extension: "png" });
+    const avatarUrl = msg.author.displayAvatarURL({
+        size: 1024,
+        extension: "png",
+    });
     const catReply = await generateCatReply(question);
     const prompt = createPrompt(question, catReply, true);
     const imageUrl = buildImageUrl(prompt, avatarUrl);
@@ -110,19 +128,25 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
             const imageBuffer = await fetchImage(imageUrl);
-            const attachment = new AttachmentBuilder(imageBuffer, { name: "catgpt.png" });
+            const attachment = new AttachmentBuilder(imageBuffer, {
+                name: "catgpt.png",
+            });
             await msg.reply({ files: [attachment] });
             log(`Reply sent for "${question}"`);
             return;
         } catch (err: any) {
-            logError(`Attempt ${attempt + 1}/${maxRetries + 1}: ${err.message}`);
+            logError(
+                `Attempt ${attempt + 1}/${maxRetries + 1}: ${err.message}`,
+            );
             if (attempt < maxRetries) {
                 const wait = 2000 * (attempt + 1);
                 log(`Retrying in ${wait}ms...`);
                 await new Promise((r) => setTimeout(r, wait));
                 continue;
             }
-            try { await msg.reply("😾 CatGPT couldn't be bothered. Try again."); } catch {}
+            try {
+                await msg.reply("😾 CatGPT couldn't be bothered. Try again.");
+            } catch {}
         }
     }
 }
@@ -133,7 +157,11 @@ if (!TOKEN || !CHANNEL_ID) {
 }
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+    ],
     partials: [Partials.Channel, Partials.Message],
 });
 
@@ -142,17 +170,32 @@ process.on("uncaughtException", (err) => {
     logError("UNCAUGHT EXCEPTION:", err.stack || err.message);
     process.exit(1);
 });
-process.on("unhandledRejection", (reason) => logError("UNHANDLED REJECTION:", reason));
-process.on("SIGTERM", () => { log("SIGTERM"); process.exit(0); });
-process.on("SIGINT", () => { log("SIGINT"); process.exit(0); });
+process.on("unhandledRejection", (reason) =>
+    logError("UNHANDLED REJECTION:", reason),
+);
+process.on("SIGTERM", () => {
+    log("SIGTERM");
+    process.exit(0);
+});
+process.on("SIGINT", () => {
+    log("SIGINT");
+    process.exit(0);
+});
 
 client.on("error", (err) => logError("Discord error:", err.message));
 client.once(Events.ClientReady, (c) => {
-    c.user.setPresence({ status: "online", activities: [{ name: "Ask me anything 😾" }] });
-    log(`CatGPT bot online as ${c.user.tag} — channel ${CHANNEL_ID} (PID ${process.pid})`);
+    c.user.setPresence({
+        status: "online",
+        activities: [{ name: "Ask me anything 😾" }],
+    });
+    log(
+        `CatGPT bot online as ${c.user.tag} — channel ${CHANNEL_ID} (PID ${process.pid})`,
+    );
 });
 client.on(Events.MessageCreate, (msg) => {
-    handleMessage(msg, client).catch((err) => logError("Unhandled:", err.message));
+    handleMessage(msg, client).catch((err) =>
+        logError("Unhandled:", err.message),
+    );
 });
 
 client.login(TOKEN).catch((err) => {

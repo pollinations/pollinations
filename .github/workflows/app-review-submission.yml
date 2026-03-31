@@ -327,7 +327,8 @@ jobs:
           git checkout "$BRANCH"
 
           # Merge main into PR branch to ensure branch is up to date.
-          git merge --no-ff origin/main
+          # || true so the step continues into conflict resolution on merge failures
+          git merge --no-ff origin/main || true
 
           if git diff --name-only --diff-filter=U | grep .; then
             echo "Merge conflicts detected in apps/APPS.md. Attempting a safe resolve by keeping the PR change."

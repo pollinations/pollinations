@@ -1,0 +1,34 @@
+{
+  "pr_number": 9772,
+  "title": "Add labol lens to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9772",
+  "merged_at": "2026-03-31T06:21:31Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Looking through the Labol Lens",
+    "blurb": "A brand new community app just sprouted in the greenhouse! Check out Labol Lens, the latest creation built on our image generation API.",
+    "summary": "Added the community-built 'Labol Lens' application to the Pollinations app showcase and greenhouse.",
+    "impact": "Users can now discover and explore the Labol Lens app directly from our community directory.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "image",
+      "greenhouse"
+    ],
+    "visual_concept": "The PR adds an app called 'Labol Lens' to the Greenhouse directory. The visual should feature Polly the bee in a cozy greenhouse setting, looking through a magnifying glass or camera lens at a glowing pixel-art flower or image, representing the new 'lens' app.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny explorer's hat, looking through a glowing magnifying glass at a sprouting code-plant inside a warm greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-31/PR-9772.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny explorer's hat, looking through a glowing magnifying glass at a sprouting code-plant inside a warm greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-31T06:22:28.841793+00:00",
+  "app_name": "labol lens",
+  "app_url": "https://labol-lens.streamlit.app/"
+}

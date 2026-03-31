@@ -22,8 +22,7 @@ SCHEMA >
     `issue_url` String `json:$.issue_url`,
     `approved_date` String `json:$.approved_date`,
     `byop` String `json:$.byop`,
-    `requests_24h` String `json:$.requests_24h`,
-    `health` String `json:$.health`
+    `requests_24h` String `json:$.requests_24h`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "github_user_id, category"

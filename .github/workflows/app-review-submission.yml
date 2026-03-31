@@ -320,15 +320,22 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
 
       - name: Attempt to resolve merge conflicts
-        if: always()
+        if: success()
         run: |
+          BRANCH="${{ steps.branch.outputs.branch }}"
           git fetch origin
-          git merge origin/main || true
+          git checkout "$BRANCH"
+
+          # Merge main into PR branch to ensure branch is up to date.
+          git merge --no-ff origin/main
+
           if git diff --name-only --diff-filter=U | grep .; then
-            echo "Merge conflicts detected. Attempting to resolve..."
-            git merge --strategy-option theirs origin/main || true
-            git add .
-            git commit -m "Resolve merge conflicts automatically" || true
-            git push origin HEAD || true
+            echo "Merge conflicts detected in apps/APPS.md. Attempting a safe resolve by keeping the PR change."
+            git checkout --ours -- apps/APPS.md
+            git add apps/APPS.md
+            git commit -m "Resolve merge conflicts: keep app addition in apps/APPS.md"
+            git push origin HEAD
           else
-            echo "No merge conflicts detected."
+            echo "No merge conflicts detected. Pushing updated branch."
+            git push origin HEAD
+          fi

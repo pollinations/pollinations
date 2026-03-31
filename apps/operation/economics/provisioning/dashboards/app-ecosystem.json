@@ -1,0 +1,1512 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "description": "App ecosystem landscape — categories, platforms, BYOP share, and recruitment opportunities. Uses app_directory for category/platform enrichment and live generation_event data.",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 100,
+            "panels": [],
+            "title": "Overview",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Apps listed in APPS.md with a category assigned.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "blue",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "blue",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 0,
+                "y": 1
+            },
+            "id": 1,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT count() as apps FROM app_directory WHERE category != ''",
+                    "refId": "A"
+                }
+            ],
+            "title": "Directory Apps",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Distinct users in the selected period whose GitHub ID matches an app_directory entry.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "blue",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "blue",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 3,
+                "y": 1
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT countDistinct(ge.user_github_id) as users FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.category != '' AND ge.user_github_id != '' AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Directory Users",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Total pollen consumed by users in the app directory.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 6,
+                "y": 1
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT sumIf(ge.total_price, ad.category != '') as total FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Categorized Pollen",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Percentage of total platform pollen attributable to directory users.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "blue",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "blue",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "percentunit"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 10,
+                "y": 1
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT if(sum(ge.total_price) > 0, sumIf(ge.total_price, ad.category != '') / sum(ge.total_price), 0) as coverage FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Coverage",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Number of distinct categories in the app directory.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "purple",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "purple",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 13,
+                "y": 1
+            },
+            "id": 5,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT countDistinct(category) as cats FROM app_directory WHERE category != ''",
+                    "refId": "A"
+                }
+            ],
+            "title": "Categories",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Directory users with clean BYOP (redirect-auth) traffic in the selected period.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 16,
+                "y": 1
+            },
+            "id": 6,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT countDistinct(ge.user_github_id) as users FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.category != '' AND ge.api_key_created_via = 'redirect-auth' AND ge.user_github_id != '' AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Users (clean BYOP)",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Directory users with heuristic BYOP traffic in the selected period.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "orange",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "orange",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 20,
+                "y": 1
+            },
+            "id": 7,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT countDistinct(ge.user_github_id) as users FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.category != '' AND ge.api_key_created_via != 'redirect-auth' AND ge.api_key_type = 'secret' AND ge.api_key_name LIKE '%.%' AND ge.user_github_id != '' AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Users (heuristic)",
+            "type": "stat"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 5
+            },
+            "id": 101,
+            "panels": [],
+            "title": "Category Economics",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Per-category economics: tier pollen (subsidy) vs pack pollen (revenue), with subsidy rate and user counts.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "filterable": true,
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "category"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "apps"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 50
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Tier ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Pack ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Total ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "profitability"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Profit"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percentunit"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 0
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 65
+                            },
+                            {
+                                "id": "min",
+                                "value": -1
+                            },
+                            {
+                                "id": "max",
+                                "value": 1
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "color-background",
+                                    "mode": "gradient"
+                                }
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "continuous-RdYlGr"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 70
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "unique_users"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Users"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 60
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 12,
+                "x": 0,
+                "y": 6
+            },
+            "id": 8,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": false,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Total ρ"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT\n  ad.category as category,\n  cat_counts.apps as apps,\n  sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,\n  sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen,\n  sum(ge.total_price) as total_pollen,\n  if(total_pollen > 0, (pack_pollen - tier_pollen) / total_pollen, 0) as profitability,\n  count() as requests,\n  countDistinct(ge.user_github_id) as unique_users\nFROM generation_event ge\nLEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id\nLEFT JOIN (SELECT category, count() as apps FROM app_directory GROUP BY category) cat_counts ON ad.category = cat_counts.category\nWHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND ge.user_github_id != '241978997' AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY ad.category, cat_counts.apps\nHAVING ad.category != ''\nORDER BY total_pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "title": "Category P&L",
+            "type": "table"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Share of total pollen consumed per category.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 12,
+                "x": 12,
+                "y": 6
+            },
+            "id": 10,
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true,
+                    "values": [
+                        "value",
+                        "percent"
+                    ]
+                },
+                "pieType": "pie",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "displayLabels": [
+                    "name",
+                    "value"
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT ad.category as category, sum(ge.total_price) as pollen FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.category != '' GROUP BY ad.category ORDER BY pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "title": "Pollen by Category",
+            "type": "piechart"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Tier (free subsidy, orange) vs Pack (paid, green) per category.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Tier ρ"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Pack ρ"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 12,
+                "y": 18
+            },
+            "id": 11,
+            "options": {
+                "barRadius": 0,
+                "barWidth": 0.8,
+                "groupWidth": 0.7,
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "horizontal",
+                "stacking": "normal",
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "xTickLabelRotation": 0
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT ad.category as category, sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen, sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.category != '' GROUP BY ad.category ORDER BY tier_pollen + pack_pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "title": "Tier vs Pack by Category",
+            "type": "barchart"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily pollen consumption stacked by category. Shows which categories are growing or declining over time.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 0,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        },
+                        "barAlignment": 0
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 0,
+                "y": 18
+            },
+            "id": 13,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum",
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "range": true,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT toStartOfInterval(ge.start_time, INTERVAL 1 DAY) as time, ad.category as category, sum(ge.total_price) as pollen FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.category != '' GROUP BY time, category ORDER BY time",
+                    "refId": "A"
+                }
+            ],
+            "title": "Daily Pollen by Category",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 28
+            },
+            "id": 104,
+            "panels": [],
+            "title": "Platform Distribution",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Share of total pollen consumed per platform (web, cli, discord, etc.).",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 12,
+                "x": 0,
+                "y": 29
+            },
+            "id": 15,
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "right",
+                    "showLegend": true,
+                    "values": [
+                        "value",
+                        "percent"
+                    ]
+                },
+                "pieType": "pie",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "displayLabels": [
+                    "name",
+                    "value"
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT ad.platform as platform, sum(ge.total_price) as pollen FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.platform != '' GROUP BY ad.platform ORDER BY pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "title": "Pollen by Platform",
+            "type": "piechart"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Tier (free subsidy, orange) vs Pack (paid, green) per platform.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Tier ρ"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Pack ρ"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 12,
+                "x": 12,
+                "y": 29
+            },
+            "id": 16,
+            "options": {
+                "barRadius": 0,
+                "barWidth": 0.8,
+                "groupWidth": 0.7,
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "horizontal",
+                "stacking": "normal",
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "xTickLabelRotation": 0
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT ad.platform as platform, sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen, sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.platform != '' GROUP BY ad.platform ORDER BY tier_pollen + pack_pollen DESC",
+                    "refId": "A"
+                }
+            ],
+            "title": "Tier vs Pack by Platform",
+            "type": "barchart"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily pollen consumption stacked by platform. Shows where apps are deployed and how platform distribution changes over time.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 0,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        },
+                        "barAlignment": 0
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 41
+            },
+            "id": 18,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum",
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "range": true,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT toStartOfInterval(ge.start_time, INTERVAL 1 DAY) as time, ad.platform as platform, sum(ge.total_price) as pollen FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.platform != '' GROUP BY time, platform ORDER BY time",
+                    "refId": "A"
+                }
+            ],
+            "title": "Daily Pollen by Platform",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 51
+            },
+            "id": 106,
+            "panels": [],
+            "title": "Recruitment",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Top 50 users by pollen consumption who are NOT in the app directory. Potential recruitment targets — high-usage developers who could register their apps.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "filterable": true,
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "user"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 180
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Total ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 120
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "color-background",
+                                    "mode": "gradient"
+                                }
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "continuous-GrYlRd"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Tier ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Pack ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "apps"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "App(s)"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 300
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 52
+            },
+            "id": 80,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Total ρ"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT if(ge.user_github_username != '' AND ge.user_github_username != 'undefined', ge.user_github_username, ge.user_github_id) as user, sum(ge.total_price) as total_pollen, sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen, sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen, count() as requests, arrayStringConcat(groupUniqArray(ge.api_key_name), ', ') as apps FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND (ad.category = '' OR ad.category IS NULL) AND ge.user_github_id != '' GROUP BY user ORDER BY total_pollen DESC LIMIT 50",
+                    "refId": "A"
+                }
+            ],
+            "title": "Uncategorized Whales",
+            "type": "table"
+        }
+    ],
+    "schemaVersion": 40,
+    "tags": [
+        "apps",
+        "ecosystem",
+        "economics"
+    ],
+    "templating": {
+        "list": []
+    },
+    "time": {
+        "from": "now-30d",
+        "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "utc",
+    "title": "App Ecosystem",
+    "uid": "app-ecosystem",
+    "version": 0
+}

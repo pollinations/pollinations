@@ -346,7 +346,7 @@ export const IMAGE_SERVICES = {
         ],
         description:
             "Grok Video Pro - xAI official video generation (720p, 1-15s)",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
     "klein": {

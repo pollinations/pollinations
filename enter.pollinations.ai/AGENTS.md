@@ -640,8 +640,8 @@ https://myapp.com/callback#api_key=sk_xxxxx
 | microbe| 🦠    | 0        | none    | Entry tier (auto-upgrades once verified) |
 | spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
 | seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
-| flower | 🌸    | 10       | daily   | Contributor              |
-| nectar | 🍯    | 20       | daily   | Coming soon              |
+| flower | 🌸    | 0.4      | hourly  | Contributor              |
+| nectar | 🍯    | 0.8      | hourly  | Coming soon              |
 
 ### Quick Tier Update
 

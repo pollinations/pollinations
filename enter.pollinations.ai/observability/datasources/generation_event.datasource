@@ -31,6 +31,7 @@ SCHEMA >
 `api_key_type`          LowCardinality(String)  `json:$.apiKeyType` DEFAULT 'undefined',
 `api_key_created_via`   LowCardinality(String)  `json:$.apiKeyCreatedVia` DEFAULT 'undefined',
 `api_key_created_for_app` String                `json:$.apiKeyCreatedForApp` DEFAULT 'undefined',
+`api_key_created_for_user_id` String            `json:$.apiKeyCreatedForUserId` DEFAULT 'undefined',
 
 -- Meter
 `selected_meter_id`     LowCardinality(String)  `json:$.selectedMeterId` DEFAULT 'undefined',

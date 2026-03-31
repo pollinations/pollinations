@@ -132,6 +132,9 @@ export const track = (eventType: EventType) =>
             apiKeyCreatedForApp: apiKeyMetadata?.createdForApp as
                 | string
                 | undefined,
+            apiKeyCreatedForUserId: apiKeyMetadata?.createdForUserId as
+                | string
+                | undefined,
         } satisfies UserData;
 
         let responseOverride = null;
@@ -413,6 +416,7 @@ type UserData = {
     apiKeyName?: string;
     apiKeyCreatedVia?: string;
     apiKeyCreatedForApp?: string;
+    apiKeyCreatedForUserId?: string;
 };
 
 type BalanceData = {

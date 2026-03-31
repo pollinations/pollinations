@@ -1,3 +1,4 @@
+import { getStoredApiKey, getStoredModel } from "@/hooks/ui";
 import {
     API_CONFIG,
     type PollingsMessage,
@@ -18,6 +19,27 @@ const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => ({
         seed: Math.floor(Math.random() * 1000000),
     }),
 });
+function createFetchRequest(
+    messages: PollingsMessage[],
+    jsonMode = true,
+): RequestInit {
+    const apiKey = getStoredApiKey();
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
+    return {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            messages,
+            model: getStoredModel(),
+            response_format: jsonMode ? { type: "json_object" } : undefined,
+            seed: Math.floor(Math.random() * 1000000),
+        }),
+    };
+}
 
 const FALLBACK_RESPONSE: PollingsResponse = {
     choices: [

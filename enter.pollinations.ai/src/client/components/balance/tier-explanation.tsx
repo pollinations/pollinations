@@ -12,6 +12,7 @@ const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
     green: { bg: "bg-green-100/60", ring: "ring-green-400" },
     pink: { bg: "bg-pink-100/60", ring: "ring-pink-400" },
     amber: { bg: "bg-amber-100/60", ring: "ring-amber-400" },
+    orange: { bg: "bg-orange-100/60", ring: "ring-orange-400" },
 };
 
 const SeedTooltipContent = () => (

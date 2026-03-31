@@ -7,6 +7,7 @@ const panelColors = {
     violet: "border-violet-300 bg-violet-50/70",
     purple: "border-purple-300 bg-purple-50/70",
     amber: "border-amber-300 bg-amber-50/70",
+    orange: "border-orange-300 bg-orange-50/70",
     green: "border-green-200 bg-green-50/70",
     pink: "border-pink-300 bg-pink-50/70",
     gray: "border-gray-300 bg-gray-50/70",

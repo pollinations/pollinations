@@ -1,0 +1,34 @@
+{
+  "pr_number": 9765,
+  "title": "feat: add CatGPT Discord bot",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9765",
+  "merged_at": "2026-03-31T15:55:01Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "CatGPT enters the chat",
+    "blurb": "Someone built a CatGPT Discord bot that turns your messages into sarcastic webcomics. It even uses your avatar, so you can be personally roasted by a fictional cat in high resolution.",
+    "summary": "Added a CatGPT Discord bot to the apps directory that uses Claude for witty replies and nanobanana to generate custom webcomic panels.",
+    "impact": "Discord users can now trigger custom AI-generated comic strips that feature their own avatars interacting with a sassy AI cat.",
+    "keywords": [
+      "discord",
+      "bot",
+      "catgpt",
+      "comics",
+      "apps"
+    ],
+    "visual_concept": "A sassy cat and the Pollinations bee mascot. The cat represents the new CatGPT bot, and comic strips represent the generated webcomics. They should be hanging out around a retro computer or chat interface.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny beret, laughing at a printed comic strip alongside a sassy, chunky pixel art cat sitting on a retro computer monitor. The monitor screen glows with chat bubbles. Soft lime green (#ecf874) and peach pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-03-31/PR-9765.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny beret, laughing at a printed comic strip alongside a sassy, chunky pixel art cat sitting on a retro computer monitor. The monitor screen glows with chat bubbles. Soft lime green (#ecf874) and peach pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-03-31T15:56:21.963294+00:00"
+}

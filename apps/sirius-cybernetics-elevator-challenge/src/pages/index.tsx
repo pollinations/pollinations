@@ -365,27 +365,10 @@ export default function Index() {
                         , the Deep Thought of our times.
                     </p>
                 </div>
-        <div className="flex flex-col items-center justify-center min-h-screen bg-black text-green-400 p-4 font-mono">
-            <Card className="w-full max-w-2xl p-6 space-y-6 bg-gray-900 border-green-400 border-2 rounded-none relative">
-                {/* Sub-Etha Auth Status — top right */}
-                <div className="absolute top-2 right-3">
-                    {apiKey ? (
-                        <div className="flex items-center space-x-2">
-                            <span className="text-xs text-green-600">
-                                Sub-Etha: ...{apiKey.slice(-5)}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={logout}
-                                className="text-xs text-red-400 hover:text-red-300 underline"
-                            >
-                                disconnect
-                            </button>
-                        </div>
-                    ) : (
-                        <span className="text-xs text-gray-600">offline</span>
-                    )}
-                </div>
+            </div>
+        </>
+    );
+}
 
                 <div className="text-center space-y-4">
                     <h1 className="text-3xl font-bold text-yellow-400 animate-pulse">

@@ -800,6 +800,215 @@ describe("Image Integration Tests", () => {
     );
 });
 
+/**
+ * Qwen Image (Alibaba) Tests
+ *
+ * Cost: $0.03 per image (international)
+ */
+describe("Qwen Image Generation", () => {
+    test(
+        "qwen-image should return image (text-to-image)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20red%20panda%20eating%20bamboo?model=qwen-image&width=512&height=512&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("qwen-image response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "qwen-image should return edited image when image input provided",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const referenceImageUrl = "https://picsum.photos/256/256";
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/make%20it%20look%20like%20a%20watercolor%20painting?model=qwen-image&seed=42&image=${encodeURIComponent(referenceImageUrl)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("qwen-image edit response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+});
+
+/**
+ * Grok Imagine (xAI) Tests
+ *
+ * Cost: grok-imagine $0.02/image, grok-imagine-pro $0.07/image
+ */
+describe("Grok Imagine Generation", () => {
+    test(
+        "grok-imagine should return image (basic)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20red%20apple%20on%20a%20white%20table?model=grok-imagine&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("grok-imagine response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "grok-imagine-pro should return image (pro)",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20sunset%20over%20mountains?model=grok-imagine-pro&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log(
+                    "grok-imagine-pro response:",
+                    response.status,
+                    body,
+                );
+            }
+
+            expect(response.status).toBe(200);
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    test(
+        "grok-imagine with landscape aspect ratio should work",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20mountain%20landscape?model=grok-imagine&width=1920&height=1080&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log(
+                    "grok-imagine landscape response:",
+                    response.status,
+                    body,
+                );
+            }
+
+            expect(response.status).toBe(200);
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("image/");
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+});
+
+/**
+ * Grok Video Pro (xAI) Tests
+ *
+ * Cost: $0.07/sec at 720p
+ */
+describe("Grok Video Pro Generation", () => {
+    test(
+        "grok-video-pro T2V should return video/mp4",
+        { timeout: 180000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20cat%20walking%20on%20grass?model=grok-video-pro&duration=3`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("grok-video-pro response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+});
+
 describe("POST /v1/images/generations", () => {
     test(
         "returns b64_json response by default",

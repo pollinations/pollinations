@@ -84,7 +84,7 @@ export const ImageParamsSchema = z
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),
         aspectRatio: z.enum(["16:9", "9:16"]).optional(),
-        audio: sanitizedBoolean.catch(false), // generateAudio defaults to false (can enable later)
+        audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
     })
     .transform((data) => {
         // adjust width and height to fit the selected model

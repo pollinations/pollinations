@@ -11,21 +11,15 @@ import {
 import type { ApiKeyType } from "@/db/schema/event.ts";
 import { getTierCadence, tierNames } from "@/tier-config.ts";
 
-// Calculate next tier refill time based on cadence (null for tiers with no refill)
+// Calculate next tier refill time (null for tiers with no refill)
 function getNextRefillAt(tier?: string | null): string | null {
     const cadence = tier ? getTierCadence(tier) : "none";
     if (cadence === "none") return null;
     const now = new Date();
-    if (cadence === "hourly") {
-        const nextHour = new Date(now);
-        nextHour.setUTCMinutes(0, 0, 0);
-        nextHour.setUTCHours(nextHour.getUTCHours() + 1);
-        return nextHour.toISOString();
-    }
-    const tomorrow = new Date(now);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-    tomorrow.setUTCHours(0, 0, 0, 0);
-    return tomorrow.toISOString();
+    const nextHour = new Date(now);
+    nextHour.setUTCMinutes(0, 0, 0);
+    nextHour.setUTCHours(nextHour.getUTCHours() + 1);
+    return nextHour.toISOString();
 }
 
 import type { Env } from "../env.ts";
@@ -494,11 +488,10 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            const userId = user.id;
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
             const kv = c.env.KV;
-            const cacheKey = `usage:daily:${userId}`;
+            const cacheKey = `usage:daily:${user.id}`;
 
             try {
                 let usage: DailyUsageRecord[] | null = null;
@@ -524,7 +517,7 @@ export const accountRoutes = new Hono<Env>()
                         "/v0/pipes/user_usage_daily.json",
                         tinybirdOrigin,
                     );
-                    url.searchParams.set("user_id", userId);
+                    url.searchParams.set("user_id", user.id);
                     url.searchParams.set("since", since);
 
                     const response = await fetch(url.toString(), {
@@ -553,7 +546,10 @@ export const accountRoutes = new Hono<Env>()
 
                 log.debug(
                     "Fetched daily usage: count={count} cached={cached}",
-                    { count: usage.length, cached },
+                    {
+                        count: usage.length,
+                        cached,
+                    },
                 );
 
                 const { format } = c.req.valid("query");

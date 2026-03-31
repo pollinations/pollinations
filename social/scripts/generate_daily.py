@@ -84,6 +84,9 @@ def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
             lines.append(f"**Headline:** {ai['headline']}")
         if ai.get("keywords"):
             lines.append(f"**Keywords:** {', '.join(ai['keywords'])}")
+        # Include app link so highlights can reference it
+        if g.get("app_name") and g.get("app_url"):
+            lines.append(f"**App Link:** [{g['app_name']}]({g['app_url']})")
         lines.append("")
 
     return "\n".join(lines), len(filtered)

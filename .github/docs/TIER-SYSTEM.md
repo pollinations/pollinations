@@ -9,10 +9,10 @@ The pollinations.ai tier system rewards contributors with increasing API credits
 | Microbe* | 0 | — | Internal: Account under review |
 | Spore* | 0.01 | Hourly | Internal: Verified account |
 | **Seed** | 0.15 | Hourly | Automatic via GitHub activity |
-| **Flower** | 10 | Daily | Contributor (app submission) |
-| **Nectar** | 20 | Daily | Coming soon |
+| **Flower** | 0.4 | Hourly | Contributor (app submission) |
+| **Nectar** | 0.8 | Hourly | Coming soon |
 
-> **Note:** *Microbe/Spore are internal-only. Spore and Seed refill hourly. Flower/Nectar refill daily at midnight UTC. No rollover.
+> **Note:** *Microbe/Spore are internal-only. All tiers refill hourly. No rollover.
 
 ---
 
@@ -56,7 +56,7 @@ Example: A 12-month-old account (6 pts) with 20 commits (2 pts) qualifies.
 - **Script:** `tier-update-user.ts` (in `enter.pollinations.ai`)
 - **Action:** For each approved user:
   1. Updates D1 database: `tier = 'seed'`
-  2. Balance refills automatically at next refill cycle (hourly for Spore/Seed, daily for Flower+)
+  2. Balance refills automatically at next refill cycle (hourly for all tiers)
 - **Rate limiting:** 1 second delay between upgrades
 
 ### Scripts
@@ -117,9 +117,8 @@ flowchart TD
 
     I -->|Adds TIER-APP-APPROVED| AP[TIER-APP-APPROVED]
     AP --> PR[🔀 PR created + auto-merge]
-    PR --> J[TIER-APP-COMPLETE]
-    J --> K[⬆️ Upgrade to Flower]
-    K --> L[🎉 Celebrate!]
+    PR --> K[⬆️ Upgrade to Flower]
+    K --> L[🎉 Celebrate + Close Issue]
 
     style B fill:#3b82f6,color:#fff
     style E1 fill:#f59e0b,color:#000
@@ -129,7 +128,6 @@ flowchart TD
     style AP fill:#3b82f6,color:#fff
     style PR fill:#8b5cf6,color:#fff
     style REJ fill:#ef4444,color:#fff
-    style J fill:#22c55e,color:#fff
     style CLOSED1 fill:#6b7280,color:#fff
     style CLOSED2 fill:#6b7280,color:#fff
     style CLOSED3 fill:#6b7280,color:#fff
@@ -140,8 +138,7 @@ flowchart TD
 **Color Legend:**
 - 🔵 **Blue** - New submission (`TIER-APP`)
 - 🟠 **Orange** - Incomplete, can retry (`TIER-APP-INCOMPLETE`)
-- 🟣 **Purple** - In review (`TIER-APP-REVIEW`, `TIER-APP-REVIEW-PR`)
-- 🟢 **Green** - Complete (`TIER-APP-COMPLETE`)
+- 🟣 **Purple** - In review (`TIER-APP-REVIEW`)
 - 🔴 **Red** - Rejected (`TIER-APP-REJECTED`)
 - ⚫ **Gray** - Closed
 
@@ -237,55 +234,34 @@ flowchart TD
 |--------|---------|
 | Branch | `auto/app-{issue_number}-{app_name_slug}` |
 | Files updated | `apps/APPS.md`, `GREENHOUSE.md` |
-| PR label | `TIER-APP-REVIEW-PR` |
 | Auto-merge | Enabled (squash + delete branch) |
 
 The `app-approve` job in `app-review-submission.yml` parses the `APP_REVIEW_DATA` JSON from the bot's preview comment, creates a branch, updates APPS.md, and opens a PR with auto-merge enabled.
 
 ---
 
-#### Step 5A: PR Merged → Tier Upgrade
+#### Step 5: PR Merged → Tier Upgrade + Issue Closed
 
 **Workflow:** `app-upgrade-tier.yml`
 
 | Action | Details |
 |--------|---------|
 | Trigger | PR closed + merged |
-| Condition | Has `TIER-APP-REVIEW-PR` label |
-| PR label | `TIER-APP-REVIEW-PR` → `TIER-APP-COMPLETE` |
+| Condition | Branch matches `auto/app-{number}-*` |
 | User tier | Upgraded to `flower` in D1 |
-| Issue | Closed automatically |
+| Issue | Auto-closed via `Fixes #NNN` in PR body |
 
 **Bot comment posted:**
 
 > 🎉 **App Approved & Verified!**
-> 
+>
 > Your app has been added to the pollinations.ai showcase!
-> 
+>
 > **🌸 Flower Tier Activated!**
-> 
-> @user, you've been upgraded to **Flower tier** (10 pollen/day)!
-> 
+>
+> @user, you've been upgraded to **Flower tier** (0.4 pollen/hour)!
+>
 > Check your balance at enter.pollinations.ai 🌻
-
----
-
-#### Step 5B: PR Closed Without Merge → Rejected
-
-**Workflow:** `app-upgrade-tier.yml` triggers on `pull_request_target: closed`
-
-**Condition:** `merged == false` AND has `TIER-APP-REVIEW-PR` label
-
-**What happens:**
-
-1. **PR label updated:** `TIER-APP-REVIEW-PR` → `TIER-APP-REJECTED`
-2. **Issue label updated:** `TIER-APP-REVIEW` → `TIER-APP-REJECTED`
-3. **Comment posted to issue:**
-   ```
-   ❌ Unfortunately, this submission was not approved. 
-   Feel free to submit a different app in the future!
-   ```
-4. **Issue closed**
 
 ---
 
@@ -298,8 +274,7 @@ The `app-approve` job in `app-review-submission.yml` parses the `APP_REVIEW_DATA
 | Issue comment | `app-review-submission.yml` | Has `TIER-APP-INCOMPLETE`, not from bot |
 | Issue labeled | `app-review-submission.yml` | `TIER-APP-APPROVED` added + has `TIER-APP-REVIEW` |
 | Manual | `app-review-submission.yml` | `workflow_dispatch` with issue number |
-| PR merged | `app-upgrade-tier.yml` | Has `TIER-APP-REVIEW-PR` label |
-| PR closed | `app-upgrade-tier.yml` | Has `TIER-APP-REVIEW-PR` label |
+| PR merged | `app-upgrade-tier.yml` | Branch matches `auto/app-{number}-*` |
 
 ---
 
@@ -324,8 +299,6 @@ The `app-approve` job in `app-review-submission.yml` parses the `APP_REVIEW_DATA
 | `TIER-APP-INCOMPLETE` | Waiting | Validation failed, user can fix and retry |
 | `TIER-APP-REVIEW` | In Review | AI reviewed, preview posted, awaiting human approval |
 | `TIER-APP-APPROVED` | Approved | Maintainer approved, PR created with auto-merge |
-| `TIER-APP-REVIEW-PR` | PR | Applied to the PR itself |
-| `TIER-APP-COMPLETE` | Done | PR merged, tier upgraded |
 | `TIER-APP-REJECTED` | Closed | Declined (duplicate/invalid/spore tier) |
 
 ---
@@ -367,7 +340,7 @@ npx tsx scripts/tier-update-user.ts verify-tier \
 This script updates:
 - **D1 database** (Cloudflare) - `tier` column in `user` table
 
-> Balance refills automatically at next refill cycle (hourly for Spore/Seed, daily for Flower+).
+> Balance refills automatically at next refill cycle (hourly for all tiers).
 
 ---
 

@@ -216,19 +216,61 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "grok": {
-        aliases: ["grok-fast", "grok-4", "grok-4-fast"],
-        modelId: "grok-4-fast-non-reasoning",
+        aliases: ["grok-fast", "grok-4-1-fast"],
+        modelId: "grok-4-1-fast-non-reasoning",
         provider: "azure",
         paidOnly: true,
         cost: [
             {
-                date: COST_START_DATE,
+                date: new Date("2026-03-22").getTime(),
                 promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.2), // Azure doesn't discount cached tokens for third-party models
+                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
                 completionTextTokens: perMillion(0.5),
             },
         ],
-        description: "xAI Grok 4 Fast - High Speed & Real-Time",
+        description: "xAI Grok 4.1 Fast - High Speed & Real-Time",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 2000000,
+        isSpecialized: false,
+    },
+    "grok-reasoning": {
+        aliases: ["grok-4-1-fast-reasoning"],
+        modelId: "grok-4-1-fast-reasoning",
+        provider: "azure",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
+                completionTextTokens: perMillion(0.5),
+            },
+        ],
+        description: "xAI Grok 4.1 Fast Reasoning - Chain-of-Thought Reasoning",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 2000000,
+        isSpecialized: false,
+    },
+    "grok-legacy": {
+        aliases: ["grok-4", "grok-4-fast"],
+        modelId: "grok-4-fast-non-reasoning",
+        provider: "azure",
+        paidOnly: true,
+        hidden: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
+                completionTextTokens: perMillion(0.5),
+            },
+        ],
+        description: "xAI Grok 4 Fast - Legacy",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -259,17 +301,36 @@ export const TEXT_SERVICES = {
     },
     "midijourney": {
         aliases: [],
-        modelId: "gpt-5.2-2025-12-11",
-        provider: "azure",
+        modelId: "claude-haiku-4-5-20251001",
+        provider: "anthropic",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(2.2),
-                promptCachedTokens: perMillion(0.55),
-                completionTextTokens: perMillion(8.8),
+                promptTextTokens: perMillion(1.0),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(5.0),
             },
         ],
         description: "MIDIjourney - AI Music Composition Assistant",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: true,
+    },
+    "midijourney-large": {
+        aliases: [],
+        modelId: "claude-opus-4-6",
+        provider: "anthropic",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(5.0),
+                promptCachedTokens: perMillion(0.5),
+                completionTextTokens: perMillion(25.0),
+            },
+        ],
+        description: "MIDIjourney Large - Premium AI Music Composition",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -490,7 +551,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "nova-fast": {
-        aliases: ["amazon-nova-micro", "nova", "nova-micro"],
+        aliases: ["amazon-nova-micro", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
         provider: "aws",
         cost: [
@@ -505,6 +566,26 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         contextLength: 128000,
+        isSpecialized: false,
+    },
+    "nova": {
+        aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2"],
+        modelId: "us.amazon.nova-2-lite-v1:0",
+        provider: "aws",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.3),
+                completionTextTokens: perMillion(2.5),
+            },
+        ],
+        description: "Amazon Nova 2 Lite - 1M Context with Reasoning",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "glm": {
@@ -567,6 +648,66 @@ export const TEXT_SERVICES = {
         search: true,
         isSpecialized: false,
         alpha: true,
+    },
+    "qwen-coder-large": {
+        aliases: ["qwen3-coder-next"],
+        modelId: "qwen3-coder-next",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.3),
+                completionTextTokens: perMillion(1.5),
+            },
+        ],
+        description:
+            "Qwen3 Coder Next - Advanced Code Generation via DashScope",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "qwen-large": {
+        aliases: ["qwen3.5", "qwen3.5-plus"],
+        modelId: "qwen3.5-plus",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.4),
+                completionTextTokens: perMillion(2.4),
+            },
+        ],
+        description:
+            "Qwen3.5 Plus - Alibaba Frontier MoE Model with Reasoning via DashScope",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "qwen-vision": {
+        aliases: ["qwen3-vl", "qwen3-vl-plus", "qwen-vl"],
+        modelId: "qwen3-vl-plus",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.2),
+                completionTextTokens: perMillion(1.6),
+            },
+        ],
+        description:
+            "Qwen3 VL Plus - Vision-Language Understanding with Reasoning via DashScope",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 131072,
+        isSpecialized: false,
     },
     "qwen-safety": {
         aliases: ["qwen3guard-gen-8b"],

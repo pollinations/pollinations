@@ -17,6 +17,8 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "@aws-sdk/client-bedrock-runtime": "^3.1010.0",
+        "@aws-sdk/client-s3": "^3.1010.0",
         "@azure-rest/ai-content-safety": "^1.0.1",
         "@azure/core-auth": "^1.9.0",
         "@azure/identity": "^4.10.0",
@@ -35,9 +37,9 @@
         "node-fetch": "^3.3.2",
         "p-queue": "^7.3.4",
         "sharp": "^0.33.5",
-        "zod": "^4.0.5",
         "tsx": "^4.20.3",
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "zod": "^4.0.5"
     },
     "devDependencies": {
         "@fast-check/vitest": "^0.2.2",

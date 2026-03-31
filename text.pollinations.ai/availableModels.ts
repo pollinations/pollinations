@@ -36,6 +36,19 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
+        name: "qwen-coder-large",
+        config: portkeyConfig["qwen3-coder-next"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.coding),
+    },
+    {
+        name: "qwen-large",
+        config: portkeyConfig["qwen3.5-plus"],
+    },
+    {
+        name: "qwen-vision",
+        config: portkeyConfig["qwen3-vl-plus"],
+    },
+    {
         name: "mistral",
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
     },
@@ -45,7 +58,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "grok",
-        config: portkeyConfig["myceli-grok-4-fast"],
+        config: portkeyConfig["grok-4-1-fast-non-reasoning"],
+    },
+    {
+        name: "grok-reasoning",
+        config: portkeyConfig["grok-4-1-fast-reasoning"],
+    },
+    {
+        name: "grok-legacy",
+        config: portkeyConfig["grok-4-fast-non-reasoning-legacy"],
     },
     {
         name: "openai-audio",
@@ -96,7 +117,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        config: portkeyConfig["gpt-5.2-2025-12-11"],
+        config: portkeyConfig["claude-haiku-4-5"],
+        transform: createMessageTransform(midijourneyPrompt),
+    },
+    {
+        name: "midijourney-large",
+        config: portkeyConfig["claude-opus-4-6"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
@@ -144,6 +170,10 @@ const models: ModelDefinition[] = [
     {
         name: "nova-fast",
         config: portkeyConfig["nova-micro-fallback"],
+    },
+    {
+        name: "nova",
+        config: portkeyConfig["nova-2-lite"],
     },
     {
         name: "glm",

@@ -165,21 +165,22 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                body: `### 🌸 Flower Tier Activated & Verified!\n\n@${username}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`
+                body: `### 🌸 Flower Tier Activated & Verified!\n\n@${username}, you've been upgraded to **Flower tier** which grants you **0.4 pollen per hour**!\n\n⏰ **How it works:** Your pollen balance refills every hour. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`
               });
               
-              // Update labels - swap to COMPLETE
+              // Remove INCOMPLETE label and close the issue
               try {
                 await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, name: 'TIER-APP-INCOMPLETE' });
               } catch (e) { /* label might not exist */ }
-              
-              await github.rest.issues.addLabels({
+
+              await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                labels: ['TIER-APP-COMPLETE']
+                state: 'closed',
+                state_reason: 'completed'
               });
-              
+
               console.log(`✅ Upgraded ${username} to Flower tier`);
             } else if (!registered) {
               // Still not registered - gentle reminder

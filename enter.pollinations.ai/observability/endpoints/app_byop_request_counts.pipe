@@ -1,6 +1,7 @@
 DESCRIPTION >
-    Get request counts per BYOP hostname in the last 24 hours.
-    Counts ALL requests going through a BYOP app's API key, regardless of end user.
+    Get request counts per BYOP app in the last 24 hours.
+    Priority: api_key_created_for_app (explicit) > api_key_name (hostname heuristic).
+    Counts ALL requests through a BYOP app's API key, regardless of end user.
 
 TOKEN app_metrics READ
 TOKEN model_usage READ
@@ -8,13 +9,15 @@ TOKEN model_usage READ
 NODE app_byop_request_counts_node
 SQL >
     SELECT
-        api_key_name as hostname,
+        if(api_key_created_for_app != 'undefined', api_key_created_for_app, api_key_name) as hostname,
         count() as requests
     FROM generation_event
     WHERE start_time > now() - INTERVAL 1 DAY
-      AND api_key_name LIKE '%.%'
-      AND api_key_type = 'secret'
-    GROUP BY api_key_name
+      AND (
+        api_key_created_via = 'redirect-auth'
+        OR (api_key_type = 'secret' AND api_key_name LIKE '%.%')
+      )
+    GROUP BY hostname
     HAVING requests > 0
 
 TYPE endpoint

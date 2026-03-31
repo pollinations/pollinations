@@ -17,9 +17,8 @@ import type { Env } from "../env.ts";
 
 const log = getLogger(["hono", "admin"]);
 
-// KV keys for tracking bulk refill timestamps (separate for hourly vs daily)
+// KV key for tracking bulk refill timestamp
 const HOURLY_REFILL_KV_KEY = "tier:bulk_refill:hourly:last_timestamp";
-const DAILY_REFILL_KV_KEY = "tier:bulk_refill:daily:last_timestamp";
 
 function getCurrentHourMs(): number {
     const now = new Date();
@@ -29,11 +28,6 @@ function getCurrentHourMs(): number {
         now.getUTCDate(),
         now.getUTCHours(),
     );
-}
-
-function getTodayStartMs(): number {
-    const now = new Date();
-    return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 }
 
 async function getLastRefillTime(
@@ -151,10 +145,9 @@ async function sendBulkTierRefillEvents(
 
 /**
  * Core refill logic — callable from both the HTTP endpoint and CF scheduled handler.
- * Runs hourly and daily refills with separate idempotency checks.
+ * Runs hourly refills for all tiers with idempotency check.
  *
- * Hourly tiers (spore, seed): adds pollen increment each hour
- * Daily tiers (flower, nectar, router): adds pollen increment at midnight UTC
+ * All tiers refill hourly: adds pollen increment each hour, capped at tier max.
  */
 export async function runTierRefill(
     env: CloudflareBindings,
@@ -165,21 +158,13 @@ export async function runTierRefill(
     const refillTimestamp = Date.now();
     const timestamp = new Date(refillTimestamp).toISOString();
 
-    // --- Hourly refill (spore, seed) ---
+    // --- Hourly refill (all tiers) ---
     const currentHourMs = getCurrentHourMs();
     const lastHourlyMs = await getLastRefillTime(kv, HOURLY_REFILL_KV_KEY);
-    let hourlyRefillCount = 0;
     const hourlySkipped = lastHourlyMs >= currentHourMs;
 
-    // --- Daily refill check ---
-    const todayStartMs = getTodayStartMs();
-    const lastDailyMs = await getLastRefillTime(kv, DAILY_REFILL_KV_KEY);
-    let dailyRefillCount = 0;
-    const dailySkipped = lastDailyMs >= todayStartMs;
-
-    // Skip early if both already ran (avoids unnecessary DB scan)
-    if (hourlySkipped && dailySkipped) {
-        log.info("TIER_REFILL_SKIPPED: hourly and daily already ran", {
+    if (hourlySkipped) {
+        log.info("TIER_REFILL_SKIPPED: hourly already ran", {
             eventType: "tier_refill_skipped",
         });
         return {
@@ -199,49 +184,26 @@ export async function runTierRefill(
         .from(userTable)
         .where(sql`tier IS NOT NULL`);
 
-    if (!hourlySkipped) {
-        // Add hourly pollen, capped at the tier max (negative balances recover gradually)
-        const hourlyResult = await db.run(sql`
-            UPDATE user
-            SET
-                tier_balance = CASE tier
-                    WHEN 'spore' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.spore}, ${TIER_POLLEN.spore})
-                    WHEN 'seed' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.seed}, ${TIER_POLLEN.seed})
-                    ELSE tier_balance
-                END,
-                last_tier_grant = ${refillTimestamp}
-            WHERE tier IN ('spore', 'seed')
-        `);
-        hourlyRefillCount = hourlyResult.meta.changes ?? 0;
-        await kv.put(HOURLY_REFILL_KV_KEY, refillTimestamp.toString());
-    }
-
-    if (!dailySkipped) {
-        // Add daily pollen, capped at the tier max (negative balances recover gradually)
-        const dailyResult = await db.run(sql`
-            UPDATE user
-            SET
-                tier_balance = CASE tier
-                    WHEN 'flower' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.flower}, ${TIER_POLLEN.flower})
-                    WHEN 'nectar' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.nectar}, ${TIER_POLLEN.nectar})
-                    WHEN 'router' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.router}, ${TIER_POLLEN.router})
-                    ELSE tier_balance
-                END,
-                last_tier_grant = ${refillTimestamp}
-            WHERE tier IN ('flower', 'nectar', 'router')
-        `);
-        dailyRefillCount = dailyResult.meta.changes ?? 0;
-        await kv.put(DAILY_REFILL_KV_KEY, refillTimestamp.toString());
-    }
+    // Add hourly pollen, capped at the tier max (negative balances recover gradually)
+    const hourlyResult = await db.run(sql`
+        UPDATE user
+        SET
+            tier_balance = CASE tier
+                WHEN 'spore' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.spore}, ${TIER_POLLEN.spore})
+                WHEN 'seed' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.seed}, ${TIER_POLLEN.seed})
+                WHEN 'flower' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.flower}, ${TIER_POLLEN.flower})
+                WHEN 'nectar' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.nectar}, ${TIER_POLLEN.nectar})
+                WHEN 'router' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.router}, ${TIER_POLLEN.router})
+                ELSE tier_balance
+            END,
+            last_tier_grant = ${refillTimestamp}
+        WHERE tier IN ('spore', 'seed', 'flower', 'nectar', 'router')
+    `);
+    const refillCount = hourlyResult.meta.changes ?? 0;
+    await kv.put(HOURLY_REFILL_KV_KEY, refillTimestamp.toString());
 
     const tierBreakdown = calculateTierBreakdown(usersBeforeRefill);
-    const refilledTiers = new Set([
-        ...(!hourlySkipped ? ["spore", "seed"] : []),
-        ...(!dailySkipped ? ["flower", "nectar", "router"] : []),
-    ]);
-    const usersForEvents = usersBeforeRefill.filter(
-        (u) => u.tier && refilledTiers.has(u.tier),
-    );
+    const usersForEvents = usersBeforeRefill.filter((u) => u.tier != null);
 
     ctx.waitUntil(
         sendBulkTierRefillEvents(
@@ -253,29 +215,16 @@ export async function runTierRefill(
             log,
         ),
     );
-
-    const refillCount = hourlyRefillCount + dailyRefillCount;
-    log.info(
-        "TIER_REFILL_COMPLETE: usersUpdated={usersUpdated} (hourly={hourly}, daily={daily})",
-        {
-            eventType: "tier_refill_complete",
-            usersUpdated: refillCount,
-            hourlyRefillCount,
-            dailyRefillCount,
-            hourlySkipped,
-            dailySkipped,
-            tierBreakdown,
-        },
-    );
+    log.info("TIER_REFILL_COMPLETE: usersUpdated={usersUpdated}", {
+        eventType: "tier_refill_complete",
+        usersUpdated: refillCount,
+        tierBreakdown,
+    });
 
     return {
         success: true,
         skipped: false,
         usersRefilled: refillCount,
-        hourlyRefillCount,
-        dailyRefillCount,
-        hourlySkipped,
-        dailySkipped,
         tierBreakdown,
         timestamp,
     };

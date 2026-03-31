@@ -135,8 +135,7 @@ flowchart TD
 | `TIER-APP`            | New app submission                | Issue template              |
 | `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `app-review-submission.yml` |
 | `TIER-APP-REVIEW`     | Issue awaiting maintainer review  | `app-review-submission.yml` |
-| `TIER-APP-REVIEW-PR`  | PR awaiting maintainer review     | `app-review-submission.yml` |
-| `TIER-APP-COMPLETE`   | Approved and merged               | `app-upgrade-tier.yml`      |
+| `TIER-APP-APPROVED`   | Maintainer approved, PR created   | Maintainer (manual)         |
 | `TIER-APP-REJECTED`   | Submission rejected               | `app-review-submission.yml` |
 
 **Code Contributions** _(future)_: `TIER-CODE`, `TIER-CODE-REVIEW-PR`, `TIER-CODE-COMPLETE`, `TIER-CODE-REJECTED` planned.

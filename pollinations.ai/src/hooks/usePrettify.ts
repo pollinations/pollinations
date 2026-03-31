@@ -31,6 +31,7 @@ export function usePrettify<T, K extends keyof T>(
     useEffect(() => {
         if (!PRETTIFY_ENABLED || items.length === 0) return;
 
+        let aborted = false;
         setIsPrettifying(true);
 
         const copyItems = items.map((item, i) => ({
@@ -40,19 +41,34 @@ export function usePrettify<T, K extends keyof T>(
             titleEmoji: emojiField ? String(item[emojiField] ?? "") : undefined,
         }));
 
-        prettifyCopy(copyItems, apiKey)
-            .then((processed) => {
-                const result = items.map((item, i) => ({
-                    ...item,
-                    [field]: processed[i]?.text || item[field],
-                }));
-                setPrettified(result);
-            })
-            .catch((err) => {
-                console.error("❌ [PRETTIFY] Hook error:", err);
-                setPrettified(items);
-            })
-            .finally(() => setIsPrettifying(false));
+        // Calls are fired without await — they enter fetchWithRetry's serial queue
+        // and execute one at a time. UI updates progressively as each resolves.
+        let completed = 0;
+        const results = [...items];
+        for (const copyItem of copyItems) {
+            const idx = copyItems.indexOf(copyItem);
+            prettifyCopy([copyItem], apiKey)
+                .then(([processed]) => {
+                    if (aborted) return;
+                    if (processed?.text) {
+                        results[idx] = {
+                            ...items[idx],
+                            [field]: processed.text,
+                        } as T;
+                        setPrettified([...results]);
+                    }
+                })
+                .catch(() => {}) // keep original on failure
+                .finally(() => {
+                    if (aborted) return;
+                    completed++;
+                    if (completed === copyItems.length) setIsPrettifying(false);
+                });
+        }
+
+        return () => {
+            aborted = true;
+        };
     }, [itemsKey, field, apiKey]);
 
     return { prettified, isPrettifying };

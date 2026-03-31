@@ -12,12 +12,60 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # When a maintainer closes an app PR without merging, label the issue as rejected
+  handle-rejection:
+    if: |
+      github.event.pull_request.merged == false &&
+      startsWith(github.event.pull_request.head.ref, 'auto/app-') &&
+      !startsWith(github.event.pull_request.head.ref, 'auto/app-metrics')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Generate App Token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Label issue as rejected
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const prBody = context.payload.pull_request.body || '';
+            const closePattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
+            const matches = [...prBody.matchAll(closePattern)];
+
+            for (const match of matches) {
+              const issueNumber = parseInt(match[1]);
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  labels: ['TIER-APP-REJECTED']
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  state: 'closed',
+                  state_reason: 'not_planned'
+                });
+                console.log(`Rejected and closed issue #${issueNumber}`);
+              } catch (e) {
+                console.log(`Could not update issue #${issueNumber}: ${e.message}`);
+              }
+            }
+
   upgrade-tier:
-    # Run when PR with TIER-APP-REVIEW-PR label is merged.
-    # The merge is the manual approval - no manual labeling required.
+    # Run when an app submission PR is merged (branch: auto/app-{issue}-{slug})
     if: |
       github.event.pull_request.merged == true &&
-      contains(github.event.pull_request.labels.*.name, 'TIER-APP-REVIEW-PR')
+      startsWith(github.event.pull_request.head.ref, 'auto/app-') &&
+      !startsWith(github.event.pull_request.head.ref, 'auto/app-metrics')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,32 +79,6 @@ jobs:
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
-
-      - name: Update PR labels to COMPLETE
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ steps.pollinations-ai.outputs.token }}
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            
-            // Remove TIER-APP-REVIEW-PR, add TIER-APP-COMPLETE
-            try {
-              await github.rest.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                name: 'TIER-APP-REVIEW-PR'
-              });
-            } catch (e) { /* label might not exist */ }
-            
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              labels: ['TIER-APP-COMPLETE']
-            });
-            
-            console.log(`Updated PR #${prNumber}: TIER-APP-REVIEW-PR → TIER-APP-COMPLETE`);
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -216,41 +238,29 @@ jobs:
               if (result.success === true) {
                 // === CELEBRATE ON PR (always - for both apps and code) ===
                 const prMessage = result.type === 'app'
-                  ? `## 🎉 App Added & Verified!\n\nThis PR added **@${result.user}**'s app to the [pollinations.ai showcase](https://pollinations.ai).\n\n### 🌸 Flower Tier Activated!\n\nUser upgraded to **Flower tier** (10 pollen/day).\n\nSee issue #${targetNumber} for full details.`
-                  : `## 🎉 Contribution Merged & Verified!\n\nThank you **@${result.user}** for your contribution to pollinations.ai!\n\n### 🌸 Flower Tier Activated!\n\nYou've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`;
-                
+                  ? `## 🎉 App Added & Verified!\n\nThis PR added **@${result.user}**'s app to the [pollinations.ai showcase](https://pollinations.ai).\n\n### 🌸 Flower Tier Activated!\n\nUser upgraded to **Flower tier** (0.4 pollen/hour).\n\nSee issue #${targetNumber} for full details.`
+                  : `## 🎉 Contribution Merged & Verified!\n\nThank you **@${result.user}** for your contribution to pollinations.ai!\n\n### 🌸 Flower Tier Activated!\n\nYou've been upgraded to **Flower tier** which grants you **0.4 pollen per hour**!\n\n⏰ **How it works:** Your pollen balance refills every hour. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`;
+
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
                   body: prMessage
                 });
-                
-                // PR label already updated to COMPLETE at start of workflow
-                
+
+
                 // === CELEBRATE ON ISSUE + CLOSE (apps only) ===
                 if (isIssue) {
-                  const issueMessage = `## 🎉 App Approved & Verified!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to pollinations.ai! 🌻`;
-                  
+                  const issueMessage = `## 🎉 App Approved & Verified!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **0.4 pollen per hour**!\n\n⏰ **How it works:** Your pollen balance refills every hour. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to pollinations.ai! 🌻`;
+
                   await github.rest.issues.createComment({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
                     issue_number: targetNumber,
                     body: issueMessage
                   });
-                  
-                  // Update issue label to COMPLETE
-                  const issue = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: targetNumber });
-                  const oldLabels = issue.data.labels.map(l => l.name).filter(n => n.startsWith('TIER-APP'));
-                  for (const label of oldLabels) {
-                    try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: targetNumber, name: label }); } catch (e) {}
-                  }
-                  await github.rest.issues.addLabels({
-                    owner: context.repo.owner, repo: context.repo.repo,
-                    issue_number: targetNumber, labels: ['TIER-APP-COMPLETE']
-                  });
-                  
-                  // Close the issue
+
+                  // Close the issue (Fixes #NNN in PR body also auto-closes, but be explicit)
                   await github.rest.issues.update({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -258,14 +268,14 @@ jobs:
                     state: 'closed',
                     state_reason: 'completed'
                   });
-                  
+
                   console.log(`✅ Upgraded ${result.user}, posted celebrations, closed issue #${targetNumber}`);
                 } else {
                   console.log(`✅ Upgraded ${result.user} and posted celebration on PR`);
                 }
               } else {
                 // User not registered
-                const failMessage = `### ⚠️ Action Required: Claim Your Flower Tier\n\n@${result.user}, your contribution has been merged but we couldn't find your account to upgrade your tier.\n\n**To claim your 🌸 Flower tier (10 pollen/day):**\n1. Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) using GitHub\n2. Reply to this ${isIssue ? 'issue' : 'PR'} once you've signed up\n\nWe'll upgrade your tier once you're registered. Thanks for contributing! 🌻`;
+                const failMessage = `### ⚠️ Action Required: Claim Your Flower Tier\n\n@${result.user}, your contribution has been merged but we couldn't find your account to upgrade your tier.\n\n**To claim your 🌸 Flower tier (0.4 pollen/hour):**\n1. Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) using GitHub\n2. Reply to this ${isIssue ? 'issue' : 'PR'} once you've signed up\n\nWe'll upgrade your tier once you're registered. Thanks for contributing! 🌻`;
                 
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,

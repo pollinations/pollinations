@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
 // ── Modality color map ──────────────────────────────────────────────
@@ -53,10 +53,6 @@ function get2xxColor(ok2xx, total, excludedUserErrors = 0) {
     return "text-dark font-medium";
 }
 
-function get2xx(stats) {
-    return stats?.status_2xx || 0;
-}
-
 function getLatencyColor(latencySec) {
     if (latencySec < 2) return "text-secondary-strong";
     if (latencySec < 5) return "text-tertiary-strong";
@@ -78,7 +74,7 @@ function computeHealthStatus(stats) {
 
 // ── Health summary cards ─────────────────────────────────────────────
 
-function GlobalHealthSummary({ models }) {
+function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
     const calcGroupStats = (group) => {
         let total2xx = 0;
         let total5xx = 0;
@@ -123,9 +119,17 @@ function GlobalHealthSummary({ models }) {
 
     const HealthCard = ({ title, type, stats }) => {
         const colors = typeColor(type);
+        const isActive = typeFilter === type;
+        const isDimmed = typeFilter !== null && !isActive;
         return (
-            <div
-                className={`flex-1 min-w-[140px] ${colors.card} border-r-4 border-b-4 p-3`}
+            <button
+                type="button"
+                onClick={() => onTypeFilter(isActive ? null : type)}
+                className={`${colors.card} border-r-4 border-b-4 p-3 cursor-pointer select-none text-left transition-all duration-100 ${
+                    isActive
+                        ? "translate-x-[3px] translate-y-[3px] shadow-none"
+                        : "shadow-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+                } ${isDimmed ? "opacity-35" : ""}`}
             >
                 <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold uppercase tracking-wider text-dark">
@@ -165,7 +169,7 @@ function GlobalHealthSummary({ models }) {
                         </span>
                     )}
                 </div>
-            </div>
+            </button>
         );
     };
 
@@ -179,7 +183,7 @@ function GlobalHealthSummary({ models }) {
     ];
 
     return (
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {types.map(({ key, title }) => {
                 const group = models.filter((m) => m.type === key);
                 if (group.length === 0) return null;
@@ -332,34 +336,24 @@ function GatewayHealth({ stats }) {
 
 function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
-    const isLiveMode = aggregationWindow === "5m";
 
-    const {
-        models,
-        gatewayStats,
-        refresh,
-        pollInterval,
-        lastUpdated,
-        error,
-        tinybirdConfigured,
-        endpointStatus,
-    } = useModelMonitor(aggregationWindow);
+    const WINDOW_OPTIONS = [
+        { key: "7d", label: "7d" },
+        { key: "24h", label: "24h" },
+        { key: "60m", label: "1h" },
+        { key: "5m", label: "5m" },
+    ];
+    const { models, gatewayStats, lastUpdated, error, tinybirdConfigured } =
+        useModelMonitor(aggregationWindow);
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
-    const [countdown, setCountdown] = useState(pollInterval / 1000);
-
-    useEffect(() => {
-        setCountdown(pollInterval / 1000);
-        const timer = setInterval(() => {
-            setCountdown((prev) => (prev > 0 ? prev - 1 : pollInterval / 1000));
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [pollInterval]);
+    const [typeFilter, setTypeFilter] = useState(null);
 
     const handleSort = (key) => {
         setSort((prev) => ({
             key,
-            asc: prev.key === key ? !prev.asc : true,
+            asc:
+                prev.key === key ? !prev.asc : key === "name" || key === "type",
         }));
     };
 
@@ -391,13 +385,21 @@ function App() {
                 }
                 return dir * (aReqs - bReqs);
             }
-            case "ok2xx":
-                return dir * (get2xx(a.stats) - get2xx(b.stats));
+            case "ok2xx": {
+                const aTotal2 =
+                    (a.stats?.total_requests || 0) - (a.stats?.total_4xx || 0);
+                const bTotal2 =
+                    (b.stats?.total_requests || 0) - (b.stats?.total_4xx || 0);
+                const aPct2 =
+                    aTotal2 > 0 ? (a.stats?.status_2xx || 0) / aTotal2 : 0;
+                const bPct2 =
+                    bTotal2 > 0 ? (b.stats?.status_2xx || 0) / bTotal2 : 0;
+                return dir * (aPct2 - bPct2);
+            }
             case "errors":
                 return (
                     dir *
-                    ((a.stats?.total_errors || 0) -
-                        (b.stats?.total_errors || 0))
+                    ((a.stats?.total_5xx || 0) - (b.stats?.total_5xx || 0))
                 );
             case "lastError": {
                 const aTime =
@@ -442,120 +444,162 @@ function App() {
         }
     });
 
-    // Endpoint status indicators
-    const endpoints = [
-        { key: "text", label: "text" },
-        { key: "image", label: "image" },
-        { key: "audio", label: "audio" },
-    ];
+    const filteredModels = typeFilter
+        ? sortedModels.filter((m) => m.type === typeFilter)
+        : sortedModels;
 
     return (
         <div className="min-h-screen p-4 md:p-6 bg-cream">
             <div className="max-w-5xl mx-auto space-y-4">
                 {/* Header */}
-                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <img
-                                src="/bee-text-black.svg"
-                                alt="pollinations.ai"
-                                className="h-[7.5rem]"
-                            />
-                            <span className="text-lg font-bold text-dark uppercase tracking-wider">
-                                model monitor
-                            </span>
-                            {isLiveMode && (
-                                <span
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold bg-accent-light text-dark border border-accent-strong uppercase tracking-wider"
-                                    title="Live mode shows 5-minute data. More volatile than standard view."
-                                >
-                                    Live (noisy)
+                <header className="space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-12 sm:mb-8">
+                        <img
+                            src="/bee-text-black.svg"
+                            alt="pollinations.ai"
+                            className="h-[7.5rem] -my-6"
+                        />
+
+                        <div className="flex items-center justify-center sm:justify-end gap-3">
+                            {!tinybirdConfigured && (
+                                <span className="text-xs text-dark bg-accent-light px-2 py-1 border border-accent-strong font-bold">
+                                    Tinybird not configured
                                 </span>
                             )}
-                        </div>
-                        <p className="text-xs text-subtle flex items-center gap-2 flex-wrap mt-1">
-                            <span>
-                                {isLiveMode ? "5-minute" : "60-minute"} window
-                            </span>
-                            {endpoints.map(({ key, label }) => (
-                                <span
-                                    key={key}
-                                    className="flex items-center gap-1"
+
+                            {/* External links */}
+                            <div className="flex items-center gap-1.5">
+                                <a
+                                    href="https://pollinations.ai"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="pollinations.ai"
+                                    className="p-1.5 border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none hover:border-r hover:border-b active:translate-x-[2px] active:translate-y-[2px]"
                                 >
-                                    <span
-                                        className={`inline-block w-2 h-2 ${
-                                            endpointStatus[key] === true
-                                                ? typeColor(key).dot
-                                                : endpointStatus[key] === false
-                                                  ? "bg-dark"
-                                                  : "bg-border"
-                                        }`}
-                                    />
-                                    {label}:{" "}
-                                    {
-                                        sortedModels.filter(
-                                            (m) =>
-                                                m.type === key ||
-                                                (key === "image" &&
-                                                    m.type === "video"),
-                                        ).length
-                                    }
-                                </span>
-                            ))}
-                            <span>
-                                Updated:{" "}
-                                {lastUpdated?.toLocaleTimeString() || "—"}
-                            </span>
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {/* Aggregation toggle */}
-                        <div
-                            className="inline-flex border border-dark overflow-hidden"
-                            title="60m is more stable. 5m is faster but noisier."
-                        >
-                            <button
-                                type="button"
-                                onClick={() => setAggregationWindow("60m")}
-                                className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors ${
-                                    !isLiveMode
-                                        ? "bg-dark text-white"
-                                        : "bg-cream text-muted hover:bg-tan"
-                                }`}
-                            >
-                                60m
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setAggregationWindow("5m")}
-                                className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors border-l border-dark ${
-                                    isLiveMode
-                                        ? "bg-accent-strong text-dark"
-                                        : "bg-cream text-muted hover:bg-tan"
-                                }`}
-                            >
-                                5m
-                            </button>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <title>Website</title>
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M2 12h20" />
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                    </svg>
+                                </a>
+                                <a
+                                    href="https://enter.pollinations.ai"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Dashboard"
+                                    className="p-1.5 border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none hover:border-r hover:border-b active:translate-x-[2px] active:translate-y-[2px]"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <title>Login</title>
+                                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                                        <polyline points="10 17 15 12 10 7" />
+                                        <line x1="15" y1="12" x2="3" y2="12" />
+                                    </svg>
+                                </a>
+                                <a
+                                    href="https://discord.gg/pollinations-ai-885844321461485618"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Discord"
+                                    className="p-1.5 border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none hover:border-r hover:border-b active:translate-x-[2px] active:translate-y-[2px]"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                    >
+                                        <title>Discord</title>
+                                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.947 2.418-2.157 2.418z" />
+                                    </svg>
+                                </a>
+                                <a
+                                    href="https://github.com/pollinations/pollinations"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="GitHub"
+                                    className="p-1.5 border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none hover:border-r hover:border-b active:translate-x-[2px] active:translate-y-[2px]"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                    >
+                                        <title>GitHub</title>
+                                        <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+                                    </svg>
+                                </a>
+                            </div>
                         </div>
-
-                        {!tinybirdConfigured && (
-                            <span className="text-xs text-dark bg-accent-light px-2 py-1 border border-accent-strong font-bold">
-                                Tinybird not configured
-                            </span>
-                        )}
-
-                        <span className="text-[10px] text-subtle tabular-nums font-mono">
-                            {countdown}s
+                    </div>
+                    <div className="text-xs text-subtle flex items-center gap-2 flex-wrap">
+                        <span className="text-lg font-bold text-dark uppercase tracking-wider">
+                            📡 model monitor
                         </span>
-
-                        <button
-                            type="button"
-                            onClick={refresh}
-                            className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2"
-                        >
-                            Refresh
-                        </button>
+                        <span className="text-border mx-0.5">·</span>
+                        <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                            <span>window:</span>
+                            <div
+                                className="inline-flex border border-dark overflow-hidden"
+                                title="Longer windows are more stable. 5m is live but noisier."
+                            >
+                                {WINDOW_OPTIONS.map(({ key, label }, i) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() =>
+                                            setAggregationWindow(key)
+                                        }
+                                        className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                                            i > 0 ? "border-l border-dark" : ""
+                                        } ${
+                                            aggregationWindow === key
+                                                ? key === "5m"
+                                                    ? "bg-accent-strong text-dark"
+                                                    : "bg-dark text-white"
+                                                : "bg-cream text-muted hover:bg-tan"
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </span>
+                        <span className="text-border mx-1">·</span>
+                        <span className="whitespace-nowrap">
+                            last update:{" "}
+                            {lastUpdated?.toLocaleTimeString("en-GB", {
+                                timeZone: "UTC",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                            }) || "—"}{" "}
+                            UTC
+                        </span>
                     </div>
                 </header>
 
@@ -567,7 +611,11 @@ function App() {
                 )}
 
                 {/* Global Health Summary */}
-                <GlobalHealthSummary models={models} />
+                <GlobalHealthSummary
+                    models={models}
+                    typeFilter={typeFilter}
+                    onTypeFilter={setTypeFilter}
+                />
 
                 {/* Gateway Health (pre-model errors) */}
                 <GatewayHealth stats={gatewayStats} />
@@ -628,7 +676,7 @@ function App() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-tan">
-                            {sortedModels.length === 0 ? (
+                            {filteredModels.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan={7}
@@ -640,7 +688,7 @@ function App() {
                                     </td>
                                 </tr>
                             ) : (
-                                sortedModels.map((model) => {
+                                filteredModels.map((model) => {
                                     const stats = model.stats;
                                     const total = stats?.total_requests || 0;
                                     const total5xx = stats?.total_5xx || 0;
@@ -679,6 +727,15 @@ function App() {
                                                     <span className="text-dark font-medium">
                                                         {model.name}
                                                     </span>
+                                                    {model.description && (
+                                                        <span className="text-subtle text-[11px]">
+                                                            {
+                                                                model.description.split(
+                                                                    " - ",
+                                                                )[0]
+                                                            }
+                                                        </span>
+                                                    )}
                                                     <StatusBadge
                                                         stats={stats}
                                                     />
@@ -765,19 +822,6 @@ function App() {
                             )}
                         </tbody>
                     </table>
-                </div>
-
-                {/* Legend */}
-                <div className="text-[10px] text-subtle text-center">
-                    <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold bg-status-off text-white border border-status-off mr-1 uppercase tracking-wider">
-                        OFF
-                    </span>
-                    5xx ≥ 50%
-                    <span className="mx-3">·</span>
-                    <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold bg-status-degraded text-white border border-status-degraded mr-1 uppercase tracking-wider">
-                        DEGRADED
-                    </span>
-                    5xx ≥ 10%
                 </div>
             </div>
         </div>

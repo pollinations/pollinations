@@ -115,6 +115,9 @@ export const track = (eventType: EventType) =>
         const clientIp = rawIp ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
+        const apiKeyMetadata = c.var.auth.apiKey?.metadata as
+            | Record<string, unknown>
+            | undefined;
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
@@ -123,8 +126,15 @@ export const track = (eventType: EventType) =>
                 : undefined,
             userGithubUsername: c.var.auth.user?.githubUsername,
             apiKeyId: c.var.auth.apiKey?.id,
-            apiKeyType: c.var.auth.apiKey?.metadata?.keyType as ApiKeyType,
+            apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
             apiKeyName: c.var.auth.apiKey?.name,
+            apiKeyCreatedVia: apiKeyMetadata?.createdVia as string | undefined,
+            apiKeyCreatedForApp: apiKeyMetadata?.createdForApp as
+                | string
+                | undefined,
+            apiKeyCreatedForUserId: apiKeyMetadata?.createdForUserId as
+                | string
+                | undefined,
         } satisfies UserData;
 
         let responseOverride = null;
@@ -404,6 +414,9 @@ type UserData = {
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
     apiKeyName?: string;
+    apiKeyCreatedVia?: string;
+    apiKeyCreatedForApp?: string;
+    apiKeyCreatedForUserId?: string;
 };
 
 type BalanceData = {

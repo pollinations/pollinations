@@ -12,6 +12,7 @@ export type TinybirdModelStats = {
         model: string;
         avg_cost_usd: number;
         request_count?: number;
+        priced_success_count?: number;
     }>;
 };
 

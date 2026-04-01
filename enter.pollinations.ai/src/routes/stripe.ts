@@ -1,50 +1,29 @@
 import { Hono } from "hono";
+import {
+    describePollenPack,
+    getPollenPack,
+    isPollenPackAmount,
+    POLLEN_PACKS,
+} from "@/pollen-packs.ts";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 
 /**
- * Stripe pack products configuration
- * Maps pack names to Stripe Price IDs
- * Pollen amount is derived from payment amount ($1 = 1 pollen)
+ * Stripe pack configuration
+ * Checkout copy and payout are controlled in-app so bonus changes do not
+ * require Stripe catalog edits.
  */
-const getPackPrices = (env: CloudflareBindings) => {
-    const isProduction = env.STRIPE_MODE === "live";
-
-    if (isProduction) {
-        return {
-            "5": "price_1Srl1z7rcjS3l7tr0Y971QxA",
-            "10": "price_1Srl5P7rcjS3l7treLbAZocj",
-            "20": "price_1Srl667rcjS3l7trUByzhPHy",
-            "50": "price_1Srl6e7rcjS3l7trBUDAOq1M",
-        } as const;
-    }
-
-    // Sandbox/test mode
-    return {
-        "5": "price_1Srl9o6O03AauPe8Px6vwI7F",
-        "10": "price_1SrlAS6O03AauPe8TxLBePFg",
-        "20": "price_1SrlBH6O03AauPe8ynkEaJeH",
-        "50": "price_1SrlBu6O03AauPe8KCklipVK",
-    } as const;
-};
-
-type PackAmount = "5" | "10" | "20" | "50";
-
-const isValidPackAmount = (amount: string): amount is PackAmount => {
-    return ["5", "10", "20", "50"].includes(amount);
-};
-
 export const stripeRoutes = new Hono<Env>()
     /**
      * GET /api/stripe/checkout/:amount
      * Create a Stripe Checkout Session for pack purchases
-     * Amount is in USD (5, 10, 20, 50)
+     * Amount is in USD (2, 5, 10, 20, 50, 100)
      */
     .get("/checkout/:amount", async (c) => {
         const amount = c.req.param("amount");
 
-        if (!isValidPackAmount(amount)) {
+        if (!isPollenPackAmount(amount)) {
             return c.json({ error: "Invalid pack amount" }, 400);
         }
 
@@ -61,9 +40,11 @@ export const stripeRoutes = new Hono<Env>()
         const userId = session.user.id;
         const userEmail = session.user.email;
 
-        // Get price ID for this amount
-        const packPrices = getPackPrices(c.env);
-        const priceId = packPrices[amount];
+        const pack = getPollenPack(amount);
+
+        if (!pack) {
+            return c.json({ error: "Invalid pack amount" }, 400);
+        }
 
         // Create Stripe client
         const stripe = createStripeClient(c.env);
@@ -75,12 +56,23 @@ export const stripeRoutes = new Hono<Env>()
 
         try {
             // Create Checkout Session with automatic tax, VAT, and invoice creation
-            // Pollen amount is derived from payment amount in webhook ($1 = 1 pollen)
+            // Checkout copy is derived from the shared pack catalog so it stays
+            // in sync with the credited pollen amount.
             const checkoutSession = await stripe.checkout.sessions.create({
                 mode: "payment",
                 line_items: [
                     {
-                        price: priceId,
+                        price_data: {
+                            currency: "usd",
+                            unit_amount: pack.amountUsd * 100,
+                            tax_behavior: "inclusive",
+                            product_data: {
+                                name: pack.checkoutName,
+                                description: pack.checkoutDescription,
+                                images: [pack.checkoutImageUrl],
+                                tax_code: pack.taxCode,
+                            },
+                        },
                         quantity: 1,
                     },
                 ],
@@ -98,11 +90,17 @@ export const stripeRoutes = new Hono<Env>()
                 // Invoice creation after payment
                 invoice_creation: {
                     enabled: true,
+                    invoice_data: {
+                        rendering_options: {
+                            amount_tax_display: "include_inclusive_tax",
+                        },
+                    },
                 },
-                // Metadata for webhook processing - only userId needed
-                // Pollen amount derived from session.amount_subtotal (before tax)
+                // Metadata links the completed checkout back to the shared pack
+                // definition used by the webhook.
                 metadata: {
                     userId,
+                    packAmount: String(pack.amountUsd),
                 },
                 success_url: `${successUrl}?stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${cancelUrl}?stripe_canceled=true`,
@@ -127,12 +125,12 @@ export const stripeRoutes = new Hono<Env>()
      * List available pack amounts
      */
     .get("/products", async (c) => {
-        const packPrices = getPackPrices(c.env);
-
         return c.json({
-            packs: Object.keys(packPrices).map((amount) => ({
-                amount: Number(amount),
-                description: `$${amount} → ${amount} Pollen`,
+            packs: POLLEN_PACKS.map((pack) => ({
+                amount: pack.amountUsd,
+                bonusPollen: pack.bonusPollen,
+                pollenGrant: pack.pollenGrant,
+                description: describePollenPack(pack),
             })),
         });
     });

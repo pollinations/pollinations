@@ -3,6 +3,7 @@ dist/
 .pipelight/
 .wrangler/
 .dev.vars
+.dev.vars.local
 .dev.vars.prod
 .env
 *.log

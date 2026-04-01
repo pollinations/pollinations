@@ -73,12 +73,12 @@ export const HELLO_PAGE = {
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
     tierFlowerDescription: "Your app is live and getting used.",
-    tierFlowerGrant: "10 pollen / day",
+    tierFlowerGrant: "0.4 pollen / hour",
     tierFlowerPoints: "",
     tierNectarEmoji: "🍯",
     tierNectarTitle: "Nectar",
     tierNectarDescription: "Most active builders.",
-    tierNectarGrant: "20 pollen / day",
+    tierNectarGrant: "0.8 pollen / hour",
     tierNectarPoints: "",
 
     // Section — What you get

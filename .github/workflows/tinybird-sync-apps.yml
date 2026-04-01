@@ -1,0 +1,21 @@
+name: Daily APPS.md → Tinybird Sync
+
+on:
+  schedule:
+    # Run at 05:00 UTC daily (after app-update-metrics at 04:00)
+    - cron: '0 5 * * *'
+  workflow_dispatch: # Manual trigger from GitHub UI
+
+permissions: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Sync APPS.md to Tinybird
+        env:
+          TINYBIRD_APP_SYNC_TOKEN: ${{ secrets.TINYBIRD_APP_SYNC_TOKEN }}
+        run: node .github/scripts/tinybird-sync-apps.js

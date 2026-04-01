@@ -271,6 +271,7 @@ export const IMAGE_SERVICES = {
         aliases: ["wan2.2", "wan-2.2"],
         modelId: "wan-fast",
         provider: "alibaba",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-23").getTime(),
@@ -307,6 +308,7 @@ export const IMAGE_SERVICES = {
         aliases: ["grok-imagine-image"],
         modelId: "grok-imagine",
         provider: "xai",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -346,7 +348,7 @@ export const IMAGE_SERVICES = {
         ],
         description:
             "Grok Video Pro - xAI official video generation (720p, 1-15s)",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
     "klein": {

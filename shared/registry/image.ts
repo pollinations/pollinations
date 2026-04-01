@@ -368,9 +368,9 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
     },
     "ltx-2": {
-        aliases: ["ltx2", "ltxvideo", "ltx-video"],
+        aliases: ["ltx2", "ltx-2.3", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
-        provider: "vastai",
+        provider: "lambda",
         alpha: true,
         cost: [
             {
@@ -378,7 +378,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.005,
             },
         ],
-        description: "LTX-2 - Fast text-to-video generation on Vast.ai",
+        description: "LTX-2.3 - Fast text-to-video generation with upscaler",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },

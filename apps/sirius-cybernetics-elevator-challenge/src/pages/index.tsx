@@ -36,13 +36,8 @@ export default function Index() {
         setAnimationMode,
         isLoaded: settingsLoaded,
     } = useSettings();
-    const { apiKey, login } = useBYOP();
+    const { apiKey } = useBYOP();
     useModelSelector();
-
-    // Auto-redirect to BYOP login if no API key
-    useEffect(() => {
-        if (!apiKey) login();
-    }, [apiKey, login]);
 
     useGuideMessages(gameState, messages, addMessage);
     useAutonomousConversation(gameState, messages, addMessage);

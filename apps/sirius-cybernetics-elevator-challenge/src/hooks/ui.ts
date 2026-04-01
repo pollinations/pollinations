@@ -52,25 +52,28 @@ export function useBYOP() {
 
     useEffect(() => {
         const key = extractApiKeyFromFragment();
-        if (!key) return;
-        storeApiKey(key);
-        setApiKey(key);
-        window.history.replaceState(
-            {},
-            "",
-            window.location.pathname + window.location.search,
-        );
+        if (key) {
+            storeApiKey(key);
+            setApiKey(key);
+            window.history.replaceState(
+                {},
+                "",
+                window.location.pathname + window.location.search,
+            );
+            return;
+        }
+        // No key in fragment and none stored — redirect to login
+        if (!getStoredApiKey()) {
+            window.location.href = getAuthorizeUrl();
+        }
     }, []);
 
-    const login = useCallback(() => {
-        window.location.href = getAuthorizeUrl();
-    }, []);
     const logout = useCallback(() => {
         clearApiKey();
         setApiKey(null);
     }, []);
 
-    return { apiKey, login, logout };
+    return { apiKey, logout };
 }
 
 export function getStoredModel(): string {

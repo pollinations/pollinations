@@ -53,17 +53,29 @@ https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com
 
 With restrictions:
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com&app_key=pk_yourkey&models=flux,openai&expiry=7&budget=10
+https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com&app_key=pk_yourkey&key_type=publishable&models=flux,openai&expiry=7&budget=10
 ```
 
 | Param | What it does | Example |
 |-------|-------------|---------|
 | `app_key` | Your publishable key — shows app name + author on consent screen, tracks traffic for tier upgrades | `pk_abc123` |
 | `redirect_url` | Where users return after authorizing — receives the temp API key in the URL fragment | `https://myapp.com` |
+| `key_type` | Key type to create: `secret` (sk_, full access) or `publishable` (pk_, rate-limited, safe for frontend). Default: `secret`. User can toggle on the consent screen. | `publishable` |
 | `models` | Restrict to specific models | `flux,openai,gptimage` |
 | `budget` | Pollen cap | `10` |
 | `expiry` | Key lifetime in days (default: 30) | `7` |
 | `permissions` | Account access | `profile,balance,usage` |
+
+### Key Types: `sk_` vs `pk_`
+
+| | Secret (`sk_`) | Publishable (`pk_`) |
+|---|---|---|
+| **Use case** | Server-side / backend | Client-side / frontend |
+| **Rate limiting** | None | 1 pollen/IP/hour |
+| **Key length** | 32 chars | 16 chars |
+| **Safe to embed in frontend?** | No | Yes |
+
+For web apps, use `?key_type=publishable` so users get a `pk_` key by default. They can still toggle to `sk_` on the consent screen if they prefer.
 
 ### 2. Handle the Redirect
 
@@ -81,6 +93,7 @@ Fragment, not query param — never hits server logs. 🔒
 const params = new URLSearchParams({
   redirect_url: location.href,
   app_key: 'pk_yourkey', // optional — shows app name + author
+  key_type: 'publishable', // optional — pre-selects pk_ key (user can toggle)
 });
 window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9653,
+  "title": "feat: paid-only for grok (xai), elevenmusic, wan-fast",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9653",
+  "merged_at": "2026-04-01T16:30:10Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The VIP lounge expands",
+    "blurb": "We've updated the access tiers for some of our most popular heavy-hitter models. Grok, ElevenMusic, and Wan-Fast are now exclusive perks for our premium supporters, ensuring top-tier performance when you need it most.",
+    "summary": "Updated access tiers for Grok-imagine, ElevenMusic, and Wan-Fast to ensure reliable performance and fair usage across the platform.",
+    "impact": "These high-demand models are now exclusive to premium tiers, providing dedicated capacity and better stability for our supporters.",
+    "keywords": [
+      "models",
+      "billing",
+      "grok",
+      "elevenmusic",
+      "wan-fast"
+    ],
+    "visual_concept": "The bee mascot acting as a friendly host at a cozy VIP garden lounge, welcoming users. A velvet rope made of vines and glowing premium tokens.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bowtie, standing next to a velvet rope made of green vines outside a glowing VIP garden lounge. Soft lime green (#ecf874) and lavender gradient background. A chunky retro sign reads 'VIP' in pixel font. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-01/PR-9653.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bowtie, standing next to a velvet rope made of green vines outside a glowing VIP garden lounge. Soft lime green (#ecf874) and lavender gradient background. A chunky retro sign reads 'VIP' in pixel font. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-01T16:31:23.336817+00:00"
+}

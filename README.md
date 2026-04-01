@@ -20,16 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎨 ItacaLab - graphic editor for authors](https://itacalab.editoraitacaiunas.com/) | img width="158" alt="Image" src="https://github.com/user-attachments/assets/4e1824a2-4577-4136-9497-ec52544dd7b5" / | [@web](https://github.com/web) |
+| [📝 ContentAI](https://contentaiak.lovable.app) | ContentAI is an AI-powered content generation platform for businesses. Users add their business profile (or paste a URL for AI auto-fill), then generate platform-optimized content for Twitter, LinkedI | [@web](https://github.com/web) |
+| [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@web](https://github.com/web) |
+| [🧩 Puzzel Math](https://apps.apple.com/vn/app/puzzlemath-kids/id6751527974?l=vi) | Use Puzzel Math to help elementary school students practice math through interactive exercises and mini-games. | [@ios](https://github.com/ios) |
+| [🤖 Soy Cosmo](https://soy-cosmo.web.app) | Opera en WhatsApp como asistente personal inteligente. Soy Cosmo usa la API de Pollinations.ai para generar imágenes y audio desde conversaciones y ofrece 3 meses de prueba gratis. | [@whatsapp](https://github.com/whatsapp) |
+| [🎮 AI · RPG Engine](https://yuuki8763.github.io/en/index.html) | Visit AI · RPG Engine at https://yuuki8763.github.io/en/index.html | [@web](https://github.com/web) |
 | [📚 vocamax](https://play.google.com/store/apps/details?id=com.musiclearns.music_app) | Enriches vocamax vocabulary sets using n8n and the enter.pollinations.ai API to add meanings, expand vocabulary, generate images, and provide grammar support for each set. | [@android](https://github.com/android) |
 | [🤖 Exovia Destek](https://discord.com/invite/3BF7NH4fKN (in my discord its the your ai that uses in " #?・soru "channel)) | Displays the image referenced in Exovia Destek with src https://github.com/user-attachments/assets/859fcf85-5bd4-495b-a5fa-f4bc53177368 and attributes width=1271 height=921 alt='Image'. | [@discord](https://github.com/discord) |
 | [🥞 Martabak Gresik](https://martabakgresik.my.id) | Connects customers to Martabak Gresik and its handmade Sweet Martabak and Savory Egg Martabak; launched in 2020 in Gresik, East Java as a web designer-led digital transformation project. | [@web](https://github.com/web) |
 | [🧩 Puzzle Hexagonal Simétrico](https://proyectodescartes.org/IATools/146_Puzles_hexagonales/) | Play Puzzle Hexagonal Simétrico. | [@web](https://github.com/web) |
 | [🔬 labol lens](https://labol-lens.streamlit.app/) | Implements labol-lens in labol lens. | [@web](https://github.com/web) |
 | [🍳 مطبخي الذكي AI](https://matbaki.vercel.app) | Offers مطبخي الذكي AI, an AI-driven culinary platform that uses Pollinations AI to dynamically generate images for every recipe, including desserts, traditional main courses, and pastries. | [@web](https://github.com/web) |
-| [📝 YoutubeToBlog](10759187) | Displays YoutubeToBlog. | [@web](https://github.com/web) |
-| [🌐 Noyaku](https://play.google.com/store/apps/details?id=com.kickerai.noyaku) | Translate Webtoons, manhwa, novels, comics, and web content using AI with Noyaku. | [@android](https://github.com/android) |
-| [🎓 Learnty](https://learnty.site) | Learnty generates personalized learning games with AI, creating interactive exercises that help users engage with information and learn basic concepts. | [@web](https://github.com/web) |
-| [✒️ Onyx Sign](https://onyxsign.vercel.app/) | Generate minimalist flat 2D signatures with Onyx Sign and export handwriting-ready vector files converting AI designs into physical handwriting formats. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

@@ -36,7 +36,7 @@ export default function Index() {
         setAnimationMode,
         isLoaded: settingsLoaded,
     } = useSettings();
-    useBYOP();
+    const { apiKey } = useBYOP();
     useModelSelector();
 
     useGuideMessages(gameState, messages, addMessage);
@@ -87,6 +87,9 @@ export default function Index() {
             inputRef.current.focus();
         }
     }, [gameState.isLoading, gameState.firstStageComplete, inputRef.current]);
+
+    // Don't render anything while redirecting to BYOP login
+    if (!apiKey) return null;
 
     const getInstructionMessage = () => {
         if (gameState.hasWon) return null;

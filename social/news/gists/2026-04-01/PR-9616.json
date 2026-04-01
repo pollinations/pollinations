@@ -1,0 +1,34 @@
+{
+  "pr_number": 9616,
+  "title": "fix: deploy LTX-2 to GH200 with token auth",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9616",
+  "merged_at": "2026-04-01T23:38:10Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "LTX-2 goes brrrrr",
+    "blurb": "We strapped a massive GH200 GPU to the LTX-2 video backend. Videos now generate in about 12 seconds, which is barely enough time to take a sip of coffee.",
+    "summary": "Migrated the LTX-2 video generation backend to a high-performance GH200 instance running a patched ComfyUI with token authentication.",
+    "impact": "Users will experience significantly faster video generation times, dropping to around 12-16 seconds end-to-end.",
+    "keywords": [
+      "video",
+      "ltx-2",
+      "performance",
+      "gpu",
+      "infrastructure"
+    ],
+    "visual_concept": "Upgrading hardware for speed. Polly the bee and the Monitor Robot installing a massive, glowing new GPU into a retro server rack to make videos render faster.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot installing a massive, glowing lime green (#ecf874) GPU into a retro server rack. The robot's screen shows a fast-forward symbol. Soft pastel lavender and peach gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-01/PR-9616.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot installing a massive, glowing lime green (#ecf874) GPU into a retro server rack. The robot's screen shows a fast-forward symbol. Soft pastel lavender and peach gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-01T23:39:04.734714+00:00"
+}

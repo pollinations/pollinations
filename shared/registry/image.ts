@@ -293,7 +293,6 @@ export const IMAGE_SERVICES = {
         ],
         modelId: "qwen-image",
         provider: "alibaba",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),

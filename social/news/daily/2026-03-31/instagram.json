@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-31",
+  "period_start": "2026-03-31",
+  "period_end": "2026-03-31",
+  "generated_at": "2026-04-01T06:32:18.354401+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-31/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-31/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-31/images/instagram-3.jpg"
+    }
+  ],
+  "text": "9 PRs merged this week and the greenhouse is officially overflowing. \n\nCatGPT is now live on Discord generating sassy webcomics, the Sirius Cybernetics Elevator got a fresh coat of paint (and some much-needed responsive UI fixes), and we welcomed a whole new batch of bots and apps to the ecosystem (RPG engines, lenses, and more). The nomnom creature is feasting well today.\n\nCheck out the new apps at pollinations.ai or drop by the repo to see what's sprouting. 🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #discordbot #webcomics #buildinpublic #retroaesthetic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

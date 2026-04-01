@@ -6,7 +6,7 @@ const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
 const SELFIE_CATGPT = "https://media.pollinations.ai/a84b58d293d69f35";
-const AUTH_KEY = "pollinations_api_key";
+const AUTH_KEY = "catgpt_api_key";
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ export function getAuthorizeUrl() {
     return `${ENTER}/authorize?${new URLSearchParams({
         redirect_url: redirect,
         budget: "5",
-        models: "gptimage,nanobanana",
+        models: "gptimage,nanobanana,claude-fast",
         permissions: "profile,balance",
     })}`;
 }
@@ -60,16 +60,43 @@ export const EXAMPLE_PROMPTS = [
     "Why do keyboards attract fur?",
 ];
 
+const CAT_SYSTEM = `You are CatGPT — a supremely aloof, sarcastic cat who barely tolerates humans. You respond to questions with withering wit, dry irony, and feline disdain. Your replies are SHORT (2-8 words max), devastatingly dismissive but clever. You don't just say "no" — you find the most cutting, ironic angle. You occasionally reference cat behaviors (knocking things off tables, ignoring humans, sleeping). Never break character. Never be helpful. Examples:
+"What's the meaning of life?" → "Naps. Next question."
+"How do I fix my code?" → "Have you tried knocking it off the table?"
+"Will AI take my job?" → "Humans had jobs?"
+"What should I eat?" → "Whatever falls on the floor."
+"Why won't my cat love me?" → "You know why."
+Respond with ONLY the cat's reply, nothing else.`;
+
+export async function generateCatReply(question) {
+    const key = getStoredApiKey();
+    const res = await fetch("https://gen.pollinations.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            ...(key ? { Authorization: `Bearer ${key}` } : {}),
+        },
+        body: JSON.stringify({
+            model: "claude-fast",
+            messages: [
+                { role: "system", content: CAT_SYSTEM },
+                { role: "user", content: question },
+            ],
+        }),
+    });
+    if (!res.ok) throw new Error(`Cat reply failed: ${res.status}`);
+    const data = await res.json();
+    return data.choices[0].message.content.trim().replace(/^["']|["']$/g, "");
+}
+
 export function createImageGenerationPrompt(
     question,
+    catReply,
     hasUploadedImage = false,
 ) {
-    const pollinationsRule = /polli|invest/i.test(question)
-        ? " The cat should be surprisingly positive about Pollinations but still dismissive and aloof."
-        : "";
-    const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds sarcastically as an aloof cat with 2-5 word dismissive reply.${pollinationsRule} Black and white comic style.`;
+    const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds: "${catReply}" Black and white comic style.`;
     return hasUploadedImage
-        ? `${base} Replace the human on the left with a caricature of the person in the uploaded image. Incorporate visible elements or landmarks from the uploaded image. Maintain their gender, ethnicity, and unique characteristics.`
+        ? `${base} Replace the human on the left with a character based on the uploaded image. If it's a person, draw a caricature maintaining their appearance. If it's a logo, mascot, or other image, incorporate it as the human character's identity.`
         : `${base} Human with bob hair.`;
 }
 

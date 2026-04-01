@@ -53,10 +53,7 @@ async function generateCatReply(question: string): Promise<string> {
 }
 
 function createPrompt(question: string, catReply: string, hasAvatar: boolean): string {
-    const pollinationsRule = /polli|invest/i.test(question)
-        ? " The cat should be surprisingly positive about Pollinations but still dismissive and aloof."
-        : "";
-    const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds: "${catReply}"${pollinationsRule} Black and white comic style.`;
+    const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds: "${catReply}" Black and white comic style.`;
     return hasAvatar
         ? `${base} Replace the human on the left with a character based on the uploaded image. If it's a person, draw a caricature maintaining their appearance. If it's a logo, mascot, or other image, incorporate it as the human character's identity.`
         : `${base} Human with bob hair.`;

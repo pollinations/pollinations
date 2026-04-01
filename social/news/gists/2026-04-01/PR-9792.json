@@ -1,0 +1,35 @@
+{
+  "pr_number": 9792,
+  "title": "Fix/lottie class name",
+  "author": "ChunkyPanda29",
+  "url": "https://github.com/pollinations/pollinations/pull/9792",
+  "merged_at": "2026-04-01T04:59:17Z",
+  "labels": [
+    "WEB",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Elevator maintenance",
+    "blurb": "A quick CSS tune-up for the Sirius Cybernetics Elevator Challenge to keep those Lottie animations looking sharp.",
+    "summary": "Fixed a CSS class name mismatch for Lottie animations in the Sirius Cybernetics Elevator Challenge community app.",
+    "impact": "Lottie animations in the elevator challenge app will now display correctly with the proper styling applied.",
+    "keywords": [
+      "css",
+      "bug-fix",
+      "community-app",
+      "lottie",
+      "sirius-cybernetics"
+    ],
+    "visual_concept": "The PR is about fixing a CSS class name for a Lottie animation in an elevator app (Sirius Cybernetics Elevator Challenge). Visuals: The bee mascot wearing a tiny hard hat, fixing a glowing elevator panel or a CSS blueprint alongside the monitor robot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, using a small wrench to fix a glowing retro elevator control panel. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. A chunky robot with a CRT monitor head holds up a blueprint showing CSS code with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'CSS FIXED'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-01/PR-9792.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, using a small wrench to fix a glowing retro elevator control panel. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. A chunky robot with a CRT monitor head holds up a blueprint showing CSS code with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'CSS FIXED'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-01T05:00:18.945428+00:00"
+}

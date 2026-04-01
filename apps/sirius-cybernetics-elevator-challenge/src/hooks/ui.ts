@@ -4,6 +4,7 @@ import type { Message } from "@/types";
 const AUTH_KEY = "pollinations_api_key";
 const MODEL_KEY = "pollinations_model";
 const ENTER_URL = "https://enter.pollinations.ai";
+const API_BASE = "https://enter.pollinations.ai/api";
 const API_KEY_PREFIX = /^(sk_|plln_pk_|pk_)/;
 
 export const DEFAULT_MODEL = "deepseek";
@@ -14,6 +15,18 @@ export const AVAILABLE_MODELS = [
     { id: "gemini-fast", label: "Gemini" },
     { id: "claude-fast", label: "Claude" },
 ] as const;
+
+export interface UserProfile {
+    name: string;
+    email: string;
+    githubUsername: string | null;
+    image: string | null;
+    tier: "seed" | "flower" | "nectar" | null;
+}
+
+export interface UserBalance {
+    balance: number;
+}
 
 export function getStoredApiKey(): string | null {
     try {
@@ -42,14 +55,20 @@ function extractApiKeyFromFragment(): string | null {
     }
 }
 
+const APP_KEY = "pk_vbqLj6cwn05D2v5B";
+
 function getAuthorizeUrl(): string {
     const redirect = window.location.href.split("#")[0];
-    return `${ENTER_URL}/authorize?${new URLSearchParams({ redirect_url: redirect })}`;
+    return `${ENTER_URL}/authorize?${new URLSearchParams({ redirect_url: redirect, app_key: APP_KEY, permissions: "profile,balance" })}`;
 }
 
 export function useBYOP() {
     const [apiKey, setApiKey] = useState<string | null>(getStoredApiKey);
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [balance, setBalance] = useState<UserBalance | null>(null);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
+    // Extract API key from URL fragment on mount (OAuth redirect callback)
     useEffect(() => {
         const key = extractApiKeyFromFragment();
         if (key) {
@@ -60,20 +79,71 @@ export function useBYOP() {
                 "",
                 window.location.pathname + window.location.search,
             );
+        }
+    }, []);
+
+    // Fetch profile and balance when API key is available
+    useEffect(() => {
+        if (!apiKey) {
+            setProfile(null);
+            setBalance(null);
             return;
         }
-        // No key in fragment and none stored — redirect to login
-        if (!getStoredApiKey()) {
-            window.location.href = getAuthorizeUrl();
-        }
+
+        setIsLoadingProfile(true);
+
+        const headers = { Authorization: `Bearer ${apiKey}` };
+
+        const fetchProfile = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/account/profile`, { headers });
+                if (res.status === 401) {
+                    clearApiKey();
+                    setApiKey(null);
+                    return;
+                }
+                if (!res.ok) return;
+                const data = await res.json();
+                setProfile({
+                    name: data.name,
+                    email: data.email,
+                    githubUsername: data.githubUsername,
+                    image: data.image ?? null,
+                    tier: data.tier ?? null,
+                });
+            } catch {
+                // Profile fetch failed silently
+            }
+        };
+
+        const fetchBalance = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/account/balance`, { headers });
+                if (!res.ok) return;
+                const data = await res.json();
+                setBalance({ balance: data.balance });
+            } catch {
+                // Balance fetch failed silently
+            }
+        };
+
+        Promise.all([fetchProfile(), fetchBalance()]).finally(() => {
+            setIsLoadingProfile(false);
+        });
+    }, [apiKey]);
+
+    const login = useCallback(() => {
+        window.location.href = getAuthorizeUrl();
     }, []);
 
     const logout = useCallback(() => {
         clearApiKey();
         setApiKey(null);
+        setProfile(null);
+        setBalance(null);
     }, []);
 
-    return { apiKey, logout };
+    return { apiKey, profile, balance, isLoadingProfile, login, logout };
 }
 
 export function getStoredModel(): string {

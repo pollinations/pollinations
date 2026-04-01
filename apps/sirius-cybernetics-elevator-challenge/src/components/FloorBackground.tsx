@@ -53,8 +53,6 @@ export function FloorBackground({
             )}
 
             <div className="floor-vignette" />
-
-            <div className="floor-indicator">FLOOR {currentFloor}</div>
         </div>
     );
 }

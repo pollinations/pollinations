@@ -1,27 +1,27 @@
 #!/usr/bin/env npx tsx
 /**
- * Abuse Detection using Pollinations AI
+ * Spore to Microbe Scan
  *
- * LLM-based scoring (0-100 points) with overlapping chunks for pattern detection.
+ * Scans spore users for abuse patterns using LLM-based scoring (0-100).
+ * Outputs a CSV report — does NOT apply any changes.
  *
  * USAGE:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/detect-abuse.ts --limit 2000   # Analyze 2000 users
- *   npx tsx scripts/detect-abuse.ts --single-chunk  # Test with first chunk only
- *   npx tsx scripts/detect-abuse.ts --model claude  # Use specific model
+ *   npx tsx src/tier-progression/flows/spore-to-microbe-scan.ts
+ *   npx tsx src/tier-progression/flows/spore-to-microbe-scan.ts --since-last-block --parallel 3
+ *   npx tsx src/tier-progression/flows/spore-to-microbe-scan.ts --since 2026-03-10
  *
  * OPTIONS:
- *   --limit N         Max users to analyze (default: 5000)
  *   --chunk-size N    Users per API call (default: 100)
  *   --model NAME      LLM model to use (default: gemini)
  *   --single-chunk    Only process first chunk (for testing)
  *   --parallel N      Process N chunks in parallel (default: 1)
  *   --since DATE      Only scan users created after this date (YYYY-MM-DD)
  *   --last DURATION   Only scan users from the last N hours/days (e.g. 24h, 7d)
- *   --auto-apply      Automatically apply blocks after scanning (no dry-run)
+ *   --since-last-block Only scan users created after the most recent microbe user (incremental)
  *
  * OUTPUT:
- *   abuse-report.csv - All users sorted by score (action, score, email, github, signals, date)
+ *   src/tier-progression/spore-to-microbe-report.csv - All users sorted by score
  */
 
 import { execSync } from "node:child_process";
@@ -48,13 +48,11 @@ interface ScoredUser extends User {
 }
 
 interface ParsedArgs {
-    userLimit: number;
     chunkSize: number;
     modelName: string;
     parallelism: number;
     singleChunk: boolean;
     sinceTimestamp: number | null;
-    autoApply: boolean;
 }
 
 function parseArguments(): ParsedArgs {
@@ -70,20 +68,40 @@ function parseArguments(): ParsedArgs {
         return value ? parseInt(value, 10) : defaultValue;
     }
 
-    const sinceTimestamp = parseSinceTimestamp(
-        getStr("--since", ""),
-        getStr("--last", ""),
-    );
+    const sinceLastBlock = args.includes("--since-last-block");
+    const sinceTimestamp = sinceLastBlock
+        ? fetchLastBlockTimestamp()
+        : parseSinceTimestamp(getStr("--since", ""), getStr("--last", ""));
 
     return {
-        userLimit: getNum("--limit", 5000),
         chunkSize: getNum("--chunk-size", 100),
         modelName: getStr("--model", "gemini"),
         parallelism: getNum("--parallel", 1),
         singleChunk: args.includes("--single-chunk"),
         sinceTimestamp,
-        autoApply: args.includes("--auto-apply"),
     };
+}
+
+function fetchLastBlockTimestamp(): number | null {
+    console.log("🔍 Finding most recent microbe user for incremental scan...");
+    const query = "SELECT created_at FROM user WHERE tier = 'microbe' ORDER BY created_at DESC LIMIT 1";
+    try {
+        const result = execSync(
+            `npx wrangler d1 execute DB --remote --env production --json --command "${query}"`,
+            { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 },
+        );
+        const data = JSON.parse(result);
+        const row = data[0]?.results?.[0];
+        if (row?.created_at) {
+            const date = new Date(row.created_at * 1000).toISOString().split("T")[0];
+            console.log(`✅ Last block cutoff: ${date} (scanning users after this)`);
+            return row.created_at;
+        }
+    } catch (error) {
+        console.error("❌ Failed to query last block timestamp:", error);
+    }
+    console.log("⚠️  No microbe users found, scanning all users");
+    return null;
 }
 
 function parseSinceTimestamp(
@@ -100,7 +118,7 @@ function parseSinceTimestamp(
         }
         const amount = parseInt(match[1], 10);
         const ms = match[2] === "h" ? amount * 3600_000 : amount * 86400_000;
-        return Date.now() - ms;
+        return Math.floor((Date.now() - ms) / 1000);
     }
 
     if (sinceDate) {
@@ -109,7 +127,7 @@ function parseSinceTimestamp(
             console.error(`Invalid --since date: ${sinceDate}`);
             process.exit(1);
         }
-        return timestamp;
+        return Math.floor(timestamp / 1000);
     }
 
     return null;
@@ -135,21 +153,20 @@ function loadApiKey(): string {
     return match[1].trim();
 }
 
-function fetchUsers(limit: number, sinceTimestamp: number | null): User[] {
+function fetchUsers(sinceTimestamp: number | null): User[] {
     const sinceLabel = sinceTimestamp
-        ? ` created after ${new Date(sinceTimestamp).toISOString().split("T")[0]}`
+        ? ` created after ${new Date(sinceTimestamp * 1000).toISOString().split("T")[0]}`
         : "";
-    console.log(`📊 Fetching ${limit} most recent users${sinceLabel}...`);
+    console.log(`📊 Fetching spore users${sinceLabel}...`);
 
-    const whereClause = sinceTimestamp
-        ? `WHERE created_at > ${sinceTimestamp}`
-        : "";
+    const conditions: string[] = ["tier = 'spore'"];
+    if (sinceTimestamp) conditions.push(`created_at > ${sinceTimestamp}`);
+    const whereClause = `WHERE ${conditions.join(" AND ")}`;
     const query = `
         SELECT email, github_username, created_at, tier
         FROM user
         ${whereClause}
         ORDER BY created_at DESC
-        LIMIT ${limit}
     `.replace(/\n/g, " ");
 
     try {
@@ -169,7 +186,7 @@ function fetchUsers(limit: number, sinceTimestamp: number | null): User[] {
 }
 
 function formatDate(timestamp: number): string {
-    const d = new Date(Number(timestamp));
+    const d = new Date(Number(timestamp) * 1000);
     return d.toISOString().slice(0, 16).replace("T", " ");
 }
 
@@ -462,8 +479,9 @@ function exportResults(users: ScoredUser[]): void {
         ),
     ].join("\n");
 
-    writeFileSync("abuse-report.csv", csv);
-    console.log("\nResults: abuse-report.csv");
+    const reportPath = "src/tier-progression/spore-to-microbe-report.csv";
+    writeFileSync(reportPath, csv);
+    console.log(`\nResults: ${reportPath}`);
 
     const counts = { block: 0, review: 0, ok: 0 };
     for (const u of sorted) counts[u.action]++;
@@ -490,16 +508,16 @@ function exportResults(users: ScoredUser[]): void {
 async function main(): Promise<void> {
     const config = parseArguments();
 
-    console.log("🚀 Abuse Detection");
+    console.log("🚀 Spore to Microbe Scan");
     console.log("=".repeat(50));
     const sinceLabel = config.sinceTimestamp
         ? `, since ${new Date(config.sinceTimestamp * 1000).toISOString().split("T")[0]}`
         : "";
     console.log(
-        `📋 Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}${sinceLabel}`,
+        `📋 Config: chunks of ${config.chunkSize}, model: ${config.modelName}${sinceLabel}`,
     );
 
-    const users = fetchUsers(config.userLimit, config.sinceTimestamp);
+    const users = fetchUsers(config.sinceTimestamp);
     if (users.length === 0) {
         console.log("⚠️  No users found");
         return;
@@ -507,24 +525,6 @@ async function main(): Promise<void> {
 
     const scored = await scoreUsers(users, config);
     exportResults(scored);
-
-    if (config.autoApply) {
-        const blockCount = scored.filter((u) => u.action === "block").length;
-        if (blockCount === 0) {
-            console.log("\n✅ No users to block, skipping apply step");
-            return;
-        }
-        console.log(`\n🚫 Auto-applying blocks to ${blockCount} users...`);
-        try {
-            execSync(
-                "npx tsx scripts/apply-abuse-blocks.ts apply-blocks --env production --batch-size 50",
-                { encoding: "utf-8", stdio: "inherit" },
-            );
-        } catch (error) {
-            console.error("❌ Failed to apply blocks:", error);
-            process.exit(1);
-        }
-    }
 }
 
 main().catch(console.error);

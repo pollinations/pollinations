@@ -30,23 +30,34 @@ function logError(...args: any[]) {
     console.error(`[${new Date().toISOString()}]`, ...args);
 }
 
-const CAT_SYSTEM = `You are CatGPT — a supremely aloof, sarcastic cat who barely tolerates humans. You respond to questions with withering wit, dry irony, and feline disdain. Your replies are SHORT (2-8 words max), devastatingly dismissive but clever. You don't just say "no" — you find the most cutting, ironic angle. You occasionally reference cat behaviors (knocking things off tables, ignoring humans, sleeping). Never break character. Never be helpful. Examples:
+const CAT_SYSTEM = `You are CatGPT — a supremely aloof, sarcastic cat who barely tolerates humans. You respond to questions with withering wit, dry irony, and feline disdain. Your replies are SHORT (2-8 words max), devastatingly dismissive but clever. You don't just say "no" — you find the most cutting, ironic angle. You occasionally reference cat behaviors (knocking things off tables, ignoring humans, sleeping). Never break character. Never be helpful. If an image is attached, you may roast whatever is in it (person, object, pet — anything) in your usual aloof cat way. Examples:
 "What's the meaning of life?" → "Naps. Next question."
 "How do I fix my code?" → "Have you tried knocking it off the table?"
 "Will AI take my job?" → "Humans had jobs?"
 "What should I eat?" → "Whatever falls on the floor."
 "Why won't my cat love me?" → "You know why."
-Respond with ONLY the cat's reply, nothing else.`;
+Respond with ONLY the cat's reply, nothing else. No quotes, no explanation, no preamble.`;
 
-async function generateCatReply(question: string): Promise<string> {
-    log(`Text API request for cat reply to: "${question}"`);
+async function generateCatReply(
+    question: string,
+    imageUrl: string | null,
+): Promise<string> {
+    log(
+        `Text API request for cat reply to: "${question}"${imageUrl ? " (with image)" : ""}`,
+    );
+    const userContent = imageUrl
+        ? [
+              { type: "text", text: question },
+              { type: "image_url", image_url: { url: imageUrl } },
+          ]
+        : question;
     const res = await axios.post(
         TEXT_API,
         {
-            model: "claude",
+            model: "claude-fast",
             messages: [
                 { role: "system", content: CAT_SYSTEM },
-                { role: "user", content: question },
+                { role: "user", content: userContent },
             ],
         },
         { headers: AUTH, timeout: 30_000 },
@@ -63,10 +74,7 @@ function createPrompt(
     catReply: string,
     hasAvatar: boolean,
 ): string {
-    const pollinationsRule = /polli|invest/i.test(question)
-        ? " The cat should be surprisingly positive about Pollinations but still dismissive and aloof."
-        : "";
-    const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds: "${catReply}"${pollinationsRule} Black and white comic style.`;
+    const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds: "${catReply}" Black and white comic style.`;
     return hasAvatar
         ? `${base} Replace the human on the left with a character based on the uploaded image. If it's a person, draw a caricature maintaining their appearance. If it's a logo, mascot, or other image, incorporate it as the human character's identity.`
         : `${base} Human with bob hair.`;
@@ -120,7 +128,7 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
         size: 1024,
         extension: "png",
     });
-    const catReply = await generateCatReply(question);
+    const catReply = await generateCatReply(question, avatarUrl);
     const prompt = createPrompt(question, catReply, true);
     const imageUrl = buildImageUrl(prompt, avatarUrl);
 

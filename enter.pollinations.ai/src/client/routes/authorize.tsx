@@ -231,9 +231,9 @@ function AuthorizeComponent() {
             ...(expiryDays !== null && {
                 expiresIn: expiryDays * SECONDS_PER_DAY,
             }),
-            prefix: "sk",
+            prefix: keyType === "publishable" ? "pk" : "sk",
             metadata: {
-                keyType: "secret",
+                keyType,
                 createdVia: isDeviceMode ? "device-flow" : "redirect-auth",
                 ...(isDeviceMode && { deviceUserCode: user_code }),
                 ...(attribution?.found && {
@@ -658,6 +658,45 @@ function AuthorizeComponent() {
                                     </li>
                                 </ul>
                             )}
+
+                            <div>
+                                <p className="text-sm font-medium text-green-950 mb-2">
+                                    Key type
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setKeyType("secret")}
+                                        className={`flex-1 text-sm rounded-lg px-3 py-2 border-2 transition-colors ${
+                                            keyType === "secret"
+                                                ? "border-green-700 bg-green-200 text-green-950 font-medium"
+                                                : "border-green-300 bg-green-50 text-green-700 hover:border-green-400"
+                                        }`}
+                                    >
+                                        <span className="font-mono">sk_</span>{" "}
+                                        Secret
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setKeyType("publishable")
+                                        }
+                                        className={`flex-1 text-sm rounded-lg px-3 py-2 border-2 transition-colors ${
+                                            keyType === "publishable"
+                                                ? "border-green-700 bg-green-200 text-green-950 font-medium"
+                                                : "border-green-300 bg-green-50 text-green-700 hover:border-green-400"
+                                        }`}
+                                    >
+                                        <span className="font-mono">pk_</span>{" "}
+                                        Publishable
+                                    </button>
+                                </div>
+                                <p className="text-xs text-green-700 mt-1">
+                                    {keyType === "secret"
+                                        ? "Full access — keep this key private."
+                                        : "Safe to embed in frontend code — limited permissions."}
+                                </p>
+                            </div>
 
                             <KeyPermissionsInputs
                                 value={keyPermissions}

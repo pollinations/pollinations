@@ -1,0 +1,35 @@
+{
+  "pr_number": 9797,
+  "title": "Add ItacaLab - graphic editor for authors to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9797",
+  "merged_at": "2026-04-01T05:13:17Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Books need covers too",
+    "blurb": "ItacaLab just sprouted in the community greenhouse. It's a graphic editor built specifically for authors to generate their own visuals, because judging a book by its cover is still very much a thing.",
+    "summary": "Added ItacaLab, a graphic editor tailored for authors, to the community apps showcase.",
+    "impact": "Writers can now discover ItacaLab in the greenhouse to generate and edit artwork for their literary projects.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "image-generation",
+      "authors",
+      "design"
+    ],
+    "visual_concept": "Polly the bee acting as a graphic designer for books. She should be wearing a tiny painter's beret and working at a retro computer with a stack of books nearby, blending the concepts of writing, graphic editing, and our ecosystem.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, using a retro computer monitor to design a book cover. A stack of colorful pixelated books sits next to the glowing lime green (#ecf874) screen. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-01/PR-9797.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, using a retro computer monitor to design a book cover. A stack of colorful pixelated books sits next to the glowing lime green (#ecf874) screen. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-01T05:14:21.065692+00:00",
+  "app_name": "ItacaLab - graphic editor for authors",
+  "app_url": "https://itacalab.editoraitacaiunas.com/"
+}

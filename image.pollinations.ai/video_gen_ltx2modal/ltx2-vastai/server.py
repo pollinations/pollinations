@@ -6,7 +6,7 @@ Also handles heartbeat registration with the EC2 gateway.
 
 import json, os, random, threading, time, urllib.request, urllib.parse, subprocess, logging
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
@@ -40,7 +40,7 @@ def start_comfyui():
     global comfy_proc
     log.info("Starting ComfyUI...")
     comfy_proc = subprocess.Popen(
-        f"comfy launch -- --listen {COMFY_HOST} --port {COMFY_PORT}",
+        f"comfy launch -- --listen {COMFY_HOST} --port {COMFY_PORT} --gpu-only --disable-dynamic-vram",
         shell=True, cwd=COMFYUI_ROOT,
     )
     # Wait for health
@@ -75,6 +75,14 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="LTX-2 Video Server", lifespan=lifespan)
+
+@app.middleware("http")
+async def verify_backend_token(request: Request, call_next):
+    if PLN_TOKEN and request.url.path not in ("/health",):
+        token = request.headers.get("x-backend-token", "")
+        if token != PLN_TOKEN:
+            return JSONResponse(status_code=403, content={"error": "Unauthorized"})
+    return await call_next(request)
 
 class EnqueueRequest(BaseModel):
     prompt: str

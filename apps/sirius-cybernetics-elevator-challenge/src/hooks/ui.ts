@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Message } from "@/types";
 
 const AUTH_KEY = "pollinations_api_key";
@@ -62,13 +62,13 @@ export function useBYOP() {
         );
     }, []);
 
-    function login() {
+    const login = useCallback(() => {
         window.location.href = getAuthorizeUrl();
-    }
-    function logout() {
+    }, []);
+    const logout = useCallback(() => {
         clearApiKey();
         setApiKey(null);
-    }
+    }, []);
 
     return { apiKey, login, logout };
 }

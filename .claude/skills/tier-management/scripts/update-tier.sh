@@ -21,7 +21,7 @@ TARGET_TIER="${2:-}"
 
 if [ -z "$USER_QUERY" ] || [ -z "$TARGET_TIER" ]; then
     echo "Usage: $0 <username_or_email> <tier>"
-    echo "       tier: spore, seed, flower, nectar, router"
+    echo "       tier: microbe, spore, seed, flower, nectar, router"
     echo ""
     echo "Example: $0 ez-vivek flower"
     exit 1

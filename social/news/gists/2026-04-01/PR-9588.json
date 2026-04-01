@@ -1,0 +1,33 @@
+{
+  "pr_number": 9588,
+  "title": "refactor: move tier progression flow into enter app",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9588",
+  "merged_at": "2026-04-01T14:58:02Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidying the garden shed",
+    "blurb": "We've reorganized the internal logic that handles tier upgrades, moving the Spore-to-Seed flow into its proper home in the Enter app. Just some spring cleaning to keep the codebase healthy!",
+    "summary": "Refactored the tier progression system by moving the Spore-to-Seed upgrade flow into the enter.pollinations.ai application and extracting shared helpers.",
+    "impact": "This internal reorganization makes the tier upgrade logic easier to maintain and extends our shared infrastructure.",
+    "keywords": [
+      "refactor",
+      "tier-progression",
+      "enter-app",
+      "infrastructure"
+    ],
+    "visual_concept": "The bee mascot organizing boxes or files in a cozy garden shed. A robot helper holding a 'Spore to Seed' folder. Represents internal refactoring and moving logic to its proper place.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, organizing glowing lime green (#ecf874) folders in a rustic garden shed. A chunky robot with a CRT monitor head holds a folder labeled 'SEED'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-01/PR-9588.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, organizing glowing lime green (#ecf874) folders in a rustic garden shed. A chunky robot with a CRT monitor head holds a folder labeled 'SEED'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-01T14:59:04.300755+00:00"
+}

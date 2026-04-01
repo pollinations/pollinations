@@ -1,3 +1,10 @@
+- **2026-03-31** – **🤖 CatGPT** A new Discord bot that uses Claude to generate webcomic panels of your avatar arguing with a cat. Because the internet needed this.
+- **2026-03-31** – **🍳 Smart Kitchen AI** A community-built culinary platform that hallucinates recipe visualizations on demand. [Try it](https://matbaki.vercel.app) <!-- app -->
+- **2026-03-31** – **🔍 Labol Lens** A streamlined image generation interface added to the community showcase. [Try it](https://labol-lens.streamlit.app/) <!-- app -->
+- **2026-03-31** – **👾 Exovia Destek** Another Discord bot joins the hive, proving that text generation is the new server admin. [Try it](https://discord.com/invite/3BF7NH4fKN) <!-- app -->
+- **2026-03-31** – **📚 Vocamax** A language learning app using our API to generate educational content on the fly. [Try it](https://play.google.com/store/apps/details?id=com.musiclearns.music_app) <!-- app -->
+- **2026-03-31** – **🎲 AI RPG Engine** A browser-based RPG engine that uses our endpoints to run the campaign. Roll for initiative. [Try it](https://yuuki8763.github.io/en/index.html) <!-- app -->
+- **2026-03-31** – **📱 Soy Cosmo** A WhatsApp personal assistant that generates images and audio. Texting AI is officially mainstream. [Try it](https://soy-cosmo.web.app) <!-- app -->
 - **2026-03-26** – **🌸 OrchidLLM** New multimodal generation app in the showcase. Send text, get whatever. [Try it](https://orchidllm.vercel.app) <!-- app -->
 - **2026-03-26** – **⚙️ OpenCode Configurator** Auto-configure OpenCode environments with our text models. Less boilerplate, more building. [View repo](https://github.com/onatrain/opencode-pollinations-conf) <!-- app -->
 - **2026-03-26** – **📝 TranslateIt** Context-aware AI translation tool. Because literal translations are usually terrible. [Try it](https://connor.ct.ws/translateit) <!-- app -->

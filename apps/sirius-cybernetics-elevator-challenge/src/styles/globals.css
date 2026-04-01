@@ -97,14 +97,14 @@ body {
 }
 
 /* Responsive Lottie backgrounds - Fixes #9440 */
-body.iframe-mode .floor-lottie-container,
-body.iframe-mode .floor-lottie-container > div {
+body.iframe-mode .floor-lottie-wrapper,
+body.iframe-mode .floor-lottie-wrapper > div {
   width: 200px !important;
   height: 200px !important;
 }
 
-body.standalone-mode .floor-lottie-container,
-body.standalone-mode .floor-lottie-container > div {
+body.standalone-mode .floor-lottie-wrapper,
+body.standalone-mode .floor-lottie-wrapper > div {
   width: 15vw !important;
   height: 15vh !important;
   max-width: 300px !important;
@@ -114,7 +114,7 @@ body.standalone-mode .floor-lottie-container > div {
 }
 
 @media (max-width: 768px) {
-  body.standalone-mode .floor-lottie-container {
+  body.standalone-mode .floor-lottie-wrapper {
     width: 25vw !important;
     height: 25vh !important;
   }

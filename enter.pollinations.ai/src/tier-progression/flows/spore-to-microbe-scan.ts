@@ -84,7 +84,8 @@ function parseArguments(): ParsedArgs {
 
 function fetchLastBlockTimestamp(): number | null {
     console.log("🔍 Finding most recent microbe user for incremental scan...");
-    const query = "SELECT created_at FROM user WHERE tier = 'microbe' ORDER BY created_at DESC LIMIT 1";
+    const query =
+        "SELECT created_at FROM user WHERE tier = 'microbe' ORDER BY created_at DESC LIMIT 1";
     try {
         const result = execSync(
             `npx wrangler d1 execute DB --remote --env production --json --command "${query}"`,
@@ -93,8 +94,12 @@ function fetchLastBlockTimestamp(): number | null {
         const data = JSON.parse(result);
         const row = data[0]?.results?.[0];
         if (row?.created_at) {
-            const date = new Date(row.created_at * 1000).toISOString().split("T")[0];
-            console.log(`✅ Last block cutoff: ${date} (scanning users after this)`);
+            const date = new Date(row.created_at * 1000)
+                .toISOString()
+                .split("T")[0];
+            console.log(
+                `✅ Last block cutoff: ${date} (scanning users after this)`,
+            );
             return row.created_at;
         }
     } catch (error) {

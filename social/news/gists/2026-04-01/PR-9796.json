@@ -1,0 +1,35 @@
+{
+  "pr_number": 9796,
+  "title": "Add SciVis AI to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9796",
+  "merged_at": "2026-04-01T04:49:25Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Science meets sci-fi",
+    "blurb": "A new community app, SciVis AI, just landed in the greenhouse. It turns any science topic into stunning sci-fi style illustrations using our Flux model.",
+    "summary": "Added SciVis AI to the community showcase, an app that generates sci-fi style science illustrations using the Pollinations Image API.",
+    "impact": "Users can now explore and create scientific visualizations in 6 different sci-fi styles and 3 aspect ratios directly from the community apps list.",
+    "keywords": [
+      "community",
+      "app",
+      "image-generation",
+      "sci-fi",
+      "science",
+      "flux"
+    ],
+    "visual_concept": "The PR introduces an app for sci-fi science illustrations. Key symbols: science (atoms, holograms, lab equipment), sci-fi aesthetics, and the Pollinations bee. Polly the bee wearing a tiny lab coat or sci-fi goggles, interacting with a glowing holographic atom or planet.",
+    "image_prompt": "Cozy pixel art scene of a futuristic laboratory where a glowing holographic atom floats above a retro computer terminal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Polly the bee mascot wearing tiny sci-fi goggles and a lab coat, inspecting the hologram with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'SCI-VIS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-01/PR-9796.jpg",
+    "prompt": "Cozy pixel art scene of a futuristic laboratory where a glowing holographic atom floats above a retro computer terminal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Polly the bee mascot wearing tiny sci-fi goggles and a lab coat, inspecting the hologram with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'SCI-VIS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-01T04:50:21.424217+00:00",
+  "app_name": "SciVis AI",
+  "app_url": "https://s971153.github.io/scivis-ai/"
+}

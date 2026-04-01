@@ -61,10 +61,7 @@ export const Route = createFileRoute("/authorize")({
             redirect_url: (search.redirect_url as string) || "",
         };
 
-        if (
-            search.key_type === "publishable" ||
-            search.key_type === "secret"
-        ) {
+        if (search.key_type === "publishable" || search.key_type === "secret") {
             result.key_type = search.key_type;
         }
 

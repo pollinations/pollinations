@@ -176,7 +176,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
                     <div
                         id="buy-pollen"
-                        className="mx-auto grid w-fit [grid-template-columns:repeat(3,max-content)] gap-2.5"
+                        className="mx-auto grid w-full grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 sm:w-fit sm:[grid-template-columns:repeat(3,max-content)]"
                     >
                         {POLLEN_PACKS.map((pack) => (
                             <Button
@@ -186,7 +186,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 color="amber"
                                 weight="light"
                                 title={`Buy $${pack.amountUsd} pollen pack`}
-                                className="btn-shimmer w-[132px] justify-self-center whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:text-sm"
+                                className="btn-shimmer w-full min-w-0 justify-self-stretch whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:w-[132px] sm:justify-self-center sm:text-sm"
                             >
                                 <span className="font-semibold text-amber-900">
                                     ${pack.amountUsd}

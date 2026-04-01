@@ -23,7 +23,7 @@ export const FilterButton: FC<FilterButtonProps> = ({
         className={cn(
             "px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200",
             active
-                ? "bg-green-950 text-green-100"
+                ? "bg-amber-950 text-amber-100"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200",
             className,
         )}

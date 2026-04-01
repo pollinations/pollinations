@@ -656,9 +656,6 @@ npx wrangler d1 execute DB --remote --env production \
 npx wrangler d1 execute DB --remote --env production \
   --command "UPDATE user SET tier='flower' WHERE github_username='USERNAME';"
 
-# 3. Update Polar subscription
-export POLAR_ACCESS_TOKEN=$(sops -d secrets/prod.vars.json | grep POLAR_ACCESS_TOKEN | cut -d'"' -f4)
-npx tsx scripts/manage-polar.ts user update-tier --email USER@EMAIL.COM --tier flower
 ```
 
 ### Evaluate User for Upgrade

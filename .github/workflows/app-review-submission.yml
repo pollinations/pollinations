@@ -17,7 +17,7 @@ on:
         type: string
 
 concurrency:
-  group: app-submission-${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}
+  group: app-review-submission
   cancel-in-progress: false
 
 jobs:
@@ -182,7 +182,6 @@ jobs:
       github.event_name == 'issues' &&
       github.event.action == 'labeled' &&
       github.event.label.name == 'TIER-APP-APPROVED' &&
-      contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW') &&
       github.event.issue.state == 'open'
     runs-on: ubuntu-latest
     permissions:
@@ -272,7 +271,7 @@ jobs:
             run(`git checkout -b ${branch} origin/main`);
 
             // Build the row (stars left empty — daily metrics fills it)
-            const row = `| ${d.emoji} | ${d.name} | ${d.web_url} | ${d.description} | ${d.language} | ${d.category} | ${d.platform} | ${d.github_username} | ${d.github_user_id} | ${d.repo_url} | | ${d.discord} | | ${d.submitted_date} | ${d.issue_url} | ${today} |  |  |  |`;
+            const row = `| ${d.emoji} | ${d.name} | ${d.web_url} | ${d.description} | ${d.language} | ${d.category} | ${d.platform} | ${d.github_username} | ${d.github_user_id} | ${d.repo_url} | | ${d.discord} | | ${d.submitted_date} | ${d.issue_url} | ${today} |  |  |`;
 
             run('node .github/scripts/app-prepend-row.js', { NEW_ROW: row });
             run('node .github/scripts/app-update-greenhouse.js');
@@ -319,3 +318,25 @@ jobs:
           gh pr merge "$PR_URL" --auto --squash --delete-branch
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
+
+      - name: Attempt to resolve merge conflicts
+        if: success()
+        run: |
+          BRANCH="${{ steps.branch.outputs.branch }}"
+          git fetch origin
+          git checkout "$BRANCH"
+
+          # Merge main into PR branch to ensure branch is up to date.
+          # || true so the step continues into conflict resolution on merge failures
+          git merge --no-ff origin/main || true
+
+          if git diff --name-only --diff-filter=U | grep .; then
+            echo "Merge conflicts detected in apps/APPS.md. Attempting a safe resolve by keeping the PR change."
+            git checkout --ours -- apps/APPS.md
+            git add apps/APPS.md
+            git commit -m "Resolve merge conflicts: keep app addition in apps/APPS.md"
+            git push origin HEAD
+          else
+            echo "No merge conflicts detected. Pushing updated branch."
+            git push origin HEAD
+          fi

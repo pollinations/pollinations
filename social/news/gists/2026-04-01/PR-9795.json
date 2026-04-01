@@ -1,0 +1,34 @@
+{
+  "pr_number": 9795,
+  "title": "Add Puzzel Math to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9795",
+  "merged_at": "2026-04-01T04:44:50Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Puzzel Math joins the hive",
+    "blurb": "Puzzel Math just sprouted in our community greenhouse. It's a clever new app using Pollinations to help kids learn math through interactive mini-games.",
+    "summary": "Added Puzzel Math, an interactive educational app for elementary students, to the community showcase.",
+    "impact": "The community directory now features a new example of Pollinations being used to power educational tools and mini-games.",
+    "keywords": [
+      "community",
+      "app",
+      "education",
+      "math",
+      "showcase"
+    ],
+    "visual_concept": "The PR is about a kids' math app called 'Puzzel Math'. Visuals should include math symbols (plus, minus, numbers), puzzle pieces, and a playful/educational vibe. Polly the bee could be wearing glasses or holding a pointer, teaching or solving a math puzzle with the robot.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny teacher glasses, solving a jigsaw puzzle made of glowing math symbols and numbers. A cute chunky robot companion holds up a flashcard with a plus sign. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and educational."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-01/PR-9795.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny teacher glasses, solving a jigsaw puzzle made of glowing math symbols and numbers. A cute chunky robot companion holds up a flashcard with a plus sign. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and educational."
+  },
+  "generated_at": "2026-04-01T04:45:38.070857+00:00",
+  "app_name": "Puzzel Math",
+  "app_url": "https://apps.apple.com/vn/app/puzzlemath-kids/id6751527974?l=vi"
+}

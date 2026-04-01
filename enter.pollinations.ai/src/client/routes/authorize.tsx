@@ -56,9 +56,17 @@ export const Route = createFileRoute("/authorize")({
             budget?: number | null;
             expiry?: number | null;
             permissions?: string[] | null;
+            key_type?: "publishable" | "secret";
         } = {
             redirect_url: (search.redirect_url as string) || "",
         };
+
+        if (
+            search.key_type === "publishable" ||
+            search.key_type === "secret"
+        ) {
+            result.key_type = search.key_type;
+        }
 
         if (search.user_code && typeof search.user_code === "string") {
             result.user_code = search.user_code;
@@ -98,6 +106,7 @@ function AuthorizeComponent() {
         budget,
         expiry,
         permissions: urlPermissions,
+        key_type: urlKeyType,
     } = Route.useSearch();
     const navigate = useNavigate();
 
@@ -106,6 +115,9 @@ function AuthorizeComponent() {
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
 
+    const [keyType, setKeyType] = useState<"publishable" | "secret">(
+        urlKeyType ?? "secret",
+    );
     const [isAuthorizing, setIsAuthorizing] = useState(false);
     const [isSigningIn, setIsSigningIn] = useState(false);
     const [error, setError] = useState<string | null>(null);

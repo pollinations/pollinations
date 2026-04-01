@@ -1,20 +1,20 @@
 /**
- * Apply Abuse Blocks Script
+ * Spore to Microbe Apply
  *
- * Reads abuse-report.csv and downgrades all users with "block" action to microbe tier.
+ * Reads spore-to-microbe-report.csv and downgrades all users with "block" action to microbe tier.
  * Processes in batches with rate limiting to avoid D1 overload.
  *
  * Usage:
- *   npx tsx scripts/apply-abuse-blocks.ts --env production
- *   npx tsx scripts/apply-abuse-blocks.ts --env production --dry-run
- *   npx tsx scripts/apply-abuse-blocks.ts --env production --batch-size 50 --delay 1000
+ *   npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts apply-blocks --env production
+ *   npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts apply-blocks --env production --dry-run
+ *   npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts apply-blocks --env production --batch-size 50 --delay 1000
  *
  * Options:
  *   --env          Environment (staging|production), default: production
  *   --dry-run      Show what would be done without making changes
  *   --batch-size   Number of users to process per batch (default: 100)
  *   --delay        Delay in ms between batches (default: 500)
- *   --report       Path to abuse report CSV (default: ./abuse-report.csv)
+ *   --report       Path to report CSV (default: src/tier-progression/spore-to-microbe-report.csv)
  */
 
 import { execSync } from "node:child_process";
@@ -141,7 +141,7 @@ const applyBlocksCommand = command({
         delay: number().default(500).desc("Delay between batches in ms"),
         report: string()
             .alias("r")
-            .default("./abuse-report.csv")
+            .default("src/tier-progression/spore-to-microbe-report.csv")
             .desc("Path to abuse report"),
         tier: string()
             .alias("t")

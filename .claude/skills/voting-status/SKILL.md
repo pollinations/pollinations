@@ -159,8 +159,8 @@ effective from next refill
 \`\`\`
 🍄 spore    0.01/hour
 🌱 seed     0.15/hour
-🌸 flower   10/day
-🍯 nectar   20/day
+🌸 flower   0.4/hour
+🍯 nectar   0.8/hour
 \`\`\`
 
 ## 🌱 🌸 upgrade paths

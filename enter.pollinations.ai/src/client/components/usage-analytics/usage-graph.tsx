@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { useEffect, useState } from "react";
+import { getTierColor, TIER_EMOJIS } from "@/tier-config.ts";
 import type { TierStatus } from "../../../tier-config";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -9,15 +10,15 @@ import { MultiSelect } from "./multi-select";
 import type { FilterState, Metric, TimeRange } from "./types";
 import { useUsageData } from "./use-usage-data";
 
-const TIER_EMOJIS: Record<TierStatus, string> = {
-    none: "🦠",
-    microbe: "🦠",
-    spore: "🍄",
-    seed: "🌱",
-    flower: "🌸",
-    nectar: "🍯",
-    router: "🔌",
-};
+const TIER_PILL_CLASSES = {
+    gray: "bg-gray-200 text-gray-900",
+    blue: "bg-blue-200 text-blue-900",
+    green: "bg-green-200 text-green-900",
+    pink: "bg-pink-200 text-pink-900",
+    amber: "bg-amber-200 text-amber-900",
+    orange: "bg-orange-300 text-orange-950",
+    violet: "bg-violet-200 text-violet-950",
+} as const;
 
 export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
     const [filters, setFilters] = useState<FilterState>({
@@ -46,6 +47,15 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
         value: m.id,
         label: m.label,
     }));
+    const tierEmoji =
+        tier && tier !== "none" ? TIER_EMOJIS[tier] : TIER_EMOJIS.spore;
+
+    const tierColor =
+        TIER_PILL_CLASSES[
+            getTierColor(
+                (tier || "spore") as TierStatus,
+            ) as keyof typeof TIER_PILL_CLASSES
+        ] || TIER_PILL_CLASSES.blue;
 
     const showModelBreakdown =
         filters.selectedModels.length === 0 ||
@@ -66,7 +76,7 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
 
     return (
         <div className="flex flex-col gap-2">
-            <Panel color="purple">
+            <Panel color="amber">
                 {loading && (
                     <div className="flex items-center justify-center h-[180px]">
                         <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
@@ -188,7 +198,7 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
 
                         {/* Chart */}
                         <Card
-                            color="purple"
+                            color="amber"
                             bg="bg-white"
                             className="relative mb-4"
                         >
@@ -196,30 +206,37 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                                 data={chartData}
                                 metric={filters.metric}
                                 showModelBreakdown={showModelBreakdown}
+                                tier={tier}
                             />
                         </Card>
 
                         {/* Stats */}
                         <div className="space-y-1">
                             <div>
-                                <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">
+                                <span className="text-[10px] uppercase tracking-wide text-amber-500 font-bold">
                                     Requests
                                 </span>
-                                <span className="text-lg font-bold text-green-950 tabular-nums ml-2">
+                                <span className="ml-2 text-lg font-bold text-amber-950 tabular-nums">
                                     {stats.totalRequests.toLocaleString()}
                                 </span>
                             </div>
                             <div>
-                                <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">
+                                <span className="text-[10px] uppercase tracking-wide text-amber-500 font-bold">
                                     Pollen
                                 </span>
-                                <span className="text-lg font-bold text-green-950 tabular-nums ml-2">
+                                <span className="ml-2 text-lg font-bold text-amber-950 tabular-nums">
                                     {stats.totalPollen.toFixed(2)}
                                 </span>
-                                <span className="text-xs text-gray-400 ml-1">
-                                    ({TIER_EMOJIS[tier || "spore"]}{" "}
-                                    {stats.tierPollen.toFixed(2)} + 💎{" "}
-                                    {stats.paidPollen.toFixed(2)})
+                                <span className="ml-2 inline-flex flex-wrap items-center gap-2 align-middle">
+                                    <span
+                                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${tierColor}`}
+                                    >
+                                        {tierEmoji}{" "}
+                                        {stats.tierPollen.toFixed(2)}
+                                    </span>
+                                    <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                                        🪷 {stats.paidPollen.toFixed(2)}
+                                    </span>
                                 </span>
                             </div>
                         </div>

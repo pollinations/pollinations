@@ -1,28 +1,47 @@
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { getTierColor, type TierStatus } from "@/tier-config.ts";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
     grid: "#e5e7eb", // gray-200
-    tierBar: "#99f6e4", // teal-200
-    tierBarHover: "#5eead4", // teal-300
-    paidBar: "#ddd6fe", // violet-200
-    paidBarHover: "#c4b5fd", // violet-300
+    paidBar: "#fde68a", // amber-200
+    paidBarHover: "#fcd34d", // amber-300
     tooltipBg: "#18181b", // zinc-950
     tooltipSep: "#374151", // gray-700
+} as const;
+
+const TIER_BAR_COLORS = {
+    gray: { base: "#d1d5db", hover: "#9ca3af" },
+    blue: { base: "#bfdbfe", hover: "#93c5fd" },
+    green: { base: "#bbf7d0", hover: "#86efac" },
+    pink: { base: "#fbcfe8", hover: "#f9a8d4" },
+    amber: { base: "#fde68a", hover: "#fcd34d" },
+    orange: { base: "#fdba74", hover: "#fb923c" },
+    violet: { base: "#c4b5fd", hover: "#a78bfa" },
 } as const;
 
 type ChartProps = {
     data: DataPoint[];
     metric: Metric;
     showModelBreakdown: boolean;
+    tier?: TierStatus;
 };
 
-export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
+export const Chart: FC<ChartProps> = ({
+    data,
+    metric,
+    showModelBreakdown,
+    tier,
+}) => {
     const [hovered, setHovered] = useState<number | null>(null);
     const [animationProgress, setAnimationProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(600);
+    const tierBarColor =
+        TIER_BAR_COLORS[
+            getTierColor(tier || "spore") as keyof typeof TIER_BAR_COLORS
+        ];
 
     // Animate on mount with cleanup to prevent memory leaks
     useEffect(() => {
@@ -243,8 +262,8 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                 style={{
                                     fill:
                                         hovered === idx
-                                            ? CHART_COLORS.tierBarHover
-                                            : CHART_COLORS.tierBar,
+                                            ? tierBarColor.hover
+                                            : tierBarColor.base,
                                     transition: "fill 0.15s ease-out",
                                 }}
                             />

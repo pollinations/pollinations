@@ -294,7 +294,9 @@ const safeJsonParse = (data: string): { message: string; action?: Action } => {
     }
 
     // Try to find a JSON object in the string
-    const braceMatch = data.match(/\{[\s\S]*"message"\s*:\s*"[\s\S]*?"\s*[\s\S]*?\}/);
+    const braceMatch = data.match(
+        /\{[\s\S]*"message"\s*:\s*"[\s\S]*?"\s*[\s\S]*?\}/,
+    );
     if (braceMatch) {
         try {
             return JSON.parse(braceMatch[0]);

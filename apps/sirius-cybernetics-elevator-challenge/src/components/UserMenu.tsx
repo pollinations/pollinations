@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import type { UserProfile, UserBalance } from "@/hooks/ui";
+import { useEffect, useRef, useState } from "react";
+import type { UserBalance, UserProfile } from "@/hooks/ui";
 
 const TIER_EMOJI: Record<string, string> = {
     seed: "\u{1F331}",
@@ -21,7 +21,10 @@ export function UserMenu({ profile, balance, apiKey, logout }: UserMenuProps) {
     // Close on outside click
     useEffect(() => {
         function handleClick(e: MouseEvent) {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(e.target as Node)
+            ) {
                 setIsOpen(false);
             }
         }
@@ -120,7 +123,8 @@ export function UserMenu({ profile, balance, apiKey, logout }: UserMenuProps) {
                                 API Key:{" "}
                             </span>
                             <span className="text-green-400/60">
-                                {apiKey.slice(0, 6)}{"........"}
+                                {apiKey.slice(0, 6)}
+                                {"........"}
                             </span>
                         </div>
                     </div>

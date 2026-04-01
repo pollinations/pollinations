@@ -71,7 +71,11 @@ export default function Index() {
     );
 
     useEffect(() => {
-        if (!gameState.isLoading && !gameState.firstStageComplete && inputRef.current) {
+        if (
+            !gameState.isLoading &&
+            !gameState.firstStageComplete &&
+            inputRef.current
+        ) {
             inputRef.current.focus();
         }
     }, [gameState.isLoading, gameState.firstStageComplete, inputRef.current]);
@@ -81,13 +85,18 @@ export default function Index() {
     useEffect(() => {
         if (!gameStarted || !apiKey) return;
         const fetchGreeting = async () => {
-            const response = await fetchPersonaMessage("elevator", gameState, []);
+            const response = await fetchPersonaMessage(
+                "elevator",
+                gameState,
+                [],
+            );
             addMessage(response);
         };
         fetchGreeting();
     }, [gameStarted]);
 
-    const hasGameMessages = messages.filter((m) => m.persona !== "guide").length > 0;
+    const hasGameMessages =
+        messages.filter((m) => m.persona !== "guide").length > 0;
 
     // ─── PRE-GAME SCREEN ───
     if (!gameStarted) {
@@ -124,8 +133,8 @@ export default function Index() {
                     </pre>
 
                     <p className="text-green-400/70 text-xs text-center max-w-sm">
-                        Convince the neurotic elevator to reach the ground floor.
-                        You have 15 moves. Choose your words wisely.
+                        Convince the neurotic elevator to reach the ground
+                        floor. You have 15 moves. Choose your words wisely.
                     </p>
 
                     {apiKey ? (
@@ -147,7 +156,10 @@ export default function Index() {
 
                 <div className="text-center text-green-400/50 mt-4 text-[10px]">
                     Powered by{" "}
-                    <a href="https://pollinations.ai" className="text-blue-400/60 underline">
+                    <a
+                        href="https://pollinations.ai"
+                        className="text-blue-400/60 underline"
+                    >
                         pollinations.ai
                     </a>
                 </div>
@@ -158,173 +170,182 @@ export default function Index() {
     // ─── IN-GAME SCREEN ───
     return (
         <div className="flex flex-col items-center justify-center h-screen overflow-hidden bg-[#0a0a0f] text-green-400 p-4 font-mono">
-                <Card className="w-full max-w-2xl max-h-[90vh] p-4 space-y-3 bg-gray-900/90 border-green-400 border-2 rounded-none overflow-hidden flex flex-col">
-                    {/* Top bar: charge + hint | user menu */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            {/* Charge gauge */}
-                            <div className="flex items-center gap-1.5 px-3 py-1 border border-yellow-400/50 bg-yellow-400/10">
-                                <span className="text-lg">
-                                    {gameState.movesLeft < 7 ? "\u{1FAB6}" : "\u{1F50B}"}
-                                </span>
-                                <span className="text-sm font-bold text-yellow-400">
-                                    {gameState.movesLeft}
-                                </span>
-                            </div>
-                            {/* Hint / Rewind button */}
-                            {gameState.conversationMode === "autonomous" ? (
-                                <button
-                                    type="button"
-                                    onClick={handlePersonaSwitch}
-                                    className="flex items-center gap-1 px-2 py-1 text-xs text-yellow-400 border border-yellow-400/40 bg-yellow-400/10 hover:bg-yellow-400/20 transition-colors"
-                                    title="Rewind Time"
-                                >
-                                    <span className="text-base">{"\u23EA"}</span>
-                                    Rewind
-                                </button>
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={handleGuideAdvice}
-                                    className="flex items-center gap-1 px-2 py-1 text-xs text-green-400 border border-green-400/40 bg-green-400/10 hover:bg-green-400/20 transition-colors"
-                                    title="Ask the Guide for advice"
-                                >
-                                    <span className="text-base">{"\u{1F4D6}"}</span>
-                                    Hint
-                                </button>
-                            )}
+            <Card className="w-full max-w-2xl max-h-[90vh] p-4 space-y-3 bg-gray-900/90 border-green-400 border-2 rounded-none overflow-hidden flex flex-col">
+                {/* Top bar: charge + hint | user menu */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        {/* Charge gauge */}
+                        <div className="flex items-center gap-1.5 px-3 py-1 border border-yellow-400/50 bg-yellow-400/10">
+                            <span className="text-lg">
+                                {gameState.movesLeft < 7
+                                    ? "\u{1FAB6}"
+                                    : "\u{1F50B}"}
+                            </span>
+                            <span className="text-sm font-bold text-yellow-400">
+                                {gameState.movesLeft}
+                            </span>
                         </div>
-                        <UserMenu
-                            profile={profile}
-                            balance={balance}
-                            apiKey={apiKey ?? ""}
-                            logout={logout}
-                        />
-                    </div>
-
-                    {/* Elevator shaft with floor indicator */}
-                    {!gameState.hasWon && gameState.movesLeft > 0 && (
-                        <ElevatorShaft
-                            currentFloor={gameState.currentFloor}
-                            isMarvinMode={gameState.currentPersona === "marvin"}
-                            hasMarvinJoined={gameState.marvinJoined}
-                        />
-                    )}
-
-                    {/* Marvin challenge notice */}
-                    {gameState.currentPersona === "marvin" && !gameState.marvinJoined && (
-                        <div className="bg-pink-900/50 text-pink-200 p-2 text-xs text-center">
-                            Convince Marvin to join the elevator, then reach the top floor together.
-                        </div>
-                    )}
-
-                    {/* Autonomous mode notice */}
-                    {gameState.conversationMode === "autonomous" && (
-                        <div className="bg-blue-900/50 text-blue-200 p-2 text-xs text-center">
-                            The elevator and Marvin are talking autonomously. Don't panic!
-                        </div>
-                    )}
-
-                    {/* Stage complete transition */}
-                    {gameState.showInstruction &&
-                        gameState.currentPersona === "elevator" &&
-                        gameState.firstStageComplete && (
-                            <div className="bg-green-900 text-green-200 p-3 text-xs text-center space-y-2">
-                                <p>
-                                    <strong>Ground floor reached!</strong> Now brace yourself
-                                    for <em>Marvin the Paranoid Android</em>.
-                                </p>
-                                <Button
-                                    onClick={handlePersonaSwitch}
-                                    className="bg-green-400 text-black hover:bg-green-500 text-xs py-1 px-3"
-                                >
-                                    Continue
-                                </Button>
-                            </div>
+                        {/* Hint / Rewind button */}
+                        {gameState.conversationMode === "autonomous" ? (
+                            <button
+                                type="button"
+                                onClick={handlePersonaSwitch}
+                                className="flex items-center gap-1 px-2 py-1 text-xs text-yellow-400 border border-yellow-400/40 bg-yellow-400/10 hover:bg-yellow-400/20 transition-colors"
+                                title="Rewind Time"
+                            >
+                                <span className="text-base">{"\u23EA"}</span>
+                                Rewind
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={handleGuideAdvice}
+                                className="flex items-center gap-1 px-2 py-1 text-xs text-green-400 border border-green-400/40 bg-green-400/10 hover:bg-green-400/20 transition-colors"
+                                title="Ask the Guide for advice"
+                            >
+                                <span className="text-base">{"\u{1F4D6}"}</span>
+                                Hint
+                            </button>
                         )}
+                    </div>
+                    <UserMenu
+                        profile={profile}
+                        balance={balance}
+                        apiKey={apiKey ?? ""}
+                        logout={logout}
+                    />
+                </div>
 
-                    {/* Win screen */}
-                    {gameState.hasWon && (
-                        <div className="space-y-3">
-                            <div className="bg-green-900 text-green-200 p-4 text-center animate-bounce">
-                                <p className="text-lg font-bold">
-                                    So Long, and Thanks for All the Fish!
-                                </p>
-                                <p className="text-xs mt-1">
-                                    You convinced Marvin to join and reached the top floor. Remarkable!
-                                </p>
-                            </div>
-                            <GargleBlaster />
+                {/* Elevator shaft with floor indicator */}
+                {!gameState.hasWon && gameState.movesLeft > 0 && (
+                    <ElevatorShaft
+                        currentFloor={gameState.currentFloor}
+                        isMarvinMode={gameState.currentPersona === "marvin"}
+                        hasMarvinJoined={gameState.marvinJoined}
+                    />
+                )}
+
+                {/* Marvin challenge notice */}
+                {gameState.currentPersona === "marvin" &&
+                    !gameState.marvinJoined && (
+                        <div className="bg-pink-900/50 text-pink-200 p-2 text-xs text-center">
+                            Convince Marvin to join the elevator, then reach the
+                            top floor together.
                         </div>
                     )}
 
-                    {/* Loss screen */}
-                    {!gameState.hasWon && gameState.movesLeft <= 0 && (
-                        <div className="bg-red-900 text-red-200 p-4 text-center animate-bounce">
-                            <p className="text-lg font-bold">Mostly Harmless</p>
+                {/* Autonomous mode notice */}
+                {gameState.conversationMode === "autonomous" && (
+                    <div className="bg-blue-900/50 text-blue-200 p-2 text-xs text-center">
+                        The elevator and Marvin are talking autonomously. Don't
+                        panic!
+                    </div>
+                )}
+
+                {/* Stage complete transition */}
+                {gameState.showInstruction &&
+                    gameState.currentPersona === "elevator" &&
+                    gameState.firstStageComplete && (
+                        <div className="bg-green-900 text-green-200 p-3 text-xs text-center space-y-2">
+                            <p>
+                                <strong>Ground floor reached!</strong> Now brace
+                                yourself for{" "}
+                                <em>Marvin the Paranoid Android</em>.
+                            </p>
+                            <Button
+                                onClick={handlePersonaSwitch}
+                                className="bg-green-400 text-black hover:bg-green-500 text-xs py-1 px-3"
+                            >
+                                Continue
+                            </Button>
+                        </div>
+                    )}
+
+                {/* Win screen */}
+                {gameState.hasWon && (
+                    <div className="space-y-3">
+                        <div className="bg-green-900 text-green-200 p-4 text-center animate-bounce">
+                            <p className="text-lg font-bold">
+                                So Long, and Thanks for All the Fish!
+                            </p>
                             <p className="text-xs mt-1">
-                                Out of moves. Consult the Hitchhiker's Guide!
+                                You convinced Marvin to join and reached the top
+                                floor. Remarkable!
                             </p>
                         </div>
-                    )}
-
-                    {/* Messages */}
-                    <div className="flex-1 min-h-0 overflow-y-auto space-y-1 p-2 bg-gray-800 border border-green-400">
-                        {!hasGameMessages && (
-                            <div className="text-green-600 text-xs text-center py-4">
-                                Waiting for elevator response...
-                            </div>
-                        )}
-                        {messages
-                            .slice(1)
-                            .map((msg, _index) => (
-                                <MessageDisplay
-                                    key={`${msg.persona}-${msg.message.slice(0, 20)}`}
-                                    msg={msg}
-                                    gameState={gameState}
-                                />
-                            ))}
-                        <div ref={messagesEndRef} />
+                        <GargleBlaster />
                     </div>
+                )}
 
-                    {/* Input */}
-                    {gameState.conversationMode === "interactive" &&
-                        !gameState.hasWon &&
-                        gameState.movesLeft > 0 && (
-                            <div className="flex space-x-2">
-                                <Input
-                                    type="text"
-                                    value={inputPrompt}
-                                    onChange={(e) => setInputPrompt(e.target.value)}
-                                    placeholder={
-                                        gameState.currentPersona === "elevator"
-                                            ? "Talk to the elevator..."
-                                            : "Talk to Marvin..."
-                                    }
-                                    onKeyPress={(e) =>
-                                        e.key === "Enter" && handleMessage(inputPrompt)
-                                    }
-                                    className="flex-grow bg-gray-800 text-green-400 border-green-400 placeholder-green-600 text-sm"
-                                    ref={inputRef}
-                                    disabled={gameState.isLoading}
-                                />
-                                <Button
-                                    onClick={() => handleMessage(inputPrompt)}
-                                    className="bg-green-400 text-black hover:bg-green-500 text-sm"
-                                    disabled={gameState.isLoading}
-                                >
-                                    {gameState.isLoading ? "..." : "Send"}
-                                </Button>
-                            </div>
-                        )}
-                </Card>
+                {/* Loss screen */}
+                {!gameState.hasWon && gameState.movesLeft <= 0 && (
+                    <div className="bg-red-900 text-red-200 p-4 text-center animate-bounce">
+                        <p className="text-lg font-bold">Mostly Harmless</p>
+                        <p className="text-xs mt-1">
+                            Out of moves. Consult the Hitchhiker's Guide!
+                        </p>
+                    </div>
+                )}
 
-                {/* Footer */}
-                <div className="text-center text-green-400/40 mt-2 text-[10px]">
-                    <a href="https://pollinations.ai" className="text-blue-400/50 underline">
-                        pollinations.ai
-                    </a>
+                {/* Messages */}
+                <div className="flex-1 min-h-0 overflow-y-auto space-y-1 p-2 bg-gray-800 border border-green-400">
+                    {!hasGameMessages && (
+                        <div className="text-green-600 text-xs text-center py-4">
+                            Waiting for elevator response...
+                        </div>
+                    )}
+                    {messages.slice(1).map((msg, _index) => (
+                        <MessageDisplay
+                            key={`${msg.persona}-${msg.message.slice(0, 20)}`}
+                            msg={msg}
+                            gameState={gameState}
+                        />
+                    ))}
+                    <div ref={messagesEndRef} />
                 </div>
+
+                {/* Input */}
+                {gameState.conversationMode === "interactive" &&
+                    !gameState.hasWon &&
+                    gameState.movesLeft > 0 && (
+                        <div className="flex space-x-2">
+                            <Input
+                                type="text"
+                                value={inputPrompt}
+                                onChange={(e) => setInputPrompt(e.target.value)}
+                                placeholder={
+                                    gameState.currentPersona === "elevator"
+                                        ? "Talk to the elevator..."
+                                        : "Talk to Marvin..."
+                                }
+                                onKeyPress={(e) =>
+                                    e.key === "Enter" &&
+                                    handleMessage(inputPrompt)
+                                }
+                                className="flex-grow bg-gray-800 text-green-400 border-green-400 placeholder-green-600 text-sm"
+                                ref={inputRef}
+                                disabled={gameState.isLoading}
+                            />
+                            <Button
+                                onClick={() => handleMessage(inputPrompt)}
+                                className="bg-green-400 text-black hover:bg-green-500 text-sm"
+                                disabled={gameState.isLoading}
+                            >
+                                {gameState.isLoading ? "..." : "Send"}
+                            </Button>
+                        </div>
+                    )}
+            </Card>
+
+            {/* Footer */}
+            <div className="text-center text-green-400/40 mt-2 text-[10px]">
+                <a
+                    href="https://pollinations.ai"
+                    className="text-blue-400/50 underline"
+                >
+                    pollinations.ai
+                </a>
             </div>
+        </div>
     );
 }

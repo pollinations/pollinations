@@ -96,7 +96,9 @@ export function useBYOP() {
 
         const fetchProfile = async () => {
             try {
-                const res = await fetch(`${API_BASE}/account/profile`, { headers });
+                const res = await fetch(`${API_BASE}/account/profile`, {
+                    headers,
+                });
                 if (res.status === 401) {
                     clearApiKey();
                     setApiKey(null);
@@ -118,7 +120,9 @@ export function useBYOP() {
 
         const fetchBalance = async () => {
             try {
-                const res = await fetch(`${API_BASE}/account/balance`, { headers });
+                const res = await fetch(`${API_BASE}/account/balance`, {
+                    headers,
+                });
                 if (!res.ok) return;
                 const data = await res.json();
                 setBalance({ balance: data.balance });

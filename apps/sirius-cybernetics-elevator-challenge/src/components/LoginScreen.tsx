@@ -17,7 +17,7 @@ export function LoginScreen({ login }: LoginScreenProps) {
 
                 <div className="space-y-4 text-sm text-green-400/70">
                     <pre className="text-green-400 text-xs leading-tight">
-{`    ___________
+                        {`    ___________
    |  _______  |
    | |       | |
    | |  ???  | |
@@ -29,8 +29,8 @@ export function LoginScreen({ login }: LoginScreenProps) {
    |__|_____|__|`}
                     </pre>
                     <p>
-                        The elevator refuses to move for unauthorized
-                        personnel. Please identify yourself.
+                        The elevator refuses to move for unauthorized personnel.
+                        Please identify yourself.
                     </p>
                 </div>
 

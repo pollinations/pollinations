@@ -19,7 +19,10 @@ export function ElevatorShaft({
     isMarvinMode,
     hasMarvinJoined,
 }: ElevatorShaftProps) {
-    const floors = Array.from({ length: GAME_CONFIG.FLOORS }, (_, i) => GAME_CONFIG.FLOORS - i);
+    const floors = Array.from(
+        { length: GAME_CONFIG.FLOORS },
+        (_, i) => GAME_CONFIG.FLOORS - i,
+    );
 
     return (
         <div className="flex items-center justify-center gap-3 py-1">
@@ -39,41 +42,54 @@ export function ElevatorShaft({
                     return (
                         <div key={floor} className="flex items-center gap-1.5">
                             {/* Left label */}
-                            <span className={`text-[10px] w-6 text-right font-mono ${
-                                isCurrentFloor ? "text-green-400 font-bold" : "text-green-400/30"
-                            }`}>
+                            <span
+                                className={`text-[10px] w-6 text-right font-mono ${
+                                    isCurrentFloor
+                                        ? "text-green-400 font-bold"
+                                        : "text-green-400/30"
+                                }`}
+                            >
                                 {floorInfo?.label}
                             </span>
 
                             {/* Shaft cell */}
-                            <div className={`w-10 h-4 border font-mono text-[9px] flex items-center justify-center transition-all ${
-                                isCurrentFloor
-                                    ? "border-green-400 bg-green-400/20 text-green-400"
-                                    : "border-green-400/20 bg-gray-800/50 text-green-400/20"
-                            }`}>
-                                {isCurrentFloor && (
-                                    isMarvinMode
-                                        ? hasMarvinJoined ? "MA\u2191" : "\u25A0\u25A0"
-                                        : "\u25A0\u25A0"
-                                )}
+                            <div
+                                className={`w-10 h-4 border font-mono text-[9px] flex items-center justify-center transition-all ${
+                                    isCurrentFloor
+                                        ? "border-green-400 bg-green-400/20 text-green-400"
+                                        : "border-green-400/20 bg-gray-800/50 text-green-400/20"
+                                }`}
+                            >
+                                {isCurrentFloor &&
+                                    (isMarvinMode
+                                        ? hasMarvinJoined
+                                            ? "MA\u2191"
+                                            : "\u25A0\u25A0"
+                                        : "\u25A0\u25A0")}
                                 {!isCurrentFloor && "\u00B7\u00B7"}
                             </div>
 
                             {/* Right tag */}
-                            <span className={`text-[9px] w-10 font-mono ${
-                                isGoal
-                                    ? "text-yellow-400"
-                                    : isTop
-                                        ? "text-red-400/60"
-                                        : "text-green-400/20"
-                            }`}>
+                            <span
+                                className={`text-[9px] w-10 font-mono ${
+                                    isGoal
+                                        ? "text-yellow-400"
+                                        : isTop
+                                          ? "text-red-400/60"
+                                          : "text-green-400/20"
+                                }`}
+                            >
                                 {floorInfo?.tag ?? ""}
                             </span>
 
                             {/* Marvin outside elevator */}
-                            {isCurrentFloor && isMarvinMode && !hasMarvinJoined && (
-                                <span className="text-[10px] text-pink-400 ml-1">MA</span>
-                            )}
+                            {isCurrentFloor &&
+                                isMarvinMode &&
+                                !hasMarvinJoined && (
+                                    <span className="text-[10px] text-pink-400 ml-1">
+                                        MA
+                                    </span>
+                                )}
                         </div>
                     );
                 })}

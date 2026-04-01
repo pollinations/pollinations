@@ -592,7 +592,6 @@ export const TEXT_SERVICES = {
         aliases: ["glm-5", "glm-4.7", "glm-4p7"],
         modelId: "accounts/fireworks/models/glm-5",
         provider: "fireworks",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-13").getTime(),
@@ -674,7 +673,6 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3.5", "qwen3.5-plus"],
         modelId: "qwen3.5-plus",
         provider: "alibaba",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),

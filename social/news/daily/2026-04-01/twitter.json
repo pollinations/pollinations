@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-01",
+  "period_start": "2026-04-01",
+  "period_end": "2026-04-01",
+  "generated_at": "2026-04-02T06:24:59.107942+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-01/images/twitter.jpg"
+    }
+  ],
+  "text": "moved LTX-2 video generation to a GH200 node. it is now absurdly fast. 4 new community apps just landed in the ecosystem. also fixed the elevator game so you can actually leave when you log out."
+}

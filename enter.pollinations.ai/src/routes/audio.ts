@@ -104,13 +104,19 @@ const CreateSpeechRequestSchema = z
             example: 1.0,
         }),
         duration: z.number().min(3).max(300).optional().meta({
-            description: "Music duration in seconds, 3-300 (elevenmusic only)",
+            description:
+                "Music duration in seconds, 3-300 (elevenmusic/acestep)",
             example: 30,
         }),
         instrumental: z.boolean().optional().meta({
             description:
                 "If true, guarantees instrumental output (elevenmusic only)",
             example: false,
+        }),
+        style: z.string().optional().meta({
+            description:
+                "Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.",
+            example: "brazilian berimbau instrumental",
         }),
     })
     .meta({ $id: "CreateSpeechRequest" });
@@ -443,6 +449,147 @@ export async function generateMusic(opts: {
     });
 }
 
+export async function generateAceStepMusic(opts: {
+    prompt: string;
+    style?: string;
+    durationSeconds?: number;
+    serviceUrl: string;
+    log: Logger;
+}): Promise<Response> {
+    const { prompt, style, serviceUrl, log } = opts;
+    const duration = opts.durationSeconds ?? 15;
+
+    if (prompt.length > 10000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+        });
+    }
+
+    log.info(
+        "ACE-Step request: chars={chars}, duration={duration}, style={style}",
+        { chars: prompt.length, duration, style: style ?? "(auto)" },
+    );
+
+    const submitResponse = await fetch(`${serviceUrl}/release_task`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            prompt: style ?? "",
+            lyrics: prompt,
+            audio_duration: duration,
+            batch_size: 1,
+            thinking: true,
+            audio_format: "mp3",
+        }),
+    });
+
+    if (!submitResponse.ok) {
+        const errorText = await submitResponse.text();
+        log.warn("ACE-Step submit error {status}: {body}", {
+            status: submitResponse.status,
+            body: errorText,
+        });
+        throw new UpstreamError(submitResponse.status as ContentfulStatusCode, {
+            message: errorText || getDefaultErrorMessage(submitResponse.status),
+        });
+    }
+
+    const submitData = (await submitResponse.json()) as {
+        data?: { task_id?: string };
+    };
+    const taskId = submitData?.data?.task_id;
+    if (!taskId) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "ACE-Step did not return a task_id",
+        });
+    }
+
+    // Poll until done (status 1=success, 2=failed)
+    // CF Workers have wall-clock limits; cap at 120s (typical gen is 8-12s)
+    const maxPollTime = 120_000;
+    const pollInterval = 2_000;
+    const startTime = Date.now();
+    let audioPath: string | undefined;
+    let consecutiveErrors = 0;
+
+    while (Date.now() - startTime < maxPollTime) {
+        await new Promise((r) => setTimeout(r, pollInterval));
+
+        const pollResponse = await fetch(`${serviceUrl}/query_result`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task_id_list: [taskId] }),
+        });
+
+        if (!pollResponse.ok) {
+            if (++consecutiveErrors >= 3) {
+                throw new UpstreamError(502 as ContentfulStatusCode, {
+                    message: `ACE-Step polling failed: ${pollResponse.status}`,
+                });
+            }
+            continue;
+        }
+        consecutiveErrors = 0;
+
+        const pollData = (await pollResponse.json()) as {
+            data?: Array<{ task_id: string; status: number; result?: string }>;
+        };
+        const task = pollData?.data?.[0];
+        if (!task) continue;
+
+        if (task.status === 2) {
+            throw new UpstreamError(500 as ContentfulStatusCode, {
+                message: "ACE-Step generation failed",
+            });
+        }
+
+        if (task.status === 1 && task.result) {
+            const results = JSON.parse(task.result) as Array<{
+                file?: string;
+            }>;
+            if (results?.[0]?.file) {
+                audioPath = results[0].file;
+                break;
+            }
+        }
+    }
+
+    if (!audioPath) {
+        throw new UpstreamError(504 as ContentfulStatusCode, {
+            message: "ACE-Step generation timed out",
+        });
+    }
+
+    const audioResponse = await fetch(`${serviceUrl}${audioPath}`);
+    if (!audioResponse.ok) {
+        const errorText = await audioResponse.text();
+        throw new UpstreamError(audioResponse.status as ContentfulStatusCode, {
+            message: errorText || "Failed to download generated audio",
+        });
+    }
+
+    const audioBuffer = await audioResponse.arrayBuffer();
+
+    // Use requested duration for billing (more accurate than byte-size heuristic)
+    const usageHeaders = buildUsageHeaders(
+        "acestep",
+        createCompletionAudioSecondsUsage(duration),
+    );
+
+    log.info("ACE-Step success: {bytes} bytes, {duration}s", {
+        bytes: audioBuffer.byteLength,
+        duration,
+    });
+
+    return new Response(audioBuffer, {
+        status: 200,
+        headers: {
+            "Content-Type": "audio/mpeg",
+            ...usageHeaders,
+        },
+    });
+}
+
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), balance)
@@ -502,6 +649,19 @@ export const audioRoutes = new Hono<Env>()
             ) as CreateSpeechRequest;
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "acestep") {
+                const { duration, style } = c.req.valid(
+                    "json" as never,
+                ) as CreateSpeechRequest;
+                return generateAceStepMusic({
+                    prompt: input,
+                    style,
+                    durationSeconds: duration,
+                    serviceUrl: c.env.MUSIC_SERVICE_URL,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(

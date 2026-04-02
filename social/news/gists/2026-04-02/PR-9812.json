@@ -1,0 +1,34 @@
+{
+  "pr_number": 9812,
+  "title": "feat: CatGPT text-first generation with vision",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9812",
+  "merged_at": "2026-04-02T21:10:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The cats can see you now",
+    "blurb": "CatGPT just leveled up with vision capabilities! The sassy felines can now actually look at your avatar and deliver a highly personalized, vision-aware roast before generating your meme.",
+    "summary": "CatGPT has been updated to use a two-step generation flow with Claude-fast, enabling vision capabilities to analyze user images for context-aware text generation.",
+    "impact": "Users on both the web app and Discord bot will now receive highly personalized, image-aware cat roasts based on their avatars.",
+    "keywords": [
+      "catgpt",
+      "vision",
+      "claude",
+      "discord-bot",
+      "apps"
+    ],
+    "visual_concept": "A sassy pixel art cat and Polly the bee looking at a polaroid picture. The cat represents CatGPT's new vision capabilities, judging the photo to generate a roast.",
+    "image_prompt": "Cozy pixel art scene of a sassy orange tabby cat and the cute bee mascot looking at a small polaroid picture together. The cat looks judgmental and is typing on a retro keyboard. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-02/PR-9812.jpg",
+    "prompt": "Cozy pixel art scene of a sassy orange tabby cat and the cute bee mascot looking at a small polaroid picture together. The cat looks judgmental and is typing on a retro keyboard. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-02T21:11:02.149084+00:00"
+}

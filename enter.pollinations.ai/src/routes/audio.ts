@@ -510,6 +510,7 @@ export async function generateAceStepMusic(opts: {
     const pollInterval = 2_000;
     const startTime = Date.now();
     let audioPath: string | undefined;
+    let consecutiveErrors = 0;
 
     while (Date.now() - startTime < maxPollTime) {
         await new Promise((r) => setTimeout(r, pollInterval));
@@ -520,7 +521,15 @@ export async function generateAceStepMusic(opts: {
             body: JSON.stringify({ task_id_list: [taskId] }),
         });
 
-        if (!pollResponse.ok) continue;
+        if (!pollResponse.ok) {
+            if (++consecutiveErrors >= 3) {
+                throw new UpstreamError(502 as ContentfulStatusCode, {
+                    message: `ACE-Step polling failed: ${pollResponse.status}`,
+                });
+            }
+            continue;
+        }
+        consecutiveErrors = 0;
 
         const pollData = (await pollResponse.json()) as {
             data?: Array<{ task_id: string; status: number; result?: string }>;
@@ -649,9 +658,7 @@ export const audioRoutes = new Hono<Env>()
                     prompt: input,
                     style,
                     durationSeconds: duration,
-                    serviceUrl: (
-                        c.env as unknown as { MUSIC_SERVICE_URL: string }
-                    ).MUSIC_SERVICE_URL,
+                    serviceUrl: c.env.MUSIC_SERVICE_URL,
                     log,
                 });
             }

@@ -728,6 +728,11 @@ export const proxyRoutes = new Hono<Env>()
                             "If true, guarantees instrumental output (elevenmusic only)",
                         example: "false",
                     }),
+                style: z.string().optional().meta({
+                    description:
+                        "Style/genre tags for music generation (acestep only)",
+                    example: "brazilian berimbau instrumental",
+                }),
                 key: z.string().optional().meta({
                     description:
                         "API key (alternative to Authorization header)",
@@ -754,9 +759,7 @@ export const proxyRoutes = new Hono<Env>()
                     prompt: text,
                     style,
                     durationSeconds: duration,
-                    serviceUrl: (
-                        c.env as unknown as { MUSIC_SERVICE_URL: string }
-                    ).MUSIC_SERVICE_URL,
+                    serviceUrl: c.env.MUSIC_SERVICE_URL,
                     log,
                 });
             }

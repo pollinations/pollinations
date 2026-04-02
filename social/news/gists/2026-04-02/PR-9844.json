@@ -1,0 +1,34 @@
+{
+  "pr_number": 9844,
+  "title": "Add Pollin-Gen Studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9844",
+  "merged_at": "2026-04-02T15:52:41Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Welcome to the Studio",
+    "blurb": "Pollin-Gen Studio just sprouted in the community greenhouse! It's a lightweight, open-source web UI for generating images that you can easily self-host.",
+    "summary": "Added Pollin-Gen Studio to the community showcase, providing a lightweight, open-source web interface for AI image generation.",
+    "impact": "Creators can now discover and self-host a dedicated, secure web UI powered by the Pollinations API.",
+    "keywords": [
+      "community",
+      "app",
+      "image-generation",
+      "self-hosting",
+      "ui"
+    ],
+    "visual_concept": "An art studio inside a greenhouse. Polly the bee wearing a painter's beret, painting on a digital canvas next to a small, friendly-looking retro server. Represents the 'Studio' aspect and 'self-hosting' in the 'Greenhouse'.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, painting on a glowing digital canvas inside a lush greenhouse. Small retro servers sit among lime green (#ecf874) potted plants. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-02/PR-9844.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, painting on a glowing digital canvas inside a lush greenhouse. Small retro servers sit among lime green (#ecf874) potted plants. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-02T15:53:40.658095+00:00",
+  "app_name": "Pollin-Gen Studio",
+  "app_url": "https://image-ai.testes.eu.org"
+}

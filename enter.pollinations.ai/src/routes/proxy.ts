@@ -746,15 +746,13 @@ export const proxyRoutes = new Hono<Env>()
                 .ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "acestep") {
-                const { duration, instrumental } = c.req.valid(
-                    "query" as never,
-                ) as {
+                const { duration, style } = c.req.valid("query" as never) as {
                     duration?: number;
-                    instrumental?: boolean;
+                    style?: string;
                 };
                 return generateAceStepMusic({
                     prompt: text,
-                    instrumental,
+                    style,
                     durationSeconds: duration,
                     serviceUrl: (
                         c.env as unknown as { MUSIC_SERVICE_URL: string }

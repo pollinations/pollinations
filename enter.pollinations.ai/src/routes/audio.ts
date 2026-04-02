@@ -104,13 +104,19 @@ const CreateSpeechRequestSchema = z
             example: 1.0,
         }),
         duration: z.number().min(3).max(300).optional().meta({
-            description: "Music duration in seconds, 3-300 (elevenmusic only)",
+            description:
+                "Music duration in seconds, 3-300 (elevenmusic/acestep)",
             example: 30,
         }),
         instrumental: z.boolean().optional().meta({
             description:
                 "If true, guarantees instrumental output (elevenmusic only)",
             example: false,
+        }),
+        style: z.string().optional().meta({
+            description:
+                "Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.",
+            example: "brazilian berimbau instrumental",
         }),
     })
     .meta({ $id: "CreateSpeechRequest" });
@@ -445,12 +451,12 @@ export async function generateMusic(opts: {
 
 export async function generateAceStepMusic(opts: {
     prompt: string;
-    instrumental?: boolean;
+    style?: string;
     durationSeconds?: number;
     serviceUrl: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, instrumental, serviceUrl, log } = opts;
+    const { prompt, style, serviceUrl, log } = opts;
     const duration = opts.durationSeconds ?? 60;
 
     if (prompt.length > 10000) {
@@ -459,27 +465,17 @@ export async function generateAceStepMusic(opts: {
         });
     }
 
-    // ACE-Step has two fields: "prompt" (style/genre tags) and "lyrics" (sung words).
-    // If input has [verse]/[chorus] markers, treat as lyrics with auto-detected style.
-    // If instrumental or no lyric markers, treat as a style prompt.
-    const hasLyricMarkers = /\[(verse|chorus|bridge|outro|intro|inst)\]/i.test(
-        prompt,
-    );
-    const isInstrumental = instrumental || /\[inst\]/i.test(prompt);
-    const acePrompt = hasLyricMarkers ? "" : prompt;
-    const aceLyrics = isInstrumental ? "[inst]" : hasLyricMarkers ? prompt : "";
-
     log.info(
-        "ACE-Step request: chars={chars}, duration={duration}, instrumental={instrumental}",
-        { chars: prompt.length, duration, instrumental: isInstrumental },
+        "ACE-Step request: chars={chars}, duration={duration}, style={style}",
+        { chars: prompt.length, duration, style: style ?? "(auto)" },
     );
 
     const submitResponse = await fetch(`${serviceUrl}/release_task`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            prompt: acePrompt,
-            lyrics: aceLyrics,
+            prompt: style ?? "",
+            lyrics: prompt,
             audio_duration: duration,
             batch_size: 1,
             thinking: true,
@@ -646,12 +642,12 @@ export const audioRoutes = new Hono<Env>()
                 .ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "acestep") {
-                const { duration, instrumental } = c.req.valid(
+                const { duration, style } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
                 return generateAceStepMusic({
                     prompt: input,
-                    instrumental,
+                    style,
                     durationSeconds: duration,
                     serviceUrl: (
                         c.env as unknown as { MUSIC_SERVICE_URL: string }

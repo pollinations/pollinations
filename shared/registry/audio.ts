@@ -125,7 +125,7 @@ export const AUDIO_SERVICES = {
         cost: [
             {
                 date: new Date("2026-04-02").getTime(),
-                completionAudioSeconds: 0.001,
+                completionAudioSeconds: 0.0005,
             },
         ],
         description:

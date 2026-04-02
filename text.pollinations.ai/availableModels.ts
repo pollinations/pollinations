@@ -142,6 +142,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
     },
     {
+        name: "kimi-tasknode",
+        config: portkeyConfig["moonshotai/Kimi-K2.5"],
+    },
+    {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(

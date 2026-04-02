@@ -11,6 +11,7 @@ import {
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
+    createTasknodeModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -206,5 +207,9 @@ export const portkeyConfig: PortkeyConfigMap = {
     "polly": () =>
         createPollyConfig({
             model: "polly",
+        }),
+    "moonshotai/Kimi-K2.5": () =>
+        createTasknodeModelConfig({
+            model: "moonshotai/Kimi-K2.5",
         }),
 };

@@ -501,6 +501,26 @@ export const TEXT_SERVICES = {
         contextLength: 256000,
         isSpecialized: false,
     },
+    "kimi-tasknode": {
+        aliases: [],
+        modelId: "moonshotai/Kimi-K2.5",
+        provider: "tasknode",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.30),
+                completionTextTokens: perMillion(1.25),
+            },
+        ],
+        description:
+            "Moonshot Kimi K2.5 - Community provider backed by tasknode.io",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 256000,
+        isSpecialized: false,
+    },
     "gemini-large": {
         aliases: ["gemini-3.1-pro"],
         modelId: "gemini-3.1-pro-preview",

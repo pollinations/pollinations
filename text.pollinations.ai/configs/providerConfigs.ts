@@ -179,6 +179,20 @@ export function createPollyConfig(
 }
 
 /**
+ * Creates a Tasknode community provider configuration.
+ * Community provider: https://tasknode.io/
+ */
+export function createTasknodeModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://anotherboreddude.tasknode.io/v1",
+        process.env.TASKNODE_API_KEY,
+        overrides,
+    );
+}
+
+/**
  * Creates an Anthropic model configuration for direct Claude API access.
  */
 export function createAnthropicConfig(

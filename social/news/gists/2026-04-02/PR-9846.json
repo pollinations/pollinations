@@ -1,0 +1,34 @@
+{
+  "pr_number": 9846,
+  "title": "Add OGP Maker to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9846",
+  "merged_at": "2026-04-02T16:39:07Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Picture perfect previews",
+    "blurb": "OGP Maker has sprouted in the community greenhouse! Generate perfect Open Graph images for your links so they look sharp when shared on social media.",
+    "summary": "Added OGP Maker to the community apps showcase, providing a dedicated tool to generate Open Graph images for social media platforms.",
+    "impact": "Creators can now easily discover and use a community-built tool for generating perfectly sized preview cards for Facebook and X.",
+    "keywords": [
+      "community",
+      "apps",
+      "ogp",
+      "social-media",
+      "images"
+    ],
+    "visual_concept": "OGP (Open Graph Protocol) is all about social media preview cards. The visual should feature the bee creating or holding a tiny social media preview card (a rectangle with an image and text layout). A painter's easel fits the 'maker' vibe.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting a miniature social media preview card on a wooden easel in a digital garden. A chunky pixel robot with a monitor head watches happily. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-02/PR-9846.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting a miniature social media preview card on a wooden easel in a digital garden. A chunky pixel robot with a monitor head watches happily. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-02T16:39:56.673494+00:00",
+  "app_name": "OGP Maker",
+  "app_url": "https://ogp-maker-teal.vercel.app/"
+}

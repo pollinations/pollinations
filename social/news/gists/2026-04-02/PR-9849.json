@@ -1,0 +1,34 @@
+{
+  "pr_number": 9849,
+  "title": "switch polly workflows default model to glm",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/9849",
+  "merged_at": "2026-04-02T16:35:42Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly gets a new brain",
+    "blurb": "We've updated our internal GitHub workflows to use the GLM model for Polly's auto-fix and PR assistant features. Just a quick tune-up to keep our automated helper buzzing along smoothly!",
+    "summary": "Updated the default model for Polly's GitHub Action workflows from claude-large to glm.",
+    "impact": "Internal automation for issue auto-fixing and PR assistance will now be powered by the GLM model.",
+    "keywords": [
+      "github-actions",
+      "workflows",
+      "glm",
+      "polly",
+      "automation"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot upgrading a server rack by inserting a new glowing 'GLM' cartridge, representing the model switch in the GitHub workflows.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky Monitor Robot swapping a glowing lime green (#ecf874) 'GLM' cartridge into a retro server rack. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-02/PR-9849.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky Monitor Robot swapping a glowing lime green (#ecf874) 'GLM' cartridge into a retro server rack. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-02T16:36:43.441284+00:00"
+}

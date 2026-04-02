@@ -1,0 +1,34 @@
+{
+  "pr_number": 9848,
+  "title": "Add AI Photo Editor Pro to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9848",
+  "merged_at": "2026-04-02T16:37:07Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh in the greenhouse",
+    "blurb": "AI Photo Editor Pro just landed in the community showcase. Time to give those pixels a fresh coat of paint with some AI magic.",
+    "summary": "Added AI Photo Editor Pro to the community apps showcase, providing a new tool for easy AI-powered photo editing.",
+    "impact": "Users can now discover and use AI Photo Editor Pro directly from the community greenhouse.",
+    "keywords": [
+      "community",
+      "apps",
+      "image",
+      "photo-editor",
+      "greenhouse"
+    ],
+    "visual_concept": "Polly the bee acting as a photo editor/artist inside the community greenhouse. A retro monitor showing a photo being edited, surrounded by lush digital plants.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, holding a small glowing photograph inside a lush digital greenhouse. A chunky retro monitor nearby displays an image editing interface. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-02/PR-9848.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, holding a small glowing photograph inside a lush digital greenhouse. A chunky retro monitor nearby displays an image editing interface. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-04-02T16:37:53.141398+00:00",
+  "app_name": "AI Photo Editor Pro",
+  "app_url": "https://vision.scripted.my.id/"
+}

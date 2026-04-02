@@ -1,0 +1,34 @@
+{
+  "pr_number": 9839,
+  "title": "feat: add Wan 2.7 Image models via DashScope",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9839",
+  "merged_at": "2026-04-02T21:57:21Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Wan 2.7 enters the studio",
+    "blurb": "We've added Wan 2.7 Image and Wan 2.7 Image Pro to our lineup. Get ready for stunning 4K generations and models that actually think before they paint.",
+    "summary": "Added Wan 2.7 Image and Wan 2.7 Image Pro models via DashScope, bringing up to 4K resolution and thinking mode capabilities to the image generation API.",
+    "impact": "Users can now generate higher-resolution images with enhanced prompt adherence using the new wan-image and wan-image-pro models.",
+    "keywords": [
+      "image-generation",
+      "models",
+      "wan",
+      "dashscope",
+      "api"
+    ],
+    "visual_concept": "The PR adds Wan 2.7 image models (standard and pro with 'thinking mode' and 4K resolution). Visual symbols: A painter's studio, high-resolution canvases, a brain or 'thinking' motif. Characters: Polly the bee wearing a painter's beret, maybe the Monitor Robot holding a massive, highly detailed canvas.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting on a massive glowing high-resolution canvas. The chunky monitor robot stands nearby holding a glowing brain symbol, representing 'thinking mode'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-02/PR-9839.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting on a massive glowing high-resolution canvas. The chunky monitor robot stands nearby holding a glowing brain symbol, representing 'thinking mode'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes."
+  },
+  "generated_at": "2026-04-02T21:58:16.625240+00:00"
+}

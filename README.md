@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎨 AI Photo Editor Pro](https://vision.scripted.my.id/) | Edit photos easily using AI. | [@web](https://github.com/web) |
 | [🎬 V-AI-Powered YouTube Shorts Automation Platform](65834394) | Generates YouTube Shorts videos automatically from news URLs and publishes them to multiple social media platforms. | [@web](https://github.com/web) |
 | [🎨 Pollin-Gen Studio](https://image-ai.testes.eu.org) | Pollin-Gen Studio provides a lightweight, 100% open-source web interface for AI image generation via the Pollinations.ai API, designed for secure self-hosting. | [@web](https://github.com/web) |
 | [🧩 TileTile](https://tiletile.netlify.app/) | Generate seamless tile textures with TileTile using the Flux Schnell image generation model provided by Pollinations. | [@web](https://github.com/web) |

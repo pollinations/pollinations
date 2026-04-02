@@ -14,6 +14,7 @@
 |-----|-------------|--------|---:|---|
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@cli](https://github.com/cli) |  | 🫧 |
 | [🎨 Pollin-Gen Studio](https://image-ai.testes.eu.org) | Pollin-Gen Studio provides a lightweight, 100% open-source web interface for AI image generation via the Pollinations.ai API, designed for secure self-hosting. | [@web](https://github.com/web) |  | 🫧 |
+| [🎨 AI Photo Editor Pro](https://vision.scripted.my.id/) | Edit photos easily using AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 V-AI-Powered YouTube Shorts Automation Platform](65834394) | Generates YouTube Shorts videos automatically from news URLs and publishes them to multiple social media platforms. | [@web](https://github.com/web) |  | 🫧 |
 | [🧩 TileTile](https://tiletile.netlify.app/) | Generate seamless tile textures with TileTile using the Flux Schnell image generation model provided by Pollinations. | [@web](https://github.com/web) |  | 🫧 |
 | [📝 ContentAI](https://contentaiak.lovable.app) | ContentAI is an AI-powered content generation platform for businesses. Users add their business profile (or paste a URL for AI auto-fill), then generate platform-optimized content for Twitter, LinkedI | [@web](https://github.com/web) |  | 🫧 |
@@ -30,6 +31,7 @@
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
 | [🎨 Pollin-Gen Studio](https://image-ai.testes.eu.org) | Pollin-Gen Studio provides a lightweight, 100% open-source web interface for AI image generation via the Pollinations.ai API, designed for secure self-hosting. | [@web](https://github.com/web) |  | 🫧 |
+| [🎨 AI Photo Editor Pro](https://vision.scripted.my.id/) | Edit photos easily using AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🧩 TileTile](https://tiletile.netlify.app/) | Generate seamless tile textures with TileTile using the Flux Schnell image generation model provided by Pollinations. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 ItacaLab - graphic editor for authors](https://itacalab.editoraitacaiunas.com/) | img width="158" alt="Image" src="https://github.com/user-attachments/assets/4e1824a2-4577-4136-9497-ec52544dd7b5" / | [@web](https://github.com/web) |  | 🫧 |
 | [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@web](https://github.com/web) |  | 🫧 |
@@ -38,12 +40,12 @@
 | [🧊 3D Icon Generator](https://icon.scripted.my.id/) | Create 3D icons in various styles with 3D Icon Generator. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ AI Image Generator](https://moh65-debug.github.io/pollinations-image-generator/pollinations-image-generator.html) | Generate images with AI Image Generator using Pollinations AI and BYOP; users supply API keys from enter.pollinations.ai, pay only for what they generate, and the developer pays $0. | [@web](https://github.com/web) |  | 🫧 |
 | [🌼 PollenStudio: AI Variation Gallery](https://souravhchoursiya.github.io/pollen-gallery/) | Showcases PollenStudio: AI Variation Gallery. | [@web](https://github.com/web) |  | 🫧 |
-| [🎨 Cadavre Exquis Generator](https://baran-sd.github.io/cadavre-exquis/) | Generate AI tri-style images with Cadavre Exquis Generator using z-image. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 151 apps</summary>
+<details><summary>Show all 152 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🎨 Cadavre Exquis Generator](https://baran-sd.github.io/cadavre-exquis/) | Generate AI tri-style images with Cadavre Exquis Generator using z-image. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 AI-Image-Generator](https://main.ai-image-generator-5li.pages.dev/) | Generate images with AI-Image-Generator using a Cloudflare Workers backend and React frontend, with deterministic seed generation and rate limiting. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Alara AI](https://alara-ai.vercel.app) | Generates images and videos using flux and ltx-2, and provides chat and code capabilities via gemini (from google) in Alara AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ image-gen-editor.vercel.app](https://image-gen-editor.vercel.app) | image-gen-editor.vercel.app generates and edits images via the Pollinations AI API and provides a web interface built with Next.js 14 and TypeScript. | [@web](https://github.com/web) |  | 🫧 |

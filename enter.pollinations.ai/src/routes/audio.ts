@@ -445,11 +445,12 @@ export async function generateMusic(opts: {
 
 export async function generateAceStepMusic(opts: {
     prompt: string;
+    instrumental?: boolean;
     durationSeconds?: number;
     serviceUrl: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, serviceUrl, log } = opts;
+    const { prompt, instrumental, serviceUrl, log } = opts;
     const duration = opts.durationSeconds ?? 60;
 
     if (prompt.length > 10000) {
@@ -458,18 +459,27 @@ export async function generateAceStepMusic(opts: {
         });
     }
 
-    log.info("ACE-Step request: chars={chars}, duration={duration}", {
-        chars: prompt.length,
-        duration,
-    });
+    // ACE-Step has two fields: "prompt" (style/genre tags) and "lyrics" (sung words).
+    // If input has [verse]/[chorus] markers, treat as lyrics with auto-detected style.
+    // If instrumental or no lyric markers, treat as a style prompt.
+    const hasLyricMarkers = /\[(verse|chorus|bridge|outro|intro|inst)\]/i.test(
+        prompt,
+    );
+    const isInstrumental = instrumental || /\[inst\]/i.test(prompt);
+    const acePrompt = hasLyricMarkers ? "" : prompt;
+    const aceLyrics = isInstrumental ? "[inst]" : hasLyricMarkers ? prompt : "";
 
-    // ACE-Step uses "lyrics" as the primary text input, "prompt" is for style hints
+    log.info(
+        "ACE-Step request: chars={chars}, duration={duration}, instrumental={instrumental}",
+        { chars: prompt.length, duration, instrumental: isInstrumental },
+    );
+
     const submitResponse = await fetch(`${serviceUrl}/release_task`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            prompt: "",
-            lyrics: prompt,
+            prompt: acePrompt,
+            lyrics: aceLyrics,
             audio_duration: duration,
             batch_size: 1,
             thinking: true,
@@ -636,11 +646,12 @@ export const audioRoutes = new Hono<Env>()
                 .ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "acestep") {
-                const { duration } = c.req.valid(
+                const { duration, instrumental } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
                 return generateAceStepMusic({
                     prompt: input,
+                    instrumental,
                     durationSeconds: duration,
                     serviceUrl: (
                         c.env as unknown as { MUSIC_SERVICE_URL: string }

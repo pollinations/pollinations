@@ -14,7 +14,7 @@
  *   --dry-run      Show what would be done without making changes
  *   --batch-size   Number of users to process per batch (default: 100)
  *   --delay        Delay in ms between batches (default: 500)
- *   --report       Path to report CSV (default: src/tier-progression/spore-to-microbe-report.csv)
+ *   --report       Path to report CSV (default: src/tier-progression/spore-to-microbe-report-reviewed.csv)
  */
 
 import { execSync } from "node:child_process";
@@ -141,7 +141,9 @@ const applyBlocksCommand = command({
         delay: number().default(500).desc("Delay between batches in ms"),
         report: string()
             .alias("r")
-            .default("src/tier-progression/spore-to-microbe-report.csv")
+            .default(
+                "src/tier-progression/spore-to-microbe-report-reviewed.csv",
+            )
             .desc("Path to abuse report"),
         tier: string()
             .alias("t")

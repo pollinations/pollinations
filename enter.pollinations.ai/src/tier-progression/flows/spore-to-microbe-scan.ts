@@ -35,6 +35,7 @@ const SCORE_THRESHOLDS = {
 const OVERLAP_SIZE = 20;
 
 interface User {
+    id: string;
     email: string;
     github_username: string | null;
     created_at: number;
@@ -168,7 +169,7 @@ function fetchUsers(sinceTimestamp: number | null): User[] {
     if (sinceTimestamp) conditions.push(`created_at > ${sinceTimestamp}`);
     const whereClause = `WHERE ${conditions.join(" AND ")}`;
     const query = `
-        SELECT email, github_username, created_at, tier
+        SELECT id, email, github_username, created_at, tier
         FROM user
         ${whereClause}
         ORDER BY created_at DESC
@@ -477,10 +478,10 @@ function exportResults(users: ScoredUser[]): void {
     const sorted = [...users].sort((a, b) => b.score - a.score);
 
     const csv = [
-        "action,score,email,github_username,signals,tier,registered",
+        "id,action,score,email,github_username,signals,tier,registered",
         ...sorted.map(
             (u) =>
-                `"${u.action}",${u.score},"${u.email}","${u.github_username || ""}","${u.signals.join("; ")}","${u.tier}","${formatDate(u.created_at)}"`,
+                `"${u.id}","${u.action}",${u.score},"${u.email}","${u.github_username || ""}","${u.signals.join("; ")}","${u.tier}","${formatDate(u.created_at)}"`,
         ),
     ].join("\n");
 

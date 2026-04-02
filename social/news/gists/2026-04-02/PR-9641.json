@@ -1,0 +1,33 @@
+{
+  "pr_number": 9641,
+  "title": "fix: invalidate stale api key data after updates",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9641",
+  "merged_at": "2026-04-02T23:46:48Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh keys, no waiting",
+    "blurb": "Fixed a pesky caching bug where edited API keys would sometimes show old data. Now when you update a key, the changes show up instantly.",
+    "summary": "Resolved an issue where API key updates returned stale data by implementing proper cache invalidation and no-store headers.",
+    "impact": "Users will now see their API key changes reflected immediately in the dashboard without needing to hard refresh.",
+    "keywords": [
+      "api-keys",
+      "auth",
+      "cache",
+      "bug-fix"
+    ],
+    "visual_concept": "The Nomnom creature eating old, dusty data (representing the stale cache) while Polly the bee holds up a shiny, freshly minted API key.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating dusty old paper documents, while the cute bee mascot wearing a tiny tool belt holds up a shiny new golden key. A retro terminal nearby glows lime green (#ecf874). Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-02/PR-9641.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature happily eating dusty old paper documents, while the cute bee mascot wearing a tiny tool belt holds up a shiny new golden key. A retro terminal nearby glows lime green (#ecf874). Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-04-02T23:47:34.030542+00:00"
+}

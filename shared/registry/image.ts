@@ -324,7 +324,6 @@ export const IMAGE_SERVICES = {
         ],
         modelId: "qwen-image",
         provider: "alibaba",
-        hidden: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -332,7 +331,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Qwen Image Plus - Alibaba text-to-image and image editing via DashScope (legacy)",
+            "Qwen Image Plus - Alibaba text-to-image and image editing via DashScope",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

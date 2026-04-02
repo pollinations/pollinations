@@ -153,7 +153,7 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 2048,
     },
 
-    // Alibaba Qwen Image Plus - Text-to-image and image editing (legacy)
+    // Alibaba Qwen Image Plus - Text-to-image and image editing
     "qwen-image": {
         type: "alibaba-dashscope-image",
         enhance: false,

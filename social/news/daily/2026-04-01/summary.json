@@ -1,0 +1,39 @@
+{
+  "date": "2026-04-01",
+  "period_start": "2026-04-01",
+  "period_end": "2026-04-01",
+  "title": "Video generation hits warp speed",
+  "summary": "LTX-2 video generation gets a massive speed boost on new hardware, while the community ships four new apps and patches up the elevator game.\n\nWe migrated the LTX-2 video backend to a GH200 instance. End-to-end video generation times have dropped to a very reasonable 12-16 seconds. We also bolted on token authentication while we were under the hood.\n\nThe community directory absorbed four new projects today: Puzzel Math (elementary education), SciVis AI (sci-fi science illustrations), ItacaLab (graphic editor for authors), and ContentAI (business writing). A solid cross-section of people building weird and useful things on top of the API.\n\nA couple of quality-of-life fixes landed for the Sirius Cybernetics Elevator Challenge. Bring-Your-Own-Pollen (BYOP) keys now persist in local storage so you don't have to re-type them on every visit, and hitting logout actually redirects you to the login screen. Basic state management, but we love to see it.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 9616,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9795,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9796,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9797,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9798,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9816,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9819,
+      "date": "2026-04-01"
+    }
+  ],
+  "generated_at": "2026-04-02T06:24:59.107942+00:00"
+}

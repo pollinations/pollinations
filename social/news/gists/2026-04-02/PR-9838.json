@@ -1,0 +1,34 @@
+{
+  "pr_number": 9838,
+  "title": "Add TileTile to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9838",
+  "merged_at": "2026-04-02T09:14:39Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Laying down the tiles",
+    "blurb": "TileTile just dropped into the greenhouse. It uses Flux Schnell to generate seamless repeating textures, perfect for when you need a background that never ends.",
+    "summary": "Added TileTile, a seamless texture generator powered by Flux Schnell, to the community app showcase.",
+    "impact": "Creators can now discover TileTile in the greenhouse to easily generate repeating textures for games, art, and backgrounds.",
+    "keywords": [
+      "community",
+      "app",
+      "textures",
+      "flux",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny tool belt, arranging perfectly matching square tiles on the ground to create a seamless pattern in a cozy garden setting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, carefully laying down perfectly matching square tiles to build a seamless garden path. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-02/PR-9838.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, carefully laying down perfectly matching square tiles to build a seamless garden path. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-02T09:15:40.180994+00:00",
+  "app_name": "TileTile",
+  "app_url": "https://tiletile.netlify.app/"
+}

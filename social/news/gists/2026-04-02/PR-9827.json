@@ -1,0 +1,34 @@
+{
+  "pr_number": 9827,
+  "title": "fix: update LTX-2 registry to LTX-2.3",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9827",
+  "merged_at": "2026-04-02T23:21:31Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "LTX hits version 2.3",
+    "blurb": "We bumped the LTX video model to 2.3 and strapped it to some fresh GH200 hardware. Your moving pixels should be moving a little nicer now.",
+    "summary": "Updated the LTX video model registry to version 2.3 and migrated its infrastructure to run on upgraded GH200 hardware.",
+    "impact": "Video generation requests using the LTX model will now route to the upgraded 2.3 version on faster hardware.",
+    "keywords": [
+      "video",
+      "ltx",
+      "models",
+      "hardware",
+      "gh200"
+    ],
+    "visual_concept": "LTX is a video generation model, and it's getting a hardware upgrade (GH200). Visual: Polly the bee and the Monitor Robot upgrading a retro film projector or video rendering machine with a shiny new glowing computer chip.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, helping a chunky monitor-headed robot install a glowing new computer chip into a retro video rendering machine. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-02/PR-9827.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, helping a chunky monitor-headed robot install a glowing new computer chip into a retro video rendering machine. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-02T23:22:24.583034+00:00"
+}

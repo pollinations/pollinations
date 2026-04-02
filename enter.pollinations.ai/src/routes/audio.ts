@@ -449,20 +449,28 @@ export async function generateAceStepMusic(opts: {
     serviceUrl: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, durationSeconds, serviceUrl, log } = opts;
+    const { prompt, serviceUrl, log } = opts;
+    const duration = opts.durationSeconds ?? 60;
+
+    if (prompt.length > 10000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+        });
+    }
 
     log.info("ACE-Step request: chars={chars}, duration={duration}", {
         chars: prompt.length,
-        duration: durationSeconds || 60,
+        duration,
     });
 
+    // ACE-Step uses "lyrics" as the primary text input, "prompt" is for style hints
     const submitResponse = await fetch(`${serviceUrl}/release_task`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             prompt: "",
             lyrics: prompt,
-            audio_duration: durationSeconds || 60,
+            audio_duration: duration,
             batch_size: 1,
             thinking: true,
             audio_format: "mp3",
@@ -491,7 +499,8 @@ export async function generateAceStepMusic(opts: {
     }
 
     // Poll until done (status 1=success, 2=failed)
-    const maxPollTime = 300_000;
+    // CF Workers have wall-clock limits; cap at 120s (typical gen is 8-12s)
+    const maxPollTime = 120_000;
     const pollInterval = 2_000;
     const startTime = Date.now();
     let audioPath: string | undefined;
@@ -545,16 +554,16 @@ export async function generateAceStepMusic(opts: {
     }
 
     const audioBuffer = await audioResponse.arrayBuffer();
-    const estimatedDuration = audioBuffer.byteLength / 16000;
 
+    // Use requested duration for billing (more accurate than byte-size heuristic)
     const usageHeaders = buildUsageHeaders(
         "acestep",
-        createCompletionAudioSecondsUsage(estimatedDuration),
+        createCompletionAudioSecondsUsage(duration),
     );
 
-    log.info("ACE-Step success: {bytes} bytes, ~{duration}s", {
+    log.info("ACE-Step success: {bytes} bytes, {duration}s", {
         bytes: audioBuffer.byteLength,
-        duration: Math.round(estimatedDuration),
+        duration,
     });
 
     return new Response(audioBuffer, {

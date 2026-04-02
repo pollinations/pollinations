@@ -284,6 +284,37 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "wan-image": {
+        aliases: ["wan2.7-image", "wan-img"],
+        modelId: "wan-image",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-04-02").getTime(),
+                completionImageTokens: 0.035, // $0.035 per image (international)
+            },
+        ],
+        description:
+            "Wan 2.7 Image - Alibaba text-to-image and image editing (up to 2K)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "wan-image-pro": {
+        aliases: ["wan2.7-image-pro", "wan-img-pro"],
+        modelId: "wan-image-pro",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-04-02").getTime(),
+                completionImageTokens: 0.075, // $0.075 per image (international)
+            },
+        ],
+        description:
+            "Wan 2.7 Image Pro - Alibaba text-to-image and editing (4K, thinking mode)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "qwen-image": {
         aliases: [
             "qwen-image-plus",
@@ -293,6 +324,7 @@ export const IMAGE_SERVICES = {
         ],
         modelId: "qwen-image",
         provider: "alibaba",
+        hidden: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -300,7 +332,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Qwen Image Plus - Alibaba text-to-image and image editing via DashScope",
+            "Qwen Image Plus - Alibaba text-to-image and image editing via DashScope (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

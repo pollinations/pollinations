@@ -25,6 +25,7 @@ import { boolean, command, number, run, string } from "@drizzle-team/brocli";
 type Environment = "staging" | "production";
 
 interface AbuseReportRow {
+    id: string;
     action: string;
     score: number;
     email: string;

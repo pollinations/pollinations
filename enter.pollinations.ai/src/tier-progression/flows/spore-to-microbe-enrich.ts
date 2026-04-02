@@ -136,7 +136,9 @@ async function queryTinybirdBatch(
             return results;
         }
 
-        const result = await response.json();
+        const result = (await response.json()) as {
+            data?: Record<string, unknown>[];
+        };
         for (const row of result.data || []) {
             results.set(row.lookup_key, {
                 tier_pollen: row.tier_pollen,

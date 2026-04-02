@@ -457,7 +457,7 @@ export async function generateAceStepMusic(opts: {
     log: Logger;
 }): Promise<Response> {
     const { prompt, style, serviceUrl, log } = opts;
-    const duration = opts.durationSeconds ?? 30;
+    const duration = opts.durationSeconds ?? 15;
 
     if (prompt.length > 10000) {
         throw new UpstreamError(400 as ContentfulStatusCode, {

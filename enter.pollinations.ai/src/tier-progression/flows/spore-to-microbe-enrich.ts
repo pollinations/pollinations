@@ -137,7 +137,7 @@ async function queryTinybirdBatch(
         }
 
         const result = (await response.json()) as {
-            data?: Record<string, unknown>[];
+            data?: (ConsumptionData & { lookup_key: string })[];
         };
         for (const row of result.data || []) {
             results.set(row.lookup_key, {

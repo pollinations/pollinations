@@ -74,6 +74,7 @@ function parseCSV(content: string): AbuseReportRow[] {
         }
 
         return {
+            id: row.id || "",
             action: row.action || "",
             score: parseInt(row.score, 10) || 0,
             email: row.email || "",

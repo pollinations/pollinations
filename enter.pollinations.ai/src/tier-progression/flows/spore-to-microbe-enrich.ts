@@ -99,13 +99,12 @@ function parseCsv(content: string): { headers: string[]; rows: CsvRow[] } {
 async function queryTinybirdBatch(
     host: string,
     token: string,
-    usernames: string[],
+    keys: string[],
+    keyField: "user_id" | "user_github_username",
 ): Promise<Map<string, ConsumptionData>> {
-    const escaped = usernames
-        .map((u) => `'${u.replace(/'/g, "''")}'`)
-        .join(",");
+    const escaped = keys.map((u) => `'${u.replace(/'/g, "''")}'`).join(",");
     const sql = `SELECT
-        user_github_username,
+        ${keyField} as lookup_key,
         round(SUM(CASE WHEN selected_meter_slug = 'v1:meter:tier' THEN total_price ELSE 0 END), 4) as tier_pollen,
         round(SUM(CASE WHEN selected_meter_slug = 'v1:meter:pack' THEN total_price ELSE 0 END), 4) as pack_pollen,
         round(SUM(total_price), 4) as total_pollen,
@@ -114,8 +113,8 @@ async function queryTinybirdBatch(
         countIf(response_status >= 400) as error_count,
         round(countIf(response_status >= 400) / COUNT(*) * 100, 1) as error_rate_pct
     FROM generation_event
-    WHERE user_github_username IN (${escaped})
-    GROUP BY user_github_username
+    WHERE ${keyField} IN (${escaped})
+    GROUP BY ${keyField}
     FORMAT JSON`;
 
     const results = new Map<string, ConsumptionData>();
@@ -139,7 +138,7 @@ async function queryTinybirdBatch(
 
         const result = await response.json();
         for (const row of result.data || []) {
-            results.set(row.user_github_username, {
+            results.set(row.lookup_key, {
                 tier_pollen: row.tier_pollen,
                 pack_pollen: row.pack_pollen,
                 total_pollen: row.total_pollen,
@@ -191,16 +190,15 @@ async function main(): Promise<void> {
     const BATCH_SIZE = 200;
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
         const batch = rows.slice(i, i + BATCH_SIZE);
-        const usernames = batch.map((r) => r.github_username).filter(Boolean);
+        const ids = batch.map((r) => r.id).filter(Boolean);
 
         const consumptionMap =
-            usernames.length > 0
-                ? await queryTinybirdBatch(host, token, usernames)
+            ids.length > 0
+                ? await queryTinybirdBatch(host, token, ids, "user_id")
                 : new Map<string, ConsumptionData>();
 
         for (const row of batch) {
-            const consumption =
-                consumptionMap.get(row.github_username) || EMPTY_CONSUMPTION;
+            const consumption = consumptionMap.get(row.id) || EMPTY_CONSUMPTION;
 
             if (consumption.total_pollen > 0) withUsage++;
             if (consumption.pack_pollen > 0) withPacks++;

@@ -119,12 +119,6 @@ function confirm(message: string): Promise<boolean> {
     });
 }
 
-const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-function validateEmail(email: string): boolean {
-    return EMAIL_RE.test(email) && email.length <= 254;
-}
-
 const applyBlocksCommand = command({
     name: "apply-blocks",
     desc: "Downgrade blocked users to microbe tier",
@@ -241,20 +235,20 @@ const applyBlocksCommand = command({
             if (!opts["dry-run"]) {
                 for (const user of batch) {
                     try {
-                        if (!validateEmail(user.email)) {
+                        if (!user.id) {
                             console.error(
-                                `   ⚠️  Skipped invalid email: ${user.email}`,
+                                `   ⚠️  Skipped: no id for ${user.github_username || user.email}`,
                             );
                             failed++;
                             processed++;
                             continue;
                         }
-                        const safeEmail = user.email.replace(/'/g, "''");
-                        const sql = `UPDATE user SET tier = 'microbe', tier_balance = 0.1 WHERE email = '${safeEmail}'`;
+                        const safeId = user.id.replace(/'/g, "''");
+                        const sql = `UPDATE user SET tier = 'microbe', tier_balance = 0 WHERE id = '${safeId}'`;
                         queryD1(env, sql);
                         succeeded++;
                     } catch {
-                        console.error(`   ❌ Failed: ${user.email}`);
+                        console.error(`   ❌ Failed: ${user.id}`);
                         failed++;
                     }
                     processed++;

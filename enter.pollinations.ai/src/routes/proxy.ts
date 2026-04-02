@@ -6,6 +6,8 @@ import {
     type BalanceVariables,
     balance,
     getAvailableBalance,
+    getSpendPolicyError,
+    type UserBalance,
 } from "@/middleware/balance.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -53,6 +55,7 @@ import {
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
+import { DEFAULT_SPEND_POLICY } from "@/utils/spend-policy.ts";
 import { generateMusic, generateSpeech } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
@@ -233,6 +236,7 @@ function filterModelsByPermissions<
 function hasPaidBalance(c: any): boolean | undefined {
     const user = c.var?.auth?.user;
     if (!user) return undefined;
+    if (c.var?.auth?.apiKey?.spendPolicy === "tier_only") return false;
     return (user.packBalance ?? 0) > 0 || (user.cryptoBalance ?? 0) > 0;
 }
 
@@ -956,6 +960,7 @@ async function checkBalance(
 
     const serviceDefinition = getServiceDefinition(model.resolved);
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
+    let userBalance: UserBalance | undefined;
 
     // Pre-check: reject if balance < estimated cost for this model
     // getModelStats is cached in KV for 1hr, so this is cheap
@@ -975,12 +980,21 @@ async function checkBalance(
     }
 
     if (estimatedCost > 0) {
-        const userBalance = await balance.getBalance(auth.user.id);
-        const available = getAvailableBalance(userBalance, isPaidOnly);
+        userBalance = await balance.getBalance(auth.user.id);
+        const spendPolicy = auth.apiKey?.spendPolicy ?? DEFAULT_SPEND_POLICY;
+        const available = getAvailableBalance(
+            userBalance,
+            spendPolicy,
+            isPaidOnly,
+        );
 
         if (available < estimatedCost) {
             throw new HTTPException(402, {
-                message: `Insufficient balance. This model costs ~${estimatedCost.toFixed(4)} pollen per request, but your available balance is ${available.toFixed(4)}.`,
+                message: getSpendPolicyError(
+                    spendPolicy,
+                    isPaidOnly,
+                    `Insufficient balance. This model costs ~${estimatedCost.toFixed(4)} pollen per request, but your available balance is ${available.toFixed(4)}.`,
+                ),
             });
         }
     }
@@ -990,11 +1004,13 @@ async function checkBalance(
         await balance.requirePaidBalance(
             auth.user.id,
             "This model requires a paid balance. Tier balance cannot be used.",
+            userBalance,
         );
     } else {
         await balance.requirePositiveBalance(
             auth.user.id,
             "Insufficient pollen balance to use this model",
+            userBalance,
         );
     }
 }

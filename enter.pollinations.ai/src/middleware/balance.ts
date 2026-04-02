@@ -5,6 +5,10 @@ import { HTTPException } from "hono/http-exception";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import {
+    DEFAULT_SPEND_POLICY,
+    type SpendPolicy,
+} from "@/utils/spend-policy.ts";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
@@ -18,25 +22,72 @@ export type UserBalance = {
     cryptoBalance: number;
 };
 
-/**
- * Get the total available balance across relevant buckets.
- * For paid-only models: crypto + pack only.
- * For regular models: tier + crypto + pack (only positive buckets).
- */
+export function getSpendPolicyError(
+    spendPolicy: SpendPolicy,
+    isPaidOnlyModel: boolean,
+    fallback: string,
+): string {
+    if (isPaidOnlyModel && spendPolicy === "tier_only") {
+        return "This API key is restricted to free pollen and cannot use paid-only models.";
+    }
+    if (spendPolicy === "tier_only") {
+        return "This API key is restricted to free pollen. Wait for your next refill or change the spend policy.";
+    }
+    if (spendPolicy === "paid_only") {
+        return "This API key is restricted to paid balance. Add pack or crypto pollen to continue.";
+    }
+    return fallback;
+}
+
+function getAccessibleBalances(
+    balances: UserBalance,
+    spendPolicy: SpendPolicy,
+    isPaidOnlyModel = false,
+): UserBalance {
+    if (isPaidOnlyModel) {
+        if (spendPolicy === "tier_only") {
+            return { tierBalance: 0, packBalance: 0, cryptoBalance: 0 };
+        }
+        return {
+            tierBalance: 0,
+            packBalance: balances.packBalance,
+            cryptoBalance: balances.cryptoBalance,
+        };
+    }
+
+    switch (spendPolicy) {
+        case "tier_only":
+            return {
+                tierBalance: balances.tierBalance,
+                packBalance: 0,
+                cryptoBalance: 0,
+            };
+        case "paid_only":
+            return {
+                tierBalance: 0,
+                packBalance: balances.packBalance,
+                cryptoBalance: balances.cryptoBalance,
+            };
+        default:
+            return balances;
+    }
+}
+
 export function getAvailableBalance(
     balances: UserBalance,
-    isPaidOnly = false,
+    spendPolicy = DEFAULT_SPEND_POLICY,
+    isPaidOnlyModel = false,
 ): number {
-    if (isPaidOnly) {
-        return (
-            Math.max(0, balances.cryptoBalance) +
-            Math.max(0, balances.packBalance)
-        );
-    }
+    const accessibleBalances = getAccessibleBalances(
+        balances,
+        spendPolicy,
+        isPaidOnlyModel,
+    );
+
     return (
-        Math.max(0, balances.tierBalance) +
-        Math.max(0, balances.cryptoBalance) +
-        Math.max(0, balances.packBalance)
+        Math.max(0, accessibleBalances.tierBalance) +
+        Math.max(0, accessibleBalances.cryptoBalance) +
+        Math.max(0, accessibleBalances.packBalance)
     );
 }
 
@@ -45,8 +96,13 @@ export type BalanceVariables = {
         requirePositiveBalance: (
             userId: string,
             message?: string,
+            balances?: UserBalance,
         ) => Promise<void>;
-        requirePaidBalance: (userId: string, message?: string) => Promise<void>;
+        requirePaidBalance: (
+            userId: string,
+            message?: string,
+            balances?: UserBalance,
+        ) => Promise<void>;
         getBalance: (userId: string) => Promise<UserBalance>;
         balanceCheckResult?: BalanceCheckResult;
     };
@@ -102,53 +158,66 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     // Helper to determine selected balance source
     const determineBalanceSource = (
         balances: UserBalance,
-        isPaidOnly = false,
+        spendPolicy: SpendPolicy,
+        isPaidOnlyModel = false,
     ): { source: string; slug: string } => {
-        if (isPaidOnly) {
-            // For paid-only: crypto → pack
-            if (balances.cryptoBalance > 0) {
-                return { source: "crypto", slug: "v1:meter:crypto" };
-            }
-            return { source: "pack", slug: "v1:meter:pack" };
-        }
+        const accessibleBalances = getAccessibleBalances(
+            balances,
+            spendPolicy,
+            isPaidOnlyModel,
+        );
 
-        // Regular: tier → crypto → pack
-        if (balances.tierBalance > 0) {
+        if (accessibleBalances.tierBalance > 0) {
             return { source: "tier", slug: "v1:meter:tier" };
         }
-        if (balances.cryptoBalance > 0) {
+        if (accessibleBalances.cryptoBalance > 0) {
             return { source: "crypto", slug: "v1:meter:crypto" };
         }
         return { source: "pack", slug: "v1:meter:pack" };
     };
 
-    const requirePositiveBalance = async (userId: string, message?: string) => {
-        const balances = await fetchBalanceWithErrorHandling(userId);
-        // Check if any individual bucket is positive (don't sum — negative buckets shouldn't cancel out positive ones)
+    const requirePositiveBalance = async (
+        userId: string,
+        message?: string,
+        prefetchedBalance?: UserBalance,
+    ) => {
+        const balances =
+            prefetchedBalance ?? (await fetchBalanceWithErrorHandling(userId));
+        const spendPolicy =
+            c.var.auth.apiKey?.spendPolicy ?? DEFAULT_SPEND_POLICY;
+        const accessibleBalances = getAccessibleBalances(
+            balances,
+            spendPolicy,
+            false,
+        );
         const hasPositiveBalance =
-            balances.tierBalance > 0 ||
-            balances.cryptoBalance > 0 ||
-            balances.packBalance > 0;
+            accessibleBalances.tierBalance > 0 ||
+            accessibleBalances.cryptoBalance > 0 ||
+            accessibleBalances.packBalance > 0;
 
         log.debug(
-            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}, crypto={cryptoBalance}",
+            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}, crypto={cryptoBalance}, spendPolicy={spendPolicy}",
             {
                 userId,
                 tierBalance: balances.tierBalance,
                 packBalance: balances.packBalance,
                 cryptoBalance: balances.cryptoBalance,
+                spendPolicy,
             },
         );
 
         if (hasPositiveBalance) {
-            const { source, slug } = determineBalanceSource(balances);
+            const { source, slug } = determineBalanceSource(
+                balances,
+                spendPolicy,
+            );
             c.var.balance.balanceCheckResult = {
                 selectedMeterId: `local:${source}`,
                 selectedMeterSlug: slug,
                 balances: {
-                    "v1:meter:tier": balances.tierBalance,
-                    "v1:meter:crypto": balances.cryptoBalance,
-                    "v1:meter:pack": balances.packBalance,
+                    "v1:meter:tier": accessibleBalances.tierBalance,
+                    "v1:meter:crypto": accessibleBalances.cryptoBalance,
+                    "v1:meter:pack": accessibleBalances.packBalance,
                 },
             };
             return;
@@ -156,35 +225,56 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
 
         // no positive balance - 402 for all billing/payment issues
         throw new HTTPException(402, {
-            message: message || "Your pollen balance is too low.",
+            message: getSpendPolicyError(
+                spendPolicy,
+                false,
+                message || "Your pollen balance is too low.",
+            ),
         });
     };
 
-    const requirePaidBalance = async (userId: string, message?: string) => {
-        const balances = await fetchBalanceWithErrorHandling(userId);
+    const requirePaidBalance = async (
+        userId: string,
+        message?: string,
+        prefetchedBalance?: UserBalance,
+    ) => {
+        const balances =
+            prefetchedBalance ?? (await fetchBalanceWithErrorHandling(userId));
+        const spendPolicy =
+            c.var.auth.apiKey?.spendPolicy ?? DEFAULT_SPEND_POLICY;
+        const accessibleBalances = getAccessibleBalances(
+            balances,
+            spendPolicy,
+            true,
+        );
 
-        // Check if any paid bucket is positive (don't sum — negative buckets shouldn't cancel out positive ones)
         const hasPositivePaidBalance =
-            balances.cryptoBalance > 0 || balances.packBalance > 0;
+            accessibleBalances.cryptoBalance > 0 ||
+            accessibleBalances.packBalance > 0;
 
         log.debug(
-            "Paid balance check for user {userId}: crypto={cryptoBalance}, pack={packBalance}",
+            "Paid balance check for user {userId}: crypto={cryptoBalance}, pack={packBalance}, spendPolicy={spendPolicy}",
             {
                 userId,
                 cryptoBalance: balances.cryptoBalance,
                 packBalance: balances.packBalance,
+                spendPolicy,
             },
         );
 
         if (hasPositivePaidBalance) {
-            const { source, slug } = determineBalanceSource(balances, true);
+            const { source, slug } = determineBalanceSource(
+                balances,
+                spendPolicy,
+                true,
+            );
             c.var.balance.balanceCheckResult = {
                 selectedMeterId: `local:${source}`,
                 selectedMeterSlug: slug,
                 balances: {
                     "v1:meter:tier": 0, // Tier not available for paid-only
-                    "v1:meter:crypto": balances.cryptoBalance,
-                    "v1:meter:pack": balances.packBalance,
+                    "v1:meter:crypto": accessibleBalances.cryptoBalance,
+                    "v1:meter:pack": accessibleBalances.packBalance,
                 },
             };
             return;
@@ -192,9 +282,12 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
 
         // No paid balance available
         throw new HTTPException(402, {
-            message:
+            message: getSpendPolicyError(
+                spendPolicy,
+                true,
                 message ||
-                "This model requires a paid balance. Tier balance cannot be used.",
+                    "This model requires a paid balance. Tier balance cannot be used.",
+            ),
         });
     };
 

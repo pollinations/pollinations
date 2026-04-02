@@ -45,6 +45,7 @@ test(
         expect(data).toHaveProperty("expiresIn");
         expect(data).toHaveProperty("permissions");
         expect(data).toHaveProperty("pollenBudget");
+        expect(data).toHaveProperty("spendPolicy");
         expect(data).toHaveProperty("rateLimitEnabled");
     },
 );

@@ -1,6 +1,7 @@
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { cn } from "@/util.ts";
+import { getSpendPolicyLabel, type SpendPolicy } from "@/utils/spend-policy.ts";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
     lessThanXSeconds: "{{count}}s",
@@ -29,7 +30,8 @@ export const shortLocale = {
 export const LimitsBadge: FC<{
     expiresAt: Date | null | undefined;
     pollenBudget: number | null | undefined;
-}> = ({ expiresAt, pollenBudget }) => {
+    spendPolicy: SpendPolicy;
+}> = ({ expiresAt, pollenBudget, spendPolicy }) => {
     const expiryStr = formatExpiry(expiresAt);
     const budgetStr = formatBudget(pollenBudget);
     const isExhausted = pollenBudget != null && pollenBudget <= 0;
@@ -49,6 +51,12 @@ export const LimitsBadge: FC<{
                     )}
                 >
                     {budgetStr}
+                </span>
+            </span>
+            <span>
+                <span className="text-gray-400">Spend: </span>
+                <span className="text-gray-500">
+                    {getSpendPolicyLabel(spendPolicy)}
                 </span>
             </span>
         </>

@@ -1,5 +1,7 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
+import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
+import { user as userTable } from "@/db/schema/better-auth.ts";
 import { test } from "../fixtures.ts";
 
 describe("API Key Management", () => {
@@ -36,6 +38,7 @@ describe("API Key Management", () => {
                 expect(key).toHaveProperty("start");
                 expect(key).toHaveProperty("createdAt");
                 expect(key).toHaveProperty("pollenBalance");
+                expect(key).toHaveProperty("spendPolicy");
             }
 
             // Find the restricted key and verify its permissions
@@ -210,6 +213,48 @@ describe("API Key Management", () => {
             const keys = await listResponse.json();
             const updatedKey = keys.data.find((k: any) => k.id === keyId);
             expect(updatedKey.pollenBalance).toBe(50);
+        });
+
+        test("should update spend policy", async ({ auth, sessionToken }) => {
+            const createResponse = await auth.apiKey.create({
+                name: "spend-policy-test",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+            const keyId = createResponse.data!.id;
+
+            const updateResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        spendPolicy: "paid_only",
+                    }),
+                },
+            );
+
+            expect(updateResponse.status).toBe(200);
+            const result = await updateResponse.json();
+            expect(result.spendPolicy).toBe("paid_only");
+
+            const listResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const keys = await listResponse.json();
+            const updatedKey = keys.data.find((k: any) => k.id === keyId);
+            expect(updatedKey.spendPolicy).toBe("paid_only");
         });
 
         test("should update expiry date", async ({ auth, sessionToken }) => {
@@ -601,6 +646,122 @@ describe("API Key Management", () => {
                 },
             );
             expect(response.status).toBe(402);
+        });
+
+        test("tier-only keys should not spill into paid balance", async ({
+            auth,
+            sessionToken,
+            mocks,
+        }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const db = drizzle(env.DB);
+            await db.update(userTable).set({
+                tierBalance: 0,
+                packBalance: 25,
+                cryptoBalance: 0,
+            });
+
+            const createResponse = await auth.apiKey.create({
+                name: "tier-only-test-key",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+
+            await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createResponse.data!.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        spendPolicy: "tier_only",
+                    }),
+                },
+            );
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${createResponse.data!.key}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai-fast",
+                        messages: [{ role: "user", content: "Hello" }],
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(402);
+            const body = await response.json();
+            expect((body as any).error.message).toContain(
+                "restricted to free pollen",
+            );
+        });
+
+        test("paid-only keys should not use tier balance", async ({
+            auth,
+            sessionToken,
+            mocks,
+        }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const db = drizzle(env.DB);
+            await db.update(userTable).set({
+                tierBalance: 25,
+                packBalance: 0,
+                cryptoBalance: 0,
+            });
+
+            const createResponse = await auth.apiKey.create({
+                name: "paid-only-test-key",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+
+            await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createResponse.data!.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        spendPolicy: "paid_only",
+                    }),
+                },
+            );
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${createResponse.data!.key}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai-fast",
+                        messages: [{ role: "user", content: "Hello" }],
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(402);
+            const body = await response.json();
+            expect((body as any).error.message).toContain(
+                "restricted to paid balance",
+            );
         });
     });
 });

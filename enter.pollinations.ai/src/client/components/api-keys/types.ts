@@ -1,3 +1,5 @@
+import type { SpendPolicy } from "@/utils/spend-policy.ts";
+
 export interface ApiKey {
     id: string;
     name?: string | null;
@@ -9,12 +11,14 @@ export interface ApiKey {
     permissions: Record<string, string[]> | null;
     metadata: Record<string, unknown> | null;
     pollenBalance?: number | null;
+    spendPolicy: SpendPolicy;
 }
 
 export interface ApiKeyUpdateParams {
     name?: string;
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
+    spendPolicy?: SpendPolicy;
     accountPermissions?: string[] | null;
     expiresAt?: Date | null;
 }
@@ -34,6 +38,8 @@ export type CreateApiKey = {
     allowedModels?: string[] | null;
     /** Pollen budget cap for this key. null = unlimited */
     pollenBudget?: number | null;
+    /** How this key chooses between free tier and paid pollen */
+    spendPolicy?: SpendPolicy;
     /** Days until expiry. null = no expiry */
     expiryDays?: number | null;
     /** Account permissions: ["balance", "usage"]. null = no permissions */

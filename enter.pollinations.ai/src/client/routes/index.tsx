@@ -119,6 +119,7 @@ function RouteComponent() {
             metadata: {
                 description: formState.description,
                 keyType,
+                spendPolicy: formState.spendPolicy,
                 ...(isPublishable && { plaintextKey: "" }), // Placeholder, updated below
             },
         });
@@ -185,6 +186,7 @@ function RouteComponent() {
             id: apiKey.id,
             key: apiKey.key,
             name: apiKey.name,
+            spendPolicy: formState.spendPolicy,
         } as CreateApiKeyResponse;
     }
 
@@ -202,6 +204,7 @@ function RouteComponent() {
             name?: string;
             allowedModels?: string[] | null;
             pollenBudget?: number | null;
+            spendPolicy?: CreateApiKey["spendPolicy"];
             accountPermissions?: string[] | null;
             expiresAt?: Date | null;
         },

@@ -58,6 +58,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const keyPermissions = useKeyPermissions({
         allowedModels: apiKey.permissions?.models ?? null,
         pollenBudget: apiKey.pollenBalance ?? null,
+        spendPolicy: apiKey.spendPolicy,
         accountPermissions: apiKey.permissions?.account ?? null,
         expiryDays,
     });

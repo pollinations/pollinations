@@ -9,7 +9,9 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
+import { getAvailableBalance } from "@/middleware/balance.ts";
 import { getTierCadence, tierNames } from "@/tier-config.ts";
+import { DEFAULT_SPEND_POLICY, SPEND_POLICIES } from "@/utils/spend-policy.ts";
 
 // Calculate next tier refill time (null for tiers with no refill)
 function getNextRefillAt(tier?: string | null): string | null {
@@ -103,7 +105,7 @@ const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Remaining pollen balance (combines tier, pack, and crypto balances)",
+            "Remaining pollen balance available to this account or API key",
         ),
 });
 
@@ -253,6 +255,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
+            const spendPolicy = apiKey?.spendPolicy ?? DEFAULT_SPEND_POLICY;
 
             // Check permission for API key access
             if (apiKey && !apiKey.permissions?.account?.includes("balance")) {
@@ -286,10 +289,14 @@ export const accountRoutes = new Hono<Env>()
             // Clamp each bucket at 0 before summing — individual buckets can go negative
             // from overage but shouldn't reduce the visible total
             return c.json({
-                balance:
-                    Math.max(0, tierBalance) +
-                    Math.max(0, packBalance) +
-                    Math.max(0, cryptoBalance),
+                balance: getAvailableBalance(
+                    {
+                        tierBalance,
+                        packBalance,
+                        cryptoBalance,
+                    },
+                    spendPolicy,
+                ),
             });
         },
     )
@@ -642,6 +649,11 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Remaining pollen budget for this key, null = unlimited (uses user balance)",
                                         ),
+                                    spendPolicy: z
+                                        .enum(SPEND_POLICIES)
+                                        .describe(
+                                            "How this key chooses between free tier and paid pollen",
+                                        ),
                                     rateLimitEnabled: z
                                         .boolean()
                                         .describe(
@@ -722,6 +734,7 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
+                spendPolicy: apiKey.spendPolicy,
                 // Rate limiting applies to publishable keys only (see rate-limit-durable.ts)
                 rateLimitEnabled: keyType === "publishable",
             });

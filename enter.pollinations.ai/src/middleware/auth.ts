@@ -5,6 +5,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { Session, User } from "@/auth.ts";
 import * as schema from "@/db/schema/better-auth.ts";
+import { parseSpendPolicy, type SpendPolicy } from "@/utils/spend-policy.ts";
 import { createAuth } from "../auth.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ModelVariables } from "./model.ts";
@@ -40,6 +41,7 @@ interface ApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    spendPolicy: SpendPolicy;
     rawKey?: string;
 }
 
@@ -71,6 +73,19 @@ function assertNotBanned(user: {
             ? `Account banned: ${user.banReason}`
             : "Account banned",
     });
+}
+
+function parseApiKeyMetadata(
+    raw: string | null | undefined,
+): Record<string, unknown> {
+    if (!raw) return {};
+    try {
+        let parsed = JSON.parse(raw);
+        if (typeof parsed === "string") parsed = JSON.parse(parsed);
+        return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+        return {};
+    }
 }
 
 export const auth = (options: AuthOptions) =>
@@ -126,6 +141,7 @@ export const auth = (options: AuthOptions) =>
             const fullApiKey = apiKeyData
                 ? { ...apiKeyData, user: userData }
                 : null;
+            const metadata = parseApiKeyMetadata(fullApiKey?.metadata);
 
             // Check if key has expired
             if (fullApiKey?.expiresAt) {
@@ -150,8 +166,9 @@ export const auth = (options: AuthOptions) =>
                     id: keyResult.key.id,
                     name: keyResult.key.name || undefined,
                     permissions,
-                    metadata: keyResult.key.metadata || undefined,
+                    metadata,
                     pollenBalance: fullApiKey?.pollenBalance ?? null,
+                    spendPolicy: parseSpendPolicy(metadata.spendPolicy),
                     rawKey: rawApiKey,
                 },
                 rawApiKey,

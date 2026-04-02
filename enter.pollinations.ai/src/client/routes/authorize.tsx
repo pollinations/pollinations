@@ -650,6 +650,7 @@ function AuthorizeComponent() {
                             <KeyPermissionsInputs
                                 value={keyPermissions}
                                 inline
+                                showSpendPolicy={false}
                             />
 
                             {!isDeviceMode && (

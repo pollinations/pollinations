@@ -1,3 +1,8 @@
+- **2026-04-01** – **🚀 LTX-2 goes brrrrr** We moved the video generation backend to a GH200 instance. End-to-end generation times just dropped to 12-16 seconds.
+- **2026-04-01** – **🎨 SciVis AI** Generate scientific visualizations in six different sci-fi styles using the [Image API](https://gen.pollinations.ai/image/models). [Try it](https://s971153.github.io/scivis-ai/) <!-- app -->
+- **2026-04-01** – **✨ ItacaLab** Books need covers too. A new graphic editor tailored for authors to generate artwork for their literary projects. [Try it](https://itacalab.editoraitacaiunas.com/) <!-- app -->
+- **2026-04-01** – **📱 ContentAI** Generate optimized social media content for your business without the usual headache. [Try it](https://contentaiak.lovable.app) <!-- app -->
+- **2026-04-01** – **💡 Puzzel Math** An interactive educational math app for elementary students, powered by the hive. [Try it](https://apps.apple.com/vn/app/puzzlemath-kids/id6751527974?l=vi) <!-- app -->
 - **2026-03-31** – **🤖 CatGPT** A new Discord bot that uses Claude to generate webcomic panels of your avatar arguing with a cat. Because the internet needed this.
 - **2026-03-31** – **🍳 Smart Kitchen AI** A community-built culinary platform that hallucinates recipe visualizations on demand. [Try it](https://matbaki.vercel.app) <!-- app -->
 - **2026-03-31** – **🔍 Labol Lens** A streamlined image generation interface added to the community showcase. [Try it](https://labol-lens.streamlit.app/) <!-- app -->

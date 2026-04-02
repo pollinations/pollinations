@@ -371,10 +371,11 @@ export const IMAGE_SERVICES = {
         aliases: ["ltx2", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
         provider: "vastai",
+        alpha: true,
         cost: [
             {
                 date: new Date("2026-03-23").getTime(),
-                completionVideoSeconds: 0.01,
+                completionVideoSeconds: 0.005,
             },
         ],
         description: "LTX-2 - Fast text-to-video generation on Vast.ai",

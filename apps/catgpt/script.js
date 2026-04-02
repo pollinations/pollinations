@@ -7,6 +7,7 @@ import {
     extractApiKeyFromFragment,
     fetchBalance,
     fetchProfile,
+    generateCatReply,
     generateImageURL,
     getAuthorizeUrl,
     getStoredApiKey,
@@ -357,7 +358,10 @@ function loadExamples() {
         const card = createMemeCard(
             q,
             i,
-            generateImageURL(createImageGenerationPrompt(q), activeModel),
+            generateImageURL(
+                createImageGenerationPrompt(q, "..."),
+                activeModel,
+            ),
         );
         if (card) dom.examplesGrid.appendChild(card);
     });
@@ -384,15 +388,19 @@ async function generateMeme() {
     hide(dom.generateError);
     dom.generateError.textContent = "";
 
-    const imageUrl = generateImageURL(
-        createImageGenerationPrompt(question, !!uploadedImageUrl),
-        activeModel,
-        uploadedImageUrl,
-    );
     let cancelled = false;
     currentAbort = () => {
         cancelled = true;
     };
+
+    const catReply = await generateCatReply(question, uploadedImageUrl);
+    if (cancelled) return;
+
+    const imageUrl = generateImageURL(
+        createImageGenerationPrompt(question, catReply, !!uploadedImageUrl),
+        activeModel,
+        uploadedImageUrl,
+    );
 
     try {
         const response = await fetch(imageUrl);

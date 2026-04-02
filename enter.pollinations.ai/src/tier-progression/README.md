@@ -14,13 +14,19 @@ these flows, but the business logic lives here.
 
 ## Layout
 
-- `flows/`: concrete progression flows such as `spore_to_seed.py`
+- `flows/spore_to_seed.py`: upgrade spore users to seed based on GitHub activity
+- `flows/spore-to-microbe-scan.ts`: LLM-based abuse detection and scoring
+- `flows/apply-abuse-blocks.ts`: apply tier downgrades from abuse report
+- `flows/cleanup-github-users.ts`: audit D1 users against GitHub API (renamed/deleted accounts)
 - `shared/github_profile.py`: GitHub identity lookup and scoring logic
 - `shared/d1_updates.py`: shared D1 query and mutation helpers
+- `shared/tier-update-user.ts`: direct tier updates in D1 (used by app workflows)
 
-## Current Flow
+## Current Flows
 
-The current scheduled flow is `spore_to_seed.py`.
+### spore → seed (upgrade)
+
+The upgrade flow is `spore_to_seed.py`.
 
 High-level behavior:
 
@@ -34,6 +40,22 @@ High-level behavior:
 This flow is triggered by:
 
 - `.github/workflows/tier-progression-spore-to-seed.yml`
+
+### spore → microbe (abuse downgrade)
+
+The downgrade flow is `spore-to-microbe-scan.ts` + `apply-abuse-blocks.ts`.
+
+High-level behavior:
+
+1. Find the most recent microbe user's registration date as cutoff (`--since-last-block`).
+2. Fetch users created after that cutoff from D1.
+3. Score users via LLM (Gemini) in overlapping chunks, looking for coordinated abuse patterns.
+4. Users scoring >= 70 are flagged for blocking.
+5. Blocked users are downgraded to `microbe` tier with 0.1 pollen balance.
+
+This flow is triggered by:
+
+- `.github/workflows/user-downgrade-spore-to-microbe.yml`
 
 ## Entry Point
 

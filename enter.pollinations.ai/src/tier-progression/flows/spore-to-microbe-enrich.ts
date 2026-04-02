@@ -187,7 +187,7 @@ async function main(): Promise<void> {
     let withUsage = 0;
     let withPacks = 0;
 
-    const BATCH_SIZE = 200;
+    const BATCH_SIZE = 50;
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
         const batch = rows.slice(i, i + BATCH_SIZE);
         const ids = batch.map((r) => r.id).filter(Boolean);

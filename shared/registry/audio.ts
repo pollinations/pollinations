@@ -118,6 +118,22 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
+    acestep: {
+        aliases: ["ace-step", "acestep-music"],
+        modelId: "acestep_v15_turbo",
+        provider: "self-hosted",
+        cost: [
+            {
+                date: new Date("2026-04-02").getTime(),
+                completionAudioSeconds: 0.002,
+            },
+        ],
+        description:
+            "ACE-Step 1.5 Turbo — Fast open-source music generation with lyrics support",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        alpha: true,
+    },
 } satisfies Record<string, ServiceDefinition<string>>;
 
 export function resolveElevenLabsVoiceId(voice: string): string {

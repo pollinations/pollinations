@@ -53,7 +53,11 @@ import {
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
-import { generateMusic, generateSpeech } from "./audio.ts";
+import {
+    generateAceStepMusic,
+    generateMusic,
+    generateSpeech,
+} from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
@@ -740,6 +744,20 @@ export const proxyRoutes = new Hono<Env>()
             const text = decodeURIComponent(c.req.param("text"));
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "acestep") {
+                const { duration } = c.req.valid("query" as never) as {
+                    duration?: number;
+                };
+                return generateAceStepMusic({
+                    prompt: text,
+                    durationSeconds: duration,
+                    serviceUrl: (
+                        c.env as unknown as { MUSIC_SERVICE_URL: string }
+                    ).MUSIC_SERVICE_URL,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(

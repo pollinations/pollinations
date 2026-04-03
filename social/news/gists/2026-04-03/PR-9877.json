@@ -1,0 +1,34 @@
+{
+  "pr_number": 9877,
+  "title": "fix: move ACE-Step config to encrypted secrets + add auth",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9877",
+  "merged_at": "2026-04-03T10:07:49Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Backstage passes required",
+    "blurb": "We've added some extra security to our ACE-Step music generation backend. Just making sure only the right bees can access the instruments!",
+    "summary": "Moved ACE-Step music service configuration to encrypted secrets and added bearer token authentication for internal API calls.",
+    "impact": "Improves backend security for audio generation services without affecting the public API experience.",
+    "keywords": [
+      "security",
+      "infrastructure",
+      "audio",
+      "secrets",
+      "ace-step"
+    ],
+    "visual_concept": "The bee mascot acting as a security guard or holding a key/padlock next to a music speaker or server rack. The robot showing a VIP backstage pass.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, holding a glowing golden key next to a retro server rack that looks like a giant boombox. A chunky pixel robot with a monitor head holds up a VIP backstage pass. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9877.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, holding a glowing golden key next to a retro server rack that looks like a giant boombox. A chunky pixel robot with a monitor head holds up a VIP backstage pass. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-03T10:08:50.747973+00:00"
+}

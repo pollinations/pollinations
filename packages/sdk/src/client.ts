@@ -7,6 +7,7 @@ import type {
     ChatResponse,
     ChatStreamChunk,
     DailyUsageResponse,
+    ImageEditOptions,
     ImageGenerateOptions,
     ImageResponse,
     KeyInfo,

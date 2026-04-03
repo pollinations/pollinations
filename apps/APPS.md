@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🎬 | MUSINGWEI STUDIO | https://musingwei.com | Generate images, audio, and video using the pollinations.ai APIs with MUSINGWEI STUDIO. | en | video_audio | web | @musingwei | 8786037 |  | |  | | 2026-04-01 | https://github.com/pollinations/pollinations/issues/9815 | 2026-04-03 |  |  |
 | 🖼️ | OGP Maker | https://ogp-maker-teal.vercel.app/ | Generate OGP for Facebook/X. | en,ja | image | web | @wildriver | 1543468 | https://github.com/wildriver/OGP-Maker | |  | | 2026-04-02 | https://github.com/pollinations/pollinations/issues/9831 | 2026-04-02 |  |  |
 | 🎨 | AI Photo Editor Pro | https://vision.scripted.my.id/ | Edit photos easily using AI. | en | image | web | @grew-easing-easily | 265815269 |  | |  | | 2026-04-01 | https://github.com/pollinations/pollinations/issues/9824 | 2026-04-02 |  |  |
 | 🎬 | V-AI-Powered YouTube Shorts Automation Platform |  | Generates YouTube Shorts videos automatically from news URLs and publishes them to multiple social media platforms. | tr | video_audio | web | @oguzgokyar | 65834394 | https://github.com/oguzgokyar/Video_Kur | |  | | 2026-04-01 | https://github.com/pollinations/pollinations/issues/9822 | 2026-04-02 |  |  |

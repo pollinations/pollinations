@@ -1,0 +1,34 @@
+{
+  "pr_number": 9904,
+  "title": "feat: add API key management endpoints (create, list, revoke)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9904",
+  "merged_at": "2026-04-03T18:31:33Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Keys to the hive",
+    "blurb": "You can now create, list, and revoke API keys programmatically. We've added secure endpoints so your apps can manage access without ever touching the dashboard.",
+    "summary": "Added new API endpoints to programmatically create, list, and revoke API keys, complete with strict security controls to prevent privilege escalation.",
+    "impact": "Developers can now automate API key management directly within their applications, using secure, permission-gated endpoints.",
+    "keywords": [
+      "api",
+      "keys",
+      "security",
+      "endpoints",
+      "auth"
+    ],
+    "visual_concept": "Polly the bee acting as a keymaster or locksmith. Holding a glowing golden pixel-art key. A retro terminal showing 'POST /keys'. Nomnom creature eating an old revoked key.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny locksmith apron, holding a glowing golden key. A chunky retro terminal in the background displays lime green (#ecf874) code for generating keys. The round nomnom creature happily eats a rusty, revoked key. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9904.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny locksmith apron, holding a glowing golden key. A chunky retro terminal in the background displays lime green (#ecf874) code for generating keys. The round nomnom creature happily eats a rusty, revoked key. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-04-03T18:32:28.832515+00:00"
+}

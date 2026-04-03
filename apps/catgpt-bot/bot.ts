@@ -93,7 +93,7 @@ function buildImageUrl(prompt: string, avatarUrl: string | null): string {
 }
 
 async function fetchImage(url: string): Promise<Buffer> {
-    log(`Image API request: ${url}`);
+    log(`Image API request: ${url.replace(/key=[^&]+/, "key=***")}`);
     const res = await axios.get(url, {
         headers: AUTH,
         responseType: "arraybuffer",

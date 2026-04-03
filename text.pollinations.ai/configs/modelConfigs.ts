@@ -1,6 +1,5 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
-    createAnthropicConfig,
     createAzureModelConfig,
     createAzureXaiModelConfig,
     createBedrockNativeConfig,
@@ -102,25 +101,25 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),
 
-    // -- Claude Direct Anthropic API ------------------------------------------
+    // -- Claude via AWS Bedrock -----------------------------------------------
     "claude-sonnet-4-6": () =>
-        createAnthropicConfig({
-            model: "claude-sonnet-4-6",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
     "claude-opus-4-6": () =>
-        createAnthropicConfig({
-            model: "claude-opus-4-6",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-4-5": () =>
-        createAnthropicConfig({
-            model: "claude-opus-4-5-20251101",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-opus-4-5-20251101-v1:0",
             defaultOptions: { max_tokens: 64000 },
         }),
     "claude-haiku-4-5": () =>
-        createAnthropicConfig({
-            model: "claude-haiku-4-5-20251001",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
             defaultOptions: { max_tokens: 64000 },
         }),
 

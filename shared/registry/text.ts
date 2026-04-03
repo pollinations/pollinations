@@ -353,7 +353,7 @@ export const TEXT_SERVICES = {
     "midijourney": {
         aliases: [],
         modelId: "claude-haiku-4-5-20251001",
-        provider: "anthropic",
+        provider: "bedrock",
         cost: [
             {
                 date: COST_START_DATE,
@@ -371,7 +371,7 @@ export const TEXT_SERVICES = {
     "midijourney-large": {
         aliases: [],
         modelId: "claude-opus-4-6",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -387,10 +387,10 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: true,
     },
-    "claude-fast": {
-        aliases: ["claude-haiku-4.5", "claude-haiku"],
+    "claude-haiku-4.5": {
+        aliases: ["claude-fast", "claude-haiku"],
         modelId: "claude-haiku-4-5-20251001",
-        provider: "anthropic",
+        provider: "bedrock",
         cost: [
             {
                 date: COST_START_DATE,
@@ -406,10 +406,10 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude": {
-        aliases: ["claude-sonnet-4.6", "claude-sonnet"],
+    "claude-sonnet-4.6": {
+        aliases: ["claude", "claude-sonnet"],
         modelId: "claude-sonnet-4-6",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -426,10 +426,10 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude-large": {
-        aliases: ["claude-opus-4.6", "claude-opus"],
+    "claude-opus-4.6": {
+        aliases: ["claude-large", "claude-opus"],
         modelId: "claude-opus-4-6",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -446,10 +446,10 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude-legacy": {
-        aliases: ["claude-opus-4.5", "claude-large-legacy"],
+    "claude-opus-4.5": {
+        aliases: ["claude-legacy", "claude-large-legacy"],
         modelId: "claude-opus-4-5-20251101",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         hidden: true,
         cost: [

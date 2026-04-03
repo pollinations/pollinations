@@ -66,6 +66,14 @@ export interface ImageGenerateOptions extends RequestOptions {
     guidanceScale?: number;
 }
 
+/** Options for image editing (POST /v1/images/edits) */
+export interface ImageEditOptions extends RequestOptions {
+    /** Image model to use (default: 'flux') */
+    model?: ImageModel;
+    /** Source image URL(s) for editing */
+    image?: string | string[];
+}
+
 /** Response from image generation */
 export interface ImageResponse {
     /** The generated image as a Buffer (Node.js) or ArrayBuffer (browser) */

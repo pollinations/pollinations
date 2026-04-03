@@ -8,6 +8,7 @@ import type {
     ChatResponse,
     ChatStreamChunk,
     DailyUsageResponse,
+    ImageEditOptions,
     ImageGenerateOptions,
     ImageResponse,
     KeyInfo,
@@ -453,6 +454,106 @@ export class Pollinations {
         }
 
         throw lastError;
+    }
+
+    // ============================================================================
+    // Image Editing
+    // ============================================================================
+
+    /**
+     * Edit an image using the OpenAI-compatible endpoint (POST /v1/images/edits).
+     * Accepts JSON with image URLs or multipart/form-data file uploads.
+     *
+     * @example
+     * ```ts
+     * const result = await pollinations.imageEdit('Make the sky purple', {
+     *   image: 'https://example.com/photo.jpg',
+     *   model: 'flux',
+     * });
+     * ```
+     */
+    async imageEdit(
+        prompt: string,
+        options: ImageEditOptions = {},
+    ): Promise<ImageResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body: Record<string, unknown> = {
+            prompt,
+            model: options.model || "flux",
+        };
+
+        if (options.image) {
+            body.image = options.image;
+        }
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/images/edits`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.imageTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        const json = (await response.json()) as {
+            data: Array<{ url?: string; b64_json?: string }>;
+        };
+
+        const item = json.data?.[0];
+        if (!item) {
+            throw new PollinationsError(
+                "No image data in response",
+                "NO_IMAGE",
+                500,
+            );
+        }
+
+        // If we got a URL, fetch the binary
+        if (item.url) {
+            const imgResponse = await fetchWithTimeout(
+                item.url,
+                {},
+                this.imageTimeout,
+                options.signal,
+            );
+            const buffer = await imgResponse.arrayBuffer();
+            const contentType =
+                imgResponse.headers.get("content-type") || "image/png";
+            return { buffer, contentType, url: item.url };
+        }
+
+        // b64_json response — decode to buffer
+        if (item.b64_json) {
+            const binary = atob(item.b64_json);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return {
+                buffer: bytes.buffer as ArrayBuffer,
+                contentType: "image/png",
+                url: "",
+            };
+        }
+
+        throw new PollinationsError(
+            "Unexpected response format from image edit",
+            "INVALID_RESPONSE",
+            500,
+        );
     }
 
     // ============================================================================

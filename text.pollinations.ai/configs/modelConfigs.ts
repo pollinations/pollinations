@@ -66,10 +66,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gpt-5.2-2025-12-11",
         16384,
     ),
-    "gpt-4o-mini-audio-preview-2024-12-17": createAzureWithMaxTokens(
-        process.env.AZURE_MYCELI_GPT4O_AUDIO_API_KEY,
-        process.env.AZURE_MYCELI_GPT4O_AUDIO_ENDPOINT,
-        "gpt-4o-mini-audio-preview-2024-12-17",
+    "gpt-audio-mini-2025-12-15": createAzureWithMaxTokens(
+        process.env.AZURE_MYCELI_GPT_AUDIO_MINI_API_KEY,
+        process.env.AZURE_MYCELI_GPT_AUDIO_MINI_ENDPOINT,
+        "gpt-audio-mini-2025-12-15",
+        2048,
+    ),
+    "gpt-audio-2025-12-15": createAzureWithMaxTokens(
+        process.env.AZURE_MYCELI_GPT_AUDIO_API_KEY,
+        process.env.AZURE_MYCELI_GPT_AUDIO_ENDPOINT,
+        "gpt-audio-2025-12-15",
         2048,
     ),
     "myceli-grok-4-fast": createMyceliGrok4FastConfig,

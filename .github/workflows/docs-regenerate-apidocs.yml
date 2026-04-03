@@ -8,23 +8,40 @@ on:
       - 'enter.pollinations.ai/src/routes/docs.ts'
       - 'enter.pollinations.ai/src/routes/**/*.ts'
       - 'enter.pollinations.ai/scripts/generate-apidocs.ts'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to regenerate docs from'
+        required: false
+        default: main
+      create_pr:
+        description: 'Create a docs PR if APIDOCS.md changes'
+        required: false
+        default: false
+        type: boolean
+  repository_dispatch:
+    types:
+      - regenerate-apidocs
 
 jobs:
   regenerate-docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
     steps:
       - name: Generate GitHub App token
         id: token
         uses: actions/create-github-app-token@v1
         with:
-          app-id: ${{ secrets.ORG_BOSS_APP_ID }}
-          private-key: ${{ secrets.ORG_BOSS_PRIVATE_KEY }}
-          owner: pollinations
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
 
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ steps.token.outputs.token }}
+          ref: ${{ github.event.inputs.ref || github.event.client_payload.ref || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -49,7 +66,7 @@ jobs:
           fi
 
       - name: Create PR with updated docs
-        if: steps.changes.outputs.changed == 'true'
+        if: ${{ steps.changes.outputs.changed == 'true' && (github.event_name == 'push' || inputs.create_pr || github.event.client_payload.create_pr == true || github.event.client_payload.create_pr == 'true') }}
         run: |
           BRANCH="docs/regenerate-apidocs-$(date +%s)"
           git config user.name "github-actions[bot]"

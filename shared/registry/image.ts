@@ -271,6 +271,7 @@ export const IMAGE_SERVICES = {
         aliases: ["wan2.2", "wan-2.2"],
         modelId: "wan-fast",
         provider: "alibaba",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-23").getTime(),
@@ -282,6 +283,37 @@ export const IMAGE_SERVICES = {
             "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P) via DashScope",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+    },
+    "wan-image": {
+        aliases: ["wan2.7-image", "wan-img"],
+        modelId: "wan-image",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-04-02").getTime(),
+                completionImageTokens: 0.035, // $0.035 per image (international)
+            },
+        ],
+        description:
+            "Wan 2.7 Image - Alibaba text-to-image and image editing (up to 2K)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "wan-image-pro": {
+        aliases: ["wan2.7-image-pro", "wan-img-pro"],
+        modelId: "wan-image-pro",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-04-02").getTime(),
+                completionImageTokens: 0.075, // $0.075 per image (international)
+            },
+        ],
+        description:
+            "Wan 2.7 Image Pro - Alibaba text-to-image and editing (4K, thinking mode)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
     },
     "qwen-image": {
         aliases: [
@@ -307,6 +339,7 @@ export const IMAGE_SERVICES = {
         aliases: ["grok-imagine-image"],
         modelId: "grok-imagine",
         provider: "xai",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -366,16 +399,17 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
     },
     "ltx-2": {
-        aliases: ["ltx2", "ltxvideo", "ltx-video"],
+        aliases: ["ltx2", "ltx-2.3", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
-        provider: "vastai",
+        provider: "lambda",
+        alpha: true,
         cost: [
             {
                 date: new Date("2026-03-23").getTime(),
-                completionVideoSeconds: 0.01,
+                completionVideoSeconds: 0.005,
             },
         ],
-        description: "LTX-2 - Fast text-to-video generation on Vast.ai",
+        description: "LTX-2.3 - Fast text-to-video generation with upscaler",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },

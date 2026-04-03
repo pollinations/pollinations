@@ -5,7 +5,7 @@
 | Document                            | Description                                      |
 | ----------------------------------- | ------------------------------------------------ |
 | [Labels](LABELS.md)                 | Label system reference (inbox, tier, PR labels)  |
-| [Tier System](TIER-SYSTEM.md)       | Tier upgrades, app submission & Flower tier      |
+| [Tier Progression](../../enter.pollinations.ai/src/tier-progression/README.md) | App-owned tier progression flows and shared evaluation logic |
 | [Triage](TRIAGE.md)                 | Issue/PR labeling, AI agents, project management |
 | [Deployment](DEPLOYMENT.md)         | Deploy pipelines (Cloudflare, EC2)               |
 | [Maintenance](MAINTENANCE.md)       | Branch cleanup, CI/testing                       |

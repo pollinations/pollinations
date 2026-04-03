@@ -90,6 +90,7 @@ export type {
     FileContentPart,
     FunctionDefinition,
     ImageContentPart,
+    ImageEditOptions,
     ImageGenerateOptions,
     // Image
     ImageModel,

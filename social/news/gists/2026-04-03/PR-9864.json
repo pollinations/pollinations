@@ -1,0 +1,34 @@
+{
+  "pr_number": 9864,
+  "title": "fix: wan-image models ignore width/height parameters",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9864",
+  "merged_at": "2026-04-03T00:46:31Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Thinking outside the square",
+    "blurb": "The Wan image models were stubbornly making everything square. We've fixed the math so your requested aspect ratios actually work now.",
+    "summary": "Fixed an issue where Wan image models ignored user-requested width and height parameters by passing explicit pixel dimensions instead of resolution presets.",
+    "impact": "Users will now receive images in their requested aspect ratios instead of being forced into square outputs when using Wan models.",
+    "keywords": [
+      "bug fix",
+      "image generation",
+      "wan",
+      "aspect ratio",
+      "dimensions"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot working together to stretch a square canvas into a rectangle, representing the fix for aspect ratios.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot working together to stretch a glowing square canvas into a wide rectangle. The canvas shows a beautiful pixel landscape. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9864.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot working together to stretch a glowing square canvas into a wide rectangle. The canvas shows a beautiful pixel landscape. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-03T00:47:28.509778+00:00"
+}

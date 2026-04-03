@@ -1,5 +1,5 @@
 #!/bin/bash
-# Update a user's tier in both DB and Polar
+# Update a user's tier in D1
 # Usage: ./update-tier.sh <username_or_email> <tier>
 # Example: ./update-tier.sh ez-vivek flower
 
@@ -21,7 +21,7 @@ TARGET_TIER="${2:-}"
 
 if [ -z "$USER_QUERY" ] || [ -z "$TARGET_TIER" ]; then
     echo "Usage: $0 <username_or_email> <tier>"
-    echo "       tier: spore, seed, flower, nectar, router"
+    echo "       tier: microbe, spore, seed, flower, nectar, router"
     echo ""
     echo "Example: $0 ez-vivek flower"
     exit 1
@@ -29,8 +29,8 @@ fi
 
 # Validate tier
 case "$TARGET_TIER" in
-    spore|seed|flower|nectar|router) ;;
-    *) error "Invalid tier: $TARGET_TIER (must be: spore, seed, flower, nectar, router)" ;;
+    microbe|spore|seed|flower|nectar|router) ;;
+    *) error "Invalid tier: $TARGET_TIER (must be: microbe, spore, seed, flower, nectar, router)" ;;
 esac
 
 # Sanitize USER_QUERY to prevent SQL injection
@@ -76,23 +76,6 @@ else
     npx wrangler d1 execute DB --remote --env production \
         --command "UPDATE user SET tier='$TARGET_TIER' WHERE github_username='$USERNAME';" 2>/dev/null
     log "✅ DB updated: $CURRENT_TIER → $TARGET_TIER"
-fi
-
-# Always check/update Polar (even if DB matches)
-if [ -n "$EMAIL" ]; then
-    log "Checking Polar subscription..."
-    
-    if [ -z "$POLAR_ACCESS_TOKEN" ]; then
-        export POLAR_ACCESS_TOKEN=$(sops -d secrets/prod.vars.json 2>/dev/null | grep POLAR_ACCESS_TOKEN | cut -d'"' -f4)
-    fi
-    
-    if [ -n "$POLAR_ACCESS_TOKEN" ]; then
-        npx tsx scripts/manage-polar.ts user update-tier --email "$EMAIL" --tier "$TARGET_TIER" --apply 2>/dev/null || warn "Polar update skipped (user may not have subscription)"
-    else
-        warn "Could not get POLAR_ACCESS_TOKEN - skipping Polar update"
-    fi
-else
-    warn "No email found - skipping Polar update"
 fi
 
 # Verify

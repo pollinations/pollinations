@@ -70,7 +70,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-audio",
-        config: portkeyConfig["gpt-4o-mini-audio-preview-2024-12-17"],
+        config: portkeyConfig["gpt-audio-mini-2025-12-15"],
+    },
+    {
+        name: "openai-audio-large",
+        config: portkeyConfig["gpt-audio-2025-12-15"],
     },
     {
         name: "claude-fast",

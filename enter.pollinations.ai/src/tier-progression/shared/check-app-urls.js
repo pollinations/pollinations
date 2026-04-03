@@ -46,7 +46,6 @@ function fetchURL(url, redirectCount = 0) {
                         "Mozilla/5.0 (compatible; PollinationsHealthCheck/1.0)",
                     Accept: "text/html,*/*",
                 },
-                rejectUnauthorized: false,
             },
             (res) => {
                 res.resume(); // drain

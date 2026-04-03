@@ -1,0 +1,34 @@
+{
+  "pr_number": 9891,
+  "title": "fix(sdk): relax video duration validation for new models",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/9891",
+  "merged_at": "2026-04-03T16:27:56Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Director's cut unlocked",
+    "blurb": "We've relaxed the video duration limits in the SDK so you can play with all the shiny new models like Wan, LTX-2, and Grok Video Pro. The server handles the specifics, you just bring the popcorn.",
+    "summary": "Relaxed strict client-side video duration validation in the SDK to unblock generation for newer models like Wan, LTX-2, and Grok Video Pro.",
+    "impact": "Developers using the SDK can now generate videos up to 30 seconds long and access the latest video models without client-side errors.",
+    "keywords": [
+      "sdk",
+      "video",
+      "models",
+      "validation",
+      "bugfix"
+    ],
+    "visual_concept": "The bee mascot acting as a movie director. A clapperboard, film reels, maybe a cute robot holding a camera. The bee has a little director's beret or megaphone.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, sitting on a stack of film reels next to a chunky robot with a CRT monitor head holding a clapperboard. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9891.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, sitting on a stack of film reels next to a chunky robot with a CRT monitor head holding a clapperboard. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-03T16:28:44.084120+00:00"
+}

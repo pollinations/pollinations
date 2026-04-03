@@ -1,0 +1,55 @@
+{
+  "date": "2026-04-02",
+  "period_start": "2026-04-02",
+  "period_end": "2026-04-02",
+  "title": "Heavy metal for audio and video",
+  "summary": "A massive day for multimedia: new 4K image models, upgraded audio and video pipelines, five new community apps, and an AI cat that can now see your face to roast you better.\n\nWe migrated LTX video to v2.3 on GH200 hardware for faster rendering. Audio also got a massive bump: ACE-Step 1.5 Turbo now generates 30-second stereo music tracks in under 12 seconds, and we upgraded the OpenAI TTS endpoints to the latest mini and large models. Zero code changes required to get the better audio.\n\nAdded Wan 2.7 Image and Pro models to the API via DashScope. You can now generate 4K resolution images with models that actually pay attention to the details in your prompt.\n\nCatGPT now uses Claude-fast's vision capabilities to analyze your avatar before insulting you. In less antagonistic news, we fixed a caching bug so API key updates in the dashboard reflect immediately without requiring a hard refresh.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 9641,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9812,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9827,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9828,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9838,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9839,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9844,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9846,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9847,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9848,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9856,
+      "date": "2026-04-02"
+    }
+  ],
+  "generated_at": "2026-04-03T06:24:18.470220+00:00"
+}

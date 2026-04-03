@@ -1,0 +1,34 @@
+{
+  "pr_number": 9880,
+  "title": "Add Viralent to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9880",
+  "merged_at": "2026-04-03T13:56:48Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Learning goes viral",
+    "blurb": "A new community app called Viralent just sprouted in the greenhouse! It serves up daily articles and interactive quizzes to keep your brain buzzing.",
+    "summary": "Added Viralent, a new community-built learning app featuring daily informative articles and interactive quizzes, to the app showcase.",
+    "impact": "Users can now discover and use Viralent to broaden their horizons and test their knowledge directly from the community greenhouse.",
+    "keywords": [
+      "community",
+      "app",
+      "learning",
+      "quizzes",
+      "showcase"
+    ],
+    "visual_concept": "A cozy study or library setting representing learning and quizzes. Polly the bee wearing reading glasses, studying a retro monitor, while the Nomnom creature happily eats quiz papers.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, studying a glowing retro computer monitor displaying a pixelated quiz. The round tan nomnom creature sits nearby, happily eating a stack of test papers. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9880.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, studying a glowing retro computer monitor displaying a pixelated quiz. The round tan nomnom creature sits nearby, happily eating a stack of test papers. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-03T13:57:34.634936+00:00",
+  "app_name": "Viralent",
+  "app_url": "viralent.info"
+}

@@ -18,6 +18,7 @@
  *   --parallel N      Process N chunks in parallel (default: 1)
  *   --since DATE      Only scan users created after this date (YYYY-MM-DD)
  *   --last DURATION   Only scan users from the last N hours/days (e.g. 24h, 7d)
+ *   --until DATE      Only scan users created before this date (YYYY-MM-DD)
  *   --since-last-block Only scan users created after the most recent microbe user (incremental)
  *
  * OUTPUT:
@@ -35,6 +36,7 @@ const SCORE_THRESHOLDS = {
 const OVERLAP_SIZE = 20;
 
 interface User {
+    id: string;
     email: string;
     github_username: string | null;
     created_at: number;
@@ -53,6 +55,7 @@ interface ParsedArgs {
     parallelism: number;
     singleChunk: boolean;
     sinceTimestamp: number | null;
+    untilTimestamp: number | null;
 }
 
 function parseArguments(): ParsedArgs {
@@ -73,12 +76,16 @@ function parseArguments(): ParsedArgs {
         ? fetchLastBlockTimestamp()
         : parseSinceTimestamp(getStr("--since", ""), getStr("--last", ""));
 
+    const untilDate = getStr("--until", "");
+    const untilTimestamp = untilDate ? parseDate(untilDate) : null;
+
     return {
         chunkSize: getNum("--chunk-size", 100),
         modelName: getStr("--model", "gemini"),
         parallelism: getNum("--parallel", 1),
         singleChunk: args.includes("--single-chunk"),
         sinceTimestamp,
+        untilTimestamp,
     };
 }
 
@@ -107,6 +114,15 @@ function fetchLastBlockTimestamp(): number | null {
     }
     console.log("⚠️  No microbe users found, scanning all users");
     return null;
+}
+
+function parseDate(dateStr: string): number | null {
+    const timestamp = new Date(dateStr).getTime();
+    if (Number.isNaN(timestamp)) {
+        console.error(`Invalid date: ${dateStr}`);
+        process.exit(1);
+    }
+    return Math.floor(timestamp / 1000);
 }
 
 function parseSinceTimestamp(
@@ -158,17 +174,24 @@ function loadApiKey(): string {
     return match[1].trim();
 }
 
-function fetchUsers(sinceTimestamp: number | null): User[] {
+function fetchUsers(
+    sinceTimestamp: number | null,
+    untilTimestamp: number | null,
+): User[] {
     const sinceLabel = sinceTimestamp
         ? ` created after ${new Date(sinceTimestamp * 1000).toISOString().split("T")[0]}`
         : "";
-    console.log(`📊 Fetching spore users${sinceLabel}...`);
+    const untilLabel = untilTimestamp
+        ? ` until ${new Date(untilTimestamp * 1000).toISOString().split("T")[0]}`
+        : "";
+    console.log(`📊 Fetching spore users${sinceLabel}${untilLabel}...`);
 
     const conditions: string[] = ["tier = 'spore'"];
     if (sinceTimestamp) conditions.push(`created_at > ${sinceTimestamp}`);
+    if (untilTimestamp) conditions.push(`created_at < ${untilTimestamp}`);
     const whereClause = `WHERE ${conditions.join(" AND ")}`;
     const query = `
-        SELECT email, github_username, created_at, tier
+        SELECT id, email, github_username, created_at, tier
         FROM user
         ${whereClause}
         ORDER BY created_at DESC
@@ -479,10 +502,10 @@ function exportResults(users: ScoredUser[]): void {
     const sorted = [...users].sort((a, b) => b.score - a.score);
 
     const csv = [
-        "action,score,email,github_username,signals,tier,registered",
+        "id,action,score,email,github_username,signals,tier,registered",
         ...sorted.map(
             (u) =>
-                `"${u.action}",${u.score},"${u.email}","${u.github_username || ""}","${u.signals.join("; ")}","${u.tier}","${formatDate(u.created_at)}"`,
+                `"${u.id}","${u.action}",${u.score},"${u.email}","${u.github_username || ""}","${u.signals.join("; ")}","${u.tier}","${formatDate(u.created_at)}"`,
         ),
     ].join("\n");
 
@@ -520,11 +543,14 @@ async function main(): Promise<void> {
     const sinceLabel = config.sinceTimestamp
         ? `, since ${new Date(config.sinceTimestamp * 1000).toISOString().split("T")[0]}`
         : "";
+    const untilLabel = config.untilTimestamp
+        ? `, until ${new Date(config.untilTimestamp * 1000).toISOString().split("T")[0]}`
+        : "";
     console.log(
-        `📋 Config: chunks of ${config.chunkSize}, model: ${config.modelName}${sinceLabel}`,
+        `📋 Config: chunks of ${config.chunkSize}, model: ${config.modelName}${sinceLabel}${untilLabel}`,
     );
 
-    const users = fetchUsers(config.sinceTimestamp);
+    const users = fetchUsers(config.sinceTimestamp, config.untilTimestamp);
     if (users.length === 0) {
         console.log("⚠️  No users found");
         return;

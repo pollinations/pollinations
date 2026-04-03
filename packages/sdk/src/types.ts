@@ -84,13 +84,13 @@ export interface ImageResponse {
 export interface VideoGenerateOptions extends RequestOptions {
     /** Video model to use (default: 'veo') */
     model?: VideoModel;
-    /** Duration in seconds (veo: 4,6,8; seedance: 2-10) */
+    /** Duration in seconds (1-30, varies by model) */
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
     /** Seed for reproducible generation */
     seed?: number;
-    /** Enable audio generation - veo only (default: false) */
+    /** Enable audio generation (default: false). wan always has audio */
     audio?: boolean;
     /** Reference image URL(s) for image-to-video */
     referenceImage?: string | string[];

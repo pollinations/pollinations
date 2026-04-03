@@ -353,7 +353,7 @@ export const TEXT_SERVICES = {
     "midijourney": {
         aliases: [],
         modelId: "claude-haiku-4-5-20251001",
-        provider: "anthropic",
+        provider: "bedrock",
         cost: [
             {
                 date: COST_START_DATE,
@@ -371,7 +371,7 @@ export const TEXT_SERVICES = {
     "midijourney-large": {
         aliases: [],
         modelId: "claude-opus-4-6",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -390,7 +390,7 @@ export const TEXT_SERVICES = {
     "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
         modelId: "claude-haiku-4-5-20251001",
-        provider: "anthropic",
+        provider: "bedrock",
         cost: [
             {
                 date: COST_START_DATE,
@@ -409,7 +409,7 @@ export const TEXT_SERVICES = {
     "claude": {
         aliases: ["claude-sonnet-4.6", "claude-sonnet"],
         modelId: "claude-sonnet-4-6",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -429,7 +429,7 @@ export const TEXT_SERVICES = {
     "claude-large": {
         aliases: ["claude-opus-4.6", "claude-opus"],
         modelId: "claude-opus-4-6",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -449,7 +449,7 @@ export const TEXT_SERVICES = {
     "claude-legacy": {
         aliases: ["claude-opus-4.5", "claude-large-legacy"],
         modelId: "claude-opus-4-5-20251101",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         hidden: true,
         cost: [

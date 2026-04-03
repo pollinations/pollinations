@@ -66,6 +66,14 @@ export interface ImageGenerateOptions extends RequestOptions {
     guidanceScale?: number;
 }
 
+/** Options for image editing (POST /v1/images/edits) */
+export interface ImageEditOptions extends RequestOptions {
+    /** Image model to use (default: 'flux') */
+    model?: ImageModel;
+    /** Source image URL(s) for editing */
+    image?: string | string[];
+}
+
 /** Response from image generation */
 export interface ImageResponse {
     /** The generated image as a Buffer (Node.js) or ArrayBuffer (browser) */
@@ -84,13 +92,13 @@ export interface ImageResponse {
 export interface VideoGenerateOptions extends RequestOptions {
     /** Video model to use (default: 'veo') */
     model?: VideoModel;
-    /** Duration in seconds (veo: 4,6,8; seedance: 2-10) */
+    /** Duration in seconds (1-30, varies by model) */
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
     /** Seed for reproducible generation */
     seed?: number;
-    /** Enable audio generation - veo only (default: false) */
+    /** Enable audio generation (default: false). wan always has audio */
     audio?: boolean;
     /** Reference image URL(s) for image-to-video */
     referenceImage?: string | string[];

@@ -48,6 +48,7 @@ export {
     chatStream,
     configure,
     conversation,
+    editImage,
     generateAudio,
     generateImage,
     generateText,
@@ -93,6 +94,7 @@ export type {
     FileContentPart,
     FunctionDefinition,
     ImageContentPart,
+    ImageEditOptions,
     ImageGenerateOptions,
     // Image
     ImageModel,

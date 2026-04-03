@@ -1,0 +1,34 @@
+{
+  "pr_number": 9636,
+  "title": "fix: default audio transcriptions to whisper",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9636",
+  "merged_at": "2026-04-03T10:33:07Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Whisper by default",
+    "blurb": "We fixed a tiny routing bug where audio transcriptions weren't defaulting to Whisper Large V3 as intended. Now, if you don't specify a model, we'll automatically use our best listener.",
+    "summary": "Updated the API gateway to correctly route default audio transcription requests to the whisper-large-v3 model.",
+    "impact": "Developers can now omit the model parameter on the /v1/audio/transcriptions endpoint and reliably get Whisper Large V3, perfectly matching the documentation.",
+    "keywords": [
+      "audio",
+      "transcription",
+      "whisper",
+      "api",
+      "bugfix"
+    ],
+    "visual_concept": "Audio transcription and the Whisper model. Polly the bee wearing headphones, listening to a retro audio device (like a boombox or cassette player) and writing down text on a notepad.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones and holding a small notepad, transcribing audio from a retro boombox. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. The bee has chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9636.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones and holding a small notepad, transcribing audio from a retro boombox. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. The bee has chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-03T10:34:04.648916+00:00"
+}

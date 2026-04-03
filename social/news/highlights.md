@@ -1,3 +1,13 @@
+- **2026-04-02** – **🎵 The hive drops a beat** ACE-Step 1.5 Turbo is now live on the [Audio API](https://gen.pollinations.ai/audio/{text}). Generate 15-30 second stereo music tracks from text prompts in under 12 seconds.
+- **2026-04-02** – **🖼️ Wan 2.7 enters the studio** Added `wan-image` and `wan-image-pro` to the [Image API](https://gen.pollinations.ai/image/models), bringing up to 4K resolution and thinking mode capabilities.
+- **2026-04-02** – **🎙️ High fidelity buzzing** Upgraded the default OpenAI audio endpoint to the latest mini model and added `openai-audio-large` for premium text-to-speech.
+- **2026-04-02** – **🎬 LTX hits version 2.3** The LTX video model has been bumped to v2.3 and migrated to GH200 hardware for faster generation.
+- **2026-04-02** – **👁️ The cats can see you now** CatGPT now uses Claude-fast with vision to analyze your avatar and deliver highly personalized, image-aware roasts.
+- **2026-04-02** – **🎨 Laying down the tiles** Generate seamless repeating textures for games and backgrounds using Flux Schnell. [Try it](https://tiletile.netlify.app/) <!-- app -->
+- **2026-04-02** – **📸 Welcome to the Studio** A lightweight, open-source web UI for AI image generation powered by the Pollinations API. [Try it](https://image-ai.testes.eu.org) <!-- app -->
+- **2026-04-02** – **🔗 Picture perfect previews** A dedicated tool to generate perfectly sized Open Graph preview cards for social media. [Try it](https://ogp-maker-teal.vercel.app/) <!-- app -->
+- **2026-04-02** – **📱 Shorts on autopilot** Automatically generate and publish YouTube Shorts directly from news URLs. [View repo](https://github.com/oguzgokyar/Video_Kur) <!-- app -->
+- **2026-04-02** – **✨ Fresh in the greenhouse** Easy AI-powered photo editing directly from the browser. [Try it](https://vision.scripted.my.id/) <!-- app -->
 - **2026-04-01** – **🚀 LTX-2 goes brrrrr** We moved the video generation backend to a GH200 instance. End-to-end generation times just dropped to 12-16 seconds.
 - **2026-04-01** – **🎨 SciVis AI** Generate scientific visualizations in six different sci-fi styles using the [Image API](https://gen.pollinations.ai/image/models). [Try it](https://s971153.github.io/scivis-ai/) <!-- app -->
 - **2026-04-01** – **✨ ItacaLab** Books need covers too. A new graphic editor tailored for authors to generate artwork for their literary projects. [Try it](https://itacalab.editoraitacaiunas.com/) <!-- app -->

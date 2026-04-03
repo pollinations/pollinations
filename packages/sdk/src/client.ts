@@ -38,7 +38,7 @@ const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
 const DEFAULT_VIDEO_TIMEOUT = 600_000; // 10min for videos
 
 // HTTP status codes that should NOT be retried
-const NON_RETRIABLE_CODES = [400, 401, 403, 404, 422];
+const NON_RETRIABLE_CODES = [400, 401, 402, 403, 404, 422];
 
 // Default Retry-After delay when header is missing (seconds)
 const DEFAULT_RETRY_AFTER = 60;

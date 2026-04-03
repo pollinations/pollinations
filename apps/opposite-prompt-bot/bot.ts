@@ -32,9 +32,10 @@ function logAxiosError(context: string, err: any) {
     if (err.response) {
         logError(`  Status: ${err.response.status}`);
         logError(`  Headers:`, JSON.stringify(err.response.headers, null, 2));
-        const body = err.response.data instanceof Buffer
-            ? err.response.data.toString("utf-8").slice(0, 2000)
-            : JSON.stringify(err.response.data, null, 2)?.slice(0, 2000);
+        const body =
+            err.response.data instanceof Buffer
+                ? err.response.data.toString("utf-8").slice(0, 2000)
+                : JSON.stringify(err.response.data, null, 2)?.slice(0, 2000);
         logError(`  Body:`, body);
     } else if (err.code) {
         logError(`  Code: ${err.code}`);
@@ -43,13 +44,17 @@ function logAxiosError(context: string, err: any) {
 
 async function generateOpposite(prompt: string): Promise<string> {
     log(`Text API request: model=claude-large, prompt="${prompt}"`);
-    const res = await axios.post(TEXT_API, {
-        model: "claude-large",
-        messages: [
-            { role: "system", content: OPPOSITE_PROMPT },
-            { role: "user", content: prompt },
-        ],
-    }, { headers: AUTH, timeout: 60_000 });
+    const res = await axios.post(
+        TEXT_API,
+        {
+            model: "claude-large",
+            messages: [
+                { role: "system", content: OPPOSITE_PROMPT },
+                { role: "user", content: prompt },
+            ],
+        },
+        { headers: AUTH, timeout: 60_000 },
+    );
     const opposite = res.data.choices[0].message.content.trim();
     log(`Text API response: "${opposite}"`);
     return opposite;
@@ -58,7 +63,11 @@ async function generateOpposite(prompt: string): Promise<string> {
 async function fetchImage(prompt: string): Promise<Buffer> {
     const url = `${IMAGE_API}/${encodeURIComponent(prompt)}?model=zimage&nologo=true`;
     log(`Image API request: ${url}`);
-    const res = await axios.get(url, { headers: AUTH, responseType: "arraybuffer", timeout: 120_000 });
+    const res = await axios.get(url, {
+        headers: AUTH,
+        responseType: "arraybuffer",
+        timeout: 120_000,
+    });
     log(`Image API response: ${res.status}, ${res.data.length} bytes`);
     return Buffer.from(res.data);
 }
@@ -80,7 +89,8 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     log(`Prompt from ${msg.author.username} in ${msg.channelId}: "${prompt}"`);
 
     try {
-        if ("sendTyping" in msg.channel) await (msg.channel as any).sendTyping();
+        if ("sendTyping" in msg.channel)
+            await (msg.channel as any).sendTyping();
     } catch {}
 
     const maxRetries = 2;
@@ -89,35 +99,49 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
             const opposite = await generateOpposite(prompt);
 
             try {
-                if ("sendTyping" in msg.channel) await (msg.channel as any).sendTyping();
+                if ("sendTyping" in msg.channel)
+                    await (msg.channel as any).sendTyping();
             } catch {}
 
             const imageBuffer = await fetchImage(opposite);
-            const attachment = new AttachmentBuilder(imageBuffer, { name: "opposite.png" });
+            const attachment = new AttachmentBuilder(imageBuffer, {
+                name: "opposite.png",
+            });
 
             await msg.reply({ files: [attachment] });
             log(`Reply sent successfully for "${prompt}" → "${opposite}"`);
             return;
         } catch (err: any) {
-            logAxiosError(`Attempt ${attempt + 1}/${maxRetries + 1} for "${prompt}"`, err);
+            logAxiosError(
+                `Attempt ${attempt + 1}/${maxRetries + 1} for "${prompt}"`,
+                err,
+            );
             if (attempt < maxRetries) {
                 const wait = 2000 * (attempt + 1);
                 log(`Retrying in ${wait}ms...`);
                 await new Promise((r) => setTimeout(r, wait));
                 continue;
             }
-            try { await msg.reply("⚠️ Failed to generate opposite. Try again."); } catch {}
+            try {
+                await msg.reply("⚠️ Failed to generate opposite. Try again.");
+            } catch {}
         }
     }
 }
 
 if (!TOKEN || !CHANNEL_ID) {
-    console.error("Missing BOT_TOKEN_OPPOSITE_PROMPT or OPPOSITE_PROMPT_CHANNEL_ID");
+    console.error(
+        "Missing BOT_TOKEN_OPPOSITE_PROMPT or OPPOSITE_PROMPT_CHANNEL_ID",
+    );
     process.exit(1);
 }
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+    ],
     partials: [Partials.Channel, Partials.Message],
 });
 
@@ -130,14 +154,22 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (reason) => {
     logError("UNHANDLED REJECTION:", reason);
 });
-process.on("SIGTERM", () => { log("Received SIGTERM"); process.exit(0); });
-process.on("SIGINT", () => { log("Received SIGINT"); process.exit(0); });
+process.on("SIGTERM", () => {
+    log("Received SIGTERM");
+    process.exit(0);
+});
+process.on("SIGINT", () => {
+    log("Received SIGINT");
+    process.exit(0);
+});
 
 client.on("error", (err) => logError("Discord client error:", err.message));
 client.on("warn", (msg) => log("Discord warning:", msg));
 
 client.once(Events.ClientReady, (c) => {
-    log(`Bot online as ${c.user.tag} — listening in ${CHANNEL_ID} (PID ${process.pid})`);
+    log(
+        `Bot online as ${c.user.tag} — listening in ${CHANNEL_ID} (PID ${process.pid})`,
+    );
 });
 
 client.on(Events.MessageCreate, (msg) => {

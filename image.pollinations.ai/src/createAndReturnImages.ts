@@ -20,6 +20,7 @@ import {
     callSeedreamAPI,
     callSeedreamProAPI,
 } from "./models/seedreamModel.ts";
+import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
@@ -1219,6 +1220,38 @@ const generateImage = async (
                 );
             } catch (error) {
                 logError("Nova Canvas generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "wan-image": {
+            try {
+                return await callWanImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    false,
+                );
+            } catch (error) {
+                logError("Wan image generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "wan-image-pro": {
+            try {
+                return await callWanImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    true,
+                );
+            } catch (error) {
+                logError("Wan image pro generation failed:", error.message);
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }

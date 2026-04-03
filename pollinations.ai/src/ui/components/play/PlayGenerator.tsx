@@ -286,26 +286,46 @@ export function PlayGenerator({
             }
         } else if (isAudioModel) {
             try {
-                const body = {
-                    model: selectedModel,
-                    modalities: ["text", "audio"],
-                    audio: {
-                        voice: selectedVoice || "alloy",
-                        format: "wav",
-                    },
-                    messages: [{ role: "user", content: prompt }],
-                };
-                const response = await fetch(
-                    `${API_BASE}/v1/chat/completions`,
-                    {
+                // Dedicated audio models (type=audio, e.g. elevenmusic, elevenlabs)
+                // use /v1/audio/speech; text models with audio output use /v1/chat/completions
+                const isDedicatedAudioModel =
+                    currentModelData?.type === "audio";
+
+                let response: Response;
+                if (isDedicatedAudioModel) {
+                    const body = {
+                        model: selectedModel,
+                        input: prompt,
+                        ...(selectedVoice ? { voice: selectedVoice } : {}),
+                    };
+                    response = await fetch(`${API_BASE}/v1/audio/speech`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                             Authorization: `Bearer ${apiKey}`,
                         },
                         body: JSON.stringify(body),
-                    },
-                );
+                    });
+                } else {
+                    const body = {
+                        model: selectedModel,
+                        modalities: ["text", "audio"],
+                        audio: {
+                            voice: selectedVoice || "alloy",
+                            format: "wav",
+                        },
+                        messages: [{ role: "user", content: prompt }],
+                    };
+                    response = await fetch(`${API_BASE}/v1/chat/completions`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${apiKey}`,
+                        },
+                        body: JSON.stringify(body),
+                    });
+                }
+
                 if (!response.ok) {
                     const errorMsg = await extractErrorMessage(response);
                     setError(errorMsg);
@@ -313,21 +333,29 @@ export function PlayGenerator({
                     setIsLoading(false);
                     return;
                 }
-                const data = await response.json();
-                const audioData = data.choices?.[0]?.message?.audio?.data;
-                if (!audioData) {
-                    setError(copy.noResponse);
-                    setResult(null);
-                    setIsLoading(false);
-                    return;
+
+                let audioURL: string;
+                if (isDedicatedAudioModel) {
+                    const blob = await response.blob();
+                    audioURL = URL.createObjectURL(blob);
+                } else {
+                    const data = await response.json();
+                    const audioData = data.choices?.[0]?.message?.audio?.data;
+                    if (!audioData) {
+                        setError(copy.noResponse);
+                        setResult(null);
+                        setIsLoading(false);
+                        return;
+                    }
+                    const binaryString = atob(audioData);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    const blob = new Blob([bytes], { type: "audio/wav" });
+                    audioURL = URL.createObjectURL(blob);
                 }
-                const binaryString = atob(audioData);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                const blob = new Blob([bytes], { type: "audio/wav" });
-                const audioURL = URL.createObjectURL(blob);
+
                 setResult(audioURL);
                 setResultType("audio");
                 setIsLoading(false);

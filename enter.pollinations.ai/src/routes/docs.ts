@@ -216,7 +216,9 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /audio/{text}");
     lines.push("Text-to-speech or music generation. Returns audio/mpeg.");
-    lines.push("Query params: voice, model (elevenlabs|elevenmusic), duration");
+    lines.push(
+        "Query params: voice, model (elevenlabs|elevenmusic|acestep), duration",
+    );
     lines.push("");
 
     lines.push("### POST /v1/audio/speech");
@@ -476,8 +478,12 @@ const blob = await response.blob();`,
 curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
 
-# Generate music
+# Generate music (ElevenLabs)
 curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration=30" \\
+  -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3
+
+# Generate music (ACE-Step, open-source)
+curl "https://gen.pollinations.ai/audio/brazilian%20berimbau%20instrumental?model=acestep&duration=15" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3`,
         },
         {
@@ -935,7 +941,7 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
         tier: "seed",
         displayTier: "Seed",
         createdAt: "2024-01-15T10:30:00.000Z",
-        nextResetAt: "2024-02-15T00:00:00.000Z",
+        nextResetAt: "2024-02-15T14:00:00.000Z",
     },
     "get /account/key": {
         valid: true,

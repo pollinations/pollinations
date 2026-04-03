@@ -16,7 +16,7 @@
 
 import { execSync } from "node:child_process";
 import { boolean, command, run, string } from "@drizzle-team/brocli";
-import type { TierName } from "../src/tier-config.ts";
+import type { TierName } from "../../tier-config.ts";
 
 type Environment = "staging" | "production";
 
@@ -95,7 +95,7 @@ function getD1User(env: Environment, githubUsername: string): D1User | null {
 
 /**
  * Update tier directly in D1 database.
- * Does NOT set tier_balance — the cron refill handles that (hourly for spore/seed, daily for others).
+ * Does NOT set tier_balance — the cron refill handles that (hourly for all tiers).
  */
 function updateD1Tier(
     env: Environment,

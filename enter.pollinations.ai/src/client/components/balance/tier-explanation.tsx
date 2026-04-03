@@ -12,6 +12,7 @@ const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
     green: { bg: "bg-green-100/60", ring: "ring-green-400" },
     pink: { bg: "bg-pink-100/60", ring: "ring-pink-400" },
     amber: { bg: "bg-amber-100/60", ring: "ring-amber-400" },
+    orange: { bg: "bg-orange-100/60", ring: "ring-orange-400" },
 };
 
 const SeedTooltipContent = () => (
@@ -29,7 +30,7 @@ const SeedTooltipContent = () => (
                 </tr>
                 <tr className="border-b border-gray-100">
                     <td className="py-1 pr-2 text-gray-600 leading-tight">
-                        Public commits (last year)
+                        Public commits (last 90 days)
                     </td>
                     <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.1pt each (max 3)
@@ -126,7 +127,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         </strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.flower} pollen/day
+                        {TIER_POLLEN.flower} pollen/hour
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
@@ -155,7 +156,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         </strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.nectar} pollen/day
+                        {TIER_POLLEN.nectar} pollen/hour
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">

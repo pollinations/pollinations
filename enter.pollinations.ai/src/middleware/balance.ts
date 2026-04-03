@@ -62,7 +62,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const db = drizzle(c.env.DB);
 
     // Get balance from D1 only
-    // Pack balance is updated via webhooks, tier balance via cron (hourly for spore/seed, daily for others)
+    // Pack balance is updated via webhooks, tier balance via hourly cron refill
     const getBalance = async (userId: string): Promise<UserBalance> => {
         const users = await db
             .select({

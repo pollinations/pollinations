@@ -71,6 +71,7 @@ export const AUDIO_SERVICES = {
         aliases: ["music"],
         modelId: "music_v1",
         provider: "elevenlabs",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),
@@ -116,6 +117,22 @@ export const AUDIO_SERVICES = {
             "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+    },
+    acestep: {
+        aliases: ["ace-step", "acestep-music"],
+        modelId: "acestep_v15_turbo",
+        provider: "self-hosted",
+        cost: [
+            {
+                date: new Date("2026-04-02").getTime(),
+                completionAudioSeconds: 0.0005,
+            },
+        ],
+        description:
+            "ACE-Step 1.5 Turbo — Fast open-source music generation with lyrics support",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        alpha: true,
     },
 } satisfies Record<string, ServiceDefinition<string>>;
 

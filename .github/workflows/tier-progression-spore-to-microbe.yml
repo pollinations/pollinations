@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:.github/workflows/tier-progression-spore-to-microbe.yml
+name: Tier Progression - Spore to Microbe
+========
 name: User Downgrade Spore to Microbe
+>>>>>>>> origin/main:.github/workflows/user-downgrade-spore-to-microbe.yml
 
 permissions:
   contents: read

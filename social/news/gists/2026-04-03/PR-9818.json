@@ -1,0 +1,34 @@
+{
+  "pr_number": 9818,
+  "title": "refactor: reorganize abuse detection into tier-progression",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9818",
+  "merged_at": "2026-04-03T00:00:20Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the spores",
+    "blurb": "We've reorganized our internal tier progression scripts to make them more robust and easier to maintain. Just a little housekeeping to keep the hive running smoothly!",
+    "summary": "Refactored and reorganized the internal tier progression scripts into a dedicated directory with independent scanning and application steps.",
+    "impact": "Improves the reliability and maintainability of the automated tier management system, ensuring fairer usage across the platform.",
+    "keywords": [
+      "refactor",
+      "tier-progression",
+      "scripts",
+      "infrastructure",
+      "maintenance"
+    ],
+    "visual_concept": "The bee mascot organizing files or sweeping up a server room. A little robot helper sorting folders labeled 'spore' and 'microbe'.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor hat, sweeping up glowing digital dust in a server room. A chunky robot with a CRT monitor head is organizing lime green (#ecf874) folders labeled 'SPORE' and 'MICROBE'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9818.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor hat, sweeping up glowing digital dust in a server room. A chunky robot with a CRT monitor head is organizing lime green (#ecf874) folders labeled 'SPORE' and 'MICROBE'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-04-03T00:01:09.514826+00:00"
+}

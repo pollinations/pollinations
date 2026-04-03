@@ -17,13 +17,13 @@ WORKDIR /app
 RUN python3.12 -m venv /app/venv
 ENV PATH="/app/venv/bin:$PATH"
 
-# PyTorch with CUDA 12.4 (compatible with older RunPod drivers)
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu124
+# PyTorch 2.11 with CUDA 12.8 (pip bundles its own CUDA runtime, base image only sets driver compat)
+RUN pip install --no-cache-dir torch==2.11.0 torchvision --index-url https://download.pytorch.org/whl/cu128
 
 # Python deps
 RUN pip install --no-cache-dir diffusers transformers accelerate safetensors sentencepiece protobuf huggingface_hub runpod Pillow
 
-# Pre-built nunchaku wheel (cp312, bundles its own CUDA kernels)
+# Pre-built nunchaku wheel matching torch 2.11
 RUN pip install --no-cache-dir --no-deps 'https://github.com/nunchaku-ai/nunchaku/releases/download/v1.3.0dev20260213/nunchaku-1.3.0.dev20260213%2Bcu12.8torch2.11-cp312-cp312-linux_x86_64.whl'
 
 COPY handler.py .

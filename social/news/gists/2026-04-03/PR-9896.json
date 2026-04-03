@@ -1,0 +1,34 @@
+{
+  "pr_number": 9896,
+  "title": "migrate claude models to aws bedrock + rename to version-based names",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9896",
+  "merged_at": "2026-04-03T16:12:34Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new bed for Claude",
+    "blurb": "We've tucked our Claude models into AWS Bedrock and gave them shiny new version-based names. Your old aliases still work, but now you can be specific about which flavor of Claude you want.",
+    "summary": "Migrated Claude models to AWS Bedrock and updated the model registry to use explicit version names.",
+    "impact": "Developers can now target specific Claude versions like `claude-sonnet-4.6`, while existing apps using legacy names remain fully supported via aliases.",
+    "keywords": [
+      "claude",
+      "anthropic",
+      "aws bedrock",
+      "text api",
+      "models"
+    ],
+    "visual_concept": "Claude (AI model) moving to Bedrock (AWS). Visual metaphor: a cozy bed made of smooth stones. The bee mascot is organizing blocks with numbers on them (versions) next to the bed.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing small wooden blocks with numbers on them next to a tiny, cozy bed made of smooth stones. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9896.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot organizing small wooden blocks with numbers on them next to a tiny, cozy bed made of smooth stones. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-03T16:13:23.401267+00:00"
+}

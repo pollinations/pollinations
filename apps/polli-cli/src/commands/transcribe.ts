@@ -2,56 +2,52 @@ import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { Command } from "commander";
 import ora from "ora";
-import { BASE_URL } from "../lib/config.js";
 import { requireKey } from "../lib/api.js";
-import {
-	getOutputMode,
-	printError,
-	printResult,
-} from "../lib/output.js";
+import { BASE_URL } from "../lib/config.js";
+import { getOutputMode, printError, printResult } from "../lib/output.js";
 
 export const transcribeCommand = new Command("transcribe")
-	.description("Transcribe audio to text (speech-to-text)")
-	.argument("<file>", "Audio file path (mp3, wav, etc.)")
-	.option("--model <model>", "STT model (whisper, scribe)", "whisper")
-	.option("--language <lang>", "Language hint (ISO code)")
-	.action(async (file, opts) => {
-		const key = requireKey();
-		const isHuman = getOutputMode() === "human";
-		const spinner = isHuman ? ora("Transcribing...").start() : null;
+    .description("Transcribe audio to text (speech-to-text)")
+    .argument("<file>", "Audio file path (mp3, wav, etc.)")
+    .option("--model <model>", "STT model (whisper, scribe)", "whisper")
+    .option("--language <lang>", "Language hint (ISO code)")
+    .action(async (file, opts) => {
+        const key = requireKey();
+        const isHuman = getOutputMode() === "human";
+        const spinner = isHuman ? ora("Transcribing...").start() : null;
 
-		try {
-			const buffer = readFileSync(file);
-			const blob = new Blob([buffer]);
+        try {
+            const buffer = readFileSync(file);
+            const blob = new Blob([buffer]);
 
-			const formData = new FormData();
-			formData.append("file", blob, basename(file));
-			formData.append("model", opts.model);
-			if (opts.language) formData.append("language", opts.language);
+            const formData = new FormData();
+            formData.append("file", blob, basename(file));
+            formData.append("model", opts.model);
+            if (opts.language) formData.append("language", opts.language);
 
-			const res = await fetch(`${BASE_URL}/v1/audio/transcriptions`, {
-				method: "POST",
-				headers: { Authorization: `Bearer ${key}` },
-				body: formData,
-				signal: AbortSignal.timeout(120_000),
-			});
+            const res = await fetch(`${BASE_URL}/v1/audio/transcriptions`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${key}` },
+                body: formData,
+                signal: AbortSignal.timeout(120_000),
+            });
 
-			if (!res.ok) {
-				const text = await res.text().catch(() => "");
-				throw new Error(`${res.status}: ${text}`);
-			}
+            if (!res.ok) {
+                const text = await res.text().catch(() => "");
+                throw new Error(`${res.status}: ${text}`);
+            }
 
-			const data = (await res.json()) as { text: string };
-			spinner?.stop();
+            const data = (await res.json()) as { text: string };
+            spinner?.stop();
 
-			if (getOutputMode() === "json") {
-				printResult(data);
-			} else {
-				process.stdout.write(`${data.text}\n`);
-			}
-		} catch (err) {
-			spinner?.fail("Transcription failed");
-			printError(err instanceof Error ? err.message : "unknown error");
-			process.exit(1);
-		}
-	});
+            if (getOutputMode() === "json") {
+                printResult(data);
+            } else {
+                process.stdout.write(`${data.text}\n`);
+            }
+        } catch (err) {
+            spinner?.fail("Transcription failed");
+            printError(err instanceof Error ? err.message : "unknown error");
+            process.exit(1);
+        }
+    });

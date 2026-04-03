@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-02",
+  "period_start": "2026-04-02",
+  "period_end": "2026-04-02",
+  "generated_at": "2026-04-03T06:24:18.470220+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-02/images/twitter.jpg"
+    }
+  ],
+  "text": "11 PRs merged. upgraded to Wan 2.7 for images and bumped openai-audio to mini/large. we also gave CatGPT vision capabilities, which means it can now accurately roast your selfies. plus 5 new community apps built on the api."
+}

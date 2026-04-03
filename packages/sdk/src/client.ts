@@ -459,23 +459,12 @@ export class Pollinations {
     // Video Generation
     // ============================================================================
 
-    private validateVideoDuration(model: string, duration?: number): void {
+    private validateVideoDuration(_model: string, duration?: number): void {
         if (duration === undefined) return;
 
-        const isVeo = model === "veo";
-        const isSeedance = model.startsWith("seedance");
-
-        if (isVeo && ![4, 6, 8].includes(duration)) {
+        if (duration < 1 || duration > 30) {
             throw new PollinationsError(
-                `Invalid duration for veo: ${duration}. Must be 4, 6, or 8 seconds.`,
-                "INVALID_DURATION",
-                400,
-            );
-        }
-
-        if (isSeedance && (duration < 2 || duration > 10)) {
-            throw new PollinationsError(
-                `Invalid duration for ${model}: ${duration}. Must be between 2-10 seconds.`,
+                `Invalid duration: ${duration}. Must be between 1-30 seconds.`,
                 "INVALID_DURATION",
                 400,
             );

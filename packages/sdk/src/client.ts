@@ -343,7 +343,7 @@ export class Pollinations {
         seed?: number,
     ): string {
         const params: Record<string, unknown> = {
-            model: options.model || "flux",
+            model: options.model || "zimage",
             width: options.width,
             height: options.height,
             seed: seed !== undefined ? seed : resolveSeed(options.seed),

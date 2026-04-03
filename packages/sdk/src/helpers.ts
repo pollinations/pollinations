@@ -20,10 +20,12 @@
 
 import { Pollinations } from "./client.js";
 import {
+    type AudioResponseExt,
     type ChatResponseExt,
     Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
+    wrapAudioResponse,
     wrapChatResponse,
     wrapImageResponse,
     wrapVideoResponse,
@@ -385,21 +387,18 @@ export function conversation(options?: ChatOptions): Conversation {
 // Audio Functions
 // ============================================================================
 
-/** Audio response type */
-export interface AudioResponseExt {
-    transcript: string;
-    data: string;
-    id: string;
-    expiresAt: number;
-}
-
 /**
- * Generate speech audio from text
+ * Generate audio from text (TTS or music). Returns binary audio with helper methods.
  *
  * @example
  * ```ts
- * // Single audio
+ * // Text-to-speech
  * const audio = await generateAudio('Hello world!', { voice: 'nova' });
+ * await audio.saveToFile('speech.mp3');
+ *
+ * // Music generation
+ * const music = await generateAudio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+ * await music.saveToFile('jazz.mp3');
  *
  * // Multiple variations
  * const audios = await generateAudio('Hello world!', { n: 3, voice: 'nova' });
@@ -413,7 +412,8 @@ export async function generateAudio(
     const client = getClient();
 
     if (n === 1) {
-        return client.audio(text, audioOptions);
+        const response = await client.audio(text, audioOptions);
+        return wrapAudioResponse(response);
     }
 
     const results = await Promise.all(
@@ -421,7 +421,7 @@ export async function generateAudio(
             client.audio(text, { ...audioOptions, seed: -1 }),
         ),
     );
-    return results;
+    return results.map(wrapAudioResponse);
 }
 
 // ============================================================================

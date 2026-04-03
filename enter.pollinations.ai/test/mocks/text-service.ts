@@ -65,7 +65,7 @@ export function createMockTextService(): MockAPI<TextServiceState> {
     return {
         state,
         handlerMap: {
-            "ec2-3-80-56-235.compute-1.amazonaws.com:16385":
+            "ec2-54-147-14-220.compute-1.amazonaws.com:16385":
                 createHonoMockHandler(app),
         },
         reset: () => {

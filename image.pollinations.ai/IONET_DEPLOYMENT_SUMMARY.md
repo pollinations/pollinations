@@ -15,7 +15,7 @@
 
 ### 1. Cloudflare Blocking Issue
 **Problem**: Some io.net outbound IPs were blocked by Cloudflare WAF
-**Solution**: Updated all services to use direct EC2 endpoint `http://3.80.56.235:16384/register`
+**Solution**: Updated all services to use direct EC2 endpoint `http://54.147.14.220:16384/register`
 
 ### 2. Flux Public IP Detection
 **Problem**: Containers auto-detected wrong internal IP (209.137.137.19 instead of 3.21.229.114)

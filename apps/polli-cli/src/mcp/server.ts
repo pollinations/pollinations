@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { pollyTools } from "./tools.js";
 import { POLLINATIONS_KNOWLEDGE } from "./knowledge.js";
+import { pollyTools } from "./tools.js";
 
 const SERVER_INSTRUCTIONS = `# Polly — Pollinations AI Assistant (MCP)
 
@@ -35,64 +35,64 @@ Set it via: polli auth login --token <key>
 Get keys at: https://enter.pollinations.ai`;
 
 export async function startPollyMcp() {
-	const server = new McpServer(
-		{
-			name: "polly-mcp",
-			version: "0.1.0",
-			instructions: SERVER_INSTRUCTIONS,
-		},
-		{
-			capabilities: {
-				tools: {},
-				resources: {},
-			},
-		},
-	);
+    const server = new McpServer(
+        {
+            name: "polly-mcp",
+            version: "0.1.0",
+            instructions: SERVER_INSTRUCTIONS,
+        },
+        {
+            capabilities: {
+                tools: {},
+                resources: {},
+            },
+        },
+    );
 
-	// Register all Polly tools
-	for (const tool of pollyTools) {
-		server.tool(tool.name, tool.description, tool.schema, tool.handler);
-	}
+    // Register all Polly tools
+    for (const tool of pollyTools) {
+        server.tool(tool.name, tool.description, tool.schema, tool.handler);
+    }
 
-	// Register knowledge base as a resource
-	server.resource(
-		"pollinations-docs",
-		"pollinations://knowledge",
-		{
-			description: "Complete Pollinations.AI platform documentation",
-			mimeType: "text/markdown",
-		},
-		async () => ({
-			contents: [
-				{
-					uri: "pollinations://knowledge",
-					mimeType: "text/markdown",
-					text: POLLINATIONS_KNOWLEDGE,
-				},
-			],
-		}),
-	);
+    // Register knowledge base as a resource
+    server.resource(
+        "pollinations-docs",
+        "pollinations://knowledge",
+        {
+            description: "Complete Pollinations.AI platform documentation",
+            mimeType: "text/markdown",
+        },
+        async () => ({
+            contents: [
+                {
+                    uri: "pollinations://knowledge",
+                    mimeType: "text/markdown",
+                    text: POLLINATIONS_KNOWLEDGE,
+                },
+            ],
+        }),
+    );
 
-	// Error handling
-	server.onerror = (error) => {
-		console.error(`Polly MCP error: ${error.message}`);
-	};
+    // Error handling
+    server.onerror = (error) => {
+        console.error(`Polly MCP error: ${error.message}`);
+    };
 
-	process.on("uncaughtException", (error) => {
-		console.error(`Uncaught: ${error.message}`);
-	});
+    process.on("uncaughtException", (error) => {
+        console.error(`Uncaught: ${error.message}`);
+    });
 
-	process.on("unhandledRejection", (reason) => {
-		console.error(`Unhandled: ${reason}`);
-	});
+    process.on("unhandledRejection", (reason) => {
+        console.error(`Unhandled: ${reason}`);
+    });
 
-	// Connect via stdio
-	const transport = new StdioServerTransport();
-	await server.connect(transport);
+    // Connect via stdio
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
 
-	console.error("Polly MCP Server v0.1.0 running on stdio");
-	console.error("Tools: " + pollyTools.map((t) => t.name).join(", "));
+    console.error("Polly MCP Server v0.1.0 running on stdio");
+    console.error(`Tools: ${pollyTools.map((t) => t.name).join(", ")}`);
 
-	process.on("SIGINT", () => process.exit(0));
-	process.on("SIGTERM", () => process.exit(0));
+    process.on("SIGINT", () => process.exit(0));
+    process.on("SIGTERM", () => process.exit(0));
 }

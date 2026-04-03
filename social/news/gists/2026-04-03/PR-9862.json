@@ -1,0 +1,33 @@
+{
+  "pr_number": 9862,
+  "title": "chore: clean up app directory — fix stale data, remove dead apps",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9862",
+  "merged_at": "2026-04-03T00:28:03Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pruning the app garden",
+    "blurb": "We did some spring cleaning in the app directory! Dead links have been pruned, URLs fixed, and a new health-check script ensures our garden of 600+ community apps stays fresh and working.",
+    "summary": "Cleaned up the community app directory by fixing malformed URLs, updating renamed GitHub accounts, and removing dead links, alongside a new automated health-check script.",
+    "impact": "Users browsing the app directory will experience significantly fewer broken links, with over 95% of listed apps now verified as working.",
+    "keywords": [
+      "app directory",
+      "cleanup",
+      "health check",
+      "community apps"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener, pruning dead leaves (representing broken links) from a vibrant code-plant (representing the app directory). The monitor robot helps by holding a watering can.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron, gently pruning dead pixelated leaves from a glowing code-plant in a lime green (#ecf874) flower pot. A chunky robot with a monitor head holds a watering can nearby. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9862.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron, gently pruning dead pixelated leaves from a glowing code-plant in a lime green (#ecf874) flower pot. A chunky robot with a monitor head holds a watering can nearby. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-03T00:29:10.823316+00:00"
+}

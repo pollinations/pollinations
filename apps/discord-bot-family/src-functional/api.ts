@@ -21,10 +21,7 @@ export const createGenerateTextWithHistory = (
     /**
      * Generate text using conversation history
      */
-    return async (
-        messages: ApiMessage[],
-        model: string,
-    ): Promise<string> => {
+    return async (messages: ApiMessage[], model: string): Promise<string> => {
         const url = `${baseUrl}/chat/completions`;
         const apiMessages = [...messages];
 

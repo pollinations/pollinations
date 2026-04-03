@@ -18,7 +18,11 @@ const PROACTIVE_MIN_MS = 600_000; // 10 minutes minimum
 const PROACTIVE_MAX_MS = 1_800_000; // 30 minutes maximum
 const PROACTIVE_CHANCE = 0.02; // 2% chance to post when channel is quiet
 
-function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string): string {
+function getSystemPrompt(
+    config: BotConfig,
+    botUsername?: string,
+    botId?: string,
+): string {
     return `You are ${config.model}. Your discord username is "${botUsername || config.model}" and your ID is ${botId || "unknown"}. Keep it casual and a little quirky. Respond like a real person in a Discord chat — max 2 short paragraphs, never walls of text. Use creative Discord markdown. To mention someone, use their ID like <@123456>. Never mention or tag other bots. Do not pretend to be another model.`;
 }
 
@@ -28,7 +32,6 @@ function getSystemPrompt(config: BotConfig, botUsername?: string, botId?: string
 function cleanResponse(response: string, modelName: string): string {
     // Remove <think>...</think> tags
     let cleaned = response.replace(/<think>.*?<\/think>/gs, "");
-
 
     // Remove model name prefixes like "[modelName]:\n"
     const escapedName = modelName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -59,7 +62,11 @@ async function generateResponseWithHistory(
     initialPrompt?: string,
 ): Promise<string | null> {
     // Build instructions
-    const instructions = getSystemPrompt(config, client.user?.username, client.user?.id);
+    const instructions = getSystemPrompt(
+        config,
+        client.user?.username,
+        client.user?.id,
+    );
 
     // Fetch channel and history
     const channel = await discordApiCall(
@@ -93,13 +100,12 @@ async function generateResponseWithHistory(
 
     // Pack everything into a single user message
     const parts = [instructions, transcript, initialPrompt].filter(Boolean);
-    const apiMessages: ApiMessage[] = [{ role: "user", content: parts.join("\n\n") }];
+    const apiMessages: ApiMessage[] = [
+        { role: "user", content: parts.join("\n\n") },
+    ];
 
     // Generate response — no system prompt, everything in the user message
-    const response = await generateText(
-        apiMessages,
-        config.model,
-    );
+    const response = await generateText(apiMessages, config.model);
 
     if (response && response.trim()) {
         return cleanResponse(response, config.model);
@@ -253,10 +259,16 @@ async function processMessage(
     // Only respond to mentions, replies, in bot-specific conversation channels, or DMs
     const isMentioned = msg.mentions.users?.has(client.user.id);
     const isReplyToBot = msg.reference?.messageId
-        ? (await msg.channel.messages.fetch(msg.reference.messageId).catch(() => null))?.author?.id === client.user.id
+        ? (
+              await msg.channel.messages
+                  .fetch(msg.reference.messageId)
+                  .catch(() => null)
+          )?.author?.id === client.user.id
         : false;
     // Bot mentions/replies don't count as directed — treat them like any other message
-    const isDirected = msg.author.bot ? false : (isMentioned || isReplyToBot || isDM);
+    const isDirected = msg.author.bot
+        ? false
+        : isMentioned || isReplyToBot || isDM;
     const isConvoChannel = config.conversationChannelIds?.includes(
         msg.channelId,
     );
@@ -318,12 +330,14 @@ async function processMessage(
         const recent = await msg.channel.messages.fetch({ limit: 5 });
         const now = Date.now();
         const recentBotMessages = recent.filter(
-            (m) =>
-                m.author.bot &&
-                now - m.createdTimestamp < RATE_WINDOW_MS,
+            (m) => m.author.bot && now - m.createdTimestamp < RATE_WINDOW_MS,
         );
         if (recentBotMessages.size >= MAX_BOT_MESSAGES_PER_WINDOW) {
-            log("Rate limited in channel %s (%d msgs in last minute), skipping", msg.channelId, recentBotMessages.size);
+            log(
+                "Rate limited in channel %s (%d msgs in last minute), skipping",
+                msg.channelId,
+                recentBotMessages.size,
+            );
             return;
         }
     }
@@ -335,9 +349,7 @@ async function processMessage(
     } else if (isGlobalChannel && !isDirected) {
         // Human in global/shared channel, not directly addressed: 2% chance
         if (Math.random() > 0.02) {
-            log(
-                "Skipping human message in shared channel (2%% response rate)",
-            );
+            log("Skipping human message in shared channel (2%% response rate)");
             return;
         }
     }
@@ -444,30 +456,55 @@ export async function runBot(
     // Proactive posting: only in global/shared channels, randomized intervals
     if (config.globalChannelIds && config.globalChannelIds.length > 0) {
         const scheduleProactive = () => {
-            const delay = PROACTIVE_MIN_MS + Math.random() * (PROACTIVE_MAX_MS - PROACTIVE_MIN_MS);
+            const delay =
+                PROACTIVE_MIN_MS +
+                Math.random() * (PROACTIVE_MAX_MS - PROACTIVE_MIN_MS);
             setTimeout(async () => {
                 try {
-                    const channelId = config.globalChannelIds![
-                        Math.floor(Math.random() * config.globalChannelIds!.length)
-                    ];
+                    const channelId =
+                        config.globalChannelIds![
+                            Math.floor(
+                                Math.random() * config.globalChannelIds!.length,
+                            )
+                        ];
                     const channel = client.channels.cache.get(channelId);
                     if (channel && "messages" in channel) {
-                        const recent = await channel.messages.fetch({ limit: 5 });
+                        const recent = await channel.messages.fetch({
+                            limit: 5,
+                        });
                         const now = Date.now();
                         const recentMessages = recent.filter(
                             (m) => now - m.createdTimestamp < PROACTIVE_MIN_MS,
                         );
                         const lastMsg = recent.first();
-                        if (lastMsg?.author.id !== client.user?.id && recentMessages.size <= 1 && Math.random() < PROACTIVE_CHANCE) {
-                            log("Channel %s is quiet, proactively posting", channelId);
-                            const response = await generateResponseWithHistory(client, config, generateText, channelId);
+                        if (
+                            lastMsg?.author.id !== client.user?.id &&
+                            recentMessages.size <= 1 &&
+                            Math.random() < PROACTIVE_CHANCE
+                        ) {
+                            log(
+                                "Channel %s is quiet, proactively posting",
+                                channelId,
+                            );
+                            const response = await generateResponseWithHistory(
+                                client,
+                                config,
+                                generateText,
+                                channelId,
+                            );
                             if (response && "send" in channel) {
-                                await (channel as any).send(response.slice(0, 1500));
+                                await (channel as any).send(
+                                    response.slice(0, 1500),
+                                );
                             }
                         }
                     }
                 } catch (error) {
-                    log("Error in proactive posting for %s: %O", config.name, error);
+                    log(
+                        "Error in proactive posting for %s: %O",
+                        config.name,
+                        error,
+                    );
                 }
                 scheduleProactive();
             }, delay);

@@ -1,5 +1,6 @@
 import { Pollinations } from "./client.js";
 import type {
+    AudioBinaryResponse,
     ChatOptions,
     ChatResponse,
     ImageGenerateOptions,

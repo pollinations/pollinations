@@ -19,6 +19,7 @@
 export { Pollinations } from "./client.js";
 // Extra utilities
 export {
+    type AudioResponseExt,
     type AwaitOptions,
     type ChatResponseExt,
     // Conversation class
@@ -34,6 +35,7 @@ export {
     // Browser helpers
     showImage,
     type VideoResponseExt,
+    wrapAudioResponse,
     wrapChatResponse,
     // Response wrappers (for advanced use)
     wrapImageResponse,
@@ -46,6 +48,7 @@ export {
     chatStream,
     configure,
     conversation,
+    editImage,
     generateAudio,
     generateImage,
     generateText,
@@ -71,11 +74,13 @@ export type {
     AccountBalance,
     AccountPermission,
     AccountProfile,
+    AudioBinaryResponse,
     AudioContentPart,
     AudioFormat,
     AudioGenerateOptions,
-    AudioResponse,
     // Audio
+    AudioModel,
+    AudioResponse,
     AudioVoice,
     AuthorizeOptions,
     BuiltInToolType,
@@ -89,6 +94,7 @@ export type {
     FileContentPart,
     FunctionDefinition,
     ImageContentPart,
+    ImageEditOptions,
     ImageGenerateOptions,
     // Image
     ImageModel,

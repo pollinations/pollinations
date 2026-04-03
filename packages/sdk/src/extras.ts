@@ -1,5 +1,6 @@
 import { Pollinations } from "./client.js";
 import type {
+    AudioBinaryResponse,
     ChatOptions,
     ChatResponse,
     ImageGenerateOptions,
@@ -25,6 +26,16 @@ export interface VideoResponseExt extends VideoResponse {
     /** Get as base64 string */
     toBase64: () => string;
     /** Get as data URL */
+    toDataURL: () => string;
+}
+
+/** Extended audio response with helper methods */
+export interface AudioResponseExt extends AudioBinaryResponse {
+    /** Save audio to file (Node.js only) */
+    saveToFile: (path: string) => Promise<void>;
+    /** Get as base64 string */
+    toBase64: () => string;
+    /** Get as data URL (ready for audio src) */
     toDataURL: () => string;
 }
 
@@ -125,6 +136,19 @@ export function wrapImageResponse(response: ImageResponse): ImageResponseExt {
 
 /** Wrap video response with helper methods */
 export function wrapVideoResponse(response: VideoResponse): VideoResponseExt {
+    return {
+        ...response,
+        saveToFile: (path: string) => saveBufferToFile(response.buffer, path),
+        toBase64: () => arrayBufferToBase64(response.buffer),
+        toDataURL: () =>
+            `data:${response.contentType};base64,${arrayBufferToBase64(response.buffer)}`,
+    };
+}
+
+/** Wrap audio response with helper methods */
+export function wrapAudioResponse(
+    response: AudioBinaryResponse,
+): AudioResponseExt {
     return {
         ...response,
         saveToFile: (path: string) => saveBufferToFile(response.buffer, path),

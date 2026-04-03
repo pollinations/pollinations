@@ -254,7 +254,6 @@ describe("Whisper Transcription", () => {
                 new Blob([audioBuffer], { type: "audio/wav" }),
                 "test.wav",
             );
-            formData.append("model", "whisper-large-v3");
 
             const response = await SELF.fetch(
                 "http://localhost:3000/api/generate/v1/audio/transcriptions",
@@ -276,7 +275,7 @@ describe("Whisper Transcription", () => {
             expect(data.text).toBeDefined();
             expect(data.text.length).toBeGreaterThan(0);
 
-            // Verify usage headers
+            // Verify usage headers default to Whisper when model is omitted
             expect(response.headers.get("x-model-used")).toBe("whisper");
         },
     );

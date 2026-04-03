@@ -454,9 +454,10 @@ export async function generateAceStepMusic(opts: {
     style?: string;
     durationSeconds?: number;
     serviceUrl: string;
+    serviceToken: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, style, serviceUrl, log } = opts;
+    const { prompt, style, serviceUrl, serviceToken, log } = opts;
     const duration = opts.durationSeconds ?? 15;
 
     if (prompt.length > 10000) {
@@ -470,9 +471,11 @@ export async function generateAceStepMusic(opts: {
         { chars: prompt.length, duration, style: style ?? "(auto)" },
     );
 
+    const authHeaders = { Authorization: `Bearer ${serviceToken}` };
+
     const submitResponse = await fetch(`${serviceUrl}/release_task`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
             prompt: style ?? "",
             lyrics: prompt,
@@ -517,7 +520,7 @@ export async function generateAceStepMusic(opts: {
 
         const pollResponse = await fetch(`${serviceUrl}/query_result`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...authHeaders },
             body: JSON.stringify({ task_id_list: [taskId] }),
         });
 
@@ -560,7 +563,9 @@ export async function generateAceStepMusic(opts: {
         });
     }
 
-    const audioResponse = await fetch(`${serviceUrl}${audioPath}`);
+    const audioResponse = await fetch(`${serviceUrl}${audioPath}`, {
+        headers: authHeaders,
+    });
     if (!audioResponse.ok) {
         const errorText = await audioResponse.text();
         throw new UpstreamError(audioResponse.status as ContentfulStatusCode, {
@@ -659,6 +664,7 @@ export const audioRoutes = new Hono<Env>()
                     style,
                     durationSeconds: duration,
                     serviceUrl: c.env.MUSIC_SERVICE_URL,
+                    serviceToken: c.env.MUSIC_SERVICE_TOKEN,
                     log,
                 });
             }

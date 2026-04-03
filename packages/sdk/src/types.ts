@@ -36,7 +36,7 @@ export type ImageQuality = "low" | "medium" | "high" | "hd";
 
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (default: 'flux') */
+    /** Image model to use (default: 'zimage') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;

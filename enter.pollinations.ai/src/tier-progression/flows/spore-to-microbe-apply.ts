@@ -14,7 +14,7 @@
  *   --dry-run      Show what would be done without making changes
  *   --batch-size   Number of users to process per batch (default: 100)
  *   --delay        Delay in ms between batches (default: 500)
- *   --report       Path to report CSV (default: src/tier-progression/spore-to-microbe-report.csv)
+ *   --report       Path to report CSV (default: src/tier-progression/spore-to-microbe-report-reviewed.csv)
  */
 
 import { execSync } from "node:child_process";
@@ -25,6 +25,7 @@ import { boolean, command, number, run, string } from "@drizzle-team/brocli";
 type Environment = "staging" | "production";
 
 interface AbuseReportRow {
+    id: string;
     action: string;
     score: number;
     email: string;
@@ -73,6 +74,7 @@ function parseCSV(content: string): AbuseReportRow[] {
         }
 
         return {
+            id: row.id || "",
             action: row.action || "",
             score: parseInt(row.score, 10) || 0,
             email: row.email || "",
@@ -119,12 +121,6 @@ function confirm(message: string): Promise<boolean> {
     });
 }
 
-const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-function validateEmail(email: string): boolean {
-    return EMAIL_RE.test(email) && email.length <= 254;
-}
-
 const applyBlocksCommand = command({
     name: "apply-blocks",
     desc: "Downgrade blocked users to microbe tier",
@@ -141,7 +137,9 @@ const applyBlocksCommand = command({
         delay: number().default(500).desc("Delay between batches in ms"),
         report: string()
             .alias("r")
-            .default("src/tier-progression/spore-to-microbe-report.csv")
+            .default(
+                "src/tier-progression/spore-to-microbe-report-reviewed.csv",
+            )
             .desc("Path to abuse report"),
         tier: string()
             .alias("t")
@@ -239,20 +237,20 @@ const applyBlocksCommand = command({
             if (!opts["dry-run"]) {
                 for (const user of batch) {
                     try {
-                        if (!validateEmail(user.email)) {
+                        if (!user.id) {
                             console.error(
-                                `   ⚠️  Skipped invalid email: ${user.email}`,
+                                `   ⚠️  Skipped: no id for ${user.github_username || user.email}`,
                             );
                             failed++;
                             processed++;
                             continue;
                         }
-                        const safeEmail = user.email.replace(/'/g, "''");
-                        const sql = `UPDATE user SET tier = 'microbe', tier_balance = 0.1 WHERE email = '${safeEmail}'`;
+                        const safeId = user.id.replace(/'/g, "''");
+                        const sql = `UPDATE user SET tier = 'microbe', tier_balance = 0 WHERE id = '${safeId}'`;
                         queryD1(env, sql);
                         succeeded++;
                     } catch {
-                        console.error(`   ❌ Failed: ${user.email}`);
+                        console.error(`   ❌ Failed: ${user.id}`);
                         failed++;
                     }
                     processed++;

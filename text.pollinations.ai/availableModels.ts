@@ -77,19 +77,19 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-audio-2025-12-15"],
     },
     {
-        name: "claude-fast",
+        name: "claude-haiku-4.5",
         config: portkeyConfig["claude-haiku-4-5"],
     },
     {
-        name: "claude",
+        name: "claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
     },
     {
-        name: "claude-large",
+        name: "claude-opus-4.6",
         config: portkeyConfig["claude-opus-4-6"],
     },
     {
-        name: "claude-legacy",
+        name: "claude-opus-4.5",
         config: portkeyConfig["claude-opus-4-5"],
     },
     {

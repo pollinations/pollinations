@@ -196,6 +196,33 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "gemini-flash-lite-3.1": {
+        aliases: [
+            "gemini-3.1-flash-lite",
+            "gemini-3.1-flash-lite-preview",
+            "gemini-flash-lite",
+        ],
+        modelId: "gemini-3.1-flash-lite-preview",
+        provider: "google",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.25),
+                promptCachedTokens: perMillion(0.025),
+                promptAudioTokens: perMillion(0.5),
+                completionTextTokens: perMillion(1.5),
+            },
+        ],
+        description: "Google Gemini 3.1 Flash Lite - Fast & Cost-Effective",
+        inputModalities: ["text", "image", "audio"],
+        outputModalities: ["text"],
+        tools: true,
+        search: true,
+        codeExecution: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "gemini-fast": {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",

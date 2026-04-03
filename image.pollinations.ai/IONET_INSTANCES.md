@@ -115,12 +115,12 @@ ssh -i ~/.ssh/pollinations_services_2026 -p 18960 root@ssh3.vast.ai
 ## Heartbeat Registration
 
 All GPU workers send heartbeats to the EC2 gateway:
-- **URL**: `http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register`
+- **URL**: `http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register`
 - **Payload**: `{"url": "http://IP:PORT", "type": "flux|zimage"}`
 
 To check currently registered servers:
 ```bash
-curl -s http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register
+curl -s http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register
 ```
 
 ## Service Management

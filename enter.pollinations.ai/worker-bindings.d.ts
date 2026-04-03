@@ -65,8 +65,8 @@ declare namespace Cloudflare {
         TINYBIRD_CRYPTO_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event";
         TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
         TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
-        IMAGE_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384";
-        TEXT_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385";
+        IMAGE_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384";
+        TEXT_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385";
         POLLEN_REFILL_PER_HOUR: 1;
         NOWPAYMENTS_ENV: "production";
         STRIPE_MODE: "live";
@@ -113,8 +113,8 @@ declare namespace Cloudflare {
         TINYBIRD_CRYPTO_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event";
         TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
         TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
-        IMAGE_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384";
-        TEXT_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385";
+        IMAGE_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384";
+        TEXT_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385";
         STRIPE_MODE: "sandbox";
         STRIPE_SUCCESS_URL: "https://staging.enter.pollinations.ai";
         BETTER_AUTH_SECRET: string;
@@ -158,8 +158,8 @@ declare namespace Cloudflare {
         TINYBIRD_CRYPTO_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event";
         TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
         TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
-        IMAGE_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384";
-        TEXT_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385";
+        IMAGE_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384";
+        TEXT_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385";
         STRIPE_MODE: "sandbox";
         STRIPE_SUCCESS_URL: "https://dev.enter.pollinations.ai";
         BETTER_AUTH_SECRET: string;
@@ -204,8 +204,8 @@ declare namespace Cloudflare {
         TINYBIRD_CRYPTO_INGEST_URL: "http://localhost:7181/v0/events?name=crypto_event";
         TINYBIRD_TIER_INGEST_URL: "http://localhost:7181/v0/events?name=tier_event";
         TINYBIRD_STRIPE_INGEST_URL: "http://localhost:7181/v0/events?name=stripe_event";
-        IMAGE_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384";
-        TEXT_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385";
+        IMAGE_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384";
+        TEXT_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385";
         BETTER_AUTH_SECRET: string;
         POLAR_ACCESS_TOKEN: string;
         POLAR_WEBHOOK_SECRET: string;
@@ -290,10 +290,10 @@ declare namespace Cloudflare {
             | "http://localhost:7181/v0/events?name=stripe_event";
         IMAGE_SERVICE_URL:
             | "http://localhost:16384"
-            | "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384";
+            | "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384";
         TEXT_SERVICE_URL:
             | "http://localhost:16385"
-            | "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385";
+            | "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385";
         STRIPE_MODE?: "sandbox" | "live";
         STRIPE_SUCCESS_URL?:
             | "http://localhost:3000"

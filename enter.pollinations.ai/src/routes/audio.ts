@@ -776,7 +776,9 @@ export const audioRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.audio"),
+        resolveModel("generate.audio", {
+            defaultModel: "whisper-large-v3",
+        }),
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("transcription");

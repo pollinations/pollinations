@@ -1,0 +1,33 @@
+{
+  "pr_number": 9893,
+  "title": "fix(sdk): add 402 insufficient balance to non-retriable errors",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/9893",
+  "merged_at": "2026-04-03T16:32:50Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Stop hitting yourself",
+    "blurb": "The SDK now immediately throws 402 Insufficient Balance errors instead of stubbornly retrying them. Because when you're out of pollen, asking again won't magically make more appear!",
+    "summary": "Added 402 (Insufficient Balance) to the list of non-retriable error codes in the SDK to prevent unnecessary API calls.",
+    "impact": "Developers will see immediate error feedback when out of credits instead of waiting for retries to exhaust.",
+    "keywords": [
+      "sdk",
+      "error-handling",
+      "billing",
+      "bug-fix"
+    ],
+    "visual_concept": "A chunky robot trying to press a retry button while getting a 402 error, and Polly the bee gently stopping it with a tiny stop sign. Represents stopping unnecessary retries.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head showing a '402' error, while the cute bee mascot gently holds up a tiny red stop sign to prevent the robot from pressing a retry button. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9893.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head showing a '402' error, while the cute bee mascot gently holds up a tiny red stop sign to prevent the robot from pressing a retry button. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-03T16:33:42.488947+00:00"
+}

@@ -27,7 +27,7 @@ FRAME_COUNT_NODE = "177:113"
 SEED_NODES = ["177:118", "177:123"]
 
 # Heartbeat config
-REGISTER_URL = os.environ.get("REGISTER_URL", "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register")
+REGISTER_URL = os.environ.get("REGISTER_URL", "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register")
 PUBLIC_IP = os.environ.get("PUBLIC_IP", "")
 PUBLIC_PORT = os.environ.get("PUBLIC_PORT", "")
 SERVICE_TYPE = os.environ.get("SERVICE_TYPE", "ltx2")

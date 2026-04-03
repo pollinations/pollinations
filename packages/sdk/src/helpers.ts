@@ -35,6 +35,7 @@ import type {
     AuthorizeOptions,
     ChatOptions,
     DailyUsageResponse,
+    ImageEditOptions,
     ImageGenerateOptions,
     KeyInfo,
     Message,
@@ -158,6 +159,29 @@ export async function generateImage(
         ),
     );
     return results.map(wrapImageResponse);
+}
+
+// ============================================================================
+// Image Editing Functions
+// ============================================================================
+
+/**
+ * Edit an image using a text prompt (OpenAI-compatible endpoint)
+ *
+ * @example
+ * ```ts
+ * const result = await editImage('Make the sky purple', {
+ *   image: 'https://example.com/photo.jpg',
+ * });
+ * await result.saveToFile('edited.png');
+ * ```
+ */
+export async function editImage(
+    prompt: string,
+    options?: ImageEditOptions,
+): Promise<ImageResponseExt> {
+    const response = await getClient().imageEdit(prompt, options);
+    return wrapImageResponse(response);
 }
 
 // ============================================================================

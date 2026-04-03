@@ -687,7 +687,7 @@ export interface ModelInfo {
 
 /** API error details */
 export interface PollinationsErrorDetails {
-    code: "BAD_REQUEST" | "UNAUTHORIZED" | "INTERNAL_ERROR" | string;
+    code: "BAD_REQUEST" | "UNAUTHORIZED" | "INSUFFICIENT_BALANCE" | "PERMISSION_DENIED" | "INTERNAL_ERROR" | string;
     message: string;
     timestamp: string;
     details?: Record<string, unknown>;

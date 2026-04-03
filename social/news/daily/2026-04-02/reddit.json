@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-02",
+  "period_start": "2026-04-02",
+  "period_end": "2026-04-02",
+  "generated_at": "2026-04-03T06:24:18.470220+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-02/images/reddit.jpg"
+    }
+  ],
+  "title": "Added Wan 2.7 images, upgraded OpenAI audio, and fixed API key caching.",
+  "text": "Just merged 11 PRs. Mostly model upgrades, new community apps, and a caching fix that was long overdue.\n\nCore infrastructure updates:\n- Wan 2.7 is now available for image generation via DashScope.\n- Upgraded our OpenAI audio endpoints. The default openai-audio was bumped to gpt-audio-mini, and we added openai-audio-large for heavier workloads.\n- Added ACE-Step 1.5 for music generation.\n- Updated the LTX-2 registry to LTX-2.3 for video generation.\n\nOn the maintenance side, PR #9641 is finally in. We were having issues with stale API key data persisting after updates. The cache now properly invalidates. If you were seeing weird auth rejections right after rotating keys, this should be resolved.\n\nFor the community apps, we merged five new tools into the ecosystem, including TileTile, OGP Maker, and a YouTube Shorts automation platform. Also, CatGPT now supports text-first generation with vision capabilities, meaning you can pass it an image URL and it will roast the pixels.\n\nAll models and endpoints are live and accessible via standard HTTP requests. \n\nCode and full changelog: https://github.com/pollinations/pollinations\nEndpoint documentation: https://pollinations.ai/docs"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9908,
+  "title": "Add Genie AI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9908",
+  "merged_at": "2026-04-03T20:32:17Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Genie in the chat",
+    "blurb": "Genie AI just dropped into the ecosystem. Whether you need live internet answers, document analysis, or just want to generate some wild videos, your wish is its command.",
+    "summary": "Genie AI has been added to the community apps showcase, bringing a massive suite of tools including live web search, document analysis, and multimodal generation.",
+    "impact": "Users can now explore Genie AI's all-in-one capabilities directly from the apps directory.",
+    "keywords": [
+      "genie ai",
+      "chat",
+      "multimodal",
+      "community apps",
+      "showcase"
+    ],
+    "visual_concept": "A magical genie lamp theme. The Pollinations bee interacting with a glowing magic lamp that is emitting data or a friendly pixel genie, representing the new Genie AI app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, rubbing a glowing retro magic lamp. A friendly, chunky pixel magical genie made of glowing data emerges from the spout. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9908.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, rubbing a glowing retro magic lamp. A friendly, chunky pixel magical genie made of glowing data emerges from the spout. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-03T20:33:08.325683+00:00",
+  "app_name": "Genie AI",
+  "app_url": "https://cantalopapps.com/genie-ai"
+}

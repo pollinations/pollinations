@@ -16,23 +16,39 @@ const DASHSCOPE_API_BASE =
 const WAN_IMAGE_MODEL = "wan2.7-image";
 const WAN_IMAGE_PRO_MODEL = "wan2.7-image-pro";
 
-// Resolution specs for size parameter
-// wan2.7-image: 1K, 2K (default)
-// wan2.7-image-pro: 1K, 2K (default), 4K (text-to-image only)
-function getResolutionSpec(
+// Pixel limits per model variant and mode
+// wan2.7-image: all scenarios 768*768 to 2048*2048, aspect ratio 1:8 to 8:1
+// wan2.7-image-pro text-to-image: 768*768 to 4096*4096, aspect ratio 1:8 to 8:1
+// wan2.7-image-pro other: 768*768 to 2048*2048, aspect ratio 1:8 to 8:1
+const MIN_SIDE = 768;
+
+function clampDimensions(
     width: number,
     height: number,
     isPro: boolean,
     hasImage: boolean,
-): string {
-    const totalPixels = width * height;
-    if (isPro && !hasImage && totalPixels > 2048 * 2048) {
-        return "4K";
+): [number, number] {
+    const maxTotal = isPro && !hasImage ? 4096 * 4096 : 2048 * 2048;
+    const maxSide = isPro && !hasImage ? 4096 : 2048;
+
+    // Clamp individual sides
+    let w = Math.max(MIN_SIDE, Math.min(width, maxSide));
+    let h = Math.max(MIN_SIDE, Math.min(height, maxSide));
+
+    // Enforce aspect ratio 1:8 to 8:1
+    const ratio = w / h;
+    if (ratio > 8) h = Math.ceil(w / 8);
+    else if (ratio < 1 / 8) w = Math.ceil(h / 8);
+
+    // Scale down if total pixels exceed max
+    const total = w * h;
+    if (total > maxTotal) {
+        const scale = Math.sqrt(maxTotal / total);
+        w = Math.floor(w * scale);
+        h = Math.floor(h * scale);
     }
-    if (totalPixels > 1024 * 1024) {
-        return "2K";
-    }
-    return "1K";
+
+    return [w, h];
 }
 
 interface WanImageResponse {
@@ -102,11 +118,14 @@ export async function callWanImageAPI(
 
     content.push({ text: prompt });
 
-    const width = safeParams.width || 1024;
-    const height = safeParams.height || 1024;
-    const sizeSpec = getResolutionSpec(width, height, isPro, hasImage);
+    const [w, h] = clampDimensions(
+        safeParams.width || 1024,
+        safeParams.height || 1024,
+        isPro,
+        hasImage,
+    );
 
-    logOps(`Calling ${modelLabel} (${sizeSpec}):`, prompt);
+    logOps(`Calling ${modelLabel} (${w}x${h}):`, prompt);
     progress.updateBar(
         requestId,
         35,
@@ -115,7 +134,7 @@ export async function callWanImageAPI(
     );
 
     const parameters: Record<string, unknown> = {
-        size: sizeSpec,
+        size: `${w}*${h}`,
         n: 1,
         watermark: false,
     };

@@ -103,7 +103,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-flash-lite",
+        name: "gemini-flash-lite-3.1",
         config: portkeyConfig["gemini-3.1-flash-lite-preview"],
         transform: pipe(
             sanitizeToolSchemas(),

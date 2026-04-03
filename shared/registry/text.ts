@@ -196,8 +196,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-flash-lite": {
-        aliases: ["gemini-3.1-flash-lite", "gemini-3.1-flash-lite-preview"],
+    "gemini-flash-lite-3.1": {
+        aliases: ["gemini-3.1-flash-lite", "gemini-3.1-flash-lite-preview", "gemini-flash-lite"],
         modelId: "gemini-3.1-flash-lite-preview",
         provider: "google",
         paidOnly: true,

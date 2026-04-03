@@ -1,0 +1,34 @@
+{
+  "pr_number": 9887,
+  "title": "feat(sdk): audio overhaul — dedicated TTS/music endpoints",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/9887",
+  "merged_at": "2026-04-03T16:26:44Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive finds its voice",
+    "blurb": "We've completely overhauled audio in the SDK. Generating text-to-speech and music is now as simple as grabbing a binary buffer, complete with handy new save and export helpers.",
+    "summary": "The SDK now features dedicated endpoints for text-to-speech and music generation, returning binary audio buffers with built-in helper methods.",
+    "impact": "Developers can now easily generate, save, and export audio and music directly using the new generateAudio and audioSpeech methods.",
+    "keywords": [
+      "sdk",
+      "audio",
+      "tts",
+      "music",
+      "api"
+    ],
+    "visual_concept": "The pollinations bee wearing cute chunky headphones, listening to music or a podcast. A retro boombox or a synthesizer keyboard nearby. Musical notes floating in the air.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing chunky retro headphones, bobbing her head to music next to a vintage 8-bit boombox. Colorful pixel musical notes float in the air. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9887.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing chunky retro headphones, bobbing her head to music next to a vintage 8-bit boombox. Colorful pixel musical notes float in the air. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-03T16:27:35.944153+00:00"
+}

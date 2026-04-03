@@ -387,8 +387,8 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: true,
     },
-    "claude-haiku-4.5": {
-        aliases: ["claude-fast", "claude-haiku"],
+    "claude-fast": {
+        aliases: ["claude-haiku-4.5", "claude-haiku"],
         modelId: "claude-haiku-4-5-20251001",
         provider: "bedrock",
         cost: [
@@ -406,8 +406,8 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude-sonnet-4.6": {
-        aliases: ["claude", "claude-sonnet"],
+    "claude": {
+        aliases: ["claude-sonnet-4.6", "claude-sonnet"],
         modelId: "claude-sonnet-4-6",
         provider: "bedrock",
         paidOnly: true,
@@ -426,8 +426,8 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude-opus-4.6": {
-        aliases: ["claude-large", "claude-opus"],
+    "claude-large": {
+        aliases: ["claude-opus-4.6", "claude-opus"],
         modelId: "claude-opus-4-6",
         provider: "bedrock",
         paidOnly: true,
@@ -446,8 +446,8 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude-opus-4.5": {
-        aliases: ["claude-legacy", "claude-large-legacy"],
+    "claude-legacy": {
+        aliases: ["claude-opus-4.5", "claude-large-legacy"],
         modelId: "claude-opus-4-5-20251101",
         provider: "bedrock",
         paidOnly: true,

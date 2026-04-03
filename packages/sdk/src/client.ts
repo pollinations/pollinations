@@ -1,6 +1,7 @@
 import type {
     AccountBalance,
     AccountProfile,
+    AudioBinaryResponse,
     AudioGenerateOptions,
     AuthorizeOptions,
     ChatOptions,
@@ -1085,44 +1086,103 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const response = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
-     * // response.data contains base64 audio, response.transcript contains the text
+     * // Text-to-speech
+     * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
+     *
+     * // Music generation
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
      * ```
      */
     async audio(
         text: string,
         options: AudioGenerateOptions = {},
-    ): Promise<{
-        transcript: string;
-        data: string;
-        id: string;
-        expiresAt: number;
-    }> {
-        const response = await this.chat([{ role: "user", content: text }], {
-            model: options.model || "openai-audio",
-            modalities: ["text", "audio"],
-            audio: {
-                voice: options.voice || "alloy",
-                format: options.format || "mp3",
-            },
-            seed: options.seed,
-        });
-
-        const audioData = response.choices[0]?.message?.audio;
-        if (!audioData) {
+    ): Promise<AudioBinaryResponse> {
+        if (!text || typeof text !== "string") {
             throw new PollinationsError(
-                "No audio in response",
-                "NO_AUDIO",
-                500,
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
             );
         }
 
-        return {
-            transcript: audioData.transcript,
-            data: audioData.data,
-            id: audioData.id,
-            expiresAt: audioData.expires_at,
+        const params: Record<string, unknown> = {
+            voice: options.voice,
+            model: options.model,
+            duration: options.duration,
+            seed:
+                options.seed !== undefined
+                    ? resolveSeed(options.seed)
+                    : undefined,
         };
+
+        const queryString = this.buildQueryParams(params);
+        const encodedText = encodeURIComponent(text);
+        const url = `${this.baseUrl}/audio/${encodedText}${queryString ? `?${queryString}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const contentType =
+            response.headers.get("content-type") || "audio/mpeg";
+
+        return { buffer, contentType };
+    }
+
+    /**
+     * Generate speech using the OpenAI-compatible TTS endpoint (POST /v1/audio/speech).
+     *
+     * @example
+     * ```ts
+     * const { buffer } = await pollinations.audioSpeech('Hello world', { voice: 'nova' });
+     * ```
+     */
+    async audioSpeech(
+        text: string,
+        options: AudioGenerateOptions = {},
+    ): Promise<AudioBinaryResponse> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body = {
+            input: text,
+            voice: options.voice || "alloy",
+            model: options.model || "elevenlabs",
+        };
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const contentType =
+            response.headers.get("content-type") || "audio/mpeg";
+
+        return { buffer, contentType };
     }
 
     // ============================================================================

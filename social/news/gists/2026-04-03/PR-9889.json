@@ -1,0 +1,34 @@
+{
+  "pr_number": 9889,
+  "title": "feat(sdk): add image editing support (POST /v1/images/edits)",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/9889",
+  "merged_at": "2026-04-03T16:29:04Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The SDK gets a paintbrush",
+    "blurb": "We've added image editing support to the SDK. Now you can programmatically tweak, remix, and repaint your images with a single function call.",
+    "summary": "Added `imageEdit()` and `editImage()` methods to the TypeScript SDK to support the OpenAI-compatible image editing endpoint.",
+    "impact": "Developers can now programmatically edit images using prompts and source URLs directly through the SDK, complete with handy file-saving helpers.",
+    "keywords": [
+      "sdk",
+      "image-editing",
+      "typescript",
+      "api",
+      "flux"
+    ],
+    "visual_concept": "The pollinations bee mascot acting as a painter or editor. She should be holding a tiny pixelated paintbrush or palette, standing next to a canvas or a glowing retro monitor showing a half-painted image. The monitor robot could be watching excitedly.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a small paintbrush and touching up a digital canvas on an easel. A chunky retro robot with a CRT monitor head watches excitedly. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9889.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a small paintbrush and touching up a digital canvas on an easel. A chunky retro robot with a CRT monitor head watches excitedly. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes."
+  },
+  "generated_at": "2026-04-03T16:29:51.953308+00:00"
+}

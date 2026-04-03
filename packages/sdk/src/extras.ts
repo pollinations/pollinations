@@ -146,7 +146,9 @@ export function wrapVideoResponse(response: VideoResponse): VideoResponseExt {
 }
 
 /** Wrap audio response with helper methods */
-export function wrapAudioResponse(response: AudioBinaryResponse): AudioResponseExt {
+export function wrapAudioResponse(
+    response: AudioBinaryResponse,
+): AudioResponseExt {
     return {
         ...response,
         saveToFile: (path: string) => saveBufferToFile(response.buffer, path),

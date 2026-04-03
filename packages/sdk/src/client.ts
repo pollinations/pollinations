@@ -1109,7 +1109,10 @@ export class Pollinations {
             voice: options.voice,
             model: options.model,
             duration: options.duration,
-            seed: options.seed !== undefined ? resolveSeed(options.seed) : undefined,
+            seed:
+                options.seed !== undefined
+                    ? resolveSeed(options.seed)
+                    : undefined,
         };
 
         const queryString = this.buildQueryParams(params);
@@ -1128,7 +1131,8 @@ export class Pollinations {
         }
 
         const buffer = await response.arrayBuffer();
-        const contentType = response.headers.get("content-type") || "audio/mpeg";
+        const contentType =
+            response.headers.get("content-type") || "audio/mpeg";
 
         return { buffer, contentType };
     }
@@ -1175,7 +1179,8 @@ export class Pollinations {
         }
 
         const buffer = await response.arrayBuffer();
-        const contentType = response.headers.get("content-type") || "audio/mpeg";
+        const contentType =
+            response.headers.get("content-type") || "audio/mpeg";
 
         return { buffer, contentType };
     }

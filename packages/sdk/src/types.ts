@@ -438,11 +438,7 @@ export type AudioVoice = string;
 export type AudioFormat = "wav" | "mp3" | "flac" | "opus" | "pcm16";
 
 /** Dedicated audio/music model */
-export type AudioModel =
-    | "elevenlabs"
-    | "elevenmusic"
-    | "acestep"
-    | string;
+export type AudioModel = "elevenlabs" | "elevenmusic" | "acestep" | string;
 
 /** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
 export interface AudioGenerateOptions extends RequestOptions {

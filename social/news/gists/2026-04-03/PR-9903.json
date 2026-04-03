@@ -1,0 +1,34 @@
+{
+  "pr_number": 9903,
+  "title": "feat: add opposite prompt Discord bot",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9903",
+  "merged_at": "2026-04-03T17:56:51Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Prompting in reverse",
+    "blurb": "Someone built a Discord bot that takes your image prompt, completely inverts the meaning, and generates that instead. Chaos? Yes. Art? Also yes.",
+    "summary": "Added a new community Discord bot that chains the Pollinations text and image APIs to generate the exact opposite of a user's prompt.",
+    "impact": "Developers can deploy this bot to their servers for a fun, chaotic image generation experience, serving as a great reference for chaining our APIs.",
+    "keywords": [
+      "discord",
+      "bot",
+      "apps",
+      "prompt-engineering",
+      "community"
+    ],
+    "visual_concept": "The concept is 'opposites' and 'Discord bots'. The scene should feature the Pollinations bee and the Monitor Robot (representing the bot). The robot's screen should show something, while a canvas or output shows the exact opposite (e.g., fire vs water, or day vs night).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, standing next to a chunky monitor-head robot. The robot's screen shows a bright sun, while a canvas next to them displays a glowing moon, representing opposite prompts. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9903.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, standing next to a chunky monitor-head robot. The robot's screen shows a bright sun, while a canvas next to them displays a glowing moon, representing opposite prompts. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-03T17:57:46.656431+00:00"
+}

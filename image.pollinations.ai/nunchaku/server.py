@@ -63,7 +63,7 @@ async def send_heartbeat():
             url = f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
             # Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
-            register_url = os.getenv("REGISTER_URL", "http://3.80.56.235:16384/register")
+            register_url = os.getenv("REGISTER_URL", "http://54.147.14.220:16384/register")
             async with aiohttp.ClientSession() as session:
                 async with session.post(register_url, json={'url': url, 'type': service_type}) as response:
                     if response.status == 200:

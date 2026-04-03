@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **661** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **662** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -18,10 +18,10 @@
 | [🎨 AI Photo Editor Pro](https://vision.scripted.my.id/) | Edit photos easily using AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 V-AI-Powered YouTube Shorts Automation Platform](65834394) | Generates YouTube Shorts videos automatically from news URLs and publishes them to multiple social media platforms. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 MUSINGWEI STUDIO](https://musingwei.com) | Generate images, audio, and video using the pollinations.ai APIs with MUSINGWEI STUDIO. | [@web](https://github.com/web) |  | 🫧 |
+| [🖼️ AI Image Studio](https://aiimage.studio) | Generates photorealistic AI images in a client-side, zero-retention web terminal using AI Image Studio; all asset rendering occurs in the local client environment. | [@web](https://github.com/web) |  | 🫧 |
 | [🧩 TileTile](https://tiletile.netlify.app/) | Generate seamless tile textures with TileTile using the Flux Schnell image generation model provided by Pollinations. | [@web](https://github.com/web) |  | 🫧 |
 | [📝 ContentAI](https://contentaiak.lovable.app) | ContentAI is an AI-powered content generation platform for businesses. Users add their business profile (or paste a URL for AI auto-fill), then generate platform-optimized content for Twitter, LinkedI | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 ItacaLab - graphic editor for authors](https://itacalab.editoraitacaiunas.com/) | img width="158" alt="Image" src="https://github.com/user-attachments/assets/4e1824a2-4577-4136-9497-ec52544dd7b5" / | [@web](https://github.com/web) |  | 🫧 |
-| [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@web](https://github.com/web) |  | 🫧 |
 
 ---
 
@@ -32,18 +32,19 @@
 | [🎨 Pollin-Gen Studio](https://image-ai.testes.eu.org) | Pollin-Gen Studio provides a lightweight, 100% open-source web interface for AI image generation via the Pollinations.ai API, designed for secure self-hosting. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ OGP Maker](https://ogp-maker-teal.vercel.app/) | Generate OGP for Facebook/X. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 AI Photo Editor Pro](https://vision.scripted.my.id/) | Edit photos easily using AI. | [@web](https://github.com/web) |  | 🫧 |
+| [🖼️ AI Image Studio](https://aiimage.studio) | Generates photorealistic AI images in a client-side, zero-retention web terminal using AI Image Studio; all asset rendering occurs in the local client environment. | [@web](https://github.com/web) |  | 🫧 |
 | [🧩 TileTile](https://tiletile.netlify.app/) | Generate seamless tile textures with TileTile using the Flux Schnell image generation model provided by Pollinations. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 ItacaLab - graphic editor for authors](https://itacalab.editoraitacaiunas.com/) | img width="158" alt="Image" src="https://github.com/user-attachments/assets/4e1824a2-4577-4136-9497-ec52544dd7b5" / | [@web](https://github.com/web) |  | 🫧 |
 | [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@web](https://github.com/web) |  | 🫧 |
 | [🔬 labol lens](https://labol-lens.streamlit.app/) | Implements labol-lens in labol lens. | [@web](https://github.com/web) |  | 🫧 |
 | [🍳 مطبخي الذكي AI](https://matbaki.vercel.app) | Offers مطبخي الذكي AI, an AI-driven culinary platform that uses Pollinations AI to dynamically generate images for every recipe, including desserts, traditional main courses, and pastries. | [@web](https://github.com/web) |  | 🫧 |
 | [🧊 3D Icon Generator](https://icon.scripted.my.id/) | Create 3D icons in various styles with 3D Icon Generator. | [@web](https://github.com/web) |  | 🫧 |
-| [🖼️ AI Image Generator](https://moh65-debug.github.io/pollinations-image-generator/pollinations-image-generator.html) | Generate images with AI Image Generator using Pollinations AI and BYOP; users supply API keys from enter.pollinations.ai, pay only for what they generate, and the developer pays $0. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 147 apps</summary>
+<details><summary>Show all 148 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ AI Image Generator](https://moh65-debug.github.io/pollinations-image-generator/pollinations-image-generator.html) | Generate images with AI Image Generator using Pollinations AI and BYOP; users supply API keys from enter.pollinations.ai, pay only for what they generate, and the developer pays $0. | [@web](https://github.com/web) |  | 🫧 |
 | [🌼 PollenStudio: AI Variation Gallery](https://souravhchoursiya.github.io/pollen-gallery/) | Showcases PollenStudio: AI Variation Gallery. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Cadavre Exquis Generator](https://baran-sd.github.io/cadavre-exquis/) | Generate AI tri-style images with Cadavre Exquis Generator using z-image. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 AI-Image-Generator](https://main.ai-image-generator-5li.pages.dev/) | Generate images with AI-Image-Generator using a Cloudflare Workers backend and React frontend, with deterministic seed generation and rate limiting. | [@web](https://github.com/web) |  | 🫧 |

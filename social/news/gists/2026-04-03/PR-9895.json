@@ -1,0 +1,34 @@
+{
+  "pr_number": 9895,
+  "title": "docs(sdk): update README with new endpoints and examples",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/9895",
+  "merged_at": "2026-04-03T16:30:27Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Reading the friendly manual",
+    "blurb": "We've updated the SDK README to cover all the shiny new toys. Image editing, dedicated audio endpoints, and fresh models are now fully documented with copy-pasteable examples.",
+    "summary": "Updated the SDK documentation to include new endpoints for image editing, audio generation, and transcription, along with updated model defaults.",
+    "impact": "Developers can now easily reference up-to-date code examples for our newest API capabilities directly in the SDK repository.",
+    "keywords": [
+      "sdk",
+      "documentation",
+      "readme",
+      "api",
+      "examples"
+    ],
+    "visual_concept": "The bee mascot reading a large, glowing manual or spellbook (representing the README/docs). The Nomnom creature is eating an old page of docs. Code plants sprouting from the book.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, hovering over a glowing open book where literal code-plants are sprouting from the pages. The round tan nomnom creature sits nearby happily eating an outdated piece of paper. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'DOCS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-03/PR-9895.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, hovering over a glowing open book where literal code-plants are sprouting from the pages. The round tan nomnom creature sits nearby happily eating an outdated piece of paper. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'DOCS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-03T16:31:32.436892+00:00"
+}

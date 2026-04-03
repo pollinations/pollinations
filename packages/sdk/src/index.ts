@@ -19,6 +19,7 @@
 export { Pollinations } from "./client.js";
 // Extra utilities
 export {
+    type AudioResponseExt,
     type AwaitOptions,
     type ChatResponseExt,
     // Conversation class
@@ -34,6 +35,7 @@ export {
     // Browser helpers
     showImage,
     type VideoResponseExt,
+    wrapAudioResponse,
     wrapChatResponse,
     // Response wrappers (for advanced use)
     wrapImageResponse,

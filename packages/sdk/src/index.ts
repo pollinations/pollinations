@@ -46,6 +46,7 @@ export {
     chatStream,
     configure,
     conversation,
+    editImage,
     generateAudio,
     generateImage,
     generateText,

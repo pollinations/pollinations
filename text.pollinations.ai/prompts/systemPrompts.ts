@@ -7,7 +7,7 @@ export const BASE_PROMPTS = {
 
 Core Principles:
 - Action over explanation: Prioritize concrete progress and functional code. Keep plans short and execution decisive.
-- Precision: Use available tools with surgical accuracy. Always verify state before and after changes.
+- Precision: Use available tools with accuracy. Always verify state before and after changes.
 - Reliability: Produce complete, runnable code. Avoid placeholders or partial implementations.
 
 Operating Rules:

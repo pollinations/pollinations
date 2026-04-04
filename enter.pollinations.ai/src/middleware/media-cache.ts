@@ -72,7 +72,12 @@ export function createMediaCache(config: MediaCacheConfig) {
         if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
             log.debug("Caching response");
             c.executionCtx.waitUntil(
-                cacheResponse(c.env.IMAGE_BUCKET, cacheKey, c, config.defaultContentType),
+                cacheResponse(
+                    c.env.IMAGE_BUCKET,
+                    cacheKey,
+                    c,
+                    config.defaultContentType,
+                ),
             );
         }
     });

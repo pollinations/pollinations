@@ -4,9 +4,9 @@
  * Stores binary responses in R2 with URL-based cache keys.
  */
 
+import type { Logger } from "@logtape/logtape";
 import type { Context } from "hono";
 import { removeUnset } from "@/util.ts";
-import type { Logger } from "@logtape/logtape";
 
 const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
 

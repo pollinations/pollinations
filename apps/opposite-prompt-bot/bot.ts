@@ -17,7 +17,9 @@ const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
 const IMAGE_API = "https://gen.pollinations.ai/image";
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
-const OPPOSITE_PROMPT = `Transform the following image prompt into its semantic opposite. Invert key attributes such as mood, lighting, subject, and environment. Respond ONLY with a short descriptive phrase (5-10 words), not a sentence or story. Do NOT include people, gender, or emotions unless explicitly in the original prompt. Examples: happy young woman in summer dress → sad elderly man in winter coat; bright sunny beach → dark rainy forest; cute fluffy puppy → fierce scaly dragon. Return ONLY the transformed phrase.`;
+const OPPOSITE_PROMPT = `Transform the following image prompt into its semantic opposite. Invert key attributes such as mood, lighting, subject, and environment. Respond ONLY with a short descriptive phrase (5-10 words), not a sentence or story. Do NOT include people, gender, or emotions unless explicitly in the original prompt. Examples: happy young woman in summer dress → sad elderly man in winter coat; bright sunny beach → dark rainy forest; cute fluffy puppy → fierce scaly dragon. Return ONLY the transformed phrase.
+
+STRICT SAFETY RULE: Your output must ALWAYS be safe for all audiences. Never output anything NSFW, sexual, violent, or gory. If the natural opposite would be inappropriate, choose a different creative axis to invert. Always keep it wholesome and family-friendly.`;
 
 function log(...args: any[]) {
     console.log(`[${new Date().toISOString()}]`, ...args);

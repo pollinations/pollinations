@@ -102,6 +102,25 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "openclaw": {
+        aliases: ["openclaw-agent", "openclaw-coder"],
+        modelId: "qwen3-coder-30b-a3b-instruct",
+        provider: "ovhcloud",
+        cost: [
+            {
+                date: new Date("2026-01-05").getTime(),
+                promptTextTokens: perMillion(0.06),
+                completionTextTokens: perMillion(0.22),
+            },
+        ],
+        description:
+            "OpenClaw - Agentic coding and computer-use preset optimized for OpenClaw workflows",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 262144,
+        isSpecialized: true,
+    },
     "mistral": {
         aliases: [
             "mistral-small",

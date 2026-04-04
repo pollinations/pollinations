@@ -58,12 +58,10 @@ export const setKeyOverride = (key: string) => {
     _keyOverride = key;
 };
 
-/** Resolve the API key — flag override > env > stored credentials */
+/** Resolve the API key — flag override > stored credentials */
 export const resolveApiKey = (flagKey?: string): string | undefined =>
     flagKey ??
     _keyOverride ??
-    process.env.POLLINATIONS_API_KEY ??
-    process.env.POLLI_KEY ??
     loadCredentials().apiKey;
 
 export const BASE_URL =

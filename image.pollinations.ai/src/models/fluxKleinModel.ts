@@ -7,10 +7,9 @@ import type { ProgressManager } from "../progressBar.ts";
 const logOps = debug("pollinations:flux-klein:ops");
 const logError = debug("pollinations:flux-klein:error");
 
-// RunPod pod endpoint for Klein 4B
-const KLEIN_BASE_URL =
-    process.env.KLEIN_URL || "https://pi90tfk3sa9t12-8000.proxy.runpod.net";
-const KLEIN_GENERATE_URL = `${KLEIN_BASE_URL}/generate`;
+// RunPod pod endpoint for Klein 4B (read lazily so dotenv has time to load)
+const getKleinGenerateUrl = () =>
+    `${process.env.KLEIN_URL || "https://pi90tfk3sa9t12-8000.proxy.runpod.net"}/generate`;
 const MAX_INPUT_IMAGES = 10;
 
 /**
@@ -74,7 +73,12 @@ export const callFluxKleinAPI = async (
             ...(imagesB64.length > 0 && { images: imagesB64 }),
         };
 
-        logOps("Klein request to", KLEIN_GENERATE_URL, "keys:", Object.keys(body).join(", "));
+        logOps(
+            "Klein request to",
+            getKleinGenerateUrl(),
+            "keys:",
+            Object.keys(body).join(", "),
+        );
 
         const headers: Record<string, string> = {
             "Content-Type": "application/json",
@@ -84,7 +88,7 @@ export const callFluxKleinAPI = async (
             headers["x-backend-token"] = backendToken;
         }
 
-        const response = await fetch(KLEIN_GENERATE_URL, {
+        const response = await fetch(getKleinGenerateUrl(), {
             method: "POST",
             headers,
             body: JSON.stringify(body),

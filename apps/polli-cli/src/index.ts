@@ -1,8 +1,7 @@
 import { Command } from "commander";
-import { appsCommand } from "./commands/apps.js";
+
 import { authCommand } from "./commands/auth.js";
-import { configCommand } from "./commands/config.js";
-import { deployCommand } from "./commands/deploy.js";
+
 import { genCommand } from "./commands/gen/index.js";
 import { healthCommand } from "./commands/health.js";
 import { keysCommand } from "./commands/keys.js";
@@ -11,6 +10,7 @@ import { modelsCommand } from "./commands/models.js";
 import { tierCommand } from "./commands/tier.js";
 import { pollenCommand, usageCommand } from "./commands/usage.js";
 import { whoamiCommand } from "./commands/whoami.js";
+
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
 
@@ -58,13 +58,8 @@ program.addCommand(tierCommand);
 // Generation
 program.addCommand(genCommand);
 
-// Config & diagnostics
-program.addCommand(configCommand);
+// Diagnostics
 program.addCommand(healthCommand);
-
-// Apps & deploy
-program.addCommand(appsCommand);
-program.addCommand(deployCommand);
 
 // MCP
 program.addCommand(mcpCommand);

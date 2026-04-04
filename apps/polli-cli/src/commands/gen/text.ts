@@ -83,7 +83,7 @@ export const textCommand = new Command("text")
     .option("--output <path>", "Save to file instead of stdout")
     .action(async (prompt, opts) => {
         const key = requireKey();
-        opts.model = resolveModel("text", opts.model);
+        opts.model = resolveModel(opts.model);
         const isHuman = getOutputMode() === "human";
         const count = Math.max(1, Number.parseInt(opts.count, 10) || 1);
 

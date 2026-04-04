@@ -21,7 +21,7 @@ export const videoCommand = new Command("video")
     .option("--output <path>", "Save to file", "video.mp4")
     .action(async (prompt, opts) => {
         const key = requireKey();
-        opts.model = resolveModel("video", opts.model);
+        opts.model = resolveModel(opts.model);
         const isHuman = getOutputMode() === "human";
 
         const params = new URLSearchParams({

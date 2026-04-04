@@ -1,6 +1,5 @@
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
-import { resolveModel } from "../lib/config.js";
 import { printError, printTable } from "../lib/output.js";
 
 interface ModelEntry {
@@ -24,14 +23,6 @@ function classifyType(m: ModelEntry): string {
     return "unknown";
 }
 
-function markDefault(
-    name: string,
-    type: string,
-    defaults: Record<string, string>,
-): string {
-    return name === defaults[type] ? `${name} *` : name;
-}
-
 export const modelsCommand = new Command("models")
     .description("List available models")
     .option("--type <type>", "Filter: text, image, audio, video, all", "all")
@@ -39,13 +30,6 @@ export const modelsCommand = new Command("models")
         requireKey();
         const type = opts.type as string;
         const rows: Record<string, unknown>[] = [];
-
-        const defaults: Record<string, string> = {
-            text: resolveModel("text"),
-            image: resolveModel("image"),
-            audio: resolveModel("audio"),
-            video: resolveModel("video"),
-        };
 
         try {
             // /image/models returns image + video models with full metadata
@@ -57,7 +41,7 @@ export const modelsCommand = new Command("models")
                     const mType = classifyType(m);
                     if (type !== "all" && mType !== type) continue;
                     rows.push({
-                        name: markDefault(m.name, mType, defaults),
+                        name: m.name,
                         type: mType,
                         description: m.description ?? "-",
                     });
@@ -71,7 +55,7 @@ export const modelsCommand = new Command("models")
                 });
                 for (const m of textModels) {
                     rows.push({
-                        name: markDefault(m.name, "text", defaults),
+                        name: m.name,
                         type: "text",
                         description: m.description ?? "-",
                     });
@@ -85,7 +69,7 @@ export const modelsCommand = new Command("models")
                 });
                 for (const m of audioModels) {
                     rows.push({
-                        name: markDefault(m.name, "audio", defaults),
+                        name: m.name,
                         type: "audio",
                         description: m.description ?? "-",
                     });

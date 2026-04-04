@@ -1,6 +1,6 @@
 ---
 name: monitor-services
-description: "Health check and auto-restart all Pollinations GPU services (LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Vast.ai). Use with /loop for recurring checks."
+description: "Health check and auto-restart all Pollinations GPU services (Flux/Z-Image on RunPod, LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Vast.ai). Use with /loop for recurring checks."
 ---
 
 # Monitor Services
@@ -126,21 +126,63 @@ Wait ~30s for model load, then re-check health.
 
 ---
 
-### 5. Sana Image Model (Vast.ai via OVH tunnel)
+### 5. Flux + Z-Image Workers (RunPod 4x RTX 4090)
 
 | Property | Value |
 |----------|-------|
-| **Direct** | `211.72.13.202:47190` |
-| **Via OVH tunnel** | `localhost:19876` (on OVH) |
+| **Pod** | `hsl3ksl31lvrcc` |
+| **Provider** | RunPod (4x RTX 4090, community cloud) |
+| **SSH** | `ssh -i ~/.ssh/thomashkey -p 28895 root@38.65.239.17` |
+
+**Workers:**
+
+| GPU | Port | Proxy URL | Service |
+|-----|------|-----------|---------|
+| 0 | 8765 | `https://hsl3ksl31lvrcc-8765.proxy.runpod.net` | Flux (INT4) |
+| 1 | 8766 | `https://hsl3ksl31lvrcc-8766.proxy.runpod.net` | Flux (INT4) |
+| 2 | 8767 | `https://hsl3ksl31lvrcc-8767.proxy.runpod.net` | Z-Image |
+| 3 | 8768 | `https://hsl3ksl31lvrcc-8768.proxy.runpod.net` | Z-Image |
+
+**Health check (per worker):**
+```bash
+curl -s --connect-timeout 5 --max-time 15 https://hsl3ksl31lvrcc-8765.proxy.runpod.net/generate \
+  -X POST -H "Content-Type: application/json" \
+  -d '{"prompt":"test","width":512,"height":512}' -o /dev/null -w "HTTP %{http_code}"
+```
+Expected: HTTP 200
+
+**Registry check (all image workers at once):**
+```bash
+curl -s --connect-timeout 5 --max-time 10 http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register
+```
+Expected: 4 workers with 0% error rate, all `hsl3ksl31lvrcc-*.proxy.runpod.net`
+
+**Restart a worker:**
+```bash
+ssh -i ~/.ssh/thomashkey -p 28895 root@38.65.239.17
+screen -S flux-gpu0 -X quit
+screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nunchaku/venv/bin/activate && \
+  CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=hsl3ksl31lvrcc-8765.proxy.runpod.net PUBLIC_PORT=443 \
+  SERVICE_TYPE=flux python /opt/pollinations/image.pollinations.ai/nunchaku/server.py 2>&1 | tee /tmp/flux-gpu0.log'
+```
+
+---
+
+### 6. SDXL Turbo / Legacy Sana (Vast.ai UK, 1x RTX 4090)
+
+| Property | Value |
+|----------|-------|
+| **Instance** | 34086100 (Vast.ai, UK) |
+| **Direct** | `http://45.143.122.9:32174` |
+| **Via OVH tunnel** | `localhost:19876` (on OVH → port 8765) |
+| **SSH** | `ssh -i ~/.ssh/pollinations_services_2026 -p 16100 root@ssh7.vast.ai` |
+| **Model** | `stabilityai/sdxl-turbo` (registers as `sana` type) |
 
 **Health check (direct):**
 ```bash
-curl -s --connect-timeout 5 --max-time 30 -X POST http://211.72.13.202:47190/generate \
-  -H "Content-Type: application/json" \
-  -d '{"prompt":"test","width":512,"height":512}' \
-  -o /dev/null -w "HTTP %{http_code}"
+curl -s --connect-timeout 5 --max-time 10 http://45.143.122.9:32174/health
 ```
-Expected: HTTP 200
+Expected: `{"status":"healthy","model":"stabilityai/sdxl-turbo"}`
 
 **SSH tunnel check (OVH side):**
 ```bash
@@ -150,7 +192,7 @@ Expected: LISTEN on port 19876
 
 ---
 
-### 5. OVH Disk Space
+### 7. OVH Disk Space
 
 **Check:**
 ```bash
@@ -169,14 +211,16 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo truncate -s 0 /var/log/syslog
 
 When invoked, run checks in this order:
 
-1. **LTX-2 health** - curl health endpoint
-2. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
-3. **ACE-Step health** - curl health endpoint on port 8189
-4. **Klein health** - curl RunPod proxy health endpoint
-5. **Legacy image service** - check systemctl status
-6. **Sana direct** - curl generate endpoint
-7. **SSH tunnel** - check port 19876 on OVH
-8. **Disk space** - check OVH disk usage
+1. **EC2 image registry** - curl register endpoint, check worker count and error rates
+2. **Flux/Z-Image RunPod** - verify 4 workers registered with 0% error rate
+3. **LTX-2 health** - curl health endpoint
+4. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
+5. **ACE-Step health** - curl health endpoint on port 8189
+6. **Klein health** - curl RunPod proxy health endpoint
+7. **Legacy image service** - check systemctl status
+8. **SDXL Turbo / legacy sana** - curl health on 45.143.122.9:32174
+9. **SSH tunnel** - check port 19876 on OVH
+10. **Disk space** - check OVH disk usage
 
 For each:
 - If healthy: report OK with latency
@@ -194,12 +238,17 @@ Report a brief status table:
 ```
 | Service | Status | Latency | Notes |
 |---------|--------|---------|-------|
+| EC2 registry | OK | 0.1s | 4 workers, 0% errors |
+| Flux RunPod (gpu0) | OK | 2.9s | hsl3ksl31lvrcc-8765 |
+| Flux RunPod (gpu1) | OK | 2.9s | hsl3ksl31lvrcc-8766 |
+| Z-Image RunPod (gpu2) | OK | 1.5s | hsl3ksl31lvrcc-8767 |
+| Z-Image RunPod (gpu3) | OK | 1.5s | hsl3ksl31lvrcc-8768 |
 | LTX-2 health | OK | 0.2s | |
 | LTX-2 e2e | OK | 11.3s | 682KB |
 | ACE-Step | OK | 0.1s | |
 | Klein 4B | OK | 0.3s | RunPod |
 | Legacy image | OK | - | active |
-| Sana | OK | 2.1s | |
+| SDXL Turbo (sana) | OK | 0.3s | vast.ai UK 34086100 |
 | SSH tunnel | OK | - | LISTEN |
 | OVH disk | OK | - | 45% used |
 ```

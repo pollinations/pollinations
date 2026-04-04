@@ -1,0 +1,34 @@
+{
+  "pr_number": 9925,
+  "title": "feat: migrate Klein 4B from bpaigen.com to RunPod",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9925",
+  "merged_at": "2026-04-04T11:18:03Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Moving day for Klein",
+    "blurb": "We packed up the Klein 4B model and moved it to a new self-hosted setup. The new place has more space, meaning you can now cram up to 10 reference images into a single prompt.",
+    "summary": "Migrated the Klein 4B image model to a self-hosted RunPod backend, unifying the text-to-image and editing code paths.",
+    "impact": "Generations and edits using the Klein model now support up to 10 reference images, up from the previous limit of 4.",
+    "keywords": [
+      "klein",
+      "image-generation",
+      "runpod",
+      "backend",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot moving into a new server home. The robot is holding a stack of 10 polaroid pictures (reference images). Cozy, warm server room with plants.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny sweatband, flying next to a chunky monitor-head robot who is happily carrying a tall stack of polaroid pictures. They are moving into a cozy server room with lime green (#ecf874) glowing lights and code-plants sprouting from the racks. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-04/PR-9925.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny sweatband, flying next to a chunky monitor-head robot who is happily carrying a tall stack of polaroid pictures. They are moving into a cozy server room with lime green (#ecf874) glowing lights and code-plants sprouting from the racks. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-04-04T11:19:07.671766+00:00"
+}

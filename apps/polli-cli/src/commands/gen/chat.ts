@@ -30,7 +30,7 @@ export const chatCommand = new Command("chat")
     .option("--save <path>", "Save conversation transcript on exit")
     .action(async (opts) => {
         const key = requireKey();
-        opts.model = resolveModel("text", opts.model);
+        opts.model = resolveModel(opts.model);
         const isJson = getOutputMode() !== "human";
 
         const messages: Message[] = [];

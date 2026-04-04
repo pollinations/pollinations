@@ -19,7 +19,7 @@ export const pipeCommand = new Command("pipe")
     .option("--max-tokens <n>", "Maximum output tokens")
     .action(async (opts) => {
         const key = requireKey();
-        opts.model = resolveModel("text", opts.model);
+        opts.model = resolveModel(opts.model);
 
         // Read all of stdin
         const chunks: Buffer[] = [];

@@ -228,44 +228,47 @@ const logout = new Command("logout")
         printSuccess("Logged out. Credentials cleared.");
     });
 
+/** Shared action for `auth status` and the `whoami` alias. */
+export async function showAuthStatus(): Promise<void> {
+    const key = resolveApiKey();
+    if (!key) {
+        printResult({
+            authenticated: false,
+            message: "Not logged in. Run: polli auth login",
+        });
+        return;
+    }
+
+    const masked = `${key.slice(0, 5)}...${key.slice(-6)}`;
+
+    try {
+        const [profile, balance] = await Promise.all([
+            enter<ProfileResponse>("/api/account/profile", { apiKey: key }),
+            enter<BalanceResponse>("/api/account/balance", {
+                apiKey: key,
+            }).catch(() => null),
+        ]);
+
+        printResult({
+            authenticated: true,
+            key: masked,
+            name: profile.name ?? profile.email ?? "unknown",
+            tier: profile.tier ?? "unknown",
+            pollen: balance?.balance ?? "unknown",
+            cadence: balance?.cadence ?? "unknown",
+        });
+    } catch {
+        printResult({
+            authenticated: true,
+            key: masked,
+            status: "Key stored but could not reach API",
+        });
+    }
+}
+
 const status = new Command("status")
     .description("Show current auth status, tier, and balance")
-    .action(async () => {
-        const key = resolveApiKey();
-        if (!key) {
-            printResult({
-                authenticated: false,
-                message: "Not logged in. Run: polli auth login",
-            });
-            return;
-        }
-
-        const masked = `${key.slice(0, 5)}...${key.slice(-6)}`;
-
-        try {
-            const [profile, balance] = await Promise.all([
-                enter<ProfileResponse>("/api/account/profile", { apiKey: key }),
-                enter<BalanceResponse>("/api/account/balance", {
-                    apiKey: key,
-                }).catch(() => null),
-            ]);
-
-            printResult({
-                authenticated: true,
-                key: masked,
-                name: profile.name ?? profile.email ?? "unknown",
-                tier: profile.tier ?? "unknown",
-                pollen: balance?.balance ?? "unknown",
-                cadence: balance?.cadence ?? "unknown",
-            });
-        } catch {
-            printResult({
-                authenticated: true,
-                key: masked,
-                status: "Key stored but could not reach API",
-            });
-        }
-    });
+    .action(showAuthStatus);
 
 export const authCommand = new Command("auth")
     .description("Login, logout, and check auth status")

@@ -22,7 +22,7 @@ export const editCommand = new Command("edit")
     .option("--output <path>", "Save result to file (default: edited.png)")
     .action(async (prompt, opts) => {
         const key = requireKey();
-        const model = resolveModel("image", opts.model ?? "gptimage");
+        const model = resolveModel(opts.model);
         const isHuman = getOutputMode() === "human";
         const images: string[] = opts.image;
         const outputPath: string = opts.output ?? "edited.png";

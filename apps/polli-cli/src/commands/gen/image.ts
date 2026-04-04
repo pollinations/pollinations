@@ -89,7 +89,7 @@ export const imageCommand = new Command("image")
     .option("--output <path>", "Save to file")
     .action(async (prompt, opts) => {
         const key = requireKey();
-        opts.model = resolveModel("image", opts.model);
+        opts.model = resolveModel(opts.model);
         const isHuman = getOutputMode() === "human";
         const count = Math.max(1, Number.parseInt(opts.count, 10) || 1);
 

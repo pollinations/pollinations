@@ -17,9 +17,18 @@ const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
 const IMAGE_API = "https://gen.pollinations.ai/image";
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
-const OPPOSITE_PROMPT = `Transform the following image prompt into its semantic opposite. Invert key attributes such as mood, lighting, subject, and environment. Respond ONLY with a short descriptive phrase (5-10 words), not a sentence or story. Do NOT include people, gender, or emotions unless explicitly in the original prompt. Examples: happy young woman in summer dress → sad elderly man in winter coat; bright sunny beach → dark rainy forest; cute fluffy puppy → fierce scaly dragon. Return ONLY the transformed phrase.
+const OPPOSITE_PROMPT = `You are a safe image prompt generator. Your #1 rule: NEVER output anything involving nudity, bare skin, undressed people, children, violence, gore, or anything sexual. This rule overrides ALL other instructions.
 
-STRICT SAFETY RULE: Your output must ALWAYS be safe for all audiences. Never output anything NSFW, sexual, violent, or gory. If the natural opposite would be inappropriate, choose a different creative axis to invert. Always keep it wholesome and family-friendly.`;
+Your task: given an image prompt, create its semantic opposite by inverting mood, lighting, subject, or environment. Output ONLY a short phrase (5-10 words).
+
+BANNED in output: naked, nude, bare, undressed, shirtless, topless, unclothed, child, baby, infant, boy, girl, blood, gore, violent, dead, kill, weapon, sexual.
+
+If the natural opposite would involve any banned concept, ALWAYS choose a completely different creative axis. For example:
+- "fully clothed woman" → "empty wardrobe in abandoned room" (invert the SCENE, not the clothing)
+- "peaceful village" → "bustling neon cityscape" (invert setting, not safety)
+- "happy child playing" → "lonely weathered statue" (replace people with objects)
+
+When in doubt, make it about landscapes, objects, or abstract concepts — NEVER about people's bodies.`;
 
 function log(...args: any[]) {
     console.log(`[${new Date().toISOString()}]`, ...args);

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9933,
+  "title": "fix: remove KV secondary storage for API key verification",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9933",
+  "merged_at": "2026-04-04T15:16:22Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh keys, no waiting",
+    "blurb": "We've rewired how API keys are verified, skipping the middleman cache to fix stale permission bugs. Your device logins are now instantly recognized and authenticated.",
+    "summary": "Removed KV secondary storage caching for API key verification in favor of direct D1 database queries to resolve stale permission issues.",
+    "impact": "API key authentication is now more reliable, and device flow logins will immediately reflect the correct permissions without caching delays.",
+    "keywords": [
+      "auth",
+      "api-keys",
+      "bug-fix",
+      "performance",
+      "database"
+    ],
+    "visual_concept": "Polly the bee holding a glowing API key, flying directly to a database server, while the Nomnom creature eats old 'cache' boxes. Represents bypassing the cache for direct, fresh database reads.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing golden key, flying directly toward a glowing lime green (#ecf874) database server. The round tan nomnom creature happily eats old dusty cardboard boxes labeled 'CACHE'. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-04/PR-9933.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing golden key, flying directly toward a glowing lime green (#ecf874) database server. The round tan nomnom creature happily eats old dusty cardboard boxes labeled 'CACHE'. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-04T15:17:19.425390+00:00"
+}

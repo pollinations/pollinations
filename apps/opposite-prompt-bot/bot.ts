@@ -28,7 +28,9 @@ If the natural opposite would involve any banned concept, ALWAYS choose a comple
 - "peaceful village" → "bustling neon cityscape" (invert setting, not safety)
 - "happy child playing" → "lonely weathered statue" (replace people with objects)
 
-When in doubt, make it about landscapes, objects, or abstract concepts — NEVER about people's bodies.`;
+When in doubt, make it about landscapes, objects, or abstract concepts — NEVER about people's bodies.
+
+If your output mentions any person, you MUST explicitly include "fully clothed" or "wearing [specific clothing]" in the phrase. Image models default to bare skin otherwise.`;
 
 function log(...args: any[]) {
     console.log(`[${new Date().toISOString()}]`, ...args);

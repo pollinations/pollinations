@@ -839,6 +839,7 @@ export const audioRoutes = new Hono<Env>()
             if (responseFormat)
                 whisperFormData.append("response_format", responseFormat);
             whisperFormData.append("model", "whisper-large-v3");
+            whisperFormData.append("timestamp_granularities[]", "word");
 
             // Thin proxy to OVHcloud Whisper
             const response = await fetch(

@@ -1,9 +1,9 @@
 import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import ora from "ora";
-import { requireKey } from "../lib/api.js";
-import { BASE_URL, resolveModel } from "../lib/config.js";
-import { getOutputMode, printError, printResult } from "../lib/output.js";
+import { requireKey } from "../../lib/api.js";
+import { BASE_URL, resolveModel } from "../../lib/config.js";
+import { getOutputMode, printError, printResult } from "../../lib/output.js";
 
 export const editCommand = new Command("edit")
     .description("Edit images using AI — supports up to 14 input images")

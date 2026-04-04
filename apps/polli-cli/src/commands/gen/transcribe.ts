@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { Command } from "commander";
 import ora from "ora";
-import { requireKey } from "../lib/api.js";
-import { BASE_URL } from "../lib/config.js";
-import { getOutputMode, printError, printResult } from "../lib/output.js";
+import { requireKey } from "../../lib/api.js";
+import { BASE_URL } from "../../lib/config.js";
+import { getOutputMode, printError, printResult } from "../../lib/output.js";
 
 export const transcribeCommand = new Command("transcribe")
     .description("Transcribe audio to text (speech-to-text)")

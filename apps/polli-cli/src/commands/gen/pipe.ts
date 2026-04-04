@@ -1,7 +1,7 @@
 import { Command } from "commander";
-import { requireKey } from "../lib/api.js";
-import { BASE_URL, resolveModel } from "../lib/config.js";
-import { getOutputMode, printError, printResult } from "../lib/output.js";
+import { requireKey } from "../../lib/api.js";
+import { BASE_URL, resolveModel } from "../../lib/config.js";
+import { getOutputMode, printError, printResult } from "../../lib/output.js";
 
 /**
  * `polli pipe` — reads stdin and sends it as a prompt to the text API.

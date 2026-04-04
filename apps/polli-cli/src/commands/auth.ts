@@ -136,8 +136,8 @@ const login = new Command("login")
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    client_id: "polli-cli",
-                    scope: "generate",
+                    client_id: "pk_NgBAArhUeGvSRFba",
+                    scope: "generate keys balance usage",
                 }),
             });
             if (!res.ok) {

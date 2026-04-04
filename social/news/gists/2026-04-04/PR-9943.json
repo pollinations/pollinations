@@ -1,0 +1,33 @@
+{
+  "pr_number": 9943,
+  "title": "fix: NSFW safety for opposite-prompt bot",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9943",
+  "merged_at": "2026-04-04T16:16:34Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Sweaters for everyone",
+    "blurb": "The Opposite Prompt Bot just got a safety upgrade! It now focuses on inverting scenes instead of outfits, keeping our digital garden cozy and family-friendly.",
+    "summary": "Implemented a safety-first system prompt for the Opposite Prompt Bot to prevent NSFW outputs by focusing inversions on scenes and objects.",
+    "impact": "Users interacting with the bot will receive consistently safe, family-friendly image generations.",
+    "keywords": [
+      "bot",
+      "safety",
+      "prompt-engineering",
+      "community-app"
+    ],
+    "visual_concept": "The PR is about adding safety filters and explicit clothing requirements to an image generation bot. Visually, this can be represented by Polly the bee and the Monitor Robot ensuring things are 'clothed' and safe. The Monitor Robot wearing a cozy oversized sweater perfectly captures the 'explicit clothing' rule in a cute, wholesome way.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and the chunky monitor robot, who is now wearing a cozy oversized knitted sweater to stay warm and safe. They are looking at a retro terminal displaying a beautiful, family-friendly landscape. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-04/PR-9943.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and the chunky monitor robot, who is now wearing a cozy oversized knitted sweater to stay warm and safe. They are looking at a retro terminal displaying a beautiful, family-friendly landscape. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-04T16:17:43.957160+00:00"
+}

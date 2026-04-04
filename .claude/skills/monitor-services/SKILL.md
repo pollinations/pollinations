@@ -1,6 +1,6 @@
 ---
 name: monitor-services
-description: "Health check and auto-restart all Pollinations GPU services (LTX-2 on GH200, legacy image on OVH, Sana on Vast.ai). Use with /loop for recurring checks."
+description: "Health check and auto-restart all Pollinations GPU services (LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Vast.ai). Use with /loop for recurring checks."
 ---
 
 # Monitor Services
@@ -102,7 +102,31 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo systemctl restart image-polli
 
 ---
 
-### 4. Sana Image Model (Vast.ai via OVH tunnel)
+### 4. Klein 4B (RunPod Pod)
+
+| Property | Value |
+|----------|-------|
+| **Host** | `pi90tfk3sa9t12-8000.proxy.runpod.net` |
+| **Port** | `8000` |
+| **Provider** | RunPod (RTX 3090, community cloud) |
+| **SSH** | `ssh -i ~/.runpod/ssh/RunPod-Key-Go root@213.144.200.243 -p 10207` |
+| **Auth** | `x-backend-token` header with `PLN_IMAGE_BACKEND_TOKEN` |
+
+**Health check:**
+```bash
+curl -s --connect-timeout 5 --max-time 10 https://pi90tfk3sa9t12-8000.proxy.runpod.net/health
+```
+Expected: `{"status":"ok","model":"black-forest-labs/FLUX.2-klein-4B"}`
+
+**Restart:**
+```bash
+ssh -i ~/.runpod/ssh/RunPod-Key-Go root@213.144.200.243 -p 10207 "/workspace/restart.sh"
+```
+Wait ~30s for model load, then re-check health.
+
+---
+
+### 5. Sana Image Model (Vast.ai via OVH tunnel)
 
 | Property | Value |
 |----------|-------|
@@ -148,10 +172,11 @@ When invoked, run checks in this order:
 1. **LTX-2 health** - curl health endpoint
 2. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
 3. **ACE-Step health** - curl health endpoint on port 8189
-4. **Legacy image service** - check systemctl status
-5. **Sana direct** - curl generate endpoint
-6. **SSH tunnel** - check port 19876 on OVH
-7. **Disk space** - check OVH disk usage
+4. **Klein health** - curl RunPod proxy health endpoint
+5. **Legacy image service** - check systemctl status
+6. **Sana direct** - curl generate endpoint
+7. **SSH tunnel** - check port 19876 on OVH
+8. **Disk space** - check OVH disk usage
 
 For each:
 - If healthy: report OK with latency
@@ -171,6 +196,8 @@ Report a brief status table:
 |---------|--------|---------|-------|
 | LTX-2 health | OK | 0.2s | |
 | LTX-2 e2e | OK | 11.3s | 682KB |
+| ACE-Step | OK | 0.1s | |
+| Klein 4B | OK | 0.3s | RunPod |
 | Legacy image | OK | - | active |
 | Sana | OK | 2.1s | |
 | SSH tunnel | OK | - | LISTEN |

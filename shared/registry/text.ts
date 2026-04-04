@@ -104,7 +104,7 @@ export const TEXT_SERVICES = {
     },
     "openclaw": {
         aliases: ["openclaw-agent", "openclaw-coder"],
-        modelId: "qwen3-coder-30b-a3b-instruct",
+        modelId: "openclaw-premium-agent",
         provider: "ovhcloud",
         cost: [
             {

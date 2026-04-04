@@ -18,51 +18,12 @@ import {
 import { sendTierEventToTinybird } from "./events.ts";
 import { DEFAULT_TIER, getTierPollen } from "./tier-config.ts";
 
-// Track which API keys have been written to KV in this isolate.
-// Better Auth writes tracking data (lastRequest, requestCount, updatedAt) to KV
-// on every verify call. At ~3-5M req/day this exceeds KV's write limits (429s).
-// First write per key (cache-warm on KV miss) goes through; subsequent writes
-// (verify tracking updates) are skipped. Session writes are unaffected.
-// Dashboard reads lastRequest from D1 (updated via deferUpdates).
-const kvWrittenKeys = new Set<string>();
-
-function addKeyPrefix(key: string) {
-    return `auth:${key}`;
-}
-
-type ApiKeyCacheRef = {
-    id: string;
-    userId: string;
-    key?: string | null;
-};
-
-export async function invalidateApiKeyCache(
-    env: Pick<Cloudflare.Env, "KV">,
-    key: ApiKeyCacheRef,
-): Promise<void> {
-    const cacheKeys = [
-        `api-key:by-id:${key.id}`,
-        `api-key:by-user:${key.userId}`,
-        ...(key.key ? [`api-key:${key.key}`] : []),
-    ];
-
-    await Promise.all(
-        cacheKeys.map((cacheKey) => {
-            const prefixedKey = addKeyPrefix(cacheKey);
-            kvWrittenKeys.delete(prefixedKey);
-            return env.KV.delete(prefixedKey);
-        }),
-    );
-}
-
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
 
     const PUBLISHABLE_KEY_PREFIX = "pk";
 
     const apiKeyPlugin = apiKey({
-        storage: "secondary-storage",
-        fallbackToDatabase: true,
         enableMetadata: true,
         deferUpdates: true, // Defers lastRequest/requestCount updates - OK if dropped, prevents D1 contention
         defaultPrefix: PUBLISHABLE_KEY_PREFIX,
@@ -132,30 +93,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                       },
                   }
                 : undefined,
-        },
-        secondaryStorage: {
-            get: async (key) => {
-                return await env.KV.get(addKeyPrefix(key));
-            },
-            set: async (key, value, ttl) => {
-                if (key.startsWith("api-key:")) {
-                    const prefixedKey = addKeyPrefix(key);
-                    if (kvWrittenKeys.has(prefixedKey)) return;
-                    await env.KV.put(prefixedKey, value, {
-                        expirationTtl: ttl,
-                    });
-                    kvWrittenKeys.add(prefixedKey);
-                    return;
-                }
-                await env.KV.put(addKeyPrefix(key), value, {
-                    expirationTtl: ttl,
-                });
-            },
-            delete: async (key) => {
-                const prefixedKey = addKeyPrefix(key);
-                kvWrittenKeys.delete(prefixedKey);
-                await env.KV.delete(prefixedKey);
-            },
         },
         trustedOrigins: ["*"],
         user: {

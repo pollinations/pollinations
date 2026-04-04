@@ -252,7 +252,7 @@ export const IMAGE_CONFIG = {
         enhance: false,
         isVideo: true,
         defaultDuration: 6,
-        maxDuration: 30,
+        maxDuration: 60,
         defaultResolution: "720p",
     },
 } as const satisfies ImageModelsConfig;

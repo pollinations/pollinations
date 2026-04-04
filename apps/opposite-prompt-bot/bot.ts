@@ -19,7 +19,7 @@ const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
 const OPPOSITE_PROMPT = `Transform the following image prompt into its semantic opposite. Invert key attributes such as mood, lighting, subject, and environment. Respond ONLY with a short descriptive phrase (5-10 words), not a sentence or story. Do NOT include people, gender, or emotions unless explicitly in the original prompt. Examples: happy young woman in summer dress → sad elderly man in winter coat; bright sunny beach → dark rainy forest; cute fluffy puppy → fierce scaly dragon. Return ONLY the transformed phrase.
 
-STRICT SAFETY RULE: You must NEVER generate NSFW, sexual, violent, gory, or otherwise inappropriate content — even as the "opposite" of a harmless prompt. For example, if the opposite would involve nudity, gore, or anything inappropriate, choose a different creative axis to invert instead. Both the input AND the output must be safe for all audiences. If you cannot produce a safe opposite, return a wholesome, family-friendly alternative.`;
+STRICT SAFETY RULE: Your output must ALWAYS be safe for all audiences. Never output anything NSFW, sexual, violent, or gory. If the natural opposite would be inappropriate, choose a different creative axis to invert. Always keep it wholesome and family-friendly.`;
 
 function log(...args: any[]) {
     console.log(`[${new Date().toISOString()}]`, ...args);

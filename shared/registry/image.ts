@@ -385,7 +385,7 @@ export const IMAGE_SERVICES = {
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
-        provider: "bpai",
+        provider: "runpod",
         alpha: true,
         cost: [
             {
@@ -394,7 +394,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "FLUX.2 Klein 4B - Fast image generation and editing via bpaigen",
+            "FLUX.2 Klein 4B - Fast image generation and editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

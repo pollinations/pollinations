@@ -346,6 +346,7 @@ debugsession_*/
 
 # Claude skills mutable data (sensitive/local)
 .claude/skills/*/data/
+.claude/scheduled_tasks.lock
 
 # Vim swap files
 *.swp

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9928,
+  "title": "feat: add audio caching via media cache middleware",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9928",
+  "merged_at": "2026-04-04T14:20:14Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Echoes in the hive",
+    "blurb": "We've upgraded our caching system to support audio generation. Repeated text-to-speech requests now return instantly, making your voice apps snappier than ever.",
+    "summary": "Extracted the existing image caching logic into a unified media cache middleware and applied it to the audio generation endpoints.",
+    "impact": "Developers will experience instant response times for repeated audio requests, significantly improving performance for text-to-speech and music applications.",
+    "keywords": [
+      "audio",
+      "caching",
+      "performance",
+      "api",
+      "middleware"
+    ],
+    "visual_concept": "Polly the bee wearing headphones, organizing glowing musical notes into a storage box. The Robot companion displaying a soundwave on its screen, representing the new audio caching capability.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, carefully placing a glowing musical note into a lime green (#ecf874) storage box. A chunky retro robot companion with a CRT monitor head displays a soundwave on its screen. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-04/PR-9928.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, carefully placing a glowing musical note into a lime green (#ecf874) storage box. A chunky retro robot companion with a CRT monitor head displays a soundwave on its screen. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-04T14:21:02.853736+00:00"
+}

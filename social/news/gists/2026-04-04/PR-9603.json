@@ -1,0 +1,37 @@
+{
+  "pr_number": 9603,
+  "title": "Fix STT: Enable scribe speaker diarization and whisper word-level timestamps",
+  "author": "LumsBot",
+  "url": "https://github.com/pollinations/pollinations/pull/9603",
+  "merged_at": "2026-04-04T11:15:18Z",
+  "labels": [
+    "AUDIO",
+    "API",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Who's buzzing, and exactly when",
+    "blurb": "The hive's ears just got sharper. Our Speech-to-Text API now supports speaker diarization and word-level timestamps, so you can finally prove exactly who said what, and when.",
+    "summary": "Enabled speaker diarization for Scribe and word-level timestamps for Whisper in the STT API.",
+    "impact": "Developers can now use the verbose_json response format to extract individual speaker labels and precise per-word timing from transcribed audio files.",
+    "keywords": [
+      "audio",
+      "stt",
+      "whisper",
+      "diarization",
+      "api",
+      "transcription"
+    ],
+    "visual_concept": "The pollinations bee and the monitor robot analyzing an audio waveform. The waveform is split into different colors representing different speakers, and tiny clocks or timestamps are attached to individual words floating in the air.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones and a chunky monitor robot analyzing a glowing audio waveform that splits into different pastel colors. Tiny pixelated words with little clocks attached float up from the waveform. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-04/PR-9603.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones and a chunky monitor robot analyzing a glowing audio waveform that splits into different pastel colors. Tiny pixelated words with little clocks attached float up from the waveform. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-04-04T11:16:28.762262+00:00"
+}

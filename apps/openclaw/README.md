@@ -54,6 +54,13 @@ If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. 
         "api": "openai-completions",
         "models": [
           {
+            "id": "openclaw",
+            "name": "OpenClaw",
+            "input": ["text"],
+            "contextWindow": 262144,
+            "maxTokens": 8192
+          },
+          {
             "id": "kimi",
             "name": "Kimi K2.5",
             "reasoning": true,

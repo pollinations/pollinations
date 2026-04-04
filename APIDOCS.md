@@ -383,6 +383,103 @@ Returns daily aggregated usage for the last 90 days, grouped by date and model. 
 
 ##### Status: 403 Permission denied - API key missing \`account:usage\` permission
 
+### List API Keys
+
+- **Method:** `GET`
+- **Path:** `/account/keys`
+- **Tags:** 👤 Account
+
+List all API keys for the current user. Requires `account:keys` permission when using API keys. Secret key values are never returned.
+
+#### Responses
+
+##### Status: 200 List of API keys
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied
+
+### Create API Key
+
+- **Method:** `POST`
+- **Path:** `/account/keys`
+- **Tags:** 👤 Account
+
+Create a new API key. Requires `account:keys` permission and a secret key (sk\_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`name` (required)**
+
+  `string` — Name for the API key
+
+- **`accountPermissions`**
+
+  `object` — Account permissions (e.g. \["balance", "usage"]). "keys" is auto-stripped.
+
+- **`allowedModels`**
+
+  `object` — Model IDs this key can access. null = all models
+
+- **`expiresIn`**
+
+  `integer` — Expiry in seconds from now (max 365 days)
+
+- **`pollenBudget`**
+
+  `object` — Pollen budget cap. null = unlimited
+
+- **`type`**
+
+  `string`, possible values: `"secret", "publishable"`, default: `"secret"` — Key type: secret (sk\_) or publishable (pk\_)
+
+**Example:**
+
+```json
+{
+  "name": "",
+  "type": "secret",
+  "expiresIn": 1,
+  "allowedModels": [
+    ""
+  ],
+  "pollenBudget": 1,
+  "accountPermissions": [
+    ""
+  ]
+}
+```
+
+#### Responses
+
+##### Status: 200 Created API key with full secret
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied or publishable key
+
+### Revoke API Key
+
+- **Method:** `DELETE`
+- **Path:** `/account/keys/{id}`
+- **Tags:** 👤 Account
+
+Delete/revoke an API key. Requires `account:keys` permission and a secret key (sk\_). Cannot revoke the key used to authenticate the request.
+
+#### Responses
+
+##### Status: 200 Key revoked
+
+##### Status: 400 Cannot revoke self
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied
+
+##### Status: 404 Key not found
+
 ### Get API Key Info
 
 - **Method:** `GET`
@@ -576,14 +673,6 @@ Returns available models (text, image, audio) in the OpenAI-compatible format (`
 
     `object`
 
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -618,10 +707,6 @@ Returns available models (text, image, audio) in the OpenAI-compatible format (`
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -666,14 +751,6 @@ Returns all available image and video generation models with pricing, capabiliti
 
     `object`
 
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -708,10 +785,6 @@ Returns all available image and video generation models with pricing, capabiliti
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -756,14 +829,6 @@ Returns all available text generation models with pricing, capabilities, and met
 
     `object`
 
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -798,10 +863,6 @@ Returns all available text generation models with pricing, capabilities, and met
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -846,14 +907,6 @@ Returns all available audio models (text-to-speech, music generation, and transc
 
     `object`
 
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -888,10 +941,6 @@ Returns all available audio models (text-to-speech, music generation, and transc
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -1387,26 +1436,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 
   `object`
 
-  - **`completion_tokens` (required)**
-
-    `integer`
-
-  - **`prompt_tokens` (required)**
-
-    `integer`
-
-  - **`total_tokens` (required)**
-
-    `integer`
-
-  - **`completion_tokens_details`**
-
-    `object`
-
-  - **`prompt_tokens_details`**
-
-    `object`
-
 - **`user_tier`**
 
   `string`, possible values: `"anonymous", "seed", "flower", "nectar"`
@@ -1472,92 +1501,18 @@ Supports streaming, function calling, vision (image input), structured outputs, 
           }
         ]
       },
-      "content_filter_results": {
-        "hate": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "self_harm": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "sexual": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "violence": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "jailbreak": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_text": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_code": {
-          "filtered": true,
-          "detected": true
-        }
-      }
+      "content_filter_results": null
     }
   ],
   "prompt_filter_results": [
     {
-      "prompt_index": 0,
-      "content_filter_results": {
-        "hate": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "self_harm": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "sexual": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "violence": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "jailbreak": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_text": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_code": {
-          "filtered": true,
-          "detected": true
-        }
-      }
+      "prompt_index": 0
     }
   ],
   "created": -9007199254740991,
   "model": "",
   "system_fingerprint": "",
   "object": "chat.completion",
-  "usage": {
-    "completion_tokens": 0,
-    "completion_tokens_details": {
-      "accepted_prediction_tokens": 0,
-      "audio_tokens": 0,
-      "reasoning_tokens": 0,
-      "rejected_prediction_tokens": 0
-    },
-    "prompt_tokens": 0,
-    "prompt_tokens_details": {
-      "audio_tokens": 0,
-      "cached_tokens": 0
-    },
-    "total_tokens": 0
-  },
   "user_tier": "anonymous",
   "citations": [
     ""
@@ -1580,26 +1535,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
   - **`details` (required)**
 
     `object`
-
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1635,18 +1570,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -1668,14 +1591,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1711,10 +1626,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -1736,14 +1647,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1779,10 +1682,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -1804,14 +1703,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1847,10 +1738,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -1872,14 +1759,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1915,10 +1794,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
     "code": "RATE_LIMITED",
     "message": "You're making requests too quickly. Please slow down a bit.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -1940,14 +1815,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -1983,10 +1850,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2033,26 +1896,6 @@ true
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -2087,18 +1930,6 @@ true
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -2120,14 +1951,6 @@ true
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2163,10 +1986,6 @@ true
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2188,14 +2007,6 @@ true
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2231,10 +2042,6 @@ true
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2256,14 +2063,6 @@ true
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2299,10 +2098,6 @@ true
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2324,14 +2119,6 @@ true
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2367,10 +2154,6 @@ true
     "code": "RATE_LIMITED",
     "message": "You're making requests too quickly. Please slow down a bit.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2392,14 +2175,6 @@ true
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2435,10 +2210,6 @@ true
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2497,26 +2268,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -2551,18 +2302,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -2584,14 +2323,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2627,10 +2358,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2652,14 +2379,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2695,10 +2414,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2720,14 +2435,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2763,10 +2470,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2788,14 +2491,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2831,10 +2526,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
     "code": "RATE_LIMITED",
     "message": "You're making requests too quickly. Please slow down a bit.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2856,14 +2547,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -2899,10 +2582,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -2955,26 +2634,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -3009,18 +2668,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -3042,14 +2689,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3085,10 +2724,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3110,14 +2745,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3153,10 +2780,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3178,14 +2801,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3221,10 +2836,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3246,14 +2857,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3289,10 +2892,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
     "code": "RATE_LIMITED",
     "message": "You're making requests too quickly. Please slow down a bit.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3314,14 +2913,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3357,10 +2948,6 @@ Browse all available models at [`/image/models`](https://gen.pollinations.ai/ima
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3413,26 +3000,6 @@ Generate speech or music from text via a simple GET request.
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -3467,18 +3034,6 @@ Generate speech or music from text via a simple GET request.
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -3500,14 +3055,6 @@ Generate speech or music from text via a simple GET request.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3543,10 +3090,6 @@ Generate speech or music from text via a simple GET request.
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3568,14 +3111,6 @@ Generate speech or music from text via a simple GET request.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3611,10 +3146,6 @@ Generate speech or music from text via a simple GET request.
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3636,14 +3167,6 @@ Generate speech or music from text via a simple GET request.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3679,10 +3202,6 @@ Generate speech or music from text via a simple GET request.
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3704,14 +3223,6 @@ Generate speech or music from text via a simple GET request.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3747,10 +3258,6 @@ Generate speech or music from text via a simple GET request.
     "code": "RATE_LIMITED",
     "message": "You're making requests too quickly. Please slow down a bit.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3772,14 +3279,6 @@ Generate speech or music from text via a simple GET request.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -3815,10 +3314,6 @@ Generate speech or music from text via a simple GET request.
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -3895,41 +3390,9 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
 
 ###### Content-Type: application/json
 
-- **`created` (required)**
-
-  `integer`
-
-- **`data` (required)**
-
-  `array`
-
-  **Items:**
-
-  - **`b64_json`**
-
-    `string`
-
-  - **`revised_prompt`**
-
-    `string`
-
-  - **`url`**
-
-    `string`
-
 **Example:**
 
-```json
-{
-  "created": -9007199254740991,
-  "data": [
-    {
-      "url": "",
-      "b64_json": "",
-      "revised_prompt": ""
-    }
-  ]
-}
+```
 ```
 
 ##### Status: 400 Something was wrong with the input data, check the details for more info.
@@ -3947,26 +3410,6 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
   - **`details` (required)**
 
     `object`
-
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4002,18 +3445,6 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -4035,14 +3466,6 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4078,10 +3501,6 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -4103,14 +3522,6 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4146,10 +3557,6 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -4171,14 +3578,6 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4214,10 +3613,6 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -4239,14 +3634,6 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4282,10 +3669,6 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -4310,41 +3693,9 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
 
 ###### Content-Type: application/json
 
-- **`created` (required)**
-
-  `integer`
-
-- **`data` (required)**
-
-  `array`
-
-  **Items:**
-
-  - **`b64_json`**
-
-    `string`
-
-  - **`revised_prompt`**
-
-    `string`
-
-  - **`url`**
-
-    `string`
-
 **Example:**
 
-```json
-{
-  "created": -9007199254740991,
-  "data": [
-    {
-      "url": "",
-      "b64_json": "",
-      "revised_prompt": ""
-    }
-  ]
-}
+```
 ```
 
 ##### Status: 400 Something was wrong with the input data, check the details for more info.
@@ -4362,26 +3713,6 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
   - **`details` (required)**
 
     `object`
-
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4417,18 +3748,6 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -4450,14 +3769,6 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4493,10 +3804,6 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -4518,14 +3825,6 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4561,10 +3860,6 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -4586,14 +3881,6 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4629,10 +3916,6 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -4654,14 +3937,6 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4697,10 +3972,6 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -4842,26 +4113,6 @@ Set `model` to `elevenmusic` to generate music instead of speech.
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -4896,18 +4147,6 @@ Set `model` to `elevenmusic` to generate music instead of speech.
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -4929,14 +4168,6 @@ Set `model` to `elevenmusic` to generate music instead of speech.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -4972,10 +4203,6 @@ Set `model` to `elevenmusic` to generate music instead of speech.
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -4997,14 +4224,6 @@ Set `model` to `elevenmusic` to generate music instead of speech.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -5040,10 +4259,6 @@ Set `model` to `elevenmusic` to generate music instead of speech.
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -5065,14 +4280,6 @@ Set `model` to `elevenmusic` to generate music instead of speech.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -5108,10 +4315,6 @@ Set `model` to `elevenmusic` to generate music instead of speech.
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -5133,14 +4336,6 @@ Set `model` to `elevenmusic` to generate music instead of speech.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -5176,10 +4371,6 @@ Set `model` to `elevenmusic` to generate music instead of speech.
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -5277,26 +4468,6 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 
     `object`
 
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
   - **`message` (required)**
 
     `object`
@@ -5331,18 +4502,6 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
     "code": "BAD_REQUEST",
     "message": "Something was wrong with the input data, check the details for more info.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
     "requestId": "",
     "cause": null
   }
@@ -5364,14 +4523,6 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -5407,10 +4558,6 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
     "code": "UNAUTHORIZED",
     "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -5432,14 +4579,6 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -5475,10 +4614,6 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
     "code": "PAYMENT_REQUIRED",
     "message": "Insufficient pollen balance or API key budget exhausted.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -5500,14 +4635,6 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -5543,10 +4670,6 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
     "code": "FORBIDDEN",
     "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -5568,14 +4691,6 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
   - **`details` (required)**
 
     `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
 
   - **`message` (required)**
 
@@ -5611,10 +4726,6 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
     "code": "INTERNAL_ERROR",
     "message": "Oh snap, something went wrong on our end. We're on it!",
     "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
     "requestId": "",
     "cause": null
   }
@@ -5866,27 +4977,6 @@ Delete a file by its content hash. Only the original uploader can delete their o
 
 ## Schemas
 
-### ErrorDetails
-
-- **Type:**`object`
-
-* **`name` (required)**
-
-  `string`
-
-* **`stack`**
-
-  `string`
-
-**Example:**
-
-```json
-{
-  "name": "",
-  "stack": ""
-}
-```
-
 ### CacheControl
 
 - **Type:**`object`
@@ -5903,266 +4993,11 @@ Delete a file by its content hash. Only the original uploader can delete their o
 }
 ```
 
-### ContentFilterSeverity
-
-- **Type:**`string`
-
-**Example:**
-
-### ContentFilterResult
-
-- **Type:**`object`
-
-* **`hate`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-* **`jailbreak`**
-
-  `object`
-
-  - **`detected` (required)**
-
-    `boolean`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-* **`protected_material_code`**
-
-  `object`
-
-  - **`detected` (required)**
-
-    `boolean`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-* **`protected_material_text`**
-
-  `object`
-
-  - **`detected` (required)**
-
-    `boolean`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-* **`self_harm`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-* **`sexual`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-* **`violence`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-**Example:**
-
-```json
-{
-  "hate": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "self_harm": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "sexual": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "violence": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "jailbreak": {
-    "filtered": true,
-    "detected": true
-  },
-  "protected_material_text": {
-    "filtered": true,
-    "detected": true
-  },
-  "protected_material_code": {
-    "filtered": true,
-    "detected": true
-  }
-}
-```
-
-### CompletionUsage
-
-- **Type:**`object`
-
-* **`completion_tokens` (required)**
-
-  `integer`
-
-* **`prompt_tokens` (required)**
-
-  `integer`
-
-* **`total_tokens` (required)**
-
-  `integer`
-
-* **`completion_tokens_details`**
-
-  `object`
-
-* **`prompt_tokens_details`**
-
-  `object`
-
-**Example:**
-
-```json
-{
-  "completion_tokens": 0,
-  "completion_tokens_details": {
-    "accepted_prediction_tokens": 0,
-    "audio_tokens": 0,
-    "reasoning_tokens": 0,
-    "rejected_prediction_tokens": 0
-  },
-  "prompt_tokens": 0,
-  "prompt_tokens_details": {
-    "audio_tokens": 0,
-    "cached_tokens": 0
-  },
-  "total_tokens": 0
-}
-```
-
-### ValidationErrorDetails
-
-- **Type:**`object`
-
-* **`fieldErrors` (required)**
-
-  `object`
-
-* **`formErrors` (required)**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-* **`name` (required)**
-
-  `string`
-
-* **`stack`**
-
-  `string`
-
-**Example:**
-
-```json
-{
-  "name": "",
-  "stack": "",
-  "formErrors": [
-    ""
-  ],
-  "fieldErrors": {
-    "propertyName*": [
-      ""
-    ]
-  }
-}
-```
-
 ### MessageContentPart
 
 - **Type:**
 
 **Example:**
-
-### CreateImageResponse
-
-- **Type:**`object`
-
-* **`created` (required)**
-
-  `integer`
-
-* **`data` (required)**
-
-  `array`
-
-  **Items:**
-
-  - **`b64_json`**
-
-    `string`
-
-  - **`revised_prompt`**
-
-    `string`
-
-  - **`url`**
-
-    `string`
-
-**Example:**
-
-```json
-{
-  "created": -9007199254740991,
-  "data": [
-    {
-      "url": "",
-      "b64_json": "",
-      "revised_prompt": ""
-    }
-  ]
-}
-```
 
 ### CreateImageRequest
 

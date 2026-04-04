@@ -9,13 +9,13 @@
  */
 
 import { createMiddleware } from "hono/factory";
+import type { RequestIdVariables } from "hono/request-id";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
+    cacheResponse,
     generateCacheKey,
     setHttpMetadataHeaders,
-    cacheResponse,
 } from "@/utils/media-cache.ts";
-import type { LoggerVariables } from "@/middleware/logger.ts";
-import type { RequestIdVariables } from "hono/request-id";
 
 type MediaCacheEnv = {
     Bindings: CloudflareBindings;
@@ -48,8 +48,15 @@ export function createMediaCache(config: MediaCacheConfig) {
             const cached = await c.env.IMAGE_BUCKET.get(cacheKey);
             if (cached) {
                 log.info("Cache HIT");
-                setHttpMetadataHeaders(c, cached.httpMetadata, config.defaultContentType);
-                c.header("Cache-Control", "public, max-age=31536000, immutable");
+                setHttpMetadataHeaders(
+                    c,
+                    cached.httpMetadata,
+                    config.defaultContentType,
+                );
+                c.header(
+                    "Cache-Control",
+                    "public, max-age=31536000, immutable",
+                );
                 c.header("X-Cache", "HIT");
                 c.header("X-Cache-Type", "EXACT");
                 return c.body(cached.body);
@@ -66,8 +73,8 @@ export function createMediaCache(config: MediaCacheConfig) {
         const contentType = c.res?.headers.get("content-type");
         const xCache = c.res?.headers.get("x-cache");
 
-        const isMatchingContent = config.mediaTypes.some(
-            (type) => contentType?.includes(type),
+        const isMatchingContent = config.mediaTypes.some((type) =>
+            contentType?.includes(type),
         );
         if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
             log.debug("Caching response");

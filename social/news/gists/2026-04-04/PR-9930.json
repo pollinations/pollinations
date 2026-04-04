@@ -1,0 +1,34 @@
+{
+  "pr_number": 9930,
+  "title": "docs: add Flux/Z-Image RunPod + SDXL Turbo to GPU docs and monitoring",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9930",
+  "merged_at": "2026-04-04T12:41:12Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Mapping the GPU garden",
+    "blurb": "Updated our internal maps to track the new RunPod GPU instances powering Flux and Z-Image. Keeping the monitoring tools sharp so we always know what's buzzing.",
+    "summary": "Updated internal documentation and Claude monitoring skills to track new RunPod GPU instances for Flux and Z-Image generation.",
+    "impact": "Maintainers and AI agents can now accurately monitor the health and status of the latest image generation infrastructure.",
+    "keywords": [
+      "gpu",
+      "infrastructure",
+      "monitoring",
+      "runpod",
+      "flux"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot acting as system admins, looking at a glowing dashboard or map of server nodes. Represents tracking and monitoring infrastructure.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, looking at a glowing retro terminal screen alongside a chunky monitor-head robot. The screen displays a map of glowing server nodes. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-04/PR-9930.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, looking at a glowing retro terminal screen alongside a chunky monitor-head robot. The screen displays a map of glowing server nodes. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-04T12:42:12.649460+00:00"
+}

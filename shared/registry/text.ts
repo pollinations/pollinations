@@ -109,8 +109,8 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-01-05").getTime(),
-                promptTextTokens: perMillion(0.06),
-                completionTextTokens: perMillion(0.22),
+                promptTextTokens: perMillion(0.08),
+                completionTextTokens: perMillion(0.32),
             },
         ],
         description:

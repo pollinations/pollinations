@@ -36,7 +36,6 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
-<<<<<<< HEAD
         name: "qwen-coder-large",
         config: portkeyConfig["qwen3-coder-next"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
@@ -48,11 +47,11 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-vision",
         config: portkeyConfig["qwen3-vl-plus"],
-=======
+    },
+    {
         name: "openclaw",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         transform: createSystemPromptTransform(BASE_PROMPTS.openclaw),
->>>>>>> caffd5647 (add a new model called openclaw)
     },
     {
         name: "mistral",

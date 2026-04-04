@@ -10,7 +10,6 @@ import {
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
 import { getTierCadence, tierNames } from "@/tier-config.ts";
-import { invalidateApiKeyCache } from "../auth.ts";
 
 // Calculate next tier refill time (null for tiers with no refill)
 function getNextRefillAt(tier?: string | null): string | null {
@@ -851,11 +850,7 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "API key not found" });
             }
 
-            // Delete from DB and invalidate cache
-            await Promise.all([
-                db.delete(apikeyTable).where(eq(apikeyTable.id, id)),
-                invalidateApiKeyCache(c.env, key),
-            ]);
+            await db.delete(apikeyTable).where(eq(apikeyTable.id, id));
 
             return c.json({ success: true });
         },

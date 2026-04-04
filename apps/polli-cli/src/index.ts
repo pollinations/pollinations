@@ -1,22 +1,15 @@
 import { Command } from "commander";
 import { appsCommand } from "./commands/apps.js";
-import { audioCommand } from "./commands/audio.js";
 import { authCommand } from "./commands/auth.js";
-import { chatCommand } from "./commands/chat.js";
 import { configCommand } from "./commands/config.js";
 import { deployCommand } from "./commands/deploy.js";
-import { editCommand } from "./commands/edit.js";
+import { genCommand } from "./commands/gen/index.js";
 import { healthCommand } from "./commands/health.js";
-import { imageCommand } from "./commands/image.js";
 import { keysCommand } from "./commands/keys.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { modelsCommand } from "./commands/models.js";
-import { pipeCommand } from "./commands/pipe.js";
-import { textCommand } from "./commands/text.js";
 import { tierCommand } from "./commands/tier.js";
-import { transcribeCommand } from "./commands/transcribe.js";
 import { pollenCommand, usageCommand } from "./commands/usage.js";
-import { videoCommand } from "./commands/video.js";
 import { whoamiCommand } from "./commands/whoami.js";
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
@@ -62,15 +55,8 @@ program.addCommand(pollenCommand);
 program.addCommand(modelsCommand);
 program.addCommand(tierCommand);
 
-// Generation — top-level for dead-simple usage
-program.addCommand(textCommand);
-program.addCommand(imageCommand);
-program.addCommand(editCommand);
-program.addCommand(audioCommand);
-program.addCommand(videoCommand);
-program.addCommand(chatCommand);
-program.addCommand(pipeCommand);
-program.addCommand(transcribeCommand);
+// Generation
+program.addCommand(genCommand);
 
 // Config & diagnostics
 program.addCommand(configCommand);

@@ -1,14 +1,14 @@
 import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import ora from "ora";
-import { requireKey } from "../lib/api.js";
-import { BASE_URL, resolveModel } from "../lib/config.js";
+import { requireKey } from "../../lib/api.js";
+import { BASE_URL, resolveModel } from "../../lib/config.js";
 import {
     getOutputMode,
     printError,
     printResult,
     printSuccess,
-} from "../lib/output.js";
+} from "../../lib/output.js";
 
 interface ChatResponse {
     choices: Array<{ message: { content: string } }>;

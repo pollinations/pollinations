@@ -2,9 +2,9 @@ import { writeFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import chalk from "chalk";
 import { Command } from "commander";
-import { requireKey } from "../lib/api.js";
-import { BASE_URL, resolveModel } from "../lib/config.js";
-import { getOutputMode, printError, printResult } from "../lib/output.js";
+import { requireKey } from "../../lib/api.js";
+import { BASE_URL, resolveModel } from "../../lib/config.js";
+import { getOutputMode, printError, printResult } from "../../lib/output.js";
 
 interface Message {
     role: "system" | "user" | "assistant";

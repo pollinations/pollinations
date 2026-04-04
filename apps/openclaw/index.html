@@ -631,7 +631,7 @@
   | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
                     <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
                         <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
-                        <li>🤖 Adds 7 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
+                        <li>🤖 Adds 8 models: OpenClaw, Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
                         <li>🔍 Configures <code style="color:var(--accent); font-size:13px">web_search</code> tool with Perplexity <em>via pollinations.ai</em> (preserves existing if already set)</li>
                     </ul>
 
@@ -643,10 +643,11 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "pollinations/kimi",
-        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
+                "primary": "pollinations/openclaw",
+                "fallbacks": ["pollinations/kimi", "pollinations/deepseek", "pollinations/glm"]
       },
       "models": {
+                "pollinations/openclaw": { "alias": "OpenClaw" },
         "pollinations/kimi": { "alias": "Kimi K2.5" },
         "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
         "pollinations/glm": { "alias": "GLM-4.7" },
@@ -665,6 +666,8 @@
         "apiKey": "${POLLINATIONS_API_KEY}",
         "api": "openai-completions",
         "models": [
+                    { "id": "openclaw", "name": "OpenClaw",
+                        "input": ["text"], "contextLength": 262144 },
           { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
             "input": ["text","image"], "contextLength": 256000 },
           { "id": "deepseek", "name": "DeepSeek V3.2",
@@ -706,7 +709,7 @@
 
 curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- <span class="key-in-json">YOUR_API_KEY</span>
 
-The script will restart the gateway automatically. After that, switch to the new provider with: /model pollinations/gemini-search<button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
+The script will restart the gateway automatically. After that, switch to the new provider with: /model pollinations/openclaw<button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
                 </div>
             </div>
         </div>
@@ -716,7 +719,12 @@ The script will restart the gateway automatically. After that, switch to the new
 
             <div class="model-table">
                 <div class="model-row recommended">
-                    <div class="model-label">Kimi K2.5 <span class="model-tag">default</span></div>
+                    <div class="model-label">OpenClaw <span class="model-tag">default</span></div>
+                    <div class="model-id">pollinations/openclaw</div>
+                    <div class="model-note"><strong>Best low-cost preset</strong> for agentic coding and computer-use workflows. Built on a fast coding model with OpenClaw-tuned behavior.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Kimi K2.5</div>
                     <div class="model-id">pollinations/kimi</div>
                     <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K context</em>, vision, tools, reasoning. 77% SWE-Bench.</div>
                 </div>
@@ -752,7 +760,7 @@ The script will restart the gateway automatically. After that, switch to the new
                 </div>
             </div>
 
-            <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model pollinations/gemini-search</code></p>
+            <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model pollinations/openclaw</code></p>
         </section>
 
         <section class="section">
@@ -798,7 +806,7 @@ function toggleManual() {
 
 function startAuthorize() {
     var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
-    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast,claude-large,gemini-large');
+    var models = encodeURIComponent('openclaw,kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast,claude-large,gemini-large');
     window.location.href = `https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}&models=${models}`;
 }
 

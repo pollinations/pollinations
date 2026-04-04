@@ -91,7 +91,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "glm",
-      "name": "GLM-4.7 — Coding, reasoning, agentic workflows",
+      "name": "GLM 5 — Coding, reasoning, agentic workflows",
       "reasoning": false,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},

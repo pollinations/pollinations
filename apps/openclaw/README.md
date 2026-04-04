@@ -2,7 +2,7 @@
 
 Use **25+ AI models** as your OpenClaw brain through a single API.
 
-**OpenClaw** as default (agentic coding + computer-use preset), with Kimi K2.5, DeepSeek, GLM-4.7, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
+**OpenClaw** as default (agentic coding + computer-use preset), with Kimi K2.5, DeepSeek, GLM 5, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
 
 ## Setup
 
@@ -34,7 +34,7 @@ Switch models anytime in chat with `/model pollinations/<name>`:
 | **OpenClaw** (default) | `pollinations/openclaw` | Agentic coding, terminal workflows, computer-use reliability |
 | **Kimi K2.5** | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
 | **DeepSeek V3.2** | `pollinations/deepseek` | Strong reasoning & tool calling |
-| **GLM-4.7** | `pollinations/glm` | Coding, reasoning, agentic workflows |
+| **GLM 5** | `pollinations/glm` | Coding, reasoning, agentic workflows |
 | **Gemini + Search** | `pollinations/gemini-search` | Web search grounded answers |
 | **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast with good reasoning |
 | **Claude Opus 4.6** | `pollinations/claude-large` | Most intelligent (paid) |

@@ -1,0 +1,87 @@
+{
+  "date": "2026-04-03",
+  "period_start": "2026-04-03",
+  "period_end": "2026-04-03",
+  "title": "Massive SDK upgrade: audio, image editing, and smarter defaults",
+  "summary": "A heavy shipping day bringing a massive SDK overhaul, programmatic API key management, new Gemini models, and a freshly scrubbed app directory.\n\nSix PRs overhauled the TypeScript/JavaScript SDK. We added dedicated methods for text-to-speech and music generation, wired up the OpenAI-compatible image editing endpoint, and swapped the default image model from flux to zimage. We also relaxed client-side video duration limits so you can actually use newer models like Wan and Grok Video Pro, and stopped the SDK from pointlessly retrying when you hit a 402 Insufficient Balance.\n\nWe added Google's Gemini 3.1 Flash Lite preview to the text API for fast, 1M-token context window processing. Behind the scenes, Claude models were migrated to AWS Bedrock with explicit versioning, though we kept the original naming scheme so your code won't break. On the bug front, Wan image models now actually respect your requested width and height instead of forcing squares, and the default audio transcription endpoint correctly routes to Whisper Large V3.\n\nYou can now automate your own access. We shipped secure, permission-gated endpoints to programmatically create, list, and revoke API keys directly within your applications.",
+  "pr_count": 19,
+  "prs": [
+    {
+      "number": 9636,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9862,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9864,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9868,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9879,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9880,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9885,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9887,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9889,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9890,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9891,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9893,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9895,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9896,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9897,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9902,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9903,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9904,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9908,
+      "date": "2026-04-03"
+    }
+  ],
+  "generated_at": "2026-04-04T06:20:10.893185+00:00"
+}

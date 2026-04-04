@@ -484,7 +484,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Amazon Nova Reel - Bedrock Video Generation (6-30s, 720p)",
+            "Amazon Nova Reel - Bedrock Video Generation (6-60s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9937,
+  "title": "Add https://storyboard-ai-ochre.vercel.app/ to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/9937",
+  "merged_at": "2026-04-04T14:39:38Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Sticky notes and pixels",
+    "blurb": "StoryBoard AI just landed in the greenhouse. Map out your wildest ideas on an infinite canvas with AI-generated frames, sticky notes, and a whole lot of drag-and-drop magic.",
+    "summary": "Added StoryBoard AI, a visual planning application with an infinite canvas and AI image generation, to the community apps showcase.",
+    "impact": "Creators can now discover and use a new community-built tool for visually mapping out stories and ideas.",
+    "keywords": [
+      "community",
+      "app",
+      "storyboard",
+      "image-generation",
+      "canvas"
+    ],
+    "visual_concept": "A storyboard or infinite canvas with sticky notes and image frames. Polly the bee acting as a director or planner, pinning things to a board.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, pinning colorful sticky notes and image frames to a large wooden storyboard canvas. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-04/PR-9937.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, pinning colorful sticky notes and image frames to a large wooden storyboard canvas. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-04T14:41:16.230149+00:00",
+  "app_name": "https://storyboard-ai-ochre.vercel.app/",
+  "app_url": "https://storyboard-ai-ochre.vercel.app/"
+}

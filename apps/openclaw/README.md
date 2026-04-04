@@ -74,6 +74,7 @@ Then set the default model:
 openclaw models set pollinations/openclaw
 openclaw models fallbacks add pollinations/kimi
 openclaw models fallbacks add pollinations/deepseek
+openclaw models fallbacks add pollinations/glm
 openclaw gateway restart
 ```
 

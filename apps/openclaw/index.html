@@ -631,8 +631,8 @@
   | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
                     <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
                         <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
-                        <li>🤖 Adds 8 models: OpenClaw, Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
-                        <li>🔍 Configures <code style="color:var(--accent); font-size:13px">web_search</code> tool with Perplexity <em>via pollinations.ai</em> (preserves existing if already set)</li>
+                        <li>🤖 Adds 8 OpenClaw models: OpenClaw, Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
+                        <li>🔍 Also enables Perplexity Fast for the <code style="color:var(--accent); font-size:13px">web_search</code> tool <em>via pollinations.ai</em> (preserves existing if already set)</li>
                     </ul>
 
                     <button class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
@@ -667,21 +667,21 @@
         "api": "openai-completions",
         "models": [
                     { "id": "openclaw", "name": "OpenClaw",
-                        "input": ["text"], "contextLength": 262144 },
+                        "input": ["text"], "contextWindow": 262144 },
           { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
-            "input": ["text","image"], "contextLength": 256000 },
+            "input": ["text","image"], "contextWindow": 256000 },
           { "id": "deepseek", "name": "DeepSeek V3.2",
-            "input": ["text"], "contextLength": 128000 },
+            "input": ["text"], "contextWindow": 128000 },
           { "id": "glm", "name": "GLM 5",
-            "input": ["text"], "contextLength": 128000 },
+            "input": ["text"], "contextWindow": 128000 },
           { "id": "gemini-search", "name": "Gemini + Search",
-            "input": ["text","image"], "contextLength": 128000 },
+            "input": ["text","image"], "contextWindow": 128000 },
           { "id": "claude-fast", "name": "Claude Haiku 4.5",
-            "input": ["text","image"], "contextLength": 200000 },
+            "input": ["text","image"], "contextWindow": 200000 },
           { "id": "claude-large", "name": "Claude Opus 4.6 (Paid)",
-            "input": ["text","image"], "contextLength": 200000 },
+            "input": ["text","image"], "contextWindow": 200000 },
           { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
-            "input": ["text","image"], "contextLength": 1000000 }
+            "input": ["text","image"], "contextWindow": 1000000 }
         ]
       }
     }

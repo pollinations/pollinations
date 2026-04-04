@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [📚 vocamax](https://play.google.com/store/apps/details?id=com.musiclearns.music_app) | Enriches vocamax vocabulary sets using n8n and the enter.pollinations.ai API to add meanings, expand vocabulary, generate images, and provide grammar support for each set. | [@android](https://github.com/android) |
-| [🤖 Exovia Destek](https://discord.com/invite/3BF7NH4fKN (in my discord its the your ai that uses in " #?・soru "channel)) | Displays the image referenced in Exovia Destek with src https://github.com/user-attachments/assets/859fcf85-5bd4-495b-a5fa-f4bc53177368 and attributes width=1271 height=921 alt='Image'. | [@discord](https://github.com/discord) |
-| [🥞 Martabak Gresik](https://martabakgresik.my.id) | Connects customers to Martabak Gresik and its handmade Sweet Martabak and Savory Egg Martabak; launched in 2020 in Gresik, East Java as a web designer-led digital transformation project. | [@web](https://github.com/web) |
-| [🧩 Puzzle Hexagonal Simétrico](https://proyectodescartes.org/IATools/146_Puzles_hexagonales/) | Play Puzzle Hexagonal Simétrico. | [@web](https://github.com/web) |
-| [🔬 labol lens](https://labol-lens.streamlit.app/) | Implements labol-lens in labol lens. | [@web](https://github.com/web) |
-| [🍳 مطبخي الذكي AI](https://matbaki.vercel.app) | Offers مطبخي الذكي AI, an AI-driven culinary platform that uses Pollinations AI to dynamically generate images for every recipe, including desserts, traditional main courses, and pastries. | [@web](https://github.com/web) |
-| [📝 YoutubeToBlog](10759187) | Displays YoutubeToBlog. | [@web](https://github.com/web) |
-| [🌐 Noyaku](https://play.google.com/store/apps/details?id=com.kickerai.noyaku) | Translate Webtoons, manhwa, novels, comics, and web content using AI with Noyaku. | [@android](https://github.com/android) |
-| [🎓 Learnty](https://learnty.site) | Learnty generates personalized learning games with AI, creating interactive exercises that help users engage with information and learn basic concepts. | [@web](https://github.com/web) |
-| [✒️ Onyx Sign](https://onyxsign.vercel.app/) | Generate minimalist flat 2D signatures with Onyx Sign and export handwriting-ready vector files converting AI designs into physical handwriting formats. | [@web](https://github.com/web) |
+| [🧞 Genie AI](https://cantalopapps.com/genie-ai) | Chat with Genie AI for live internet answers, document analysis and summaries, image recognition, and image/video generation with text-to-speech and sound effect generation. | [@lankafoaz](https://github.com/lankafoaz) |
+| [🧠 Viralent](viralent.info) | Provides daily informative articles and interactive quizzes on Viralent to help users broaden horizons and hone knowledge. | [@danuras](https://github.com/danuras) |
+| [🖼️ AI Image Studio](https://aiimage.studio) | Generates photorealistic AI images in a client-side, zero-retention web terminal using AI Image Studio; all asset rendering occurs in the local client environment. | [@witekmedia](https://github.com/witekmedia) |
+| [🎬 MUSINGWEI STUDIO](https://musingwei.com) | Generate images, audio, and video using the pollinations.ai APIs with MUSINGWEI STUDIO. | [@musingwei](https://github.com/musingwei) |
+| [🖼️ OGP Maker](https://ogp-maker-teal.vercel.app/) | Generate OGP for Facebook/X. | [@wildriver](https://github.com/wildriver) |
+| [🎨 AI Photo Editor Pro](https://vision.scripted.my.id/) | Edit photos easily using AI. | [@grew-easing-easily](https://github.com/grew-easing-easily) |
+| 🎬 V-AI-Powered YouTube Shorts Automation Platform | Generates YouTube Shorts videos automatically from news URLs and publishes them to multiple social media platforms. | [@oguzgokyar](https://github.com/oguzgokyar) |
+| [🎨 Pollin-Gen Studio](https://image-ai.testes.eu.org) | Pollin-Gen Studio provides a lightweight, 100% open-source web interface for AI image generation via the Pollinations.ai API, designed for secure self-hosting. | [@samucastudent](https://github.com/samucastudent) |
+| [🧩 TileTile](https://tiletile.netlify.app/) | Generate seamless tile textures with TileTile using the Flux Schnell image generation model provided by Pollinations. | [@xaw1](https://github.com/xaw1) |
+| [🎨 ItacaLab - graphic editor for authors](https://itacalab.editoraitacaiunas.com/) | img width="158" alt="Image" src="https://github.com/user-attachments/assets/4e1824a2-4577-4136-9497-ec52544dd7b5" / | [@wljrodrigues](https://github.com/wljrodrigues) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -47,16 +47,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-03-23** – **🚀 Amazon Nova arrives** The Nova model family (Pro, Canvas, and Reel) is now wired up for text, image, and video generation. We also enabled image-to-image variation support for Canvas.
-- **2026-03-23** – **🧠 Grok learns to reason** Added official xAI integration for `grok-imagine` and `grok-video-pro`, plus upgraded text models featuring `grok-reasoning` with a casual 2M token context window.
-- **2026-03-23** – **🎨 Qwen image models** Added Alibaba's `qwen-image-plus` and `qwen-image-edit-plus`. Native CJK text rendering and multi-image editing are now on the menu.
-- **2026-03-23** – **🎬 Fast, free, and moving** Added `wan-fast` for free 5-second video generation. We also defaulted `audio=true` across the video API, so supported models will just generate sound automatically.
-- **2026-03-23** – **🔐 Headless in the hive** Implemented RFC 8628 Device Authorization Grant. You can now securely authenticate terminal tools and headless scripts without complex browser workarounds.
-- **2026-03-23** – **🎵 Free the MIDI** We split the `midijourney` text model into a free base version (Claude Haiku) and a large variant (Claude Opus) for complex compositions.
-- **2026-03-23** – **🌟 Showcase additions** Phicasso Chat (browser-native privacy) and AI MIDI Generator (text-to-multitrack) have joined the community showcase. [Try them](https://hello.pollinations.ai) <!-- app -->
-- **2026-03-22** – **🤖 Qwen Models & Vision** Alibaba's Qwen models (`qwen-coder-large`, `qwen-large`, and `qwen-vision`) are now live on the [Unified API](https://gen.pollinations.ai). 1M context windows and image understanding, completely unlocked for the free tier.
-- **2026-03-22** – **🎨 LND Ai Showcase** LND Ai has been added to the community showcase. Another solid text-to-image tool built entirely by hitting our API. [Try it](https://www.namansoni.in/text-to-image). <!-- app -->
-- **2026-03-20** – **🎨 Klein Multi-Image Blending** The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending.
+- **2026-04-03** – **🚀 Gemini 3.1 Flash Lite** Google's lightweight multimodal model is now live on the [text API](https://gen.pollinations.ai/v1/models). Fast processing and a 1M token context window for when you have entirely too much to say.
+- **2026-04-03** – **🔗 Programmatic API Keys** You can now create, list, and revoke API keys directly via endpoints. Automate your access management instead of clicking around the [dashboard](https://enter.pollinations.ai).
+- **2026-04-03** – **🎨 SDK gets a paintbrush and a voice** The [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk) now features dedicated methods for text-to-speech, music generation, and OpenAI-compatible image editing.
+- **2026-04-03** – **📱 Genie AI** A massive new community app featuring live web search, document analysis, and multimodal generation just dropped in the showcase. [Try it](https://cantalopapps.com/genie-ai) <!-- app -->
+- **2026-04-03** – **🤖 Discord bot family** We added a functional multi-model bot framework to the apps directory, complete with per-channel routing. Deploy your own AI staff. [View repos](https://github.com/pollinations/pollinations) <!-- app -->
+- **2026-04-02** – **🎵 The hive drops a beat** ACE-Step 1.5 Turbo is now live on the [Audio API](https://gen.pollinations.ai/audio/{text}). Generate 15-30 second stereo music tracks from text prompts in under 12 seconds.
+- **2026-04-02** – **🖼️ Wan 2.7 enters the studio** Added `wan-image` and `wan-image-pro` to the [Image API](https://gen.pollinations.ai/image/models), bringing up to 4K resolution and thinking mode capabilities.
+- **2026-04-02** – **🎙️ High fidelity buzzing** Upgraded the default OpenAI audio endpoint to the latest mini model and added `openai-audio-large` for premium text-to-speech.
+- **2026-04-02** – **🎬 LTX hits version 2.3** The LTX video model has been bumped to v2.3 and migrated to GH200 hardware for faster generation.
+- **2026-04-02** – **👁️ The cats can see you now** CatGPT now uses Claude-fast with vision to analyze your avatar and deliver highly personalized, image-aware roasts.
 ---
 
 ## 🌱 Introduction

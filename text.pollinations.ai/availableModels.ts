@@ -70,7 +70,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-audio",
-        config: portkeyConfig["gpt-4o-mini-audio-preview-2024-12-17"],
+        config: portkeyConfig["gpt-audio-mini-2025-12-15"],
+    },
+    {
+        name: "openai-audio-large",
+        config: portkeyConfig["gpt-audio-2025-12-15"],
     },
     {
         name: "claude-fast",
@@ -95,6 +99,14 @@ const models: ModelDefinition[] = [
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
+        name: "gemini-flash-lite-3.1",
+        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
+        transform: pipe(
+            sanitizeToolSchemas(),
             createGeminiThinkingTransform("v3-flash"),
         ),
     },

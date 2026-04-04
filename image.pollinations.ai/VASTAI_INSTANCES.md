@@ -265,7 +265,7 @@ curl http://<PUBLIC_IP>:<MAPPED_FLUX_PORT>/docs
 ## Heartbeat Registration
 
 Servers send heartbeats to the EC2 image service:
-- **URL**: `http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register`
+- **URL**: `http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register`
 - **Payload**: `{"url": "http://PUBLIC_IP:PUBLIC_PORT", "type": "flux"}`
 - **Interval**: Every 30 seconds
 

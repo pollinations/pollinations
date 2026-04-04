@@ -17,7 +17,7 @@ on:
         type: string
 
 concurrency:
-  group: app-submission-${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}
+  group: app-review-submission
   cancel-in-progress: false
 
 jobs:
@@ -318,3 +318,25 @@ jobs:
           gh pr merge "$PR_URL" --auto --squash --delete-branch
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
+
+      - name: Attempt to resolve merge conflicts
+        if: success()
+        run: |
+          BRANCH="${{ steps.branch.outputs.branch }}"
+          git fetch origin
+          git checkout "$BRANCH"
+
+          # Merge main into PR branch to ensure branch is up to date.
+          # || true so the step continues into conflict resolution on merge failures
+          git merge --no-ff origin/main || true
+
+          if git diff --name-only --diff-filter=U | grep .; then
+            echo "Merge conflicts detected in apps/APPS.md. Attempting a safe resolve by keeping the PR change."
+            git checkout --ours -- apps/APPS.md
+            git add apps/APPS.md
+            git commit -m "Resolve merge conflicts: keep app addition in apps/APPS.md"
+            git push origin HEAD
+          else
+            echo "No merge conflicts detected. Pushing updated branch."
+            git push origin HEAD
+          fi

@@ -19,7 +19,7 @@ Must run from the `pollinations` repo root.
 
 | Environment | Gateway (Cloudflare Worker) | Text/Image Services (EC2) |
 |-------------|----------------------------|---------------------------|
-| **Production** | `enter.pollinations.ai` | `3.80.56.235` (ports 16384/16385) |
+| **Production** | `enter.pollinations.ai` | `54.147.14.220` (ports 16384/16385) |
 | **Staging** | `staging.enter.pollinations.ai` | `44.222.254.250` (ports 16384/16385) |
 
 ---
@@ -30,7 +30,7 @@ Add to `~/.ssh/config`:
 ```
 # Production instance
 Host enter-services
-  HostName 3.80.56.235
+  HostName 54.147.14.220
   User ubuntu
   IdentityFile ~/.ssh/enter-services-shared-key
 

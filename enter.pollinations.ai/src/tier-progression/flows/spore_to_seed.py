@@ -14,9 +14,9 @@ Strategy (stateless, hourly slicing):
     3. Fetches 10 repos per user for quality filtering
 
 Usage:
-    python user_upgrade_spore_to_seed.py              # Full run
-    python user_upgrade_spore_to_seed.py --dry-run    # Validate only, no upgrades
-    python user_upgrade_spore_to_seed.py --env staging  # Use staging environment
+    python enter.pollinations.ai/src/tier-progression/flows/spore_to_seed.py
+    python enter.pollinations.ai/src/tier-progression/flows/spore_to_seed.py --dry-run
+    python enter.pollinations.ai/src/tier-progression/flows/spore_to_seed.py --env staging
 
 Environment variables:
     GITHUB_TOKEN           - Required for GitHub API
@@ -25,58 +25,19 @@ Environment variables:
 """
 
 import argparse
-import json
 import os
-import subprocess
 import sys
 from datetime import datetime, timezone
 
-from user_validate_github_profile import validate_users, THRESHOLD, SCORING
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "shared"))
+
+from d1_updates import ban_deleted_accounts, batch_upgrade_users, run_d1_query
+from github_profile import THRESHOLD, validate_users
 
 # Max users to process per run.
 # Each user costs 1 REST request to /user/:id (5,000/hour for GitHub App tokens).
 # 3 concurrent workers, so ~4,500 keeps us safely under the limit.
 MAX_USERS_PER_RUN = 4500
-
-
-def run_d1_query(query: str, env: str = "production") -> list[dict] | None:
-    """Run a D1 query and return results."""
-    cmd = [
-        "npx",
-        "wrangler",
-        "d1",
-        "execute",
-        "DB",
-        "--remote",
-        "--env",
-        env,
-        "--command",
-        query,
-        "--json",
-    ]
-
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            cwd=os.path.join(os.path.dirname(__file__), "../../enter.pollinations.ai"),
-            timeout=60,
-        )
-
-        if result.returncode != 0:
-            print(f"❌ D1 query failed: {result.stderr}", file=sys.stderr)
-            return None
-
-        data = json.loads(result.stdout)
-        return data[0].get("results", [])
-
-    except subprocess.TimeoutExpired:
-        print("❌ D1 query timed out", file=sys.stderr)
-        return None
-    except (json.JSONDecodeError, KeyError, IndexError) as e:
-        print(f"❌ Failed to parse D1 response: {e}", file=sys.stderr)
-        return None
 
 
 def fetch_spore_users(env: str = "production") -> tuple[list[int], list[int], int]:
@@ -134,91 +95,6 @@ def fetch_spore_users(env: str = "production") -> tuple[list[int], list[int], in
     slice_ids = [r["github_id"] for r in slice_results] if slice_results else []
 
     return new_ids, slice_ids, total_old
-
-
-def batch_upgrade_users(
-    github_ids: list[int], env: str = "production"
-) -> tuple[int, int, bool]:
-    """Upgrade users to seed tier in batch SQL using github_id. Returns (upgraded, skipped, failed)."""
-    BATCH_SQL_SIZE = 500
-    total_upgraded = 0
-    total_skipped = 0
-
-    failed = False
-
-    for i in range(0, len(github_ids), BATCH_SQL_SIZE):
-        batch = github_ids[i : i + BATCH_SQL_SIZE]
-        # Sanitize: github_id must be a positive integer
-        safe_batch = [gid for gid in batch if isinstance(gid, int) and gid > 0]
-        if len(safe_batch) != len(batch):
-            print(f"   ⚠️  Skipped {len(batch) - len(safe_batch)} invalid github_ids")
-        if not safe_batch:
-            continue
-        id_list = ", ".join(str(gid) for gid in safe_batch)
-
-        # Count users that will be skipped (already at higher tier)
-        count_query = f"""
-            SELECT COUNT(*) as count FROM user
-            WHERE github_id IN ({id_list})
-            AND tier NOT IN ('spore', 'microbe')
-            AND tier IS NOT NULL
-        """
-        skip_results = run_d1_query(count_query, env)
-        skipped = skip_results[0]["count"] if skip_results else 0
-        total_skipped += skipped
-
-        # Batch update - only upgrade spore/microbe users
-        # tier_balance is NOT set here — the hourly cron refill handles it
-        update_query = f"""
-            UPDATE user SET tier = 'seed'
-            WHERE github_id IN ({id_list})
-            AND (tier IN ('spore', 'microbe') OR tier IS NULL)
-        """
-        result = run_d1_query(update_query, env)
-
-        # run_d1_query returns None on failure
-        if result is not None:
-            total_upgraded += len(safe_batch) - skipped
-        else:
-            failed = True
-            print(f"   ❌ Batch {i // BATCH_SQL_SIZE + 1} failed")
-            continue
-
-        print(
-            f"   Batch {i // BATCH_SQL_SIZE + 1}: {len(safe_batch) - skipped} upgraded, {skipped} skipped (higher tier)"
-        )
-
-    return total_upgraded, total_skipped, failed
-
-
-def ban_deleted_accounts(
-    github_ids: list[int], env: str = "production"
-) -> tuple[int, bool]:
-    """Ban users whose GitHub accounts were deleted. Returns (banned_count, had_failures)."""
-    BATCH_SQL_SIZE = 500
-    total_banned = 0
-    failed = False
-
-    for i in range(0, len(github_ids), BATCH_SQL_SIZE):
-        batch = github_ids[i : i + BATCH_SQL_SIZE]
-        safe_batch = [gid for gid in batch if isinstance(gid, int) and gid > 0]
-        if not safe_batch:
-            continue
-        id_list = ", ".join(str(gid) for gid in safe_batch)
-
-        query = f"""
-            UPDATE user SET banned = 1, ban_reason = 'github_account_deleted'
-            WHERE github_id IN ({id_list})
-            AND (banned = 0 OR banned IS NULL)
-        """
-        result = run_d1_query(query, env)
-        if result is not None:
-            total_banned += len(safe_batch)
-        else:
-            failed = True
-            print(f"   ❌ Ban batch {i // BATCH_SQL_SIZE + 1} failed")
-
-    return total_banned, failed
 
 
 def _display_name(r: dict) -> str:

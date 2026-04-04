@@ -68,7 +68,7 @@ jobs:
           
           echo "Checking registration for $GITHUB_USERNAME..."
           
-          if npx tsx scripts/tier-update-user.ts check-user \
+          if npx tsx src/tier-progression/shared/tier-update-user.ts check-user \
             --githubUsername "$GITHUB_USERNAME" \
             --env production 2>&1 | grep -q "EXISTS"; then
             echo "registered=true" >> $GITHUB_OUTPUT
@@ -89,7 +89,7 @@ jobs:
           cd enter.pollinations.ai
           
           echo "🌸 Upgrading $GITHUB_USERNAME to flower tier..."
-          OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
+          OUTPUT=$(npx tsx src/tier-progression/shared/tier-update-user.ts update-tier \
             --githubUsername "$GITHUB_USERNAME" \
             --tier flower \
             --env production 2>&1) || true
@@ -103,7 +103,7 @@ jobs:
           elif echo "$OUTPUT" | grep -q "Tier update complete"; then
             # Verify the tier was actually set correctly in D1
             echo "🔍 Verifying tier upgrade for $GITHUB_USERNAME..."
-            VERIFY_OUTPUT=$(npx tsx scripts/tier-update-user.ts verify-tier \
+            VERIFY_OUTPUT=$(npx tsx src/tier-progression/shared/tier-update-user.ts verify-tier \
               --githubUsername "$GITHUB_USERNAME" \
               --tier flower \
               --env production 2>&1) || true

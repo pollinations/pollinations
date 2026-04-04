@@ -383,6 +383,103 @@ Returns daily aggregated usage for the last 90 days, grouped by date and model. 
 
 ##### Status: 403 Permission denied - API key missing \`account:usage\` permission
 
+### List API Keys
+
+- **Method:** `GET`
+- **Path:** `/account/keys`
+- **Tags:** 👤 Account
+
+List all API keys for the current user. Requires `account:keys` permission when using API keys. Secret key values are never returned.
+
+#### Responses
+
+##### Status: 200 List of API keys
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied
+
+### Create API Key
+
+- **Method:** `POST`
+- **Path:** `/account/keys`
+- **Tags:** 👤 Account
+
+Create a new API key. Requires `account:keys` permission and a secret key (sk\_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`name` (required)**
+
+  `string` — Name for the API key
+
+- **`accountPermissions`**
+
+  `object` — Account permissions (e.g. \["balance", "usage"]). "keys" is auto-stripped.
+
+- **`allowedModels`**
+
+  `object` — Model IDs this key can access. null = all models
+
+- **`expiresIn`**
+
+  `integer` — Expiry in seconds from now (max 365 days)
+
+- **`pollenBudget`**
+
+  `object` — Pollen budget cap. null = unlimited
+
+- **`type`**
+
+  `string`, possible values: `"secret", "publishable"`, default: `"secret"` — Key type: secret (sk\_) or publishable (pk\_)
+
+**Example:**
+
+```json
+{
+  "name": "",
+  "type": "secret",
+  "expiresIn": 1,
+  "allowedModels": [
+    ""
+  ],
+  "pollenBudget": 1,
+  "accountPermissions": [
+    ""
+  ]
+}
+```
+
+#### Responses
+
+##### Status: 200 Created API key with full secret
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied or publishable key
+
+### Revoke API Key
+
+- **Method:** `DELETE`
+- **Path:** `/account/keys/{id}`
+- **Tags:** 👤 Account
+
+Delete/revoke an API key. Requires `account:keys` permission and a secret key (sk\_). Cannot revoke the key used to authenticate the request.
+
+#### Responses
+
+##### Status: 200 Key revoked
+
+##### Status: 400 Cannot revoke self
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied
+
+##### Status: 404 Key not found
+
 ### Get API Key Info
 
 - **Method:** `GET`

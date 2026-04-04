@@ -3,6 +3,8 @@
  * Requirements: API must be running locally or pointed to gen.pollinations.ai
  */
 
+/* eslint-env node */
+
 async function testOpenClaw() {
   const API_URL = process.env.POLLINATIONS_API_URL || "https://gen.pollinations.ai/v1/chat/completions";
   const API_KEY = process.env.POLLINATIONS_API_KEY;

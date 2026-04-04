@@ -4,7 +4,7 @@
  */
 
 async function testOpenClaw() {
-  const API_URL = "https://gen.pollinations.ai/v1/chat/completions";
+  const API_URL = process.env.POLLINATIONS_API_URL || "https://gen.pollinations.ai/v1/chat/completions";
   const API_KEY = process.env.POLLINATIONS_API_KEY;
 
   if (!API_KEY) {
@@ -12,7 +12,7 @@ async function testOpenClaw() {
     return;
   }
 
-  console.log("Testing 'openclaw' model preset...");
+  console.log(`Testing 'openclaw' model preset via ${API_URL}...`);
 
   try {
     const response = await fetch(API_URL, {
@@ -30,13 +30,27 @@ async function testOpenClaw() {
       })
     });
 
+    if (!response.ok) {
+        const errText = await response.text();
+        console.error(`\n❌ API Error (${response.status} ${response.statusText}):`);
+        console.error(errText);
+        return;
+    }
+
     const data = await response.json();
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error("\n❌ Unexpected API Response Format:");
+        console.log(JSON.stringify(data, null, 2));
+        return;
+    }
+
     console.log("\n--- Response From OpenClaw Preset ---");
     console.log(data.choices[0].message.content);
     console.log("\n--- Metadata ---");
     console.log("Model Used:", data.model);
   } catch (error) {
-    console.error("Error testing model:", error.message);
+    console.error("\n❌ Error testing model:", error.message);
   }
 }
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9964,
+  "title": "fix: rotate Azure gptimage endpoints to new April deployments",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9964",
+  "merged_at": "2026-04-05T11:55:08Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fresh endpoints for April",
+    "blurb": "Rotated our Azure image generation endpoints to fresh April deployments. Just keeping the pixels flowing smoothly behind the scenes.",
+    "summary": "Updated the backend Azure endpoints for the gpt-image-1-mini and gpt-image-1.5 models to new April deployments.",
+    "impact": "Ensures continued reliability and uptime for image generation without any changes required from users.",
+    "keywords": [
+      "infrastructure",
+      "azure",
+      "image-generation",
+      "endpoints",
+      "maintenance"
+    ],
+    "visual_concept": "Polly the bee and the monitor robot doing routine maintenance, swapping out glowing server cartridges in a cozy garden shed data center.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot swapping out glowing lime green (#ecf874) server cartridges in a cozy garden shed data center. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-05/PR-9964.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot swapping out glowing lime green (#ecf874) server cartridges in a cozy garden shed data center. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-05T11:56:06.002681+00:00"
+}

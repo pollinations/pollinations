@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-04-05",
+  "period_start": "2026-03-29",
+  "period_end": "2026-04-04",
+  "generated_at": "2026-04-05T06:25:00.901187+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-05/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.42 — 66 PRs merged. We overhauled audio, swapped out video engines, and added API key management.\n\n───\n\n→ AUDIO & VIDEO\nThe media engines got a V8 swap. Added ACE-Step 1.5 for music and upgraded to openai-audio-large. Whisper now supports word-level timestamps and speaker diarization. We also added media caching, because regenerating the exact same audio clip is a waste of electricity.\n\n→ MODELS & SDK\nWan 2.7 and Klein 4B are live. Fixed an issue where Wan models stubbornly ignored width and height parameters. The SDK got a major update with dedicated TTS/music endpoints and image editing support.\n\n→ KEYS & BOTS\nYou can finally create, list, and revoke API keys via the new endpoints. We also launched a family of Discord bots, including CatGPT (with vision) and an Opposite Prompt bot that we immediately had to patch with NSFW safety instructions. Because the internet is the internet.\n\n→ COMMUNITY\n25 new community apps added this week, from 3D icon generators to RPG engines.\n\n───\n\nEverything is open source. No subscriptions.\ngithub.com/pollinations/pollinations\n\n#OpenSource #AI #WebDev"
+}

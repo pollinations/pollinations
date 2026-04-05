@@ -22,11 +22,11 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-03-26",
-        emoji: "⏱️",
-        title: "Flower & Nectar: Daily → Hourly Refills",
+        date: "2026-04-05",
+        emoji: "⏸️",
+        title: "Auto Tier Upgrades Paused",
         description:
-            "Starting Thursday, March 26 — Flower 0.4p/hr, Nectar 0.8p/hr. Need more? Grab a Pollen Pack below!",
+            "Spore → Seed auto-upgrades are temporarily frozen. We're building a gamified tier ladder with fluid upgrades & downgrades — rolling out soon!",
     },
 ];
 

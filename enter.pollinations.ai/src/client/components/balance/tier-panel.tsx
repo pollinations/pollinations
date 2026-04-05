@@ -50,11 +50,11 @@ const MicrobeLimitedPanel: FC = () => (
     <Panel color="gray">
         <div className="flex flex-col gap-3">
             <p className="text-sm text-gray-600 leading-relaxed">
-                We're verifying that your account belongs to a real person. This
-                usually takes a few days.
+                Your account currently has limited access. Tier upgrades are
+                paused while we build a better automated system — coming soon!
             </p>
             <p className="text-sm">
-                📧 Questions about your tier?{" "}
+                📧 Think this is an error?{" "}
                 <a
                     href={APPEAL_URL}
                     target="_blank"

@@ -110,8 +110,8 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                                 </span>
                             </Tooltip>
                         </p>
-                        <p className="text-[10px] text-emerald-600 mt-0.5">
-                            Auto-upgraded weekly
+                        <p className="text-[10px] text-amber-600 mt-0.5">
+                            ⏸️ Paused — new automated pipeline coming soon
                         </p>
                     </div>
                 </div>
@@ -136,8 +136,12 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                                 href="https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml"
                                 className="text-blue-600 hover:underline"
                             >
-                                Publish an app
+                                Publish a quality app
                             </a>
+                        </p>
+                        <p className="text-[10px] text-gray-500 mt-0.5 leading-snug">
+                            Apps must be well-built, maintained & working.
+                            Broken or unmaintained apps may lose Flower status.
                         </p>
                         <p className="text-[10px] text-amber-600 mt-0.5">
                             {TIER_EMOJIS.seed} Must be Seed first

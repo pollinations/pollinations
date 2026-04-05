@@ -1,8 +1,10 @@
 name: Tier Progression - Spore to Seed
 
 on:
-  schedule:
-    - cron: '0 */4 * * *'
+  # schedule:
+  #   - cron: '0 */4 * * *'
+  # ⚠️ Automated spore→seed upgrades are frozen.
+  # Will be re-enabled when the gamified tier ladder is ready.
   workflow_dispatch:
     inputs:
       dry_run:

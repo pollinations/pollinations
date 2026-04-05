@@ -230,10 +230,10 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.01),
-                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.03),
+                promptAudioTokens: perMillion(0.3), // Audio billed at same rate as text
+                completionTextTokens: perMillion(1.2),
             },
         ],
         description:
@@ -335,10 +335,10 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.01),
-                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.03),
+                promptAudioTokens: perMillion(0.3), // Audio billed at same rate as text
+                completionTextTokens: perMillion(1.2),
             },
         ],
         description: "Google Gemini 2.5 Flash Lite - With Google Search",

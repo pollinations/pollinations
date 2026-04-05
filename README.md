@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🎞️ https://storyboard-ai-ochre.vercel.app/](https://storyboard-ai-ochre.vercel.app/) | StoryBoard AI is a visual storyboard planning application with AI image generation, featuring an infinite canvas where users can drag and drop frames, sticky notes, custom images, text titles, and sha | [@web](https://github.com/web) |
-| [🧞 Genie AI](https://cantalopapps.com/genie-ai) | Chat with Genie AI for live internet answers, document analysis and summaries, image recognition, and image/video generation with text-to-speech and sound effect generation. | [@web](https://github.com/web) |
-| [🧠 Viralent](viralent.info) | Provides daily informative articles and interactive quizzes on Viralent to help users broaden horizons and hone knowledge. | [@web](https://github.com/web) |
-| [🖼️ AI Image Studio](https://aiimage.studio) | Generates photorealistic AI images in a client-side, zero-retention web terminal using AI Image Studio; all asset rendering occurs in the local client environment. | [@web](https://github.com/web) |
-| [🎬 MUSINGWEI STUDIO](https://musingwei.com) | Generate images, audio, and video using the pollinations.ai APIs with MUSINGWEI STUDIO. | [@web](https://github.com/web) |
-| [🖼️ OGP Maker](https://ogp-maker-teal.vercel.app/) | Generate OGP for Facebook/X. | [@web](https://github.com/web) |
-| [🎨 AI Photo Editor Pro](https://vision.scripted.my.id/) | Edit photos easily using AI. | [@web](https://github.com/web) |
-| [🎬 V-AI-Powered YouTube Shorts Automation Platform](65834394) | Generates YouTube Shorts videos automatically from news URLs and publishes them to multiple social media platforms. | [@web](https://github.com/web) |
-| [🎨 Pollin-Gen Studio](https://image-ai.testes.eu.org) | Pollin-Gen Studio provides a lightweight, 100% open-source web interface for AI image generation via the Pollinations.ai API, designed for secure self-hosting. | [@web](https://github.com/web) |
-| [🧩 TileTile](https://tiletile.netlify.app/) | Generate seamless tile textures with TileTile using the Flux Schnell image generation model provided by Pollinations. | [@web](https://github.com/web) |
+| [🎞️ https://storyboard-ai-ochre.vercel.app/](https://storyboard-ai-ochre.vercel.app/) | StoryBoard AI is a visual storyboard planning application with AI image generation, featuring an infinite canvas where users can drag and drop frames, sticky notes, custom images, text titles, and sha | [@vote4arealclown](https://github.com/vote4arealclown) |
+| [🧞 Genie AI](https://cantalopapps.com/genie-ai) | Chat with Genie AI for live internet answers, document analysis and summaries, image recognition, and image/video generation with text-to-speech and sound effect generation. | [@lankafoaz](https://github.com/lankafoaz) |
+| [🧠 Viralent](viralent.info) | Provides daily informative articles and interactive quizzes on Viralent to help users broaden horizons and hone knowledge. | [@danuras](https://github.com/danuras) |
+| [🖼️ AI Image Studio](https://aiimage.studio) | Generates photorealistic AI images in a client-side, zero-retention web terminal using AI Image Studio; all asset rendering occurs in the local client environment. | [@witekmedia](https://github.com/witekmedia) |
+| [🎬 MUSINGWEI STUDIO](https://musingwei.com) | Generate images, audio, and video using the pollinations.ai APIs with MUSINGWEI STUDIO. | [@musingwei](https://github.com/musingwei) |
+| [🖼️ OGP Maker](https://ogp-maker-teal.vercel.app/) | Generate OGP for Facebook/X. | [@wildriver](https://github.com/wildriver) |
+| [🎨 AI Photo Editor Pro](https://vision.scripted.my.id/) | Edit photos easily using AI. | [@grew-easing-easily](https://github.com/grew-easing-easily) |
+| 🎬 V-AI-Powered YouTube Shorts Automation Platform | Generates YouTube Shorts videos automatically from news URLs and publishes them to multiple social media platforms. | [@oguzgokyar](https://github.com/oguzgokyar) |
+| [🎨 Pollin-Gen Studio](https://image-ai.testes.eu.org) | Pollin-Gen Studio provides a lightweight, 100% open-source web interface for AI image generation via the Pollinations.ai API, designed for secure self-hosting. | [@samucastudent](https://github.com/samucastudent) |
+| [🧩 TileTile](https://tiletile.netlify.app/) | Generate seamless tile textures with TileTile using the Flux Schnell image generation model provided by Pollinations. | [@xaw1](https://github.com/xaw1) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.

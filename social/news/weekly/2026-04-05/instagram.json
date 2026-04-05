@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-04-05",
+  "period_start": "2026-03-29",
+  "period_end": "2026-04-04",
+  "generated_at": "2026-04-05T06:25:00.901187+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-05/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-05/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-05/images/instagram-3.jpg"
+    }
+  ],
+  "text": "66 PRs merged this week. The audio and video engines basically got a V8 swap — dedicated TTS/music endpoints, ACE-Step 1.5, and media caching. \n\nThe SDK got a massive cleanup. We added proper API key management endpoints (create, list, revoke) so you can finally organize your keys without duct tape.\n\nWe also wired up Wan 2.7 and Klein 4B for images, and watched the community launch 25+ new apps to the showcase. Plus, a CatGPT Discord bot, because the internet remains undefeated.\n\nFull changelog on GitHub. Go build something weird. 🐝✨\n\nDocs at the link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #github #javascript",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

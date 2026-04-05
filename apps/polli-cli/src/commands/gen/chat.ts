@@ -5,6 +5,7 @@ import { Command } from "commander";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
+import { streamSSE } from "../../lib/stream.js";
 
 interface Message {
     role: "system" | "user" | "assistant";
@@ -63,6 +64,18 @@ export function createChatCommand() {
             const sendMessage = async (userMsg: string) => {
                 messages.push({ role: "user", content: userMsg });
 
+                const body: Record<string, unknown> = {
+                    messages,
+                    stream: !isJson,
+                    ...(opts.model && { model: opts.model }),
+                    ...(opts.temperature && {
+                        temperature: Number(opts.temperature),
+                    }),
+                    ...(opts.maxTokens && {
+                        max_tokens: Number(opts.maxTokens),
+                    }),
+                };
+
                 try {
                     const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
                         method: "POST",
@@ -70,16 +83,7 @@ export function createChatCommand() {
                             "Content-Type": "application/json",
                             Authorization: `Bearer ${key}`,
                         },
-                        body: JSON.stringify({
-                            model: opts.model,
-                            messages,
-                            ...(opts.temperature && {
-                                temperature: Number(opts.temperature),
-                            }),
-                            ...(opts.maxTokens && {
-                                max_tokens: Number(opts.maxTokens),
-                            }),
-                        }),
+                        body: JSON.stringify(body),
                         signal: AbortSignal.timeout(120_000),
                     });
 
@@ -88,23 +92,29 @@ export function createChatCommand() {
                         throw new Error(`${res.status}: ${text}`);
                     }
 
-                    const data = (await res.json()) as ChatResponse;
-                    const content = data.choices[0]?.message?.content ?? "";
-                    messages.push({ role: "assistant", content });
+                    if (!isJson) {
+                        // Stream tokens to stderr as they arrive
+                        process.stderr.write(`${chalk.yellow("ai")} > `);
+                        let content = "";
+                        for await (const chunk of streamSSE(res)) {
+                            content += chunk;
+                            process.stderr.write(chunk);
+                        }
+                        process.stderr.write("\n\n");
+                        messages.push({ role: "assistant", content });
+                    } else {
+                        const data = (await res.json()) as ChatResponse;
+                        const content = data.choices[0]?.message?.content ?? "";
+                        messages.push({ role: "assistant", content });
 
-                    if (data.usage) totalTokens += data.usage.total_tokens;
+                        if (data.usage) totalTokens += data.usage.total_tokens;
 
-                    if (isJson) {
                         printResult({
                             role: "assistant",
                             content,
                             model: data.model,
                             tokens: data.usage?.total_tokens,
                         });
-                    } else {
-                        process.stderr.write(
-                            `${chalk.yellow("ai")} > ${content}\n\n`,
-                        );
                     }
                 } catch (err) {
                     // Remove the failed user message

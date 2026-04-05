@@ -9,6 +9,7 @@ import {
     printResult,
     printSuccess,
 } from "../../lib/output.js";
+import { streamSSE } from "../../lib/stream.js";
 
 interface ChatResponse {
     choices: Array<{ message: { content: string } }>;
@@ -16,8 +17,7 @@ interface ChatResponse {
     usage?: { total_tokens: number };
 }
 
-async function generate(
-    key: string,
+function buildBody(
     prompt: string,
     opts: {
         model?: string;
@@ -31,8 +31,12 @@ async function generate(
         json?: boolean;
         thinking?: boolean;
     },
-): Promise<ChatResponse> {
-    const messages = [];
+    stream = false,
+): {
+    messages: Array<{ role: string; content: string }>;
+    body: Record<string, unknown>;
+} {
+    const messages: Array<{ role: string; content: string }> = [];
     if (opts.system) messages.push({ role: "system", content: opts.system });
     messages.push({ role: "user", content: prompt });
 
@@ -48,7 +52,15 @@ async function generate(
     if (opts.seed) body.seed = Number(opts.seed);
     if (opts.json) body.response_format = { type: "json_object" };
     if (opts.thinking) body.thinking = true;
+    if (stream) body.stream = true;
 
+    return { messages, body };
+}
+
+async function requestCompletion(
+    key: string,
+    body: Record<string, unknown>,
+): Promise<Response> {
     const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
         method: "POST",
         headers: {
@@ -64,7 +76,7 @@ async function generate(
         throw new Error(`${res.status} ${res.statusText}: ${text}`);
     }
 
-    return res.json() as Promise<ChatResponse>;
+    return res;
 }
 
 /** Read all of stdin (non-blocking: returns empty string if stdin is a TTY with no data). */
@@ -94,6 +106,7 @@ export function createTextCommand() {
         .option("--json", "Force JSON output")
         .option("--thinking", "Enable extended thinking (reasoning models)")
         .option("--output <path>", "Save to file instead of stdout")
+        .option("--no-stream", "Disable streaming (wait for full response)")
         .action(async (promptArg, opts) => {
             const key = requireKey();
             const stdinText = await readStdin();
@@ -114,28 +127,49 @@ export function createTextCommand() {
             }
 
             const isHuman = getOutputMode() === "human";
-            const spinner = isHuman ? ora("Generating...").start() : null;
+            const useStream = opts.stream !== false && !opts.output;
 
             try {
-                const data = await generate(key, prompt, opts);
-                const content = data.choices[0]?.message?.content ?? "";
+                if (useStream) {
+                    const { body } = buildBody(prompt, opts, true);
+                    const res = await requestCompletion(key, body);
+                    let content = "";
+                    for await (const chunk of streamSSE(res)) {
+                        content += chunk;
+                        if (isHuman) {
+                            process.stdout.write(chunk);
+                        }
+                    }
+                    if (isHuman) process.stdout.write("\n");
 
-                spinner?.stop();
-
-                if (opts.output) {
-                    writeFileSync(opts.output, content, "utf-8");
-                    printSuccess(`Saved to ${opts.output}`);
-                } else if (getOutputMode() === "json") {
-                    printResult({
-                        content,
-                        model: data.model,
-                        tokens: data.usage?.total_tokens ?? null,
-                    });
+                    if (getOutputMode() === "json") {
+                        printResult({ content, model: opts.model ?? null });
+                    }
                 } else {
-                    process.stdout.write(`${content}\n`);
+                    const spinner = isHuman
+                        ? ora("Generating...").start()
+                        : null;
+                    const { body } = buildBody(prompt, opts);
+                    const res = await requestCompletion(key, body);
+                    const data = (await res.json()) as ChatResponse;
+                    const content = data.choices[0]?.message?.content ?? "";
+
+                    spinner?.stop();
+
+                    if (opts.output) {
+                        writeFileSync(opts.output, content, "utf-8");
+                        printSuccess(`Saved to ${opts.output}`);
+                    } else if (getOutputMode() === "json") {
+                        printResult({
+                            content,
+                            model: data.model,
+                            tokens: data.usage?.total_tokens ?? null,
+                        });
+                    } else {
+                        process.stdout.write(`${content}\n`);
+                    }
                 }
             } catch (err) {
-                spinner?.fail("Generation failed");
                 printError(
                     err instanceof Error ? err.message : "unknown error",
                 );

@@ -1,0 +1,34 @@
+{
+  "pr_number": 9970,
+  "title": "Remove Argent Script and Mirexa AI Chat entries",
+  "author": "withthatway",
+  "url": "https://github.com/pollinations/pollinations/pull/9970",
+  "merged_at": "2026-04-05T13:04:32Z",
+  "labels": [
+    "WEB",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the garden",
+    "blurb": "We've done a little housekeeping in the community showcase, pruning a couple of older app entries to keep the list fresh.",
+    "summary": "Removed Argent Script and Mirexa AI Chat from the community applications list.",
+    "impact": "The community showcase is slightly more streamlined and up-to-date.",
+    "keywords": [
+      "showcase",
+      "apps",
+      "cleanup",
+      "community"
+    ],
+    "visual_concept": "The bee mascot doing some light gardening or pruning of a digital plant. A cozy garden shed vibe representing list maintenance.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, gently pruning a glowing digital code-plant in a lime green (#ecf874) flower pot. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-05/PR-9970.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, gently pruning a glowing digital code-plant in a lime green (#ecf874) flower pot. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-05T13:05:24.470396+00:00"
+}

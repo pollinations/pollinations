@@ -77,65 +77,69 @@ async function readStdin(): Promise<string> {
     return Buffer.concat(chunks).toString("utf-8").trim();
 }
 
-export const textCommand = new Command("text")
-    .description(
-        "Generate text from a prompt (also reads stdin: echo 'hello' | polli gen text)",
-    )
-    .argument("[prompt]", "Text prompt (or pipe via stdin)")
-    .option("--model <model>", "Text model")
-    .option("--system <msg>", "System message")
-    .option("--temperature <n>", "Randomness (0-2)")
-    .option("--max-tokens <n>", "Maximum output tokens")
-    .option("--top-p <n>", "Nucleus sampling (0-1)")
-    .option("--frequency-penalty <n>", "Repetition penalty (-2 to 2)")
-    .option("--presence-penalty <n>", "Topic penalty (-2 to 2)")
-    .option("--seed <n>", "Reproducibility seed")
-    .option("--json", "Force JSON output")
-    .option("--thinking", "Enable extended thinking (reasoning models)")
-    .option("--output <path>", "Save to file instead of stdout")
-    .action(async (promptArg, opts) => {
-        const key = requireKey();
-        const stdinText = await readStdin();
-        const prompt = promptArg || stdinText;
+export function createTextCommand() {
+    return new Command("text")
+        .description(
+            "Generate text from a prompt (also reads stdin: echo 'hello' | polli text)",
+        )
+        .argument("[prompt]", "Text prompt (or pipe via stdin)")
+        .option("--model <model>", "Text model")
+        .option("--system <msg>", "System message")
+        .option("--temperature <n>", "Randomness (0-2)")
+        .option("--max-tokens <n>", "Maximum output tokens")
+        .option("--top-p <n>", "Nucleus sampling (0-1)")
+        .option("--frequency-penalty <n>", "Repetition penalty (-2 to 2)")
+        .option("--presence-penalty <n>", "Topic penalty (-2 to 2)")
+        .option("--seed <n>", "Reproducibility seed")
+        .option("--json", "Force JSON output")
+        .option("--thinking", "Enable extended thinking (reasoning models)")
+        .option("--output <path>", "Save to file instead of stdout")
+        .action(async (promptArg, opts) => {
+            const key = requireKey();
+            const stdinText = await readStdin();
+            const prompt = promptArg || stdinText;
 
-        if (!prompt) {
-            printError(
-                "No prompt provided. Pass as argument or pipe via stdin.",
-            );
-            process.exit(1);
-        }
-
-        // If both stdin and arg are provided, use arg as prompt and stdin as context
-        if (promptArg && stdinText) {
-            opts.system = opts.system
-                ? `${opts.system}\n\nContext:\n${stdinText}`
-                : stdinText;
-        }
-
-        const isHuman = getOutputMode() === "human";
-        const spinner = isHuman ? ora("Generating...").start() : null;
-
-        try {
-            const data = await generate(key, prompt, opts);
-            const content = data.choices[0]?.message?.content ?? "";
-
-            spinner?.stop();
-
-            if (opts.output) {
-                writeFileSync(opts.output, content, "utf-8");
-                printSuccess(`Saved to ${opts.output}`);
-            } else if (getOutputMode() === "json") {
-                printResult({
-                    content,
-                    model: data.model,
-                    tokens: data.usage?.total_tokens ?? null,
-                });
-            } else {
-                process.stdout.write(`${content}\n`);
+            if (!prompt) {
+                printError(
+                    "No prompt provided. Pass as argument or pipe via stdin.",
+                );
+                process.exit(1);
             }
-        } catch (err) {
-            spinner?.fail("Generation failed");
-            printError(err instanceof Error ? err.message : "unknown error");
-            process.exit(1);
-        }
-    });
+
+            // If both stdin and arg are provided, use arg as prompt and stdin as context
+            if (promptArg && stdinText) {
+                opts.system = opts.system
+                    ? `${opts.system}\n\nContext:\n${stdinText}`
+                    : stdinText;
+            }
+
+            const isHuman = getOutputMode() === "human";
+            const spinner = isHuman ? ora("Generating...").start() : null;
+
+            try {
+                const data = await generate(key, prompt, opts);
+                const content = data.choices[0]?.message?.content ?? "";
+
+                spinner?.stop();
+
+                if (opts.output) {
+                    writeFileSync(opts.output, content, "utf-8");
+                    printSuccess(`Saved to ${opts.output}`);
+                } else if (getOutputMode() === "json") {
+                    printResult({
+                        content,
+                        model: data.model,
+                        tokens: data.usage?.total_tokens ?? null,
+                    });
+                } else {
+                    process.stdout.write(`${content}\n`);
+                }
+            } catch (err) {
+                spinner?.fail("Generation failed");
+                printError(
+                    err instanceof Error ? err.message : "unknown error",
+                );
+                process.exit(1);
+            }
+        });
+}

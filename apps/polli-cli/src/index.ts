@@ -1,12 +1,13 @@
 import { Command } from "commander";
 
 import { authCommand } from "./commands/auth.js";
-
-import { genCommand } from "./commands/gen/index.js";
+import { docsCommand } from "./commands/docs.js";
+import { createGenCommand } from "./commands/gen/index.js";
 import { healthCommand } from "./commands/health.js";
 import { keysCommand } from "./commands/keys.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { modelsCommand } from "./commands/models.js";
+import { statsCommand } from "./commands/stats.js";
 import { pollenCommand, usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
@@ -46,13 +47,15 @@ program.addCommand(authCommand);
 program.addCommand(keysCommand);
 program.addCommand(usageCommand);
 program.addCommand(pollenCommand);
-program.addCommand(modelsCommand);
 
 // Generation
-program.addCommand(genCommand);
+program.addCommand(createGenCommand());
 
-// Diagnostics
+// Discovery & diagnostics
+program.addCommand(modelsCommand);
 program.addCommand(healthCommand);
+program.addCommand(statsCommand);
+program.addCommand(docsCommand);
 
 // MCP
 program.addCommand(mcpCommand);

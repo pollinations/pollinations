@@ -223,7 +223,6 @@
 | [🎨 Cinepoca](https://cinepoca.com.br) | Generate AI-driven movie content including blog posts and custom imagery and automate social media reels, with human review to verify accuracy. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 ViralFlow AI](https://fabioarieira.com/viralflow) | Auto-generates cinematic viral videos from a theme (script, TTS, visuals). | [@web](https://github.com/web) |  | 🫧 |
 | [🔍 Polli YT Search](https://replit.com/@nojeheg897/VideoFind5) | Search YouTube using multimodal analysis of thumbnails, visuals, transcripts, and metrics to locate relevant videos beyond title keywords, leveraging Pollinations for deep video analysis. | [@web](https://github.com/web) |  | 🫧 |
-| [🎧 Argent Script](https://perchance.org/ai-text-to-audio) | Convert text to audio using GPT-4o Audio with unlimited conversions and natural-sounding voices. | [@web](https://github.com/web) |  | 🫧 |
 | [🌐 Yo el director](https://yoeldirector.dpana.com.ve) | Create films and YouTube content using Pollinations, export projects to YouTube, generate illustrated books, and import or export project files. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 FastStoryboard](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | [@web](https://github.com/web) |  |  |
 | [🎵 Strudel AI REPL](https://strudel-ai-repl.pages.dev) | AI-powered live-coding music environment for generating and performing algorithmic compositions. | [@web](https://github.com/web) |  |  |
@@ -439,7 +438,6 @@
 | [🧰 AIMinistries](https://www.ai-ministries.com) | Free AI toolkit: chat, writing, images, TTS, and speech-to-text. | [@web](https://github.com/web) |  |  |
 | [💬 LobeChat](https://lobechat.com) | Open-source AI chat framework with multi-model support, plugins, and customizable agent workflows | [@web](https://github.com/web) |  |  |
 | [🖼️ Pollinator Android App](103292141) | Provides Android access to Pollinations features with emphasis on Vibe Coding and creative media generation tools. | [@api](https://github.com/api) |  |  |
-| [🧠 Mirexa AI Chat](https://mirexa.vercel.app) | Multimodal AI chat: text, images, audio, math help, and live web search. | [@web](https://github.com/web) |  |  |
 | [🖼️ FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai) | Create images on-demand directly from ChatGPT. | [@web](https://github.com/web) |  |  |
 | [💬 Unity AI Lab](https://unity.unityailab.com/) | AI platform with chatbots, integration services, and generative tools powered by Pollinations | [@web](https://github.com/web) |  |  |
 

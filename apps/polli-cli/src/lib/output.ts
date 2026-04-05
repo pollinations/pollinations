@@ -1,6 +1,6 @@
 import chalk from "chalk";
 
-export type OutputMode = "human" | "json" | "quiet";
+export type OutputMode = "human" | "json";
 
 let currentMode: OutputMode = "human";
 
@@ -40,22 +40,10 @@ export const printResult = (data: unknown) => {
 
     const obj = data as Record<string, unknown>;
 
-    if (currentMode === "quiet") {
-        const values = Object.values(obj).filter(
-            (v) => v !== null && v !== undefined,
-        );
-        for (const v of values) {
-            process.stdout.write(`${v}\n`);
-        }
-        return;
-    }
-
-    // human mode — pretty key-value pairs
-    const maxKeyLen = Math.max(...Object.keys(obj).map((k) => k.length));
+    // key: value pairs, one per line
     for (const [key, value] of Object.entries(obj)) {
         if (value === null || value === undefined) continue;
-        const label = chalk.dim(`${key.padEnd(maxKeyLen)}`);
-        process.stdout.write(`  ${label}  ${value}\n`);
+        process.stdout.write(`${key}: ${value}\n`);
     }
 };
 
@@ -74,35 +62,12 @@ export const printTable = (
         return;
     }
 
-    if (currentMode === "quiet") {
-        for (const row of rows) {
-            const vals = columns
-                ? columns.map((c) => row[c] ?? "")
-                : Object.values(row);
-            process.stdout.write(`${vals.join("\t")}\n`);
-        }
-        return;
-    }
-
-    // human mode — aligned columns
+    // Tab-separated with header
     const cols = columns ?? Object.keys(rows[0]);
-    const widths = cols.map((col) =>
-        Math.max(col.length, ...rows.map((r) => String(r[col] ?? "").length)),
-    );
-
-    // header
-    const header = cols
-        .map((c, i) => chalk.bold(c.padEnd(widths[i])))
-        .join("  ");
-    process.stdout.write(`  ${header}\n`);
-    process.stdout.write(`  ${widths.map((w) => "─".repeat(w)).join("  ")}\n`);
-
-    // rows
+    process.stdout.write(`${cols.join("\t")}\n`);
     for (const row of rows) {
-        const line = cols
-            .map((c, i) => String(row[c] ?? "").padEnd(widths[i]))
-            .join("  ");
-        process.stdout.write(`  ${line}\n`);
+        const vals = cols.map((c) => String(row[c] ?? ""));
+        process.stdout.write(`${vals.join("\t")}\n`);
     }
 };
 

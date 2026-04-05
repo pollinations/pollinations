@@ -20,24 +20,18 @@ program
         "The Pollinations CLI — for humans, AI agents, and everything in between",
     )
     .version("0.1.0")
-    .option("--json", "Output as JSON (stdout), messages to stderr")
-    .option("--quiet", "Bare values only, no decoration")
+    .option("--json", "Output as JSON")
     .option("--key <key>", "Override stored API key for this command")
     .hook("preAction", () => {
         const opts = program.opts();
 
         if (opts.json) {
             setOutputMode("json");
-        } else if (opts.quiet) {
-            setOutputMode("quiet");
+            process.env.NO_COLOR = "1";
         }
 
         if (opts.key) {
             setKeyOverride(opts.key);
-        }
-
-        if (opts.json || opts.quiet) {
-            process.env.NO_COLOR = "1";
         }
     });
 

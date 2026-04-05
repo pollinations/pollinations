@@ -1,0 +1,74 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "midijourney",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 04 Apr 2026 13:34:53 GMT",
+      "transfer-encoding": "chunked"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"anthropic-1775",
+          "delay": 25
+        },
+        {
+          "data": "309693317\",\"object\":\"chat.completion.chunk\",\"created\":1775309693,\"model\":\"claude-haiku-4-5-20251001\",\"provider\":\"anthropic\",\"choices\":[{\"delta\":{\"content\":\"\",\"role\":\"assistant\"},\"index\":0,\"logprobs\":null,\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"anthropic-17",
+          "delay": 0
+        },
+        {
+          "data": "75309693317\",\"object\":\"chat.completion.chunk\",\"created\":1775309693,\"model\":\"claude-haiku-4-5-20251001\",\"provider\":\"anthropic\",\"choices\":[{\"delta\":{\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"\"}}]},\"index\":0,\"logprobs\":null,\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"anthropic-1775",
+          "delay": 22
+        },
+        {
+          "data": "309693317\",\"object\":\"chat.completion.chunk\",\"created\":1775309693,\"model\":\"claude-haiku-4-5-20251001\",\"provider\":\"anthropic\",\"choices\":[{\"delta\":{\"content\":\"yes\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"yes\"}}]},\"index\":0,\"logprobs\":null,\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"anthropic-1775",
+          "delay": 299
+        },
+        {
+          "data": "309693317\",\"object\":\"chat.completion.chunk\",\"created\":1775309693,\"model\":\"claude-haiku-4-5-20251001\",\"provider\":\"anthropic\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":1210,\"completion_tokens\":4,\"total_tokens\":1214,\"prompt_tokens_details\":{\"cached_tokens\":0}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: [DONE]\n\n",
+          "delay": 13
+        }
+      ]
+    }
+  }
+}

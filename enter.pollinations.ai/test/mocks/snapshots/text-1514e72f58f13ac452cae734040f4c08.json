@@ -1,0 +1,1190 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "perplexity-reasoning",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 04 Apr 2026 13:35:12 GMT",
+      "transfer-encoding": "chunked"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"<think>\\nThe user is asking a\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 10
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" straightforward yes\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 2
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"/no question:\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 5
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" \\\"Is Berlin the capital of Germany?\\\"\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 4
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\\n\\nThe\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 6
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" search\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 14
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" results clearly\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 46
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" confirm\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 5
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" this. Multiple\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 16
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" sources state\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" that Berlin is the capital of Germany:\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 48
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\\n-\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309712,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" \"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 42
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"[1] \\\"The\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 116
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" capital\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 7
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" of Germany is the\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 9
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" city\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b",
+          "delay": 0
+        },
+        {
+          "data": "7-43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" of Berlin.\\\"\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 3
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\\n- [2] \\\"Berlin is\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 8
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" the capital an\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 15
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"d chief\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" urban\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 31
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" center of Germany.\\\"\\n- \"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 89
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"[3] \\\"Berlin is not\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 16
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" only the capital of the\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b",
+          "delay": 0
+        },
+        {
+          "data": "7-43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" Federal Republic of Germany;\"},\"index\":0}]}\n\ndata: {\"id\":\"becaab7b-f0b7-43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"r",
+          "delay": 0
+        },
+        {
+          "data": "ole\":\"assistant\",\"content\"",
+          "delay": 0
+        },
+        {
+          "data": ":\" it is also the seat\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 4
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" of Germany\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 24
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"'s federal\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" parliament\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" an\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 24
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"d government\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 32
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\".\\\"\\n- [4] \\\"Berlin\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\",\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" the capital city\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" of Germany\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"...\\\"\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 41
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\\n- [5] \\\"Berlin is the\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 24
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" capital of\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 20
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" Germany,\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 43
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" as\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 5
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" well as its\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 19
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" largest city by\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 38
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" both\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 27
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" area\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 8
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" and population.\\\"\\n\\nThe answer\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" is clearly\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 28
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" \\\"\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 14
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\".\\\"\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 20
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\\n\\nHowever, the\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 32
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" user asks\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" me to \\\"\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Reply yes or no\\\" -\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 27
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309713,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" shoul\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 26
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"d I just\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 19
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" give\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 38
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" a one\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 14
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"-word answer?\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 40
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" Looking\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 8
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" at the instructions, I'm told to\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 86
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" \\\"Begin\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 8
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" with\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 6
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" a direct\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 3
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" \"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 3
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"1\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 19
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"-2\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 45
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" sentence answer to\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 11
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" the core\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 11
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" query\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" (\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 30
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"no\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" header\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" neede\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 28
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"d).\\\"\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" So\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" I should provide\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 19
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" a direct answer,\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 25
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" but\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 20
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" perhaps\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 29
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" with\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 14
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" a bit\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" of\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" context woul\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 26
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"d be appropriate\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\".\\n\\nGiven\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 26
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" the\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 24
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" instruction to optimize\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 27
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" for\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 12
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" user\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 26
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" understanding\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 20
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" an\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 19
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"d provide author\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 33
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"itative answers\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 24
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\", I think the best approach is to\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 24
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" directly\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 20
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" state\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" \\\"Yes\\\" an\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309714,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"d perhaps\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 24
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" add one\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 28
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" supporting\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 25
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" sentence\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 26
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" with\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 16
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" a\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 19
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" citation\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 37
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\".\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 12
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\\n\\nLet\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" me format this\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 20
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" appropri\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 35
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"ately:\\n-\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" Direct answer: Yes\\n- Maybe\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 19
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" add one\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" sentence of\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 28
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" confirmation\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 17
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" with\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 29
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" proper\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 25
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" citation\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 77
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\\n\\nI shoul\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 34
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"d keep\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 6
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" it concise since\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 7
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" they\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 14
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" asked for yes\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 26
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" or\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" no,\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 28
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" but still\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 33
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" provide proper\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 22
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" citation\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 29
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" as\"},\"index\":0}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" per my\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" guidelines.\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 27
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\\n</think>\\n\\nYes.\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 18
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" **\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 20
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Berlin is the capital of Germany**,\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" as well\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 21
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" as the\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 23
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" seat\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 26
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" of the\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 16
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" Federal\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 29
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" President\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 19
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309715,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" an\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 27
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309716,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"d the German parliament.\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 17
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309716,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"[1]\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 83
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.chunk\",\"created\":1775309716,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"[3]\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"becaab7b-f0b7-",
+          "delay": 92
+        },
+        {
+          "data": "43f0-89ac-afeb70f6d7f9\",\"object\":\"chat.completion.done\",\"created\":1775309716,\"model\":\"sonar-reasoning-pro\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://en.wikipedia.org/wiki/Berlin\",\"https://www.youtube.com/watch?v=NtXnOn01H-o\",\"https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":13,\"completion_tokens\":353,\"total_tokens\":366,\"search_context_size\":\"low\",\"cost\":{\"input_tokens_cost\":0.00003,\"output_tokens_cost\":0.00282,\"request_cost\":0.006,\"total_cost\":0.00885}}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

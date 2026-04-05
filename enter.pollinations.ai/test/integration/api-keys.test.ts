@@ -1,8 +1,5 @@
-import { env, SELF } from "cloudflare:test";
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
+import { SELF } from "cloudflare:test";
 import { describe, expect } from "vitest";
-import { apikey as apikeyTable } from "@/db/schema/better-auth.ts";
 import { test } from "../fixtures.ts";
 
 describe("API Key Management", () => {
@@ -189,12 +186,12 @@ describe("API Key Management", () => {
             });
         });
 
-        test("should invalidate Better Auth API key caches on update", async ({
+        test("should reflect updated permissions immediately after update", async ({
             auth,
             sessionToken,
         }) => {
             const createResponse = await auth.apiKey.create({
-                name: "cache-invalidation-test",
+                name: "permissions-freshness-test",
                 fetchOptions: {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -206,36 +203,9 @@ describe("API Key Management", () => {
             if (!createdKey) {
                 throw new Error("Failed to create API key");
             }
-            const keyId = createdKey.id;
-
-            const db = drizzle(env.DB);
-            const keyRow = await db
-                .select({
-                    id: apikeyTable.id,
-                    userId: apikeyTable.userId,
-                    key: apikeyTable.key,
-                })
-                .from(apikeyTable)
-                .where(eq(apikeyTable.id, keyId))
-                .get();
-
-            expect(keyRow).toBeTruthy();
-            expect(keyRow?.key).toBeTruthy();
-            expect(keyRow?.userId).toBeTruthy();
-            if (!keyRow?.key || !keyRow.userId) {
-                throw new Error("Failed to load API key row");
-            }
-
-            const hashedCacheKey = `auth:api-key:${keyRow.key}`;
-            const byIdCacheKey = `auth:api-key:by-id:${keyId}`;
-            const byUserCacheKey = `auth:api-key:by-user:${keyRow.userId}`;
-
-            expect(await env.KV.get(hashedCacheKey)).toBeTruthy();
-            expect(await env.KV.get(byIdCacheKey)).toBeTruthy();
-            expect(await env.KV.get(byUserCacheKey)).toBeTruthy();
 
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/api-keys/${createdKey.id}/update`,
                 {
                     method: "POST",
                     headers: {
@@ -247,11 +217,7 @@ describe("API Key Management", () => {
                     }),
                 },
             );
-
             expect(updateResponse.status).toBe(200);
-            expect(await env.KV.get(hashedCacheKey)).toBeNull();
-            expect(await env.KV.get(byIdCacheKey)).toBeNull();
-            expect(await env.KV.get(byUserCacheKey)).toBeNull();
 
             const accountKeyResponse = await SELF.fetch(
                 "http://localhost:3000/api/account/key",
@@ -263,17 +229,18 @@ describe("API Key Management", () => {
             );
 
             expect(accountKeyResponse.status).toBe(200);
-            expect(await env.KV.get(hashedCacheKey)).toBeTruthy();
-            expect(await env.KV.get(byIdCacheKey)).toBeTruthy();
-            expect(await env.KV.get(byUserCacheKey)).toBeTruthy();
+            const keyInfo = (await accountKeyResponse.json()) as {
+                permissions?: { models?: string[] };
+            };
+            expect(keyInfo.permissions?.models).toEqual(["flux"]);
         });
 
-        test("should invalidate metadata caches after metadata updates", async ({
+        test("should reflect updated metadata immediately after update", async ({
             auth,
             sessionToken,
         }) => {
             const createResponse = await auth.apiKey.create({
-                name: "metadata-cache-invalidation-test",
+                name: "metadata-freshness-test",
                 fetchOptions: {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -285,27 +252,6 @@ describe("API Key Management", () => {
             if (!createdKey) {
                 throw new Error("Failed to create API key");
             }
-
-            const db = drizzle(env.DB);
-            const keyRow = await db
-                .select({
-                    id: apikeyTable.id,
-                    userId: apikeyTable.userId,
-                    key: apikeyTable.key,
-                })
-                .from(apikeyTable)
-                .where(eq(apikeyTable.id, createdKey.id))
-                .get();
-
-            expect(keyRow?.key).toBeTruthy();
-            expect(keyRow?.userId).toBeTruthy();
-            if (!keyRow?.key || !keyRow.userId) {
-                throw new Error("Failed to load API key row");
-            }
-
-            const hashedCacheKey = `auth:api-key:${keyRow.key}`;
-            const byIdCacheKey = `auth:api-key:by-id:${createdKey.id}`;
-            const byUserCacheKey = `auth:api-key:by-user:${keyRow.userId}`;
 
             const metadataResponse = await SELF.fetch(
                 `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
@@ -320,11 +266,7 @@ describe("API Key Management", () => {
                     }),
                 },
             );
-
             expect(metadataResponse.status).toBe(200);
-            expect(await env.KV.get(hashedCacheKey)).toBeNull();
-            expect(await env.KV.get(byIdCacheKey)).toBeNull();
-            expect(await env.KV.get(byUserCacheKey)).toBeNull();
 
             const accountKeyResponse = await SELF.fetch(
                 "http://localhost:3000/api/account/key",

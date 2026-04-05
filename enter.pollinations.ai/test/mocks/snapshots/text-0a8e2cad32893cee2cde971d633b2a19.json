@@ -1,0 +1,46 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "grok-legacy",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 04 Apr 2026 13:34:49 GMT",
+      "transfer-encoding": "chunked"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 12
+        },
+        {
+          "data": "{\"content\":\"Yes\",\"role\":\"assistant\"},\"index\":0}],\"created\":1775309689,\"id\":\"df9f73e9-78b3-4468-9c4e-e9de4dcf63be\",\"model\":\"grok-4-fast-non-reasoning\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":\"fp_69c5j0a3e9\"}\n\ndata: {\"choices\":[{\"delta\":{\"content\":\".\"},\"index\":0}],\"created\":1775309689,\"id\":\"df9f73e9-78b3-4468-9c4e-e9de4dcf63be\",\"model\":\"grok-4-fast-non-reasoning\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":\"fp_69c5j0a3e9\"}\n\ndata: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\",\"index\":0}],\"created\":1775309689,\"id\":\"df9f73e9-78b3-4468-9c4e-e9de4dcf63be\",\"model\":\"grok-4-fast-non-reasoning\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":\"fp_69c5j0a3e9\"}\n\ndata: {\"choices\":[],\"created\":1775309689,\"id\":\"df9f73e9-78b3-4468-9c4e-e9de4dcf63be\",\"model\":\"grok-4-fast-non-reasoning\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":\"fp_69c5j0a3e9\",\"usage\":{\"completion_tokens\":2,\"completion_tokens_details\":{\"accepted_prediction_tokens\":0,\"audio_tokens\":0,\"reasoning_tokens\":0,\"rejected_prediction_tokens\":0},\"num_sources_used\":0,\"prompt_tokens\":180,\"prompt_tokens_details\":{\"audio_tokens\":0,\"cached_tokens\":161,\"image_tokens\":0,\"text_tokens\":180},\"total_tokens\":182}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 04 Apr 2026 13:14:03 GMT",
+      "transfer-encoding": "chunked"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"choices\":[],\"create",
+          "delay": 27
+        },
+        {
+          "data": "d\":0,\"id\":\"\",\"model\":\"\",\"object\":\"\",\"prompt_filter_results\":[{\"prompt_index\":0,\"content_filter_results\":{\"hate\":{\"filtered\":false,\"severity\":\"safe\"},\"jailbreak\":{\"detected\":false,\"filtered\":false},\"self_harm\":{\"filtered\":false,\"severity\":\"safe\"},\"sexual\":{\"filtered\":false,\"severity\":\"safe\"},\"violence\":{\"filtered\":false,\"severity\":\"safe\"}}}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"conte",
+          "delay": 0
+        },
+        {
+          "data": "nt_filter_results\":{},\"delta\":{\"content\":\"\",\"refusal\":null,\"role\":\"assistant\"},\"finish_reason\":null,\"index\":0,\"logprobs\":null}],\"created\":1775308441,\"id\":\"chatcmpl-DQv738loBBEI7XFH4RFimnde9Wve8\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"mK5fvwdmrdOhNH\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"content",
+          "delay": 33
+        },
+        {
+          "data": "_filter_results\":{\"protected_material_code\":{\"detected\":false,\"filtered\":false}},\"delta\":{\"content\":\"Yes\"},\"finish_reason\":null,\"index\":0,\"logprobs\":null}],\"created\":1775308441,\"id\":\"chatcmpl-DQv738loBBEI7XFH4RFimnde9Wve8\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"QIvEnVzM9wTtv\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"content",
+          "delay": 0
+        },
+        {
+          "data": "_filter_results\":{},\"delta\":{},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null}],\"created\":1775308441,\"id\":\"chatcmpl-DQv738loBBEI7XFH4RFimnde9Wve8\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"9dLMf178yE\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[],\"create",
+          "delay": 47
+        },
+        {
+          "data": "d\":1775308441,\"id\":\"chatcmpl-DQv738loBBEI7XFH4RFimnde9Wve8\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"fAxMXhXKkq65Ah\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":{\"completion_tokens\":75,\"completion_tokens_details\":{\"accepted_prediction_tokens\":0,\"audio_tokens\":0,\"reasoning_tokens\":64,\"rejected_prediction_tokens\":0},\"prompt_tokens\":18,\"prompt_tokens_details\":{\"audio_tokens\":0,\"cached_tokens\":0},\"total_tokens\":93}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: [DONE]\n\n",
+          "delay": 2
+        }
+      ]
+    }
+  }
+}

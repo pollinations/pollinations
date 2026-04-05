@@ -1,0 +1,69 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "perplexity-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1048",
+      "content-type": "application/json",
+      "date": "Sat, 04 Apr 2026 13:12:43 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "sonar",
+      "x-usage-completion-text-tokens": "92",
+      "x-usage-prompt-text-tokens": "13"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_2bcefe851e850850d39f12df45f4fc5d",
+        "object": "chat.completion",
+        "created": 1775308363,
+        "model": "sonar",
+        "provider": "perplexity-ai",
+        "citations": [
+          "https://en.wikipedia.org/wiki/Capital_of_Germany",
+          "https://www.britannica.com/place/Berlin",
+          "https://www.youtube.com/watch?v=NtXnOn01H-o",
+          "https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html",
+          "https://en.wikipedia.org/wiki/Berlin",
+          "https://www.britannica.com/video/Overview-Bonn-decision-Berlin-Germany/-197060"
+        ],
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "**Yes**, Berlin is the capital of Germany.[1][2][4][5]\n\nIt has served as the official capital since German reunification in 1990, with the Bundestag confirming the move from Bonn in 1991 and the constitution explicitly stating this in 2006.[1][2][3][5] Berlin hosts the federal parliament, government, and most ministries, though some offices remain in Bonn.[1][4]"
+            },
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": ""
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 13,
+          "completion_tokens": 92,
+          "total_tokens": 105
+        }
+      }
+    }
+  }
+}

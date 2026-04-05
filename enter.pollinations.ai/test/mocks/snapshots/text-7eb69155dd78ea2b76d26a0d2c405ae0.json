@@ -1,0 +1,318 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "nova",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 04 Apr 2026 13:35:35 GMT",
+      "transfer-encoding": "chunked"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"Yes\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".\\n\\nBerlin is indeed\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\".\\n\\n",
+          "delay": 0
+        },
+        {
+          "data": "Berlin is indeed\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-177530",
+          "delay": 225
+        },
+        {
+          "data": "9735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" the capital of Germany. It\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" the capital of Germany. It\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" has served\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" has served\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" as the capital\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" as the capital\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" since\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" since\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-177530",
+          "delay": 1
+        },
+        {
+          "data": "9735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" 1990\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" 1990\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\", following\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\", following\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" the reunification of East\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" the reunification of East\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-177530",
+          "delay": 4
+        },
+        {
+          "data": "9735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" and West Germany. Prior\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" and West Germany. Prior\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" to that\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" to that\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\", from\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\", from\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" 1949\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" 1949\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 2
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" to 1990\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" to 1990\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\", the\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\", the\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" capital of\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" capital of\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" West\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" West\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" Germany was Bonn\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" Germany was Bonn\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\", while\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\", while\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" East\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" East\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-177530",
+          "delay": 104
+        },
+        {
+          "data": "9735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" Germany's\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" Germany's\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309735,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" capital\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" capital\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-177530",
+          "delay": 158
+        },
+        {
+          "data": "9735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" was East\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" was East\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" Berlin. After\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" Berlin. After\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" reunification, Berlin\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" reunification, Berlin\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" once\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" once\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" again became the\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" again became the\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" capital\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" capital\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\",\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" a\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" a\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" role\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" role\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" it\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" it\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" also\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" also\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" held from\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" held from\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" 1871\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" 1871\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" to 1918\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" to 1918\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 1
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" and\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" and\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" again from\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" again from\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" 1933\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" 1933\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" to 1945\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" to 1945\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\". \\n\\n\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\". \\n\\n\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Berlin is not\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"Berlin is not\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-177530",
+          "delay": 142
+        },
+        {
+          "data": "9735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" only the political centre\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" only the political centre\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-177530",
+          "delay": 6
+        },
+        {
+          "data": "9735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" of\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" of\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" Germany\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" Germany\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" but also its\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" but also its\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" largest\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" largest\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" city and one\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" city and one\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" of the most important\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" of the most important\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" cultural\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" cultural\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\",\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" scientific\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" scientific\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\", and historical\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\", and historical\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" hubs\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" hubs\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" in Europe\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" in Europe\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1775",
+          "delay": 0
+        },
+        {
+          "data": "309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\".\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-177530",
+          "delay": 2
+        },
+        {
+          "data": "9735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1775309735696\",\"object\":\"chat.completion.chunk\",\"created\":1775309736,\"model\":\"us.amazon.nova-2-lite-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":58,\"completion_tokens\":127,\"total_tokens\":185,\"prompt_tokens_details\":{\"cached_tokens\":0}}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

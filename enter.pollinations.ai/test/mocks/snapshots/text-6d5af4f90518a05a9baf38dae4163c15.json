@@ -1,0 +1,54 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "qwen-coder",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 04 Apr 2026 13:14:08 GMT",
+      "transfer-encoding": "chunked"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-b981c",
+          "delay": 58
+        },
+        {
+          "data": "dc0f0aad574\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}],\"created\":1775308448,\"model\":\"Qwen3-Coder-30B-A3B-Instruct\",\"object\":\"chat.completion.chunk\"}\n\ndata: {\"id\":\"chatcmpl-b981cdc0f0aad574\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\",\"name\":\"assistant\"}}],\"created\":1775308448,\"model\":\"Qwen3-Coder-30B-A3B-Instruct\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-b98",
+          "delay": 0
+        },
+        {
+          "data": "1cdc0f0aad574\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"name\":\"assistant\"},\"finish_reason\":\"stop\"}],\"created\":1775308448,\"model\":\"Qwen3-Coder-30B-A3B-Instruct\",\"object\":\"chat.completion.chunk\"}\n\ndata: {\"id\":\"chatcmpl-b981cdc0f0aad574\",\"choices\":[],\"created\":1775308448,\"model\":\"Qwen3-Coder-30B-A3B-Instruct\",\"object\":\"chat.completion.chunk\",\"usage\":{\"prompt_tokens\":80,\"completion_tokens\":2,\"total_tokens\":82}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "qwen-safety",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "331",
+      "content-type": "application/json",
+      "date": "Sat, 04 Apr 2026 13:13:57 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "Qwen3Guard-Gen-8B",
+      "x-usage-completion-text-tokens": "8",
+      "x-usage-prompt-text-tokens": "308"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_8193ee7d267524563bc1e44ccd486597",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Safety: Safe\nCategories: None",
+              "tool_calls": []
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "created": 1775308436,
+        "model": "Qwen3Guard-Gen-8B",
+        "object": "chat.completion",
+        "usage": {
+          "prompt_tokens": 308,
+          "completion_tokens": 8,
+          "total_tokens": 316
+        }
+      }
+    }
+  }
+}

@@ -104,54 +104,42 @@ export const auth = (options: AuthOptions) =>
 
             if (!keyResult.valid || !keyResult.key) return null;
 
-            const db = drizzle(c.env.DB, { schema });
-            const permissions = keyResult.key.permissions as
+            const key = keyResult.key;
+            const permissions = key.permissions as
                 | { models?: string[]; account?: string[] }
                 | undefined;
 
-            const apiKeyData = await db
-                .select()
-                .from(schema.apikey)
-                .where(eq(schema.apikey.id, keyResult.key.id))
-                .get();
+            // verifyApiKey already checks expiry and enabled.
+            // We still need pollenBalance (custom column, not in verifyApiKey)
+            // and the user record (for ban check + downstream user.id/tier/githubId).
+            const db = drizzle(c.env.DB, { schema });
+            const [apiKeyExtra, userData] = await Promise.all([
+                db
+                    .select({ pollenBalance: schema.apikey.pollenBalance })
+                    .from(schema.apikey)
+                    .where(eq(schema.apikey.id, key.id))
+                    .get(),
+                key.userId
+                    ? db
+                          .select()
+                          .from(schema.user)
+                          .where(eq(schema.user.id, key.userId))
+                          .get()
+                    : null,
+            ]);
 
-            const userData = apiKeyData
-                ? await db
-                      .select()
-                      .from(schema.user)
-                      .where(eq(schema.user.id, apiKeyData.userId))
-                      .get()
-                : null;
-
-            const fullApiKey = apiKeyData
-                ? { ...apiKeyData, user: userData }
-                : null;
-
-            // Check if key has expired
-            if (fullApiKey?.expiresAt) {
-                const expiryDate = new Date(fullApiKey.expiresAt);
-                if (expiryDate < new Date()) {
-                    return null;
-                }
-            }
-
-            // Check if the key is disabled
-            if (fullApiKey?.enabled === false) {
-                return null;
-            }
-
-            if (fullApiKey?.user) {
-                assertNotBanned(fullApiKey.user);
+            if (userData) {
+                assertNotBanned(userData);
             }
 
             return {
-                user: fullApiKey?.user as User,
+                user: userData as User,
                 apiKey: {
-                    id: keyResult.key.id,
-                    name: keyResult.key.name || undefined,
+                    id: key.id,
+                    name: key.name || undefined,
                     permissions,
-                    metadata: keyResult.key.metadata || undefined,
-                    pollenBalance: fullApiKey?.pollenBalance ?? null,
+                    metadata: key.metadata || undefined,
+                    pollenBalance: apiKeyExtra?.pollenBalance ?? null,
                     rawKey: rawApiKey,
                 },
                 rawApiKey,

@@ -1,0 +1,75 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "495",
+      "content-type": "application/json",
+      "date": "Sat, 04 Apr 2026 13:11:44 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-flash-preview",
+      "x-usage-completion-reasoning-tokens": "73",
+      "x-usage-completion-text-tokens": "2",
+      "x-usage-prompt-text-tokens": "12"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_49c85ebce39589d6e8f882ab315ae326",
+        "object": "chat.completion",
+        "created": 1775308304,
+        "model": "gemini-3-flash-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "Yes.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Yes."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 12,
+          "completion_tokens": 75,
+          "total_tokens": 87,
+          "completion_tokens_details": {
+            "reasoning_tokens": 73,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

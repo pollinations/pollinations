@@ -1,0 +1,54 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "mistral",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 04 Apr 2026 13:14:10 GMT",
+      "transfer-encoding": "chunked"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-a4362",
+          "delay": 53
+        },
+        {
+          "data": "a62b43fc264\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}],\"created\":1775308450,\"model\":\"Mistral-Small-3.2-24B-Instruct-2506\",\"object\":\"chat.completion.chunk\"}\n\ndata: {\"id\":\"chatcmpl-a4362a62b43fc264\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"yes\",\"name\":\"assistant\"}}],\"created\":1775308450,\"model\":\"Mistral-Small-3.2-24B-Instruct-2506\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-a43",
+          "delay": 0
+        },
+        {
+          "data": "62a62b43fc264\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"name\":\"assistant\"},\"finish_reason\":\"stop\"}],\"created\":1775308450,\"model\":\"Mistral-Small-3.2-24B-Instruct-2506\",\"object\":\"chat.completion.chunk\"}\n\ndata: {\"id\":\"chatcmpl-a4362a62b43fc264\",\"choices\":[],\"created\":1775308450,\"model\":\"Mistral-Small-3.2-24B-Instruct-2506\",\"object\":\"chat.completion.chunk\",\"usage\":{\"prompt_tokens\":15,\"completion_tokens\":2,\"total_tokens\":17}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

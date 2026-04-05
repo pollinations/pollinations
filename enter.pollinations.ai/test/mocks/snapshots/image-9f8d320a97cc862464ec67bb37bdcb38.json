@@ -1,0 +1,36 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/prompt/a%20sunset%20over%20mountains?model=grok-imagine-pro&seed=42",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 503,
+    "statusText": "Service Unavailable",
+    "headers": {
+      "access-control-allow-headers": "Content-Type",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "Content-Length",
+      "connection": "keep-alive",
+      "content-type": "application/json",
+      "date": "Sat, 04 Apr 2026 13:10:33 GMT",
+      "keep-alive": "timeout=5",
+      "transfer-encoding": "chunked",
+      "x-error-type": "Internal Server Error"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "{\"error\":\"Internal Server Error\",\"message\":\"xAI image generation failed: {\\\"code\\\":\\\"The service is currently unavailable\\\",\\\"error\\\":\\\"The model is temporarily unavailable.\\\"}\",\"timingInfo\":[{\"step\":\"Request received.\",\"timestamp\":0},{\"step\":\"Start generating job\",\"timestamp\":0},{\"step\":\"Start processing\",\"timestamp\":0},{\"step\":\"Start prompt normalization and translation\",\"timestamp\":0},{\"step\":\"End prompt normalization and translation\",\"timestamp\":0}],\"requestId\":\"xhbp6j\",\"requestParameters\":{\"prompt\":\"a sunset over mountains\",\"seed\":42,\"model\":\"grok-imagine-pro\",\"enhance\":false,\"negative_prompt\":\"undefined\",\"nofeed\":false,\"safe\":false,\"quality\":\"medium\",\"image\":[],\"transparent\":false,\"audio\":true,\"width\":1024,\"height\":1024},\"queueInfo\":null}",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

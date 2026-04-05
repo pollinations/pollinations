@@ -5,5 +5,6 @@ export const SCOPE_LABELS: Record<string, string> = {
     generate: "Generate images, text, audio, and video",
     usage: "View your usage history",
     balance: "View your pollen balance",
+    keys: "Manage your API keys",
     offline_access: "Stay connected when you're away",
 };

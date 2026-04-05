@@ -1,0 +1,46 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "grok",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 04 Apr 2026 13:34:43 GMT",
+      "transfer-encoding": "chunked"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 38
+        },
+        {
+          "data": "{\"content\":\"Yes\",\"role\":\"assistant\"},\"index\":0}],\"created\":1775309683,\"id\":\"8ebcd91e-4426-47e0-ba78-0f2687d74ab5\",\"model\":\"grok-4-1-fast-non-reasoning\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":\"fp_49c5j0a323\"}\n\ndata: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\",\"index\":0}],\"created\":1775309683,\"id\":\"8ebcd91e-4426-47e0-ba78-0f2687d74ab5\",\"model\":\"grok-4-1-fast-non-reasoning\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":\"fp_49c5j0a323\"}\n\ndata: {\"choices\":[],\"created\":1775309683,\"id\":\"8ebcd91e-4426-47e0-ba78-0f2687d74ab5\",\"model\":\"grok-4-1-fast-non-reasoning\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":\"fp_49c5j0a323\",\"usage\":{\"completion_tokens\":1,\"completion_tokens_details\":{\"accepted_prediction_tokens\":0,\"audio_tokens\":0,\"reasoning_tokens\":0,\"rejected_prediction_tokens\":0},\"cost_in_usd_ticks\":0,\"num_sources_used\":0,\"prompt_tokens\":12,\"prompt_tokens_details\":{\"audio_tokens\":0,\"cached_tokens\":0,\"image_tokens\":0,\"text_tokens\":12},\"total_tokens\":13}}\n\ndata: [DONE]\n\n",
+          "delay": 1
+        }
+      ]
+    }
+  }
+}

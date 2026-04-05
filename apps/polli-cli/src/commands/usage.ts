@@ -32,14 +32,24 @@ interface BalanceResponse {
     balance: number;
 }
 
-const usage = new Command("usage")
-    .description("Show usage history")
+export const usageCommand = new Command("usage")
+    .description("Show usage history or pollen balance")
     .option("--limit <n>", "Number of records", "20")
     .option("--daily", "Show daily summary instead of individual requests")
+    .option("--balance", "Show pollen balance only")
     .action(async (opts) => {
         const key = requireKey();
 
         try {
+            if (opts.balance) {
+                const data = await enter<BalanceResponse>(
+                    "/api/account/balance",
+                    { apiKey: key },
+                );
+                printResult({ pollen: data.balance });
+                return;
+            }
+
             if (opts.daily) {
                 const data = await enter<DailyUsageResponse>(
                     "/api/account/usage/daily",
@@ -88,22 +98,16 @@ const usage = new Command("usage")
         }
     });
 
-export const usageCommand = usage;
-
+/** `polli pollen` — alias for `polli usage --balance` */
 export const pollenCommand = new Command("pollen")
-    .description("Check pollen balance")
+    .description("Check pollen balance (alias for usage --balance)")
     .action(async () => {
         const key = requireKey();
-
         try {
-            const balance = await enter<BalanceResponse>(
-                "/api/account/balance",
-                {
-                    apiKey: key,
-                },
-            );
-
-            printResult({ pollen: balance.balance });
+            const data = await enter<BalanceResponse>("/api/account/balance", {
+                apiKey: key,
+            });
+            printResult({ pollen: data.balance });
         } catch (err) {
             printError(
                 `Failed to fetch balance: ${err instanceof Error ? err.message : "unknown"}`,

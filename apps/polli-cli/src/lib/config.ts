@@ -11,7 +11,6 @@ import { join } from "node:path";
 const CONFIG_DIR = join(homedir(), ".pollinations");
 const CREDENTIALS_FILE = join(CONFIG_DIR, "credentials.json");
 
-
 export interface PolliCredentials {
     apiKey?: string;
     keyType?: "pk" | "sk";
@@ -60,16 +59,10 @@ export const setKeyOverride = (key: string) => {
 
 /** Resolve the API key — flag override > stored credentials */
 export const resolveApiKey = (flagKey?: string): string | undefined =>
-    flagKey ??
-    _keyOverride ??
-    loadCredentials().apiKey;
+    flagKey ?? _keyOverride ?? loadCredentials().apiKey;
 
 export const BASE_URL =
     process.env.POLLINATIONS_BASE_URL ?? "https://gen.pollinations.ai";
 
 export const ENTER_URL =
     process.env.POLLINATIONS_ENTER_URL ?? "https://enter.pollinations.ai";
-
-/** Return the user's --model flag value, or undefined to let the server pick. */
-export const resolveModel = (flagValue?: string): string | undefined =>
-    flagValue;

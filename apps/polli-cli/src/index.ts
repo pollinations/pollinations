@@ -7,9 +7,7 @@ import { healthCommand } from "./commands/health.js";
 import { keysCommand } from "./commands/keys.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { modelsCommand } from "./commands/models.js";
-import { tierCommand } from "./commands/tier.js";
 import { pollenCommand, usageCommand } from "./commands/usage.js";
-import { whoamiCommand } from "./commands/whoami.js";
 
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
@@ -25,7 +23,6 @@ program
     .option("--json", "Output as JSON (stdout), messages to stderr")
     .option("--quiet", "Bare values only, no decoration")
     .option("--key <key>", "Override stored API key for this command")
-    .option("--yes", "Skip all interactive confirmations")
     .hook("preAction", () => {
         const opts = program.opts();
 
@@ -44,16 +41,12 @@ program
         }
     });
 
-// Auth & identity
+// Auth & account
 program.addCommand(authCommand);
-program.addCommand(whoamiCommand);
-
-// Keys & account
 program.addCommand(keysCommand);
 program.addCommand(usageCommand);
 program.addCommand(pollenCommand);
 program.addCommand(modelsCommand);
-program.addCommand(tierCommand);
 
 // Generation
 program.addCommand(genCommand);

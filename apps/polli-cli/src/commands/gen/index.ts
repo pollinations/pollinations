@@ -1,9 +1,7 @@
 import { Command } from "commander";
 import { audioCommand } from "./audio.js";
 import { chatCommand } from "./chat.js";
-
 import { imageCommand } from "./image.js";
-import { pipeCommand } from "./pipe.js";
 import { textCommand } from "./text.js";
 import { transcribeCommand } from "./transcribe.js";
 import { videoCommand } from "./video.js";
@@ -15,5 +13,4 @@ export const genCommand = new Command("gen")
     .addCommand(audioCommand)
     .addCommand(videoCommand)
     .addCommand(chatCommand)
-    .addCommand(pipeCommand)
     .addCommand(transcribeCommand);

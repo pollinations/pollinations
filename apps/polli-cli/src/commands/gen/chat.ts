@@ -3,7 +3,7 @@ import { createInterface } from "node:readline";
 import chalk from "chalk";
 import { Command } from "commander";
 import { requireKey } from "../../lib/api.js";
-import { BASE_URL, resolveModel } from "../../lib/config.js";
+import { BASE_URL } from "../../lib/config.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
 
 interface Message {
@@ -30,7 +30,6 @@ export const chatCommand = new Command("chat")
     .option("--save <path>", "Save conversation transcript on exit")
     .action(async (opts) => {
         const key = requireKey();
-        opts.model = resolveModel(opts.model);
         const isJson = getOutputMode() !== "human";
 
         const messages: Message[] = [];

@@ -2,81 +2,8 @@ import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import ora from "ora";
 import { requireKey } from "../../lib/api.js";
-import { BASE_URL, resolveModel } from "../../lib/config.js";
-import {
-    getOutputMode,
-    printError,
-    printResult,
-    printSuccess,
-} from "../../lib/output.js";
-
-async function generateOne(
-    key: string,
-    prompt: string,
-    opts: {
-        model?: string;
-        width: string;
-        height: string;
-        seed?: string;
-        enhance?: boolean;
-        negative?: string;
-        quality?: string;
-        safe?: boolean;
-        transparent?: boolean;
-        image?: string[];
-    },
-    index: number,
-    outputBase?: string,
-): Promise<{ path?: string; url: string; size: number; model: string }> {
-    const params = new URLSearchParams({
-        width: opts.width,
-        height: opts.height,
-    });
-    if (opts.model) params.set("model", opts.model);
-    if (opts.seed) params.set("seed", String(Number(opts.seed) + index));
-    if (opts.enhance) params.set("enhance", "true");
-    if (opts.negative) params.set("negative_prompt", opts.negative);
-    if (opts.safe) params.set("safe", "true");
-    if (opts.transparent) params.set("transparent", "true");
-    if (opts.image?.length) params.set("image", opts.image.join("|"));
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const url = `${BASE_URL}/image/${encodedPrompt}?${params}`;
-
-    const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${key}` },
-        signal: AbortSignal.timeout(120_000),
-    });
-    if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`${res.status} ${res.statusText}: ${text}`);
-    }
-
-    const buffer = Buffer.from(await res.arrayBuffer());
-
-    if (outputBase) {
-        const ext = opts.transparent ? ".png" : ".jpg";
-        const path =
-            index > 0
-                ? outputBase
-                      .replace(/(\.[^.]+)$/, `-${index + 1}$1`)
-                      .replace(/^([^.]+)$/, `$1-${index + 1}${ext}`)
-                : outputBase;
-        writeFileSync(path, buffer);
-        return {
-            path,
-            url,
-            size: buffer.length,
-            ...(opts.model && { model: opts.model }),
-        };
-    }
-
-    return {
-        url,
-        size: buffer.length,
-        ...(opts.model && { model: opts.model }),
-    };
-}
+import { BASE_URL } from "../../lib/config.js";
+import { getOutputMode, printError, printResult } from "../../lib/output.js";
 
 export const imageCommand = new Command("image")
     .description("Generate an image from a prompt")
@@ -85,7 +12,6 @@ export const imageCommand = new Command("image")
     .option("--width <n>", "Image width", "1024")
     .option("--height <n>", "Image height", "1024")
     .option("--seed <n>", "Random seed")
-
     .option("--enhance", "AI prompt improvement")
     .option("--negative <text>", "Content to avoid")
     .option("--safe", "Enable safety filters")
@@ -94,46 +20,53 @@ export const imageCommand = new Command("image")
         "--image <url...>",
         "Reference image URL(s) for editing/i2i (repeatable)",
     )
-    .option("--count <n>", "Generate multiple images", "1")
     .option("--output <path>", "Save to file")
     .action(async (prompt, opts) => {
         const key = requireKey();
-        opts.model = resolveModel(opts.model);
         const isHuman = getOutputMode() === "human";
-        const count = Math.max(1, Number.parseInt(opts.count, 10) || 1);
 
-        const spinner = isHuman
-            ? ora(
-                  count > 1
-                      ? `Generating ${count} images...`
-                      : "Generating image...",
-              ).start()
-            : null;
+        const params = new URLSearchParams({
+            width: opts.width,
+            height: opts.height,
+        });
+        if (opts.model) params.set("model", opts.model);
+        if (opts.seed) params.set("seed", opts.seed);
+        if (opts.enhance) params.set("enhance", "true");
+        if (opts.negative) params.set("negative_prompt", opts.negative);
+        if (opts.safe) params.set("safe", "true");
+        if (opts.transparent) params.set("transparent", "true");
+        if (opts.image?.length) params.set("image", opts.image.join("|"));
+
+        const encodedPrompt = encodeURIComponent(prompt);
+        const url = `${BASE_URL}/image/${encodedPrompt}?${params}`;
+
+        const spinner = isHuman ? ora("Generating image...").start() : null;
 
         try {
-            const results = await Promise.all(
-                Array.from({ length: count }, (_, i) =>
-                    generateOne(key, prompt, opts, i, opts.output),
-                ),
-            );
-
-            if (count === 1) {
-                const r = results[0];
-                if (r.path) {
-                    spinner?.succeed(`Saved to ${r.path}`);
-                } else {
-                    spinner?.succeed("Image generated");
-                }
-                printResult(r);
-            } else {
-                spinner?.succeed(`Generated ${count} images`);
-                for (const r of results) {
-                    if (r.path && isHuman) {
-                        printSuccess(`  ${r.path}`);
-                    }
-                }
-                printResult(results);
+            const res = await fetch(url, {
+                headers: { Authorization: `Bearer ${key}` },
+                signal: AbortSignal.timeout(120_000),
+            });
+            if (!res.ok) {
+                const text = await res.text().catch(() => "");
+                throw new Error(`${res.status} ${res.statusText}: ${text}`);
             }
+
+            const buffer = Buffer.from(await res.arrayBuffer());
+
+            if (opts.output) {
+                writeFileSync(opts.output, buffer);
+                spinner?.succeed(`Saved to ${opts.output}`);
+            } else {
+                spinner?.succeed("Image generated");
+            }
+
+            printResult({
+                ...(opts.output && { path: opts.output }),
+                url,
+                size: buffer.length,
+                ...(opts.model && { model: opts.model }),
+            });
         } catch (err) {
             spinner?.fail("Generation failed");
             printError(err instanceof Error ? err.message : "unknown error");

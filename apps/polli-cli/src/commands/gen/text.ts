@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import ora from "ora";
 import { requireKey } from "../../lib/api.js";
-import { BASE_URL, resolveModel } from "../../lib/config.js";
+import { BASE_URL } from "../../lib/config.js";
 import {
     getOutputMode,
     printError,
@@ -16,11 +16,11 @@ interface ChatResponse {
     usage?: { total_tokens: number };
 }
 
-async function generateOne(
+async function generate(
     key: string,
     prompt: string,
     opts: {
-        model: string;
+        model?: string;
         system?: string;
         temperature?: string;
         maxTokens?: string;
@@ -36,7 +36,8 @@ async function generateOne(
     if (opts.system) messages.push({ role: "system", content: opts.system });
     messages.push({ role: "user", content: prompt });
 
-    const body: Record<string, unknown> = { model: opts.model, messages };
+    const body: Record<string, unknown> = { messages };
+    if (opts.model) body.model = opts.model;
     if (opts.temperature) body.temperature = Number(opts.temperature);
     if (opts.maxTokens) body.max_tokens = Number(opts.maxTokens);
     if (opts.topP) body.top_p = Number(opts.topP);
@@ -66,10 +67,22 @@ async function generateOne(
     return res.json() as Promise<ChatResponse>;
 }
 
+/** Read all of stdin (non-blocking: returns empty string if stdin is a TTY with no data). */
+async function readStdin(): Promise<string> {
+    if (process.stdin.isTTY) return "";
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) {
+        chunks.push(chunk as Buffer);
+    }
+    return Buffer.concat(chunks).toString("utf-8").trim();
+}
+
 export const textCommand = new Command("text")
-    .description("Generate text from a prompt")
-    .argument("<prompt>", "Text prompt")
-    .option("--model <model>", "Text model (default: from config or 'openai')")
+    .description(
+        "Generate text from a prompt (also reads stdin: echo 'hello' | polli gen text)",
+    )
+    .argument("[prompt]", "Text prompt (or pipe via stdin)")
+    .option("--model <model>", "Text model")
     .option("--system <msg>", "System message")
     .option("--temperature <n>", "Randomness (0-2)")
     .option("--max-tokens <n>", "Maximum output tokens")
@@ -79,71 +92,46 @@ export const textCommand = new Command("text")
     .option("--seed <n>", "Reproducibility seed")
     .option("--json", "Force JSON output")
     .option("--thinking", "Enable extended thinking (reasoning models)")
-    .option("--count <n>", "Generate multiple responses", "1")
     .option("--output <path>", "Save to file instead of stdout")
-    .action(async (prompt, opts) => {
+    .action(async (promptArg, opts) => {
         const key = requireKey();
-        opts.model = resolveModel(opts.model);
-        const isHuman = getOutputMode() === "human";
-        const count = Math.max(1, Number.parseInt(opts.count, 10) || 1);
+        const stdinText = await readStdin();
+        const prompt = promptArg || stdinText;
 
-        const spinner = isHuman
-            ? ora(
-                  count > 1
-                      ? `Generating ${count} responses...`
-                      : "Generating...",
-              ).start()
-            : null;
+        if (!prompt) {
+            printError(
+                "No prompt provided. Pass as argument or pipe via stdin.",
+            );
+            process.exit(1);
+        }
+
+        // If both stdin and arg are provided, use arg as prompt and stdin as context
+        if (promptArg && stdinText) {
+            opts.system = opts.system
+                ? `${opts.system}\n\nContext:\n${stdinText}`
+                : stdinText;
+        }
+
+        const isHuman = getOutputMode() === "human";
+        const spinner = isHuman ? ora("Generating...").start() : null;
 
         try {
-            const results = await Promise.all(
-                Array.from({ length: count }, () =>
-                    generateOne(key, prompt, opts),
-                ),
-            );
+            const data = await generate(key, prompt, opts);
+            const content = data.choices[0]?.message?.content ?? "";
 
             spinner?.stop();
 
-            if (count === 1) {
-                const data = results[0];
-                const content = data.choices[0]?.message?.content ?? "";
-
-                if (opts.output) {
-                    writeFileSync(opts.output, content, "utf-8");
-                    printSuccess(`Saved to ${opts.output}`);
-                } else if (getOutputMode() === "json") {
-                    printResult({
-                        content,
-                        model: data.model,
-                        tokens: data.usage?.total_tokens ?? null,
-                    });
-                } else {
-                    process.stdout.write(`${content}\n`);
-                }
-            } else {
-                const items = results.map((data, i) => ({
-                    index: i + 1,
-                    content: data.choices[0]?.message?.content ?? "",
+            if (opts.output) {
+                writeFileSync(opts.output, content, "utf-8");
+                printSuccess(`Saved to ${opts.output}`);
+            } else if (getOutputMode() === "json") {
+                printResult({
+                    content,
                     model: data.model,
                     tokens: data.usage?.total_tokens ?? null,
-                }));
-
-                if (opts.output) {
-                    writeFileSync(
-                        opts.output,
-                        JSON.stringify(items, null, 2),
-                        "utf-8",
-                    );
-                    printSuccess(`Saved ${count} responses to ${opts.output}`);
-                } else if (getOutputMode() === "json") {
-                    printResult(items);
-                } else {
-                    for (const item of items) {
-                        process.stdout.write(
-                            `--- Response ${item.index} ---\n${item.content}\n\n`,
-                        );
-                    }
-                }
+                });
+            } else {
+                process.stdout.write(`${content}\n`);
             }
         } catch (err) {
             spinner?.fail("Generation failed");

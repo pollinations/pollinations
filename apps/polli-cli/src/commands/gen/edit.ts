@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import ora from "ora";
 import { requireKey } from "../../lib/api.js";
-import { BASE_URL, resolveModel } from "../../lib/config.js";
+import { BASE_URL } from "../../lib/config.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
 
 export const editCommand = new Command("edit")
@@ -22,7 +22,7 @@ export const editCommand = new Command("edit")
     .option("--output <path>", "Save result to file (default: edited.png)")
     .action(async (prompt, opts) => {
         const key = requireKey();
-        const model = resolveModel(opts.model);
+        const model = opts.model;
         const isHuman = getOutputMode() === "human";
         const images: string[] = opts.image;
         const outputPath: string = opts.output ?? "edited.png";

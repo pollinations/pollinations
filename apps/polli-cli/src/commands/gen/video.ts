@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import ora from "ora";
 import { requireKey } from "../../lib/api.js";
-import { BASE_URL, resolveModel } from "../../lib/config.js";
+import { BASE_URL } from "../../lib/config.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
 
 export const videoCommand = new Command("video")
@@ -21,7 +21,6 @@ export const videoCommand = new Command("video")
     .option("--output <path>", "Save to file", "video.mp4")
     .action(async (prompt, opts) => {
         const key = requireKey();
-        opts.model = resolveModel(opts.model);
         const isHuman = getOutputMode() === "human";
 
         const params = new URLSearchParams({

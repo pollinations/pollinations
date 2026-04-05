@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
 import { printError, printTable } from "../lib/output.js";
+import { showModelStats } from "./stats.js";
 
 interface ModelEntry {
     name: string;
@@ -24,9 +25,23 @@ function classifyType(m: ModelEntry): string {
 }
 
 export const modelsCommand = new Command("models")
-    .description("List available models")
+    .description("List available models or show model health stats")
     .option("--type <type>", "Filter: text, image, audio, video, all", "all")
+    .option("--stats", "Show model health and performance stats")
+    .option("--window <window>", "Stats time window: 5m, 60m, 24h, 7d", "60m")
     .action(async (opts) => {
+        if (opts.stats) {
+            try {
+                await showModelStats(opts.type, opts.window);
+            } catch (err) {
+                printError(
+                    `Failed to fetch stats: ${err instanceof Error ? err.message : "unknown"}`,
+                );
+                process.exit(1);
+            }
+            return;
+        }
+
         requireKey();
         const type = opts.type as string;
         const rows: Record<string, unknown>[] = [];

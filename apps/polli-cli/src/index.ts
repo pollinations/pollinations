@@ -6,7 +6,6 @@ import { createGenCommand } from "./commands/gen/index.js";
 import { keysCommand } from "./commands/keys.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { modelsCommand } from "./commands/models.js";
-import { statsCommand } from "./commands/stats.js";
 import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
@@ -43,9 +42,8 @@ program.addCommand(usageCommand);
 // Generation
 program.addCommand(createGenCommand());
 
-// Discovery & diagnostics
+// Discovery
 program.addCommand(modelsCommand);
-program.addCommand(statsCommand);
 program.addCommand(docsCommand);
 
 // MCP

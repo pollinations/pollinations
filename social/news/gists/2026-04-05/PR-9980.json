@@ -1,0 +1,34 @@
+{
+  "pr_number": 9980,
+  "title": "feat: add account and media endpoints to llm.txt",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9980",
+  "merged_at": "2026-04-05T22:29:24Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Feeding the bots",
+    "blurb": "We've expanded our llm.txt file to cover all 22 API endpoints, including account management and media storage. Now your AI agents have the full map to the hive.",
+    "summary": "Expanded the llm.txt documentation endpoint to include all account management and media storage APIs.",
+    "impact": "AI agents and LLM-based tools can now automatically discover and understand the complete set of 22 pollinations.ai API endpoints.",
+    "keywords": [
+      "llm.txt",
+      "documentation",
+      "api",
+      "agents",
+      "endpoints"
+    ],
+    "visual_concept": "The Nomnom creature eating a large text file or digital scroll labeled 'llm.txt', representing AI agents consuming documentation. Polly the bee watches happily, holding a tiny pointer stick. The scene takes place in a cozy digital library or server room.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a glowing digital scroll labeled 'llm.txt' while Polly the bee mascot watches amused, holding a tiny pointer stick. A retro terminal nearby glows lime green (#ecf874) showing clean API code blocks. Soft pastel lavender and peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-05/PR-9980.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a glowing digital scroll labeled 'llm.txt' while Polly the bee mascot watches amused, holding a tiny pointer stick. A retro terminal nearby glows lime green (#ecf874) showing clean API code blocks. Soft pastel lavender and peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-04-05T22:30:19.606795+00:00"
+}

@@ -168,27 +168,38 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 
 ---
 
-### 6. SDXL Turbo / Legacy Sana (Vast.ai UK, 1x RTX 4090)
+### 6. Sana Sprint 1.6B Workers (Lambda Labs)
 
-| Property | Value |
-|----------|-------|
-| **Instance** | 34086100 (Vast.ai, UK) |
-| **Direct** | `http://45.143.122.9:32174` |
-| **Via OVH tunnel** | `localhost:19876` (on OVH → port 8765) |
-| **SSH** | `ssh -i ~/.ssh/pollinations_services_2026 -p 16100 root@ssh7.vast.ai` |
-| **Model** | `stabilityai/sdxl-turbo` (registers as `sana` type) |
+Two workers registered as `sana` type with OVH legacy service via heartbeat (no SSH tunnels).
 
-**Health check (direct):**
+| Instance | GPU | Host | Port | SSH |
+|----------|-----|------|------|-----|
+| Lambda A10 | A10 (24GB) | `150.136.85.48` | `8765` | `ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48` |
+| Lambda A100 | A100 (40GB) | `150.136.209.134` | `8765` | `ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134` |
+
+**Health check:**
 ```bash
-curl -s --connect-timeout 5 --max-time 10 http://45.143.122.9:32174/health
+curl -s --connect-timeout 5 --max-time 10 http://150.136.85.48:8765/health
+curl -s --connect-timeout 5 --max-time 10 http://150.136.209.134:8765/health
 ```
-Expected: `{"status":"healthy","model":"stabilityai/sdxl-turbo"}`
+Expected: `{"status":"healthy","model":"Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers"}`
 
-**SSH tunnel check (OVH side):**
+**Sana registry check (OVH side):**
 ```bash
-ssh -i ~/.ssh/id_rsa_ovh -o ConnectTimeout=5 ubuntu@57.130.31.42 "ss -tlnp | grep 19876"
+ssh -i ~/.ssh/id_rsa_ovh -o ConnectTimeout=5 ubuntu@57.130.31.42 "curl -s http://localhost:16384/register"
 ```
-Expected: LISTEN on port 19876
+Expected: 2 workers with 0% error rate
+
+**Restart:**
+```bash
+ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48 "sudo systemctl restart sana"
+ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134 "sudo systemctl restart sana"
+```
+
+**Notes:**
+- A10 generates at ~0.60s/img, A100 at ~0.25s/img
+- Replaced SDXL Turbo on Vast.ai (instance 34086100, now STOPPED)
+- Server code: `image.pollinations.ai/sana/server.py` (MAX_DIM=768, MAX_PIXELS=512*512)
 
 ---
 
@@ -217,9 +228,9 @@ When invoked, run checks in this order:
 4. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
 5. **ACE-Step health** - curl health endpoint on port 8189
 6. **Klein health** - curl RunPod proxy health endpoint
-7. **Legacy image service** - check systemctl status
-8. **SDXL Turbo / legacy sana** - curl health on 45.143.122.9:32174
-9. **SSH tunnel** - check port 19876 on OVH
+7. **Legacy image service** - check systemctl status on OVH
+8. **Sana workers** - curl health on both Lambda instances (A10 + A100)
+9. **Sana registry** - check OVH legacy registry for 2 workers with 0% errors
 10. **Disk space** - check OVH disk usage
 
 For each:
@@ -248,7 +259,8 @@ Report a brief status table:
 | ACE-Step | OK | 0.1s | |
 | Klein 4B | OK | 0.3s | RunPod |
 | Legacy image | OK | - | active |
-| SDXL Turbo (sana) | OK | 0.3s | vast.ai UK 34086100 |
-| SSH tunnel | OK | - | LISTEN |
+| Sana (Lambda A10) | OK | 0.2s | 1.6B, ~0.60s/img |
+| Sana (Lambda A100) | OK | 0.2s | 1.6B, ~0.25s/img |
+| Sana registry | OK | - | 2 workers, 0% errors |
 | OVH disk | OK | - | 45% used |
 ```

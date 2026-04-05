@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-04-04
+Last updated: 2026-04-05
 
 ## Capacity Summary
 
@@ -15,9 +15,11 @@ Last updated: 2026-04-04
 | Z-Image (serverless) | 1-2 | ADA_32_PRO | RunPod | pay-per-use | Elliot |
 | Flux | 4 | 4x RTX 5090 | Vast.ai | $1.68 | running (not in registry) |
 | Z-Image + Sana | 4 | 4x RTX 5090 | Vast.ai | $1.66 | **STOPPED** |
-| SDXL Turbo (legacy sana) | 1 | 1x RTX 4090 | Vast.ai | $0.36 | **ACTIVE** — legacy image.pollinations.ai |
+| Sana Sprint 1.6B | 1 | 1x RTX 4090 | Vast.ai | $0.36 | **ACTIVE** — legacy image.pollinations.ai |
+| Sana Sprint 1.6B | 1 | 1x A10 | Lambda Labs | — | **ACTIVE** — legacy image.pollinations.ai |
+| Sana Sprint 1.6B | 1 | 1x A100 SXM4 | Lambda Labs | — | **ACTIVE** — legacy image.pollinations.ai |
 | Z-Image | 3 | 3x RTX 5090 | Vast.ai | $1.55 | running (not in registry) |
-| **Total active** | **~8** | | | **~$1.94/hr + serverless** |
+| **Total active** | **~10** | | | **~$1.94/hr + serverless + Lambda** |
 
 ## Provider: Vast.ai
 
@@ -66,14 +68,15 @@ vastai show instances --raw    # JSON with full details
 | 2 | zimage-gpu2 | 8767 | 40184 | Z-Image |
 | 3 | zimage-gpu3 | 8768 | 40151 | Z-Image |
 
-### Instance 34086100 — SDXL Turbo / legacy Sana (`45.143.122.9`)
+### Instance 34086100 — Sana Sprint 1.6B (`45.143.122.9`)
 
 - **GPU**: 1x RTX 4090 (24GB) | **Cost**: $0.36/hr
-- **SSH**: `ssh -i ~/.ssh/pollinations_services_2026 -p 16100 root@ssh7.vast.ai`
-- **Service**: SDXL Turbo (registers as `sana` for legacy `image.pollinations.ai`)
+- **SSH**: `ssh -i ~/.ssh/id_ed25519 -p 16100 root@ssh7.vast.ai`
+- **Service**: Sana Sprint 1.6B (registers as `sana` for legacy `image.pollinations.ai`)
 - **Port**: 8765 → public 32174 (`http://45.143.122.9:32174`)
-- **Health**: `curl -s http://45.143.122.9:32174/health` → `{"status":"healthy","model":"stabilityai/sdxl-turbo"}`
-- **OVH tunnel**: OVH (57.130.31.42) tunnels `localhost:19876` → this instance's port 8765
+- **Health**: `curl -s http://45.143.122.9:32174/health` → `{"status":"healthy","model":"Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers"}`
+- **Server code**: `sana_server.py` (same as `image.pollinations.ai/sana/server.py`)
+- **Note**: No SSH tunnel needed — direct port access only
 
 ## Provider: RunPod
 
@@ -165,12 +168,43 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 
 ## Provider: Lambda Labs
 
+API: `curl -u "secret_polli2_...:" https://cloud.lambda.ai/api/v1/instances`
+
 ### LTX-2.3 Video + ACE-Step Music (GH200)
 
 - **Host**: `192.222.51.105`
+- **GPU**: 1x GH200 (96GB)
 - **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105`
 - **LTX-2**: port 8765, health at `/health`
 - **ACE-Step**: port 8189, systemd `acestep.service`
+
+### Sana Sprint 1.6B (A10)
+
+- **Host**: `150.136.85.48`
+- **GPU**: 1x A10 (24GB) | **Region**: us-east-1
+- **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48`
+- **Service**: Sana Sprint 1.6B (registers as `sana` with OVH legacy service)
+- **Port**: 8765 (direct access, no tunnel)
+- **Health**: `curl -s http://150.136.85.48:8765/health`
+- **Server code**: `/home/ubuntu/sana_server.py` (same as `image.pollinations.ai/sana/server.py`)
+- **Start script**: `/home/ubuntu/start_sana.sh`
+- **Logs**: `/home/ubuntu/sana.log`
+- **Performance**: ~0.60s/image at 512x512, 12.7GB VRAM (55%)
+- **Constraints**: MAX_DIM=768, MAX_PIXELS=262144 (512x512)
+
+### Sana Sprint 1.6B (A100)
+
+- **Host**: `150.136.209.134`
+- **GPU**: 1x A100 SXM4 (40GB) | **Region**: us-east-1
+- **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134`
+- **Service**: Sana Sprint 1.6B (registers as `sana` with OVH legacy service)
+- **Port**: 8765 (direct access, no tunnel)
+- **Health**: `curl -s http://150.136.209.134:8765/health`
+- **Server code**: `/home/ubuntu/sana_server.py` (same as `image.pollinations.ai/sana/server.py`)
+- **Start script**: `/home/ubuntu/start_sana.sh`
+- **Logs**: `/home/ubuntu/sana.log`
+- **Performance**: ~0.25s/image at 512x512
+- **Constraints**: MAX_DIM=768, MAX_PIXELS=262144 (512x512)
 
 ## Provider: EC2 (AWS)
 
@@ -193,7 +227,7 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 - **Host**: `57.130.31.42`
 - **SSH**: `ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42`
 - **Port**: 16384
-- **Sana tunnel**: localhost:19876 → vast.ai:47190
+- **Note**: Sana workers register directly via heartbeat, no SSH tunnel needed
 
 ## Heartbeat Registration
 

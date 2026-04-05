@@ -1,6 +1,6 @@
 ---
 name: monitor-services
-description: "Health check and auto-restart all Pollinations GPU services (Flux/Z-Image on RunPod, LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Vast.ai). Use with /loop for recurring checks."
+description: "Health check and auto-restart all Pollinations GPU services (Flux/Z-Image on RunPod, LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana Sprint 1.6B on Vast.ai + Lambda Labs A10/A100). Use with /loop for recurring checks."
 ---
 
 # Monitor Services
@@ -168,27 +168,69 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 
 ---
 
-### 6. SDXL Turbo / Legacy Sana (Vast.ai UK, 1x RTX 4090)
+### 6. Sana Sprint 1.6B Workers (3 instances)
+
+All register as `sana` type with OVH legacy service. Direct port access, no SSH tunnels.
+
+**6a. Vast.ai RTX 4090 (`45.143.122.9`)**
 
 | Property | Value |
 |----------|-------|
 | **Instance** | 34086100 (Vast.ai, UK) |
 | **Direct** | `http://45.143.122.9:32174` |
-| **Via OVH tunnel** | `localhost:19876` (on OVH → port 8765) |
-| **SSH** | `ssh -i ~/.ssh/pollinations_services_2026 -p 16100 root@ssh7.vast.ai` |
-| **Model** | `stabilityai/sdxl-turbo` (registers as `sana` type) |
+| **SSH** | `ssh -i ~/.ssh/id_ed25519 -p 16100 root@ssh7.vast.ai` |
+| **Model** | `Sana_Sprint_1.6B_1024px_diffusers` |
 
-**Health check (direct):**
+**Health check:**
 ```bash
 curl -s --connect-timeout 5 --max-time 10 http://45.143.122.9:32174/health
 ```
-Expected: `{"status":"healthy","model":"stabilityai/sdxl-turbo"}`
 
-**SSH tunnel check (OVH side):**
+**6b. Lambda Labs A10 (`150.136.85.48`)**
+
+| Property | Value |
+|----------|-------|
+| **Host** | `150.136.85.48` |
+| **Port** | `8765` |
+| **SSH** | `ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48` |
+| **Model** | `Sana_Sprint_1.6B_1024px_diffusers` |
+| **Speed** | ~0.60s/image at 512x512 |
+
+**Health check:**
 ```bash
-ssh -i ~/.ssh/id_rsa_ovh -o ConnectTimeout=5 ubuntu@57.130.31.42 "ss -tlnp | grep 19876"
+curl -s --connect-timeout 5 --max-time 10 http://150.136.85.48:8765/health
 ```
-Expected: LISTEN on port 19876
+
+**Restart:**
+```bash
+ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48 "bash /home/ubuntu/start_sana.sh"
+```
+
+**6c. Lambda Labs A100 (`150.136.209.134`)**
+
+| Property | Value |
+|----------|-------|
+| **Host** | `150.136.209.134` |
+| **Port** | `8765` |
+| **SSH** | `ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134` |
+| **Model** | `Sana_Sprint_1.6B_1024px_diffusers` |
+| **Speed** | ~0.25s/image at 512x512 |
+
+**Health check:**
+```bash
+curl -s --connect-timeout 5 --max-time 10 http://150.136.209.134:8765/health
+```
+
+**Restart:**
+```bash
+ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134 "bash /home/ubuntu/start_sana.sh"
+```
+
+**Legacy sana registry check (all sana workers):**
+```bash
+ssh -i ~/.ssh/id_rsa_ovh -o ConnectTimeout=5 ubuntu@57.130.31.42 "curl -s http://localhost:16384/register"
+```
+Expected: 3 sana workers with low error rates
 
 ---
 
@@ -217,9 +259,9 @@ When invoked, run checks in this order:
 4. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
 5. **ACE-Step health** - curl health endpoint on port 8189
 6. **Klein health** - curl RunPod proxy health endpoint
-7. **Legacy image service** - check systemctl status
-8. **SDXL Turbo / legacy sana** - curl health on 45.143.122.9:32174
-9. **SSH tunnel** - check port 19876 on OVH
+7. **Legacy image service** - check systemctl status on OVH
+8. **Sana workers** - curl health on all 3: Vast.ai (45.143.122.9:32174), A10 (150.136.85.48:8765), A100 (150.136.209.134:8765)
+9. **Legacy sana registry** - check OVH localhost:16384/register for 3 sana workers
 10. **Disk space** - check OVH disk usage
 
 For each:
@@ -248,7 +290,9 @@ Report a brief status table:
 | ACE-Step | OK | 0.1s | |
 | Klein 4B | OK | 0.3s | RunPod |
 | Legacy image | OK | - | active |
-| SDXL Turbo (sana) | OK | 0.3s | vast.ai UK 34086100 |
-| SSH tunnel | OK | - | LISTEN |
+| Sana (Vast.ai 4090) | OK | 0.3s | 45.143.122.9:32174 |
+| Sana (Lambda A10) | OK | 0.3s | 150.136.85.48:8765 |
+| Sana (Lambda A100) | OK | 0.3s | 150.136.209.134:8765 |
+| Sana registry | OK | - | 3 workers, low errors |
 | OVH disk | OK | - | 45% used |
 ```

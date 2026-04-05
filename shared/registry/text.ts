@@ -680,6 +680,27 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
+    "lixsearch" : {
+        aliases: ["open-search", "lix"],
+        modelId: "lixsearch",
+        provider: "community",
+        cost: [
+            {
+                date: new Date("2026-02-20").getTime(),
+                promptTextTokens: perMillion(1.0),
+                completionTextTokens: perMillion(5.0),
+            },
+        ],
+        description: "LixSearch by @elixpo - Search-Focused Model with Three Tier Caching Architechture and Multimodal Service Vison and Image Generation (Alpha)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text", "image"],
+        tools: false,
+        search: true,
+        codeExecution: false,
+        contextLength: 128000,
+        isSpecialized: true,
+        alpha: true,
+    },
     "polly": {
         aliases: ["pollinations-ai", "polly-ai"],
         modelId: "polly",

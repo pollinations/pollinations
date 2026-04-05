@@ -1,0 +1,275 @@
+{
+  "date": "2026-04-05",
+  "period_start": "2026-03-29",
+  "period_end": "2026-04-04",
+  "title": "The audio and video engines got a V8 swap",
+  "summary": "A massive week for multimedia generation, SDK overhauls, and an absolute explosion of community apps.\n\nVideo generation got significantly faster with LTX-2.3 running on GH200 instances, dropping generation times to ~12 seconds. On the audio side, we shipped ACE-Step 1.5 for music, upgraded to OpenAI's latest TTS models, added caching for instant audio responses, and enabled speaker diarization for transcriptions.\n\nThe TypeScript SDK got a massive update with dedicated endpoints for text-to-speech, music generation, and image editing. We also shipped programmatic API key management (create, list, revoke) and fixed caching issues so key updates apply instantly.\n\nWe rolled out Wan 2.7 Image and Pro models for 4K generation, migrated Klein 4B to a custom RunPod backend (now supporting 10 reference images), and squashed a bug that was forcing Wan outputs into squares.\n\nThe greenhouse is overflowing. We merged dozens of community apps—from Unity game translators to sci-fi visualizers. We also shipped a multi-model Discord bot framework, gave CatGPT vision capabilities, and added an 'opposite prompt' bot.",
+  "pr_count": 66,
+  "prs": [
+    {
+      "number": 9650,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9738,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9739,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9740,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9741,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9742,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9743,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9744,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9745,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9746,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9752,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9753,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9607,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9765,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9771,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9772,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9775,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9776,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9787,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9788,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9789,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9616,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9795,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9796,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9797,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9798,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9816,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9819,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9641,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9812,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9827,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9828,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9838,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9839,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9844,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9846,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9847,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9848,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9856,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9636,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9862,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9864,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9868,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9879,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9880,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9885,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9887,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9889,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9890,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9891,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9893,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9895,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9896,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9897,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9902,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9903,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9904,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9908,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9603,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9925,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9928,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9933,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9937,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9938,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9940,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9943,
+      "date": "2026-04-04"
+    }
+  ],
+  "generated_at": "2026-04-05T06:25:00.901187+00:00"
+}

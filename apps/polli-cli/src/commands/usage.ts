@@ -33,15 +33,18 @@ interface BalanceResponse {
 }
 
 export const usageCommand = new Command("usage")
-    .description("Show usage history or pollen balance")
+    .description(
+        "Show pollen balance (default), usage history, or daily summary",
+    )
     .option("--limit <n>", "Number of records", "20")
+    .option("--history", "Show individual request history")
     .option("--daily", "Show daily summary instead of individual requests")
-    .option("--balance", "Show pollen balance only")
     .action(async (opts) => {
         const key = requireKey();
 
         try {
-            if (opts.balance) {
+            // Default: show balance (unless --history or --daily)
+            if (!opts.history && !opts.daily) {
                 const data = await enter<BalanceResponse>(
                     "/api/account/balance",
                     { apiKey: key },
@@ -67,7 +70,7 @@ export const usageCommand = new Command("usage")
                         source: r.meter_source,
                     })),
                 );
-            } else {
+            } else if (opts.history) {
                 const limit = Number.parseInt(opts.limit, 10);
                 if (Number.isNaN(limit) || limit < 1) {
                     printError("--limit must be a positive integer");
@@ -93,24 +96,6 @@ export const usageCommand = new Command("usage")
         } catch (err) {
             printError(
                 `Failed to fetch usage: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
-        }
-    });
-
-/** `polli pollen` — alias for `polli usage --balance` */
-export const pollenCommand = new Command("pollen")
-    .description("Check pollen balance (alias for usage --balance)")
-    .action(async () => {
-        const key = requireKey();
-        try {
-            const data = await enter<BalanceResponse>("/api/account/balance", {
-                apiKey: key,
-            });
-            printResult({ pollen: data.balance });
-        } catch (err) {
-            printError(
-                `Failed to fetch balance: ${err instanceof Error ? err.message : "unknown"}`,
             );
             process.exit(1);
         }

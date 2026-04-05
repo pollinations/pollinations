@@ -1,0 +1,33 @@
+{
+  "pr_number": 9979,
+  "title": "fix: compress APIDOCS.md from 94KB to 37KB",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9979",
+  "merged_at": "2026-04-05T22:26:35Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The docs went on a diet",
+    "blurb": "We shaved nearly 5,000 lines of repetitive error codes and massive enum lists out of the API documentation. It's the exact same information, just without the endless scrolling.",
+    "summary": "Reduced the APIDOCS.md file size by 62% by consolidating error responses and simplifying model enum lists.",
+    "impact": "Developers can now navigate the API documentation much faster without scrolling through thousands of lines of redundant JSON examples.",
+    "keywords": [
+      "docs",
+      "api",
+      "cleanup",
+      "developer-experience"
+    ],
+    "visual_concept": "The Nomnom creature eating a giant stack of redundant error logs and long lists, while Polly the bee holds a neat, single sheet of paper representing the new, concise documentation.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a massive stack of redundant error logs while the cute bee mascot, wearing tiny reading glasses, holds up a single, neatly organized piece of paper. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-05/PR-9979.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a massive stack of redundant error logs while the cute bee mascot, wearing tiny reading glasses, holds up a single, neatly organized piece of paper. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-05T22:27:30.683640+00:00"
+}

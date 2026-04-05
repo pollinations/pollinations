@@ -36,7 +36,6 @@ async function generateOne(
     if (opts.seed) params.set("seed", String(Number(opts.seed) + index));
     if (opts.enhance) params.set("enhance", "true");
     if (opts.negative) params.set("negative_prompt", opts.negative);
-    if (opts.quality) params.set("quality", opts.quality);
     if (opts.safe) params.set("safe", "true");
     if (opts.transparent) params.set("transparent", "true");
     if (opts.image?.length) params.set("image", opts.image.join("|"));
@@ -82,14 +81,13 @@ async function generateOne(
 export const imageCommand = new Command("image")
     .description("Generate an image from a prompt")
     .argument("<prompt>", "Image description")
-    .option("--model <model>", "Image model (default: from config or 'flux')")
+    .option("--model <model>", "Image model")
     .option("--width <n>", "Image width", "1024")
     .option("--height <n>", "Image height", "1024")
     .option("--seed <n>", "Random seed")
 
     .option("--enhance", "AI prompt improvement")
     .option("--negative <text>", "Content to avoid")
-    .option("--quality <level>", "low/medium/high/hd", "medium")
     .option("--safe", "Enable safety filters")
     .option("--transparent", "Transparent background (PNG)")
     .option(

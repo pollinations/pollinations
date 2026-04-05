@@ -1,0 +1,34 @@
+{
+  "pr_number": 9965,
+  "title": "fix: nunchaku CUDA hang prevention + Sana 1.6B Lambda infra docs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9965",
+  "merged_at": "2026-04-05T12:02:20Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Un-hanging the GPUs",
+    "blurb": "We taught our image servers how to not freeze up when they get overwhelmed, and swapped in Sana Sprint 1.6B while we were under the hood. Less hanging, more generating.",
+    "summary": "Fixed CUDA hang issues in the nunchaku image server and updated our infrastructure to replace SDXL Turbo with Sana Sprint 1.6B on Lambda workers.",
+    "impact": "Users will experience significantly more reliable image generation with fewer timeouts, powered by the new Sana Sprint 1.6B model.",
+    "keywords": [
+      "bugfix",
+      "cuda",
+      "sana",
+      "infrastructure",
+      "reliability"
+    ],
+    "visual_concept": "Polly the bee acting as a mechanic fixing a server rack to prevent 'hangs', with the Monitor Robot showing a healthy status screen. Represents fixing the CUDA OOM/hangs and upgrading the GPU workers.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny mechanic's cap, using a wrench to fix a retro server rack that glows with a healthy lime green (#ecf874) light. The chunky Monitor Robot stands nearby giving a happy thumbs up, its screen showing a smooth running graph. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-05/PR-9965.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny mechanic's cap, using a wrench to fix a retro server rack that glows with a healthy lime green (#ecf874) light. The chunky Monitor Robot stands nearby giving a happy thumbs up, its screen showing a smooth running graph. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-04-05T12:03:15.311370+00:00"
+}

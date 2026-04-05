@@ -2,7 +2,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 import open from "open";
 import { ENTER_URL } from "../lib/config.js";
-import { getOutputMode, printError, printInfo } from "../lib/output.js";
+import { printError, printInfo } from "../lib/output.js";
 
 const DOCS_URL = `${ENTER_URL}/api/docs`;
 const LLM_TXT_URL = `${ENTER_URL}/api/docs/llm.txt`;
@@ -18,20 +18,15 @@ async function fetchLlmTxt(): Promise<string> {
 }
 
 export const docsCommand = new Command("docs")
-    .description("Browse Pollinations API documentation")
+    .description("Show Pollinations API documentation")
     .argument(
         "[endpoint]",
         "Filter docs to a specific endpoint (e.g. /image, /v1/chat/completions)",
     )
-    .option(
-        "--text",
-        "Print LLM-optimized docs to terminal instead of opening browser",
-    )
-    .action(async (endpoint: string | undefined, opts: { text?: boolean }) => {
-        const mode = getOutputMode();
-
-        // --text or piped output: fetch llm.txt and print
-        if (opts.text || mode === "json" || mode === "quiet") {
+    .option("--open", "Open documentation in browser instead of printing")
+    .action(async (endpoint: string | undefined, opts: { open?: boolean }) => {
+        // Default: print to terminal. --open: launch browser.
+        if (!opts.open) {
             try {
                 const doc = await fetchLlmTxt();
 
@@ -47,7 +42,7 @@ export const docsCommand = new Command("docs")
                     if (matches.length === 0) {
                         printError(`No docs found matching "${endpoint}"`);
                         printInfo(
-                            `Available endpoints can be found with: polli docs --text`,
+                            `Available endpoints can be found with: polli docs`,
                         );
                         process.exit(1);
                     }
@@ -66,7 +61,7 @@ export const docsCommand = new Command("docs")
             return;
         }
 
-        // Default: open in browser
+        // --open: launch browser
         const url = endpoint
             ? `${DOCS_URL}#tag/${encodeURIComponent(endpoint.replace(/^\//, ""))}`
             : DOCS_URL;

@@ -7,8 +7,8 @@ import {
     balance,
     getAvailableBalance,
 } from "@/middleware/balance.ts";
-import { imageCache } from "@/middleware/image-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import { audioCache, imageCache } from "@/middleware/media-cache.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
@@ -651,6 +651,7 @@ export const proxyRoutes = new Hono<Env>()
     )
     .get(
         "/audio/:text",
+        audioCache,
         describeRoute({
             tags: ["🔊 Audio Generation"],
             summary: "Generate Audio",

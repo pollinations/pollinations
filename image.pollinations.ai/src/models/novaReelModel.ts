@@ -35,10 +35,10 @@ export async function callNovaReelAPI(
         );
     }
 
-    // Duration must be a multiple of 6, max 30s. Default 6s.
+    // Duration must be a multiple of 6. TEXT_VIDEO = 6s only. MULTI_SHOT_AUTOMATED = 12-60s.
     const requestedDuration = safeParams.duration || 6;
     const durationSeconds = Math.min(
-        30,
+        60,
         Math.max(6, Math.round(requestedDuration / 6) * 6),
     );
     const imageParam = safeParams.image as string | string[] | undefined;
@@ -95,18 +95,27 @@ export async function callNovaReelAPI(
         ];
     }
 
-    // Use MULTI_SHOT_AUTOMATED for >6s, TEXT_VIDEO for 6s
-    const taskType =
-        durationSeconds > 6 ? "MULTI_SHOT_AUTOMATED" : "TEXT_VIDEO";
-    const requestBody = {
-        taskType,
-        textToVideoParams,
-        videoGenerationConfig: {
-            durationSeconds,
-            fps: 24,
-            dimension: "1280x720",
-        },
-    };
+    // TEXT_VIDEO for 6s single-shot, MULTI_SHOT_AUTOMATED for 12-120s multi-shot
+    const isMultiShot = durationSeconds > 6;
+    const requestBody = isMultiShot
+        ? {
+              taskType: "MULTI_SHOT_AUTOMATED" as const,
+              multiShotAutomatedParams: { text: prompt },
+              videoGenerationConfig: {
+                  durationSeconds,
+                  fps: 24,
+                  dimension: "1280x720",
+              },
+          }
+        : {
+              taskType: "TEXT_VIDEO" as const,
+              textToVideoParams,
+              videoGenerationConfig: {
+                  durationSeconds,
+                  fps: 24,
+                  dimension: "1280x720",
+              },
+          };
 
     const s3OutputPrefix = `s3://${s3Bucket}/nova-reel/${requestId}/`;
 

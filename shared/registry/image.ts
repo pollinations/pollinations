@@ -385,7 +385,7 @@ export const IMAGE_SERVICES = {
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
-        provider: "bpai",
+        provider: "runpod",
         alpha: true,
         cost: [
             {
@@ -393,8 +393,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.01,
             },
         ],
-        description:
-            "FLUX.2 Klein 4B - Fast image generation and editing via bpaigen",
+        description: "FLUX.2 Klein 4B - Fast image generation and editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -485,7 +484,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Amazon Nova Reel - Bedrock Video Generation (6-30s, 720p)",
+            "Amazon Nova Reel - Bedrock Video Generation (6-60s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

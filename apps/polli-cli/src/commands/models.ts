@@ -13,6 +13,7 @@ interface ModelEntry {
     reasoning?: boolean;
     context_length?: number;
     paid_only?: boolean;
+    voices?: string[];
 }
 
 function classifyType(m: ModelEntry): string {
@@ -24,9 +25,35 @@ function classifyType(m: ModelEntry): string {
     return "unknown";
 }
 
+function capabilities(m: ModelEntry): string {
+    const caps: string[] = [];
+    if (m.tools) caps.push("tools");
+    if (m.reasoning) caps.push("reasoning");
+    if (m.input_modalities?.includes("image")) caps.push("vision");
+    if (m.voices && m.voices.length > 0) caps.push("voices");
+    if (m.paid_only) caps.push("paid");
+    return caps.join(",") || "-";
+}
+
+function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
+    const row: Record<string, unknown> = {
+        name: m.name,
+        type: mType,
+        capabilities: capabilities(m),
+        description: m.description ?? "-",
+    };
+    if (verbose) {
+        row.context = m.context_length
+            ? `${Math.round(m.context_length / 1000)}k`
+            : "-";
+    }
+    return row;
+}
+
 export const modelsCommand = new Command("models")
     .description("List available models or show model health stats")
     .option("--type <type>", "Filter: text, image, audio, video, all", "all")
+    .option("--verbose", "Show additional details (context length)")
     .option("--stats", "Show model health and performance stats")
     .option("--window <window>", "Stats time window: 5m, 60m, 24h, 7d", "60m")
     .action(async (opts) => {
@@ -44,10 +71,10 @@ export const modelsCommand = new Command("models")
 
         requireKey();
         const type = opts.type as string;
+        const verbose = !!opts.verbose;
         const rows: Record<string, unknown>[] = [];
 
         try {
-            // /image/models returns image + video models with full metadata
             if (type === "all" || type === "image" || type === "video") {
                 const imageModels = await gen<ModelEntry[]>("/image/models", {
                     timeout: 15_000,
@@ -55,43 +82,32 @@ export const modelsCommand = new Command("models")
                 for (const m of imageModels) {
                     const mType = classifyType(m);
                     if (type !== "all" && mType !== type) continue;
-                    rows.push({
-                        name: m.name,
-                        type: mType,
-                        description: m.description ?? "-",
-                    });
+                    rows.push(buildRow(m, mType, verbose));
                 }
             }
 
-            // /text/models returns text models with pricing
             if (type === "all" || type === "text") {
                 const textModels = await gen<ModelEntry[]>("/text/models", {
                     timeout: 15_000,
                 });
                 for (const m of textModels) {
-                    rows.push({
-                        name: m.name,
-                        type: "text",
-                        description: m.description ?? "-",
-                    });
+                    rows.push(buildRow(m, "text", verbose));
                 }
             }
 
-            // /audio/models returns TTS, music, and STT models
             if (type === "all" || type === "audio") {
                 const audioModels = await gen<ModelEntry[]>("/audio/models", {
                     timeout: 15_000,
                 });
                 for (const m of audioModels) {
-                    rows.push({
-                        name: m.name,
-                        type: "audio",
-                        description: m.description ?? "-",
-                    });
+                    rows.push(buildRow(m, "audio", verbose));
                 }
             }
 
-            printTable(rows, ["name", "type", "description"]);
+            const cols = verbose
+                ? ["name", "type", "capabilities", "context", "description"]
+                : ["name", "type", "capabilities", "description"];
+            printTable(rows, cols);
         } catch (err) {
             printError(
                 `Failed to fetch models: ${err instanceof Error ? err.message : "unknown"}`,

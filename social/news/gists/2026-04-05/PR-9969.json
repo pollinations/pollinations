@@ -1,0 +1,34 @@
+{
+  "pr_number": 9969,
+  "title": "Remove Argent Script and Mirexa AI Chat entries",
+  "author": "withthatway",
+  "url": "https://github.com/pollinations/pollinations/pull/9969",
+  "merged_at": "2026-04-05T13:06:42Z",
+  "labels": [
+    "WEB",
+    ".DOCS"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the Greenhouse",
+    "blurb": "Did a little tidying up in the Greenhouse to keep our community app showcase fresh and up-to-date.",
+    "summary": "Removed inactive entries for Argent Script and Mirexa AI Chat from the community app showcase.",
+    "impact": "Ensures the Greenhouse directory only points to active, working projects for users exploring the ecosystem.",
+    "keywords": [
+      "greenhouse",
+      "community",
+      "showcase",
+      "cleanup"
+    ],
+    "visual_concept": "The Greenhouse is a literal garden/greenhouse metaphor. Pruning dead leaves or sweeping up. Polly the bee with a tiny broom or pruning shears, keeping the garden tidy.",
+    "image_prompt": "Cozy pixel art scene of a tiny 8-bit bee character wearing a gardener's apron, gently sweeping up fallen leaves in a glowing digital greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-05/PR-9969.jpg",
+    "prompt": "Cozy pixel art scene of a tiny 8-bit bee character wearing a gardener's apron, gently sweeping up fallen leaves in a glowing digital greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-05T13:07:40.493246+00:00"
+}

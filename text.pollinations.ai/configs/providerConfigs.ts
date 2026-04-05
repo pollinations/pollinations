@@ -179,6 +179,19 @@ export function createPollyConfig(
 }
 
 /**
+ * Creates a LixSearch model configuration (Vision + Search + Image).
+ */
+export function createLixSearchConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://search.elixpo.com/v1",
+        process.env.LIXSEARCH_API_KEY,
+        overrides,
+    );
+}
+
+/**
  * Creates an Anthropic model configuration for direct Claude API access.
  */
 export function createAnthropicConfig(

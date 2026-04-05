@@ -200,6 +200,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["polly"],
     },
     {
+        name: "lixsearch",
+        config: portkeyConfig["lixsearch"],
+    },
+    {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],
     },

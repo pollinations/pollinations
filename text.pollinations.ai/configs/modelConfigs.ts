@@ -9,6 +9,7 @@ import {
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
+    createLixSearchConfig,
     createPollyConfig,
 } from "./providerConfigs.js";
 
@@ -204,6 +205,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v3p2",
         }),
+
+    // -- LixSearch (Elixpo) ----------------------------------------------------
+    "lixsearch": () => createLixSearchConfig({ model: "lixsearch" }),
 
     // -- Community Models -----------------------------------------------------
     "polly": () =>

@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-04-05",
+  "period_start": "2026-03-29",
+  "period_end": "2026-04-04",
+  "generated_at": "2026-04-05T06:25:00.901187+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-05/images/discord.jpg"
+    }
+  ],
+  "text": "## Weekly Update - 2026-04-05\n\nHey <@&1424461167883194418>, 66 PRs merged this week. A lot of heavy lifting on the infrastructure side, plus a massive wave of new community apps.\n\n🎵 **Audio & Video Engine Swap**\n- The SDK got a major audio overhaul with dedicated TTS and music endpoints.\n- Added `ACE-Step 1.5` for music generation.\n- Upgraded OpenAI audio to `gpt-audio-mini` and added `openai-audio-large`.\n- Audio caching is live, so repeat generations are instantly pulled from the media cache.\n- Fixed `nova-reel` multi-shot video generation.\n\n🖼️ **Models & SDK Tweaks**\n- Added `Wan 2.7` image models (via DashScope).\n- Migrated `Klein 4B` to RunPod for better stability.\n- Updated LTX-2 to `LTX-2.3`.\n- SDK default image model is now `zimage`.\n- You can now edit images directly via the SDK (`POST /v1/images/edits`).\n\n🔑 **API Keys & Core**\n- Full API key management endpoints are live: you can now create, list, and revoke keys programmatically.\n- Fixed stale API key data caching issues.\n\n🤖 **Community & Bots**\n- Over 20 new apps added to the showcase this week (RPG engines, 3D icon generators, YouTube-to-blog tools).\n- Deployed a new Discord bot family, including `CatGPT` (text-first with vision) and an Opposite Prompt bot.\n\nCleaned up some dead apps, updated the docs, and kept the servers humming. Build something cool this weekend."
+}

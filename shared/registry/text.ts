@@ -680,7 +680,7 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "lixsearch" : {
+    "lixsearch": {
         aliases: ["open-search", "lix"],
         modelId: "lixsearch",
         provider: "community",
@@ -691,7 +691,8 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(5.0),
             },
         ],
-        description: "LixSearch by @elixpo - Search-Focused Model with Three Tier Caching Architechture and Multimodal Service Vison and Image Generation (Alpha)",
+        description:
+            "LixSearch by @elixpo - Search-Focused Model with Three Tier Caching Architechture and Multimodal Service Vison and Image Generation (Alpha)",
         inputModalities: ["text", "image"],
         outputModalities: ["text", "image"],
         tools: false,

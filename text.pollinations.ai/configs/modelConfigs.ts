@@ -5,11 +5,11 @@ import {
     createBedrockNativeConfig,
     createDashScopeModelConfig,
     createFireworksModelConfig,
+    createLixSearchConfig,
     createMyceliGrok4FastConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
-    createLixSearchConfig,
     createPollyConfig,
 } from "./providerConfigs.js";
 

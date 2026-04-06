@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-05",
+  "period_start": "2026-04-05",
+  "period_end": "2026-04-05",
+  "generated_at": "2026-04-06T06:34:20.028480+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-05/images/reddit.jpg"
+    }
+  ],
+  "title": "Fixing CUDA hangs, compressing docs, and adding Sana 1.6B infra",
+  "text": "Merged 6 PRs today for pollinations.ai. Mostly infra fixes and cleaning up documentation so agents don't choke on it.\n\nThe main headache was a nunchaku CUDA hang issue. We pushed a fix to prevent the hangs, alongside dropping the Lambda infra docs for Sana Sprint 1.6B. If you're running this locally or spinning up your own instances, those docs should save you some trial and error.\n\nWe also went on a diet with our API documentation. APIDOCS.md was sitting at 94KB, which is unnecessarily heavy when you are passing it to an LLM context window. We stripped it down to 37KB without losing the actual endpoints. Speaking of agents, we added the account and media endpoints to our llm.txt file to make automated scraping a bit smoother.\n\nOn the image generation side, we patched a bug where passing an empty string as the model parameter would break things. Simple fix, but one of those edge cases that always slips through.\n\nFinally, URV AI Chat was added to the community showcase.\n\nEverything is open source. You can hit the endpoints directly without a key for most tinkering.\n\nCode and docs: https://github.com/pollinations/pollinations"
+}

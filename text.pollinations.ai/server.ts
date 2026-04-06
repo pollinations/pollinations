@@ -264,9 +264,21 @@ function sendErrorResponse(
     const errorType = ERROR_TYPES[responseStatus] || "Internal Server Error";
 
     const errorDetails = error.details || error.response?.data;
+    // Use the most specific error message available from upstream details
+    let message = error.message || "An error occurred";
+    if (errorDetails && typeof errorDetails === "object") {
+        const details = errorDetails as Record<string, unknown>;
+        const upstreamMessage =
+            details.message ||
+            (details.error as Record<string, unknown>)?.message;
+        if (upstreamMessage && typeof upstreamMessage === "string") {
+            message = upstreamMessage;
+        }
+    }
+
     const errorResponse: Record<string, unknown> = {
         error: errorType,
-        message: error.message || "An error occurred",
+        message,
         requestId: Math.random().toString(36).substring(7),
         requestParameters: requestData || {},
     };

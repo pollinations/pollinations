@@ -23,9 +23,23 @@ function createApiError(
     details: unknown,
     modelName: string,
 ): ServiceError {
-    const error = new Error(
-        `${response.status} ${response.statusText}`,
-    ) as ServiceError;
+    // Extract the most specific error message from upstream response body
+    let message = `${response.status} ${response.statusText}`;
+    if (details && typeof details === "object") {
+        const d = details as Record<string, unknown>;
+        const upstreamMsg =
+            d.message || (d.error as Record<string, unknown>)?.message;
+        if (upstreamMsg && typeof upstreamMsg === "string") {
+            message = `${response.status}: ${upstreamMsg}`;
+        }
+    } else if (
+        typeof details === "string" &&
+        details.length > 0 &&
+        details.length < 500
+    ) {
+        message = `${response.status}: ${details}`;
+    }
+    const error = new Error(message) as ServiceError;
     error.status = response.status;
     error.details = details;
     error.model = modelName;
@@ -108,8 +122,13 @@ export async function genericOpenAIClient(
         if (!response.ok) {
             const errorText = await response.text();
             const errorDetails = parseJsonSafe(errorText) || errorText;
+            // Log response headers for debugging upstream gateway issues
+            const traceId =
+                response.headers.get("x-portkey-trace-id") ||
+                response.headers.get("x-request-id") ||
+                "none";
             errorLog(
-                `[${requestId}] API error (${response.status}):`,
+                `[${requestId}] API error (${response.status}): traceId=${traceId}`,
                 errorDetails,
             );
             throw createApiError(response, errorDetails, modelName);

@@ -161,15 +161,21 @@ const chatCompletionHandlers = factory.createHandlers(
             // Try to extract meaningful error message from upstream JSON
             let errorMessage =
                 responseText || getDefaultErrorMessage(response.status);
+            let upstreamDetails: unknown;
             try {
                 const parsed = JSON.parse(responseText);
                 const extracted =
                     parsed?.details?.error?.message ||
+                    parsed?.details?.message ||
                     parsed?.error?.message ||
                     parsed?.message ||
                     (typeof parsed?.error === "string" ? parsed.error : null);
                 if (extracted) {
                     errorMessage = extracted;
+                }
+                // Preserve full upstream details for transparency
+                if (parsed?.details) {
+                    upstreamDetails = parsed.details;
                 }
             } catch {
                 // Not JSON or parse failed - use raw text as-is
@@ -177,6 +183,7 @@ const chatCompletionHandlers = factory.createHandlers(
 
             throw new UpstreamError(remapUpstreamStatus(response.status), {
                 message: errorMessage,
+                cause: upstreamDetails,
                 requestUrl: targetUrl,
             });
         }

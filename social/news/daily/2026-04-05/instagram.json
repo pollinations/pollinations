@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-05",
+  "period_start": "2026-04-05",
+  "period_end": "2026-04-05",
+  "generated_at": "2026-04-06T06:34:20.028480+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-05/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-05/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-05/images/instagram-3.jpg"
+    }
+  ],
+  "text": "6 PRs merged. We put the API docs on a diet (94KB down to 37KB) to make them easier for agents to digest, and fed some new endpoints to llm.txt while we were at it. Also fixed a CUDA hang issue so generation runs smoother, added URV AI Chat to the community showcase, and gave the README some fresh images. Building open-source infrastructure is mostly just feeding machines and keeping them from freezing. Come build with us at pollinations.ai 🐝💻\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #github #devcommunity #aiart",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

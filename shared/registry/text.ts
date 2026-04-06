@@ -248,8 +248,8 @@ export const TEXT_SERVICES = {
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-reasoning"],
-        modelId: "DeepSeek-V3.2",
-        provider: "azure",
+        modelId: "accounts/fireworks/models/deepseek-v3p2",
+        provider: "fireworks",
         cost: [
             {
                 date: COST_START_DATE,
@@ -509,8 +509,8 @@ export const TEXT_SERVICES = {
     },
     "kimi": {
         aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
-        modelId: "Kimi-K2.5",
-        provider: "azure",
+        modelId: "accounts/fireworks/models/kimi-k2p5",
+        provider: "fireworks",
         cost: [
             {
                 date: new Date("2026-01-28").getTime(),

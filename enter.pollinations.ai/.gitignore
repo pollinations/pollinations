@@ -17,6 +17,7 @@ scripts/flagged-users*.csv
 scripts/flagged-users*.md
 abuse-report*.csv
 src/tier-progression/*-report.csv
+src/tier-progression/abuse-ledger.csv
 
 # Script outputs
 

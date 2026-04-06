@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-05",
+  "period_start": "2026-04-05",
+  "period_end": "2026-04-05",
+  "generated_at": "2026-04-06T06:34:20.028480+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-05/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 6 PRs. fixed a nunchaku CUDA hang, added Sana 1.6B docs, and compressed our APIDOCS.md from 94KB to 37KB so your agents stop choking on it. also updated llm.txt and stopped image gen from crashing on empty string params."
+}

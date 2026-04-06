@@ -189,7 +189,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
 
     // -- Fireworks AI ---------------------------------------------------------
-    "Kimi-K2.5": () => createAzureNetsimsimConfig({ model: "Kimi-K2.5" }),
+    "accounts/fireworks/models/kimi-k2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p5",
+        }),
     "accounts/fireworks/models/glm-5": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5",
@@ -198,8 +201,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p5",
         }),
-    "DeepSeek-V3.2": () =>
-        createAzureNetsimsimConfig({ model: "DeepSeek-V3.2" }),
+    "accounts/fireworks/models/deepseek-v3p2": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v3p2",
+        }),
 
     // -- Community Models -----------------------------------------------------
     "polly": () =>

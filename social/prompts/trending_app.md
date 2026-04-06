@@ -22,13 +22,20 @@ Dry, observational, slightly amused. Information-dense. Anti-corporate.
 
 ## Task
 
-Write a Discord post for the top app of the week:
+Write a Discord post for the top registered app of the week:
 
 1. **Lead with the stat** — "X got Y requests this week"
-2. **Name the builder** — @username or hostname
-3. **Explain what it does** — One sentence, information-dense
-4. **Link it** — URL from APPS.md
+2. **Name the builder** — @owner when present
+3. **Explain what it does** — Only if it is obvious from the app name or URL. If not obvious, do not guess.
+4. **Link it** — URL from the registered app key
 5. **Dry wit optional** — "Worth checking out if you're curious"
+
+## Accuracy Rules
+
+- The source data is app name, app URL, owner, and verified app-attributed request counts
+- For now, the request count comes from redirect-auth / BYOP traffic mapped to the registered app
+- Do not invent product features, categories, or descriptions
+- If the app's purpose is unclear, just state the traffic and attribution cleanly
 
 ## Polaroid Image Style (v1)
 
@@ -52,7 +59,6 @@ Return ONLY a JSON object:
 {
     "headline": "Short punchy headline (5-8 words)",
     "message": "The Discord post text (150-250 chars). Dry, observational, informative.",
-    "app_name": "The name to display for the app",
     "image_prompt": "Cozy pixel art scene showing [app concept: interface, icon, or metaphor] framed inside a Polaroid photo with white border. Handwritten-style 'App of the Week' caption at top. App name written underneath in handwritten style. Warm pastel colors with lime green #ecf874 accents. Soft ambient glow, magical sparkles floating. 8-bit aesthetic, visible chunky pixels. Lo-fi vibes like Stardew Valley or A Short Hike."
 }
 

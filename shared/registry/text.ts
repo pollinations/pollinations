@@ -230,10 +230,10 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.01),
-                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.03),
+                promptAudioTokens: perMillion(0.3), // Audio billed at same rate as text
+                completionTextTokens: perMillion(1.2),
             },
         ],
         description:
@@ -248,8 +248,8 @@ export const TEXT_SERVICES = {
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-reasoning"],
-        modelId: "accounts/fireworks/models/deepseek-v3p2",
-        provider: "fireworks",
+        modelId: "DeepSeek-V3.2",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
@@ -335,10 +335,10 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.01),
-                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.02),
+                promptAudioTokens: perMillion(0.2), // Audio billed at same rate as text
+                completionTextTokens: perMillion(0.8),
             },
         ],
         description: "Google Gemini 2.5 Flash Lite - With Google Search",
@@ -509,8 +509,8 @@ export const TEXT_SERVICES = {
     },
     "kimi": {
         aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
-        modelId: "accounts/fireworks/models/kimi-k2p5",
-        provider: "fireworks",
+        modelId: "Kimi-K2.5",
+        provider: "azure",
         cost: [
             {
                 date: new Date("2026-01-28").getTime(),

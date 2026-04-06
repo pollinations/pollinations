@@ -1,0 +1,35 @@
+{
+  "pr_number": 9988,
+  "title": "Switch DeepSeek, Kimi, Kontext to netsimsim Azure",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/9988",
+  "merged_at": "2026-04-06T01:09:15Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Azure Skies for DeepSeek",
+    "blurb": "We've re-routed DeepSeek, Kimi, and Kontext through our shiny new Azure infrastructure. Same great models, now with even more reliable buzzing under the hood.",
+    "summary": "Switched the backend providers for DeepSeek V3.2, Kimi K2.5, and Kontext models to use a new Azure resource.",
+    "impact": "Users will experience more reliable and consistent text generation for these specific models.",
+    "keywords": [
+      "azure",
+      "deepseek",
+      "kimi",
+      "kontext",
+      "infrastructure",
+      "models"
+    ],
+    "visual_concept": "The pollinations bee (Polly) acting as a train conductor or traffic controller, routing glowing data packets (representing DeepSeek, Kimi, and Kontext) onto a sturdy new blue track (representing Azure). A cute monitor robot is helping lay down the tracks.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny conductor's hat, routing glowing data packets onto a sturdy new blue track. A cute chunky monitor robot helps lay down the tracks. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-06/PR-9988.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny conductor's hat, routing glowing data packets onto a sturdy new blue track. A cute chunky monitor robot helps lay down the tracks. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-06T01:10:28.587127+00:00"
+}

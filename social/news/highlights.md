@@ -1,3 +1,6 @@
+- **2026-04-05** – **🚀 Sana Sprint 1.6B** We've swapped out SDXL Turbo for Sana Sprint 1.6B on our workers, bringing you faster and more reliable [image generation](https://gen.pollinations.ai/image/models).
+- **2026-04-05** – **✨ URV AI Chat** A new community app just dropped in the showcase, featuring diverse LLM access, character creation, and image generation. [Try it](https://urv-ai.vercel.app) <!-- app -->
+- **2026-04-05** – **🤖 Smarter llm.txt** We've expanded our `llm.txt` endpoint so your AI agents can now automatically discover and use our complete set of account management and media storage APIs.
 - **2026-04-03** – **🚀 Gemini 3.1 Flash Lite** Google's lightweight multimodal model is now live on the [text API](https://gen.pollinations.ai/v1/models). Fast processing and a 1M token context window for when you have entirely too much to say.
 - **2026-04-03** – **🔗 Programmatic API Keys** You can now create, list, and revoke API keys directly via endpoints. Automate your access management instead of clicking around the [dashboard](https://enter.pollinations.ai).
 - **2026-04-03** – **🎨 SDK gets a paintbrush and a voice** The [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk) now features dedicated methods for text-to-speech, music generation, and OpenAI-compatible image editing.

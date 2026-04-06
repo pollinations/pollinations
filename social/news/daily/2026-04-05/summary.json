@@ -1,0 +1,35 @@
+{
+  "date": "2026-04-05",
+  "period_start": "2026-04-05",
+  "period_end": "2026-04-05",
+  "title": "Sana Sprint 1.6B and CUDA hang fixes",
+  "summary": "Swapped in Sana Sprint 1.6B for image generation, fixed CUDA hangs, and put our API docs on a diet.\n\nWe swapped out SDXL Turbo for Sana Sprint 1.6B on our Lambda workers. While we were in the image server, we tracked down and fixed a CUDA hang issue in nunchaku that was causing timeouts, and patched an API edge case where empty model strings would fail instead of falling back gracefully.\n\nAPIDOCS.md went on a diet, dropping from 94KB to 37KB by consolidating redundant JSON examples. We also updated llm.txt so AI agents can actually find all 22 of our account and media endpoints, and regenerated the broken example images in the README.\n\nThe community directory grows. URV AI Chat is now live in the showcase, bringing another flavor of LLM access and character creation to the ecosystem.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 9965,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9967,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9973,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9977,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9979,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9980,
+      "date": "2026-04-05"
+    }
+  ],
+  "generated_at": "2026-04-06T06:34:20.028480+00:00"
+}

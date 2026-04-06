@@ -9,13 +9,21 @@ import type { VideoGenerationResult } from "./veoVideoModel.ts";
 const logOps = debug("pollinations:ltx2:ops");
 const logError = debug("pollinations:ltx2:error");
 
-// LTX-2 Vast.ai endpoint (instance 32608960 GPU 0)
-const LTX2_BASE_URL = process.env.LTX2_BASE_URL || "http://114.32.64.6:40161";
+// LTX-2 GH200 endpoint (Lambda Labs, patched ComfyUI with two-stage upscaler)
+// Fallback: Vast.ai RTX 5090 instance 33569731
+const LTX2_BASE_URL = process.env.LTX2_BASE_URL || "http://192.222.51.105:8765";
 
 // Polling constants
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_ATTEMPTS = 150; // 150 * 2s = 5 minutes max
 const DEFAULT_TIMEOUT_SECS = 300;
+
+// Backend auth headers
+const backendHeaders = (): Record<string, string> => ({
+    ...(process.env.PLN_IMAGE_BACKEND_TOKEN && {
+        "x-backend-token": process.env.PLN_IMAGE_BACKEND_TOKEN,
+    }),
+});
 
 /**
  * Convert duration in seconds to frame count for LTX-2
@@ -93,7 +101,10 @@ async function enqueueLtx2Job(
 
     const response = await fetch(`${LTX2_BASE_URL}/enqueue`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            ...backendHeaders(),
+        },
         body: JSON.stringify(requestBody),
     });
 
@@ -135,7 +146,9 @@ async function pollLtx2Status(
         );
 
         try {
-            const response = await fetch(statusUrl);
+            const response = await fetch(statusUrl, {
+                headers: backendHeaders(),
+            });
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -182,7 +195,7 @@ async function fetchLtx2Result(promptId: string): Promise<Buffer> {
 
     logOps("Fetching result from:", resultUrl);
 
-    const response = await fetch(resultUrl);
+    const response = await fetch(resultUrl, { headers: backendHeaders() });
 
     if (!response.ok) {
         if (response.status === 202) {

@@ -54,7 +54,7 @@ async def send_heartbeat():
             url = f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "zimage")
             # Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
-            register_url = os.getenv("REGISTER_URL", "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register")
+            register_url = os.getenv("REGISTER_URL", "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register")
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     register_url,

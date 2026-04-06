@@ -1,7 +1,7 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
-    createAnthropicConfig,
     createAzureModelConfig,
+    createAzureNetsimsimConfig,
     createAzureXaiModelConfig,
     createBedrockNativeConfig,
     createDashScopeModelConfig,
@@ -66,10 +66,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gpt-5.2-2025-12-11",
         16384,
     ),
-    "gpt-4o-mini-audio-preview-2024-12-17": createAzureWithMaxTokens(
-        process.env.AZURE_MYCELI_GPT4O_AUDIO_API_KEY,
-        process.env.AZURE_MYCELI_GPT4O_AUDIO_ENDPOINT,
-        "gpt-4o-mini-audio-preview-2024-12-17",
+    "gpt-audio-mini-2025-12-15": createAzureWithMaxTokens(
+        process.env.AZURE_MYCELI_GPT_AUDIO_MINI_API_KEY,
+        process.env.AZURE_MYCELI_GPT_AUDIO_MINI_ENDPOINT,
+        "gpt-audio-mini-2025-12-15",
+        2048,
+    ),
+    "gpt-audio-2025-12-15": createAzureWithMaxTokens(
+        process.env.AZURE_MYCELI_GPT_AUDIO_API_KEY,
+        process.env.AZURE_MYCELI_GPT_AUDIO_ENDPOINT,
+        "gpt-audio-2025-12-15",
         2048,
     ),
     "myceli-grok-4-fast": createMyceliGrok4FastConfig,
@@ -96,25 +102,25 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),
 
-    // -- Claude Direct Anthropic API ------------------------------------------
+    // -- Claude via AWS Bedrock -----------------------------------------------
     "claude-sonnet-4-6": () =>
-        createAnthropicConfig({
-            model: "claude-sonnet-4-6",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
     "claude-opus-4-6": () =>
-        createAnthropicConfig({
-            model: "claude-opus-4-6",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-4-5": () =>
-        createAnthropicConfig({
-            model: "claude-opus-4-5-20251101",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-opus-4-5-20251101-v1:0",
             defaultOptions: { max_tokens: 64000 },
         }),
     "claude-haiku-4-5": () =>
-        createAnthropicConfig({
-            model: "claude-haiku-4-5-20251001",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
             defaultOptions: { max_tokens: 64000 },
         }),
 
@@ -153,6 +159,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "gemini-2.5-flash-lite": createVertexGeminiConfig(
         "gemini-2.5-flash-lite",
         "us-central1",
+    ),
+    "gemini-3.1-flash-lite-preview": createVertexGeminiConfig(
+        "gemini-3.1-flash-lite-preview",
+        "global",
     ),
     "gemini-3-pro-legacy": createVertexGeminiConfig(
         "gemini-3-pro-preview",

@@ -48,6 +48,25 @@ describe("API Key Management", () => {
             });
         });
 
+        test("should disable caching for authenticated key lists", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("cache-control")).toBe(
+                "private, no-store, max-age=0",
+            );
+            expect(response.headers.get("pragma")).toBe("no-cache");
+        });
+
         test("should require authentication", async () => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
@@ -165,6 +184,102 @@ describe("API Key Management", () => {
                 models: ["flux", "openai"],
                 account: ["balance", "usage"],
             });
+        });
+
+        test("should reflect updated permissions immediately after update", async ({
+            auth,
+            sessionToken,
+        }) => {
+            const createResponse = await auth.apiKey.create({
+                name: "permissions-freshness-test",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+            const createdKey = createResponse.data;
+            expect(createdKey).toBeTruthy();
+            if (!createdKey) {
+                throw new Error("Failed to create API key");
+            }
+
+            const updateResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createdKey.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        allowedModels: ["flux"],
+                    }),
+                },
+            );
+            expect(updateResponse.status).toBe(200);
+
+            const accountKeyResponse = await SELF.fetch(
+                "http://localhost:3000/api/account/key",
+                {
+                    headers: {
+                        Authorization: `Bearer ${createdKey.key}`,
+                    },
+                },
+            );
+
+            expect(accountKeyResponse.status).toBe(200);
+            const keyInfo = (await accountKeyResponse.json()) as {
+                permissions?: { models?: string[] };
+            };
+            expect(keyInfo.permissions?.models).toEqual(["flux"]);
+        });
+
+        test("should reflect updated metadata immediately after update", async ({
+            auth,
+            sessionToken,
+        }) => {
+            const createResponse = await auth.apiKey.create({
+                name: "metadata-freshness-test",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+            const createdKey = createResponse.data;
+            expect(createdKey).toBeTruthy();
+            if (!createdKey) {
+                throw new Error("Failed to create API key");
+            }
+
+            const metadataResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        keyType: "publishable",
+                    }),
+                },
+            );
+            expect(metadataResponse.status).toBe(200);
+
+            const accountKeyResponse = await SELF.fetch(
+                "http://localhost:3000/api/account/key",
+                {
+                    headers: {
+                        Authorization: `Bearer ${createdKey.key}`,
+                    },
+                },
+            );
+
+            expect(accountKeyResponse.status).toBe(200);
+            const accountKey = await accountKeyResponse.json();
+            expect(accountKey.type).toBe("publishable");
         });
 
         test("should update pollen budget", async ({ auth, sessionToken }) => {

@@ -7,8 +7,8 @@ import {
     balance,
     getAvailableBalance,
 } from "@/middleware/balance.ts";
-import { imageCache } from "@/middleware/image-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import { audioCache, imageCache } from "@/middleware/media-cache.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
@@ -53,7 +53,11 @@ import {
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
-import { generateMusic, generateSpeech } from "./audio.ts";
+import {
+    generateAceStepMusic,
+    generateMusic,
+    generateSpeech,
+} from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
@@ -647,6 +651,7 @@ export const proxyRoutes = new Hono<Env>()
     )
     .get(
         "/audio/:text",
+        audioCache,
         describeRoute({
             tags: ["🔊 Audio Generation"],
             summary: "Generate Audio",
@@ -724,6 +729,11 @@ export const proxyRoutes = new Hono<Env>()
                             "If true, guarantees instrumental output (elevenmusic only)",
                         example: "false",
                     }),
+                style: z.string().optional().meta({
+                    description:
+                        "Style/genre tags for music generation (acestep only)",
+                    example: "brazilian berimbau instrumental",
+                }),
                 key: z.string().optional().meta({
                     description:
                         "API key (alternative to Authorization header)",
@@ -740,6 +750,21 @@ export const proxyRoutes = new Hono<Env>()
             const text = decodeURIComponent(c.req.param("text"));
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "acestep") {
+                const { duration, style } = c.req.valid("query" as never) as {
+                    duration?: number;
+                    style?: string;
+                };
+                return generateAceStepMusic({
+                    prompt: text,
+                    style,
+                    durationSeconds: duration,
+                    serviceUrl: c.env.MUSIC_SERVICE_URL,
+                    serviceToken: c.env.MUSIC_SERVICE_TOKEN,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(

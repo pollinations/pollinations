@@ -109,7 +109,7 @@ import { generateImage, imageUrl } from '@pollinations_ai/sdk';
 
 // Generate and save
 const image = await generateImage('a robot painting', {
-  model: 'flux',
+  model: 'zimage',
   width: 1920,
   height: 1080,
 });
@@ -131,7 +131,7 @@ const url = await imageUrl('a sunset');
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'flux'` | Model to use |
+| `model` | string | `'zimage'` | Model to use |
 | `width` | number | `1024` | Width in pixels |
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
@@ -145,6 +145,23 @@ const url = await imageUrl('a sunset');
 | `transparent` | boolean | `false` | Transparent background (PNG) |
 | `guidanceScale` | number | - | Prompt strictness (1-20) |
 | `n` | number | `1` | Number of images |
+
+## Image Editing
+
+```javascript
+import { editImage } from '@pollinations_ai/sdk';
+
+const result = await editImage('Make the sky purple', {
+  image: 'https://example.com/photo.jpg',
+  model: 'flux',
+});
+await result.saveToFile('edited.png');
+
+// Multiple source images
+const result2 = await editImage('Combine these two scenes', {
+  image: ['https://example.com/a.jpg', 'https://example.com/b.jpg'],
+});
+```
 
 ## Text Generation
 
@@ -238,32 +255,39 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'veo'` | `'veo'` or `'seedance'` |
-| `duration` | number | - | veo: 4, 6, or 8 sec / seedance: 2-10 sec |
+| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, `'ltx-2'`, etc. |
+| `duration` | number | - | Duration in seconds (1-30, varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
-| `audio` | boolean | `false` | Include audio (veo only) |
+| `audio` | boolean | `false` | Include audio (`wan` always has audio) |
 | `referenceImage` | string | - | URL for image-to-video |
 | `private` | boolean | `false` | Keep generation private |
 | `nologo` | boolean | `false` | Remove watermark |
 | `safe` | boolean | `false` | Safety filter |
 | `n` | number | `1` | Number of videos |
 
-## Audio (Text-to-Speech)
+## Audio (Text-to-Speech & Music)
 
 ```javascript
 import { generateAudio } from '@pollinations_ai/sdk';
-import { writeFileSync } from 'fs';
 
-const audio = await generateAudio('Hello, welcome!', {
-  voice: 'nova',
+// Text-to-speech
+const speech = await generateAudio('Hello, welcome!', { voice: 'nova' });
+await speech.saveToFile('welcome.mp3');
+
+// Music generation
+const music = await generateAudio('upbeat jazz piano', {
+  model: 'elevenmusic',
+  duration: 30,
 });
+await music.saveToFile('jazz.mp3');
 
-// Save to file (Node.js)
-writeFileSync('welcome.mp3', Buffer.from(audio.data, 'base64'));
+// Get as base64 or data URL
+const base64 = speech.toBase64();
+const dataUrl = speech.toDataURL();
 
 // Play in browser
-const audioEl = new Audio(`data:audio/mp3;base64,${audio.data}`);
+const audioEl = new Audio(speech.toDataURL());
 audioEl.play();
 ```
 
@@ -271,11 +295,15 @@ audioEl.play();
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `voice` | string | `'alloy'` | Voice to use |
-| `model` | string | `'openai-audio'` | Model to use |
-| `format` | string | `'mp3'` | `'mp3'`, `'wav'`, `'flac'`, `'opus'`, `'pcm16'` |
+| `voice` | string | `'alloy'` | Voice to use (see voices below) |
+| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'`, `'acestep'` |
+| `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
 | `n` | number | `1` | Number of outputs |
+
+### Available Voices
+
+alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
 ## Vision (Image Input)
 
@@ -314,11 +342,13 @@ try {
 } catch (err) {
   if (err instanceof PollinationsError) {
     console.error(err.message);  // Error message
-    console.error(err.code);     // Error code
-    console.error(err.status);   // HTTP status
+    console.error(err.code);     // Error code (BAD_REQUEST, UNAUTHORIZED, INSUFFICIENT_BALANCE, etc.)
+    console.error(err.status);   // HTTP status (400, 401, 402, 403, 500)
   }
 }
 ```
+
+Common error codes: `400` invalid params, `401` missing/invalid key, `402` insufficient balance, `403` permission denied, `500` server error.
 
 ## Advanced: Client Class
 
@@ -352,6 +382,7 @@ import type {
 | Function | Description |
 |----------|-------------|
 | `generateImage(prompt, options?)` | Generate image(s) |
+| `editImage(prompt, options?)` | Edit image with prompt |
 | `imageUrl(prompt, options?)` | Get image URL |
 | `generateText(prompt, options?)` | Generate text |
 | `generateTextStream(prompt, options?)` | Stream text |
@@ -360,7 +391,9 @@ import type {
 | `conversation(options?)` | Create conversation |
 | `generateVideo(prompt, options?)` | Generate video(s) |
 | `videoUrl(prompt, options?)` | Get video URL |
-| `generateAudio(text, options?)` | Text to speech |
+| `generateAudio(text, options?)` | Text-to-speech / music |
+| `transcribe(audio, options?)` | Speech-to-text |
+| `upload(data, options?)` | Upload media |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |
 | `getModels()` | List all models |

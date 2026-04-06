@@ -153,6 +153,16 @@ export function createOVHcloudMistralConfig(
     );
 }
 
+export function createAzureNetsimsimConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://netsimsim.services.ai.azure.com/openai/v1",
+        process.env.AZURE_NETSIMSIM_API_KEY,
+        overrides,
+    );
+}
+
 export function createFireworksModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

@@ -346,6 +346,7 @@ debugsession_*/
 
 # Claude skills mutable data (sensitive/local)
 .claude/skills/*/data/
+.claude/scheduled_tasks.lock
 
 # Vim swap files
 *.swp
@@ -361,3 +362,5 @@ agent-communication.md
 .claude/MAIN.md
 .claude/SETUP.md
 .claude/settings.json
+enter.pollinations.ai/src/tier-progression/spore-to-microbe-report-enriched.csv
+enter.pollinations.ai/src/tier-progression/spore-to-microbe-report-reviewed.csv

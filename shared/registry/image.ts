@@ -284,6 +284,37 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "wan-image": {
+        aliases: ["wan2.7-image", "wan-img"],
+        modelId: "wan-image",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-04-02").getTime(),
+                completionImageTokens: 0.035, // $0.035 per image (international)
+            },
+        ],
+        description:
+            "Wan 2.7 Image - Alibaba text-to-image and image editing (up to 2K)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "wan-image-pro": {
+        aliases: ["wan2.7-image-pro", "wan-img-pro"],
+        modelId: "wan-image-pro",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-04-02").getTime(),
+                completionImageTokens: 0.075, // $0.075 per image (international)
+            },
+        ],
+        description:
+            "Wan 2.7 Image Pro - Alibaba text-to-image and editing (4K, thinking mode)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "qwen-image": {
         aliases: [
             "qwen-image-plus",
@@ -354,7 +385,7 @@ export const IMAGE_SERVICES = {
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
-        provider: "bpai",
+        provider: "runpod",
         alpha: true,
         cost: [
             {
@@ -362,22 +393,22 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.01,
             },
         ],
-        description:
-            "FLUX.2 Klein 4B - Fast image generation and editing via bpaigen",
+        description: "FLUX.2 Klein 4B - Fast image generation and editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "ltx-2": {
-        aliases: ["ltx2", "ltxvideo", "ltx-video"],
+        aliases: ["ltx2", "ltx-2.3", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
-        provider: "vastai",
+        provider: "lambda",
+        alpha: true,
         cost: [
             {
                 date: new Date("2026-03-23").getTime(),
-                completionVideoSeconds: 0.01,
+                completionVideoSeconds: 0.005,
             },
         ],
-        description: "LTX-2 - Fast text-to-video generation on Vast.ai",
+        description: "LTX-2.3 - Fast text-to-video generation with upscaler",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },
@@ -453,7 +484,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Amazon Nova Reel - Bedrock Video Generation (6-30s, 720p)",
+            "Amazon Nova Reel - Bedrock Video Generation (6-60s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

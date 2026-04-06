@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -25,9 +25,68 @@ function getNextRefillAt(tier?: string | null): string | null {
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
+import { parseMetadata } from "./metadata-utils.ts";
 
 // Cache TTL in seconds
 const CACHE_TTL = 60 * 60; // 1 hour
+
+const SECONDS_PER_DAY = 86400;
+
+/**
+ * Require that the caller has `account:keys` permission and is using a secret key.
+ * Session-authenticated users (no apiKey) are always allowed.
+ */
+function requireKeysPermission(apiKey?: {
+    permissions?: Record<string, string[]>;
+    metadata?: Record<string, unknown>;
+}): void {
+    if (!apiKey) return; // session auth — always allowed
+    const keyType = (apiKey.metadata?.keyType as string) || "secret";
+    if (keyType !== "secret") {
+        throw new HTTPException(403, {
+            message: "Only secret keys (sk_) can manage API keys",
+        });
+    }
+    if (!apiKey.permissions?.account?.includes("keys")) {
+        throw new HTTPException(403, {
+            message: "API key does not have 'account:keys' permission",
+        });
+    }
+}
+
+// Schema for creating an API key via the API
+const CreateKeySchema = z.object({
+    name: z.string().min(1).max(253).describe("Name for the API key"),
+    type: z
+        .enum(["secret", "publishable"])
+        .optional()
+        .default("secret")
+        .describe("Key type: secret (sk_) or publishable (pk_)"),
+    expiresIn: z
+        .number()
+        .int()
+        .positive()
+        .max(365 * SECONDS_PER_DAY)
+        .optional()
+        .describe("Expiry in seconds from now (max 365 days)"),
+    allowedModels: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe("Model IDs this key can access. null = all models"),
+    pollenBudget: z
+        .number()
+        .nullable()
+        .optional()
+        .describe("Pollen budget cap. null = unlimited"),
+    accountPermissions: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe(
+            'Account permissions (e.g. ["balance", "usage"]). "keys" is auto-stripped.',
+        ),
+});
 
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
@@ -578,6 +637,222 @@ export const accountRoutes = new Hono<Env>()
                 log.error("Error fetching daily usage: {error}", { error });
                 return c.json({ error: "Failed to fetch usage data" }, 500);
             }
+        },
+    )
+    .get(
+        "/keys",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "List API Keys",
+            description:
+                "List all API keys for the current user. Requires `account:keys` permission when using API keys. Secret key values are never returned.",
+            responses: {
+                200: { description: "List of API keys" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireKeysPermission(c.var.auth.apiKey);
+
+            const db = drizzle(c.env.DB);
+            const keys = await db
+                .select({
+                    id: apikeyTable.id,
+                    name: apikeyTable.name,
+                    start: apikeyTable.start,
+                    prefix: apikeyTable.prefix,
+                    createdAt: apikeyTable.createdAt,
+                    expiresAt: apikeyTable.expiresAt,
+                    lastRequest: apikeyTable.lastRequest,
+                    permissions: apikeyTable.permissions,
+                    metadata: apikeyTable.metadata,
+                    pollenBalance: apikeyTable.pollenBalance,
+                    enabled: apikeyTable.enabled,
+                })
+                .from(apikeyTable)
+                .where(eq(apikeyTable.userId, user.id))
+                .all();
+
+            c.header("Cache-Control", "private, no-store, max-age=0");
+            return c.json({
+                data: keys.map((key) => ({
+                    id: key.id,
+                    name: key.name,
+                    start: key.start,
+                    prefix: key.prefix,
+                    createdAt: key.createdAt,
+                    expiresAt: key.expiresAt,
+                    lastRequest: key.lastRequest,
+                    permissions: key.permissions
+                        ? (() => {
+                              try {
+                                  return JSON.parse(key.permissions);
+                              } catch {
+                                  return null;
+                              }
+                          })()
+                        : null,
+                    metadata: parseMetadata(key.metadata),
+                    pollenBalance: key.pollenBalance,
+                    enabled: key.enabled,
+                })),
+            });
+        },
+    )
+    .post(
+        "/keys",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Create API Key",
+            description:
+                "Create a new API key. Requires `account:keys` permission and a secret key (sk_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.",
+            responses: {
+                200: { description: "Created API key with full secret" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied or publishable key" },
+            },
+        }),
+        validator("json", CreateKeySchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireKeysPermission(c.var.auth.apiKey);
+
+            const {
+                name,
+                type,
+                expiresIn,
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+            } = c.req.valid("json");
+
+            const isPublishable = type === "publishable";
+            const prefix = isPublishable ? "pk" : "sk";
+
+            // Strip "keys" from child account permissions to prevent escalation
+            const safeAccountPerms = accountPermissions
+                ? accountPermissions.filter((p) => p !== "keys")
+                : accountPermissions;
+
+            // Build permissions object
+            const permissions: Record<string, string[]> = {};
+            if (allowedModels) permissions.models = allowedModels;
+            if (safeAccountPerms && safeAccountPerms.length > 0)
+                permissions.account = safeAccountPerms;
+
+            // Create key via better-auth server API (no session needed when passing userId)
+            const authClient = c.var.auth.client;
+            const created = await authClient.api.createApiKey({
+                body: {
+                    name,
+                    prefix,
+                    userId: user.id,
+                    ...(expiresIn != null && { expiresIn }),
+                    metadata: {
+                        keyType: type,
+                        createdVia: "api",
+                    },
+                    permissions:
+                        Object.keys(permissions).length > 0
+                            ? permissions
+                            : undefined,
+                },
+            });
+
+            if (!created?.id || !created?.key) {
+                throw new HTTPException(500, {
+                    message: "Failed to create API key",
+                });
+            }
+
+            const db = drizzle(c.env.DB);
+
+            // Set D1 custom fields (pollenBudget, publishable plaintext)
+            const d1Updates: Record<string, unknown> = {};
+            if (pollenBudget != null) d1Updates.pollenBalance = pollenBudget;
+            if (isPublishable) {
+                d1Updates.metadata = JSON.stringify({
+                    keyType: type,
+                    createdVia: "api",
+                    plaintextKey: created.key,
+                });
+            }
+
+            if (Object.keys(d1Updates).length > 0) {
+                await db
+                    .update(apikeyTable)
+                    .set(d1Updates)
+                    .where(eq(apikeyTable.id, created.id));
+            }
+
+            return c.json({
+                id: created.id,
+                key: created.key,
+                name: created.name,
+                type,
+                prefix,
+                start: created.start,
+                expiresAt: created.expiresAt,
+                permissions:
+                    Object.keys(permissions).length > 0 ? permissions : null,
+                pollenBudget: pollenBudget ?? null,
+            });
+        },
+    )
+    .delete(
+        "/keys/:id",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Revoke API Key",
+            description:
+                "Delete/revoke an API key. Requires `account:keys` permission and a secret key (sk_). Cannot revoke the key used to authenticate the request.",
+            responses: {
+                200: { description: "Key revoked" },
+                400: { description: "Cannot revoke self" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Key not found" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            const callerKey = c.var.auth.apiKey;
+            requireKeysPermission(callerKey);
+
+            const { id } = c.req.param();
+
+            // Prevent self-revocation
+            if (callerKey && callerKey.id === id) {
+                throw new HTTPException(400, {
+                    message:
+                        "Cannot revoke the API key used to authenticate this request",
+                });
+            }
+
+            const db = drizzle(c.env.DB);
+            const key = await db
+                .select()
+                .from(apikeyTable)
+                .where(
+                    and(
+                        eq(apikeyTable.id, id),
+                        eq(apikeyTable.userId, user.id),
+                    ),
+                )
+                .get();
+
+            if (!key) {
+                throw new HTTPException(404, { message: "API key not found" });
+            }
+
+            await db.delete(apikeyTable).where(eq(apikeyTable.id, id));
+
+            return c.json({ success: true });
         },
     )
     .get(

@@ -100,18 +100,15 @@ Balance will update automatically at next hourly refill cycle.
 # Set balance immediately (e.g., flower = 0.4 pollen)
 npx wrangler d1 execute DB --remote --env production \
   --command "UPDATE user SET tier='flower', tier_balance=0.4 WHERE github_username='USERNAME';"
-
-## Step 4: Notify user on GitHub
 ```
-🎉 **Tier Upgrade!**
 
-Hey @USERNAME! You've been upgraded to **[EMOJI] [TIER] tier**! ✨
+### Step 4: Notify user on GitHub
+```
+Hey @USERNAME! You've been upgraded to [EMOJI] [TIER] tier!
 
 Your benefits:
-- [POLLEN] free compute (refills hourly or daily depending on tier)
-- 🎨 All standard models
-
-Thanks for being part of pollinations.ai! 🚀
+- [POLLEN] free compute (refills hourly)
+- All standard models
 ```
 
 ---
@@ -162,17 +159,9 @@ The script:
 .claude/skills/tier-management/scripts/check-user-balance.sh username_or_email
 ```
 
-## Legacy Batch Evaluate
-
-```bash
-export ENTER_ADMIN_TOKEN=your_token
-export TIER_EVAL_GIST_ID=your_gist_id  # optional
-.claude/skills/tier-management/scripts/batch-evaluate.sh
-```
-
 ---
 
-# Key Files
+## Key Files
 
 | File | Purpose |
 |------|---------|

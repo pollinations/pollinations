@@ -126,21 +126,45 @@ export const TEXT_SERVICES = {
     },
     "openai-audio": {
         aliases: [
+            "gpt-audio-mini",
+            "gpt-audio-mini-2025-12-15",
             "gpt-4o-mini-audio-preview",
             "gpt-4o-mini-audio-preview-2024-12-17",
         ],
-        modelId: "gpt-4o-mini-audio-preview-2024-12-17",
+        modelId: "gpt-audio-mini-2025-12-15",
         provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.165),
-                completionTextTokens: perMillion(0.66),
-                promptAudioTokens: perMillion(11.0),
-                completionAudioTokens: perMillion(22.0),
+                promptTextTokens: perMillion(0.6),
+                completionTextTokens: perMillion(2.4),
+                promptAudioTokens: perMillion(10.0),
+                completionAudioTokens: perMillion(20.0),
             },
         ],
-        description: "OpenAI GPT-4o Mini Audio - Voice Input & Output",
+        description: "OpenAI GPT Audio Mini - Voice Input & Output",
+        voices: [...AUDIO_VOICES],
+        inputModalities: ["text", "image", "audio"],
+        outputModalities: ["audio", "text"],
+        tools: true,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
+    "openai-audio-large": {
+        aliases: ["gpt-audio", "gpt-audio-2025-12-15"],
+        modelId: "gpt-audio-2025-12-15",
+        provider: "azure",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.5),
+                completionTextTokens: perMillion(10.0),
+                promptAudioTokens: perMillion(40.0),
+                completionAudioTokens: perMillion(80.0),
+            },
+        ],
+        description: "OpenAI GPT Audio - Premium Voice Input & Output",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],
@@ -172,6 +196,33 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "gemini-flash-lite-3.1": {
+        aliases: [
+            "gemini-3.1-flash-lite",
+            "gemini-3.1-flash-lite-preview",
+            "gemini-flash-lite",
+        ],
+        modelId: "gemini-3.1-flash-lite-preview",
+        provider: "google",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.25),
+                promptCachedTokens: perMillion(0.025),
+                promptAudioTokens: perMillion(0.5),
+                completionTextTokens: perMillion(1.5),
+            },
+        ],
+        description: "Google Gemini 3.1 Flash Lite - Fast & Cost-Effective",
+        inputModalities: ["text", "image", "audio"],
+        outputModalities: ["text"],
+        tools: true,
+        search: true,
+        codeExecution: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "gemini-fast": {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",
@@ -179,10 +230,10 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.01),
-                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.03),
+                promptAudioTokens: perMillion(0.3), // Audio billed at same rate as text
+                completionTextTokens: perMillion(1.2),
             },
         ],
         description:
@@ -284,10 +335,10 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.01),
-                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.02),
+                promptAudioTokens: perMillion(0.2), // Audio billed at same rate as text
+                completionTextTokens: perMillion(0.8),
             },
         ],
         description: "Google Gemini 2.5 Flash Lite - With Google Search",
@@ -302,7 +353,7 @@ export const TEXT_SERVICES = {
     "midijourney": {
         aliases: [],
         modelId: "claude-haiku-4-5-20251001",
-        provider: "anthropic",
+        provider: "bedrock",
         cost: [
             {
                 date: COST_START_DATE,
@@ -320,7 +371,7 @@ export const TEXT_SERVICES = {
     "midijourney-large": {
         aliases: [],
         modelId: "claude-opus-4-6",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -339,7 +390,7 @@ export const TEXT_SERVICES = {
     "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
         modelId: "claude-haiku-4-5-20251001",
-        provider: "anthropic",
+        provider: "bedrock",
         cost: [
             {
                 date: COST_START_DATE,
@@ -358,7 +409,7 @@ export const TEXT_SERVICES = {
     "claude": {
         aliases: ["claude-sonnet-4.6", "claude-sonnet"],
         modelId: "claude-sonnet-4-6",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -378,7 +429,7 @@ export const TEXT_SERVICES = {
     "claude-large": {
         aliases: ["claude-opus-4.6", "claude-opus"],
         modelId: "claude-opus-4-6",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -398,7 +449,7 @@ export const TEXT_SERVICES = {
     "claude-legacy": {
         aliases: ["claude-opus-4.5", "claude-large-legacy"],
         modelId: "claude-opus-4-5-20251101",
-        provider: "anthropic",
+        provider: "bedrock",
         paidOnly: true,
         hidden: true,
         cost: [

@@ -139,7 +139,21 @@ export const IMAGE_CONFIG = {
         defaultResolution: "480p",
     },
 
-    // Alibaba Qwen Image Plus - Text-to-image and image editing (auto-detects from image input)
+    // Alibaba Wan 2.7 Image - Text-to-image and image editing (up to 2K)
+    "wan-image": {
+        type: "alibaba-dashscope-image",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Alibaba Wan 2.7 Image Pro - Text-to-image and editing (4K, thinking mode)
+    "wan-image-pro": {
+        type: "alibaba-dashscope-image",
+        enhance: false,
+        defaultSideLength: 2048,
+    },
+
+    // Alibaba Qwen Image Plus - Text-to-image and image editing
     "qwen-image": {
         type: "alibaba-dashscope-image",
         enhance: false,
@@ -238,7 +252,7 @@ export const IMAGE_CONFIG = {
         enhance: false,
         isVideo: true,
         defaultDuration: 6,
-        maxDuration: 30,
+        maxDuration: 60,
         defaultResolution: "720p",
     },
 } as const satisfies ImageModelsConfig;

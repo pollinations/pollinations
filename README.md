@@ -14,10 +14,7 @@
 
 </div>
 
-<p align="center">
-<img width="923" height="362" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" src="https://github.com/user-attachments/assets/e0a294d5-05ac-4f6d-9e54-10e6537fa25f" />
-
-</p>
+<p align="center"><img src="https://media.pollinations.ai/8d8dcfb9bd9905af" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" height="340" /></p>
 
 ## 🆕 Recent Apps
 
@@ -229,11 +226,9 @@ Replace the description with your own, and you'll get a unique image based on yo
 
 Here's an example of a generated image:
 
-<p align="center"><img width="800" height="336" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" src="https://github.com/user-attachments/assets/92284ed5-83cd-4ef7-98d8-28660def9a33" />
-</p>
+<p align="center"><img src="https://media.pollinations.ai/f3e0f87db0024bc6" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" width="640" height="480" /></p>
 
-<p align="center"><img width="800" height="336" alt="Chunky pixel art of a cute robot with CRT monitor head proudly holding up a small framed picture of a cozy pixel art garden it just generated. Square pixel eyes look excited. The round tan nomnom creature beside it munches on the prompt text. Lime green (#ecf874) and soft sage gradient background. Speech bubble in pixel font: I CAN SEE. Large visible chunky pixels, lo-fi 8-bit aesthetic, warm lighting, cozy vibes like Stardew Valley." src="https://github.com/user-attachments/assets/49bb5da8-fccf-41b5-a1bf-ac5b8a80b95b" />
-</p>
+<p align="center"><img src="https://media.pollinations.ai/7317bd94b97edde2" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" width="800" height="340" /></p>
 
 ## 🎨 Examples
 
@@ -397,9 +392,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 
 > pollinations.ai is proud to be supported by:
 
-<p align="center"><img width="800" height="336" alt="Chunky pixel art cozy garden shelf display. Twelve small glowing pixel plants in labeled pots on wooden shelves: Perplexity, AWS, io.net, BytePlus, Google Cloud, NVIDIA, Azure, Cloudflare, Scaleway, Modal, Nebius, api.airforce. The cute robot with monitor head waters one plant. The round nomnom creature sits contentedly on a shelf. Bee mascot hovers with a tiny watering can. Lime green (#ecf874) glow from plants. Soft cream background. Large visible chunky pixels, lo-fi 8-bit aesthetic, warm lighting, cozy Stardew Valley vibes." src="https://github.com/user-attachments/assets/813ea463-e554-43ea-a69d-27ee39444dff" />
-
-</p>
+<p align="center"><img src="https://media.pollinations.ai/8d2067a54db29fbf" alt="Pixel art garden shelf — supporter plants in labeled pots, robot watering, bee with watering can" width="800" height="340" /></p>
 
 - [Perplexity AI](https://www.perplexity.ai/): AI-powered search and conversational answer engine
 - [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits

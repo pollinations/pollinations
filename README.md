@@ -226,7 +226,7 @@ Replace the description with your own, and you'll get a unique image based on yo
 
 Here's an example of a generated image:
 
-<p align="center"><img src="https://media.pollinations.ai/f3e0f87db0024bc6" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" width="640" height="480" /></p>
+<p align="center"><img src="https://media.pollinations.ai/589dc7f43393c30a" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" width="800" height="340" /></p>
 
 <p align="center"><img src="https://media.pollinations.ai/7317bd94b97edde2" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" width="800" height="340" /></p>
 

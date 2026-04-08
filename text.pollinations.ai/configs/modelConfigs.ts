@@ -195,10 +195,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-flash-lite-preview",
         "global",
     ),
-    "gemini-3-pro-legacy": createVertexGeminiConfig(
-        "gemini-3-pro-preview",
-        "global",
-    ),
     "gemini-2.5-pro": createVertexGeminiConfig("gemini-2.5-pro", "us-central1"),
 
     // -- Perplexity -----------------------------------------------------------

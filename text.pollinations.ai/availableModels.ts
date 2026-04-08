@@ -168,16 +168,6 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-3-pro-legacy",
-        config: portkeyConfig["gemini-3-pro-legacy"],
-        transform: pipe(
-            sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution"]),
-            removeToolsForJsonResponse,
-            createGeminiThinkingTransform("v3-pro"),
-        ),
-    },
-    {
         name: "gemini-legacy",
         config: portkeyConfig["gemini-2.5-pro"],
         transform: pipe(

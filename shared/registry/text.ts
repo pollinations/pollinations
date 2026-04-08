@@ -102,11 +102,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-large": {
-        aliases: [
-            "gpt-5.2",
-            "openai-reasoning",
-            "gpt-5.2-reasoning",
-        ],
+        aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
         modelId: "gpt-5.2",
         provider: "azure",
         cost: [
@@ -126,9 +122,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gpt-5.4": {
-        aliases: [
-            "gpt-5.4-reasoning",
-        ],
+        aliases: ["gpt-5.4-reasoning"],
         modelId: "gpt-5.4",
         provider: "azure",
         cost: [

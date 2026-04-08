@@ -260,9 +260,9 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.14),
-                promptCachedTokens: perMillion(0.57),
-                completionTextTokens: perMillion(4.56),
+                promptTextTokens: perMillion(0.58),
+                promptCachedTokens: perMillion(0.29),
+                completionTextTokens: perMillion(1.68),
             },
         ],
         description: "DeepSeek V3.2 - Efficient Reasoning & Agentic AI",

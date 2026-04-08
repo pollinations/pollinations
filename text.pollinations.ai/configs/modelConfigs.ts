@@ -1,4 +1,6 @@
-import googleCloudAuth, { googleCloudAuthNetsim } from "../auth/googleCloudAuth.js";
+import googleCloudAuth, {
+    googleCloudAuthNetsim,
+} from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createAzureNetsimsimConfig,

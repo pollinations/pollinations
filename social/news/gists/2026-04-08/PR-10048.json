@@ -1,0 +1,34 @@
+{
+  "pr_number": 10048,
+  "title": "revert: gemini-2.5-flash-lite netsim account (quota issue)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10048",
+  "merged_at": "2026-04-08T16:16:47Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Traffic control",
+    "blurb": "We've rerouted Gemini 2.5 Flash-lite traffic back to its previous home to dodge some pesky quota limits. Smooth chatting is back on the menu.",
+    "summary": "Reverted the recent Google Cloud project migration for Gemini 2.5 Flash-lite to resolve Vertex AI quota limits.",
+    "impact": "Users will experience reliable, uninterrupted access to the Gemini 2.5 Flash-lite model.",
+    "keywords": [
+      "gemini",
+      "infrastructure",
+      "routing",
+      "gcp",
+      "reliability"
+    ],
+    "visual_concept": "Polly the bee acting as a traffic controller, redirecting glowing data streams (representing Gemini traffic) away from a congested, tiny pipe (restrictive quota) into a large, flowing pipe. Nomnom creature happily eating the smooth-flowing data.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny traffic controller hat, directing glowing blue data streams away from a small clogged pipe into a large, smooth-flowing pipe. The round Nomnom creature sits nearby, happily eating the flowing data. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-08/PR-10048.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny traffic controller hat, directing glowing blue data streams away from a small clogged pipe into a large, smooth-flowing pipe. The round Nomnom creature sits nearby, happily eating the flowing data. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-04-08T16:17:52.594325+00:00"
+}

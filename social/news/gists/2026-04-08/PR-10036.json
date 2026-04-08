@@ -1,0 +1,35 @@
+{
+  "pr_number": 10036,
+  "title": "chore: update app metrics 2026-04-08",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10036",
+  "merged_at": "2026-04-08T04:58:27Z",
+  "labels": [
+    "API",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the greenhouse",
+    "blurb": "Our automated bots just finished their daily rounds, updating app metrics and checking on the greenhouse.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse status.",
+    "impact": "Keeps the community app directory and greenhouse documentation up to date with the latest health and usage metrics.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "chore"
+    ],
+    "visual_concept": "The PR is about automated metrics updating and checking on the 'greenhouse' (community apps). The robot companion and the bee tending to a digital greenhouse or watering code-plants perfectly represents this automated maintenance.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head and the tiny bee mascot watering glowing code-plants in a digital greenhouse. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-08/PR-10036.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head and the tiny bee mascot watering glowing code-plants in a digital greenhouse. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-08T04:59:21.442178+00:00"
+}

@@ -1,4 +1,6 @@
-import googleCloudAuth from "../auth/googleCloudAuth.js";
+import googleCloudAuth, {
+    googleCloudAuthNetsim,
+} from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createAzureNetsimsimConfig,
@@ -156,10 +158,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-pro-preview",
         "global",
     ),
-    "gemini-2.5-flash-lite": createVertexGeminiConfig(
-        "gemini-2.5-flash-lite",
-        "us-central1",
-    ),
+    "gemini-2.5-flash-lite": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuthNetsim.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_NETSIM_PROJECT_ID,
+        "vertex-region": "us-central1",
+        "vertex-model-id": "gemini-2.5-flash-lite",
+        "strict-openai-compliance": "false",
+    }),
     "gemini-3.1-flash-lite-preview": createVertexGeminiConfig(
         "gemini-3.1-flash-lite-preview",
         "global",

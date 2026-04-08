@@ -1,9 +1,6 @@
 import debug from "debug";
 import fetch from "node-fetch";
 
-const log = debug("pollinations:google-auth");
-const errorLog = debug("pollinations:google-auth:error");
-
 interface ServiceAccountKey {
     type: string;
     project_id: string | undefined;
@@ -15,42 +12,82 @@ interface ServiceAccountKey {
 /** Refresh tokens at 50 minutes (tokens last 60 minutes) */
 const TOKEN_REFRESH_INTERVAL_MS = 50 * 60 * 1000;
 
-let cachedToken: string | null = null;
-let tokenExpiration = 0;
+interface GoogleAuthInstance {
+    getAccessToken: () => Promise<string | null>;
+}
 
-async function refreshToken(): Promise<string | null> {
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-    const privateKeyId = process.env.GOOGLE_PRIVATE_KEY_ID;
-    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-    const projectId = process.env.GOOGLE_PROJECT_ID;
+function createGoogleAuth(envPrefix: string): GoogleAuthInstance {
+    const log = debug(`pollinations:google-auth:${envPrefix}`);
+    const errorLog = debug(`pollinations:google-auth:${envPrefix}:error`);
 
-    if (!privateKey || !privateKeyId || !clientEmail) {
-        errorLog(
-            "Missing required Google Cloud credentials. Need: GOOGLE_PRIVATE_KEY, GOOGLE_PRIVATE_KEY_ID, GOOGLE_CLIENT_EMAIL",
-        );
-        return null;
+    let cachedToken: string | null = null;
+    let tokenExpiration = 0;
+
+    async function refreshToken(): Promise<string | null> {
+        const privateKey = process.env[`${envPrefix}_PRIVATE_KEY`];
+        const privateKeyId = process.env[`${envPrefix}_PRIVATE_KEY_ID`];
+        const clientEmail = process.env[`${envPrefix}_CLIENT_EMAIL`];
+        const projectId = process.env[`${envPrefix}_PROJECT_ID`];
+
+        if (!privateKey || !privateKeyId || !clientEmail) {
+            errorLog(
+                `Missing required credentials. Need: ${envPrefix}_PRIVATE_KEY, ${envPrefix}_PRIVATE_KEY_ID, ${envPrefix}_CLIENT_EMAIL`,
+            );
+            return null;
+        }
+
+        const keyData: ServiceAccountKey = {
+            type: "service_account",
+            project_id: projectId,
+            private_key_id: privateKeyId,
+            private_key: privateKey.replace(/\\n/g, "\n"),
+            client_email: clientEmail,
+        };
+
+        const jwt = await generateJwtToken(keyData, errorLog);
+        if (!jwt) return null;
+
+        const accessToken = await exchangeJwtForAccessToken(jwt, errorLog);
+        if (!accessToken) return null;
+
+        log("Successfully authenticated using service account key");
+        return accessToken;
     }
 
-    const keyData: ServiceAccountKey = {
-        type: "service_account",
-        project_id: projectId,
-        private_key_id: privateKeyId,
-        private_key: privateKey.replace(/\\n/g, "\n"),
-        client_email: clientEmail,
-    };
+    async function getAccessToken(): Promise<string | null> {
+        if (cachedToken && Date.now() < tokenExpiration) {
+            return cachedToken;
+        }
 
-    const jwt = await generateJwtToken(keyData);
-    if (!jwt) return null;
+        log("Token missing or expired, refreshing...");
+        cachedToken = await refreshToken();
+        tokenExpiration = Date.now() + TOKEN_REFRESH_INTERVAL_MS;
+        log(
+            "Token refreshed, expires at:",
+            new Date(tokenExpiration).toISOString(),
+        );
+        return cachedToken;
+    }
 
-    const accessToken = await exchangeJwtForAccessToken(jwt);
-    if (!accessToken) return null;
+    // Start periodic token refresh if credentials are configured
+    if (process.env[`${envPrefix}_PRIVATE_KEY`]) {
+        getAccessToken().catch((error) => {
+            errorLog("Failed to initialize authentication:", error);
+        });
 
-    log("Successfully authenticated using service account key");
-    return accessToken;
+        setInterval(() => {
+            getAccessToken().catch((error) => {
+                errorLog("Failed to refresh access token:", error);
+            });
+        }, TOKEN_REFRESH_INTERVAL_MS);
+    }
+
+    return { getAccessToken };
 }
 
 async function generateJwtToken(
     keyData: ServiceAccountKey,
+    errorLog: debug.Debugger,
 ): Promise<string | null> {
     try {
         const jwt = (await import("jsonwebtoken")).default;
@@ -84,7 +121,10 @@ async function generateJwtToken(
     }
 }
 
-async function exchangeJwtForAccessToken(jwt: string): Promise<string | null> {
+async function exchangeJwtForAccessToken(
+    jwt: string,
+    errorLog: debug.Debugger,
+): Promise<string | null> {
     try {
         const response = await fetch("https://oauth2.googleapis.com/token", {
             method: "POST",
@@ -122,32 +162,10 @@ async function exchangeJwtForAccessToken(jwt: string): Promise<string | null> {
     }
 }
 
-async function getAccessToken(): Promise<string | null> {
-    if (cachedToken && Date.now() < tokenExpiration) {
-        return cachedToken;
-    }
+// Default instance (existing account) — reads GOOGLE_* env vars
+const googleCloudAuth = createGoogleAuth("GOOGLE");
 
-    log("Token missing or expired, refreshing...");
-    cachedToken = await refreshToken();
-    tokenExpiration = Date.now() + TOKEN_REFRESH_INTERVAL_MS;
-    log(
-        "Token refreshed, expires at:",
-        new Date(tokenExpiration).toISOString(),
-    );
-    return cachedToken;
-}
+// Netsim instance — reads GOOGLE_NETSIM_* env vars
+export const googleCloudAuthNetsim = createGoogleAuth("GOOGLE_NETSIM");
 
-// Start periodic token refresh if credentials are configured
-if (process.env.GOOGLE_PRIVATE_KEY) {
-    getAccessToken().catch((error) => {
-        errorLog("Failed to initialize Google Cloud authentication:", error);
-    });
-
-    setInterval(() => {
-        getAccessToken().catch((error) => {
-            errorLog("Failed to refresh Google Cloud access token:", error);
-        });
-    }, TOKEN_REFRESH_INTERVAL_MS);
-}
-
-export default { getAccessToken };
+export default googleCloudAuth;

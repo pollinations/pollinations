@@ -1,9 +1,10 @@
 import { type FC, useState } from "react";
+import { getTierEmoji, type TierStatus } from "@/tier-config.ts";
 import { cn } from "../../../util.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 
-import { calculatePerPollen } from "./calculations.ts";
+import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
 import {
     getModelDisplayName,
     hasAudioInput,
@@ -27,7 +28,10 @@ type UnifiedModelTableProps = {
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
+    tier?: TierStatus;
+    tierBalance?: number;
     packBalance?: number;
+    cryptoBalance?: number;
 };
 
 // Helper to convert per pollen string to numeric value for sorting
@@ -79,10 +83,18 @@ type PriceBadgeEntry = {
 type TabContentProps = {
     type: "text" | "image" | "video" | "audio";
     models: ModelPrice[];
+    tierBalance?: number;
     packBalance?: number;
+    cryptoBalance?: number;
 };
 
-const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
+const TabContent: FC<TabContentProps> = ({
+    type,
+    models,
+    tierBalance,
+    packBalance,
+    cryptoBalance,
+}) => {
     const sorted = sortModels(models);
     const regularModels =
         type === "text" ? sorted.filter((m) => !isPersona(m.name)) : sorted;
@@ -97,7 +109,9 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
                     <ModelRow
                         key={model.name}
                         model={model}
+                        tierBalance={tierBalance}
                         packBalance={packBalance}
+                        cryptoBalance={cryptoBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -124,7 +138,9 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
                     <MobileModelRow
                         key={model.name}
                         model={model}
+                        tierBalance={tierBalance}
                         packBalance={packBalance}
+                        cryptoBalance={cryptoBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -152,19 +168,33 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
 
 type MobileModelRowProps = {
     model: ModelPrice;
+    tierBalance?: number;
     packBalance?: number;
+    cryptoBalance?: number;
 };
 
-const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
+const MobileModelRow: FC<MobileModelRowProps> = ({
+    model,
+    tierBalance,
+    packBalance,
+    cryptoBalance,
+}) => {
     const [expanded, setExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
     const displayName = getModelDisplayName(model.name);
-    const perPollen = calculatePerPollen(model);
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
-    const isDisabled =
-        showPaidOnly && packBalance !== undefined && packBalance <= 0;
+
+    const isSignedIn = packBalance !== undefined;
+    const paidBalance = (packBalance ?? 0) + (cryptoBalance ?? 0);
+    const totalBalance = (tierBalance ?? 0) + paidBalance;
+    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
+
+    const perPollen = isSignedIn
+        ? calculateForBalance(model, effectiveBalance)
+        : calculatePerPollen(model);
+    const isDisabled = isSignedIn && effectiveBalance <= 0;
     const capabilities = [
         hasVision(model.name) && "👁️",
         hasAudioInput(model.name) && "🎙️",
@@ -411,6 +441,94 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
     );
 };
 
+// --- Column header tooltip ---
+
+type PerPollenTooltipProps = {
+    isSignedIn: boolean;
+    tier?: TierStatus;
+    tierBalance?: number;
+    packBalance?: number;
+    cryptoBalance?: number;
+};
+
+const PerPollenTooltip: FC<PerPollenTooltipProps> = ({
+    isSignedIn,
+    tier,
+    tierBalance,
+    packBalance,
+    cryptoBalance,
+}) => {
+    if (!isSignedIn) {
+        return (
+            <div className="w-64">
+                <p className="text-xs text-gray-700">
+                    Average number of requests 1 pollen allows if fully spent on
+                    a single model. Based on 7-day community average — actual
+                    costs vary with modality and output length. Sign in to see
+                    estimates based on current balance.
+                </p>
+            </div>
+        );
+    }
+
+    const tierBal = tierBalance ?? 0;
+    const pack = packBalance ?? 0;
+    const crypto = cryptoBalance ?? 0;
+    const total = tierBal + pack + crypto;
+    const tierEmoji = tier ? getTierEmoji(tier) : "🌿";
+
+    return (
+        <div className="w-64">
+            <p className="text-xs text-gray-700 mb-2">
+                Average number of requests the current balance allows if fully
+                spent on a single model. Based on 7-day community average —
+                actual costs vary with modality and output length.
+            </p>
+            <table className="w-full text-left text-[11px]">
+                <tbody>
+                    <tr className="border-b border-gray-100">
+                        <td className="py-1 pr-2 text-gray-600">
+                            {tierEmoji} Tier grant
+                        </td>
+                        <td className="py-1 text-right text-gray-800 font-mono">
+                            {tierBal.toFixed(2)}
+                        </td>
+                    </tr>
+                    <tr className="border-b border-gray-100">
+                        <td className="py-1 pr-2 text-gray-600">
+                            🪷 Purchased
+                        </td>
+                        <td className="py-1 text-right text-gray-800 font-mono">
+                            {pack.toFixed(2)}
+                        </td>
+                    </tr>
+                    {crypto > 0 && (
+                        <tr className="border-b border-gray-100">
+                            <td className="py-1 pr-2 text-gray-600">
+                                ⛓️ Crypto
+                            </td>
+                            <td className="py-1 text-right text-gray-800 font-mono">
+                                {crypto.toFixed(2)}
+                            </td>
+                        </tr>
+                    )}
+                    <tr>
+                        <td className="py-1 pr-2 font-semibold text-gray-900">
+                            Total
+                        </td>
+                        <td className="py-1 text-right font-semibold text-gray-900 font-mono">
+                            {total.toFixed(2)}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-500">
+                🪷 Paid models use purchased pollen only.
+            </p>
+        </div>
+    );
+};
+
 // --- Main export ---
 
 type SectionType = "image" | "video" | "audio" | "text";
@@ -420,8 +538,12 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     videoModels,
     textModels,
     audioModels,
+    tier,
+    tierBalance,
     packBalance,
+    cryptoBalance,
 }) => {
+    const isSignedIn = packBalance !== undefined;
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
         { type: "video", models: videoModels },
@@ -458,12 +580,23 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     {tabButtons}
                 </div>
                 <div className="flex-1 min-w-6" />
-                <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
+                <Tooltip
+                    content={
+                        <PerPollenTooltip
+                            isSignedIn={isSignedIn}
+                            tier={tier}
+                            tierBalance={tierBalance}
+                            packBalance={packBalance}
+                            cryptoBalance={cryptoBalance}
+                        />
+                    }
+                >
                     <div className="cursor-help text-right min-[500px]:text-center shrink-0">
                         <div className="text-sm font-bold text-gray-900">
-                            1 pollen ≈
+                            {isSignedIn ? "My balance" : "1 pollen"}
                         </div>
                         <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                            ≈{" "}
                             {activeSection
                                 ? unitLabels[activeSection.type]
                                 : ""}
@@ -491,7 +624,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <TabContent
                     type={activeSection.type}
                     models={activeSection.models}
+                    tierBalance={tierBalance}
                     packBalance={packBalance}
+                    cryptoBalance={cryptoBalance}
                 />
             )}
         </div>

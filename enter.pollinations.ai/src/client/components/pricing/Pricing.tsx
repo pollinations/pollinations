@@ -1,4 +1,5 @@
 import { type FC, useEffect } from "react";
+import type { TierStatus } from "@/tier-config.ts";
 import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -7,10 +8,18 @@ import { UnifiedModelTable } from "./model-table.tsx";
 import { useModelStats } from "./use-model-stats.ts";
 
 type PricingProps = {
+    tier?: TierStatus;
+    tierBalance?: number;
     packBalance?: number;
+    cryptoBalance?: number;
 };
 
-export const Pricing: FC<PricingProps> = ({ packBalance }) => {
+export const Pricing: FC<PricingProps> = ({
+    tier,
+    tierBalance,
+    packBalance,
+    cryptoBalance,
+}) => {
     useEffect(() => {
         if (window.location.hash === "#models") {
             const el = document.getElementById("models");
@@ -60,7 +69,10 @@ export const Pricing: FC<PricingProps> = ({ packBalance }) => {
                         videoModels={videoModels}
                         audioModels={audioModels}
                         textModels={textModels}
+                        tier={tier}
+                        tierBalance={tierBalance}
                         packBalance={packBalance}
+                        cryptoBalance={cryptoBalance}
                     />
                 </div>
 

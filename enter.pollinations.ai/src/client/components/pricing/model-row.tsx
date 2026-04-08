@@ -1,7 +1,7 @@
 import { type FC, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Badge } from "../ui/badge.tsx";
-import { calculatePerPollen } from "./calculations.ts";
+import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
 import {
     getModelDisplayName,
     hasAudioInput,
@@ -20,12 +20,18 @@ import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
+    tierBalance?: number;
     packBalance?: number;
+    cryptoBalance?: number;
 };
 
-export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
+export const ModelRow: FC<ModelRowProps> = ({
+    model,
+    tierBalance,
+    packBalance,
+    cryptoBalance,
+}) => {
     const modelDisplayName = getModelDisplayName(model.name);
-    const genPerPollen = calculatePerPollen(model);
     const [copied, setCopied] = useState(false);
 
     const copyModelName = async () => {
@@ -43,8 +49,16 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
-    const isDisabled =
-        showPaidOnly && packBalance !== undefined && packBalance <= 0;
+
+    const isSignedIn = packBalance !== undefined;
+    const paidBalance = (packBalance ?? 0) + (cryptoBalance ?? 0);
+    const totalBalance = (tierBalance ?? 0) + paidBalance;
+    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
+
+    const genPerPollen = isSignedIn
+        ? calculateForBalance(model, effectiveBalance)
+        : calculatePerPollen(model);
+    const isDisabled = isSignedIn && effectiveBalance <= 0;
 
     return (
         <div

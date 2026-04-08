@@ -30,3 +30,20 @@ export function calculatePerPollen(model: ModelPrice): string {
 
     return "—";
 }
+
+/**
+ * Calculate how many requests the user can afford with their current balance.
+ * For paid-only models: only packBalance + cryptoBalance.
+ * For free models: tierBalance + packBalance + cryptoBalance.
+ * Returns "0" when balance is insufficient, "—" when no cost data.
+ */
+export function calculateForBalance(
+    model: ModelPrice,
+    effectiveBalance: number,
+): string {
+    if (!model.realAvgCost || model.realAvgCost <= 0) return "—";
+    if (effectiveBalance <= 0) return "0";
+
+    const requests = effectiveBalance / model.realAvgCost;
+    return formatCount(requests);
+}

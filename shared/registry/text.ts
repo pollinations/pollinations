@@ -613,7 +613,7 @@ export const TEXT_SERVICES = {
     "nova-fast": {
         aliases: ["amazon-nova-micro", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
-        provider: "aws",
+        provider: "bedrock",
         cost: [
             {
                 date: COST_START_DATE,
@@ -631,8 +631,7 @@ export const TEXT_SERVICES = {
     "nova": {
         aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2"],
         modelId: "us.amazon.nova-2-lite-v1:0",
-        provider: "aws",
-        paidOnly: true,
+        provider: "bedrock",
         cost: [
             {
                 date: COST_START_DATE,

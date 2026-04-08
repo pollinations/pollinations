@@ -19,9 +19,32 @@ const TEST_DISABLE_CACHE = false;
 const TEST_ALL_SERVICES = true;
 
 const REQUIRED_SERVICES = ["openai", "openai-fast", "openai-large"];
-const EXCLUDED_SERVICES = ["openai-audio"];
+const EXCLUDED_SERVICES: string[] = [];
+const AUDIO_SERVICES = ["openai-audio", "openai-audio-large"];
 const TEST_MESSAGE_CONTENT =
     "Is Berlin the capital of Germany? Reply yes or no.";
+
+/** Build the request body with correct params for audio vs text models */
+function buildChatBody(serviceId: string, extra: Record<string, unknown> = {}) {
+    const isAudio = AUDIO_SERVICES.includes(serviceId);
+    return JSON.stringify({
+        model: serviceId,
+        messages: [
+            {
+                role: "user",
+                content: TEST_MESSAGE_CONTENT,
+            },
+        ],
+        seed: testSeed(),
+        ...(isAudio
+            ? {
+                  modalities: ["text", "audio"],
+                  audio: { voice: "alloy", format: "wav" },
+              }
+            : {}),
+        ...extra,
+    });
+}
 
 const servicesToTest = getTextServices().filter((serviceId) => {
     if (EXCLUDED_SERVICES.includes(serviceId)) return false;
@@ -42,6 +65,12 @@ const authenticatedTestCases = (): [ServiceId, number][] => {
     return servicesToTest.map((serviceId) => [serviceId, 200]);
 };
 
+const nonAudioTestCases = (): [ServiceId, number][] => {
+    return servicesToTest
+        .filter((serviceId) => !AUDIO_SERVICES.includes(serviceId))
+        .map((serviceId) => [serviceId, 200]);
+};
+
 // Use seed instead of a dynamic message to be able to use message in snapshot hash
 function testSeed() {
     return TEST_DISABLE_CACHE ? Math.floor(Math.random() * 10000) : 42;
@@ -60,16 +89,7 @@ describe("POST /generate/v1/chat/completions (unauthenticated)", async () => {
                     headers: {
                         "content-type": "application/json",
                     },
-                    body: JSON.stringify({
-                        model: serviceId,
-                        messages: [
-                            {
-                                role: "user",
-                                content: TEST_MESSAGE_CONTENT,
-                            },
-                        ],
-                        seed: testSeed(),
-                    }),
+                    body: buildChatBody(serviceId as string),
                 },
             );
             expect(response.status).toBe(expectedStatus);
@@ -94,16 +114,7 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
                             "content-type": "application/json",
                             "authorization": `Bearer ${paidApiKey}`,
                         },
-                        body: JSON.stringify({
-                            model: serviceId,
-                            messages: [
-                                {
-                                    role: "user",
-                                    content: TEST_MESSAGE_CONTENT,
-                                },
-                            ],
-                            seed: testSeed(),
-                        }),
+                        body: buildChatBody(serviceId as string),
                     },
                 ),
                 env,
@@ -122,9 +133,11 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
                 expect(event.modelUsed).toBeDefined();
                 expect(event.tokenCountPromptText).toBeGreaterThan(0);
                 // Reasoning models may report 0 completionText but >0 completionReasoning
+                // Audio models report audio tokens instead of text tokens
                 expect(
                     (event.tokenCountCompletionText || 0) +
-                        (event.tokenCountCompletionReasoning || 0),
+                        (event.tokenCountCompletionReasoning || 0) +
+                        (event.tokenCountCompletionAudio || 0),
                 ).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
@@ -138,7 +151,7 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
 });
 
 describe("POST /generate/v1/chat/completions (streaming)", async () => {
-    test.for(authenticatedTestCases())(
+    test.for(nonAudioTestCases())(
         "%s should respond with 200 when streaming",
         { timeout: 30000 },
         async ([serviceId, expectedStatus], { paidApiKey, mocks }) => {
@@ -153,16 +166,8 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                             "content-type": "application/json",
                             "authorization": `Bearer ${paidApiKey}`,
                         },
-                        body: JSON.stringify({
-                            model: serviceId,
-                            messages: [
-                                {
-                                    role: "user",
-                                    content: TEST_MESSAGE_CONTENT,
-                                },
-                            ],
+                        body: buildChatBody(serviceId as string, {
                             stream: true,
-                            seed: testSeed(),
                         }),
                     },
                 ),
@@ -182,9 +187,11 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                 expect(event.modelUsed).toBeDefined();
                 expect(event.tokenCountPromptText).toBeGreaterThan(0);
                 // Reasoning models may report 0 completionText but >0 completionReasoning
+                // Audio models report audio tokens instead of text tokens
                 expect(
                     (event.tokenCountCompletionText || 0) +
-                        (event.tokenCountCompletionReasoning || 0),
+                        (event.tokenCountCompletionReasoning || 0) +
+                        (event.tokenCountCompletionAudio || 0),
                 ).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
@@ -218,12 +225,17 @@ describe("GET /text/:prompt", async () => {
             );
             expect(response.status).toBe(expectedStatus);
 
-            await response.text();
+            await response.arrayBuffer();
             await waitOnExecutionContext(ctx);
 
-            // Verify content-type is text/plain for text models
+            // Audio models return audio content-type, text models return text/plain
             const contentType = response.headers.get("content-type");
-            expect(contentType).toContain("text/plain");
+            const isAudio = AUDIO_SERVICES.includes(serviceId as string);
+            if (isAudio) {
+                expect(contentType).toContain("audio/");
+            } else {
+                expect(contentType).toContain("text/plain");
+            }
 
             // make sure the recorded events contain usage
             const events = mocks.tinybird.state.events;
@@ -232,9 +244,11 @@ describe("GET /text/:prompt", async () => {
                 expect(event.modelUsed).toBeDefined();
                 expect(event.tokenCountPromptText).toBeGreaterThan(0);
                 // Reasoning models may report 0 completionText but >0 completionReasoning
+                // Audio models report audio tokens instead of text tokens
                 expect(
                     (event.tokenCountCompletionText || 0) +
-                        (event.tokenCountCompletionReasoning || 0),
+                        (event.tokenCountCompletionReasoning || 0) +
+                        (event.tokenCountCompletionAudio || 0),
                 ).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
@@ -458,7 +472,12 @@ test(
 );
 
 // DashScope thinking-mode models don't support tool_choice: "required"
-const TOOL_CALL_EXCLUDED = ["qwen-coder-large", "qwen-large", "qwen-vision"];
+const TOOL_CALL_EXCLUDED = [
+    "qwen-coder-large",
+    "qwen-large",
+    "qwen-vision",
+    ...AUDIO_SERVICES,
+];
 
 const toolCallTestCases = (): [ServiceId, number][] => {
     // Only test models that have tools: true in the registry

@@ -93,26 +93,6 @@ export function createBedrockNativeConfig(
     };
 }
 
-export function createMyceliGrok4FastConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://myceli.services.ai.azure.com/openai/v1",
-        process.env.AZURE_MYCELI_GROK_API_KEY,
-        { model: "grok-4-fast-non-reasoning", ...overrides },
-    );
-}
-
-export function createAzureXaiModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://xai-models-resource.services.ai.azure.com/models",
-        process.env.AZURE_MYCELI_XAI_API_KEY,
-        overrides,
-    );
-}
-
 export function createPerplexityModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
@@ -149,16 +129,6 @@ export function createOVHcloudMistralConfig(
     return createOpenAICompatibleConfig(
         "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
         process.env.OVHCLOUD_API_KEY,
-        overrides,
-    );
-}
-
-export function createAzureNetsimsimConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://netsimsim.services.ai.azure.com/openai/v1",
-        process.env.AZURE_NETSIMSIM_API_KEY,
         overrides,
     );
 }

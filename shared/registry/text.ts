@@ -26,18 +26,18 @@ export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {
-        aliases: [],
-        modelId: "gpt-5-mini",
-        provider: "azure-2",
+        aliases: ["gpt-5.4-mini", "gpt-5-mini"],
+        modelId: "gpt-5.4-mini",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.15),
-                promptCachedTokens: perMillion(0.04),
-                completionTextTokens: perMillion(0.6),
+                promptTextTokens: perMillion(0.75),
+                promptCachedTokens: perMillion(0.07),
+                completionTextTokens: perMillion(4.5),
             },
         ],
-        description: "OpenAI GPT-5 Mini - Fast & Balanced",
+        description: "OpenAI GPT-5.4 Mini - Fast & Balanced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -45,18 +45,18 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-fast": {
-        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
-        modelId: "gpt-5-nano-2025-08-07",
-        provider: "azure-2",
+        aliases: ["gpt-5.4-nano", "gpt-5-nano", "gpt-5-nano-2025-08-07"],
+        modelId: "gpt-5.4-nano",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.06),
-                promptCachedTokens: perMillion(0.01),
-                completionTextTokens: perMillion(0.44),
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.02),
+                completionTextTokens: perMillion(1.25),
             },
         ],
-        description: "OpenAI GPT-5 Nano - Ultra Fast & Affordable",
+        description: "OpenAI GPT-5.4 Nano - Ultra Fast & Affordable",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -64,19 +64,25 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-large": {
-        aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
-        modelId: "gpt-5.2-2025-12-11",
+        aliases: [
+            "gpt-5.4",
+            "openai-reasoning",
+            "gpt-5.4-reasoning",
+            "gpt-5.2",
+            "gpt-5.2-reasoning",
+        ],
+        modelId: "gpt-5.4",
         provider: "azure",
         paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.75),
-                promptCachedTokens: perMillion(0.175),
-                completionTextTokens: perMillion(14.0),
+                promptTextTokens: perMillion(2.5),
+                promptCachedTokens: perMillion(0.25),
+                completionTextTokens: perMillion(15.0),
             },
         ],
-        description: "OpenAI GPT-5.2 - Most Powerful & Intelligent",
+        description: "OpenAI GPT-5.4 - Most Powerful & Intelligent",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -105,19 +111,20 @@ export const TEXT_SERVICES = {
     "mistral": {
         aliases: [
             "mistral-small",
+            "mistral-small-2503",
             "mistral-small-3.2",
             "mistral-small-3.2-24b-instruct-2506",
         ],
-        modelId: "Mistral-Small-3.2-24B-Instruct-2506",
-        provider: "ovhcloud",
+        modelId: "mistral-small-2503",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1), // OVH: 0.09€ ≈ $0.10
-                completionTextTokens: perMillion(0.3), // OVH: 0.28€ ≈ $0.30
+                promptTextTokens: perMillion(1.0),
+                completionTextTokens: perMillion(3.0),
             },
         ],
-        description: "Mistral Small 3.2 24B - Efficient & Cost-Effective",
+        description: "Mistral Small 2503 - Efficient & Cost-Effective",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -151,8 +158,8 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-audio-large": {
-        aliases: ["gpt-audio", "gpt-audio-2025-12-15"],
-        modelId: "gpt-audio-2025-12-15",
+        aliases: ["gpt-audio", "gpt-audio-1.5", "gpt-audio-2025-12-15"],
+        modelId: "gpt-audio-1.5",
         provider: "azure",
         paidOnly: true,
         cost: [
@@ -164,7 +171,7 @@ export const TEXT_SERVICES = {
                 completionAudioTokens: perMillion(80.0),
             },
         ],
-        description: "OpenAI GPT Audio - Premium Voice Input & Output",
+        description: "OpenAI GPT Audio 1.5 - Premium Voice Input & Output",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],
@@ -247,15 +254,15 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "deepseek": {
-        aliases: ["deepseek-v3", "deepseek-reasoning"],
-        modelId: "accounts/fireworks/models/deepseek-v3p2",
-        provider: "fireworks",
+        aliases: ["deepseek-v3", "deepseek-v3.2"],
+        modelId: "DeepSeek-V3.2",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.56),
-                promptCachedTokens: perMillion(0.28),
-                completionTextTokens: perMillion(1.68),
+                promptTextTokens: perMillion(1.14),
+                promptCachedTokens: perMillion(0.57),
+                completionTextTokens: perMillion(4.56),
             },
         ],
         description: "DeepSeek V3.2 - Efficient Reasoning & Agentic AI",
@@ -286,46 +293,25 @@ export const TEXT_SERVICES = {
         contextLength: 2000000,
         isSpecialized: false,
     },
-    "grok-reasoning": {
-        aliases: ["grok-4-1-fast-reasoning"],
-        modelId: "grok-4-1-fast-reasoning",
+    "grok-large": {
+        aliases: ["grok-4-20", "grok-4-20-reasoning"],
+        modelId: "grok-4-20-reasoning",
         provider: "azure",
         paidOnly: true,
         cost: [
             {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
-                completionTextTokens: perMillion(0.5),
+                date: new Date("2026-04-08").getTime(),
+                promptTextTokens: perMillion(2.0),
+                promptCachedTokens: perMillion(0.5),
+                completionTextTokens: perMillion(6.0),
             },
         ],
-        description: "xAI Grok 4.1 Fast Reasoning - Chain-of-Thought Reasoning",
+        description: "xAI Grok 4.20 Reasoning - Most Powerful Grok",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 2000000,
-        isSpecialized: false,
-    },
-    "grok-legacy": {
-        aliases: ["grok-4", "grok-4-fast"],
-        modelId: "grok-4-fast-non-reasoning",
-        provider: "azure",
-        paidOnly: true,
-        hidden: true,
-        cost: [
-            {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
-                completionTextTokens: perMillion(0.5),
-            },
-        ],
-        description: "xAI Grok 4 Fast - Legacy",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        contextLength: 128000,
         isSpecialized: false,
     },
     "gemini-search": {
@@ -509,8 +495,8 @@ export const TEXT_SERVICES = {
     },
     "kimi": {
         aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
-        modelId: "accounts/fireworks/models/kimi-k2p5",
-        provider: "fireworks",
+        modelId: "Kimi-K2.5",
+        provider: "azure",
         cost: [
             {
                 date: new Date("2026-01-28").getTime(),
@@ -678,6 +664,26 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 200000,
+        isSpecialized: false,
+    },
+    "mistral-large": {
+        aliases: ["mistral-large-3"],
+        modelId: "Mistral-Large-3",
+        provider: "azure",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-04-08").getTime(),
+                promptTextTokens: perMillion(2.0),
+                completionTextTokens: perMillion(5.0),
+            },
+        ],
+        description: "Mistral Large 3 - Premium Multilingual & Reasoning",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 131072,
         isSpecialized: false,
     },
     "polly": {

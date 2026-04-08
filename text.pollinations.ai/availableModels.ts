@@ -20,15 +20,15 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-mini"],
+        config: portkeyConfig["gpt-5.4-mini"],
     },
     {
         name: "openai-fast",
-        config: portkeyConfig["gpt-5-nano-2025-08-07"],
+        config: portkeyConfig["gpt-5.4-nano"],
     },
     {
         name: "openai-large",
-        config: portkeyConfig["gpt-5.2-2025-12-11"],
+        config: portkeyConfig["gpt-5.4"],
     },
     {
         name: "qwen-coder",
@@ -50,23 +50,19 @@ const models: ModelDefinition[] = [
     },
     {
         name: "mistral",
-        config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
+        config: portkeyConfig["mistral-small-2503"],
     },
     {
         name: "deepseek",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
+        config: portkeyConfig["DeepSeek-V3.2"],
     },
     {
         name: "grok",
         config: portkeyConfig["grok-4-1-fast-non-reasoning"],
     },
     {
-        name: "grok-reasoning",
-        config: portkeyConfig["grok-4-1-fast-reasoning"],
-    },
-    {
-        name: "grok-legacy",
-        config: portkeyConfig["grok-4-fast-non-reasoning-legacy"],
+        name: "grok-large",
+        config: portkeyConfig["grok-4-20-reasoning"],
     },
     {
         name: "openai-audio",
@@ -74,7 +70,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-audio-large",
-        config: portkeyConfig["gpt-audio-2025-12-15"],
+        config: portkeyConfig["gpt-audio-1.5"],
     },
     {
         name: "claude-fast",
@@ -147,7 +143,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi",
-        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
+        config: portkeyConfig["Kimi-K2.5"],
     },
     {
         name: "gemini-large",
@@ -194,6 +190,10 @@ const models: ModelDefinition[] = [
     {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
+    },
+    {
+        name: "mistral-large",
+        config: portkeyConfig["Mistral-Large-3"],
     },
     {
         name: "polly",

@@ -1,0 +1,33 @@
+{
+  "pr_number": 10052,
+  "title": "fix: consistent separator in ACE-Step description",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10052",
+  "merged_at": "2026-04-08T22:12:53Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A dash of consistency",
+    "blurb": "Swapped an em dash for a hyphen in the ACE-Step audio model description. Small details matter when you're building the hive!",
+    "summary": "Standardized the separator used in the ACE-Step audio model description to match the rest of the registry.",
+    "impact": "Model descriptions now use consistent punctuation across the entire audio registry.",
+    "keywords": [
+      "audio",
+      "registry",
+      "formatting",
+      "consistency"
+    ],
+    "visual_concept": "Polly the bee mascot acting as a meticulous editor, holding a giant hyphen block next to a retro terminal displaying audio waves.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, holding a chunky lime green (#ecf874) hyphen block next to a retro terminal displaying audio waves. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-08/PR-10052.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, holding a chunky lime green (#ecf874) hyphen block next to a retro terminal displaying audio waves. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-08T22:13:50.597107+00:00"
+}

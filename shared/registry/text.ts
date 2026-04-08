@@ -67,7 +67,6 @@ export const TEXT_SERVICES = {
         aliases: [],
         modelId: "gpt-5.4-mini",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -87,7 +86,6 @@ export const TEXT_SERVICES = {
         aliases: [],
         modelId: "gpt-5.4-nano",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -113,7 +111,6 @@ export const TEXT_SERVICES = {
         ],
         modelId: "gpt-5.4",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -200,7 +197,6 @@ export const TEXT_SERVICES = {
         aliases: ["gpt-audio", "gpt-audio-1.5", "gpt-audio-2025-12-15"],
         modelId: "gpt-audio-1.5",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -316,7 +312,6 @@ export const TEXT_SERVICES = {
         aliases: ["grok-fast", "grok-4-1-fast"],
         modelId: "grok-4-1-fast-non-reasoning",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -336,7 +331,6 @@ export const TEXT_SERVICES = {
         aliases: ["grok-4-20", "grok-4-20-reasoning"],
         modelId: "grok-4-20-reasoning",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-04-08").getTime(),
@@ -709,7 +703,6 @@ export const TEXT_SERVICES = {
         aliases: ["mistral-large-3"],
         modelId: "Mistral-Large-3",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-04-08").getTime(),

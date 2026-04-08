@@ -101,13 +101,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             "Kimi-K2.5",
         ),
 
-    // -- Azure (Myceli Prod — eastus, Mistral) --------------------------------
-    "mistral-small-2503": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/mistral-small-2503/chat/completions?api-version=2024-12-01-preview",
-            "mistral-small-2503",
-        ),
+    // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
+    "mistral-small-3.2-24b-instruct-2506": () =>
+        createOVHcloudMistralConfig({
+            model: "Mistral-Small-3.2-24B-Instruct-2506",
+        }),
+
+    // -- Azure (Myceli Prod — eastus, Mistral Large) --------------------------
     "Mistral-Large-3": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,

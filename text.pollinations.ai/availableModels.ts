@@ -50,7 +50,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "mistral",
-        config: portkeyConfig["mistral-small-2503"],
+        config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
     },
     {
         name: "deepseek",

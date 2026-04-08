@@ -652,6 +652,7 @@ export const TEXT_SERVICES = {
         aliases: ["glm-5", "glm-4.7", "glm-4p7"],
         modelId: "accounts/fireworks/models/glm-5",
         provider: "fireworks",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-13").getTime(),
@@ -673,6 +674,7 @@ export const TEXT_SERVICES = {
         aliases: ["minimax-m2.5", "minimax-m2p5"],
         modelId: "accounts/fireworks/models/minimax-m2p5",
         provider: "fireworks",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-01-05").getTime(),

@@ -20,10 +20,18 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5.4-mini"],
+        config: portkeyConfig["gpt-5-mini"],
     },
     {
         name: "openai-fast",
+        config: portkeyConfig["gpt-5-nano"],
+    },
+    {
+        name: "gpt-5.4-mini",
+        config: portkeyConfig["gpt-5.4-mini"],
+    },
+    {
+        name: "gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
     },
     {

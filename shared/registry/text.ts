@@ -26,9 +26,48 @@ export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {
-        aliases: ["gpt-5.4-mini", "gpt-5-mini"],
+        aliases: ["gpt-5-mini"],
+        modelId: "gpt-5-mini",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.25),
+                promptCachedTokens: perMillion(0.025),
+                completionTextTokens: perMillion(2.0),
+            },
+        ],
+        description: "OpenAI GPT-5 Mini - Fast & Balanced",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 400000,
+        isSpecialized: false,
+    },
+    "openai-fast": {
+        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
+        modelId: "gpt-5-nano",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.05),
+                promptCachedTokens: perMillion(0.01),
+                completionTextTokens: perMillion(0.4),
+            },
+        ],
+        description: "OpenAI GPT-5 Nano - Ultra Fast & Affordable",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 400000,
+        isSpecialized: false,
+    },
+    "gpt-5.4-mini": {
+        aliases: [],
         modelId: "gpt-5.4-mini",
         provider: "azure",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -37,17 +76,18 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(4.5),
             },
         ],
-        description: "OpenAI GPT-5.4 Mini - Fast & Balanced",
+        description: "OpenAI GPT-5.4 Mini - Latest & Most Capable Mini",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         contextLength: 400000,
         isSpecialized: false,
     },
-    "openai-fast": {
-        aliases: ["gpt-5.4-nano", "gpt-5-nano", "gpt-5-nano-2025-08-07"],
+    "gpt-5.4-nano": {
+        aliases: [],
         modelId: "gpt-5.4-nano",
         provider: "azure",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -56,7 +96,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(1.25),
             },
         ],
-        description: "OpenAI GPT-5.4 Nano - Ultra Fast & Affordable",
+        description: "OpenAI GPT-5.4 Nano - Latest Ultra Fast Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

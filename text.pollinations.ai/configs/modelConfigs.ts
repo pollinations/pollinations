@@ -37,7 +37,19 @@ function createVertexGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
-    // -- Azure (Myceli Prod — eastus) -----------------------------------------
+    // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
+    "gpt-5-mini": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-mini/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5-mini",
+        ),
+    "gpt-5-nano": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5-nano",
+        ),
     "gpt-5.4-mini": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,

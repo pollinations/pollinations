@@ -62,6 +62,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-nano/chat/completions?api-version=2024-12-01-preview",
             "gpt-5.4-nano",
         ),
+    "gpt-5.2": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.2/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.2",
+        ),
     "gpt-5.4": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,

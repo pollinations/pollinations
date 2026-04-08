@@ -103,11 +103,31 @@ export const TEXT_SERVICES = {
     },
     "openai-large": {
         aliases: [
-            "gpt-5.4",
-            "openai-reasoning",
-            "gpt-5.4-reasoning",
             "gpt-5.2",
+            "openai-reasoning",
             "gpt-5.2-reasoning",
+        ],
+        modelId: "gpt-5.2",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(1.75),
+                promptCachedTokens: perMillion(0.175),
+                completionTextTokens: perMillion(14.0),
+            },
+        ],
+        description: "OpenAI GPT-5.2 - Powerful Reasoning Model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 400000,
+        isSpecialized: false,
+    },
+    "gpt-5.4": {
+        aliases: [
+            "gpt-5.4-reasoning",
         ],
         modelId: "gpt-5.4",
         provider: "azure",

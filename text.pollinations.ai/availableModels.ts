@@ -36,6 +36,10 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-large",
+        config: portkeyConfig["gpt-5.2"],
+    },
+    {
+        name: "gpt-5.4",
         config: portkeyConfig["gpt-5.4"],
     },
     {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10071,
+  "title": "Add Heia - Polly Intelligence update to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10071",
+  "merged_at": "2026-04-09T16:10:16Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Polly speaks your language",
+    "blurb": "The community just dropped 'Heia', a new chat app featuring a Polly Intelligence update that automatically translates to your browser's language. The hive mind is going global!",
+    "summary": "Added the 'Heia - Polly Intelligence update' community app to the showcase, which includes automatic browser language translation.",
+    "impact": "Users can now explore this new community chat app that seamlessly adapts to their native language.",
+    "keywords": [
+      "community",
+      "app",
+      "chat",
+      "translation",
+      "multilingual"
+    ],
+    "visual_concept": "Polly the bee getting an 'intelligence update' and learning languages. Depict Polly wearing smart glasses, surrounded by floating chat bubbles with different symbols, while the Monitor Robot helps her study.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny smart glasses, surrounded by floating chat bubbles. A chunky pixel robot with a CRT monitor head holds a glowing dictionary, screen glowing lime green (#ecf874). Soft pastel lavender and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10071.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny smart glasses, surrounded by floating chat bubbles. A chunky pixel robot with a CRT monitor head holds a glowing dictionary, screen glowing lime green (#ecf874). Soft pastel lavender and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-04-09T16:11:14.877922+00:00",
+  "app_name": "Heia - Polly Intelligence update",
+  "app_url": "https://heia-polly.vercel.app/"
+}

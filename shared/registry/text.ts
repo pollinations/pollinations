@@ -610,7 +610,6 @@ export const TEXT_SERVICES = {
         aliases: ["glm-5", "glm-4.7", "glm-4p7"],
         modelId: "zai.glm-5",
         provider: "bedrock",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-13").getTime(),
@@ -632,7 +631,6 @@ export const TEXT_SERVICES = {
         aliases: ["minimax-m2.5", "minimax-m2p5"],
         modelId: "minimax.minimax-m2.5",
         provider: "bedrock",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-01-05").getTime(),
@@ -693,7 +691,6 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3-coder-next"],
         modelId: "qwen3-coder-next",
         provider: "alibaba",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -713,7 +710,6 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3.5", "qwen3.5-plus"],
         modelId: "qwen3.5-plus",
         provider: "alibaba",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -734,7 +730,6 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3-vl", "qwen3-vl-plus", "qwen-vl"],
         modelId: "qwen3-vl-plus",
         provider: "alibaba",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),

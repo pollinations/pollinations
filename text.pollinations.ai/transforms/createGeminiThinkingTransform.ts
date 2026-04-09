@@ -48,7 +48,9 @@ export function createGeminiThinkingTransform(
                 // Gemini 3 Pro can't fully disable thinking; use "low" as minimum
                 updatedOptions.reasoning_effort = "low";
             } else {
-                updatedOptions.thinking = { type: "enabled", budget_tokens: 0 };
+                // Vertex AI rejects type:"enabled" with budget_tokens:0
+                // ("include_thoughts is only enabled when thinking is enabled")
+                // Just omit thinking param entirely to let the model use its default (no thinking)
             }
         } else if (modelType === "v2.5") {
             updatedOptions.thinking = {

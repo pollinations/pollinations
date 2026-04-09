@@ -1,0 +1,34 @@
+{
+  "pr_number": 10086,
+  "title": "Add AI LOGS to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10086",
+  "merged_at": "2026-04-09T16:42:09Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Logging the good vibes",
+    "blurb": "A new privacy-first desktop tool called AI LOGS has sprouted in our community greenhouse. It uses AI to track your work habits and keep an eye on your wellbeing while you code.",
+    "summary": "Added AI LOGS, a privacy-first AI-powered desktop tool for tracking work habits and wellbeing, to the community apps showcase.",
+    "impact": "Users can now discover and use AI LOGS to gain insights into their productivity and local activity directly from the community greenhouse.",
+    "keywords": [
+      "community",
+      "apps",
+      "wellbeing",
+      "productivity",
+      "bots"
+    ],
+    "visual_concept": "The PR is about 'AI LOGS', a wellbeing and productivity tracker. Visuals should combine literal logs (wood) with data logs (charts/screens) and wellbeing motifs. Polly the bee holding a clipboard (tracking) next to a retro monitor showing a cozy chart, with a literal wooden log nearby.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sweatband and holding a clipboard, standing next to a retro computer monitor displaying a glowing green productivity chart. A small pixelated wooden log sits on the desk next to a sprouting code-plant. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10086.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sweatband and holding a clipboard, standing next to a retro computer monitor displaying a glowing green productivity chart. A small pixelated wooden log sits on the desk next to a sprouting code-plant. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:43:01.492742+00:00",
+  "app_name": "AI LOGS",
+  "app_url": "https://github.com/staimoorulhassan/-USER-s-WELLBEING-"
+}

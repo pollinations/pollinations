@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🦸‍♂️ Isekai Character Generator](https://isekai-character-generator.pages.dev) | Generate fully realized multiversal heroes with Isekai Character Generator using Seeded Entropy Logic Mulberry32 PRNG to produce identity, stats, backstory, and visual appearance. | [@web](https://github.com/web) |
 | [🎛️ Dreamframe](https://funniman23.github.io/Dreamframe/) | Run Dreamframe as a zero-dependency single-HTML-file playground for the pollinations.ai API, accessing images, video, voice, TTS, and music from one interface. | [@web](https://github.com/web) |
 | [🎨 DreamCanvas AI](https://ethun01.github.io/image_gen/) | Generate images with DreamCanvas AI using the Pollinations API through a simple web-based interface. | [@web](https://github.com/web) |
 | [🎭 Neuro Mate](https://www.rustore.ru/catalog/app/com.ntechinc.neuromate) | Provides AI roleplay chat on Android. Neuro Mate connects users with characters that have distinct personalities and long-term memory and integrates pollinations.ai. | [@android](https://github.com/android) |
@@ -29,7 +30,6 @@
 | [🤔 The Shape of Meaning](https://signals.pinecone.website/) | Generate personalized philosophical analysis with The Shape of Meaning by answering questions about how you experience meaning, handle uncertainty, and navigate paradox. | [@web](https://github.com/web) |
 | [🧠 AI Companion](22582981) | Integrate AI Companion into your sidebar to provide generative writing, brainstorming, and task assistance alongside your apps. | [@browser-ext](https://github.com/browser-ext) |
 | [🎨 Chroma AI wallpaper app](https://chroma.lazyshrey.in/) | Generate unique wallpapers with Chroma AI wallpaper app using natural language prompts; built with React Native and Expo. | [@android](https://github.com/android) |
-| [🖼️ PerChamp - AI Image Generation App](https://play.google.com/store/apps/details?id=com.krpdev.perchamp_image) | Generate images from text prompts with PerChamp - AI Image Generation App using the Pollinations AI image generation API. | [@android](https://github.com/android) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

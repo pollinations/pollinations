@@ -338,6 +338,7 @@
 | [💬 PolliChatter](https://pollichatter.netlify.app/) | Enable PolliChatter, a dark-themed chat interface for Pollinations.ai, to use Pollinations text, image, and audio APIs for interacting with all available models in one place. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 PezzAI](https://chat.pezzai.com) | Provides free AI tools via a website under the name PezzAI, funded and maintained by a single developer. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 SentIQGPT](https://sentiqgpt.sentiqlabs.com/) | Provides browser-based AI assistant features in SentIQGPT, including chat memory, file analysis, and image generation. | [@web](https://github.com/web) |  | 🫧 |
+| [🛡️ Warden App](22849795) | Provide a privacy-focused native AI client built in SwiftUI; Warden App supports multiple models including OpenAI Ant and uses no Electron or web wrappers. | [@ios](https://github.com/ios) |  | 🫧 |
 | [🤖 Nothinq](https://nothinq.vercel.app) | Generate text, image, and video with 30 AI models in Nothinq, a unified chat workspace. All generation is routed through the Pollinations.ai API and supports BYOP. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 OpenLLM](https://randomcatuser.github.io/chat.openllm/) | Run OpenLLM to deploy, serve, and manage LLMs with a unified CLI and API, handling model loading, inference endpoints, and scaling for local or production environments. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 Nova.ai](200781425) | iOS AI assistant combining conversational AI, image generation, and project organization using Pollinations text and image APIs for streaming chat and prompt-based image creation. | [@ios](https://github.com/ios) |  | 🫧 |
@@ -432,7 +433,6 @@
 | [🌐 Neurix](https://neurix.ru) | Russian-language AI platform with chat, image generation, search, audio, and video tools | [@web](https://github.com/web) |  |  |
 | [💬 pollinations.ai 中文](https://pollinations.vercel.app) | Presents Pollinations content in Chinese with emphasis on Vibe Coding and creative AI tools like image, video, and music generators. | [@web](https://github.com/web) |  |  |
 | [🌐 JustBuildThings](https://justbuildthings.com) | AI platform with 700+ tools for image, video, music generation, chat, and content analysis | [@web](https://github.com/web) |  |  |
-| [✨ pollinations.ai Enhancer](68687892) | Sleek multimodal UI for AI chat, image generation, and more. | [@api](https://github.com/api) |  |  |
 | [🤖 Free AI Chatbot & Image Generator](https://vercel.com/templates/ai/ai-sdk-image-generator) | Web app for AI chat plus text-to-image generation via Pollinations. | [@web](https://github.com/web) |  |  |
 | [🧰 AIMinistries](https://www.ai-ministries.com) | Free AI toolkit: chat, writing, images, TTS, and speech-to-text. | [@web](https://github.com/web) |  |  |
 | [💬 LobeChat](https://lobechat.com) | Open-source AI chat framework with multi-model support, plugins, and customizable agent workflows | [@web](https://github.com/web) |  |  |

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10067,
+  "title": "Add Chroma AI wallpaper app to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10067",
+  "merged_at": "2026-04-09T15:59:39Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New wallpaper dropped",
+    "blurb": "Chroma AI just landed in the community showcase. It's a React Native app that turns your prompts into wallpapers, because default backgrounds are for cowards.",
+    "summary": "Added the Chroma AI wallpaper app to the community showcase.",
+    "impact": "The community directory now features Chroma, a React Native app for generating custom wallpapers via natural language.",
+    "keywords": [
+      "community",
+      "app",
+      "wallpaper",
+      "showcase",
+      "react-native"
+    ],
+    "visual_concept": "The PR is about a wallpaper app called 'Chroma'. Wallpapers represent screens, colors, and customization. The bee (Polly) can be depicted as an artist painting a colorful wallpaper on a giant retro smartphone screen.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting a vibrant landscape wallpaper on a giant retro smartphone screen. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10067.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting a vibrant landscape wallpaper on a giant retro smartphone screen. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:00:38.779346+00:00",
+  "app_name": "Chroma AI wallpaper app",
+  "app_url": "https://chroma.lazyshrey.in/"
+}

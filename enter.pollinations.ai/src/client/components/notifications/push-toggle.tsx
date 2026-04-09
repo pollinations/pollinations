@@ -30,11 +30,19 @@ export function PushNotificationToggle() {
             return;
         }
 
-        // Check if already subscribed
-        navigator.serviceWorker.ready.then((reg) => {
-            reg.pushManager.getSubscription().then((sub) => {
-                setStatus(sub ? "enabled" : "disabled");
-            });
+        // Check if a service worker is already active with a push subscription
+        const reg = navigator.serviceWorker.controller
+            ? navigator.serviceWorker.ready
+            : Promise.resolve(navigator.serviceWorker.getRegistration());
+
+        reg.then((r) => {
+            if (r) {
+                r.pushManager.getSubscription().then((sub) => {
+                    setStatus(sub ? "enabled" : "disabled");
+                });
+            } else {
+                setStatus("disabled");
+            }
         });
     }, []);
 

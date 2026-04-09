@@ -10,6 +10,8 @@ type SpendNotificationParams = {
     totalPrice: number;
     model: string;
     vapidPrivateKey: string;
+    referrerDomain?: string;
+    apiKeyName?: string;
 };
 
 export async function sendSpendNotification({
@@ -18,6 +20,8 @@ export async function sendSpendNotification({
     totalPrice,
     model,
     vapidPrivateKey,
+    referrerDomain,
+    apiKeyName,
 }: SpendNotificationParams): Promise<void> {
     const log = getLogger(["push", "spend"]);
 
@@ -32,7 +36,15 @@ export async function sendSpendNotification({
         .where(eq(pushSubscription.userId, userId))
         .all();
 
-    if (subscriptions.length === 0) return;
+    if (subscriptions.length === 0) {
+        log.info("No push subscriptions for user {userId}", { userId });
+        return;
+    }
+
+    log.info("Found {count} push subscriptions for user {userId}", {
+        count: subscriptions.length,
+        userId,
+    });
 
     let privateJWK: JsonWebKey;
     try {
@@ -51,7 +63,11 @@ export async function sendSpendNotification({
                 message: {
                     payload: {
                         title: `${totalPrice.toFixed(4)} pollen spent`,
-                        body: `Model: ${model}`,
+                        body: [
+                            `Model: ${model}`,
+                            apiKeyName && `Key: ${apiKeyName}`,
+                            referrerDomain && `From: ${referrerDomain}`,
+                        ].filter(Boolean).join(" · "),
                         url: "/",
                     },
                     adminContact: "mailto:hello@pollinations.ai",
@@ -59,10 +75,22 @@ export async function sendSpendNotification({
                 },
             });
 
+            log.info(
+                "Sending push to {endpoint} with {headerCount} headers",
+                {
+                    endpoint: endpoint.toString(),
+                    headerCount: Object.keys(headers).length,
+                },
+            );
+
             const resp = await fetch(endpoint, {
                 method: "POST",
                 headers,
                 body,
+            });
+
+            log.info("Push response: status={status}", {
+                status: resp.status,
             });
 
             // 410 Gone = subscription expired, clean up

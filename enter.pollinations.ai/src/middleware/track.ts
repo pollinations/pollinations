@@ -216,18 +216,32 @@ export const track = (eventType: EventType) =>
                 );
 
                 // Send push notification for billed usage
+                log.info(
+                    "Push check: isBilled={isBilled} userId={userId} price={price} hasVapid={hasVapid}",
+                    {
+                        isBilled: responseTracking.isBilledUsage,
+                        userId: userTracking.userId,
+                        price: responseTracking.price?.totalPrice,
+                        hasVapid: !!c.env.VAPID_PRIVATE_KEY,
+                    },
+                );
                 if (
                     responseTracking.isBilledUsage &&
                     userTracking.userId &&
                     responseTracking.price?.totalPrice &&
                     c.env.VAPID_PRIVATE_KEY
                 ) {
+                    log.info("Sending push notification for user {userId}", {
+                        userId: userTracking.userId,
+                    });
                     await sendSpendNotification({
                         db: c.env.DB,
                         userId: userTracking.userId,
                         totalPrice: responseTracking.price.totalPrice,
                         model: requestTracking.resolvedModelRequested,
                         vapidPrivateKey: c.env.VAPID_PRIVATE_KEY,
+                        referrerDomain: requestTracking.referrerData.referrerDomain,
+                        apiKeyName: c.var.auth.apiKey?.name,
                     }).catch((err) => {
                         log.warn("Push notification error: {err}", { err });
                     });

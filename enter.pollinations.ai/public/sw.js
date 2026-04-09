@@ -1,5 +1,10 @@
 self.addEventListener("push", (event) => {
-	const data = event.data?.json() ?? { title: "Pollinations", body: "" };
+	let data;
+	try {
+		data = event.data?.json() ?? { title: "Pollinations", body: "" };
+	} catch (e) {
+		data = { title: "Pollinations", body: event.data?.text() ?? "" };
+	}
 	event.waitUntil(
 		self.registration.showNotification(data.title, {
 			body: data.body,

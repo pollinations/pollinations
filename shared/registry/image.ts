@@ -11,7 +11,6 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "kontext",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -149,7 +148,6 @@ export const IMAGE_SERVICES = {
         aliases: ["gpt-image-1.5", "gpt-image-large"],
         modelId: "gptimage-large",
         provider: "azure",
-        paidOnly: true,
         cost: [
             // Azure GPT Image 1.5 (via AI Foundry)
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139

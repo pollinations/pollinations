@@ -93,26 +93,6 @@ export function createBedrockNativeConfig(
     };
 }
 
-export function createMyceliGrok4FastConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://myceli.services.ai.azure.com/openai/v1",
-        process.env.AZURE_MYCELI_GROK_API_KEY,
-        { model: "grok-4-fast-non-reasoning", ...overrides },
-    );
-}
-
-export function createAzureXaiModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://xai-models-resource.services.ai.azure.com/models",
-        process.env.AZURE_MYCELI_XAI_API_KEY,
-        overrides,
-    );
-}
-
 export function createPerplexityModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
@@ -153,26 +133,6 @@ export function createOVHcloudMistralConfig(
     );
 }
 
-export function createAzureNetsimsimConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://netsimsim.services.ai.azure.com/openai/v1",
-        process.env.AZURE_NETSIMSIM_API_KEY,
-        overrides,
-    );
-}
-
-export function createFireworksModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://api.fireworks.ai/inference/v1",
-        process.env.FIREWORKS_API_KEY,
-        overrides,
-    );
-}
-
 /**
  * Creates a Polly model configuration (community model - Pollinations AI assistant).
  * Uses user's API key for billing passthrough - Polly calls Pollinations internally.
@@ -184,20 +144,6 @@ export function createPollyConfig(
         provider: "openai",
         "custom-host": "https://polly.pollinations.ai/v1",
         useUserApiKey: true,
-        ...overrides,
-    };
-}
-
-/**
- * Creates an Anthropic model configuration for direct Claude API access.
- */
-export function createAnthropicConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return {
-        provider: "anthropic",
-        authKey: process.env.ANTHROPIC_API_KEY,
-        defaultOptions: { max_tokens: 4096 },
         ...overrides,
     };
 }

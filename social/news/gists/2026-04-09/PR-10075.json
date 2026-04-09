@@ -1,0 +1,34 @@
+{
+  "pr_number": 10075,
+  "title": "Add Dreamframe to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10075",
+  "merged_at": "2026-04-09T16:18:39Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Dreaming in single-file HTML",
+    "blurb": "Dreamframe just landed in the Greenhouse! It's a zero-dependency, single-HTML-file playground that lets you generate images, video, voice, and music all from one cozy interface.",
+    "summary": "Added Dreamframe, a zero-dependency single-HTML-file playground for the Pollinations API, to the community app showcase.",
+    "impact": "Creators can now experiment with image, video, voice, and music generation all from a single, lightweight interface.",
+    "keywords": [
+      "community",
+      "app",
+      "dreamframe",
+      "playground",
+      "html"
+    ],
+    "visual_concept": "A literal glowing picture frame (Dreamframe) showing different media types (music notes, video film, images). Polly the bee and the Monitor Robot interacting with it in a greenhouse setting, representing the app's addition to GREENHOUSE.md.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor-head robot admiring a glowing magical picture frame resting in a lush digital greenhouse. The frame emits swirling musical notes, tiny video reels, and colorful pixels. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10075.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor-head robot admiring a glowing magical picture frame resting in a lush digital greenhouse. The frame emits swirling musical notes, tiny video reels, and colorful pixels. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:19:34.202058+00:00",
+  "app_name": "Dreamframe",
+  "app_url": "https://funniman23.github.io/Dreamframe/"
+}

@@ -130,7 +130,7 @@ export const IMAGE_SERVICES = {
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",
-        provider: "azure-2",
+        provider: "azure",
         cost: [
             // Azure gpt-image-1-mini
             {

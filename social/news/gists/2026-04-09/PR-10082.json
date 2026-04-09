@@ -1,0 +1,34 @@
+{
+  "pr_number": 10082,
+  "title": "Add Splash Tool to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10082",
+  "merged_at": "2026-04-09T16:33:29Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Making a splash",
+    "blurb": "Splash Tool just landed in the greenhouse! Now you can slice and dice screenshots into editable layers, extracting colors and assets like a digital botanist.",
+    "summary": "Added Splash Tool to the community apps showcase, a new utility for converting screenshots into editable layers and extracting design assets.",
+    "impact": "Users can now easily deconstruct screenshots to extract colors, layouts, and assets for their own design workflows.",
+    "keywords": [
+      "community",
+      "app",
+      "design",
+      "tools",
+      "image"
+    ],
+    "visual_concept": "Splash Tool extracts layers and colors from screenshots. Visual metaphor: separating an image into floating layers or splashing colors. Polly the bee wearing a painter's beret, working with the Monitor Robot who is displaying a layered image.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, flying next to a chunky retro monitor robot. The robot is holding a glowing screenshot that is magically separating into floating, colorful pixel layers. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10082.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, flying next to a chunky retro monitor robot. The robot is holding a glowing screenshot that is magically separating into floating, colorful pixel layers. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:34:28.530723+00:00",
+  "app_name": "Splash Tool",
+  "app_url": "https://n8n-image-generator.vercel.app"
+}

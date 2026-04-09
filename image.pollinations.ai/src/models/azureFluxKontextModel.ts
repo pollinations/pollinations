@@ -45,12 +45,13 @@ export async function callAzureFluxKontext(
     safeParams: ImageParams,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
-    const apiKey = process.env.AZURE_MYCELI_FLUX_KONTEXT_API_KEY;
-    let endpoint = process.env.AZURE_MYCELI_FLUX_KONTEXT_ENDPOINT;
+    const apiKey = process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY;
+    const baseUrl =
+        "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/FLUX.1-Kontext-pro";
 
-    if (!apiKey || !endpoint) {
+    if (!apiKey) {
         throw new Error(
-            "Azure Flux Kontext API key or endpoint not found in environment variables",
+            "AZURE_MYCELI_PROD_SWEDEN_API_KEY not found in environment variables",
         );
     }
 
@@ -58,11 +59,12 @@ export async function callAzureFluxKontext(
     const isEditMode = safeParams.image && safeParams.image.length > 0;
 
     // Add the appropriate endpoint path and API version
+    let endpoint: string;
     if (isEditMode) {
-        endpoint = `${endpoint}/images/edits?api-version=2025-04-01-preview`;
+        endpoint = `${baseUrl}/images/edits?api-version=2025-04-01-preview`;
         logCloudflare("Using Azure Flux Kontext in edit mode");
     } else {
-        endpoint = `${endpoint}/images/generations?api-version=2025-04-01-preview`;
+        endpoint = `${baseUrl}/images/generations?api-version=2025-04-01-preview`;
         logCloudflare("Using Azure Flux Kontext in generation mode");
     }
 

@@ -1,0 +1,33 @@
+{
+  "pr_number": 10097,
+  "title": "[codex] sort model success more logically",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10097",
+  "merged_at": "2026-04-09T22:17:49Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sorting out the signals",
+    "blurb": "The model monitor now correctly sorts genuine backend hiccups above client-side typos. Less noise, more signal, happier debugging.",
+    "summary": "Updated the model monitor's sorting logic to rank genuine model success rates above 4xx client errors.",
+    "impact": "Developers looking at the monitor will now see actual backend failures prioritized over user-side request errors.",
+    "keywords": [
+      "model-monitor",
+      "metrics",
+      "sorting",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot organizing data. The robot represents the 'model monitor' and Polly is sorting the 'success' metrics (represented as blocks or charts) logically.",
+    "image_prompt": "Cozy pixel art scene of a cute bee mascot with a tiny tool belt organizing glowing data blocks, while a chunky robot with a CRT monitor head happily displays a clean, sorted bar chart on its screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10097.jpg",
+    "prompt": "Cozy pixel art scene of a cute bee mascot with a tiny tool belt organizing glowing data blocks, while a chunky robot with a CRT monitor head happily displays a clean, sorted bar chart on its screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-09T22:19:03.067288+00:00"
+}

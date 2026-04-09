@@ -1,0 +1,34 @@
+{
+  "pr_number": 10079,
+  "title": "consolidate Azure providers, rewrite image tests as dynamic",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10079",
+  "merged_at": "2026-04-09T16:35:53Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the test suite",
+    "blurb": "We've completely rewritten our image testing suite to dynamically discover and test new models the moment they're added. Plus, we consolidated our Azure providers under the hood for a cleaner, more efficient backend.",
+    "summary": "Refactored the image generation test suite to dynamically discover models from the registry and consolidated Azure providers to a single endpoint.",
+    "impact": "This streamlines our internal infrastructure, making it faster and safer for maintainers to add new image models to the platform.",
+    "keywords": [
+      "testing",
+      "infrastructure",
+      "azure",
+      "refactor",
+      "models"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot in a cozy testing lab. The robot is scanning a dynamically growing list of models, while Polly organizes glowing blue blocks representing the consolidated Azure endpoints.",
+    "image_prompt": "Cozy pixel art scene of a cute bee mascot organizing glowing blue blocks in a cozy server room while a chunky monitor-headed robot scans a long printout of code. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10079.jpg",
+    "prompt": "Cozy pixel art scene of a cute bee mascot organizing glowing blue blocks in a cozy server room while a chunky monitor-headed robot scans a long printout of code. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-09T16:37:15.356746+00:00"
+}

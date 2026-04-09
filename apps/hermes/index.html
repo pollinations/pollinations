@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pollinations.ai x Hermes Agent — AI Models for Your Agent</title>
+
+    <meta property="og:title" content="pollinations.ai x Hermes Agent — AI Models for Your Agent">
+    <meta property="og:description" content="Use 25+ AI models as your Hermes Agent brain through a single API. Kimi K2.5, DeepSeek, Claude, Gemini and more — set up in 30 seconds.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://hermes.pollinations.ai">
+    <meta property="og:image" content="https://pollinations.ai/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="description" content="Use 25+ AI models as your Hermes Agent brain through a single API. Free credits included, set up in 30 seconds.">
+
+    <link rel="manifest" href="./public/manifest.json" />
+    <meta name="theme-color" content="#0f172a" />
+
+    <style>
+        @font-face {
+            font-family: "LCT Mogi";
+            src: url("./fonts/lct-mogi-a.woff2") format("woff2"),
+                 url("./fonts/lct-mogi-a.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "Fraunces";
+            src: url("./fonts/fraunces-soft-bold.woff2") format("woff2"),
+                 url("./fonts/fraunces-soft-bold.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "Uncut Sans";
+            src: url("./fonts/uncut-sans-variable.woff2") format("woff2-variations");
+            font-weight: 300 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0f172a;          /* slate-900 */
+            --surface: #1e293b;     /* slate-800 */
+            --border: #334155;      /* slate-700 */
+            --border-light: #475569;/* slate-600 */
+            --text: #f1f5f9;        /* slate-100 */
+            --muted: #94a3b8;       /* slate-400 */
+            --accent: #a78bfa;      /* violet-400 */
+            --accent-bg: #1e1b4b;   /* indigo-950 */
+            --accent-strong: #7c3aed;/* violet-600 */
+            --code-bg: #1e293b;     /* slate-800 */
+        }
+
+        body {
+            font-family: "Uncut Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-weight: 400;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+        a:hover { opacity: 0.7; }
+
+        code { font-family: 'SF Mono', 'Fira Code', monospace; }
+        .brand { font-weight: 600; color: var(--accent); }
+        h1 .brand, h2 .brand, h3 .brand { font-weight: inherit; }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+        @media (min-width: 640px) { .container { padding: 0 24px; } }
+        @media (min-width: 768px) { .container { padding: 0 32px; } }
+
+        /* Header */
+        header {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        header .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-family: "LCT Mogi", ui-sans-serif, sans-serif;
+            font-size: 20px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .logo .pollinations-logo {
+            height: 32px;
+            width: auto;
+        }
+        .logo span { font-family: "Fraunces", ui-serif, serif; font-weight: normal; }
+        .header-links { display: flex; gap: 20px; font-size: 14px; }
+        .header-links a {
+            background: var(--accent-strong);
+            color: #f1f5f9;
+            text-decoration: none;
+            padding: 6px 16px 8px;
+            border-radius: 9999px;
+            font-weight: 500;
+            transition: filter 0.15s;
+        }
+        .header-links a:hover { filter: brightness(1.2); opacity: 1; }
+
+        @media (max-width: 640px) {
+            header .container {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+        }
+
+        /* Hero */
+        .hero {
+            padding: 64px 0 48px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-family: "LCT Mogi", ui-sans-serif, sans-serif;
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: normal;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+        .hero p {
+            font-size: 18px;
+            color: var(--muted);
+            max-width: 540px;
+            margin: 0 auto 40px;
+        }
+
+        /* Setup box */
+        .setup-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: left;
+            margin-bottom: 48px;
+        }
+        .step { margin-bottom: 24px; }
+        .step:last-child { margin-bottom: 0; }
+        .step-label {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 14px;
+            font-weight: normal;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+        .step-text {
+            font-size: 15px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+        .step-text a { font-weight: 600; color: var(--text); }
+
+        /* Code block */
+        .code-block {
+            position: relative;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 48px 16px 16px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            color: var(--text);
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.5;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--accent-strong);
+            border: none;
+            border-radius: 9999px;
+            color: #f1f5f9;
+            padding: 4px 12px 6px;
+            font-size: 12px;
+            font-family: "Uncut Sans", sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: filter 0.15s;
+        }
+        .copy-btn:hover { filter: brightness(1.2); }
+
+        /* Sections */
+        .section { padding: 48px 0; }
+        .section-title {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 28px;
+            font-weight: normal;
+            letter-spacing: -0.01em;
+            margin-bottom: 8px;
+        }
+        .section-subtitle {
+            color: var(--muted);
+            margin-bottom: 28px;
+            font-size: 15px;
+        }
+
+        /* Model table */
+        .model-table {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .model-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+        .model-row:last-child { border-bottom: none; }
+        .model-row.recommended { background: var(--accent-bg); }
+        .model-row.dimmed { opacity: 0.6; }
+        .model-label {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 15px;
+            font-weight: normal;
+            width: 200px;
+            flex-shrink: 0;
+        }
+        .model-id {
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            width: 220px;
+            flex-shrink: 0;
+        }
+        .model-note {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.4;
+            flex: 1;
+        }
+        .model-tag {
+            font-size: 11px;
+            padding: 2px 8px 3px;
+            border-radius: 9999px;
+            background: var(--accent-strong);
+            color: #f1f5f9;
+            font-weight: 500;
+            white-space: nowrap;
+            display: inline-block;
+            margin-left: 6px;
+        }
+        .model-tag.paid {
+            background: var(--muted);
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .model-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .model-label { width: auto; }
+            .model-id { width: auto; }
+        }
+
+        /* Connect button */
+        .connect-btn {
+            display: inline-block;
+            background: var(--accent-strong);
+            color: #f1f5f9;
+            border: none;
+            border-radius: 9999px;
+            padding: 12px 32px 14px;
+            font-family: "Uncut Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.15s;
+        }
+        .connect-btn:hover { filter: brightness(1.2); }
+        .connect-btn.connected {
+            background: var(--accent-bg);
+            color: var(--accent);
+            cursor: default;
+        }
+
+        /* Success banner */
+        .success-banner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--accent-bg);
+            border: 1px solid var(--accent-strong);
+            border-radius: 10px;
+            padding: 16px 20px;
+            animation: fadeSlideIn 0.4s ease-out;
+        }
+        .success-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-strong);
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .success-title {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 16px;
+            font-weight: normal;
+            margin-bottom: 4px;
+        }
+        .key-display {
+            font-family: 'SF Mono', monospace;
+            font-size: 14px;
+            color: var(--text);
+            word-break: break-all;
+            font-weight: 600;
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Segmented control tabs */
+        .tab-bar {
+            display: flex;
+            background: var(--border);
+            border-radius: 8px;
+            padding: 3px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: rgba(255,255,255,0.6);
+            font-family: "Uncut Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--surface);
+            color: var(--text);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .tab-btn:hover:not(.active) { color: #fff; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Highlight injected key in commands */
+        .key-injected {
+            background: var(--accent-bg);
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--accent-strong);
+        }
+
+        /* Manual config toggle */
+        .toggle-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 16px 8px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-family: "Uncut Sans", sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.15s;
+        }
+        .toggle-btn:hover { background: var(--accent-strong); color: #f1f5f9; }
+        .manual-config { display: none; margin-top: 16px; }
+        .manual-config.open { display: block; }
+
+        /* MCP section */
+        .mcp-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-top: 24px;
+        }
+        .mcp-box h3 {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 20px;
+            font-weight: normal;
+            margin-bottom: 8px;
+        }
+        .mcp-box p {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        /* Features */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .feature {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .feature h3 {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 16px;
+            font-weight: normal;
+            margin-bottom: 6px;
+        }
+        .feature p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        footer .links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        footer .links a { color: var(--text); font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <div class="logo"><img class="pollinations-logo" src="./logo-text-white.svg" alt="pollinations.ai" /> <span>x</span> <span>Hermes Agent</span></div>
+        <div class="header-links">
+            <a href="#" onclick="startAuthorize(); return false;">Get API Key</a>
+            <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+
+        <section class="hero">
+            <h1><span class="brand">pollinations.ai</span> x <span style="color:var(--accent)">Hermes Agent</span></h1>
+            <p>Use <strong>25+ AI models</strong> as your Hermes Agent brain through a single API. Free models with <em>web search, vision & reasoning</em> — connect your account and start building in <strong>30 seconds</strong>.</p>
+        </section>
+
+        <div class="setup-box">
+            <div class="step" id="step-connect">
+                <div class="step-label">Step 1</div>
+                <div class="step-text">Get your free API key (comes with free credits):</div>
+                <button class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with pollinations.ai</button>
+                <div class="step-text" style="margin-top:8px; font-size:13px;">or paste your key manually: <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
+            </div>
+            <div class="step" id="step-connected" style="display:none">
+                <div class="success-banner">
+                    <div class="success-icon">&#10003;</div>
+                    <div>
+                        <div class="success-title">Connected! Your API key:</div>
+                        <div class="key-display" id="key-display"></div>
+                    </div>
+                </div>
+                <div class="step-text" style="font-size:13px; margin-top:8px; color:var(--muted)">Your key has been inserted into the commands below. Just copy and run.</div>
+            </div>
+
+            <div class="step">
+                <div class="step-label">Step 2</div>
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab('install', this)">Fresh Install</button>
+                    <button class="tab-btn" onclick="switchTab('yaml', this)">Manual YAML</button>
+                </div>
+
+                <div class="tab-panel active" id="tab-install">
+                    <div class="step-text">Install Hermes Agent, then run the setup script:</div>
+                    <div class="code-block" id="install-cmd">curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash<button class="copy-btn" onclick="copyCode('install-cmd')">Copy</button></div>
+                    <div class="step-text" style="margin-top:16px">Run the <a href="https://github.com/pollinations/pollinations/blob/main/apps/hermes/setup-pollinations.sh" target="_blank" style="font-weight:600; color:var(--text)">setup script</a>:</div>
+                    <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/hermes/setup-pollinations.sh \
+  | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
+                    <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
+                        <li>Saves API key to <code style="color:var(--accent); font-size:13px">~/.hermes/config.yaml</code></li>
+                        <li>Adds 7 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
+                        <li>Sets Kimi K2.5 as default with DeepSeek + GLM fallbacks</li>
+                    </ul>
+                </div>
+
+                <div class="tab-panel" id="tab-yaml">
+                    <div class="step-text">Add this to <code style="color:var(--accent)">~/.hermes/config.yaml</code>:</div>
+                    <div class="code-block" id="yaml-config" style="white-space:pre; font-size:12px;">model:
+  provider: custom
+  default: kimi
+  base_url: https://gen.pollinations.ai/v1
+  api_key: <span class="key-in-json">YOUR_API_KEY</span>
+  context_length: 256000
+
+custom_providers:
+  - name: pollinations
+    base_url: https://gen.pollinations.ai/v1
+    api_key: <span class="key-in-json">YOUR_API_KEY</span>
+    api_mode: chat_completions
+    models:
+      kimi:
+        context_length: 256000
+      deepseek:
+        context_length: 128000
+      glm:
+        context_length: 128000
+      gemini-search:
+        context_length: 128000
+      claude-fast:
+        context_length: 200000
+      claude-large:
+        context_length: 200000
+      gemini-large:
+        context_length: 1000000
+
+fallback_model:
+  provider: custom
+  model: deepseek
+  base_url: https://gen.pollinations.ai/v1
+  api_key: <span class="key-in-json">YOUR_API_KEY</span>
+
+mcp_servers:
+  pollinations:
+    command: "npx"
+    args: ["-y", "@pollinations_ai/model-context-protocol"]<button class="copy-btn" onclick="copyCode('yaml-config')">Copy</button></div>
+                    <div class="step-text" style="margin-top:12px">Then set model: <code style="color:var(--accent)">hermes model custom:pollinations:kimi</code></div>
+                </div>
+            </div>
+        </div>
+
+        <section class="section" style="padding-top:0">
+            <h2 class="section-title">Which model should I use?</h2>
+
+            <div class="model-table">
+                <div class="model-row recommended">
+                    <div class="model-label">Kimi K2.5 <span class="model-tag">default</span></div>
+                    <div class="model-id">custom:pollinations:kimi</div>
+                    <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K context</em>, vision, tools, reasoning. 77% SWE-Bench.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Gemini + Search <span class="model-tag">web search</span></div>
+                    <div class="model-id">custom:pollinations:gemini-search</div>
+                    <div class="model-note">Google Gemini with <strong>always-on web search</strong>. Vision support. Look up docs, APIs, recent changes.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">DeepSeek V3.2</div>
+                    <div class="model-id">custom:pollinations:deepseek</div>
+                    <div class="model-note"><strong>Strong reasoning</strong> & tool calling. Good alternative to Kimi for hard problems.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">GLM-4.7</div>
+                    <div class="model-id">custom:pollinations:glm</div>
+                    <div class="model-note">Z.ai — <em>coding, reasoning, agentic workflows</em>. Competitive with Kimi.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Claude Haiku 4.5</div>
+                    <div class="model-id">custom:pollinations:claude-fast</div>
+                    <div class="model-note">Anthropic — <strong>fast</strong> with good reasoning. Claude quality, lower cost.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">Claude Opus 4.6 <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">custom:pollinations:claude-large</div>
+                    <div class="model-note">Anthropic's most capable model. Vision, tools, deep reasoning.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">Gemini 3 Pro <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">custom:pollinations:gemini-large</div>
+                    <div class="model-note">Google's flagship with vision, audio & video understanding.</div>
+                </div>
+            </div>
+
+            <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model custom:pollinations:gemini-search</code></p>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">Image, video & audio via MCP</h2>
+            <p class="section-subtitle">Hermes supports MCP natively. Add the <span class="brand">pollinations.ai</span> MCP server for multi-modal generation.</p>
+            <div class="mcp-box">
+                <div class="code-block" id="mcp-cmd">hermes mcp add pollinations -- npx -y @pollinations_ai/model-context-protocol<button class="copy-btn" onclick="copyCode('mcp-cmd')">Copy</button></div>
+                <p style="margin-top:16px">This gives your agent image generation (Flux, GPT Image, Imagen 4), video (Veo 3.1, Seedance), text-to-speech (13 voices), and vision analysis — all through Pollinations.</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">Why Pollinations + Hermes?</h2>
+            <div class="features">
+                <div class="feature">
+                    <h3>Self-improving agent</h3>
+                    <p>Hermes learns from every task — writing reusable skills and building persistent memory across sessions.</p>
+                </div>
+                <div class="feature">
+                    <h3>25+ models, one API</h3>
+                    <p>Switch between Kimi, DeepSeek, Claude, Gemini and more without changing config. Free models included.</p>
+                </div>
+                <div class="feature">
+                    <h3>Multi-modal via MCP</h3>
+                    <p>Generate images, video, and audio directly from your agent using the Pollinations MCP server.</p>
+                </div>
+                <div class="feature">
+                    <h3>Multi-platform</h3>
+                    <p>Access your Hermes agent from Telegram, Discord, Slack, CLI — all with the same Pollinations backend.</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="links">
+            <a href="https://enter.pollinations.ai">API Keys</a>
+            <a href="https://gen.pollinations.ai/v1/models">All Models</a>
+            <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a>
+            <a href="https://github.com/pollinations/pollinations">GitHub</a>
+            <a href="https://discord.gg/pollinations-ai-885844321461485618">Discord</a>
+        </div>
+        <p>pollinations.ai — open-source AI platform</p>
+    </div>
+</footer>
+
+<script>
+function copyCode(id) {
+    const el = document.getElementById(id);
+    const text = el.textContent.replace(/Copy|Copied!/g, '').trim();
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = el.querySelector('.copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    });
+}
+
+function startAuthorize() {
+    var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
+    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast,claude-large,gemini-large');
+    window.location.href = `https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}&models=${models}`;
+}
+
+function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(p => { p.classList.remove('active'); });
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    btn.classList.add('active');
+}
+
+function injectApiKey(apiKey) {
+    document.getElementById('step-connect').style.display = 'none';
+    document.getElementById('step-connected').style.display = 'block';
+    document.getElementById('key-display').textContent = apiKey;
+
+    var placeholder = document.getElementById('key-placeholder');
+    placeholder.textContent = apiKey;
+    placeholder.classList.add('key-injected');
+
+    document.querySelectorAll('.key-in-json').forEach(span => {
+        span.textContent = apiKey;
+        span.classList.add('key-injected');
+    });
+}
+
+// Check for API key in URL fragment on page load
+(() => {
+    const match = window.location.hash.match(/api_key=([^&]+)/);
+    if (match) {
+        const apiKey = decodeURIComponent(match[1]);
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        injectApiKey(apiKey);
+    }
+})();
+</script>
+
+</body>
+</html>

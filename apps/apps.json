@@ -87,6 +87,13 @@
         "title": "Pollinations × OpenClaw",
         "description": "Use 25+ AI models as your OpenClaw brain through Pollinations' unified API"
     },
+    "hermes": {
+        "subdomain": "hermes",
+        "buildCommand": null,
+        "outputDir": ".",
+        "title": "Pollinations x Hermes Agent",
+        "description": "Use 25+ AI models as your Hermes Agent brain through Pollinations' unified API"
+    },
     "slidepainter": {
         "subdomain": "slidepainter",
         "buildCommand": "npm run build",

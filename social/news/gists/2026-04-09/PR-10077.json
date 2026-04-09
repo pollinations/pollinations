@@ -1,0 +1,34 @@
+{
+  "pr_number": 10077,
+  "title": "Add Oasis AI to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10077",
+  "merged_at": "2026-04-09T16:22:53Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Oasis in the feed",
+    "blurb": "Oasis AI just landed in the greenhouse. Turn those long-winded LinkedIn essays into snappy vertical video reels without breaking a sweat.",
+    "summary": "Added Oasis AI to the community apps directory, a tool for converting long-form social media posts into short vertical videos.",
+    "impact": "Creators can now automatically repurpose their written Twitter and LinkedIn content into engaging Instagram Reels.",
+    "keywords": [
+      "oasis ai",
+      "video generation",
+      "social media",
+      "community apps",
+      "reels"
+    ],
+    "visual_concept": "Oasis AI converts text to vertical video. Visuals: A desert oasis theme mixed with social media. The pollinations bee (Polly) wearing sunglasses, relaxing by a glowing pixel-art oasis pool. A chunky retro smartphone stands nearby, displaying a vertical video (Reel). Code-plants growing around the water.",
+    "image_prompt": "Cozy pixel art scene of a chunky retro smartphone standing upright by a glowing blue oasis pool, displaying a vertical video on its screen. The cute bee mascot wears tiny sunglasses and relaxes nearby on a lime green (#ecf874) code-plant leaf. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10077.jpg",
+    "prompt": "Cozy pixel art scene of a chunky retro smartphone standing upright by a glowing blue oasis pool, displaying a vertical video on its screen. The cute bee mascot wears tiny sunglasses and relaxes nearby on a lime green (#ecf874) code-plant leaf. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:23:53.963379+00:00",
+  "app_name": "Oasis AI",
+  "app_url": "https://oasis-demo-brown.vercel.app/"
+}

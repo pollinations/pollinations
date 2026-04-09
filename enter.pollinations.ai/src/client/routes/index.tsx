@@ -14,6 +14,7 @@ import { Footer } from "../components/layout/footer.tsx";
 import { Header } from "../components/layout/header.tsx";
 import { NewsBanner } from "../components/layout/news-banner.tsx";
 import { User } from "../components/layout/user.tsx";
+import { PushNotificationToggle } from "../components/notifications/push-toggle.tsx";
 import { Pricing } from "../components/pricing";
 import { UsageGraph } from "../components/usage-analytics";
 
@@ -230,6 +231,7 @@ function RouteComponent() {
                         githubAvatarUrl={user?.image || ""}
                         onSignOut={handleSignOut}
                     />
+                    <PushNotificationToggle />
                     <Button
                         as="a"
                         href="/api/docs"

@@ -302,6 +302,8 @@ declare namespace Cloudflare {
             | "https://dev.enter.pollinations.ai";
         POLLEN_REFILL_PER_HOUR?: 1;
         EDGE_RATE_LIMITER?: RateLimit;
+        VAPID_PRIVATE_KEY?: string;
+        VAPID_PUBLIC_KEY?: string;
         NOWPAYMENTS_ENV?: "production" | "sandbox";
         POLLEN_RATE_LIMITER?:
             | DurableObjectNamespace<import("./src/index").PollenRateLimiter>

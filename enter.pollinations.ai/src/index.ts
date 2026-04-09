@@ -16,6 +16,7 @@ import { customerRoutes } from "./routes/customer.ts";
 import { deviceRoutes } from "./routes/device.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
+import { notificationRoutes } from "./routes/notifications.ts";
 import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
@@ -37,6 +38,7 @@ export const api = new Hono<Env>()
     .route("/api-keys", apiKeysRoutes)
     .route("/app-lookup", appLookupRoutes)
     .route("/account", accountRoutes)
+    .route("/notifications", notificationRoutes)
     .route("/device", deviceRoutes)
     .route("/webhooks", webhooksRoutes)
     .route("/webhooks", webhooksCryptoRoutes)

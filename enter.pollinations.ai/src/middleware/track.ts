@@ -49,6 +49,7 @@ import {
     ContentFilterSeveritySchema,
 } from "@/schemas/openai.ts";
 import { generateRandomId, removeUnset } from "@/util.ts";
+import { sendSpendNotification } from "@/utils/push-notifications.ts";
 import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
 import type { BalanceVariables } from "./balance.ts";
 import type { LoggerVariables } from "./logger.ts";
@@ -213,6 +214,24 @@ export const track = (eventType: EventType) =>
                     c.env.TINYBIRD_GENERATION_INGEST_TOKEN,
                     log,
                 );
+
+                // Send push notification for billed usage
+                if (
+                    responseTracking.isBilledUsage &&
+                    userTracking.userId &&
+                    responseTracking.price?.totalPrice &&
+                    c.env.VAPID_PRIVATE_KEY
+                ) {
+                    await sendSpendNotification({
+                        db: c.env.DB,
+                        userId: userTracking.userId,
+                        totalPrice: responseTracking.price.totalPrice,
+                        model: requestTracking.resolvedModelRequested,
+                        vapidPrivateKey: c.env.VAPID_PRIVATE_KEY,
+                    }).catch((err) => {
+                        log.warn("Push notification error: {err}", { err });
+                    });
+                }
 
                 // Handle balance deduction for both API keys and users
                 await handleBalanceDeduction({

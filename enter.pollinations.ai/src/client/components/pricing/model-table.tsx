@@ -486,7 +486,7 @@ const PerPollenTooltip: FC<PerPollenTooltipProps> = ({
                         <tbody>
                             <tr className="border-b border-gray-100">
                                 <td className="py-1 pr-2 text-gray-600">
-                                    {tierEmoji} Tier grant
+                                    {tierEmoji} Tier pollen
                                 </td>
                                 <td className="py-1 text-right text-gray-800 font-mono">
                                     {tierBal.toFixed(2)}
@@ -494,7 +494,7 @@ const PerPollenTooltip: FC<PerPollenTooltipProps> = ({
                             </tr>
                             <tr className="border-b border-gray-100">
                                 <td className="py-1 pr-2 text-gray-600">
-                                    🪷 Purchased
+                                    🪷 Paid pollen
                                 </td>
                                 <td className="py-1 text-right text-gray-800 font-mono">
                                     {pack.toFixed(2)}
@@ -524,7 +524,7 @@ const PerPollenTooltip: FC<PerPollenTooltipProps> = ({
                         🪷 Paid models use purchased pollen only.
                     </p>
                     <p className="mt-1 text-[10px] text-teal-600 font-medium">
-                        🔄 Click column header to swap between per-pollen and
+                        Click column header to swap between per-pollen and
                         balance view.
                     </p>
                 </>

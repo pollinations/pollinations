@@ -93,6 +93,16 @@ export function createBedrockNativeConfig(
     };
 }
 
+export function createFireworksModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.fireworks.ai/inference/v1",
+        process.env.FIREWORKS_API_KEY,
+        overrides,
+    );
+}
+
 export function createPerplexityModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

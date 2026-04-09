@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🧠 AI Companion](22582981) | Integrate AI Companion into your sidebar to provide generative writing, brainstorming, and task assistance alongside your apps. | [@browser-ext](https://github.com/browser-ext) |
 | [🎨 Chroma AI wallpaper app](https://chroma.lazyshrey.in/) | Generate unique wallpapers with Chroma AI wallpaper app using natural language prompts; built with React Native and Expo. | [@android](https://github.com/android) |
 | [🖼️ PerChamp - AI Image Generation App](https://play.google.com/store/apps/details?id=com.krpdev.perchamp_image) | Generate images from text prompts with PerChamp - AI Image Generation App using the Pollinations AI image generation API. | [@android](https://github.com/android) |
 | [🛡️ Warden App](22849795) | Provide a privacy-focused native AI client built in SwiftUI; Warden App supports multiple models including OpenAI Ant and uses no Electron or web wrappers. | [@ios](https://github.com/ios) |
@@ -29,7 +30,6 @@
 | [🖼️ AI Image Studio](https://aiimage.studio) | Generates photorealistic AI images in a client-side, zero-retention web terminal using AI Image Studio; all asset rendering occurs in the local client environment. | [@web](https://github.com/web) |
 | [🎬 MUSINGWEI STUDIO](https://musingwei.com) | Generate images, audio, and video using the pollinations.ai APIs with MUSINGWEI STUDIO. | [@web](https://github.com/web) |
 | [🖼️ OGP Maker](https://ogp-maker-teal.vercel.app/) | Generate OGP for Facebook/X. | [@web](https://github.com/web) |
-| [🎨 AI Photo Editor Pro](https://vision.scripted.my.id/) | Edit photos easily using AI. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

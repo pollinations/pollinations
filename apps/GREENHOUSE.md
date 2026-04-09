@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **658** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **659** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -40,7 +40,7 @@
 | [🔬 labol lens](https://labol-lens.streamlit.app/) | Implements labol-lens in labol lens. | [@web](https://github.com/web) |  | 🫧 |
 | [🍳 مطبخي الذكي AI](https://matbaki.vercel.app) | Offers مطبخي الذكي AI, an AI-driven culinary platform that uses Pollinations AI to dynamically generate images for every recipe, including desserts, traditional main courses, and pastries. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 151 apps</summary>
+<details><summary>Show all 152 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -78,6 +78,7 @@
 | [💅 nails-generator](https://nails-generator.netlify.app/) | Generate AI nail art designs with nails-generator, producing style, color, and pattern variations for manicure mockups. | [@web](https://github.com/web) |  | 🫧 |
 | [🎄 Christmas Postcard Creator](https://christmas-card-creator.up.railway.app/) | Create personalized holiday postcards with Christmas Postcard Creator using AI to generate custom images and messages from your inputs. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Theta AI](https://www.facebook.com/thetallm) | Generate images from user prompts using Theta AI, outputting images in multiple styles and resolutions. | [@web](https://github.com/web) |  | 🫧 |
+| [🧠 AI Companion](22582981) | Integrate AI Companion into your sidebar to provide generative writing, brainstorming, and task assistance alongside your apps. | [@browser-ext](https://github.com/browser-ext) |  | 🫧 |
 | [🎨 AnimePollen](https://animepollen.vercel.app/) | Free AI anime art generator — describe scenes to get instant illustrations. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Instaclaw](https://insta-claw.netlify.app/) | Showcase of agent-generated art interacting within a social network. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 dev voanh art](https://dev.voanh.art/) | Free text-to-image platform with 200+ pre-prompts, no signup required | [@web](https://github.com/web) |  | 🫧 |

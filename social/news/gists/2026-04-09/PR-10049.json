@@ -1,0 +1,35 @@
+{
+  "pr_number": 10049,
+  "title": "consolidate providers, upgrade models, clean up configs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10049",
+  "merged_at": "2026-04-09T13:28:53Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Freeing the heavyweights",
+    "blurb": "We did some massive spring cleaning in the server room and accidentally made a bunch of our heaviest AI models completely free. Enjoy upgraded GPTs, fresh Mistral, and Grok reasoning without spending a single pollen drop.",
+    "summary": "Consolidated our backend providers to upgrade several core text models and transition previously paid models like GPT-5.4, Grok, and Qwen Coder to the free tier.",
+    "impact": "Users now have free access to top-tier reasoning and audio models, plus new additions like Mistral-Large-3 and Grok-4-20.",
+    "keywords": [
+      "models",
+      "api",
+      "free-tier",
+      "gpt",
+      "mistral",
+      "grok"
+    ],
+    "visual_concept": "The PR is about making heavy/large models free and upgrading them. Visual metaphor: The Nomnom creature eating old 'PAID' invoices while the Bee organizes glowing jars representing the new, free models.",
+    "image_prompt": "Cozy pixel art scene of the round tan nomnom creature happily eating a stack of paper invoices while the cute bee mascot wearing a tiny apron organizes glowing jars of new models on a wooden shelf. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font on a wooden sign: 'FREE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10049.jpg",
+    "prompt": "Cozy pixel art scene of the round tan nomnom creature happily eating a stack of paper invoices while the cute bee mascot wearing a tiny apron organizes glowing jars of new models on a wooden shelf. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font on a wooden sign: 'FREE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T13:29:56.863100+00:00"
+}

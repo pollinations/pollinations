@@ -20,6 +20,7 @@ import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
+    showBalance: boolean;
     tierBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
@@ -27,6 +28,7 @@ type ModelRowProps = {
 
 export const ModelRow: FC<ModelRowProps> = ({
     model,
+    showBalance,
     tierBalance,
     packBalance,
     cryptoBalance,
@@ -55,7 +57,7 @@ export const ModelRow: FC<ModelRowProps> = ({
     const totalBalance = (tierBalance ?? 0) + paidBalance;
     const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
 
-    const genPerPollen = isSignedIn
+    const genPerPollen = showBalance
         ? calculateForBalance(model, effectiveBalance)
         : calculatePerPollen(model);
     const isDisabled = isSignedIn && effectiveBalance <= 0;

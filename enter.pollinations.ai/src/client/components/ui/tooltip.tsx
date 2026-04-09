@@ -29,6 +29,7 @@ export const Tooltip: FC<TooltipProps> = ({ children, content, onClick }) => {
                 e.stopPropagation();
                 if (onClick) {
                     onClick();
+                    return;
                 }
                 updateMobilePosition();
                 setShowTooltip((prev) => !prev);
@@ -43,15 +44,20 @@ export const Tooltip: FC<TooltipProps> = ({ children, content, onClick }) => {
             >
                 {content}
             </span>
-            {/* Mobile: horizontally centered on screen, vertically below trigger */}
-            <span
-                style={{ top: mobileTop }}
-                className={`${
-                    showTooltip ? "visible opacity-100" : "invisible opacity-0"
-                } md:hidden fixed left-1/2 -translate-x-1/2 px-4 py-3 bg-white text-gray-800 text-xs rounded-lg shadow-xl border border-gray-200 z-50 pointer-events-none transition-opacity max-w-[90vw]`}
-            >
-                {content}
-            </span>
+            {/* Mobile: horizontally centered on screen, vertically below trigger.
+                Hidden when onClick is provided (tap is used for the action instead). */}
+            {!onClick && (
+                <span
+                    style={{ top: mobileTop }}
+                    className={`${
+                        showTooltip
+                            ? "visible opacity-100"
+                            : "invisible opacity-0"
+                    } md:hidden fixed left-1/2 -translate-x-1/2 px-4 py-3 bg-white text-gray-800 text-xs rounded-lg shadow-xl border border-gray-200 z-50 pointer-events-none transition-opacity max-w-[90vw]`}
+                >
+                    {content}
+                </span>
+            )}
         </button>
     );
 };

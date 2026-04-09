@@ -1,0 +1,34 @@
+{
+  "pr_number": 10068,
+  "title": "Add AI Companion to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10068",
+  "merged_at": "2026-04-09T16:03:49Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Sidebar companion acquired",
+    "blurb": "The AI Companion app just sprouted in the greenhouse. Keep a brainstorming buddy in your sidebar while you build.",
+    "summary": "Added the AI Companion app to the community showcase, providing generative writing and task assistance alongside other apps.",
+    "impact": "Users can now discover and integrate a dedicated AI assistant into their sidebar for seamless brainstorming.",
+    "keywords": [
+      "community",
+      "app",
+      "assistant",
+      "productivity",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot sitting next to a glowing sidebar interface, working together on a document. Represents the 'AI Companion' in the sidebar.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky robot with a CRT monitor head sitting next to a glowing lime green (#ecf874) sidebar interface. The robot is holding a tiny clipboard and helping the bee write notes. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10068.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky robot with a CRT monitor head sitting next to a glowing lime green (#ecf874) sidebar interface. The robot is holding a tiny clipboard and helping the bee write notes. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-09T16:05:02.369275+00:00",
+  "app_name": "AI Companion",
+  "app_url": "https://github.com/dpk4212/Media-Ext"
+}

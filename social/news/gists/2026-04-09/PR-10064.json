@@ -1,0 +1,35 @@
+{
+  "pr_number": 10064,
+  "title": "Add Warden App to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10064",
+  "merged_at": "2026-04-09T14:22:40Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No Electron allowed",
+    "blurb": "Warden App just landed in the community showcase. It's a privacy-focused, native SwiftUI client for your AI needs, proving that not everything has to be a web wrapper.",
+    "summary": "Added Warden App, a privacy-focused native SwiftUI AI client, to the community showcase.",
+    "impact": "Mac users get a lightweight, native alternative for chatting with Pollinations models without the overhead of Electron.",
+    "keywords": [
+      "community",
+      "showcase",
+      "app",
+      "swiftui",
+      "macos",
+      "client"
+    ],
+    "visual_concept": "Warden App implies security/privacy and native macOS (SwiftUI). Let's have Polly the bee and the Monitor Robot. The Monitor Robot is looking very sleek and metallic, holding a tiny shield to represent privacy. Polly is wearing a little security badge.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security badge, floating next to a chunky pixel robot with a sleek silver CRT monitor head. The robot is proudly holding a glowing green shield. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10064.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security badge, floating next to a chunky pixel robot with a sleek silver CRT monitor head. The robot is proudly holding a glowing green shield. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T14:23:37.089188+00:00",
+  "app_name": "Warden App",
+  "app_url": "https://github.com/SidhuK/WardenApp"
+}

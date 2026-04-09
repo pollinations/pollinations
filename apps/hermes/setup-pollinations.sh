@@ -91,11 +91,28 @@ mcp_servers:
 YAML
 fi
 
-# --- Step 3: Set default model via CLI ---
+# --- Step 3: Install Pollinations skill (image/audio/video generation) ---
+
+SKILL_DIR="${CONFIG_DIR}/skills/pollinations-ai"
+SKILL_URL="https://raw.githubusercontent.com/pollinations/pollinations/main/apps/hermes/skills/pollinations-ai/SKILL.md"
+
+mkdir -p "$SKILL_DIR"
+if curl -fsSL "$SKILL_URL" -o "${SKILL_DIR}/SKILL.md" 2>/dev/null; then
+    echo "Installed Pollinations skill (image, audio, video generation)"
+else
+    echo "Could not download skill from GitHub, copying from local if available..."
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    if [ -f "${SCRIPT_DIR}/skills/pollinations-ai/SKILL.md" ]; then
+        cp "${SCRIPT_DIR}/skills/pollinations-ai/SKILL.md" "${SKILL_DIR}/SKILL.md"
+        echo "Installed Pollinations skill from local copy"
+    fi
+fi
+
+# --- Step 4: Set default model via CLI ---
 
 hermes model custom:pollinations:kimi >/dev/null 2>&1 || true
 
-# --- Step 4: Restart if running ---
+# --- Step 5: Restart if running ---
 
 hermes restart >/dev/null 2>&1 || true
 
@@ -108,11 +125,10 @@ echo ""
 echo "  API Key:   $MASKED"
 echo "  Default:   pollinations:kimi (256K context, vision, reasoning)"
 echo "  Fallbacks: deepseek, glm"
+echo "  Skill:     pollinations-ai (image, audio, video generation)"
 echo ""
 echo "  Switch models:  /model custom:pollinations:deepseek"
 echo "  Your account:   https://enter.pollinations.ai"
 echo ""
 echo "  Free: kimi, deepseek, glm, gemini-search, claude-fast"
 echo "  Paid: claude-large, gemini-large"
-echo ""
-echo "  MCP (image/audio/video): hermes mcp add pollinations -- npx -y @pollinations_ai/model-context-protocol"

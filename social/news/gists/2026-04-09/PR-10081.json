@@ -1,0 +1,34 @@
+{
+  "pr_number": 10081,
+  "title": "Add polimage to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10081",
+  "merged_at": "2026-04-09T16:31:32Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new workbench for your pixels",
+    "blurb": "polimage just sprouted in the community greenhouse. It's a lightweight image-generation workbench that hooks right into your Pollinations account with one click.",
+    "summary": "Added polimage, a lightweight browser-based image generation workbench with Pollinations OAuth support, to the community apps showcase.",
+    "impact": "Users can now easily connect their Pollinations account to polimage for a streamlined, one-click image generation experience in the browser.",
+    "keywords": [
+      "community",
+      "apps",
+      "image-generation",
+      "oauth",
+      "workbench"
+    ],
+    "visual_concept": "The PR adds a new image generation workbench app called 'polimage' to the community greenhouse. Visuals should represent a workbench, painting, or crafting images. The bee mascot (Polly) wearing a painter's beret or toolbelt, working at a cozy wooden workbench with glowing pixel canvases. Nature/greenhouse elements around the workbench.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, working at a wooden workbench inside a lush greenhouse. Glowing pixel canvases and lime green (#ecf874) code-plants surround the desk. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10081.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, working at a wooden workbench inside a lush greenhouse. Glowing pixel canvases and lime green (#ecf874) code-plants surround the desk. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:32:29.709733+00:00",
+  "app_name": "polimage",
+  "app_url": "https://polimage.enjoyow.com"
+}

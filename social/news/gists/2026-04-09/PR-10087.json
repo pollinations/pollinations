@@ -1,0 +1,34 @@
+{
+  "pr_number": 10087,
+  "title": "Add Pollinations Avatar Gen - Reforged to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10087",
+  "merged_at": "2026-04-09T16:44:09Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh avatars for the tavern",
+    "blurb": "A new community extension brings Pollinations-powered avatar generation directly into SillyTavern. Time to give your local LLM characters a fresh coat of pixels.",
+    "summary": "Added the Pollinations Avatar Gen - Reforged extension to the community apps showcase, integrating image generation into the SillyTavern local LLM frontend.",
+    "impact": "SillyTavern users can now seamlessly generate and update character avatars using Pollinations' image API directly within their chat interface.",
+    "keywords": [
+      "community",
+      "sillytavern",
+      "avatars",
+      "image-generation",
+      "extensions"
+    ],
+    "visual_concept": "SillyTavern is a local LLM frontend, often associated with roleplay, taverns, and character avatars. Visual: The Pollinations bee (Polly) wearing a tiny tavern-keeper apron or holding a painter's palette, painting a portrait (avatar) of a character in a cozy, wooden tavern setting. A retro monitor nearby shows the SillyTavern UI.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tavern-keeper apron, painting a pixelated character portrait on an easel inside a warm, wooden tavern. A retro computer monitor on a nearby barrel glows with a lime green (#ecf874) interface. Soft pastel gradient background through the tavern window. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10087.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tavern-keeper apron, painting a pixelated character portrait on an easel inside a warm, wooden tavern. A retro computer monitor on a nearby barrel glows with a lime green (#ecf874) interface. Soft pastel gradient background through the tavern window. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:45:31.870379+00:00",
+  "app_name": "Pollinations Avatar Gen - Reforged",
+  "app_url": "https://github.com/sunjichaocom/pollinations-avatar-gen-reforged"
+}

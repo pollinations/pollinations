@@ -17,7 +17,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@aws-sdk/client-bedrock-runtime": "^3.1010.0",
+        "@aws-sdk/client-bedrock-runtime": "^3.1027.0",
         "@aws-sdk/client-s3": "^3.1010.0",
         "@azure-rest/ai-content-safety": "^1.0.1",
         "@azure/core-auth": "^1.9.0",

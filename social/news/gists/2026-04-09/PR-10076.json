@@ -1,0 +1,35 @@
+{
+  "pr_number": 10076,
+  "title": "Add Isekai Character Generator to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10076",
+  "merged_at": "2026-04-09T16:20:58Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Your next life awaits",
+    "blurb": "Get ready to be reincarnated! The new Isekai Character Generator in our community showcase rolls up fully realized multiversal heroes, complete with stats, backstories, and pixel-perfect looks.",
+    "summary": "Added the community-built Isekai Character Generator to the apps showcase.",
+    "impact": "Users can now explore a new tool that generates complete RPG-style character profiles, stats, and visual appearances.",
+    "keywords": [
+      "community",
+      "app",
+      "games",
+      "generator",
+      "rpg",
+      "isekai"
+    ],
+    "visual_concept": "RPG/Isekai theme. Polly the bee dressed as a fantasy adventurer (wizard hat or cape) interacting with a character sheet or a magical portal, representing the generation of a new multiversal hero.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat and cape, looking excitedly at a glowing retro computer monitor displaying an RPG character stats screen. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10076.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat and cape, looking excitedly at a glowing retro computer monitor displaying an RPG character stats screen. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:22:19.488728+00:00",
+  "app_name": "Isekai Character Generator",
+  "app_url": "https://isekai-character-generator.pages.dev"
+}

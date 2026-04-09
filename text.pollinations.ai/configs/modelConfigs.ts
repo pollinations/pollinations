@@ -56,11 +56,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             "gpt-5.4",
         ),
 
-    // -- Azure (old oai-models-resource — keep until follow-up PR) -------------
+    // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(
-            process.env.AZURE_MYCELI_GPT_AUDIO_MINI_API_KEY,
-            process.env.AZURE_MYCELI_GPT_AUDIO_MINI_ENDPOINT,
+            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-audio-mini/chat/completions?api-version=2025-01-01-preview",
             "gpt-audio-mini-2025-12-15",
         ),
     // -- Azure (Myceli Prod — swedencentral, audio) ---------------------------

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10078,
+  "title": "Add Guess the Flower to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10078",
+  "merged_at": "2026-04-09T16:24:59Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Name that bloom!",
+    "blurb": "A new community game just sprouted! Test your botanical knowledge with 'Guess the Flower', an AI-powered quiz that challenges you to identify beautiful blooms.",
+    "summary": "Added 'Guess the Flower', an AI-powered botanical quiz game, to the community apps showcase.",
+    "impact": "Players can now test their plant knowledge with a new community-built game that identifies flower species from photos.",
+    "keywords": [
+      "community",
+      "app",
+      "game",
+      "quiz",
+      "flowers"
+    ],
+    "visual_concept": "The PR is about a flower guessing game. Visuals should include Polly the bee (who naturally loves flowers) playing a quiz game. The Monitor Robot can act as the quizmaster, showing a picture of a flower on its screen, while Polly tries to guess what it is.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head displaying a bright pixelated sunflower. The small bee mascot hovers nearby wearing tiny reading glasses, looking at the screen with a glowing question mark above her head. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10078.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head displaying a bright pixelated sunflower. The small bee mascot hovers nearby wearing tiny reading glasses, looking at the screen with a glowing question mark above her head. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:25:51.861322+00:00",
+  "app_name": "Guess the Flower",
+  "app_url": "https://guess-the-flower.netlify.app/"
+}

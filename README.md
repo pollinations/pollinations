@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🤖 DAi](https://ai.dverse.fun) | Provide chat and image generation with DAi using pollination api and nano banana. | [@web](https://github.com/web) |
 | [🤔 The Shape of Meaning](https://signals.pinecone.website/) | Generate personalized philosophical analysis with The Shape of Meaning by answering questions about how you experience meaning, handle uncertainty, and navigate paradox. | [@web](https://github.com/web) |
 | [🧠 AI Companion](22582981) | Integrate AI Companion into your sidebar to provide generative writing, brainstorming, and task assistance alongside your apps. | [@browser-ext](https://github.com/browser-ext) |
 | [🎨 Chroma AI wallpaper app](https://chroma.lazyshrey.in/) | Generate unique wallpapers with Chroma AI wallpaper app using natural language prompts; built with React Native and Expo. | [@android](https://github.com/android) |
@@ -29,7 +30,6 @@
 | [🎞️ https://storyboard-ai-ochre.vercel.app/](https://storyboard-ai-ochre.vercel.app/) | StoryBoard AI is a visual storyboard planning application with AI image generation, featuring an infinite canvas where users can drag and drop frames, sticky notes, custom images, text titles, and sha | [@web](https://github.com/web) |
 | [🧠 Viralent](viralent.info) | Provides daily informative articles and interactive quizzes on Viralent to help users broaden horizons and hone knowledge. | [@web](https://github.com/web) |
 | [🖼️ AI Image Studio](https://aiimage.studio) | Generates photorealistic AI images in a client-side, zero-retention web terminal using AI Image Studio; all asset rendering occurs in the local client environment. | [@web](https://github.com/web) |
-| [🎬 MUSINGWEI STUDIO](https://musingwei.com) | Generate images, audio, and video using the pollinations.ai APIs with MUSINGWEI STUDIO. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

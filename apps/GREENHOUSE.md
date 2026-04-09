@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **660** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **661** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -334,7 +334,7 @@
 | [🎙️ Talking with Unity](https://www.ai-ministries.com/apps/talking-unity/) | Talking with Unity provides a voice AI assistant for Unity projects, enabling speech recognition, text-to-speech, and voice-driven interactions for apps and games. | [@web](https://github.com/web) |  | 🫧 |
 | [💬 Phicasso Chat](https://chat.phicasso.ai/) | Runs fully in the browser with no accounts or server-side storage; Phicasso Chat keeps conversations on the user's device and uses Pollinatio. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 115 apps</summary>
+<details><summary>Show all 116 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -358,6 +358,7 @@
 | [🎨 Pollination App](42637803) | Android client for Pollinations.ai to generate images and chat with AI. | [@api](https://github.com/api) |  | 🫧 |
 | [💬 Xenchat](https://chat.xenai.tech) | Fine-tuned AI chat powered by OpenWebUI and Pollinations for fast responses | [@web](https://github.com/web) |  | 🫧 |
 | [🔒 Polli AI Client](https://polli-plum.vercel.app/) | Privacy-focused serverless AI client for Pollinations API and advanced models. | [@web](https://github.com/web) |  | 🫧 |
+| [🤖 DAi](https://ai.dverse.fun) | Provide chat and image generation with DAi using pollination api and nano banana. | [@web](https://github.com/web) |  | 🫧 |
 | [💬 ppo](https://anesnt-dz.github.io/ppo/) | Powerful AI assistant built by AnesNT, powered by Pollinations. | [@web](https://github.com/web) |  | 🫧 |
 | [💭 DreamTag](https://play.google.com/store/apps/details?id=com.dreamtag.mhyworks) | Dream interpretation platform with AI chat analyzing dreams. | [@android](https://github.com/android) |  | 🫧 |
 | [🌼 Pollenboard](https://pollenboard.vercel.app/) | Self-hostable image, audio, and text generation frontend using pollinations.ai. | [@web](https://github.com/web) |  | 🫧 |

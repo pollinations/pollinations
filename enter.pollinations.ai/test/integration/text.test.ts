@@ -565,7 +565,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
                                 },
                             ],
                             tools: [calculatorTool],
-                            tool_choice: "required",
+                            tool_choice: "auto",
                             seed: testSeed(),
                         }),
                     },

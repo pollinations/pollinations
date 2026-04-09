@@ -15,18 +15,18 @@
       "access-control-allow-origin": "*",
       "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-length": "4",
+      "content-length": "3",
       "content-type": "text/plain; charset=UTF-8",
-      "date": "Thu, 09 Apr 2026 11:56:21 GMT",
+      "date": "Thu, 09 Apr 2026 12:41:08 GMT",
       "keep-alive": "timeout=5",
       "x-model-used": "accounts/fireworks/models/kimi-k2p5",
-      "x-usage-completion-text-tokens": "97",
-      "x-usage-prompt-cached-tokens": "21",
-      "x-usage-prompt-text-tokens": "1"
+      "x-usage-completion-text-tokens": "173",
+      "x-usage-prompt-cached-tokens": "9",
+      "x-usage-prompt-text-tokens": "13"
     },
     "body": {
       "type": "text",
-      "data": "Yes."
+      "data": "yes"
     }
   }
 }

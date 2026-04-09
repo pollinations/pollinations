@@ -1,0 +1,37 @@
+{
+  "pr_number": 10069,
+  "title": "Add The Shape of Meaning to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10069",
+  "merged_at": "2026-04-09T16:05:57Z",
+  "labels": [
+    "TEXT",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The Shape of Meaning",
+    "blurb": "A new community app has sprouted in the greenhouse! 'The Shape of Meaning' offers personalized philosophical analysis based on how you handle uncertainty and paradox.",
+    "summary": "Added 'The Shape of Meaning' to the community apps showcase, a tool that generates personalized philosophical analyses based on user responses.",
+    "impact": "Users can now discover and interact with a new text-based app that explores deep questions about meaning and existence.",
+    "keywords": [
+      "community",
+      "app",
+      "philosophy",
+      "text",
+      "showcase"
+    ],
+    "visual_concept": "The PR introduces a philosophical app about 'The Shape of Meaning'. Visually, this translates to the bee mascot engaging in deep thought or examining a literal glowing 'shape' of meaning. I'll depict Polly wearing tiny scholar glasses, looking at a glowing geometric shape sprouting from a plant.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny scholar glasses, thoughtfully examining a glowing geometric shape floating above a lime green (#ecf874) flower pot. Soft lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10069.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny scholar glasses, thoughtfully examining a glowing geometric shape floating above a lime green (#ecf874) flower pot. Soft lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-09T16:07:05.593984+00:00",
+  "app_name": "The Shape of Meaning",
+  "app_url": "https://signals.pinecone.website/"
+}

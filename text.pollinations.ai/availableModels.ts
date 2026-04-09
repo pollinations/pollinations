@@ -20,7 +20,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-mini"],
+        config: portkeyConfig["gpt-5.4-nano"],
     },
     {
         name: "openai-fast",
@@ -28,7 +28,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-large",
-        config: portkeyConfig["gpt-5.2-2025-12-11"],
+        config: portkeyConfig["gpt-5.4"],
     },
     {
         name: "qwen-coder",
@@ -54,19 +54,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
+        config: portkeyConfig["DeepSeek-V3.2"],
     },
     {
         name: "grok",
         config: portkeyConfig["grok-4-1-fast-non-reasoning"],
     },
     {
-        name: "grok-reasoning",
-        config: portkeyConfig["grok-4-1-fast-reasoning"],
-    },
-    {
-        name: "grok-legacy",
-        config: portkeyConfig["grok-4-fast-non-reasoning-legacy"],
+        name: "grok-large",
+        config: portkeyConfig["grok-4-20-reasoning"],
     },
     {
         name: "openai-audio",
@@ -74,7 +70,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-audio-large",
-        config: portkeyConfig["gpt-audio-2025-12-15"],
+        config: portkeyConfig["gpt-audio-1.5"],
     },
     {
         name: "claude-fast",
@@ -147,21 +143,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi",
-        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
+        config: portkeyConfig["Kimi-K2.5"],
     },
     {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
-        transform: pipe(
-            sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution"]),
-            removeToolsForJsonResponse,
-            createGeminiThinkingTransform("v3-pro"),
-        ),
-    },
-    {
-        name: "gemini-3-pro-legacy",
-        config: portkeyConfig["gemini-3-pro-legacy"],
         transform: pipe(
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
@@ -189,11 +175,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["accounts/fireworks/models/glm-5"],
+        config: portkeyConfig["glm-5"],
     },
     {
         name: "minimax",
-        config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
+        config: portkeyConfig["minimax-m2.5"],
+    },
+    {
+        name: "mistral-large",
+        config: portkeyConfig["Mistral-Large-3"],
     },
     {
         name: "polly",

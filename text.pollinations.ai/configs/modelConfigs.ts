@@ -1,12 +1,8 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
-    createAzureNetsimsimConfig,
-    createAzureXaiModelConfig,
     createBedrockNativeConfig,
     createDashScopeModelConfig,
-    createFireworksModelConfig,
-    createMyceliGrok4FastConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
@@ -35,72 +31,88 @@ function createVertexGeminiConfig(
     });
 }
 
-/** Creates an Azure config with a max-completion-tokens limit. */
-function createAzureWithMaxTokens(
-    apiKeyEnv: string | undefined,
-    endpointEnv: string | undefined,
-    modelName: string,
-    maxTokens: number,
-): PortkeyConfigFactory {
-    return () => ({
-        ...createAzureModelConfig(apiKeyEnv, endpointEnv, modelName),
-        "max-completion-tokens": maxTokens,
-    });
-}
-
 // =============================================================================
 // Portkey Configuration Map
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
-    // -- Azure (Myceli) -------------------------------------------------------
-    "gpt-5-mini": createAzureWithMaxTokens(
-        process.env.AZURE_PF_GPT5MINI_API_KEY,
-        process.env.AZURE_PF_GPT5MINI_ENDPOINT,
-        "gpt-5-mini",
-        16384,
-    ),
-    "gpt-5.2-2025-12-11": createAzureWithMaxTokens(
-        process.env.AZURE_MYCELI_GPT52_API_KEY,
-        process.env.AZURE_MYCELI_GPT52_ENDPOINT,
-        "gpt-5.2-2025-12-11",
-        16384,
-    ),
-    "gpt-audio-mini-2025-12-15": createAzureWithMaxTokens(
-        process.env.AZURE_MYCELI_GPT_AUDIO_MINI_API_KEY,
-        process.env.AZURE_MYCELI_GPT_AUDIO_MINI_ENDPOINT,
-        "gpt-audio-mini-2025-12-15",
-        2048,
-    ),
-    "gpt-audio-2025-12-15": createAzureWithMaxTokens(
-        process.env.AZURE_MYCELI_GPT_AUDIO_API_KEY,
-        process.env.AZURE_MYCELI_GPT_AUDIO_ENDPOINT,
-        "gpt-audio-2025-12-15",
-        2048,
-    ),
-    "myceli-grok-4-fast": createMyceliGrok4FastConfig,
+    // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
+    "gpt-5.4-nano": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-nano/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.4-nano",
+        ),
+    "gpt-5-nano-2025-08-07": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5-nano-2025-08-07",
+        ),
+    "gpt-5.4": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.4",
+        ),
 
-    // -- Azure (xAI Models Resource) ------------------------------------------
+    // -- Azure (old oai-models-resource — keep until follow-up PR) -------------
+    "gpt-audio-mini-2025-12-15": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_GPT_AUDIO_MINI_API_KEY,
+            process.env.AZURE_MYCELI_GPT_AUDIO_MINI_ENDPOINT,
+            "gpt-audio-mini-2025-12-15",
+        ),
+    // -- Azure (Myceli Prod — swedencentral, audio) ---------------------------
+    "gpt-audio-1.5": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-audio-1.5/chat/completions?api-version=2025-01-01-preview",
+            "gpt-audio-1.5",
+        ),
+
+    // -- Azure (Myceli Prod — eastus, xAI Grok) -------------------------------
     "grok-4-1-fast-non-reasoning": () =>
-        createAzureXaiModelConfig({ model: "grok-4-1-fast-non-reasoning" }),
-    "grok-4-1-fast-reasoning": () =>
-        createAzureXaiModelConfig({ model: "grok-4-1-fast-reasoning" }),
-    "grok-4-fast-non-reasoning-legacy": () =>
-        createAzureXaiModelConfig({ model: "grok-4-fast-non-reasoning" }),
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-1-fast-non-reasoning/chat/completions?api-version=2024-12-01-preview",
+            "grok-4-1-fast-non-reasoning",
+        ),
+    "grok-4-20-reasoning": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-reasoning/chat/completions?api-version=2024-12-01-preview",
+            "grok-4-20-reasoning",
+        ),
 
-    // -- Azure (PointsFlyer) --------------------------------------------------
-    "gpt-5-nano-2025-08-07": createAzureWithMaxTokens(
-        process.env.AZURE_PF_GPT5NANO_API_KEY,
-        process.env.AZURE_PF_GPT5NANO_ENDPOINT,
-        "gpt-5-nano-2025-08-07",
-        512,
-    ),
+    // -- Azure (Myceli Prod — eastus, DeepSeek) -------------------------------
+    "DeepSeek-V3.2": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/DeepSeek-V3.2/chat/completions?api-version=2024-12-01-preview",
+            "DeepSeek-V3.2",
+        ),
+    // -- Azure (Myceli Prod — eastus, Kimi) -----------------------------------
+    "Kimi-K2.5": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K2.5/chat/completions?api-version=2024-12-01-preview",
+            "Kimi-K2.5",
+        ),
 
-    // -- OVHcloud Mistral -----------------------------------------------------
+    // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
     "mistral-small-3.2-24b-instruct-2506": () =>
         createOVHcloudMistralConfig({
             model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),
+
+    // -- Azure (Myceli Prod — eastus, Mistral Large) --------------------------
+    "Mistral-Large-3": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
+            "Mistral-Large-3",
+        ),
 
     // -- Claude via AWS Bedrock -----------------------------------------------
     "claude-sonnet-4-6": () =>
@@ -164,10 +176,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-flash-lite-preview",
         "global",
     ),
-    "gemini-3-pro-legacy": createVertexGeminiConfig(
-        "gemini-3-pro-preview",
-        "global",
-    ),
     "gemini-2.5-pro": createVertexGeminiConfig("gemini-2.5-pro", "us-central1"),
 
     // -- Perplexity -----------------------------------------------------------
@@ -188,23 +196,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
 
-    // -- Fireworks AI ---------------------------------------------------------
-    "accounts/fireworks/models/kimi-k2p5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/kimi-k2p5",
-        }),
-    "accounts/fireworks/models/glm-5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5",
-        }),
-    "accounts/fireworks/models/minimax-m2p5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/minimax-m2p5",
-        }),
-    "accounts/fireworks/models/deepseek-v3p2": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v3p2",
-        }),
+    // -- AWS Bedrock (GLM & MiniMax) ---------------------------------------------
+    "glm-5": () => createBedrockNativeConfig({ model: "zai.glm-5" }),
+    "minimax-m2.5": () =>
+        createBedrockNativeConfig({ model: "minimax.minimax-m2.5" }),
 
     // -- Community Models -----------------------------------------------------
     "polly": () =>

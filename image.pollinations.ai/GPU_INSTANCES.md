@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-04-04
+Last updated: 2026-04-05
 
 ## Capacity Summary
 
@@ -15,7 +15,9 @@ Last updated: 2026-04-04
 | Z-Image (serverless) | 1-2 | ADA_32_PRO | RunPod | pay-per-use | Elliot |
 | Flux | 4 | 4x RTX 5090 | Vast.ai | $1.68 | running (not in registry) |
 | Z-Image + Sana | 4 | 4x RTX 5090 | Vast.ai | $1.66 | **STOPPED** |
-| SDXL Turbo (legacy sana) | 1 | 1x RTX 4090 | Vast.ai | $0.36 | **ACTIVE** — legacy image.pollinations.ai |
+| Sana Sprint 1.6B | 1 | A10 | Lambda Labs | — | **ACTIVE** — sana registry |
+| Sana Sprint 1.6B | 1 | A100 | Lambda Labs | — | **ACTIVE** — sana registry |
+| ~~SDXL Turbo (legacy sana)~~ | 1 | 1x RTX 4090 | Vast.ai | $0.36 | **STOPPED** — replaced by Lambda Labs |
 | Z-Image | 3 | 3x RTX 5090 | Vast.ai | $1.55 | running (not in registry) |
 | **Total active** | **~8** | | | **~$1.94/hr + serverless** |
 
@@ -66,14 +68,11 @@ vastai show instances --raw    # JSON with full details
 | 2 | zimage-gpu2 | 8767 | 40184 | Z-Image |
 | 3 | zimage-gpu3 | 8768 | 40151 | Z-Image |
 
-### Instance 34086100 — SDXL Turbo / legacy Sana (`45.143.122.9`)
+### Instance 34086100 — STOPPED (formerly SDXL Turbo / Sana)
 
-- **GPU**: 1x RTX 4090 (24GB) | **Cost**: $0.36/hr
-- **SSH**: `ssh -i ~/.ssh/pollinations_services_2026 -p 16100 root@ssh7.vast.ai`
-- **Service**: SDXL Turbo (registers as `sana` for legacy `image.pollinations.ai`)
-- **Port**: 8765 → public 32174 (`http://45.143.122.9:32174`)
-- **Health**: `curl -s http://45.143.122.9:32174/health` → `{"status":"healthy","model":"stabilityai/sdxl-turbo"}`
-- **OVH tunnel**: OVH (57.130.31.42) tunnels `localhost:19876` → this instance's port 8765
+- **Status**: **STOPPED** (2026-04-05) — replaced by Lambda Labs Sana Sprint 1.6B workers
+- **GPU**: 1x RTX 4090 (24GB) | **Cost**: $0.36/hr (when running)
+- **Restart**: `vastai start instance 34086100`
 
 ## Provider: RunPod
 
@@ -171,6 +170,24 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 - **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105`
 - **LTX-2**: port 8765, health at `/health`
 - **ACE-Step**: port 8189, systemd `acestep.service`
+
+### Sana Sprint 1.6B (A10)
+
+- **Host**: `150.136.85.48`
+- **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48`
+- **Port**: 8765, health at `/health`
+- **Model**: `Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers`
+- **Speed**: ~0.60s/img
+- **Registry**: Registers as `sana` type with OVH legacy service
+
+### Sana Sprint 1.6B (A100)
+
+- **Host**: `150.136.209.134`
+- **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134`
+- **Port**: 8765, health at `/health`
+- **Model**: `Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers`
+- **Speed**: ~0.25s/img
+- **Registry**: Registers as `sana` type with OVH legacy service
 
 ## Provider: EC2 (AWS)
 

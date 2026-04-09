@@ -26,18 +26,18 @@ export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {
-        aliases: [],
-        modelId: "gpt-5-mini",
-        provider: "azure-2",
+        aliases: ["gpt-5.4-nano", "gpt-5-mini"],
+        modelId: "gpt-5.4-nano",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.15),
-                promptCachedTokens: perMillion(0.04),
-                completionTextTokens: perMillion(0.6),
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.02),
+                completionTextTokens: perMillion(1.25),
             },
         ],
-        description: "OpenAI GPT-5 Mini - Fast & Balanced",
+        description: "OpenAI GPT-5.4 Nano - Fast & Balanced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -47,13 +47,13 @@ export const TEXT_SERVICES = {
     "openai-fast": {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
         modelId: "gpt-5-nano-2025-08-07",
-        provider: "azure-2",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.06),
-                promptCachedTokens: perMillion(0.01),
-                completionTextTokens: perMillion(0.44),
+                promptTextTokens: perMillion(0.05),
+                promptCachedTokens: perMillion(0.005),
+                completionTextTokens: perMillion(0.4),
             },
         ],
         description: "OpenAI GPT-5 Nano - Ultra Fast & Affordable",
@@ -64,19 +64,24 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-large": {
-        aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
-        modelId: "gpt-5.2-2025-12-11",
+        aliases: [
+            "gpt-5.4",
+            "gpt-5.4-reasoning",
+            "gpt-5.2",
+            "openai-reasoning",
+            "gpt-5.2-reasoning",
+        ],
+        modelId: "gpt-5.4",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.75),
-                promptCachedTokens: perMillion(0.175),
-                completionTextTokens: perMillion(14.0),
+                promptTextTokens: perMillion(2.5),
+                promptCachedTokens: perMillion(0.25),
+                completionTextTokens: perMillion(15.0),
             },
         ],
-        description: "OpenAI GPT-5.2 - Most Powerful & Intelligent",
+        description: "OpenAI GPT-5.4 - Most Powerful & Intelligent",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -132,12 +137,12 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1), // OVH: 0.09€ ≈ $0.10
-                completionTextTokens: perMillion(0.3), // OVH: 0.28€ ≈ $0.30
+                promptTextTokens: perMillion(0.1),
+                completionTextTokens: perMillion(0.3),
             },
         ],
-        description: "Mistral Small 3.2 24B - Efficient & Cost-Effective",
-        inputModalities: ["text"],
+        description: "Mistral Small 3.2 - Efficient & Cost-Effective",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         contextLength: 131072,
@@ -170,10 +175,9 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-audio-large": {
-        aliases: ["gpt-audio", "gpt-audio-2025-12-15"],
-        modelId: "gpt-audio-2025-12-15",
+        aliases: ["gpt-audio", "gpt-audio-1.5", "gpt-audio-2025-12-15"],
+        modelId: "gpt-audio-1.5",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -183,7 +187,7 @@ export const TEXT_SERVICES = {
                 completionAudioTokens: perMillion(80.0),
             },
         ],
-        description: "OpenAI GPT Audio - Premium Voice Input & Output",
+        description: "OpenAI GPT Audio 1.5 - Premium Voice Input & Output",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],
@@ -249,10 +253,10 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.01),
-                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.3), // Google rate: $0.10 — marked up for margin
+                promptCachedTokens: perMillion(0.03),
+                promptAudioTokens: perMillion(0.3), // Audio billed at same rate as text
+                completionTextTokens: perMillion(1.2), // Google rate: $0.40 — marked up for margin
             },
         ],
         description:
@@ -266,14 +270,14 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "deepseek": {
-        aliases: ["deepseek-v3", "deepseek-reasoning"],
-        modelId: "accounts/fireworks/models/deepseek-v3p2",
-        provider: "fireworks",
+        aliases: ["deepseek-v3", "deepseek-v3.2", "deepseek-reasoning"],
+        modelId: "DeepSeek-V3.2",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.56),
-                promptCachedTokens: perMillion(0.28),
+                promptTextTokens: perMillion(0.58),
+                promptCachedTokens: perMillion(0.29),
                 completionTextTokens: perMillion(1.68),
             },
         ],
@@ -286,10 +290,15 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "grok": {
-        aliases: ["grok-fast", "grok-4-1-fast"],
+        aliases: [
+            "grok-fast",
+            "grok-4-1-fast",
+            "grok-legacy",
+            "grok-4",
+            "grok-4-fast",
+        ],
         modelId: "grok-4-1-fast-non-reasoning",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -305,46 +314,29 @@ export const TEXT_SERVICES = {
         contextLength: 2000000,
         isSpecialized: false,
     },
-    "grok-reasoning": {
-        aliases: ["grok-4-1-fast-reasoning"],
-        modelId: "grok-4-1-fast-reasoning",
+    "grok-large": {
+        aliases: [
+            "grok-4-20",
+            "grok-4-20-reasoning",
+            "grok-reasoning",
+            "grok-4-1-fast-reasoning",
+        ],
+        modelId: "grok-4-20-reasoning",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
-                completionTextTokens: perMillion(0.5),
+                date: new Date("2026-04-08").getTime(),
+                promptTextTokens: perMillion(2.0),
+                promptCachedTokens: perMillion(0.2),
+                completionTextTokens: perMillion(6.0),
             },
         ],
-        description: "xAI Grok 4.1 Fast Reasoning - Chain-of-Thought Reasoning",
+        description: "xAI Grok 4.20 Reasoning - Most Powerful Grok",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 2000000,
-        isSpecialized: false,
-    },
-    "grok-legacy": {
-        aliases: ["grok-4", "grok-4-fast"],
-        modelId: "grok-4-fast-non-reasoning",
-        provider: "azure",
-        paidOnly: true,
-        hidden: true,
-        cost: [
-            {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
-                completionTextTokens: perMillion(0.5),
-            },
-        ],
-        description: "xAI Grok 4 Fast - Legacy",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        contextLength: 128000,
         isSpecialized: false,
     },
     "gemini-search": {
@@ -354,10 +346,10 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.01),
-                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.02),
+                promptAudioTokens: perMillion(0.2), // Audio billed at same rate as text
+                completionTextTokens: perMillion(0.8),
             },
         ],
         description: "Google Gemini 2.5 Flash Lite - With Google Search",
@@ -528,8 +520,8 @@ export const TEXT_SERVICES = {
     },
     "kimi": {
         aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
-        modelId: "accounts/fireworks/models/kimi-k2p5",
-        provider: "fireworks",
+        modelId: "Kimi-K2.5",
+        provider: "azure",
         cost: [
             {
                 date: new Date("2026-01-28").getTime(),
@@ -571,30 +563,6 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-3-pro-legacy": {
-        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
-        modelId: "gemini-3-pro-legacy",
-        provider: "google",
-        paidOnly: true,
-        hidden: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(2.0),
-                promptCachedTokens: perMillion(0.2),
-                completionTextTokens: perMillion(12.0),
-            },
-        ],
-        description: "Google Gemini 3 Pro",
-        inputModalities: ["text", "image", "audio", "video"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
-        search: true,
-        codeExecution: false,
-        contextLength: 1048576,
-        isSpecialized: false,
-    },
     "gemini-legacy": {
         aliases: ["gemini-2.5-pro"],
         modelId: "gemini-2.5-pro",
@@ -605,7 +573,7 @@ export const TEXT_SERVICES = {
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(1.25),
-                promptCachedTokens: perMillion(0.31), // ~25% of input price
+                promptCachedTokens: perMillion(0.31), // Google rate: $0.125 — marked up for margin
                 completionTextTokens: perMillion(10.0),
             },
         ],
@@ -623,7 +591,7 @@ export const TEXT_SERVICES = {
     "nova-fast": {
         aliases: ["amazon-nova-micro", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
-        provider: "aws",
+        provider: "bedrock",
         cost: [
             {
                 date: COST_START_DATE,
@@ -641,8 +609,7 @@ export const TEXT_SERVICES = {
     "nova": {
         aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2"],
         modelId: "us.amazon.nova-2-lite-v1:0",
-        provider: "aws",
-        paidOnly: true,
+        provider: "bedrock",
         cost: [
             {
                 date: COST_START_DATE,
@@ -660,8 +627,8 @@ export const TEXT_SERVICES = {
     },
     "glm": {
         aliases: ["glm-5", "glm-4.7", "glm-4p7"],
-        modelId: "accounts/fireworks/models/glm-5",
-        provider: "fireworks",
+        modelId: "zai.glm-5",
+        provider: "bedrock",
         cost: [
             {
                 date: new Date("2026-02-13").getTime(),
@@ -681,8 +648,8 @@ export const TEXT_SERVICES = {
     },
     "minimax": {
         aliases: ["minimax-m2.5", "minimax-m2p5"],
-        modelId: "accounts/fireworks/models/minimax-m2p5",
-        provider: "fireworks",
+        modelId: "minimax.minimax-m2.5",
+        provider: "bedrock",
         cost: [
             {
                 date: new Date("2026-01-05").getTime(),
@@ -697,6 +664,26 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 200000,
+        isSpecialized: false,
+    },
+    "mistral-large": {
+        aliases: ["mistral-large-3"],
+        modelId: "Mistral-Large-3",
+        provider: "azure",
+        cost: [
+            {
+                date: new Date("2026-04-08").getTime(),
+                promptTextTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.05),
+                completionTextTokens: perMillion(1.5),
+            },
+        ],
+        description: "Mistral Large 3 - Premium Multilingual & Reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 256000,
         isSpecialized: false,
     },
     "polly": {
@@ -723,7 +710,6 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3-coder-next"],
         modelId: "qwen3-coder-next",
         provider: "alibaba",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),

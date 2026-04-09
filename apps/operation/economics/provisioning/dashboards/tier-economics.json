@@ -310,7 +310,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Registered users broken down by tier. Tiers: Microbe (free), Spore, Seed, Flower, Nectar — each with increasing daily pollen allowances.",
+            "description": "Registered users broken down by tier. Tiers: Microbe (free), Spore, Seed, Flower, Nectar — each with increasing hourly pollen allowances.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -445,7 +445,7 @@
                         "uid": "PAD1A0A25CD30D456"
                     },
                     "format": 1,
-                    "rawSql": "SELECT SUM(CASE tier\n  WHEN 'microbe' THEN 0\n  WHEN 'spore' THEN 1.5/7.0\n  WHEN 'seed' THEN 3\n  WHEN 'flower' THEN 10\n  WHEN 'nectar' THEN 20\n  ELSE 0\nEND) as max_daily_liability\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 0",
+                    "rawSql": "SELECT SUM(CASE tier\n  WHEN 'microbe' THEN 0\n  WHEN 'spore' THEN 0.01 * 24\n  WHEN 'seed' THEN 0.15 * 24\n  WHEN 'flower' THEN 0.40 * 24\n  WHEN 'nectar' THEN 0.80 * 24\n  ELSE 0\nEND) as max_daily_liability\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 0",
                     "refId": "A"
                 }
             ],
@@ -517,7 +517,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Microbe ($0/day)"
+                                "value": "Microbe ($0/hr)"
                             },
                             {
                                 "id": "color",
@@ -536,7 +536,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Spore ($1.5/week)"
+                                "value": "Spore ($0.01/hr)"
                             },
                             {
                                 "id": "color",
@@ -555,7 +555,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Seed ($3/day)"
+                                "value": "Seed ($0.15/hr)"
                             },
                             {
                                 "id": "color",
@@ -574,7 +574,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Flower ($10/day)"
+                                "value": "Flower ($0.40/hr)"
                             },
                             {
                                 "id": "color",
@@ -593,7 +593,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Nectar ($20/day)"
+                                "value": "Nectar ($0.80/hr)"
                             },
                             {
                                 "id": "color",
@@ -905,7 +905,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "What percentage of their daily allowance do users actually consume on average? Lower = users leave allocation unused = we save money.",
+            "description": "What percentage of their hourly allowance do users actually consume on average? Lower = users leave allocation unused = we save money.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -942,7 +942,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Microbe ($0/day)"
+                                "value": "Microbe ($0/hr)"
                             }
                         ]
                     },
@@ -954,7 +954,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Spore ($1.5/week)"
+                                "value": "Spore ($0.01/hr)"
                             }
                         ]
                     },
@@ -966,7 +966,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Seed ($3/day)"
+                                "value": "Seed ($0.15/hr)"
                             }
                         ]
                     },
@@ -978,7 +978,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Flower ($10/day)"
+                                "value": "Flower ($0.40/hr)"
                             }
                         ]
                     },
@@ -990,7 +990,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Nectar ($20/day)"
+                                "value": "Nectar ($0.80/hr)"
                             }
                         ]
                     }
@@ -1046,7 +1046,7 @@
                     },
                     "format": 1,
                     "range": true,
-                    "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * (1.5/7.0))) * 100 as Spore FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'spore' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
+                    "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 0.24)) * 100 as Spore FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'spore' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
                     "refId": "A"
                 },
                 {
@@ -1056,7 +1056,7 @@
                     },
                     "format": 1,
                     "range": true,
-                    "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 3)) * 100 as Seed FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'seed' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
+                    "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 3.6)) * 100 as Seed FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'seed' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
                     "refId": "B"
                 },
                 {
@@ -1066,7 +1066,7 @@
                     },
                     "format": 1,
                     "range": true,
-                    "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 10)) * 100 as Flower FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'flower' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
+                    "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 9.6)) * 100 as Flower FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'flower' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
                     "refId": "C"
                 },
                 {
@@ -1076,7 +1076,7 @@
                     },
                     "format": 1,
                     "range": true,
-                    "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 20)) * 100 as Nectar FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'nectar' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
+                    "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 19.2)) * 100 as Nectar FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'nectar' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
                     "refId": "D"
                 }
             ],
@@ -1708,7 +1708,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Microbe ($0/day)"
+                                "value": "Microbe ($0/hr)"
                             },
                             {
                                 "id": "color",
@@ -1727,7 +1727,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Spore ($1.5/week)"
+                                "value": "Spore ($0.01/hr)"
                             },
                             {
                                 "id": "color",
@@ -1746,7 +1746,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Seed ($3/day)"
+                                "value": "Seed ($0.15/hr)"
                             },
                             {
                                 "id": "color",
@@ -1765,7 +1765,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Flower ($10/day)"
+                                "value": "Flower ($0.40/hr)"
                             },
                             {
                                 "id": "color",
@@ -1784,7 +1784,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Nectar ($20/day)"
+                                "value": "Nectar ($0.80/hr)"
                             },
                             {
                                 "id": "color",

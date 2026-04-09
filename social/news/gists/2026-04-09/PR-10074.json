@@ -1,0 +1,33 @@
+{
+  "pr_number": 10074,
+  "title": "Add DreamCanvas AI to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10074",
+  "merged_at": "2026-04-09T16:16:38Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Dreaming on canvas",
+    "blurb": "DreamCanvas AI just sprouted in the greenhouse! A fresh web interface for generating images with the Pollinations API.",
+    "summary": "Added DreamCanvas AI, a new web-based interface for generating images using the Pollinations API, to the community apps showcase.",
+    "impact": "Users can now discover and use DreamCanvas AI directly from our community apps directory.",
+    "keywords": [
+      "community",
+      "apps",
+      "image-generation",
+      "showcase"
+    ],
+    "visual_concept": "DreamCanvas AI implies art, painting, and imagination. Polly the bee as an artist (wearing a beret) painting on a digital canvas, accompanied by the Monitor Robot acting as an art assistant.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting on a glowing digital canvas. A chunky pixel robot with a CRT monitor head stands nearby holding a paint palette, screen glowing lime green (#ecf874). Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10074.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting on a glowing digital canvas. A chunky pixel robot with a CRT monitor head stands nearby holding a paint palette, screen glowing lime green (#ecf874). Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:17:29.508388+00:00",
+  "app_name": "DreamCanvas AI",
+  "app_url": "https://ethun01.github.io/image_gen/"
+}

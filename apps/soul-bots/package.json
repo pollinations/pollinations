@@ -1,0 +1,18 @@
+{
+  "name": "soul-bots",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx bot.ts",
+    "deepseek": "tsx bot.ts deepseek",
+    "openai": "tsx bot.ts openai"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "discord.js": "^14.16.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

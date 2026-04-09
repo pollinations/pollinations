@@ -440,10 +440,29 @@ function App() {
                     (a.stats?.total_requests || 0) - (a.stats?.total_4xx || 0);
                 const bTotal2 =
                     (b.stats?.total_requests || 0) - (b.stats?.total_4xx || 0);
+                const aHasModelHealth = aTotal2 > 0;
+                const bHasModelHealth = bTotal2 > 0;
+
+                // 4xx-only rows display as "—", so keep them below rows with
+                // real model health data regardless of sort direction.
+                if (aHasModelHealth !== bHasModelHealth) {
+                    return aHasModelHealth ? -1 : 1;
+                }
+
+                if (!aHasModelHealth && !bHasModelHealth) {
+                    return (
+                        (b.stats?.total_requests || 0) -
+                        (a.stats?.total_requests || 0)
+                    );
+                }
+
                 const aPct2 =
                     aTotal2 > 0 ? (a.stats?.status_2xx || 0) / aTotal2 : 0;
                 const bPct2 =
                     bTotal2 > 0 ? (b.stats?.status_2xx || 0) / bTotal2 : 0;
+                if (aPct2 === bPct2) {
+                    return bTotal2 - aTotal2;
+                }
                 return dir * (aPct2 - bPct2);
             }
             case "errors":

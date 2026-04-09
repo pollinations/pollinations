@@ -1,0 +1,33 @@
+{
+  "pr_number": 10096,
+  "title": "[codex] fix model monitor health reporting",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10096",
+  "merged_at": "2026-04-09T22:08:21Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Doctor's orders: better health metrics",
+    "blurb": "We've tuned up our internal model monitor to better track latency and hidden legacy models. Now our operators can spot anomalies faster and keep the hive buzzing smoothly.",
+    "summary": "Fixed Tinybird observability pipes to accurately report average latency for successful requests and improved model catalog matching in the internal monitor.",
+    "impact": "Operators now have clearer visibility into model health, with accurate latency metrics and better handling of hidden or legacy models.",
+    "keywords": [
+      "observability",
+      "monitoring",
+      "metrics",
+      "tinybird"
+    ],
+    "visual_concept": "The pollinations.ai bee mascot acting as a doctor or mechanic, inspecting a glowing retro monitor that displays healthy green charts. The monitor robot companion is looking relieved. Medical/health checkup metaphors mixed with tech observability.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny doctor's stethoscope, inspecting a glowing retro terminal that displays healthy green charts. The chunky monitor robot companion stands nearby looking relieved and happy. Soft lime green (#ecf874) and mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cozy pixel art, soft pastel gradients, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10096.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny doctor's stethoscope, inspecting a glowing retro terminal that displays healthy green charts. The chunky monitor robot companion stands nearby looking relieved and happy. Soft lime green (#ecf874) and mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cozy pixel art, soft pastel gradients, retro gaming vibes."
+  },
+  "generated_at": "2026-04-09T22:09:15.610933+00:00"
+}

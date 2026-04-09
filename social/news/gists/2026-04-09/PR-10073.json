@@ -1,0 +1,34 @@
+{
+  "pr_number": 10073,
+  "title": "Add Neuro Mate to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10073",
+  "merged_at": "2026-04-09T16:14:38Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new friend in the greenhouse",
+    "blurb": "Neuro Mate just landed in the community showcase! It's an Android app for AI roleplay with characters that actually remember you.",
+    "summary": "Added Neuro Mate, an Android-based AI roleplay chat app featuring characters with long-term memory, to the community showcase.",
+    "impact": "Community members can now discover Neuro Mate in the apps directory and explore its pollinations-powered roleplay features.",
+    "keywords": [
+      "community",
+      "app",
+      "chat",
+      "roleplay",
+      "android"
+    ],
+    "visual_concept": "Neuro Mate is an Android app for AI roleplay and chat. Visuals should include a smartphone, chat bubbles, and the pollinations bee interacting with a new robot/character friend, representing the AI companion.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny smartphone with glowing chat bubbles coming out of it. A friendly pixel robot character stands nearby, representing an AI roleplay companion. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10073.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny smartphone with glowing chat bubbles coming out of it. A friendly pixel robot character stands nearby, representing an AI roleplay companion. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:15:36.027045+00:00",
+  "app_name": "Neuro Mate",
+  "app_url": "https://www.rustore.ru/catalog/app/com.ntechinc.neuromate"
+}

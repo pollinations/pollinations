@@ -3,6 +3,7 @@ import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDashScopeModelConfig,
+    createFireworksModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
@@ -85,20 +86,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4-20-reasoning",
         ),
 
-    // -- Azure (Myceli Prod — eastus, DeepSeek) -------------------------------
-    "DeepSeek-V3.2": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/DeepSeek-V3.2/chat/completions?api-version=2024-12-01-preview",
-            "DeepSeek-V3.2",
-        ),
-    // -- Azure (Myceli Prod — eastus, Kimi) -----------------------------------
-    "Kimi-K2.5": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K2.5/chat/completions?api-version=2024-12-01-preview",
-            "Kimi-K2.5",
-        ),
+    // -- Fireworks AI (DeepSeek, Kimi) — bypassing Portkey/Azure stability issues
+    "accounts/fireworks/models/deepseek-v3p2": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v3p2",
+        }),
+    "accounts/fireworks/models/kimi-k2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p5",
+        }),
 
     // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
     "mistral-small-3.2-24b-instruct-2506": () =>

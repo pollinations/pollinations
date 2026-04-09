@@ -1,0 +1,34 @@
+{
+  "pr_number": 10070,
+  "title": "Add DAi to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10070",
+  "merged_at": "2026-04-09T16:08:11Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "DAi joins the greenhouse",
+    "blurb": "A fresh new app has sprouted in our community garden! DAi is now live, bringing chat and image generation powered by the Pollinations API.",
+    "summary": "Added DAi to the community apps showcase, featuring chat and image generation capabilities.",
+    "impact": "Users can now discover and interact with DAi directly from our community greenhouse.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "chat",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee welcoming a new friend (representing DAi) in a cozy digital greenhouse. The new friend could be a small robot holding a chat bubble and a tiny painting, symbolizing chat and image generation.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot welcoming a friendly little robot to a lush digital greenhouse filled with code-plants. The robot holds a tiny canvas and a pixelated speech bubble. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-09/PR-10070.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot welcoming a friendly little robot to a lush digital greenhouse filled with code-plants. The robot holds a tiny canvas and a pixelated speech bubble. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-09T16:09:10.921984+00:00",
+  "app_name": "DAi",
+  "app_url": "https://ai.dverse.fun"
+}

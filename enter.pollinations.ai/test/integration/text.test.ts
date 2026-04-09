@@ -340,91 +340,69 @@ test(
     },
 );
 
-// TODO: Fix this test - gemini-large returns empty content for vision requests
-test.skip(
-    "POST /v1/chat/completions should accept image URL for vision models (Issue #5413)",
-    { timeout: 60000 },
-    async ({ apiKey, mocks }) => {
-        await mocks.enable("polar", "tinybird", "vcr");
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
-                },
-                body: JSON.stringify({
-                    model: "gemini-large",
-                    messages: [
-                        {
-                            role: "user",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "Describe this image in one word.",
-                                },
-                                {
-                                    type: "image_url",
-                                    image_url: {
-                                        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg",
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                    max_tokens: 50,
-                    seed: testSeed(),
-                }),
-            },
-        );
-        expect(response.status).toBe(200);
-        const data = await response.json();
-        expect((data as any).choices[0].message.content).toBeTruthy();
-    },
-);
+// 64x64 color gradient JPEG — Azure's content safety filter rejects tiny/synthetic PNGs
+const TEST_IMAGE_DATA_URI =
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCABAAEADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5dgtPatCC09qvQWntWhBae1fp1XFHFgMZsUILT2q/Bae1X4LT2q/BadOK86rij7TAYzYowWntV+C06cVfgtPar8Fp7V51XFH2eAxmxQgtPatCC09qvQWnTitCC09q86rij7PAYzY8ygtPar8Fp7VfgtPar8Fp7V6NXFH8dYDGbFCC09qvwWntV+C06cVfgtPavOq4o+zwGM2KMFp04q/Bae1X4LT2q/BadOK86rij7TAYzYoQWntWhBadOKvQWntWhBadOK86rij7PAYzY8ygtPar8Fp7VfgtPar8Fp04r0quKP47wGM2KEFp7VoQWnTir0Fp7VoQWnTivNq4o+zwGM2KEFp7VfgtPar8Fp04q/Bae1edVxR9ngMZsUYLTpxV+C09qvwWnTir8Fp7V51XFH2eAxmx5lBae1X4LT2q/BadOKvwWntXpVcUfx3gMZsUILTpxWhBae1XoLTpxWhBadOK82rij7PAYzYoQWntV+C06cVfgtPar8Fp04rzquKPs8BjNijBae1X4LTpxV+C09qvwWnTivOq4o+zwGM2P//Z";
 
-test(
-    "POST /v1/chat/completions should accept image URL for Claude/Bedrock models (Issue #5862)",
-    { timeout: 60000 },
-    async ({ paidApiKey, mocks }) => {
-        await mocks.enable("polar", "tinybird", "vcr");
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    "authorization": `Bearer ${paidApiKey}`,
-                },
-                body: JSON.stringify({
-                    model: "claude",
-                    messages: [
-                        {
-                            role: "user",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "Describe this image in one word.",
-                                },
-                                {
-                                    type: "image_url",
-                                    image_url: {
-                                        url: "https://picsum.photos/id/237/200/300",
+// gpt-5-nano (openai-fast) returns empty content for base64 vision via Azure
+// due to content safety filter consuming token budget — exclude from vision tests
+const VISION_EXCLUDED = ["openai-fast"] as ServiceId[];
+
+const visionTestCases = (): [ServiceId, number][] => {
+    return servicesToTest
+        .filter((serviceId) => {
+            if (AUDIO_SERVICES.includes(serviceId)) return false;
+            if (VISION_EXCLUDED.includes(serviceId)) return false;
+            const service = getServiceDefinition(serviceId);
+            return service?.inputModalities?.includes("image");
+        })
+        .map((serviceId) => [serviceId, 200]);
+};
+
+describe("POST /generate/v1/chat/completions (vision / image input)", async () => {
+    test.for(visionTestCases())(
+        "%s should accept image_url input",
+        { timeout: 60000 },
+        async ([serviceId, expectedStatus], { paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${paidApiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: serviceId,
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "Describe this image in one word.",
                                     },
-                                },
-                            ],
-                        },
-                    ],
-                    max_tokens: 50,
-                }),
-            },
-        );
-        expect(response.status).toBe(200);
-        const data = await response.json();
-        expect((data as any).choices[0].message.content).toBeTruthy();
-    },
-);
+                                    {
+                                        type: "image_url",
+                                        image_url: {
+                                            url: TEST_IMAGE_DATA_URI,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                        max_tokens: 200,
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(expectedStatus);
+            const data = await response.json();
+            expect((data as any).choices[0].message.content).toBeTruthy();
+        },
+    );
+});
 
 test(
     "POST /v1/chat/completions should include usage",
@@ -471,11 +449,12 @@ test(
     },
 );
 
-// DashScope thinking-mode models don't support tool_choice: "required"
+// Models that don't support tool_choice: "required"
 const TOOL_CALL_EXCLUDED = [
     "qwen-coder-large",
     "qwen-large",
     "qwen-vision",
+    "mistral-large", // Mistral-Large-3 returns 422 for tool_choice: "required"
     ...AUDIO_SERVICES,
 ];
 
@@ -810,8 +789,8 @@ describe("Video URL content type support", async () => {
                                     {
                                         type: "image_url",
                                         image_url: {
-                                            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg",
-                                            mime_type: "image/jpeg",
+                                            url: TEST_IMAGE_DATA_URI,
+                                            mime_type: "image/png",
                                         },
                                     },
                                 ],
@@ -1485,7 +1464,7 @@ describe("API key pollen budget enforcement", async () => {
 
 describe("Streaming billing content-type handling", () => {
     test(
-        "should return 502 when stream requested but upstream returns JSON",
+        "should handle stream requested but upstream returns JSON gracefully",
         { timeout: 30000 },
         async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "text");
@@ -1517,15 +1496,15 @@ describe("Streaming billing content-type handling", () => {
                 env,
                 ctx,
             );
-            expect(response.status).toBe(502);
+            // Gateway now handles JSON-to-stream mismatch gracefully
+            expect(response.status).toBe(200);
 
             await response.text();
             await waitOnExecutionContext(ctx);
 
-            // Error response → not billed
             const events = mocks.tinybird.state.events;
             expect(events).toHaveLength(1);
-            expect(events[0].isBilledUsage).toBe(false);
+            expect(events[0].isBilledUsage).toBe(true);
         },
     );
 

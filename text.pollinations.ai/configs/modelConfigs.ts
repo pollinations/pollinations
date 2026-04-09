@@ -3,7 +3,6 @@ import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDashScopeModelConfig,
-    createFireworksModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
@@ -38,35 +37,17 @@ function createVertexGeminiConfig(
 
 export const portkeyConfig: PortkeyConfigMap = {
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
-    "gpt-5-mini": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-mini/chat/completions?api-version=2024-12-01-preview",
-            "gpt-5-mini",
-        ),
-    "gpt-5-nano": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
-            "gpt-5-nano",
-        ),
-    "gpt-5.4-mini": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-mini/chat/completions?api-version=2024-12-01-preview",
-            "gpt-5.4-mini",
-        ),
     "gpt-5.4-nano": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-nano/chat/completions?api-version=2024-12-01-preview",
             "gpt-5.4-nano",
         ),
-    "gpt-5.2": () =>
+    "gpt-5-nano-2025-08-07": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.2/chat/completions?api-version=2024-12-01-preview",
-            "gpt-5.2",
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5-nano-2025-08-07",
         ),
     "gpt-5.4": () =>
         createAzureModelConfig(
@@ -215,15 +196,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
 
-    // -- Fireworks AI (GLM, MiniMax — staying on Fireworks for now) -----------
-    "accounts/fireworks/models/glm-5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5",
-        }),
-    "accounts/fireworks/models/minimax-m2p5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/minimax-m2p5",
-        }),
+    // -- AWS Bedrock (GLM & MiniMax) ---------------------------------------------
+    "glm-5": () => createBedrockNativeConfig({ model: "zai.glm-5" }),
+    "minimax-m2.5": () =>
+        createBedrockNativeConfig({ model: "minimax.minimax-m2.5" }),
 
     // -- Community Models -----------------------------------------------------
     "polly": () =>

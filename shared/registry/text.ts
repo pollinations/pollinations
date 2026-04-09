@@ -26,64 +26,7 @@ export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {
-        aliases: ["gpt-5-mini"],
-        modelId: "gpt-5-mini",
-        provider: "azure",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.25),
-                promptCachedTokens: perMillion(0.025),
-                completionTextTokens: perMillion(2.0),
-            },
-        ],
-        description: "OpenAI GPT-5 Mini - Fast & Balanced",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        tools: true,
-        contextLength: 400000,
-        isSpecialized: false,
-    },
-    "openai-fast": {
-        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
-        modelId: "gpt-5-nano",
-        provider: "azure",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.05),
-                promptCachedTokens: perMillion(0.01),
-                completionTextTokens: perMillion(0.4),
-            },
-        ],
-        description: "OpenAI GPT-5 Nano - Ultra Fast & Affordable",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        tools: true,
-        contextLength: 400000,
-        isSpecialized: false,
-    },
-    "gpt-5.4-mini": {
-        aliases: [],
-        modelId: "gpt-5.4-mini",
-        provider: "azure",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.75),
-                promptCachedTokens: perMillion(0.07),
-                completionTextTokens: perMillion(4.5),
-            },
-        ],
-        description: "OpenAI GPT-5.4 Mini - Latest & Most Capable Mini",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        tools: true,
-        contextLength: 400000,
-        isSpecialized: false,
-    },
-    "gpt-5.4-nano": {
-        aliases: [],
+        aliases: ["gpt-5.4-nano", "gpt-5-mini"],
         modelId: "gpt-5.4-nano",
         provider: "azure",
         cost: [
@@ -94,7 +37,26 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(1.25),
             },
         ],
-        description: "OpenAI GPT-5.4 Nano - Latest Ultra Fast Model",
+        description: "OpenAI GPT-5.4 Nano - Fast & Balanced",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 400000,
+        isSpecialized: false,
+    },
+    "openai-fast": {
+        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
+        modelId: "gpt-5-nano-2025-08-07",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.05),
+                promptCachedTokens: perMillion(0.005),
+                completionTextTokens: perMillion(0.4),
+            },
+        ],
+        description: "OpenAI GPT-5 Nano - Ultra Fast & Affordable",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -102,27 +64,13 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-large": {
-        aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
-        modelId: "gpt-5.2",
-        provider: "azure",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(1.75),
-                promptCachedTokens: perMillion(0.175),
-                completionTextTokens: perMillion(14.0),
-            },
+        aliases: [
+            "gpt-5.4",
+            "gpt-5.4-reasoning",
+            "gpt-5.2",
+            "openai-reasoning",
+            "gpt-5.2-reasoning",
         ],
-        description: "OpenAI GPT-5.2 - Powerful Reasoning Model",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
-        contextLength: 400000,
-        isSpecialized: false,
-    },
-    "gpt-5.4": {
-        aliases: ["gpt-5.4-reasoning"],
         modelId: "gpt-5.4",
         provider: "azure",
         cost: [
@@ -286,10 +234,10 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.3),
+                promptTextTokens: perMillion(0.3), // Google rate: $0.10 — marked up for margin
                 promptCachedTokens: perMillion(0.03),
                 promptAudioTokens: perMillion(0.3), // Audio billed at same rate as text
-                completionTextTokens: perMillion(1.2),
+                completionTextTokens: perMillion(1.2), // Google rate: $0.40 — marked up for margin
             },
         ],
         description:
@@ -303,7 +251,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "deepseek": {
-        aliases: ["deepseek-v3", "deepseek-v3.2"],
+        aliases: ["deepseek-v3", "deepseek-v3.2", "deepseek-reasoning"],
         modelId: "DeepSeek-V3.2",
         provider: "azure",
         cost: [
@@ -323,7 +271,13 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "grok": {
-        aliases: ["grok-fast", "grok-4-1-fast"],
+        aliases: [
+            "grok-fast",
+            "grok-4-1-fast",
+            "grok-legacy",
+            "grok-4",
+            "grok-4-fast",
+        ],
         modelId: "grok-4-1-fast-non-reasoning",
         provider: "azure",
         cost: [
@@ -342,14 +296,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "grok-large": {
-        aliases: ["grok-4-20", "grok-4-20-reasoning"],
+        aliases: [
+            "grok-4-20",
+            "grok-4-20-reasoning",
+            "grok-reasoning",
+            "grok-4-1-fast-reasoning",
+        ],
         modelId: "grok-4-20-reasoning",
         provider: "azure",
         cost: [
             {
                 date: new Date("2026-04-08").getTime(),
                 promptTextTokens: perMillion(2.0),
-                promptCachedTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.2),
                 completionTextTokens: perMillion(6.0),
             },
         ],
@@ -595,7 +554,7 @@ export const TEXT_SERVICES = {
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(1.25),
-                promptCachedTokens: perMillion(0.31), // ~25% of input price
+                promptCachedTokens: perMillion(0.31), // Google rate: $0.125 — marked up for margin
                 completionTextTokens: perMillion(10.0),
             },
         ],
@@ -649,8 +608,8 @@ export const TEXT_SERVICES = {
     },
     "glm": {
         aliases: ["glm-5", "glm-4.7", "glm-4p7"],
-        modelId: "accounts/fireworks/models/glm-5",
-        provider: "fireworks",
+        modelId: "zai.glm-5",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -671,8 +630,8 @@ export const TEXT_SERVICES = {
     },
     "minimax": {
         aliases: ["minimax-m2.5", "minimax-m2p5"],
-        modelId: "accounts/fireworks/models/minimax-m2p5",
-        provider: "fireworks",
+        modelId: "minimax.minimax-m2.5",
+        provider: "bedrock",
         paidOnly: true,
         cost: [
             {
@@ -697,8 +656,9 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-04-08").getTime(),
-                promptTextTokens: perMillion(2.0),
-                completionTextTokens: perMillion(5.0),
+                promptTextTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.05),
+                completionTextTokens: perMillion(1.5),
             },
         ],
         description: "Mistral Large 3 - Premium Multilingual & Reasoning",

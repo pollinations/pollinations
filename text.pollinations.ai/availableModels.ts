@@ -20,26 +20,14 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-mini"],
-    },
-    {
-        name: "openai-fast",
-        config: portkeyConfig["gpt-5-nano"],
-    },
-    {
-        name: "gpt-5.4-mini",
-        config: portkeyConfig["gpt-5.4-mini"],
-    },
-    {
-        name: "gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
     },
     {
-        name: "openai-large",
-        config: portkeyConfig["gpt-5.2"],
+        name: "openai-fast",
+        config: portkeyConfig["gpt-5-nano-2025-08-07"],
     },
     {
-        name: "gpt-5.4",
+        name: "openai-large",
         config: portkeyConfig["gpt-5.4"],
     },
     {
@@ -187,11 +175,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["accounts/fireworks/models/glm-5"],
+        config: portkeyConfig["glm-5"],
     },
     {
         name: "minimax",
-        config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
+        config: portkeyConfig["minimax-m2.5"],
     },
     {
         name: "mistral-large",

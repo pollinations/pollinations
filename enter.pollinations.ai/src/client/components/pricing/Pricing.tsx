@@ -7,10 +7,16 @@ import { UnifiedModelTable } from "./model-table.tsx";
 import { useModelStats } from "./use-model-stats.ts";
 
 type PricingProps = {
+    tierBalance?: number;
     packBalance?: number;
+    cryptoBalance?: number;
 };
 
-export const Pricing: FC<PricingProps> = ({ packBalance }) => {
+export const Pricing: FC<PricingProps> = ({
+    tierBalance,
+    packBalance,
+    cryptoBalance,
+}) => {
     useEffect(() => {
         if (window.location.hash === "#models") {
             const el = document.getElementById("models");
@@ -60,7 +66,9 @@ export const Pricing: FC<PricingProps> = ({ packBalance }) => {
                         videoModels={videoModels}
                         audioModels={audioModels}
                         textModels={textModels}
+                        tierBalance={tierBalance}
                         packBalance={packBalance}
+                        cryptoBalance={cryptoBalance}
                     />
                 </div>
 

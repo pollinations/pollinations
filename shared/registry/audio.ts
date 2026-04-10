@@ -129,7 +129,7 @@ export const AUDIO_SERVICES = {
             },
         ],
         description:
-            "ACE-Step 1.5 Turbo — Fast open-source music generation with lyrics support",
+            "ACE-Step 1.5 Turbo - Fast open-source music generation with lyrics support",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         alpha: true,

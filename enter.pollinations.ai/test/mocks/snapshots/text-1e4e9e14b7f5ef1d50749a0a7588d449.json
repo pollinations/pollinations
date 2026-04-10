@@ -1,0 +1,87 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "kimi",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "860",
+      "content-type": "application/json",
+      "date": "Thu, 09 Apr 2026 11:56:15 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "accounts/fireworks/models/kimi-k2p5",
+      "x-usage-completion-text-tokens": "73",
+      "x-usage-prompt-cached-tokens": "9",
+      "x-usage-prompt-text-tokens": "11"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_ca2ccabab7e74eec286164ea604b1c4b",
+        "object": "chat.completion",
+        "created": 1775735772,
+        "model": "accounts/fireworks/models/kimi-k2p5",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Yes.",
+              "reasoning_content": "The user is asking a simple factual question: \"Is Berlin the capital of Germany? Reply yes or no.\"\n\n This is a straightforward question. Berlin is indeed the capital of Germany. I should answer \"yes\" as requested.\n\n The user specifically asked to reply \"yes or no\", so I should provide a concise one-word answer.\n\n Answer: Yes"
+            },
+            "finish_reason": "stop",
+            "token_ids": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 20,
+          "total_tokens": 93,
+          "completion_tokens": 73,
+          "prompt_tokens_details": {
+            "cached_tokens": 9
+          }
+        },
+        "prompt_token_ids": [
+          163587,
+          2482,
+          163601,
+          3229,
+          28202,
+          276,
+          10484,
+          318,
+          16458,
+          30,
+          84156,
+          15024,
+          528,
+          1495,
+          13,
+          163586,
+          163588,
+          69702,
+          163601,
+          163606
+        ]
+      }
+    }
+  }
+}

@@ -46,12 +46,12 @@ export async function sendSpendNotification({
 
     const title =
         totalPrice >= 0.1
-            ? `${totalPrice.toFixed(3)} pollen spent`
-            : `${Math.round(totalPrice * 1_000_000)} μp (micro-pollen) spent`;
-    const bodyParts = [`Model: ${model}`];
-    if (apiKeyName) bodyParts.push(`Key: ${apiKeyName}`);
-    if (referrerDomain) bodyParts.push(`From: ${referrerDomain}`);
-    const body = bodyParts.join(" · ");
+            ? `🪷 ${totalPrice.toFixed(3)} pollen spent`
+            : `🪷 ${Math.round(totalPrice * 1_000_000)} μp (micro-pollen) spent`;
+    const bodyParts = [`✨ ${model}`];
+    if (apiKeyName) bodyParts.push(`🔑 ${apiKeyName}`);
+    if (referrerDomain) bodyParts.push(`🌐 ${referrerDomain}`);
+    const body = bodyParts.join("  ");
 
     await Promise.allSettled(
         subscriptions.map(async (sub) => {

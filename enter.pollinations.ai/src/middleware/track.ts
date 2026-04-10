@@ -224,7 +224,6 @@ export const track = (eventType: EventType) =>
                 ) {
                     await sendSpendNotification({
                         db: c.env.DB,
-                        kv: c.env.KV,
                         userId: userTracking.userId,
                         totalPrice: responseTracking.price.totalPrice,
                         model: requestTracking.resolvedModelRequested,

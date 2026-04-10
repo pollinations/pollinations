@@ -1,7 +1,11 @@
 import { type FC, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Badge } from "../ui/badge.tsx";
-import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
+import {
+    calculateForBalance,
+    calculatePerPollen,
+    TOP_UP_TOOLTIP,
+} from "./calculations.ts";
 import {
     getModelDisplayName,
     hasAudioInput,
@@ -74,7 +78,7 @@ export const ModelRow: FC<ModelRowProps> = ({
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 whitespace-nowrap">
                     {isDisabled ? (
-                        <Tooltip content="Top up your pollen balance to unlock this model.">
+                        <Tooltip content={TOP_UP_TOOLTIP}>
                             <span
                                 className={cn("text-sm font-medium opacity-75")}
                             >
@@ -112,7 +116,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                             <Tooltip
                                 content={
                                     isDisabled
-                                        ? "Top up your pollen balance to unlock this model."
+                                        ? TOP_UP_TOOLTIP
                                         : "This model uses purchased pollen only."
                                 }
                             >
@@ -183,7 +187,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                         content={
                             <span className="text-xs">
                                 {isDisabled
-                                    ? "🔒 Top up to use this model"
+                                    ? TOP_UP_TOOLTIP
                                     : `≈ ${balanceRequests} with current balance`}
                             </span>
                         }

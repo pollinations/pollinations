@@ -3,7 +3,11 @@ import { cn } from "../../../util.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 
-import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
+import {
+    calculateForBalance,
+    calculatePerPollen,
+    TOP_UP_TOOLTIP,
+} from "./calculations.ts";
 import {
     getModelDisplayName,
     hasAudioInput,
@@ -251,7 +255,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                         />
                     </svg>
                     {isDisabled ? (
-                        <Tooltip content="Top up your pollen balance to unlock this model.">
+                        <Tooltip content={TOP_UP_TOOLTIP}>
                             <span className="text-sm font-medium opacity-75">
                                 {displayName || model.name}
                             </span>
@@ -328,7 +332,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                     {balanceRequests !== null && (
                         <div className="text-xs text-teal-700">
                             {isDisabled
-                                ? "🔒 Top up to use this model"
+                                ? TOP_UP_TOOLTIP
                                 : `≈ ${balanceRequests} with current balance`}
                         </div>
                     )}
@@ -456,18 +460,6 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
     );
 };
 
-// --- Column header tooltip ---
-
-const PerPollenTooltip: FC = () => (
-    <div className="w-64">
-        <p className="text-xs text-gray-700">
-            Approximate number of requests 1 pollen allows if fully spent on a
-            single model. Based on 7-day community average — actual costs vary
-            with modality and output length.
-        </p>
-    </div>
-);
-
 // --- Main export ---
 
 type SectionType = "image" | "video" | "audio" | "text";
@@ -517,7 +509,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     {tabButtons}
                 </div>
                 <div className="flex-1 min-w-6" />
-                <Tooltip content={<PerPollenTooltip />}>
+                <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
                     <div className="cursor-help text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px]">
                         <div className="text-sm font-bold text-gray-900">
                             1 pollen

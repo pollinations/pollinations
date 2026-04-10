@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-09",
+  "period_start": "2026-04-09",
+  "period_end": "2026-04-09",
+  "generated_at": "2026-04-10T06:34:17.589313+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-09/images/twitter.jpg"
+    }
+  ],
+  "text": "made gptimage-large and FLUX.1 Kontext completely free today. 20 new community apps just landed in the showcase. also rolled deepseek and kimi back to fireworks because azure kept dropping connections. 23 PRs merged. building."
+}

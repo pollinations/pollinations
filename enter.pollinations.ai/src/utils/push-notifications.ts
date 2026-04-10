@@ -47,7 +47,7 @@ export async function sendSpendNotification({
     const title =
         totalPrice >= 0.1
             ? `${totalPrice.toFixed(3)} pollen spent`
-            : `${Math.round(totalPrice * 1_000_000)} μp spent`;
+            : `${Math.round(totalPrice * 1_000_000)} μp (micro-pollen) spent`;
     const bodyParts = [`Model: ${model}`];
     if (apiKeyName) bodyParts.push(`Key: ${apiKeyName}`);
     if (referrerDomain) bodyParts.push(`From: ${referrerDomain}`);

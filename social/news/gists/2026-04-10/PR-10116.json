@@ -1,0 +1,35 @@
+{
+  "pr_number": 10116,
+  "title": "move deepseek to Azure FW deployment and kimi to Bedrock",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10116",
+  "merged_at": "2026-04-10T15:00:07Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Smoother chats, stronger clouds",
+    "blurb": "We've rewired the backend for DeepSeek and Kimi to use Azure and AWS Bedrock. Expect faster responses and fewer timeouts when chatting with these models.",
+    "summary": "Migrated the backend routing for DeepSeek and Kimi models to Azure and AWS Bedrock to resolve timeout issues and improve overall stability.",
+    "impact": "Chatting with DeepSeek and Kimi is now significantly more reliable, with fewer dropped connections and faster response times.",
+    "keywords": [
+      "deepseek",
+      "kimi",
+      "infrastructure",
+      "reliability",
+      "models",
+      "backend"
+    ],
+    "visual_concept": "Polly the bee acting as a network engineer, routing glowing data cables into sturdy, reliable server racks. Nomnom creature happily eating the old, timed-out error logs to show the elimination of timeouts.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny construction hardhat, plugging glowing data cables into a sturdy retro server rack. The round Nomnom creature sits nearby, happily eating a stack of red 'timeout' error logs. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-10/PR-10116.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny construction hardhat, plugging glowing data cables into a sturdy retro server rack. The round Nomnom creature sits nearby, happily eating a stack of red 'timeout' error logs. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-10T15:01:07.420273+00:00"
+}

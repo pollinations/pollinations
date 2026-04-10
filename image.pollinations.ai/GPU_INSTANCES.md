@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-04-05
+Last updated: 2026-04-07
 
 ## Capacity Summary
 
@@ -131,7 +131,7 @@ curl -s https://hsl3ksl31lvrcc-8765.proxy.runpod.net/generate -X POST \
 curl -s http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register | python3 -m json.tool
 ```
 
-**Restart a worker:**
+**Restart a Flux worker:**
 ```bash
 ssh -i ~/.ssh/thomashkey -p 28895 root@38.65.239.17
 screen -S flux-gpu0 -X quit
@@ -140,11 +140,28 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
   SERVICE_TYPE=flux python /opt/pollinations/image.pollinations.ai/nunchaku/server.py 2>&1 | tee /tmp/flux-gpu0.log'
 ```
 
+**Restart a Z-Image worker:**
+```bash
+ssh -i ~/.ssh/thomashkey -p 28895 root@38.65.239.17
+screen -S zimage-gpu2 -X quit
+screen -dmS zimage-gpu2 bash -c 'cd /opt/pollinations/image.pollinations.ai/z-image && \
+  source venv/bin/activate && \
+  HF_TOKEN=<token> CUDA_VISIBLE_DEVICES=2 PORT=8767 PUBLIC_IP=hsl3ksl31lvrcc-8767.proxy.runpod.net PUBLIC_PORT=443 \
+  SERVICE_TYPE=zimage python server.py 2>&1 | tee /tmp/zimage-gpu2.log'
+```
+
+> **CRITICAL**: Z-Image workers MUST use `z-image/server.py` with the `z-image/venv`, NOT `nunchaku/server.py`.
+> The `cd` into the z-image directory is required because `model_cache` paths are relative.
+> Flux workers use `nunchaku/server.py` with the `nunchaku/venv`.
+> Mixing these up causes Z-Image to silently serve Flux output (wrong model, wrong steps, wrong dimensions).
+
 **Key notes:**
 - Uses INT4 quantization (not FP4) — RTX 4090 is Ada Lovelace, not Blackwell
+- Flux MAX_PIXELS capped to 900x900 (810K pixels) to prevent CUDA hangs on RTX 4090 — 1024x1024 requests get reduced to ~768x768. RTX 5090 would not need this cap.
 - Heartbeats register with `https://` proxy URLs (patched `server.py` line 63)
 - Replaced Vast.ai Taiwan instance for production Flux/Z-Image traffic
 - ~2.9s per Flux image, ~1.5s per Z-Image at 512x512
+- Z-Image model loads from `model_cache/` (relative path) — must `cd` to z-image dir before starting
 
 ### Serverless Endpoints (Elliot)
 
@@ -224,7 +241,7 @@ GPU workers send heartbeats to EC2 gateway:
 |-----|----------|----------|
 | `~/.ssh/pollinations_services_2026` | Vast.ai | All instances |
 | `~/.runpod/ssh/RunPod-Key-Go` | RunPod | All pods |
-| `~/.ssh/thomashkey` | Lambda Labs, EC2 builder | GH200, temp EC2 |
+| `~/.ssh/thomashkey` | RunPod, Lambda Labs, EC2 builder | RunPod pods, GH200, temp EC2 |
 | `~/.ssh/enter-services-shared-key` | EC2 prod | enter services |
 | `~/.ssh/enter-services-staging-key` | EC2 staging | enter services |
 | `~/.ssh/id_rsa_ovh` | OVH | Legacy service |

@@ -507,6 +507,8 @@ export const TEXT_SERVICES = {
             {
                 date: new Date("2026-01-28").getTime(),
                 promptTextTokens: perMillion(0.6),
+                // Bedrock charges cached tokens at the same rate as regular input
+                promptCachedTokens: perMillion(0.6),
                 completionTextTokens: perMillion(3.0),
             },
         ],

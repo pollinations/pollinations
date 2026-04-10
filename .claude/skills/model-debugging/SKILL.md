@@ -155,7 +155,7 @@ Key variables:
 - `AZURE_CONTENT_SAFETY_ENDPOINT` - Azure Content Safety API endpoint
 - `AZURE_CONTENT_SAFETY_API_KEY` - Azure Content Safety API key
 - `GOOGLE_PROJECT_ID` - Google Cloud project for Vertex AI
-- `AZURE_MYCELI_FLUX_KONTEXT_ENDPOINT` - Azure Kontext model endpoint
+- `AZURE_MYCELI_PROD_SWEDEN_API_KEY` - Shared Azure API key (Kontext, GPT Image, GPT Image 1.5)
 
 ## text.pollinations.ai
 ```bash

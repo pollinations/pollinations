@@ -252,14 +252,14 @@ export const TEXT_SERVICES = {
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-v3.2", "deepseek-reasoning"],
-        modelId: "DeepSeek-V3.2",
+        modelId: "FW-DeepSeek-V3.2",
         provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.58),
-                promptCachedTokens: perMillion(0.29),
-                completionTextTokens: perMillion(1.68),
+                promptTextTokens: perMillion(0.62),
+                promptCachedTokens: perMillion(0.31),
+                completionTextTokens: perMillion(1.85),
             },
         ],
         description: "DeepSeek V3.2 - Efficient Reasoning & Agentic AI",
@@ -501,13 +501,12 @@ export const TEXT_SERVICES = {
     },
     "kimi": {
         aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
-        modelId: "Kimi-K2.5",
-        provider: "azure",
+        modelId: "moonshotai.kimi-k2.5",
+        provider: "bedrock",
         cost: [
             {
                 date: new Date("2026-01-28").getTime(),
                 promptTextTokens: perMillion(0.6),
-                promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(3.0),
             },
         ],

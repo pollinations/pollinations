@@ -3,7 +3,6 @@ import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDashScopeModelConfig,
-    createFireworksModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
@@ -86,15 +85,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4-20-reasoning",
         ),
 
-    // -- Fireworks AI (DeepSeek, Kimi) — bypassing Portkey/Azure stability issues
-    "accounts/fireworks/models/deepseek-v3p2": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v3p2",
-        }),
-    "accounts/fireworks/models/kimi-k2p5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/kimi-k2p5",
-        }),
+    // -- Azure (Myceli Prod — eastus, Fireworks-hosted DeepSeek) ---------------
+    "FW-DeepSeek-V3.2": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/FW-DeepSeek-V3.2/chat/completions?api-version=2024-12-01-preview",
+            "FW-DeepSeek-V3.2",
+        ),
+
+    // -- AWS Bedrock (Kimi K2.5) — Azure FW-Kimi backend is unstable -----------
+    "moonshotai.kimi-k2.5": () =>
+        createBedrockNativeConfig({ model: "moonshotai.kimi-k2.5" }),
 
     // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
     "mistral-small-3.2-24b-instruct-2506": () =>

@@ -1,0 +1,33 @@
+{
+  "pr_number": 10109,
+  "title": "restore website title sizes and match play subtitle pattern",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10109",
+  "merged_at": "2026-04-10T08:51:03Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Big text is back",
+    "blurb": "We've restored our website titles to their former, glorious sizes and sprinkled some fresh emojis on the Play page. Sometimes bigger really is better.",
+    "summary": "Restored website title and heading sizes to their previous larger dimensions and standardized the Play page subtitle format.",
+    "impact": "Visitors will notice more prominent, readable headings across the site and a consistent, emoji-friendly subtitle style on the Play page.",
+    "keywords": [
+      "ui",
+      "frontend",
+      "typography",
+      "design"
+    ],
+    "visual_concept": "Polly the bee adjusting or painting large, chunky pixel letters. Represents typography and UI improvements.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, adjusting giant, chunky pixel letters that spell 'PLAY'. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-10/PR-10109.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, adjusting giant, chunky pixel letters that spell 'PLAY'. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-10T08:52:31.552209+00:00"
+}

@@ -197,7 +197,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const balanceRequests = isSignedIn
         ? calculateForBalance(model, effectiveBalance)
         : null;
-    const isDisabled = isSignedIn && effectiveBalance <= 0;
+    const isDisabled = isSignedIn && balanceRequests === "0";
     const capabilities = [
         hasVision(model.name) && "👁️",
         hasAudioInput(model.name) && "🎙️",
@@ -327,7 +327,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
                     {balanceRequests !== null && (
                         <div className="text-xs text-teal-700">
-                            {balanceRequests === "0" || isDisabled
+                            {isDisabled
                                 ? "🔒 Top up to use this model"
                                 : `≈ ${balanceRequests} with current balance`}
                         </div>

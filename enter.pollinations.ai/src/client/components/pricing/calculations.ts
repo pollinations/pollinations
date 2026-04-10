@@ -42,8 +42,9 @@ export function calculateForBalance(
     effectiveBalance: number,
 ): string {
     if (!model.realAvgCost || model.realAvgCost <= 0) return "—";
-    if (effectiveBalance <= 0) return "0";
 
     const requests = effectiveBalance / model.realAvgCost;
+    if (requests < 1) return "0";
+
     return formatCount(requests);
 }

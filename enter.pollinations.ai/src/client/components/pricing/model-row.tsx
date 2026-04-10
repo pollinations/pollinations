@@ -59,7 +59,7 @@ export const ModelRow: FC<ModelRowProps> = ({
     const balanceRequests = isSignedIn
         ? calculateForBalance(model, effectiveBalance)
         : null;
-    const isDisabled = isSignedIn && effectiveBalance <= 0;
+    const isDisabled = isSignedIn && balanceRequests === "0";
 
     return (
         <div
@@ -182,7 +182,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                     <Tooltip
                         content={
                             <span className="text-xs">
-                                {balanceRequests === "0" || isDisabled
+                                {isDisabled
                                     ? "🔒 Top up to use this model"
                                     : `≈ ${balanceRequests} with current balance`}
                             </span>

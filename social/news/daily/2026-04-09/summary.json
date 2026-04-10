@@ -1,0 +1,103 @@
+{
+  "date": "2026-04-09",
+  "period_start": "2026-04-09",
+  "period_end": "2026-04-09",
+  "title": "Heavyweight models drop the paywall",
+  "summary": "We moved top-tier models like GPT-5.4 and FLUX.1 to the free tier, stabilized text generation, and merged a massive wave of 20 new community apps.\n\nWe consolidated some backend providers and used the efficiency gains to move a massive chunk of our premium models to the free tier. GPT-5.4, Grok, Qwen Coder, gptimage-large, and FLUX.1 Kontext are now freely accessible. We also wired up Mistral-Large-3 and Grok-4-20, because why not.\n\nThe showcase directory exploded today. The community shipped native clients for Mac (Warden) and Android (PerChamp), a zero-dependency HTML playground (Dreamframe), and a SillyTavern avatar generator. The rest of the haul includes everything from philosophical text analyzers and emoji-to-image generators to botanical quiz games and screenshot deconstructors. The ecosystem is buzzing.\n\nAzure's gateways were buckling under the concurrent load for Kimi and DeepSeek, resulting in failed requests. We rerouted both models through Fireworks to restore stability. Text generation for these models is back to being reliable.",
+  "pr_count": 23,
+  "prs": [
+    {
+      "number": 10049,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10064,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10066,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10067,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10068,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10069,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10070,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10071,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10072,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10073,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10074,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10075,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10076,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10077,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10078,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10080,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10081,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10082,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10084,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10086,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10087,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10094,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10098,
+      "date": "2026-04-09"
+    }
+  ],
+  "generated_at": "2026-04-10T06:34:17.589313+00:00"
+}

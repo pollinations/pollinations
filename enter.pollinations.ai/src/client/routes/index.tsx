@@ -453,7 +453,6 @@ function RouteComponent() {
                     onDelete={handleDeleteApiKey}
                 />
                 <Pricing
-                    tier={tierData?.active?.tier}
                     tierBalance={tierBalance}
                     packBalance={packBalance}
                     cryptoBalance={cryptoBalance}

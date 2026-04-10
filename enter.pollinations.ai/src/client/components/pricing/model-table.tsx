@@ -1,5 +1,4 @@
 import { type FC, useState } from "react";
-import { getTierEmoji, type TierStatus } from "@/tier-config.ts";
 import { cn } from "../../../util.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
@@ -28,7 +27,6 @@ type UnifiedModelTableProps = {
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
-    tier?: TierStatus;
     tierBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
@@ -83,7 +81,6 @@ type PriceBadgeEntry = {
 type TabContentProps = {
     type: "text" | "image" | "video" | "audio";
     models: ModelPrice[];
-    showBalance: boolean;
     tierBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
@@ -92,7 +89,6 @@ type TabContentProps = {
 const TabContent: FC<TabContentProps> = ({
     type,
     models,
-    showBalance,
     tierBalance,
     packBalance,
     cryptoBalance,
@@ -111,7 +107,6 @@ const TabContent: FC<TabContentProps> = ({
                     <ModelRow
                         key={model.name}
                         model={model}
-                        showBalance={showBalance}
                         tierBalance={tierBalance}
                         packBalance={packBalance}
                         cryptoBalance={cryptoBalance}
@@ -128,7 +123,6 @@ const TabContent: FC<TabContentProps> = ({
                             <ModelRow
                                 key={model.name}
                                 model={model}
-                                showBalance={showBalance}
                                 tierBalance={tierBalance}
                                 packBalance={packBalance}
                                 cryptoBalance={cryptoBalance}
@@ -144,7 +138,6 @@ const TabContent: FC<TabContentProps> = ({
                     <MobileModelRow
                         key={model.name}
                         model={model}
-                        showBalance={showBalance}
                         tierBalance={tierBalance}
                         packBalance={packBalance}
                         cryptoBalance={cryptoBalance}
@@ -161,7 +154,9 @@ const TabContent: FC<TabContentProps> = ({
                             <MobileModelRow
                                 key={model.name}
                                 model={model}
+                                tierBalance={tierBalance}
                                 packBalance={packBalance}
+                                cryptoBalance={cryptoBalance}
                             />
                         ))}
                     </>
@@ -175,7 +170,6 @@ const TabContent: FC<TabContentProps> = ({
 
 type MobileModelRowProps = {
     model: ModelPrice;
-    showBalance: boolean;
     tierBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
@@ -183,7 +177,6 @@ type MobileModelRowProps = {
 
 const MobileModelRow: FC<MobileModelRowProps> = ({
     model,
-    showBalance,
     tierBalance,
     packBalance,
     cryptoBalance,
@@ -200,9 +193,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const totalBalance = (tierBalance ?? 0) + paidBalance;
     const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
 
-    const perPollen = showBalance
+    const perPollen = calculatePerPollen(model);
+    const balanceRequests = isSignedIn
         ? calculateForBalance(model, effectiveBalance)
-        : calculatePerPollen(model);
+        : null;
     const isDisabled = isSignedIn && effectiveBalance <= 0;
     const capabilities = [
         hasVision(model.name) && "👁️",
@@ -309,13 +303,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
             {/* Expanded: model ID + capabilities + full pricing */}
             {expanded && (
-                <div
-                    className={cn(
-                        "px-4 pb-4 pt-0 space-y-2",
-                        isDisabled && "opacity-50",
-                    )}
-                >
-                    <div className="flex items-center gap-2">
+                <div className="px-4 pb-4 pt-0 space-y-2">
+                    <div
+                        className={cn(
+                            "flex items-center gap-2",
+                            isDisabled && "opacity-50",
+                        )}
+                    >
                         <button
                             type="button"
                             className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer"
@@ -331,17 +325,29 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             ))}
                     </div>
 
-                    <MobilePriceGroup
-                        label="In"
-                        model={model}
-                        direction="input"
-                    />
+                    {balanceRequests !== null && (
+                        <div className="text-xs text-teal-700">
+                            {balanceRequests === "0" || isDisabled
+                                ? "🔒 Top up to use this model"
+                                : `≈ ${balanceRequests} with current balance`}
+                        </div>
+                    )}
 
-                    <MobilePriceGroup
-                        label="Out"
-                        model={model}
-                        direction="output"
-                    />
+                    <div
+                        className={cn("space-y-2", isDisabled && "opacity-50")}
+                    >
+                        <MobilePriceGroup
+                            label="In"
+                            model={model}
+                            direction="input"
+                        />
+
+                        <MobilePriceGroup
+                            label="Out"
+                            model={model}
+                            direction="output"
+                        />
+                    </div>
                 </div>
             )}
         </div>
@@ -452,86 +458,15 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
 
 // --- Column header tooltip ---
 
-type PerPollenTooltipProps = {
-    isSignedIn: boolean;
-    tier?: TierStatus;
-    tierBalance?: number;
-    packBalance?: number;
-    cryptoBalance?: number;
-};
-
-const PerPollenTooltip: FC<PerPollenTooltipProps> = ({
-    isSignedIn,
-    tier,
-    tierBalance,
-    packBalance,
-    cryptoBalance,
-}) => {
-    const tierBal = tierBalance ?? 0;
-    const pack = packBalance ?? 0;
-    const crypto = cryptoBalance ?? 0;
-    const total = tierBal + pack + crypto;
-    const tierEmoji = tier ? getTierEmoji(tier) : "🌿";
-
-    return (
-        <div className="w-64">
-            <p className="text-xs text-gray-700">
-                Approximate number of requests if fully spent on a single model.
-                Based on 7-day community average — actual costs vary with
-                modality and output length.
-            </p>
-            {isSignedIn && (
-                <>
-                    <table className="w-full text-left text-[11px] mt-2 pt-2 border-t border-gray-100">
-                        <tbody>
-                            <tr className="border-b border-gray-100">
-                                <td className="py-1 pr-2 text-gray-600">
-                                    {tierEmoji} Tier pollen
-                                </td>
-                                <td className="py-1 text-right text-gray-800 font-mono">
-                                    {tierBal.toFixed(2)}
-                                </td>
-                            </tr>
-                            <tr className="border-b border-gray-100">
-                                <td className="py-1 pr-2 text-gray-600">
-                                    🪷 Paid pollen
-                                </td>
-                                <td className="py-1 text-right text-gray-800 font-mono">
-                                    {pack.toFixed(2)}
-                                </td>
-                            </tr>
-                            {crypto > 0 && (
-                                <tr className="border-b border-gray-100">
-                                    <td className="py-1 pr-2 text-gray-600">
-                                        ⛓️ Crypto
-                                    </td>
-                                    <td className="py-1 text-right text-gray-800 font-mono">
-                                        {crypto.toFixed(2)}
-                                    </td>
-                                </tr>
-                            )}
-                            <tr>
-                                <td className="py-1 pr-2 font-semibold text-gray-900">
-                                    Total
-                                </td>
-                                <td className="py-1 text-right font-semibold text-gray-900 font-mono">
-                                    {total.toFixed(2)}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <p className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-500">
-                        🪷 Paid models use purchased pollen only.
-                    </p>
-                    <p className="mt-1 text-[10px] text-teal-600 font-medium">
-                        Click column header to swap between per-pollen and
-                        balance view.
-                    </p>
-                </>
-            )}
-        </div>
-    );
-};
+const PerPollenTooltip: FC = () => (
+    <div className="w-64">
+        <p className="text-xs text-gray-700">
+            Approximate number of requests 1 pollen allows if fully spent on a
+            single model. Based on 7-day community average — actual costs vary
+            with modality and output length.
+        </p>
+    </div>
+);
 
 // --- Main export ---
 
@@ -542,13 +477,10 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     videoModels,
     textModels,
     audioModels,
-    tier,
     tierBalance,
     packBalance,
     cryptoBalance,
 }) => {
-    const isSignedIn = packBalance !== undefined;
-    const [showBalance, setShowBalance] = useState(false);
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
         { type: "video", models: videoModels },
@@ -585,30 +517,10 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     {tabButtons}
                 </div>
                 <div className="flex-1 min-w-6" />
-                <Tooltip
-                    content={
-                        <PerPollenTooltip
-                            isSignedIn={isSignedIn}
-                            tier={tier}
-                            tierBalance={tierBalance}
-                            packBalance={packBalance}
-                            cryptoBalance={cryptoBalance}
-                        />
-                    }
-                    onClick={
-                        isSignedIn ? () => setShowBalance((v) => !v) : undefined
-                    }
-                >
-                    <div
-                        className={cn(
-                            "text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px]",
-                            isSignedIn
-                                ? "cursor-pointer select-none"
-                                : "cursor-help",
-                        )}
-                    >
+                <Tooltip content={<PerPollenTooltip />}>
+                    <div className="cursor-help text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px]">
                         <div className="text-sm font-bold text-gray-900">
-                            {showBalance ? "My balance" : "1 pollen"}
+                            1 pollen
                         </div>
                         <div className="text-xs font-normal text-gray-700 opacity-70 italic">
                             ≈{" "}
@@ -616,11 +528,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                                 ? unitLabels[activeSection.type]
                                 : ""}
                         </div>
-                        {isSignedIn && (
-                            <div className="text-[9px] text-teal-600 font-medium mt-0.5">
-                                tap to switch
-                            </div>
-                        )}
                     </div>
                 </Tooltip>
                 <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
@@ -644,7 +551,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <TabContent
                     type={activeSection.type}
                     models={activeSection.models}
-                    showBalance={showBalance}
                     tierBalance={tierBalance}
                     packBalance={packBalance}
                     cryptoBalance={cryptoBalance}

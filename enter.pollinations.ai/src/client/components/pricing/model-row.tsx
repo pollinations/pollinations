@@ -20,7 +20,6 @@ import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
-    showBalance: boolean;
     tierBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
@@ -28,7 +27,6 @@ type ModelRowProps = {
 
 export const ModelRow: FC<ModelRowProps> = ({
     model,
-    showBalance,
     tierBalance,
     packBalance,
     cryptoBalance,
@@ -57,9 +55,10 @@ export const ModelRow: FC<ModelRowProps> = ({
     const totalBalance = (tierBalance ?? 0) + paidBalance;
     const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
 
-    const genPerPollen = showBalance
+    const genPerPollen = calculatePerPollen(model);
+    const balanceRequests = isSignedIn
         ? calculateForBalance(model, effectiveBalance)
-        : calculatePerPollen(model);
+        : null;
     const isDisabled = isSignedIn && effectiveBalance <= 0;
 
     return (
@@ -178,15 +177,31 @@ export const ModelRow: FC<ModelRowProps> = ({
             </div>
 
             {/* Per pollen — fixed width */}
-            <div
-                className={cn(
-                    "w-[90px] text-center shrink-0",
-                    isDisabled && "opacity-50",
+            <div className="w-[90px] text-center shrink-0">
+                {isSignedIn ? (
+                    <Tooltip
+                        content={
+                            <span className="text-xs">
+                                {balanceRequests === "0" || isDisabled
+                                    ? "🔒 Top up to use this model"
+                                    : `≈ ${balanceRequests} with current balance`}
+                            </span>
+                        }
+                    >
+                        <span
+                            className={cn(
+                                "inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full cursor-help",
+                                isDisabled && "opacity-50",
+                            )}
+                        >
+                            {genPerPollen}
+                        </span>
+                    </Tooltip>
+                ) : (
+                    <span className="inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full">
+                        {genPerPollen}
+                    </span>
                 )}
-            >
-                <span className="inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full">
-                    {genPerPollen}
-                </span>
             </div>
 
             {/* Input prices — fixed width */}

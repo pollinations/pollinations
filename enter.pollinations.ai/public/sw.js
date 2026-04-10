@@ -10,6 +10,8 @@ self.addEventListener("push", (event) => {
 			body: data.body,
 			icon: "/icon-192.png",
 			badge: "/favicon-32x32.png",
+			tag: "spend",
+			renotify: true,
 			data: data.url ? { url: data.url } : undefined,
 		}),
 	);

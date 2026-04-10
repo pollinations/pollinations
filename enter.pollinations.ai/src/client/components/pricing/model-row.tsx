@@ -1,7 +1,11 @@
 import { type FC, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Badge } from "../ui/badge.tsx";
-import { calculatePerPollen } from "./calculations.ts";
+import {
+    calculateForBalance,
+    calculatePerPollen,
+    TOP_UP_TOOLTIP,
+} from "./calculations.ts";
 import {
     getModelDisplayName,
     hasAudioInput,
@@ -20,12 +24,18 @@ import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
+    tierBalance?: number;
     packBalance?: number;
+    cryptoBalance?: number;
 };
 
-export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
+export const ModelRow: FC<ModelRowProps> = ({
+    model,
+    tierBalance,
+    packBalance,
+    cryptoBalance,
+}) => {
     const modelDisplayName = getModelDisplayName(model.name);
-    const genPerPollen = calculatePerPollen(model);
     const [copied, setCopied] = useState(false);
 
     const copyModelName = async () => {
@@ -43,8 +53,17 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
-    const isDisabled =
-        showPaidOnly && packBalance !== undefined && packBalance <= 0;
+
+    const isSignedIn = packBalance !== undefined;
+    const paidBalance = (packBalance ?? 0) + (cryptoBalance ?? 0);
+    const totalBalance = (tierBalance ?? 0) + paidBalance;
+    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
+
+    const genPerPollen = calculatePerPollen(model);
+    const balanceRequests = isSignedIn
+        ? calculateForBalance(model, effectiveBalance)
+        : null;
+    const isDisabled = isSignedIn && balanceRequests === "0";
 
     return (
         <div
@@ -59,7 +78,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 whitespace-nowrap">
                     {isDisabled ? (
-                        <Tooltip content="Top up your pollen balance to unlock this model.">
+                        <Tooltip content={TOP_UP_TOOLTIP}>
                             <span
                                 className={cn("text-sm font-medium opacity-75")}
                             >
@@ -97,7 +116,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
                             <Tooltip
                                 content={
                                     isDisabled
-                                        ? "Top up your pollen balance to unlock this model."
+                                        ? TOP_UP_TOOLTIP
                                         : "This model uses purchased pollen only."
                                 }
                             >
@@ -162,15 +181,31 @@ export const ModelRow: FC<ModelRowProps> = ({ model, packBalance }) => {
             </div>
 
             {/* Per pollen — fixed width */}
-            <div
-                className={cn(
-                    "w-[90px] text-center shrink-0",
-                    isDisabled && "opacity-50",
+            <div className="w-[90px] text-center shrink-0">
+                {isSignedIn ? (
+                    <Tooltip
+                        content={
+                            <span className="text-xs">
+                                {isDisabled
+                                    ? TOP_UP_TOOLTIP
+                                    : `≈ ${balanceRequests} with current balance`}
+                            </span>
+                        }
+                    >
+                        <span
+                            className={cn(
+                                "inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full cursor-help",
+                                isDisabled && "opacity-50",
+                            )}
+                        >
+                            {genPerPollen}
+                        </span>
+                    </Tooltip>
+                ) : (
+                    <span className="inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full">
+                        {genPerPollen}
+                    </span>
                 )}
-            >
-                <span className="inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full">
-                    {genPerPollen}
-                </span>
             </div>
 
             {/* Input prices — fixed width */}

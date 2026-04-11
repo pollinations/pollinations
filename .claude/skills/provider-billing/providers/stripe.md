@@ -192,6 +192,18 @@ while True:
 | PayPal fees | 54.50 |
 | **Total** | **624.02** |
 
+To discover fee types for a different month (Stripe adds new ones as features roll out), enumerate unique descriptions across `fee_details[]` before totalling:
+
+```python
+from collections import Counter
+fee_types = Counter()
+for t in txns:
+    for f in t.get('fee_details', []) or []:
+        fee_types[f['description']] += f['amount']
+for desc, cents in fee_types.most_common():
+    print(f"{desc:<40} €{cents/100:.2f}")
+```
+
 **Effective fee rate: 8.6% on €7,303 gross.** Much higher than Stripe's headline 2.9% + €0.30 because of:
 - Currency conversion: account is EUR but many customers pay in USD/other → each charge eats a 2% FX fee
 - PayPal flows through Stripe and adds PayPal's own fee on top

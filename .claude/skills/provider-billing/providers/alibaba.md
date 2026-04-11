@@ -167,6 +167,8 @@ aliyun --profile pollinations-finops BssOpenApi QueryBillOverview --BillingCycle
 | 2026-03 | $1,509.19 | $285.10 | **$1,000.00** | **$224.08** | **$1k promo coupon consumed in one shot** |
 | 2026-04 MTD | $837.90 (Qwen) + $168.53 (Wan) = **$1,006.43** | $302.62 | **$0** | **$703.79** | Coupon depleted, paying list |
 
+> ⚠️ **Table-shape warning**: January is the ONLY month with two rows — one for the Savings Plan pre-purchase ($200 upfront) and one for Model Studio inference ($151.38). From February onwards, Alibaba consolidates everything into a single row per month. When aggregating totals across months in code, SUM all rows with matching `BillingCycle` and don't assume one row per month.
+
 **Critical read**: Alibaba granted us a **$1,000 promotional coupon in March** that was fully consumed that month. **April has $0 in coupons** — we are currently paying close to list price with only the `InvoiceDiscount` (~$302) applied. **If we're counting on ongoing promotional coupons, we aren't getting them.**
 
 Run rate at current pace: ~$1,006 / 11 days × 30 = **~$2,745/month projected April total**. That's ~80% higher than February's $1,524, driven by the new Wan video/image model usage.

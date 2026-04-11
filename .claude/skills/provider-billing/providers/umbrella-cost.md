@@ -295,49 +295,30 @@ print(f"AWS list: ${aws_cost:.2f}  Umbrella invoiced: ${umbrella_cost:.2f}  disc
 
 ---
 
-## Known unknowns (open follow-ups)
+## Known unknowns
 
-- **Why do all authenticated GETs hang?** Sign-in works, JWT is valid, `Authorization: <jwt>` is the correct header — but every data endpoint either 504s or hangs until curl timeout. See "Session 1 validation results" below. Most likely cause: API access is not enabled for our tenant user; Automat-IT admin needs to toggle it.
-- **Credit / MACC-equivalent visibility** — does Umbrella expose AWS Promotional Credits / Activate credits separately? Needs the cost-and-usage call to actually respond.
-- **`renewToken` endpoint shape** — GET returned 404, POST shape unverified. Probably `POST /api/v1/users/renewToken` with `{refreshToken}` body.
+- **Credit / MACC-equivalent visibility** — does Umbrella expose AWS Promotional Credits / Activate credits separately? Can only be answered once the data plane is unblocked (see "Unblock procedure" below).
+- **`renewToken` endpoint shape** — GET returned 404, POST shape UNTESTED. Most likely `POST /api/v1/users/renewToken` with `{refreshToken}` body, but not confirmed.
 - **Cost center setup** — has Automat-IT configured any cost centers / divisions for Pollinations? If yes, we can tag by project. If no, all spend rolls up to one bucket.
-- **Schema of `cost-and-usage` response** — I haven't seen an authenticated response yet. The field names (`actualCost`, `listCost`, etc.) above are from public docs snippets and may differ in our tenant.
-- **API access provisioning** — is API access enabled for our tenant? Some Umbrella tenants require an Automat-IT admin to explicitly enable the "API Access" feature before `users/apiAccess` works. If login fails with "API access not enabled," contact Automat-IT support.
-- **Credentials location** — credentials for our Umbrella account are currently TBD. Once someone logs in, they should be stored in SOPS alongside other provider secrets.
+- **Schema of `cost-and-usage` response** — the field names (`actualCost`, `listCost`, etc.) in the query section above are from public docs snippets and may differ in our tenant.
+- **Dashboard Cognito hosted-UI auth path** — if API access stays blocked, an alternative is the hosted UI access-token flow: `https://<tenant>.auth.us-east-1.amazoncognito.com/login?client_id=7i82cnpt469rcd93fif1glhnkm&response_type=token&redirect_uri=https://umbrellacost.io`. Untested, listed here so next session doesn't re-derive it.
 
 ---
 
-## Next session checklist
+## Unblock procedure (blocker: tenant API access gated)
 
-When we first use this skill in anger:
+**Status as of 2026-04-11**: Sign-in works, JWT is valid, but every authenticated data-plane GET hangs or returns `504 Gateway Timeout`. Diagnosed as a tenant-level "API Access" feature flag that Automat-IT must toggle.
 
-1. Get Umbrella Cost credentials from whoever manages the Automat-IT relationship
-2. Run the token endpoint probes to confirm which path works
-3. Hit `/users/me` to get the `accountId` for our AWS 301235909293 account
-4. Run a `cost-and-usage` query for last month and **compare to `aws ce` for the same period**
-5. Record the actual response schema inline in this file — replace the "from docs" field names with real ones
-6. Check whether credits are visible; if yes, update [aws.md](aws.md) with a pointer back here
-7. Update the "Validated" date at the top of this file
+### What's already been tried
 
----
+Sign-in, health check, and JS-bundle endpoint inventory all succeeded:
 
-## Session 1 validation results (2026-04-11)
+- ✅ `POST /api/v1/users/signin` → 200 with `{jwtToken, username, refreshToken}` (same on `api.umbrellacost.io` and `api-front.umbrellacost.io`)
+- ✅ JWT decodes cleanly: ID token from Cognito pool `us-east-1_Uv6ArNdSK`, client `7i82cnpt469rcd93fif1glhnkm`, `token_use: id`, 24h expiry
+- ✅ `GET /api/v1/health` → `{"status":"available","version":"0.13.145"}`
+- ✅ Endpoint inventory scraped from dashboard JS bundle (30+ `/api/v1/*` paths)
 
-Full log of what was tried, what worked, and what's still broken. This section exists so the next session doesn't repeat the same probes.
-
-### What worked
-
-✅ **Sign-in**: `POST https://api.umbrellacost.io/api/v1/users/signin` with `{"username":"elliot@myceli.ai","password":"..."}` returned 200 with `{jwtToken, username, refreshToken}`. Identical response shape from `api-front.umbrellacost.io` — same backend.
-
-✅ **JWT decoded cleanly**: ID token from Cognito pool `us-east-1_Uv6ArNdSK`, client `7i82cnpt469rcd93fif1glhnkm`, subject `3de399ff-a85c-465b-bcdd-b743c21a2e70`, email `elliot@myceli.ai`, `token_use: id`, 24h expiry.
-
-✅ **Health check**: `GET /api/v1/health` returns `{"status":"available","version":"0.13.145"}` on both `api.umbrellacost.io` and `api.mypileus.io`. Same backend, two DNS names.
-
-✅ **Dashboard JS inventory**: scraped `https://umbrellacost.io/assets/index-*.js` to extract all API endpoints. Found 30+ `/api/v1/*` paths plus the `R1 = "reCustomerOrgToken"` constant. The file [inventory is preserved in gotchas above].
-
-### What failed
-
-❌ **Every authenticated GET hangs or 504s.** Specifically tested with valid JWT in `Authorization: $JWT` (raw, no Bearer):
+All 9 authenticated data GETs tested hang or 504 (nginx-level) with a valid `Authorization: <jwt>` header:
 
 | Endpoint | Result |
 |---|---|
@@ -351,34 +332,18 @@ Full log of what was tried, what worked, and what's still broken. This section e
 | `GET /api/v1/services` | hang → timeout |
 | `GET /api/v1/integrations` | hang → timeout |
 
-Tested with `Origin: https://umbrellacost.io` + browser `User-Agent` headers — same result. Tested on both `api.umbrellacost.io` and `api-front.umbrellacost.io` — same result.
+Auth header shapes tested: only raw `Authorization: <jwt>` reaches the backend; `Bearer`, `apikey`, cookie, and basic all return 401. So the problem is NOT header shape — the backend accepts the JWT, then blackholes the request.
 
-### Auth header variants tested
+### Remediation steps
 
-| Variant | Result |
-|---|---|
-| `Authorization: <jwt>` (raw) | hang/504 (backend accepted auth, processing) |
-| `Authorization: Bearer <jwt>` | **401** |
-| `apikey: <jwt>` | **401** |
-| `Cookie: api_token=<jwt>` | **401** |
-| basic auth `-u user:pass` | **401** |
+1. **Contact Automat-IT support** — request API access for user `elliot@myceli.ai` on the Pollinations Umbrella Cost tenant. Suggested wording: "Please enable Umbrella Cost API access for this user. I need to call `/api/v1/invoices/cost-and-usage` programmatically for our internal FinOps automation."
+2. Once API access is confirmed enabled, re-run sign-in + `GET /api/v1/users/account-info` to verify the call now returns 200.
+3. Hit `/users/me` to capture the `accountId` for our AWS `301235909293` account and record it in "Known identifiers" above.
+4. Run a `cost-and-usage` query for last month and **compare to `aws ce` for the same period** — the delta is the reseller discount Automat-IT is (or isn't) passing through.
+5. Replace the "from docs" field names in the query section above with the actual response schema observed in the tenant.
+6. Update the "Validated" date at the top of this file and remove the ⚠️ from the SKILL.md status row.
+7. If credits/promo grants become visible, add a pointer from [aws.md](aws.md) over here so future sessions know to check Umbrella first.
 
-The raw-JWT variant is the only one that reaches the backend. The 401s confirm the other header shapes are wrong at the auth layer.
+### Fallback if API access stays blocked
 
-### Diagnosis
-
-The backend **accepts the JWT** (no 401) but **deadlocks on every data endpoint**. The fact that `/users/user-general-data` returned an actual nginx 504 (not curl timeout) means there's a real request being made to an upstream that never responds.
-
-Most probable cause: **our tenant user does not have API access enabled**. Pileus/Umbrella documents a per-user "API Access" feature flag that must be enabled by a tenant admin. When it's off, signed-in users can use the web dashboard (which goes through a different auth path via Cognito hosted UI) but programmatic API calls with the raw ID token get blackholed.
-
-### Remediation path
-
-1. **Contact Automat-IT support** (billing reseller admin) to request API access for user `elliot@myceli.ai` on the Pollinations Umbrella Cost tenant. Reference: "Please enable Umbrella Cost API access for this user — I need to call `/api/v1/invoices/cost-and-usage` programmatically for our internal FinOps automation."
-2. Once enabled, re-run the "Next session checklist" above to confirm calls succeed.
-3. If calls still hang, try the dashboard's own auth flow: Cognito hosted UI at `https://<tenant>.auth.us-east-1.amazoncognito.com/login?client_id=7i82cnpt469rcd93fif1glhnkm&response_type=token&redirect_uri=https://umbrellacost.io` and capture the returned access token from the URL fragment. The ID token and access token may behave differently for API calls.
-4. Alternative: **ask Automat-IT for a CSV/PDF export** of our monthly invoice via their normal support channel. Even without API access, they'll email invoices monthly. We can parse those into our runway spreadsheet until API access is unblocked.
-
-### Files touched
-
-- [providers/aws.md](aws.md) — reference back from this file for the discount-margin computation
-- No secrets written anywhere
+Ask Automat-IT for a monthly CSV/PDF export via their normal support channel — they already email invoices. Parse those into the runway spreadsheet until programmatic access is unblocked.

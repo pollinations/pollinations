@@ -109,10 +109,9 @@ jobs:
             let verdict = null;
 
             for (let attempt = 0; attempt < 3; attempt++) {
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 120000);
               try {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 120000);
-
                 const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
                   method: 'POST',
                   headers: {
@@ -133,8 +132,6 @@ jobs:
                   signal: controller.signal,
                 });
 
-                clearTimeout(timeout);
-
                 if (response.ok) {
                   const data = await response.json();
                   const content = data.choices?.[0]?.message?.content;
@@ -146,6 +143,8 @@ jobs:
                 }
               } catch (err) {
                 console.log(`Attempt ${attempt + 1} error: ${err.message}`);
+              } finally {
+                clearTimeout(timeout);
               }
 
               if (attempt < 2) {
@@ -159,6 +158,13 @@ jobs:
             }
 
             console.log(`Verdict: ${JSON.stringify(verdict)}`);
+
+            // --- Validate action ---
+            const validActions = ['duplicate', 'resolved', 'auto_fix', 'skip'];
+            if (!validActions.includes(verdict.action)) {
+              console.log(`Invalid action "${verdict.action}". Skipping.`);
+              return;
+            }
 
             // --- Confidence thresholds ---
             const thresholds = { duplicate: 0.85, resolved: 0.85, auto_fix: 0.70 };

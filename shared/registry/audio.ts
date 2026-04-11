@@ -121,7 +121,7 @@ export const AUDIO_SERVICES = {
     acestep: {
         aliases: ["ace-step", "acestep-music"],
         modelId: "acestep_v15_turbo",
-        provider: "self-hosted",
+        provider: "lambda",
         cost: [
             {
                 date: new Date("2026-04-02").getTime(),

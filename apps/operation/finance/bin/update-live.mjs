@@ -1,10 +1,12 @@
 #!/usr/bin/env node
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 /**
  * Daily cron entry point — pulls live MTD consumption from each configured
- * credit-pool provider, writes results into vendors.json and pool-history.json.
+ * credit-pool provider, writes results into vendors.json and pool-history.json,
+ * then runs rebuild-sheet.mjs to push the fresh numbers to Google Sheets.
  *
- * Usage: node bin/update-live.mjs [--dry-run]
+ * Usage: node bin/update-live.mjs [--dry-run] [--no-rebuild]
  *
  * What it does per provider:
  *   1. Call the provider wrapper (lib/providers/<name>.mjs).fetchMtd(currentMonth)
@@ -28,6 +30,25 @@ const VENDORS_PATH = join(APP_DIR, "secrets", "vendors.json");
 const HISTORY_PATH = join(APP_DIR, "secrets", "pool-history.json");
 
 const DRY_RUN = process.argv.includes("--dry-run");
+const NO_REBUILD = process.argv.includes("--no-rebuild");
+
+function runRebuild() {
+    return new Promise((resolve, reject) => {
+        const child = spawn(
+            "node",
+            [join(APP_DIR, "bin", "rebuild-sheet.mjs")],
+            { stdio: "inherit" },
+        );
+        child.on("error", reject);
+        child.on("close", (code) => {
+            if (code !== 0) {
+                reject(new Error(`rebuild-sheet.mjs exited ${code}`));
+                return;
+            }
+            resolve();
+        });
+    });
+}
 
 function currentMonth() {
     const d = new Date();
@@ -123,6 +144,12 @@ async function main() {
     } else {
         console.log();
         console.log("(dry run — nothing written)");
+    }
+
+    if (!DRY_RUN && !NO_REBUILD) {
+        console.log();
+        console.log("Running rebuild-sheet.mjs...");
+        await runRebuild();
     }
 }
 

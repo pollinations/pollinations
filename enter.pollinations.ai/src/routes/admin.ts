@@ -246,14 +246,6 @@ export const adminRoutes = new Hono<Env>()
             return await next();
         }
 
-        // Refill token only has access to /trigger-refill endpoint
-        if (
-            providedKey === c.env.REFILL_TOKEN &&
-            c.req.path.endsWith("/trigger-refill")
-        ) {
-            return await next();
-        }
-
         // Tinybird sync token: authenticates the GH Action AND is used for Tinybird API calls
         const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
         if (

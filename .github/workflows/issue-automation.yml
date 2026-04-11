@@ -70,6 +70,7 @@ jobs:
             - If find_similar found a DIFFERENT matching open issue — comment referencing it + close with close_reason "not_planned".
             - If code_search found the fix exists — comment explaining where + close with close_reason "completed".
             - If the issue is a minor well-defined fix (typo, small bug, config change) — comment + add_label "polly".
+            - If the issue reports an outage or model errors — use your tools to investigate (code_search for error handlers, find_similar for related reports, doc_search for service architecture). Comment with what you found, even partial context helps.
             - If the issue is spam, test, or gibberish — close with close_reason "not_planned", no comment needed.
             - If you genuinely can't help (too vague, needs internal access, needs human judgment) — do nothing.
             - Comments should be playful, concise, and helpful. Be a friendly team member.
@@ -82,8 +83,8 @@ jobs:
             const fewShot = [
               { role: 'user', content: 'Issue #9999:\nTitle: grok-video ignoring image input\nBody: When I pass an image to grok-video it completely ignores it and generates from text only.' },
               { role: 'assistant', content: '{"comment":"This is a known issue! See #8262 for the ongoing discussion about grok-video ignoring image inputs. Closing as duplicate.","close":true,"close_reason":"not_planned","add_label":null,"confidence":0.95,"reason":"find_similar returned #8262 — same grok-video image input bug."}' },
-              { role: 'user', content: 'Issue #9998:\nTitle: Service is completely down, nothing works\nBody: All API endpoints returning 500 errors since 10 minutes ago.' },
-              { role: 'assistant', content: '{"comment":null,"close":false,"close_reason":null,"add_label":null,"confidence":0.99,"reason":"Critical outage — needs immediate human investigation. Can\'t help here."}' },
+              { role: 'user', content: 'Issue #9998:\nTitle: grok-large returning 429 errors constantly\nBody: Every request to grok-large returns HTTP 429. Been like this for hours. Is the model down?' },
+              { role: 'assistant', content: '{"comment":"Looked into it — grok-large routes to Azure OpenAI (model grok-4-20-reasoning in text.pollinations.ai/configs/modelConfigs.ts). 429s usually mean the Azure deployment hit its TPM quota. find_similar shows #10032 and #9709 report the same pattern. The team is aware — this is an upstream Azure capacity issue, not a Pollinations bug. Try again in a bit or use a different model like openai-large in the meantime!","close":false,"close_reason":null,"add_label":null,"confidence":0.90,"reason":"code_search found grok-large Azure config. find_similar found related 429 reports. Upstream quota issue."}' },
               { role: 'user', content: 'Issue #9997:\nTitle: Fix broken link in README contributing section\nBody: The link to CONTRIBUTING.md in the main README.md points to /docs/CONTRIBUTING.md but the file is at /CONTRIBUTING.md in the repo root.' },
               { role: 'assistant', content: '{"comment":"Looks like a quick link fix! Polly will take care of this.","close":false,"close_reason":null,"add_label":"polly","confidence":0.90,"reason":"code_search confirmed README.md still has the broken link. Minor fix."}' },
               { role: 'user', content: 'Issue #9996:\nTitle: Audio generation returns 500 error\nBody: Calling /audio/hello with voice=nova returns a 500 internal server error. Started happening after the last deploy.' },

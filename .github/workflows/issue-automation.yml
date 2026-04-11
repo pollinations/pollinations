@@ -56,29 +56,41 @@ jobs:
 
             DO NOT skip tool calls. DO NOT guess based on your training data alone. Every verdict must be backed by actual search results from find_similar and code_search.
 
-            Schema: {"action":"duplicate|resolved|auto_fix|skip","confidence":0.0-1.0,"reason":"1-2 sentences referencing what you found in search results","similar_issue":"#number or null","solution_reference":"file/commit/PR or null","comment":"friendly comment to post on the issue, or null if skip"}
+            Schema: {"comment":"your reply to post on the issue, or null if nothing to say","close":true|false,"close_reason":"completed|not_planned|null","add_label":"polly|null","confidence":0.0-1.0,"reason":"1-2 sentences referencing what you found in search results"}
 
-            Actions:
-            - "duplicate": find_similar returned a DIFFERENT matching open issue. Reference it by number. High confidence only.
-            - "resolved": code_search found that the fix already exists in the codebase. Reference the file/PR. High confidence only.
-            - "auto_fix": Issue is minor and well-defined (typo, small bug, config change, doc update). Not urgent. code_search confirmed it is NOT yet fixed.
-            - "skip": Issue needs human attention, or searches were inconclusive.
-            - For duplicates, reference the original issue number in the comment.
-            - For resolved issues, reference the specific file/commit/PR in the comment.
-            - Comments should be playful, concise, and to the point. No walls of text. 1-3 sentences max.
-            - If code_search or find_similar return no results, default to "skip".
-            - CRITICAL: The issue number being analyzed is provided in the user message. NEVER mark an issue as a duplicate of itself. If find_similar only returns the same issue number, that is NOT a duplicate.`;
+            You decide dynamically what to do. Any combination is valid:
+            - Comment only (answer a question, explain behavior, help the user)
+            - Comment + close (duplicate found, issue already resolved)
+            - Comment + add "polly" label (minor fix Polly can auto-fix)
+            - Close without comment (spam, test issues)
+            - Do nothing (null comment, close=false, no label) — only when you genuinely cannot help
+
+            Guidelines:
+            - If you know the answer to a question or can explain the behavior — ALWAYS comment. Don't skip just because it's a "support question".
+            - If find_similar found a DIFFERENT matching open issue — comment referencing it + close with close_reason "not_planned".
+            - If code_search found the fix exists — comment explaining where + close with close_reason "completed".
+            - If the issue is a minor well-defined fix (typo, small bug, config change) — comment + add_label "polly".
+            - If the issue reports an outage or model errors — use your tools to investigate (code_search for error handlers, find_similar for related reports, doc_search for service architecture). Comment with what you found, even partial context helps.
+            - If the issue is spam, test, or gibberish — close with close_reason "not_planned", no comment needed.
+            - If you genuinely can't help (too vague, needs internal access, needs human judgment) — do nothing.
+            - Comments should be playful, concise, and helpful. Be a friendly team member.
+            - For duplicates, reference the original issue number.
+            - For resolved issues, reference the specific file/commit/PR.
+            - CRITICAL: The issue number being analyzed is in the user message. NEVER close an issue as duplicate of itself.
+            - Only close with high confidence (>= 0.85). Commenting is fine at any confidence.`;
 
             // --- Few-shot examples ---
             const fewShot = [
               { role: 'user', content: 'Issue #9999:\nTitle: grok-video ignoring image input\nBody: When I pass an image to grok-video it completely ignores it and generates from text only.' },
-              { role: 'assistant', content: '{"action":"duplicate","confidence":0.95,"reason":"find_similar returned #8262 which reports the same grok-video image input being ignored. code_search confirmed the image parameter pass-through is still missing in the airforce API handler.","similar_issue":"#8262","solution_reference":null,"comment":"This is a known issue! See #8262 for the ongoing discussion about grok-video ignoring image inputs. Closing as duplicate."}' },
-              { role: 'user', content: 'Issue #9998:\nTitle: Service is completely down, nothing works\nBody: All API endpoints returning 500 errors since 10 minutes ago.' },
-              { role: 'assistant', content: '{"action":"skip","confidence":0.99,"reason":"Critical outage — requires immediate human investigation. find_similar found no matching open outage reports. code_search not applicable for live incidents.","similar_issue":null,"solution_reference":null,"comment":null}' },
+              { role: 'assistant', content: '{"comment":"This is a known issue! See #8262 for the ongoing discussion about grok-video ignoring image inputs. Closing as duplicate.","close":true,"close_reason":"not_planned","add_label":null,"confidence":0.95,"reason":"find_similar returned #8262 — same grok-video image input bug."}' },
+              { role: 'user', content: 'Issue #9998:\nTitle: grok-large returning 429 errors constantly\nBody: Every request to grok-large returns HTTP 429. Been like this for hours. Is the model down?' },
+              { role: 'assistant', content: '{"comment":"Looked into it — grok-large routes to Azure OpenAI (model grok-4-20-reasoning in text.pollinations.ai/configs/modelConfigs.ts). 429s usually mean the Azure deployment hit its TPM quota. find_similar shows #10032 and #9709 report the same pattern. The team is aware — this is an upstream Azure capacity issue, not a Pollinations bug. Try again in a bit or use a different model like openai-large in the meantime!","close":false,"close_reason":null,"add_label":null,"confidence":0.90,"reason":"code_search found grok-large Azure config. find_similar found related 429 reports. Upstream quota issue."}' },
               { role: 'user', content: 'Issue #9997:\nTitle: Fix broken link in README contributing section\nBody: The link to CONTRIBUTING.md in the main README.md points to /docs/CONTRIBUTING.md but the file is at /CONTRIBUTING.md in the repo root.' },
-              { role: 'assistant', content: '{"action":"auto_fix","confidence":0.90,"reason":"find_similar returned no duplicates. code_search confirmed README.md still contains the broken /docs/CONTRIBUTING.md link. Simple path fix.","similar_issue":null,"solution_reference":"README.md","comment":"Looks like a quick link fix! Polly will take care of this."}' },
+              { role: 'assistant', content: '{"comment":"Looks like a quick link fix! Polly will take care of this.","close":false,"close_reason":null,"add_label":"polly","confidence":0.90,"reason":"code_search confirmed README.md still has the broken link. Minor fix."}' },
               { role: 'user', content: 'Issue #9996:\nTitle: Audio generation returns 500 error\nBody: Calling /audio/hello with voice=nova returns a 500 internal server error. Started happening after the last deploy.' },
-              { role: 'assistant', content: '{"action":"resolved","confidence":0.92,"reason":"find_similar returned #7801 which reported the same audio 500 error. code_search found the fix was merged in enter.pollinations.ai/src/routes/audio.ts — the voice parameter validation was added and the ElevenLabs fallback was fixed in a recent commit.","similar_issue":"#7801","solution_reference":"enter.pollinations.ai/src/routes/audio.ts","comment":"This was fixed! The audio route had a missing voice parameter validation that caused 500s. The fix landed in enter.pollinations.ai/src/routes/audio.ts. Closing as resolved."}' },
+              { role: 'assistant', content: '{"comment":"This was fixed! The audio route had a missing voice parameter validation. Fix landed in enter.pollinations.ai/src/routes/audio.ts.","close":true,"close_reason":"completed","add_label":null,"confidence":0.92,"reason":"code_search found the fix in enter.pollinations.ai/src/routes/audio.ts."}' },
+              { role: 'user', content: 'Issue #9995:\nTitle: Inquiry regarding API rate limits\nBody: I have Spore tier with $194 balance. Why am I still rate limited? I thought buying pollen removes limits.' },
+              { role: 'assistant', content: '{"comment":"Tier grants and purchased pollen work differently! Your Spore tier gives 0.01 pollen/hr as a free grant, but your purchased balance ($194) is separate — it doesn\'t change your hourly tier rate. You can use purchased pollen for requests beyond your tier grant. To get higher hourly grants, upgrade your tier (Seed, Flower, etc).","close":false,"close_reason":null,"add_label":null,"confidence":0.95,"reason":"doc_search confirmed tier grant vs purchased pollen distinction. User misunderstands the system, not a bug."}' },
             ];
 
             // --- JSON extractor ---
@@ -168,47 +180,32 @@ jobs:
 
             console.log(`Verdict: ${JSON.stringify(verdict)}`);
 
-            // --- Guard: self-duplicate ---
-            if (verdict.action === 'duplicate' && verdict.similar_issue === `#${issue.number}`) {
-              console.log(`Self-duplicate detected for #${issue.number}, forcing skip.`);
-              verdict.action = 'skip';
-            }
-
-            // --- Validate and coerce fields ---
+            // --- Coerce confidence ---
             verdict.confidence = parseFloat(verdict.confidence) || 0;
-            const validActions = ['duplicate', 'resolved', 'auto_fix', 'skip'];
-            if (!validActions.includes(verdict.action)) {
-              console.log(`Invalid action "${verdict.action}". Skipping.`);
-              return;
-            }
 
-            // --- Confidence thresholds ---
-            const thresholds = { duplicate: 0.85, resolved: 0.85, auto_fix: 0.70 };
-            const minConfidence = thresholds[verdict.action];
-            if (minConfidence && verdict.confidence < minConfidence) {
-              console.log(`Confidence ${verdict.confidence} below threshold ${minConfidence} for ${verdict.action}. Skipping.`);
-              return;
-            }
-
-            // --- Execute action ---
+            // --- Execute actions dynamically ---
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issue_number = issue.number;
+            const actions = [];
 
-            if (verdict.action === 'duplicate' && verdict.comment) {
+            // Post comment if present
+            if (verdict.comment) {
               await github.rest.issues.createComment({ owner, repo, issue_number, body: verdict.comment });
-              await github.rest.issues.update({ owner, repo, issue_number, state: 'closed', state_reason: 'not_planned' });
-              console.log(`Closed #${issue_number} as duplicate`);
-            } else if (verdict.action === 'resolved' && verdict.comment) {
-              await github.rest.issues.createComment({ owner, repo, issue_number, body: verdict.comment });
-              await github.rest.issues.update({ owner, repo, issue_number, state: 'closed', state_reason: 'completed' });
-              console.log(`Closed #${issue_number} as resolved`);
-            } else if (verdict.action === 'auto_fix') {
-              if (verdict.comment) {
-                await github.rest.issues.createComment({ owner, repo, issue_number, body: verdict.comment });
-              }
-              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: ['polly'] });
-              console.log(`Added polly label to #${issue_number} for auto-fix`);
-            } else {
-              console.log(`Action: skip for #${issue_number}`);
+              actions.push('commented');
             }
+
+            // Close if requested (only with high confidence)
+            if (verdict.close && verdict.confidence >= 0.85) {
+              const reason = verdict.close_reason === 'completed' ? 'completed' : 'not_planned';
+              await github.rest.issues.update({ owner, repo, issue_number, state: 'closed', state_reason: reason });
+              actions.push(`closed (${reason})`);
+            }
+
+            // Add label if requested
+            if (verdict.add_label === 'polly' && verdict.confidence >= 0.70) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: ['polly'] });
+              actions.push('labeled polly');
+            }
+
+            console.log(`#${issue_number}: ${actions.length ? actions.join(', ') : 'no action'}`);

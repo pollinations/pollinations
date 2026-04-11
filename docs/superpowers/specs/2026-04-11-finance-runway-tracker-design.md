@@ -297,3 +297,45 @@ v2 touches zero v1 files. It only reads `vendors.json` and writes specific cells
 7. **Forecast rule syntax:** number | `"avg3"` | `"last"` | `"none"` | `"live"`
 8. **Current-month live cells in v1:** fall back to `avg3`, rendered italicized so it's visibly a placeholder
 9. **Cash balance:** single number in `config.local.json`, manually updated
+
+## Post-implementation refinements (2026-04-11, during Task 10 smoke test)
+
+Three refinements locked in after seeing the first real output:
+
+### Forecast policy: compute is live-only, fixed forecast only for known contracts
+
+The forecast rule assignment in `vendors.json` follows this policy (not captured in the original spec but locked after running the smoke test):
+
+- **All Compute vendors → `forecast: "live"`.** Cloud spend varies too much month-to-month for a static forecast to be meaningful. v1 falls back to avg3 so the sheet shows something plausible; v2 will replace these with real month-to-date from provider APIs via the `provider-billing` skill.
+- **Fixed number forecast → only for contracts we know.** Office rent (Gaswerkssiedlung), electricity (naturenergie), salaries (Deel), subscriptions (Notion, Slack, Canva, Proton, OpenAI, Buffer, Discord, Tinybird), accounting retainer (ENTYTECH).
+- **Everything else → `forecast: "none"`.** Freelancer payments, one-off office purchases, food, banking fees, revenue. The default is "don't guess."
+- **Fixed-number forecasts are signed.** Expenses are stored as negative numbers in `vendors.json` (`"forecast": -1167`). The spec says "copy the number forward" literally — no auto-negation based on category. This keeps the rule transparent and lets the user store a positive forecast for a revenue vendor if desired.
+
+### Provider routing for v2
+
+The `provider` field in `vendors.json` maps to a playbook under `.claude/skills/provider-billing/providers/<name>.md`. The v2 cron script will look up each `forecast: "live"` vendor's `provider` field and call the matching playbook. Provider string conventions used in v1 seed data:
+
+| `provider` string | Playbook | Status (2026-04-11) |
+|---|---|---|
+| `vast` | `providers/vast.md` | TODO |
+| `runpod` | `providers/runpod.md` | TODO |
+| `gcp` | `providers/gcp.md` | Production |
+| `azure` | `providers/azure.md` | Production |
+| `aws` | `providers/aws.md` | Production (list prices); switch to `umbrella-cost` when reseller data plane unblocks |
+| `anthropic` | (no playbook yet) | TODO |
+| `alibaba`, `ionet`, `byteplus`, `xai`, `pruna`, `replicate`, `daytona`, `tele2` | TODO | TODO |
+
+Important: **`providers/umbrella-cost.md` supersedes `providers/aws.md` for runway math once unblocked.** When Umbrella reseller API access is granted, update AWS vendors to `"provider": "umbrella-cost"`.
+
+### Bugs found and fixed during smoke test
+
+1. **Number-format range included the header row**, causing Google Sheets to interpret month labels ("Jan 2025") as date serials (rendered as `45658 €`). Fix: `rebuild-sheet.mjs` now starts the numeric range at `layout.freezeRows + 1` (first data row) instead of hard-coded row 5.
+2. **Fixed-value forecasts were stored as positive numbers**, causing expense forecasts to flip sign (appearing as income). Fix: store the literal signed value in `vendors.json` (e.g. `"forecast": -1167` for rent).
+
+### KPI burn semantics
+
+When the company is net-negative (the normal case), the KPI row shows `Burn (avg3): -€34,888` correctly. The layout reviewer flagged that when net-positive the same label would be confusing (`Burn: +€158`), but this is a display concern for an edge case we aren't in. Deferred.
+
+### freezeRows intentional
+
+`freezeRows = 5` freezes title + blank + KPI + blank + header. The user wanted KPI visible while scrolling; this is by design, not a bug. Confirmed during smoke test.

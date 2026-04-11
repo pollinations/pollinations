@@ -10,7 +10,7 @@
     "finance-forecast": "./bin/forecast.mjs"
   },
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test 'test/**/*.test.mjs'",
     "rebuild": "node bin/rebuild-sheet.mjs",
     "add-month": "node bin/add-month.mjs",
     "forecast": "node bin/forecast.mjs"

@@ -166,7 +166,7 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        provider: "vast.ai",
+        provider: "runpod",
         cost: [
             {
                 date: COST_START_DATE,
@@ -180,7 +180,7 @@ export const IMAGE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
-        provider: "vast.ai",
+        provider: "runpod",
         cost: [
             {
                 date: COST_START_DATE,

@@ -65,6 +65,7 @@ jobs:
             - "skip": Issue needs human attention, or searches were inconclusive.
             - For duplicates, reference the original issue number in the comment.
             - For resolved issues, reference the specific file/commit/PR in the comment.
+            - Comments should be playful, concise, and to the point. No walls of text. 1-3 sentences max.
             - If code_search or find_similar return no results, default to "skip".
             - CRITICAL: The issue number being analyzed is provided in the user message. NEVER mark an issue as a duplicate of itself. If find_similar only returns the same issue number, that is NOT a duplicate.`;
 
@@ -135,7 +136,7 @@ jobs:
                       ...fewShot,
                       { role: 'user', content: issueContent },
                     ],
-                    max_tokens: 500,
+                    max_tokens: 4096,
                     response_format: { type: 'json_object' },
                   }),
                   signal: controller.signal,

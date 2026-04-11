@@ -1,0 +1,34 @@
+{
+  "pr_number": 10128,
+  "title": "fix: enforce mandatory tool usage in issue triage prompt",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/10128",
+  "merged_at": "2026-04-11T13:19:32Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Magnifying glass equipped",
+    "blurb": "We've updated our issue triage automation so Polly the bee actually searches the codebase before making a verdict. No more guessing—just cold, hard search results.",
+    "summary": "Updated the GitHub Actions issue automation workflows to enforce mandatory tool usage for codebase searches.",
+    "impact": "Automated issue triage will be significantly more accurate by relying on actual code search results rather than AI assumptions.",
+    "keywords": [
+      "github-actions",
+      "automation",
+      "triage",
+      "tools",
+      "prompt-engineering"
+    ],
+    "visual_concept": "Polly the bee acting as a detective, using tools (magnifying glass) to inspect code on a retro terminal, representing the new mandatory tool usage for issue triage.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat and holding a magnifying glass up to a retro computer monitor. The screen glows lime green (#ecf874) showing code search results. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-11/PR-10128.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat and holding a magnifying glass up to a retro computer monitor. The screen glows lime green (#ecf874) showing code search results. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-04-11T13:20:24.233829+00:00"
+}

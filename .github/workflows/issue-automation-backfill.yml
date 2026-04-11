@@ -51,30 +51,31 @@ jobs:
             // --- Polly System Prompt ---
             const systemPrompt = `You are an issue triage bot for pollinations/pollinations. Your ONLY output is a single raw JSON object. NO markdown. NO code fences. NO explanation. NO text before or after. JUST the JSON object starting with { and ending with }.
 
-            Workflow:
-            1. Use find_similar to check for duplicates
-            2. Use code_search to check if the problem is already fixed in code
-            3. Assess if it is a minor auto-fixable issue
-            4. Return your verdict as JSON
+            MANDATORY TOOL USAGE — you MUST call these tools before returning your verdict:
+            1. ALWAYS call github_issue with action "find_similar" using keywords from the issue title/body. Report what you found.
+            2. ALWAYS call code_search to check if the problem described is already fixed or addressed in the codebase. Search for relevant function names, error messages, or feature keywords.
+            3. Only AFTER completing both searches, assess the results and return your JSON verdict.
 
-            Schema: {"action":"duplicate|resolved|auto_fix|skip","confidence":0.0-1.0,"reason":"1-2 sentences","similar_issue":"#number or null","solution_reference":"file/commit/PR or null","comment":"friendly comment to post on the issue, or null if skip"}
+            DO NOT skip tool calls. DO NOT guess based on your training data alone. Every verdict must be backed by actual search results from find_similar and code_search.
 
-            Rules:
-            - "duplicate": Issue matches an existing open issue. High confidence only.
-            - "resolved": Problem is already fixed in the codebase (found via code_search). High confidence only.
-            - "auto_fix": Issue is minor and well-defined (typo, small bug, config change, doc update). Not urgent.
-            - "skip": Issue needs human attention (vague, complex, urgent, architectural).
-            - Always search before deciding. Never guess.
+            Schema: {"action":"duplicate|resolved|auto_fix|skip","confidence":0.0-1.0,"reason":"1-2 sentences referencing what you found in search results","similar_issue":"#number or null","solution_reference":"file/commit/PR or null","comment":"friendly comment to post on the issue, or null if skip"}
+
+            Actions:
+            - "duplicate": find_similar returned a matching open issue. Reference it by number. High confidence only.
+            - "resolved": code_search found that the fix already exists in the codebase. Reference the file/PR. High confidence only.
+            - "auto_fix": Issue is minor and well-defined (typo, small bug, config change, doc update). Not urgent. code_search confirmed it is NOT yet fixed.
+            - "skip": Issue needs human attention, or searches were inconclusive.
             - For duplicates, reference the original issue number in the comment.
-            - For resolved issues, reference the specific file/commit/PR in the comment.`;
+            - For resolved issues, reference the specific file/commit/PR in the comment.
+            - If code_search or find_similar return no results, default to "skip".`;
 
             const fewShot = [
               { role: 'user', content: 'Title: grok-video ignoring image input\nBody: When I pass an image to grok-video it completely ignores it and generates from text only.' },
-              { role: 'assistant', content: '{"action":"duplicate","confidence":0.95,"reason":"Exact duplicate of #8262 which reports the same grok-video image input being ignored.","similar_issue":"#8262","solution_reference":null,"comment":"This is a known issue! See #8262 for the ongoing discussion about grok-video ignoring image inputs. Closing as duplicate."}' },
+              { role: 'assistant', content: '{"action":"duplicate","confidence":0.95,"reason":"find_similar returned #8262 which reports the same grok-video image input being ignored. code_search confirmed the image parameter pass-through is still missing in the airforce API handler.","similar_issue":"#8262","solution_reference":null,"comment":"This is a known issue! See #8262 for the ongoing discussion about grok-video ignoring image inputs. Closing as duplicate."}' },
               { role: 'user', content: 'Title: Service is completely down, nothing works\nBody: All API endpoints returning 500 errors since 10 minutes ago.' },
-              { role: 'assistant', content: '{"action":"skip","confidence":0.99,"reason":"Critical outage report requiring immediate human investigation.","similar_issue":null,"solution_reference":null,"comment":null}' },
+              { role: 'assistant', content: '{"action":"skip","confidence":0.99,"reason":"Critical outage — requires immediate human investigation. find_similar found no matching open outage reports. code_search not applicable for live incidents.","similar_issue":null,"solution_reference":null,"comment":null}' },
               { role: 'user', content: 'Title: Fix broken link in README contributing section\nBody: The link to CONTRIBUTING.md in the main README.md points to /docs/CONTRIBUTING.md but the file is at /CONTRIBUTING.md in the repo root.' },
-              { role: 'assistant', content: '{"action":"auto_fix","confidence":0.90,"reason":"Simple broken link fix in README.md. Well-defined, minor change.","similar_issue":null,"solution_reference":"README.md","comment":"Looks like a quick link fix! Polly will take care of this."}' },
+              { role: 'assistant', content: '{"action":"auto_fix","confidence":0.90,"reason":"find_similar returned no duplicates. code_search confirmed README.md still contains the broken /docs/CONTRIBUTING.md link. Simple path fix.","similar_issue":null,"solution_reference":"README.md","comment":"Looks like a quick link fix! Polly will take care of this."}' },
             ];
 
             // --- JSON extractor ---
@@ -163,7 +164,7 @@ jobs:
             while (true) {
               const { data: batch } = await github.rest.issues.listForRepo({
                 owner, repo, state: 'open', per_page: 100, page,
-                sort: 'created', direction: 'asc',
+                sort: 'created', direction: 'desc',
               });
 
               // Filter out PRs (GitHub API returns PRs in issues endpoint)

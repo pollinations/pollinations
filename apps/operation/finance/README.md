@@ -5,7 +5,7 @@ Node CLI that ingests transaction CSVs, resolves vendor identity via an alias fi
 ## Prerequisites
 
 - Node 20+
-- [`gog`](https://github.com/anthropics/gog) CLI authenticated to the Google account that owns the target spreadsheet:
+- `gog` CLI (a local Google Workspace CLI tool) authenticated to the Google account that owns the target spreadsheet:
   ```
   gog login you@example.com
   ```
@@ -33,7 +33,7 @@ Node CLI that ingests transaction CSVs, resolves vendor identity via an alias fi
 
 ```
 npm run rebuild          # full rebuild from all CSVs (idempotent)
-npm run add-month FILE   # import a new month, then rebuild
+npm run add-month -- FILE   # import a new month, then rebuild (note the -- to forward the arg)
 npm run forecast         # re-compute forecast columns without re-reading CSVs
 npm test                 # unit tests
 ```
@@ -43,8 +43,8 @@ npm test                 # unit tests
 The first time the rebuild script sees a vendor not in `secrets/vendors.json`, it will prompt:
 
 ```
-New vendor: "Vast.ai Inc."
-  Canonical name [Vast.ai Inc.]: Vast.ai
+New vendor: "Acme Cloud Inc."
+  Canonical name [Acme Cloud Inc.]: Acme Cloud
   Category [Other]: Compute
   Forecast rule (number | avg3 | last | none | live) [avg3]: avg3
 ```

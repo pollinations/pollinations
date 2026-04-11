@@ -1,0 +1,34 @@
+{
+  "pr_number": 10130,
+  "title": "cleanup: remove 10 unused secrets across enter/image/text",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10130",
+  "merged_at": "2026-04-11T14:11:47Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the vault",
+    "blurb": "We just did a massive sweep of our internal configuration, removing old, unused API keys and secrets. A cleaner codebase means a happier, more secure hive!",
+    "summary": "Removed 10 unused secrets and associated dead code across the enter, image, and text services to streamline configuration.",
+    "impact": "This internal cleanup reduces configuration clutter and improves security hygiene without affecting any user-facing features.",
+    "keywords": [
+      "cleanup",
+      "secrets",
+      "infrastructure",
+      "security",
+      "refactor"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny janitor's hat, sweeping away old glowing keys or locks into a dustpan. Nomnom creature eating old keys.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up old glowing pixelated keys with a small broom. The round tan nomnom creature happily eats a discarded key. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-11/PR-10130.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up old glowing pixelated keys with a small broom. The round tan nomnom creature happily eats a discarded key. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-11T14:12:44.665715+00:00"
+}

@@ -28,6 +28,8 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | Stripe (revenue + fees) | [providers/stripe.md](providers/stripe.md) | ✅ Production — balance, balance_transactions, fees. March 2026: €7,303 gross / €6,627 net. | 2026-04-11 |
 | Polar.sh (subscriptions + MRR) | [providers/polar.md](providers/polar.md) | ✅ Production — `/metrics` endpoint, products, churn. ⚠️ `/metrics.revenue = 0` since Feb 2026 while Stripe shows €7k/mo — cross-check always. | 2026-04-11 |
 | Wise (cash position) | [providers/wise.md](providers/wise.md) | ✅ Production — profiles + balances live. €58,594 in business EUR balance captured. ⚠️ Statement/transaction endpoints require SCA keypair (one-time openssl setup). | 2026-04-11 |
+| RunPod (GPU shadow cost) | [providers/runpod.md](providers/runpod.md) | ✅ Production — live burn rate + credit balance via GraphQL. $2,071 credit remaining, $1.648/hr burn, ~52 days runway. No historical ledger (poll to reconstruct). | 2026-04-11 |
+| Lambda Labs (GPU shadow cost) | [providers/lambda-labs.md](providers/lambda-labs.md) | ✅ Production — instances + price book live. $5.57/hr → ~$4,010/mo across 3 instances. ❌ Zero billing endpoints; shadow cost ONLY via polling + price book. | 2026-04-11 |
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
 | GCP / Vertex AI | `providers/gcp.md` | ⏳ TODO | — |
 | Tinybird | `providers/tinybird.md` | ⏳ TODO (see also `tinybird-deploy` skill for deploys) | — |

@@ -1,0 +1,198 @@
+name: Issue Automation
+
+on:
+  issues:
+    types: [opened]
+
+concurrency:
+  group: issue-automation-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    # Skip bots and TIER issues
+    if: |
+      !endsWith(github.event.issue.user.login, '[bot]') &&
+      !contains(github.event.issue.user.login, 'dependabot') &&
+      !contains(github.event.issue.user.login, 'renovate')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: token
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Triage Issue
+        uses: actions/github-script@v7
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_AUTOPOLLY_KEY }}
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const issue = context.payload.issue;
+
+            // Skip TIER-labeled issues
+            const hasTierLabel = issue.labels?.some(l => l.name.startsWith('TIER-'));
+            if (hasTierLabel) {
+              console.log('Skipping: TIER-labeled issue');
+              return;
+            }
+
+            // --- Polly System Prompt ---
+            const systemPrompt = `You are an issue triage bot for pollinations/pollinations. Your ONLY output is a single raw JSON object. NO markdown. NO code fences. NO explanation. NO text before or after. JUST the JSON object starting with { and ending with }.
+
+            Workflow:
+            1. Use find_similar to check for duplicates
+            2. Use code_search to check if the problem is already fixed in code
+            3. Assess if it is a minor auto-fixable issue
+            4. Return your verdict as JSON
+
+            Schema: {"action":"duplicate|resolved|auto_fix|skip","confidence":0.0-1.0,"reason":"1-2 sentences","similar_issue":"#number or null","solution_reference":"file/commit/PR or null","comment":"friendly comment to post on the issue, or null if skip"}
+
+            Rules:
+            - "duplicate": Issue matches an existing open issue. High confidence only.
+            - "resolved": Problem is already fixed in the codebase (found via code_search). High confidence only.
+            - "auto_fix": Issue is minor and well-defined (typo, small bug, config change, doc update). Not urgent.
+            - "skip": Issue needs human attention (vague, complex, urgent, architectural).
+            - Always search before deciding. Never guess.
+            - For duplicates, reference the original issue number in the comment.
+            - For resolved issues, reference the specific file/commit/PR in the comment.`;
+
+            // --- Few-shot examples ---
+            const fewShot = [
+              { role: 'user', content: 'Title: grok-video ignoring image input\nBody: When I pass an image to grok-video it completely ignores it and generates from text only.' },
+              { role: 'assistant', content: '{"action":"duplicate","confidence":0.95,"reason":"Exact duplicate of #8262 which reports the same grok-video image input being ignored.","similar_issue":"#8262","solution_reference":null,"comment":"This is a known issue! See #8262 for the ongoing discussion about grok-video ignoring image inputs. Closing as duplicate."}' },
+              { role: 'user', content: 'Title: Service is completely down, nothing works\nBody: All API endpoints returning 500 errors since 10 minutes ago.' },
+              { role: 'assistant', content: '{"action":"skip","confidence":0.99,"reason":"Critical outage report requiring immediate human investigation.","similar_issue":null,"solution_reference":null,"comment":null}' },
+              { role: 'user', content: 'Title: Fix broken link in README contributing section\nBody: The link to CONTRIBUTING.md in the main README.md points to /docs/CONTRIBUTING.md but the file is at /CONTRIBUTING.md in the repo root.' },
+              { role: 'assistant', content: '{"action":"auto_fix","confidence":0.90,"reason":"Simple broken link fix in README.md. Well-defined, minor change.","similar_issue":null,"solution_reference":"README.md","comment":"Looks like a quick link fix! Polly will take care of this."}' },
+            ];
+
+            // --- JSON extractor ---
+            function extractJSON(content) {
+              if (!content?.trim()) return null;
+              content = content.trim();
+
+              // Try 1: direct parse
+              try {
+                const parsed = JSON.parse(content);
+                if (parsed?.action) return parsed;
+              } catch {}
+
+              // Try 2: strip markdown code fences
+              const fenced = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+              if (fenced) {
+                try {
+                  const parsed = JSON.parse(fenced[1]);
+                  if (parsed?.action) return parsed;
+                } catch {}
+              }
+
+              // Try 3: find JSON object in prose
+              const braceMatch = content.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
+              if (braceMatch) {
+                try {
+                  const parsed = JSON.parse(braceMatch[0]);
+                  if (parsed?.action) return parsed;
+                } catch {}
+              }
+
+              return null;
+            }
+
+            // --- Call Polly with retries ---
+            const SEEDS = [42, 777, 1337];
+            const issueContent = `Title: ${issue.title}\nBody: ${(issue.body || '').slice(0, 3000)}`;
+            let verdict = null;
+
+            for (let attempt = 0; attempt < 3; attempt++) {
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 120000);
+              try {
+                const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.POLLINATIONS_TOKEN}`,
+                  },
+                  body: JSON.stringify({
+                    model: 'polly',
+                    seed: SEEDS[attempt],
+                    messages: [
+                      { role: 'system', content: systemPrompt },
+                      ...fewShot,
+                      { role: 'user', content: issueContent },
+                    ],
+                    max_tokens: 500,
+                    response_format: { type: 'json_object' },
+                  }),
+                  signal: controller.signal,
+                });
+
+                if (response.ok) {
+                  const data = await response.json();
+                  const content = data.choices?.[0]?.message?.content;
+                  console.log(`Attempt ${attempt + 1} raw response: ${content}`);
+                  verdict = extractJSON(content);
+                  if (verdict) break;
+                } else {
+                  console.log(`Attempt ${attempt + 1} HTTP ${response.status}`);
+                }
+              } catch (err) {
+                console.log(`Attempt ${attempt + 1} error: ${err.message}`);
+              } finally {
+                clearTimeout(timeout);
+              }
+
+              if (attempt < 2) {
+                await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+              }
+            }
+
+            if (!verdict) {
+              console.log('All retries failed or no valid JSON. Skipping.');
+              return;
+            }
+
+            console.log(`Verdict: ${JSON.stringify(verdict)}`);
+
+            // --- Validate action ---
+            const validActions = ['duplicate', 'resolved', 'auto_fix', 'skip'];
+            if (!validActions.includes(verdict.action)) {
+              console.log(`Invalid action "${verdict.action}". Skipping.`);
+              return;
+            }
+
+            // --- Confidence thresholds ---
+            const thresholds = { duplicate: 0.85, resolved: 0.85, auto_fix: 0.70 };
+            const minConfidence = thresholds[verdict.action];
+            if (minConfidence && verdict.confidence < minConfidence) {
+              console.log(`Confidence ${verdict.confidence} below threshold ${minConfidence} for ${verdict.action}. Skipping.`);
+              return;
+            }
+
+            // --- Execute action ---
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = issue.number;
+
+            if (verdict.action === 'duplicate' && verdict.comment) {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: verdict.comment });
+              await github.rest.issues.update({ owner, repo, issue_number, state: 'closed', state_reason: 'not_planned' });
+              console.log(`Closed #${issue_number} as duplicate`);
+            } else if (verdict.action === 'resolved' && verdict.comment) {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: verdict.comment });
+              await github.rest.issues.update({ owner, repo, issue_number, state: 'closed', state_reason: 'completed' });
+              console.log(`Closed #${issue_number} as resolved`);
+            } else if (verdict.action === 'auto_fix') {
+              if (verdict.comment) {
+                await github.rest.issues.createComment({ owner, repo, issue_number, body: verdict.comment });
+              }
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: ['polly'] });
+              console.log(`Added polly label to #${issue_number} for auto-fix`);
+            } else {
+              console.log(`Action: skip for #${issue_number}`);
+            }

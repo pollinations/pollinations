@@ -105,10 +105,13 @@ async function main() {
         await applyFormat(spreadsheetId, fmt, { account });
     }
 
-    // Number format for all numeric cells in month columns + total
+    // Number format for all numeric cells in month columns + total.
+    // Start at the row AFTER the header (layout.freezeRows+1) to avoid formatting
+    // the header text cells as numbers (which would render month labels as date serials).
     const firstMonthCol = colLetter(2);
     const totalCol = colLetter(2 + extended.months.length);
-    const numericRange = `Sheet1!${firstMonthCol}5:${totalCol}${layout.cells.length}`;
+    const firstDataRow = layout.freezeRows + 1;
+    const numericRange = `Sheet1!${firstMonthCol}${firstDataRow}:${totalCol}${layout.cells.length}`;
     await applyNumberFormat(
         spreadsheetId,
         numericRange,

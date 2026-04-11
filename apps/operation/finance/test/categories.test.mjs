@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-    CATEGORIES,
-    categoryIndex,
-    isRevenue,
-    REVENUE_CATEGORIES,
-} from "../lib/categories.mjs";
+import { CATEGORIES, categoryIndex, isRevenue } from "../lib/categories.mjs";
 
 test("CATEGORIES is a non-empty array of strings", () => {
     assert.ok(Array.isArray(CATEGORIES));

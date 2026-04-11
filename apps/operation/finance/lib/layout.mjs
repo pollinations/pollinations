@@ -308,6 +308,7 @@ export function buildLayout(matrix, config, { currentMonth }) {
                 backgroundColor: BG_SUBTOTAL,
                 borders: {
                     top: { style: "SOLID", color: INK_MUTED },
+                    bottom: { style: "SOLID", color: INK_MUTED },
                 },
             },
         });

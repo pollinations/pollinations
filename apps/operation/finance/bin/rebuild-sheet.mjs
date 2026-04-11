@@ -98,7 +98,32 @@ async function main() {
         `Writing ${layout.cells.length} rows × ${layout.cells[0].length} cols to sheet...`,
     );
     const lastCol = colLetter(layout.cells[0].length - 1);
-    await clearSheet(spreadsheetId, `Sheet1!A1:${lastCol}1000`, { account });
+    const fullCanvas = `Sheet1!A1:${lastCol}1000`;
+    await clearSheet(spreadsheetId, fullCanvas, { account });
+
+    // Wipe any lingering formatting from previous rebuilds so new formats
+    // don't merge with stale state (stale bold/italic/background/border).
+    await applyFormat(
+        spreadsheetId,
+        {
+            range: fullCanvas,
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.textFormat.fontSize,userEnteredFormat.backgroundColor,userEnteredFormat.borders,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment",
+            format: {
+                textFormat: {
+                    bold: false,
+                    italic: false,
+                    fontSize: 10,
+                    foregroundColor: { red: 0.1, green: 0.1, blue: 0.12 },
+                },
+                backgroundColor: { red: 1, green: 1, blue: 1 },
+                borders: {},
+                horizontalAlignment: "LEFT",
+                verticalAlignment: "MIDDLE",
+            },
+        },
+        { account },
+    );
+
     await updateValues(spreadsheetId, "Sheet1!A1", layout.cells, { account });
 
     for (const fmt of layout.formats) {

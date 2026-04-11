@@ -16,6 +16,10 @@ on:
         type: number
         default: 5
 
+concurrency:
+  group: issue-automation-backfill
+  cancel-in-progress: true
+
 jobs:
   backfill:
     runs-on: ubuntu-latest
@@ -39,8 +43,10 @@ jobs:
           github-token: ${{ steps.token.outputs.token }}
           script: |
             const dryRun = process.env.DRY_RUN === 'true';
-            const maxIssues = process.env.MAX_ISSUES !== undefined ? parseInt(process.env.MAX_ISSUES) : 50;
-            const delaySec = process.env.DELAY_SECONDS !== undefined ? parseInt(process.env.DELAY_SECONDS) : 5;
+            const rawMax = parseInt(process.env.MAX_ISSUES);
+            const maxIssues = Number.isFinite(rawMax) ? rawMax : 50;
+            const rawDelay = parseInt(process.env.DELAY_SECONDS);
+            const delaySec = Number.isFinite(rawDelay) ? rawDelay : 5;
 
             console.log(`=== Issue Automation Backfill ===`);
             console.log(`Mode: ${dryRun ? 'DRY RUN' : 'LIVE'}`);
@@ -61,21 +67,25 @@ jobs:
             Schema: {"action":"duplicate|resolved|auto_fix|skip","confidence":0.0-1.0,"reason":"1-2 sentences referencing what you found in search results","similar_issue":"#number or null","solution_reference":"file/commit/PR or null","comment":"friendly comment to post on the issue, or null if skip"}
 
             Actions:
-            - "duplicate": find_similar returned a matching open issue. Reference it by number. High confidence only.
+            - "duplicate": find_similar returned a DIFFERENT matching open issue. Reference it by number. High confidence only.
             - "resolved": code_search found that the fix already exists in the codebase. Reference the file/PR. High confidence only.
             - "auto_fix": Issue is minor and well-defined (typo, small bug, config change, doc update). Not urgent. code_search confirmed it is NOT yet fixed.
             - "skip": Issue needs human attention, or searches were inconclusive.
             - For duplicates, reference the original issue number in the comment.
             - For resolved issues, reference the specific file/commit/PR in the comment.
-            - If code_search or find_similar return no results, default to "skip".`;
+            - Comments should be playful, concise, and to the point. No walls of text. 1-3 sentences max.
+            - If code_search or find_similar return no results, default to "skip".
+            - CRITICAL: The issue number being analyzed is provided in the user message. NEVER mark an issue as a duplicate of itself. If find_similar only returns the same issue number, that is NOT a duplicate.`;
 
             const fewShot = [
-              { role: 'user', content: 'Title: grok-video ignoring image input\nBody: When I pass an image to grok-video it completely ignores it and generates from text only.' },
+              { role: 'user', content: 'Issue #9999:\nTitle: grok-video ignoring image input\nBody: When I pass an image to grok-video it completely ignores it and generates from text only.' },
               { role: 'assistant', content: '{"action":"duplicate","confidence":0.95,"reason":"find_similar returned #8262 which reports the same grok-video image input being ignored. code_search confirmed the image parameter pass-through is still missing in the airforce API handler.","similar_issue":"#8262","solution_reference":null,"comment":"This is a known issue! See #8262 for the ongoing discussion about grok-video ignoring image inputs. Closing as duplicate."}' },
-              { role: 'user', content: 'Title: Service is completely down, nothing works\nBody: All API endpoints returning 500 errors since 10 minutes ago.' },
+              { role: 'user', content: 'Issue #9998:\nTitle: Service is completely down, nothing works\nBody: All API endpoints returning 500 errors since 10 minutes ago.' },
               { role: 'assistant', content: '{"action":"skip","confidence":0.99,"reason":"Critical outage — requires immediate human investigation. find_similar found no matching open outage reports. code_search not applicable for live incidents.","similar_issue":null,"solution_reference":null,"comment":null}' },
-              { role: 'user', content: 'Title: Fix broken link in README contributing section\nBody: The link to CONTRIBUTING.md in the main README.md points to /docs/CONTRIBUTING.md but the file is at /CONTRIBUTING.md in the repo root.' },
+              { role: 'user', content: 'Issue #9997:\nTitle: Fix broken link in README contributing section\nBody: The link to CONTRIBUTING.md in the main README.md points to /docs/CONTRIBUTING.md but the file is at /CONTRIBUTING.md in the repo root.' },
               { role: 'assistant', content: '{"action":"auto_fix","confidence":0.90,"reason":"find_similar returned no duplicates. code_search confirmed README.md still contains the broken /docs/CONTRIBUTING.md link. Simple path fix.","similar_issue":null,"solution_reference":"README.md","comment":"Looks like a quick link fix! Polly will take care of this."}' },
+              { role: 'user', content: 'Issue #9996:\nTitle: Audio generation returns 500 error\nBody: Calling /audio/hello with voice=nova returns a 500 internal server error. Started happening after the last deploy.' },
+              { role: 'assistant', content: '{"action":"resolved","confidence":0.92,"reason":"find_similar returned #7801 which reported the same audio 500 error. code_search found the fix was merged in enter.pollinations.ai/src/routes/audio.ts — the voice parameter validation was added and the ElevenLabs fallback was fixed in a recent commit.","similar_issue":"#7801","solution_reference":"enter.pollinations.ai/src/routes/audio.ts","comment":"This was fixed! The audio route had a missing voice parameter validation that caused 500s. The fix landed in enter.pollinations.ai/src/routes/audio.ts. Closing as resolved."}' },
             ];
 
             // --- JSON extractor ---
@@ -110,7 +120,7 @@ jobs:
             // --- Call Polly for a single issue ---
             const SEEDS = [42, 777, 1337];
             async function triageIssue(issue) {
-              const issueContent = `Title: ${issue.title}\nBody: ${(issue.body || '').slice(0, 3000)}`;
+              const issueContent = `Issue #${issue.number}:\nTitle: ${issue.title}\nBody: ${(issue.body || '').slice(0, 3000)}`;
 
               for (let attempt = 0; attempt < 3; attempt++) {
                 const controller = new AbortController();
@@ -130,7 +140,6 @@ jobs:
                         ...fewShot,
                         { role: 'user', content: issueContent },
                       ],
-                      max_tokens: 500,
                       response_format: { type: 'json_object' },
                     }),
                     signal: controller.signal,
@@ -139,8 +148,11 @@ jobs:
                   if (response.ok) {
                     const data = await response.json();
                     const content = data.choices?.[0]?.message?.content;
+                    console.log(`  Attempt ${attempt + 1} response: ${content?.slice(0, 300)}`);
                     const verdict = extractJSON(content);
                     if (verdict) return verdict;
+                  } else {
+                    console.log(`  Attempt ${attempt + 1} HTTP ${response.status}`);
                   }
                 } catch (err) {
                   console.log(`  Attempt ${attempt + 1} error: ${err.message}`);
@@ -177,13 +189,14 @@ jobs:
 
             console.log(`Found ${allIssues.length} open issues`);
 
-            // Filter out bots and TIER-labeled
+            // Filter out bots, TIER-labeled, polly-labeled, and recently created (avoid racing with live workflow)
+            const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
             const eligible = allIssues.filter(issue => {
               const login = issue.user?.login || '';
               if (login.endsWith('[bot]') || login.includes('dependabot') || login.includes('renovate')) return false;
               if (issue.labels?.some(l => l.name.startsWith('TIER-'))) return false;
-              // Skip issues that already have the polly label
               if (issue.labels?.some(l => l.name === 'polly')) return false;
+              if (issue.created_at > fiveMinAgo) return false;
               return true;
             });
 
@@ -193,6 +206,8 @@ jobs:
 
             // --- Process each issue ---
             const stats = { duplicate: 0, resolved: 0, auto_fix: 0, skip: 0, error: 0 };
+            let consecutiveErrors = 0;
+            const MAX_CONSECUTIVE_ERRORS = 5;
             const validActions = ['duplicate', 'resolved', 'auto_fix', 'skip'];
             const thresholds = { duplicate: 0.85, resolved: 0.85, auto_fix: 0.70 };
 
@@ -200,15 +215,29 @@ jobs:
               const issue = toProcess[i];
               console.log(`[${i + 1}/${toProcess.length}] #${issue.number}: ${issue.title.slice(0, 80)}`);
 
+              // Circuit breaker
+              if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                console.log(`Aborting: ${MAX_CONSECUTIVE_ERRORS} consecutive errors. Polly API may be down.`);
+                break;
+              }
+
               const verdict = await triageIssue(issue);
+
+              // Guard: self-duplicate
+              if (verdict?.action === 'duplicate' && verdict.similar_issue === `#${issue.number}`) {
+                console.log(`  Self-duplicate detected, forcing skip.`);
+                verdict.action = 'skip';
+              }
 
               if (!verdict || !validActions.includes(verdict.action)) {
                 console.log(`  -> error (no valid verdict)`);
                 stats.error++;
+                consecutiveErrors++;
                 if (i < toProcess.length - 1) await new Promise(r => setTimeout(r, delaySec * 1000));
                 continue;
               }
 
+              verdict.confidence = parseFloat(verdict.confidence) || 0;
               const minConf = thresholds[verdict.action];
               if (minConf && verdict.confidence < minConf) {
                 console.log(`  -> skip (${verdict.action} confidence ${verdict.confidence} < ${minConf})`);
@@ -219,6 +248,7 @@ jobs:
 
               console.log(`  -> ${verdict.action} (confidence: ${verdict.confidence}) ${verdict.reason || ''}`);
               stats[verdict.action]++;
+              consecutiveErrors = 0;
 
               if (dryRun) {
                 if (i < toProcess.length - 1) await new Promise(r => setTimeout(r, delaySec * 1000));

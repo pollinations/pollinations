@@ -257,7 +257,6 @@ Body: {ISSUE_BODY[:2000]}
             raw = json.loads(content)
 
             is_app_submission = raw.get("is_app_submission", False)
-            is_polly_fixable = raw.get("is_polly_fixable", False)
 
             project = raw.get("project", "").lower()
             if project not in ["dev", "support", "news"]:
@@ -291,7 +290,6 @@ Body: {ISSUE_BODY[:2000]}
                 "labels": filtered_labels,
                 "reasoning": raw.get("reasoning", ""),
                 "is_app_submission": is_app_submission,
-                "is_polly_fixable": is_polly_fixable,
             }
 
             log_debug(f"AI parsed classification: {classification}")
@@ -517,12 +515,6 @@ def main():
     
     labels = normalize_labels(project_key, classification.get("labels", []))
     log_debug(f"Normalized labels: {labels}")
-
-    # Add "polly" label if AI determined issue is auto-fixable (issues only, not PRs)
-    # Safe because issue-polly-auto-fix.yml uses GitHub API to read issue body (not raw injection)
-    if classification.get("is_polly_fixable", False) and not IS_PULL_REQUEST:
-        log_debug("AI determined issue is Polly-fixable, adding 'polly' label")
-        labels.append("polly")
 
     item_id = add_to_project(project["id"])
     if not item_id:

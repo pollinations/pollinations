@@ -1,0 +1,34 @@
+{
+  "pr_number": 10132,
+  "title": "fix: harden issue automation pipeline",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/10132",
+  "merged_at": "2026-04-11T14:33:38Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly gets a promotion",
+    "blurb": "We've hardened our automated issue triage pipeline. Polly is now smarter at finding duplicates, avoiding self-loops, and keeping the repo organized without breaking a sweat.",
+    "summary": "Hardened the GitHub issue automation pipeline with concurrency guards, circuit breakers, and stricter tool usage enforcement for Polly.",
+    "impact": "Maintainers will see more accurate automated issue triage with fewer duplicate detections and better handling of API rate limits.",
+    "keywords": [
+      "github-actions",
+      "automation",
+      "triage",
+      "polly",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee acting as a project manager or sorting through issues. Wearing tiny reading glasses, sorting through a stack of papers (issues) with a robot helper.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, carefully sorting through a stack of glowing digital papers on a wooden desk. A chunky retro robot helper stands nearby holding a clipboard. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-11/PR-10132.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, carefully sorting through a stack of glowing digital papers on a wooden desk. A chunky retro robot helper stands nearby holding a clipboard. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-11T14:34:35.709470+00:00"
+}

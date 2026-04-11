@@ -122,47 +122,68 @@ export function buildLayout(matrix, config, { currentMonth }) {
     const monthCol = (monthIdx) => 2 + monthIdx;
     const totalCol = 2 + months.length; // "Total actual" column
 
+    // Design palette — minimal, consistent, neutral.
+    const INK = { red: 0.1, green: 0.1, blue: 0.12 };
+    const INK_MUTED = { red: 0.42, green: 0.45, blue: 0.5 };
+    const WHITE = { red: 1, green: 1, blue: 1 };
+    const BG_TITLE = { red: 0.12, green: 0.14, blue: 0.2 };
+    const BG_KPI = { red: 0.98, green: 0.98, blue: 0.96 };
+    const BG_HEADER = { red: 0.96, green: 0.96, blue: 0.97 };
+    const BG_CATEGORY = { red: 0.92, green: 0.93, blue: 0.96 };
+    const BG_SUBTOTAL = { red: 0.97, green: 0.97, blue: 0.98 };
+    const BG_TOTAL = { red: 0.92, green: 0.92, blue: 0.94 };
+    const BG_NET = { red: 0.88, green: 0.9, blue: 0.94 };
+    const BG_CASH = { red: 0.86, green: 0.9, blue: 0.86 };
+    const BG_CURRENT = { red: 1, green: 0.98, blue: 0.85 };
+    const BG_FORECAST = { red: 0.97, green: 0.97, blue: 0.97 };
+
     // --- row 0: title ---
     const titleRow = [
-        "POLLINATIONS FINANCE — RUNWAY TRACKER",
+        "Pollinations Finance — Runway Tracker",
         ...Array(totalCol).fill(""),
     ];
     cells.push(titleRow);
     formats.push({
         label: "title",
         range: sheetRange(0, 0, 0, totalCol),
-        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.fontSize,userEnteredFormat.backgroundColor,userEnteredFormat.textFormat.foregroundColor",
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment,userEnteredFormat.horizontalAlignment",
         format: {
             textFormat: {
                 bold: true,
-                fontSize: 16,
-                foregroundColor: { red: 1, green: 1, blue: 1 },
+                italic: false,
+                fontSize: 14,
+                foregroundColor: WHITE,
             },
-            backgroundColor: { red: 0.15, green: 0.15, blue: 0.2 },
+            backgroundColor: BG_TITLE,
+            verticalAlignment: "MIDDLE",
+            horizontalAlignment: "LEFT",
         },
     });
 
-    // --- row 1: blank ---
-    cells.push(Array(totalCol + 1).fill(""));
-
-    // --- row 2: KPIs ---
+    // --- row 1: KPIs (no blank row above) ---
     const kpi = computeKpis(matrix, config, { currentMonth });
     const kpiRow = [kpi.text, ...Array(totalCol).fill("")];
     cells.push(kpiRow);
     formats.push({
         label: "kpi",
-        range: sheetRange(2, 0, 2, totalCol),
-        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor",
+        range: sheetRange(1, 0, 1, totalCol),
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment",
         format: {
-            textFormat: { bold: true },
-            backgroundColor: { red: 0.95, green: 0.97, blue: 1 },
+            textFormat: {
+                bold: false,
+                italic: false,
+                fontSize: 11,
+                foregroundColor: INK,
+            },
+            backgroundColor: BG_KPI,
+            verticalAlignment: "MIDDLE",
         },
     });
 
-    // --- row 3: blank ---
+    // --- row 2: blank spacer ---
     cells.push(Array(totalCol + 1).fill(""));
 
-    // --- row 4: header ---
+    // --- row 3: header ---
     const currentMonthIdx = months.indexOf(currentMonth); // may be -1
     const headerRow = ["Category", "Vendor"];
     for (const m of months) {
@@ -179,12 +200,27 @@ export function buildLayout(matrix, config, { currentMonth }) {
     formats.push({
         label: "header",
         range: sheetRange(headerRowIdx, 0, headerRowIdx, totalCol),
-        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders,userEnteredFormat.horizontalAlignment",
         format: {
-            textFormat: { bold: true },
-            backgroundColor: { red: 0.93, green: 0.93, blue: 0.93 },
-            borders: { bottom: { style: "SOLID" } },
+            textFormat: {
+                bold: true,
+                italic: false,
+                fontSize: 10,
+                foregroundColor: INK,
+            },
+            backgroundColor: BG_HEADER,
+            borders: {
+                bottom: { style: "SOLID", color: INK },
+            },
+            horizontalAlignment: "RIGHT",
         },
+    });
+    // Force left alignment for the Category and Vendor header cells
+    formats.push({
+        label: "headerLabels",
+        range: sheetRange(headerRowIdx, 0, headerRowIdx, 1),
+        fields: "userEnteredFormat.horizontalAlignment",
+        format: { horizontalAlignment: "LEFT" },
     });
 
     // --- vendor rows grouped by category ---
@@ -198,14 +234,20 @@ export function buildLayout(matrix, config, { currentMonth }) {
         formats.push({
             label: `category-${category}`,
             range: sheetRange(catRowIdx, 0, catRowIdx, totalCol),
-            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor",
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor",
             format: {
-                textFormat: { bold: true },
-                backgroundColor: { red: 0.85, green: 0.9, blue: 1 },
+                textFormat: {
+                    bold: true,
+                    italic: false,
+                    fontSize: 11,
+                    foregroundColor: INK,
+                },
+                backgroundColor: BG_CATEGORY,
             },
         });
 
-        // Vendor rows
+        // Vendor rows (all plain, consistent)
+        const firstVendorRowIdx = cells.length;
         for (const vendor of vendors) {
             const row = ["", vendor];
             let totalActual = 0;
@@ -219,6 +261,22 @@ export function buildLayout(matrix, config, { currentMonth }) {
             row.push(Number(totalActual.toFixed(2)));
             cells.push(row);
         }
+        const lastVendorRowIdx = cells.length - 1;
+        // Uniform plain style across the whole vendor block.
+        formats.push({
+            label: `vendors-${category}`,
+            range: sheetRange(firstVendorRowIdx, 0, lastVendorRowIdx, totalCol),
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor",
+            format: {
+                textFormat: {
+                    bold: false,
+                    italic: false,
+                    fontSize: 10,
+                    foregroundColor: INK,
+                },
+                backgroundColor: WHITE,
+            },
+        });
 
         // Subtotal row
         const subtotal = ["", `${category} subtotal`];
@@ -227,7 +285,6 @@ export function buildLayout(matrix, config, { currentMonth }) {
                 Number(sumRowForVendors(matrix, m, vendors).toFixed(2)),
             );
         }
-        // Total actual for subtotal = sum of actual months only
         let subtotalActual = 0;
         for (const m of months) {
             if (!matrix.forecastMonths.has(m) && m !== currentMonth) {
@@ -239,19 +296,24 @@ export function buildLayout(matrix, config, { currentMonth }) {
         const subRowIdx = cells.length - 1;
         formats.push({
             label: `subtotal-${category}`,
-            range: sheetRange(subRowIdx, 1, subRowIdx, totalCol),
-            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.borders",
+            range: sheetRange(subRowIdx, 0, subRowIdx, totalCol),
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
             format: {
-                textFormat: { bold: true, italic: true },
-                borders: { top: { style: "SOLID" } },
+                textFormat: {
+                    bold: true,
+                    italic: false,
+                    fontSize: 10,
+                    foregroundColor: INK,
+                },
+                backgroundColor: BG_SUBTOTAL,
+                borders: {
+                    top: { style: "SOLID", color: INK_MUTED },
+                },
             },
         });
-
-        // Blank spacer
-        cells.push(Array(totalCol + 1).fill(""));
     }
 
-    // --- TOTAL EXPENSES row (sum of all expense vendors) ---
+    // --- TOTAL EXPENSES row ---
     const expenseVendors = Object.entries(matrix.vendors)
         .filter(([, cat]) => !isRevenue(cat))
         .map(([v]) => v);
@@ -259,7 +321,10 @@ export function buildLayout(matrix, config, { currentMonth }) {
         .filter(([, cat]) => isRevenue(cat))
         .map(([v]) => v);
 
-    const totalExpRow = ["", "TOTAL EXPENSES"];
+    // Blank spacer before totals
+    cells.push(Array(totalCol + 1).fill(""));
+
+    const totalExpRow = ["", "Total expenses"];
     for (const m of months)
         totalExpRow.push(
             Number(sumRowForVendors(matrix, m, expenseVendors).toFixed(2)),
@@ -270,19 +335,23 @@ export function buildLayout(matrix, config, { currentMonth }) {
     formats.push({
         label: "totalExpenses",
         range: sheetRange(totalExpRowIdx, 0, totalExpRowIdx, totalCol),
-        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
         format: {
-            textFormat: { bold: true },
-            backgroundColor: { red: 0.95, green: 0.85, blue: 0.85 },
+            textFormat: {
+                bold: true,
+                italic: false,
+                fontSize: 11,
+                foregroundColor: INK,
+            },
+            backgroundColor: BG_TOTAL,
             borders: {
-                top: { style: "SOLID_THICK" },
-                bottom: { style: "SOLID" },
+                top: { style: "SOLID", color: INK },
             },
         },
     });
 
     // --- NET row ---
-    const netRow = ["", "NET (Revenue − Expenses)"];
+    const netRow = ["", "Net (Revenue − Expenses)"];
     for (const m of months) {
         const net =
             sumRowForVendors(matrix, m, revenueVendors) +
@@ -295,16 +364,25 @@ export function buildLayout(matrix, config, { currentMonth }) {
     formats.push({
         label: "net",
         range: sheetRange(netRowIdx, 0, netRowIdx, totalCol),
-        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
         format: {
-            textFormat: { bold: true },
-            backgroundColor: { red: 0.85, green: 0.95, blue: 0.85 },
-            borders: { bottom: { style: "SOLID_THICK" } },
+            textFormat: {
+                bold: true,
+                italic: false,
+                fontSize: 11,
+                foregroundColor: INK,
+            },
+            backgroundColor: BG_NET,
+            borders: {
+                bottom: { style: "SOLID", color: INK },
+            },
         },
     });
 
-    // --- Running cash row ---
+    // Blank spacer before running cash
     cells.push(Array(totalCol + 1).fill(""));
+
+    // --- Running cash row ---
     const cashRow = ["", "Running cash"];
     const asOfMonth = config.cashBalanceAsOf
         ? config.cashBalanceAsOf.slice(0, 7)
@@ -329,14 +407,25 @@ export function buildLayout(matrix, config, { currentMonth }) {
     formats.push({
         label: "runningCash",
         range: sheetRange(cashRowIdx, 0, cashRowIdx, totalCol),
-        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor",
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
         format: {
-            textFormat: { bold: true },
-            backgroundColor: { red: 0.9, green: 0.9, blue: 1 },
+            textFormat: {
+                bold: true,
+                italic: false,
+                fontSize: 11,
+                foregroundColor: INK,
+            },
+            backgroundColor: BG_CASH,
+            borders: {
+                top: { style: "SOLID", color: INK_MUTED },
+                bottom: { style: "SOLID", color: INK_MUTED },
+            },
         },
     });
 
-    // --- Column-level formats for current + forecast ---
+    // --- Column-level formats for current + forecast.
+    // These apply AFTER row styles so they must not clobber bold/italic state.
+    // Only the background color (and muted text color for forecast) changes.
     const lastRow = cells.length - 1;
     if (currentMonthIdx >= 0) {
         const c = monthCol(currentMonthIdx);
@@ -344,7 +433,7 @@ export function buildLayout(matrix, config, { currentMonth }) {
             label: "currentMonthColumn",
             range: `Sheet1!${colLetter(c)}${headerRowIdx + 1}:${colLetter(c)}${lastRow + 1}`,
             fields: "userEnteredFormat.backgroundColor",
-            format: { backgroundColor: { red: 1, green: 1, blue: 0.85 } },
+            format: { backgroundColor: BG_CURRENT },
         });
     }
     const forecastIdxs = months
@@ -358,13 +447,10 @@ export function buildLayout(matrix, config, { currentMonth }) {
         formats.push({
             label: "forecastColumns",
             range: `Sheet1!${colLetter(first)}${headerRowIdx + 1}:${colLetter(last)}${lastRow + 1}`,
-            fields: "userEnteredFormat.backgroundColor,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.foregroundColor",
+            fields: "userEnteredFormat.backgroundColor,userEnteredFormat.textFormat.foregroundColor",
             format: {
-                backgroundColor: { red: 0.94, green: 0.94, blue: 0.94 },
-                textFormat: {
-                    italic: true,
-                    foregroundColor: { red: 0.4, green: 0.4, blue: 0.4 },
-                },
+                backgroundColor: BG_FORECAST,
+                textFormat: { foregroundColor: INK_MUTED },
             },
         });
     }

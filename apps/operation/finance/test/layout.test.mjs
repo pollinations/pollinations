@@ -34,7 +34,7 @@ test("buildLayout returns cells, formats, columnWidths, freezeRows", () => {
 
 test("buildLayout first row is the title", () => {
     const { cells } = buildLayout(matrix, config, options);
-    assert.equal(cells[0][0], "POLLINATIONS FINANCE — RUNWAY TRACKER");
+    assert.equal(cells[0][0], "Pollinations Finance — Runway Tracker");
 });
 
 test("buildLayout includes a KPI summary row with cash, burn, runway", () => {
@@ -73,7 +73,7 @@ test("buildLayout groups vendors under category headers with subtotals", () => {
 
 test("buildLayout computes monthly totals row", () => {
     const { cells } = buildLayout(matrix, config, options);
-    const totalRow = cells.find((r) => r[1] === "TOTAL EXPENSES");
+    const totalRow = cells.find((r) => r[1] === "Total expenses");
     assert.ok(totalRow);
     // Jan: Acme (-100) + Beta (-42) = -142
     assert.equal(totalRow[2], -142);
@@ -82,7 +82,7 @@ test("buildLayout computes monthly totals row", () => {
 test("buildLayout computes net row (revenue + expenses)", () => {
     const { cells } = buildLayout(matrix, config, options);
     const netRow = cells.find(
-        (r) => typeof r[1] === "string" && r[1].startsWith("NET"),
+        (r) => typeof r[1] === "string" && r[1].startsWith("Net"),
     );
     assert.ok(netRow);
     // Jan: 500 + (-142) = 358

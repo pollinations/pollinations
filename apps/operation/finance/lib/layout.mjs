@@ -81,7 +81,13 @@ function indexPoolsByVendor(pools) {
     const byVendor = new Map();
     for (const [poolName, pool] of Object.entries(pools)) {
         const canonical = pool.vendor_canonical;
-        if (canonical) byVendor.set(canonical, { poolName, pool });
+        if (!canonical) continue;
+        // Revenue pools (Stripe) don't get the 3-row balance/credits/cash
+        // treatment — they're single-row vendors whose values are injected
+        // into matrix.data by rebuild-sheet.mjs before the layout runs.
+        // Skip them here so renderPoolVendor isn't called for them.
+        if (pool.role === "revenue") continue;
+        byVendor.set(canonical, { poolName, pool });
     }
     return byVendor;
 }
@@ -295,7 +301,7 @@ export function buildLayout(
 
         // Row 1: balance remaining (informational — only populated in currentMonth
         // for real credit pools; always dash for PayAsYouGo).
-        const balanceRow = ["", `    ${vendor} — balance remaining`];
+        const balanceRow = ["", `${vendor}: balance remaining`];
         for (const m of months) {
             if (isPayg) {
                 balanceRow.push("—");
@@ -312,7 +318,7 @@ export function buildLayout(
 
         // Row 2: consumed (credits) (informational — pulled from live MTD +
         // historical pool-history snapshots).
-        const creditRow = ["", `    ${vendor} — consumed (credits)`];
+        const creditRow = ["", `${vendor}: consumed credits`];
         for (const m of months) {
             if (m === currentMonth) {
                 const usedUsd = pool.pool.mtd_credit_usd ?? 0;
@@ -341,7 +347,7 @@ export function buildLayout(
         //         MTD in EUR. This is the "what hit the meter so far" number.
         //     (c) wrapper flagged mtd_stale (e.g. GCP BigQuery export lagging)
         //         → render "—" so the cell is visibly unknown, not a false zero.
-        const cashRow = ["", `    ${vendor} — consumed (cash)`];
+        const cashRow = ["", `${vendor}: consumed cash`];
         let totalActual = 0;
         for (let i = 0; i < months.length; i++) {
             const m = months[i];
@@ -430,34 +436,34 @@ export function buildLayout(
         formats.push({
             label: `vendors-${category}`,
             range: sheetRange(firstVendorRowIdx, 0, lastVendorRowIdx, totalCol),
-            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor",
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.underline,userEnteredFormat.textFormat.strikethrough,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.hyperlinkDisplayType",
             format: {
                 textFormat: {
                     bold: false,
                     italic: false,
+                    underline: false,
+                    strikethrough: false,
                     fontSize: 10,
                     foregroundColor: INK,
                 },
                 backgroundColor: WHITE,
+                hyperlinkDisplayType: "PLAIN_TEXT",
             },
         });
-        // Apply a muted italic text style to the info rows within this block
-        // (balance remaining, consumed credits) so they're visually distinct
-        // from the aggregatable cash row.
+        // Credit rows get blue foreground (so they're visually distinct from
+        // cash-expense rows — credits are "money not paid", not "money owed").
+        // Balance rows and cash rows keep the default INK color applied by the
+        // vendors-${category} block above. No italic — every pool sub-row has
+        // the same weight/style so the vendor column reads uniformly.
         for (let i = firstVendorRowIdx; i <= lastVendorRowIdx; i++) {
-            if (!infoRowIdxs.has(i)) continue;
-            // Credit rows get blue foreground; balance rows get muted gray.
-            const isCreditRow = creditRowIdxs.has(i);
+            if (!creditRowIdxs.has(i)) continue;
             formats.push({
-                label: `infoRow-${i}`,
+                label: `creditRow-${i}`,
                 range: sheetRange(i, 1, i, totalCol),
-                fields: "userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.foregroundColor",
+                fields: "userEnteredFormat.textFormat.foregroundColor",
                 format: {
                     textFormat: {
-                        italic: true,
-                        foregroundColor: isCreditRow
-                            ? { red: 0.2, green: 0.4, blue: 0.85 } // blue
-                            : INK_MUTED,
+                        foregroundColor: { red: 0.2, green: 0.4, blue: 0.85 },
                     },
                 },
             });

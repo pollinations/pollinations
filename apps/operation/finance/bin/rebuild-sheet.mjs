@@ -91,13 +91,61 @@ async function main() {
     // Aggregate → forecast → layout
     const matrix = aggregate(canonicalRows);
     const extended = forecast(matrix, vendors, config.forecastMonths ?? 6);
+
     // Credit pools live in vendors.json under the "_pools" key (config metadata,
     // not a vendor). Pool consumption history lives in a separate file so it
     // can accumulate across rebuilds without touching vendors.json.
     const pools = vendors._pools ?? {};
     const poolHistory = {}; // TODO v1.7: load from secrets/pool-history.json
+
+    // Inject live MTD cash from the provider wrappers into the extended
+    // matrix for the CURRENT MONTH ONLY, so subtotals/totals/net/running-cash
+    // naturally aggregate it. We do this AFTER forecast() so we don't
+    // interfere with the forecast module's view of "last actual month" —
+    // the current month is still a forecast month as far as forecast
+    // rules are concerned, but when live pool data exists for it, we
+    // overwrite that forecast with the live number.
+    //
+    // Stale pools (mtd_stale: true) are skipped — we don't want to
+    // clobber forecast values with a stale zero.
+    const nowMonth = currentMonthFromClock();
+    const fxRate =
+        typeof config.usd_to_eur === "number" ? config.usd_to_eur : 1;
+    if (extended.data[nowMonth]) {
+        for (const pool of Object.values(pools)) {
+            if (pool.role === "revenue") continue; // handled separately below
+            const canonical = pool.vendor_canonical;
+            if (!canonical) continue;
+            if (pool.mtd_stale === true) continue;
+            const cashUsd = pool.mtd_cash_usd;
+            if (typeof cashUsd !== "number" || cashUsd === 0) continue;
+            // Native-EUR pools (GCP) don't get FX applied.
+            const rate = pool.native_currency === "EUR" ? 1 : fxRate;
+            const cashEur = -Math.abs(cashUsd) * rate;
+            // Overwrite forecast/zero with the real live number.
+            extended.data[nowMonth][canonical] = cashEur;
+        }
+    }
+
+    // Revenue providers (Stripe) publish a full per-month history via
+    // `monthly_payouts`. Inject positive values for every month the API
+    // returned. Overwrites the Wise CSV row in place because the API
+    // payout value equals the Wise deposit value to the cent.
+    for (const pool of Object.values(pools)) {
+        if (pool.role !== "revenue") continue;
+        const canonical = pool.vendor_canonical;
+        if (!canonical) continue;
+        const payouts = pool.monthly_payouts;
+        if (!payouts || typeof payouts !== "object") continue;
+        for (const [month, amountEur] of Object.entries(payouts)) {
+            if (!extended.data[month]) continue; // skip months outside the grid
+            if (typeof amountEur !== "number") continue;
+            extended.data[month][canonical] = Number(amountEur.toFixed(2));
+        }
+    }
+
     const layout = buildLayout(extended, config, {
-        currentMonth: currentMonthFromClock(),
+        currentMonth: nowMonth,
         pools,
         poolHistory,
     });

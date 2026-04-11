@@ -32,11 +32,66 @@ Node CLI that ingests transaction CSVs, resolves vendor identity via an alias fi
 ## Commands
 
 ```
-npm run rebuild          # full rebuild from all CSVs (idempotent)
-npm run add-month -- FILE   # import a new month, then rebuild (note the -- to forward the arg)
-npm run forecast         # re-compute forecast columns without re-reading CSVs
-npm test                 # unit tests
+npm run rebuild              # full rebuild from all CSVs (idempotent)
+npm run add-month -- FILE    # import a new month, then rebuild (note the -- to forward the arg)
+npm run forecast             # re-compute forecast columns without re-reading CSVs
+node bin/update-live.mjs     # pull live MTD from provider APIs then rebuild
+node bin/update-live.mjs --dry-run       # preview without writing
+node bin/update-live.mjs --no-rebuild    # fetch + save, skip sheet push
+npm test                     # unit tests
 ```
+
+## Credit pools (live MTD via provider CLIs)
+
+The sheet has a `CREDIT POOLS (USD)` section that tracks the remaining balance of each cloud credit grant. Pool balances are stored in `secrets/vendors.json` under `_pools` and updated by `bin/update-live.mjs`, which queries the provider CLIs for current-month consumption.
+
+Supported providers:
+
+- **Azure** — `az rest` against `Microsoft.Consumption/usageDetails`. Requires `az login`. The remaining balance is manually seeded (Azure does not expose it via CLI without the `Billing Reader` role); MTD consumption is pulled live and subtracted from the seed.
+- **AWS** — `aws ce get-cost-and-usage`. Requires `aws` credentials with Cost Explorer permission. Credit application is detected via `UnblendedCost − NetUnblendedCost`.
+- **Runpod, Lambda Labs** — currently static seeds only (no CLI integration yet).
+
+Manual seed values live under `_pools.<pool>.seed_balance_usd` and should be updated from the provider's dashboard whenever a new grant is applied.
+
+## Daily cron (macOS launchd)
+
+To run `update-live.mjs` daily on macOS, install a LaunchAgent plist at `~/Library/LaunchAgents/ai.pollinations.finance-update.plist`. This file is NOT checked into the repo because it contains hard-coded paths to your home directory. Template:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>ai.pollinations.finance-update</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/ABSOLUTE/PATH/TO/pollinations/apps/operation/finance/bin/update-live.sh</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key><integer>8</integer>
+        <key>Minute</key><integer>15</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/ABSOLUTE/PATH/TO/pollinations/apps/operation/finance/secrets/update-live.log</string>
+    <key>StandardErrorPath</key>
+    <string>/ABSOLUTE/PATH/TO/pollinations/apps/operation/finance/secrets/update-live.err</string>
+    <key>WorkingDirectory</key>
+    <string>/ABSOLUTE/PATH/TO/pollinations/apps/operation/finance</string>
+</dict>
+</plist>
+```
+
+After editing paths:
+
+```bash
+launchctl load ~/Library/LaunchAgents/ai.pollinations.finance-update.plist
+launchctl start ai.pollinations.finance-update  # run immediately to verify
+tail -f apps/operation/finance/secrets/update-live.log
+```
+
+To disable: `launchctl unload ~/Library/LaunchAgents/ai.pollinations.finance-update.plist`.
 
 ## How vendor identity works
 

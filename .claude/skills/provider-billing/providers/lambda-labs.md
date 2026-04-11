@@ -166,7 +166,7 @@ Returns:
 
 Status values: `active`, `booting`, `terminated`, `unhealthy`. Only `active` counts toward shadow cost.
 
-**Important**: instance objects do NOT include a `started_at` timestamp in our API response. Without it, you cannot compute "how long has this instance been running" from a single query. You MUST poll over time and track first-seen / last-seen yourself.
+> ⚠️ **CRITICAL BLOCKER for shadow cost**: instance objects do NOT include a `started_at` timestamp. You cannot compute "how long has this instance been running" from a single query. **The ONLY path to historical cost attribution is polling over time and tracking first-seen / last-seen yourself** — start polling TODAY or you will have zero usable history for next month's runway math. See "Polling-based shadow cost" section below.
 
 ## Endpoint: File systems (persistent storage)
 

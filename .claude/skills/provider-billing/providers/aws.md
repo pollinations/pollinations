@@ -484,7 +484,7 @@ Use this table to decide the next action for any credit/discount question on AWS
 | "What credit balance do we have at AWS org level?" | ⚠️ CANNOT. Ask Automat-IT. | Email, ~1 day |
 | "Should we apply for AWS Activate credits?" | Check https://aws.amazon.com/activate/ — partner referral path. **Credits would go to our org, which means Automat-IT**. Verify with them that credits flow down to us before applying. | 1-4 weeks |
 | "Can we move to our own payer account so we see everything?" | Yes but it's a migration — terminate the member relationship and set up a standalone AWS Organization. Non-trivial; talk to Automat-IT about breakage before doing it. | Weeks |
-| "Is Automat-IT applying a discount we can't see?" | Compare our `UnblendedCost` (which already reflects list price) vs what the Umbrella Cost reseller dashboard shows. **Umbrella shows the real invoiced number.** See [umbrella-cost.md](umbrella-cost.md). | Requires unblocking Umbrella API access |
+| "Is Automat-IT applying a discount we can't see?" | Compare our `UnblendedCost` (which already reflects list price) vs what the Umbrella Cost reseller dashboard shows. **Umbrella shows the real invoiced number.** ⚠️ Umbrella API is currently blocked at tenant level — see [umbrella-cost.md](umbrella-cost.md) "Session 1 validation results" for unblock path. | Blocked pending Automat-IT API access grant |
 
 ### The Umbrella Cost escape hatch
 

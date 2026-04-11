@@ -76,7 +76,8 @@ Never print the raw value. Only confirm the prefix: `echo "${WISE_API_TOKEN:0:10
 | Can they… | Read-only token |
 |---|---|
 | See balances, profiles, recipient details | ✅ |
-| See transaction history | ⚠️ only with SCA-signed requests (below) |
+| See recent activity feed (`/activities`) | ✅ no SCA needed |
+| See full statements (`/statement.json`) | ⚠️ requires SCA-signed keypair (below) |
 | Create or approve transfers | ❌ |
 | Change account settings | ❌ |
 

@@ -380,6 +380,7 @@ The `global` region is a special Vertex-only endpoint that multiplexes across re
 - **`invoice.month` is how you pin to a billing period**, not `usage_start_time`. A SKU consumed on the last day of March might be billed on the April invoice if it crosses midnight UTC — use `invoice.month = '202603'` for strict billing-period queries.
 - **`labels` array is the only way to tag costs.** If you care about cost attribution across services/teams, tag resources with `gcloud compute ... --labels=project=pollinations,env=prod` or set default labels on the project. Labels land in the export ~24h after tagging.
 - **Vertex AI has three billing SKU families**: input tokens, output tokens, context caching. Each is a separate row in the export with `sku.description` naming the model + direction, e.g. `"Gemini 3 Flash Input Token Count - Global"`. Group by SKU, not service, for model-level cost breakdown.
+- **`ROWS` is a reserved keyword in BigQuery SQL.** Don't alias `COUNT(*) AS rows` — use `row_count`, `n_rows`, or similar. You'll get `Syntax error: Unexpected keyword ROWS`.
 
 ---
 

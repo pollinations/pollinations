@@ -48,6 +48,8 @@ Current burn rate:  $1.648/hr           (via currentSpendPerHr)
 Monthly spend cap:  $80                 (via spendLimit — appears to be a soft cap setting only)
 Runway at this burn: $2,071.80 / $1.648 ≈ 1,257 hours ≈ 52 days
                      → credits exhaust around 2026-06-02 without top-up
+                     ⚠️ assumes burn rate stays constant; if pods scale up or
+                        new workers spin up, runway shrinks proportionally
 ```
 
 ### Active pods (2026-04-11)

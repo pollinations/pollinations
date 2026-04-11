@@ -102,7 +102,6 @@ for t in v:
     elig = p.get('isAzureCreditEligible', False)
     total_eur += eur
     total_usd += usd
-    (elig_eur if elig else inelig_eur).__iadd__  # (use conditional)
     if elig: elig_eur += eur
     else: inelig_eur += eur
     k = (p.get('publisherName') or 'Microsoft', p.get('product', '')[:50])

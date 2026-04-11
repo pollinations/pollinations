@@ -34,13 +34,8 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | BytePlus (Seedance + Seedream) | [providers/byteplus.md](providers/byteplus.md) | ✅ Production — Model Ark `/api/v3/models` works, ❌ zero billing endpoints on the international tenant. Shadow cost via Tinybird `generation_event`; credit pool balance Console-only. | 2026-04-12 |
 | Perplexity (Sonar web-search) | [providers/perplexity.md](providers/perplexity.md) | ✅ Production — `POST /chat/completions` is the only endpoint that exists. Every billing/usage/models path returns 404. Shadow cost via Tinybird; credit pool balance dashboard-only. | 2026-04-12 |
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
-| GCP / Vertex AI | `providers/gcp.md` | ⏳ TODO | — |
 | Tinybird | `providers/tinybird.md` | ⏳ TODO (see also `tinybird-deploy` skill for deploys) | — |
 | Vercel | `providers/vercel.md` | ⏳ TODO | — |
-| Stripe | `providers/stripe.md` | ⏳ TODO (see also Stripe skills plugin) | — |
-| Polar | `providers/polar.md` | ⏳ TODO (see also `spending-analysis` skill for revenue) | — |
-| RunPod | `providers/runpod.md` | ⏳ TODO | — |
-| Lambda Labs | `providers/lambda.md` | ⏳ TODO | — |
 | Vast.ai | `providers/vast.md` | ⏳ TODO | — |
 | OVH | `providers/ovh.md` | ⏳ TODO | — |
 

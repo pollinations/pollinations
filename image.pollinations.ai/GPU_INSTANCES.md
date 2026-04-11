@@ -153,15 +153,6 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 | pollinations-flux -fb | dm5o59qwqo1zm7 | elliotetag/runpod-flux:v1.0.3 | ADA_24 | 1 |
 | pollinations-zimage -fb | 71bujxzz8mftz7 | elliotetag/runpod-zimage:v1.0.1 | ADA_32_PRO | 1-2 |
 
-## Provider: Modal
-
-### LTX-2 Video
-
-- **Workspace**: `myceli-ai`
-- **GPU**: H200 (auto-scaling: min=0, max=1)
-- **Endpoints**: `https://myceli-ai--ltx2-comfyui-api-distilled-{enqueue,status,result}.modal.run/`
-- **Auth**: `MODAL_LTX2_TOKEN_ID` / `MODAL_LTX2_TOKEN_SECRET`
-
 ## Provider: Lambda Labs
 
 ### LTX-2.3 Video + ACE-Step Music (GH200)

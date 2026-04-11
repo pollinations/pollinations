@@ -23,7 +23,6 @@ NOWPAYMENTS_IPN_SECRET=your_nowpayments_ipn_secret
 NOWPAYMENTS_ENV=sandbox
 
 # Testing
-TESTING_REFERRER=optional_testing_referrer
 PLN_ENTER_TOKEN=optional_pln_enter_token
 
 # ElevenLabs (text-to-speech)

@@ -112,7 +112,11 @@ function computeKpis(matrix, config, { currentMonth }) {
  * @param {object} options - { currentMonth: "YYYY-MM" } (passed explicitly for testability)
  * @returns { cells: any[][], formats: Array<{range, format, fields, label}>, columnWidths: Array<{col, width}>, freezeRows: number }
  */
-export function buildLayout(matrix, config, { currentMonth }) {
+export function buildLayout(
+    matrix,
+    config,
+    { currentMonth, pools = {}, poolHistory = {} } = {},
+) {
     const cells = [];
     const formats = [];
 
@@ -424,6 +428,131 @@ export function buildLayout(matrix, config, { currentMonth }) {
         },
     });
 
+    // --- Credit pools section (no historical backfill) ---
+    // Shows live balance + monthly consumption for providers that have credit grants.
+    // Past-month cells are empty dashes — we never retroactively reconstruct.
+    // Current-month cell = latest balance from vendors.json._pools[pool].current_balance_usd.
+    // Historical consumption cells are populated from poolHistory (accumulates over time).
+    const poolNames = Object.keys(pools);
+    let poolSectionRange = null;
+    if (poolNames.length > 0) {
+        // Blank spacer
+        cells.push(Array(totalCol + 1).fill(""));
+
+        // Section header
+        const poolHeaderRow = [
+            "CREDIT POOLS (USD)",
+            ...Array(totalCol).fill(""),
+        ];
+        cells.push(poolHeaderRow);
+        const poolHeaderRowIdx = cells.length - 1;
+        formats.push({
+            label: "poolsHeader",
+            range: sheetRange(poolHeaderRowIdx, 0, poolHeaderRowIdx, totalCol),
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
+            format: {
+                textFormat: {
+                    bold: true,
+                    italic: false,
+                    fontSize: 11,
+                    foregroundColor: INK,
+                },
+                backgroundColor: BG_CATEGORY,
+                borders: {
+                    top: { style: "SOLID", color: INK },
+                },
+            },
+        });
+
+        // One row per pool: balance as of current month + historical consumption cells
+        for (const poolName of poolNames) {
+            const pool = pools[poolName];
+            const row = ["", poolName];
+            const history = poolHistory[poolName] ?? {};
+            for (const m of months) {
+                if (m === currentMonth) {
+                    // Current month: show live remaining balance from vendors.json
+                    row.push(Number(pool.current_balance_usd ?? 0));
+                } else if (history[m] !== undefined) {
+                    // Historical consumption (negative number, -$X used in that month)
+                    row.push(Number(history[m]));
+                } else {
+                    // No data — dash
+                    row.push("—");
+                }
+            }
+            row.push(""); // Total actual column
+            cells.push(row);
+        }
+        const firstPoolRowIdx = poolHeaderRowIdx + 1;
+        const lastPoolRowIdx = cells.length - 1;
+        formats.push({
+            label: "pools",
+            range: sheetRange(firstPoolRowIdx, 0, lastPoolRowIdx, totalCol),
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor",
+            format: {
+                textFormat: {
+                    bold: false,
+                    italic: false,
+                    fontSize: 10,
+                    foregroundColor: INK,
+                },
+                backgroundColor: WHITE,
+            },
+        });
+
+        // Pool total row
+        const totalPoolRow = ["", "Total credit pool"];
+        for (const m of months) {
+            if (m === currentMonth) {
+                const total = poolNames.reduce(
+                    (s, n) => s + (pools[n].current_balance_usd ?? 0),
+                    0,
+                );
+                totalPoolRow.push(Number(total));
+            } else {
+                // Sum historical consumption across pools (only if all have data)
+                let monthTotal = 0;
+                let anyData = false;
+                for (const n of poolNames) {
+                    const h = poolHistory[n]?.[m];
+                    if (h !== undefined) {
+                        monthTotal += h;
+                        anyData = true;
+                    }
+                }
+                totalPoolRow.push(anyData ? Number(monthTotal) : "—");
+            }
+        }
+        totalPoolRow.push("");
+        cells.push(totalPoolRow);
+        const totalPoolRowIdx = cells.length - 1;
+        formats.push({
+            label: "totalPool",
+            range: sheetRange(totalPoolRowIdx, 0, totalPoolRowIdx, totalCol),
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
+            format: {
+                textFormat: {
+                    bold: true,
+                    italic: false,
+                    fontSize: 11,
+                    foregroundColor: INK,
+                },
+                backgroundColor: BG_TOTAL,
+                borders: {
+                    top: { style: "SOLID", color: INK_MUTED },
+                    bottom: { style: "SOLID", color: INK_MUTED },
+                },
+            },
+        });
+
+        // Track the numeric range of the whole pool section so the caller
+        // can apply USD number formatting to it (default is EUR).
+        const poolSectionStartRow = firstPoolRowIdx;
+        const poolSectionEndRow = totalPoolRowIdx;
+        poolSectionRange = `Sheet1!${colLetter(2)}${poolSectionStartRow + 1}:${colLetter(totalCol)}${poolSectionEndRow + 1}`;
+    }
+
     // --- Column-level formats for current + forecast.
     // These apply AFTER row styles so they must not clobber bold/italic state.
     // Only the background color (and muted text color for forecast) changes.
@@ -470,5 +599,6 @@ export function buildLayout(matrix, config, { currentMonth }) {
         formats,
         columnWidths,
         freezeRows: headerRowIdx + 1,
+        poolSectionRange,
     };
 }

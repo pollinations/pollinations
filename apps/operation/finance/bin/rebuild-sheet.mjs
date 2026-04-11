@@ -89,8 +89,15 @@ async function main() {
     // Aggregate → forecast → layout
     const matrix = aggregate(canonicalRows);
     const extended = forecast(matrix, vendors, config.forecastMonths ?? 6);
+    // Credit pools live in vendors.json under the "_pools" key (config metadata,
+    // not a vendor). Pool consumption history lives in a separate file so it
+    // can accumulate across rebuilds without touching vendors.json.
+    const pools = vendors._pools ?? {};
+    const poolHistory = {}; // TODO v1.7: load from secrets/pool-history.json
     const layout = buildLayout(extended, config, {
         currentMonth: currentMonthFromClock(),
+        pools,
+        poolHistory,
     });
 
     // Write to sheet
@@ -143,6 +150,16 @@ async function main() {
         '#,##0 "€";[RED]-#,##0 "€"',
         { account },
     );
+
+    // Pool section is USD-denominated; override EUR format for that range.
+    if (layout.poolSectionRange) {
+        await applyNumberFormat(
+            spreadsheetId,
+            layout.poolSectionRange,
+            '"$"#,##0;[RED]-"$"#,##0',
+            { account },
+        );
+    }
 
     for (const { col, width } of layout.columnWidths) {
         const letter = colLetter(col);

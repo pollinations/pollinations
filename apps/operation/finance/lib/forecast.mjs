@@ -34,7 +34,9 @@ function buildRuleIndexByCanonical(vendorRules) {
     // Map canonical vendor name → forecast rule. If two raw entries map to the same
     // canonical, last one wins (they should agree; this is documented behavior).
     const out = {};
-    for (const entry of Object.values(vendorRules)) {
+    for (const [key, entry] of Object.entries(vendorRules)) {
+        // Keys starting with "_" are config metadata (e.g. "_pools"), not vendors.
+        if (key.startsWith("_")) continue;
         out[entry.canonical] = entry.forecast;
     }
     return out;

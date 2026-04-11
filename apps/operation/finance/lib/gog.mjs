@@ -1,12 +1,20 @@
 import { spawn } from "node:child_process";
+import { setTimeout as sleep } from "node:timers/promises";
 
 /**
  * Thin async wrappers around the `gog` CLI. This is the ONLY module in the app
  * that shells out. Every other module is pure. Swapping this for the Google
  * Sheets googleapis client later would touch no other file.
+ *
+ * Rate limit handling: Google Sheets API enforces per-minute read/write quotas.
+ * A full rebuild makes ~50 API calls. When running two rebuilds in quick
+ * succession we hit 429. runOnce() does the raw spawn; run() wraps it in
+ * exponential backoff so transient rate limits are transparently retried.
  */
 
-function run(args, { account, json = false } = {}) {
+const RETRY_DELAYS_MS = [2000, 5000, 15000, 30000, 60000];
+
+function runOnce(args, { account, json = false } = {}) {
     return new Promise((resolve, reject) => {
         const finalArgs = ["-a", account, ...args];
         if (json) finalArgs.push("-j");
@@ -24,16 +32,38 @@ function run(args, { account, json = false } = {}) {
         child.on("error", reject);
         child.on("close", (code) => {
             if (code !== 0) {
-                reject(
-                    new Error(
-                        `gog ${finalArgs.join(" ")} exited ${code}\nstderr: ${stderr}`,
-                    ),
+                const err = new Error(
+                    `gog ${finalArgs.join(" ")} exited ${code}\nstderr: ${stderr}`,
                 );
+                err.stderr = stderr;
+                err.exitCode = code;
+                reject(err);
                 return;
             }
             resolve(json ? JSON.parse(stdout) : stdout.trim());
         });
     });
+}
+
+async function run(args, opts = {}) {
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+        try {
+            return await runOnce(args, opts);
+        } catch (err) {
+            const isRateLimit = /429|rateLimitExceeded|Quota exceeded/i.test(
+                err.stderr ?? err.message ?? "",
+            );
+            const canRetry = isRateLimit && attempt < RETRY_DELAYS_MS.length;
+            if (!canRetry) throw err;
+            const delay = RETRY_DELAYS_MS[attempt];
+            console.error(
+                `  rate-limited, retrying in ${delay / 1000}s (attempt ${attempt + 1}/${RETRY_DELAYS_MS.length})`,
+            );
+            await sleep(delay);
+        }
+    }
+    // unreachable
+    throw new Error("run: exhausted retries");
 }
 
 export async function createSheet(title, { account }) {

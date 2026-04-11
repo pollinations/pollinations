@@ -312,18 +312,204 @@ Yesterday's invoice showed: `AWS Cost Explorer: $0.01 (1 call)`. Not a lot in ab
 
 ---
 
-## Credit / discount handling
+## Credits and discounts — what we can see, what we cannot, and what to do about it
 
-AWS has several credit types, all invisible from the member account view on this account:
+**TL;DR for our Pollinations-via-Automat-IT account**: we CAN see usage, CAN detect savings-plan coverage effects, and CAN compare list-vs-net cost. We CANNOT see credit balances, credit grants, or credit expiry dates — those live on the payer account (Automat-IT) and are **structurally invisible** to our linked member account. If we want answers about credits themselves, we have to ask Automat-IT.
 
-| Credit type | Shows in `aws ce` | Visible from member? |
+This section is the operator's manual for every credit-related question on AWS.
+
+### AWS credit taxonomy
+
+Understand the five distinct things people call "credits", because they appear in different APIs:
+
+| # | Name | Mechanism | How it reaches us |
+|---|---|---|---|
+| 1 | **AWS Promotional Credits** | Flat $ off your bill, stamped with a program code, often time-limited | Usually applied to a specific account; shows up as `RECORD_TYPE=Credit` with negative amount |
+| 2 | **AWS Activate** (startup program) | Typically $1k–$100k promotional credits granted to startups | Same mechanism as promotional credits |
+| 3 | **AWS Rise** / other partner programs | Same again | Same |
+| 4 | **Savings Plans (SPs)** | Pre-purchased hourly commitment, gets a discount vs list | Shows as `SavingsPlanCoveredUsage` + `SavingsPlanNegation` pair (offsetting) |
+| 5 | **Enterprise Discount Program (EDP)** | % off negotiated at contract level | Invisible in API; only the *effect* shows up as lower list prices |
+
+Items 1–3 behave identically in the API: a `Credit` record with negative amount, applied at invoice close. Items 4 and 5 are structurally different — SPs show up in real time as coverage, EDP is pre-baked into the prices you see.
+
+### What our member account CAN query (live validated 2026-04-11)
+
+#### 1. `RECORD_TYPE` dimension — the definitive check for "is anything being applied?"
+
+```bash
+# Enumerate what record types exist on our account
+aws ce get-dimension-values \
+  --time-period Start=2026-01-01,End=2026-04-12 \
+  --dimension RECORD_TYPE \
+  --output json
+```
+
+**Our actual result (2026-04-11)**:
+
+```
+DiscountedUsage
+Other
+SavingsPlanCoveredUsage
+SavingsPlanNegation
+Support
+Tax
+Usage
+```
+
+**No `Credit`. No `Refund`.** These are the canonical record-type values that appear when credits land. Their absence means **our member account receives zero direct credit application** — it's a dimension that has literally never had a value for us. If credits existed for us here, they'd be in this list.
+
+#### 2. Group by `RECORD_TYPE` — see the monthly composition
+
+```bash
+aws ce get-cost-and-usage \
+  --time-period Start=2026-04-01,End=2026-04-12 \
+  --granularity MONTHLY \
+  --metrics UnblendedCost NetUnblendedCost \
+  --group-by Type=DIMENSION,Key=RECORD_TYPE
+```
+
+**Our actual April-to-date result** (values in USD):
+
+```
+month      record_type                       unblended            net
+--------------------------------------------------------------------
+2026-04    Usage                               1098.87        1098.87
+2026-04    Other                                279.00         279.00   ← Bedrock/Marketplace (Claude)
+2026-04    SavingsPlanCoveredUsage              165.91         165.91
+2026-04    SavingsPlanNegation                 -165.91        -165.91   ← offsets above, net zero
+2026-04    Support                               98.30          98.30
+2026-04    Tax                                  122.70         122.70
+```
+
+**Key reads from this output:**
+
+1. **`UnblendedCost == NetUnblendedCost` on every row** → no credits of any kind are modifying our post-discount number. This is the cleanest single signal.
+2. **SavingsPlanCoveredUsage + SavingsPlanNegation = 0** → a Savings Plan IS covering $166/month of our usage. **BUT** the pair offsets to zero, meaning the SP is accounted for elsewhere (at the payer account, where the SP was purchased). From our member view it's neutral — we neither pay extra nor save money directly from it.
+3. **`Other`** is the RECORD_TYPE bucket where AWS puts third-party Marketplace charges like Claude (Anthropic is the selling entity). This is separate from `Usage` (first-party AWS consumption).
+4. **Support** is our Business support plan fee (~$100/month).
+5. **Tax** is VAT.
+
+**Total April MTD**: $1,098 (Usage) + $279 (Other/Claude) + $98 (Support) + $123 (Tax) = **$1,599** list price, **$1,599** net (no credits).
+
+#### 3. Metric comparison — the fastest sanity check
+
+One call returns four different cost metrics:
+
+```bash
+aws ce get-cost-and-usage \
+  --time-period Start=2026-04-01,End=2026-04-12 \
+  --granularity MONTHLY \
+  --metrics BlendedCost UnblendedCost NetUnblendedCost AmortizedCost NetAmortizedCost
+```
+
+**Interpretation rules**:
+
+| Comparison | Meaning |
+|---|---|
+| `NetUnblendedCost < UnblendedCost` | Credits are being applied. The delta = credit amount. |
+| `NetUnblendedCost == UnblendedCost` | **Zero credits applied** — current state for our account. |
+| `AmortizedCost != UnblendedCost` | Savings Plans or RIs exist (the SP's upfront fee gets spread over the commitment period). |
+| `BlendedCost != UnblendedCost` | Consolidated-billing org-wide blended rate differs from our individual rate. Normal on linked members. |
+
+**For our account right now**: `NetUnblendedCost == UnblendedCost` across every month probed. Hard evidence of zero credit application.
+
+#### 4. `LEGAL_ENTITY_NAME` — who AWS is billing us for
+
+```bash
+aws ce get-dimension-values \
+  --time-period Start=2026-03-01,End=2026-04-12 \
+  --dimension LEGAL_ENTITY_NAME
+```
+
+**Our result**:
+```
+Amazon Web Services EMEA SARL     ← standard AWS services
+Anthropic, PBC                    ← Claude on Bedrock (sold through AWS Marketplace)
+```
+
+Useful for: confirming which legal entity a charge comes from. Claude being under `Anthropic, PBC` explains why it shows as its own top-level SERVICE (see "Claude models are NOT under 'Amazon Bedrock'" gotcha elsewhere in this file) and why Claude credits (if any existed) would have to come from Anthropic's Marketplace credit system, not AWS's.
+
+#### 5. `aws freetier get-free-tier-usage` — the Free Tier surface
+
+```bash
+aws freetier get-free-tier-usage --output json
+```
+
+Returns utilization vs the AWS Always-Free quota for each service. **This is NOT "credits left"** — it's "how much of the always-free quota we've used this month" (e.g., 1M Glue catalog requests, 5GB CloudWatch storage, etc.). For a production workload this is a curiosity, not a runway number.
+
+### What our member account CANNOT query
+
+Every one of these APIs either 404s, 403s with `AccessDeniedException`, or returns empty from a linked member. If you need an answer to one of these questions, **stop trying to derive it from the CLI and ask Automat-IT directly**.
+
+| Question | Why blocked |
+|---|---|
+| **How much credit balance is left on our account?** | There is NO AWS API for "credit balance remaining" on any account. Not member, not payer. AWS exposes this ONLY via the Console UI at Billing → Credits. And for us that tab is blank because credits live on the payer. |
+| **Total credits granted to our org** | Same — no API, and only visible to Automat-IT's Console UI. |
+| **Credits consumed to date** | Same — only appears in the payer's Billing Console UI, not ours. |
+| **Credit expiration dates** | Same. No API. |
+| **Does our org have a startup credit grant at all?** | Unknowable from our side. You have to ask Automat-IT or look at the grant paperwork. |
+| **What Savings Plans cover our account?** | `aws savingsplans describe-savings-plans` returns `[]` from our member account — the SP is owned by the payer. We only see its *effect* via `RECORD_TYPE=SavingsPlanCoveredUsage`, which tells us how much coverage we got but NOT the term, commitment amount, upfront fee, or expiry date of the plan. |
+| **What Reserved Instances cover our account?** | Same as SPs — if RIs exist at the payer level, we only see their effect. `ec2 describe-reserved-instances` returns only RIs we own directly. |
+| **What Cost Categories are configured?** | `aws ce list-cost-category-definitions` → `AccessDeniedException: Linked account doesn't have access to cost category`. Payer-only. |
+| **Organization structure / other accounts** | `aws organizations list-accounts`, `list-policies`, etc. all 403. Org-level APIs are payer-only. |
+| **Billing Groups (BillingConductor)** | `aws billingconductor list-billing-groups` → `AccessDeniedException: Only payer account is authorized`. |
+| **Enterprise Discount Program (EDP) terms** | If an EDP exists, it's pre-baked into the prices in our Cost Explorer output. You cannot extract "you are getting X% off" from the API. |
+
+### What we actually know about our account's credit posture
+
+Based on every signal we can query (all validated 2026-04-11):
+
+| Signal | State |
+|---|---|
+| `RECORD_TYPE=Credit` rows exist | ❌ Never. Not in the dimension values, not in any query. |
+| `NetUnblendedCost < UnblendedCost` | ❌ Always equal. Literally zero difference. |
+| Savings Plans visible locally | ❌ `savingsplans describe-savings-plans` returns empty. |
+| Savings Plan *coverage effect* visible | ✅ $165.91/month of coverage, net effect zero (offset at payer) |
+| Reserved Instances owned | ❌ None. |
+| Free tier usage | ✅ Tracked, but tiny (irrelevant for our production workload) |
+| Our `LEGAL_ENTITY_NAME` list | AWS EMEA SARL + Anthropic PBC |
+
+**Conclusion**: we're paying list price on every dollar of usage, with the only "modification" being the SP-coverage-and-negation pair that nets to zero in our view. Whether Automat-IT is absorbing that SP cost on their side (giving us a hidden discount) or passing it through is **unknowable from our side** — same answer as for the credit question.
+
+### The "what should we do about it" decision matrix
+
+Use this table to decide the next action for any credit/discount question on AWS:
+
+| What you want to know | How to get it | Effort |
 |---|---|---|
-| AWS Promotional Credits | `NetUnblendedCost` < `UnblendedCost` | Only if applied to this account directly |
-| AWS Activate (Startup) | Same as above | Applied at payer level usually |
-| Enterprise Discount Program (EDP) | `NetUnblendedCost` reflects discount | Payer-only visibility |
-| Savings Plans / RIs | `AmortizedCost` != `UnblendedCost` | Yes, via `savingsplans` + `ec2 describe-ri` |
+| "Are credits being applied to our usage right now?" | `aws ce get-cost-and-usage --group-by Type=DIMENSION,Key=RECORD_TYPE` — look for `Credit` rows | 1 call, instant |
+| "What's the net discount % we're getting?" | Same call, compare `UnblendedCost` vs `NetUnblendedCost` sums | Instant |
+| "Is there a Savings Plan covering our account?" | Same call — if you see `SavingsPlanCoveredUsage` rows, yes | Instant |
+| "What are the SP terms (commitment, end date)?" | ⚠️ CANNOT. Ask Automat-IT. | Email, ~1 day |
+| "What credit balance do we have at AWS org level?" | ⚠️ CANNOT. Ask Automat-IT. | Email, ~1 day |
+| "Should we apply for AWS Activate credits?" | Check https://aws.amazon.com/activate/ — partner referral path. **Credits would go to our org, which means Automat-IT**. Verify with them that credits flow down to us before applying. | 1-4 weeks |
+| "Can we move to our own payer account so we see everything?" | Yes but it's a migration — terminate the member relationship and set up a standalone AWS Organization. Non-trivial; talk to Automat-IT about breakage before doing it. | Weeks |
+| "Is Automat-IT applying a discount we can't see?" | Compare our `UnblendedCost` (which already reflects list price) vs what the Umbrella Cost reseller dashboard shows. **Umbrella shows the real invoiced number.** See [umbrella-cost.md](umbrella-cost.md). | Requires unblocking Umbrella API access |
 
-**For us**: `NetUnblendedCost == UnblendedCost` in April → **no credits are being applied**. If we want credits, they need to be arranged via Automat-IT (master account) and pushed down.
+### The Umbrella Cost escape hatch
+
+The ONLY way to see our "true" post-reseller-discount cost without leaving the Automat-IT relationship is via the **Umbrella Cost dashboard** (Automat-IT's FinOps platform). When Umbrella API access is unblocked (currently pending — see [umbrella-cost.md](umbrella-cost.md)), we'll be able to compare:
+
+- **Our AWS CLI `UnblendedCost`** = AWS list price = what we pay
+- **Umbrella `net_unblended` / actual invoiced amount** = what Automat-IT actually charges us
+
+The difference between those two is **either** (a) a reseller discount Automat-IT is passing through to us, **or** (b) a wash — Automat-IT marks us up to list price. Until Umbrella API access works, this is unresolved.
+
+**If Umbrella shows a lower number**, that's the effective credit/discount we're receiving, even though AWS CLI claims zero credits. It'd be off-invoice reseller margin rather than a true credit, but the effect is the same for runway math.
+
+### Key decisions flowing from this
+
+1. **Runway math must use `UnblendedCost`, not `NetUnblendedCost`**. They're equal on our account, so it doesn't matter numerically — but this makes the intent clear: we're not trying to subtract non-existent credits. Use `UnblendedCost` and don't worry about it.
+
+2. **Don't hunt for ghost credits**. We've confirmed via four independent signals (RECORD_TYPE enum, per-month RECORD_TYPE grouping, metric comparison, savings plan inventory) that zero direct credit application is happening. Stop asking the AWS API about credits for this account — the answer is "the API doesn't know because it's not ours to know."
+
+3. **For runway accuracy, prioritize getting Umbrella unblocked**. The Automat-IT reseller margin (if any) is the one real cost adjustment we can't see from AWS CLI. Every other source of discount has been ruled out via CLI.
+
+4. **If we want real AWS credits in the future**, we need to either:
+   - (a) Apply for AWS Activate or another program AND verify with Automat-IT that the credits will be attached to our specific member account (not the org payer), OR
+   - (b) Move to a standalone AWS account (break the Automat-IT relationship). Only worth it if credits are substantial enough to offset the cost of losing reseller support.
+
+5. **Track monthly `UnblendedCost` month-over-month** as the authoritative number. This month's April MTD: $1,599. The Savings Plan is invisible to us but not hurting us. Treat this number as the real cost. Anything lower on the actual Automat-IT invoice is a gift.
 
 ---
 

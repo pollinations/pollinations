@@ -1,0 +1,34 @@
+{
+  "pr_number": 10129,
+  "title": "cleanup: remove dead /feed SSE endpoint",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10129",
+  "merged_at": "2026-04-11T14:29:54Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the old feed",
+    "blurb": "We did some spring cleaning and removed the legacy `/feed` endpoint from the image backend. The Nomnom creature had a great time eating the deleted code!",
+    "summary": "Removed the legacy Server-Sent Events `/feed` endpoint and its associated routing from the image generation backend.",
+    "impact": "This internal cleanup reduces codebase bloat and removes unused routes without breaking existing clients that still pass legacy parameters.",
+    "keywords": [
+      "cleanup",
+      "backend",
+      "sse",
+      "legacy",
+      "refactor"
+    ],
+    "visual_concept": "The Nomnom creature eating old, dusty code printouts labeled '/feed', while Polly the bee sweeps up the area with a tiny broom.",
+    "image_prompt": "Cozy pixel art scene of the round Nomnom creature happily eating a stack of dusty, deprecated code printouts labeled '/feed'. Polly the bee mascot wears a tiny scarf and sweeps the floor with a small broom. Soft lime green (#ecf874) and lavender gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-11/PR-10129.jpg",
+    "prompt": "Cozy pixel art scene of the round Nomnom creature happily eating a stack of dusty, deprecated code printouts labeled '/feed'. Polly the bee mascot wears a tiny scarf and sweeps the floor with a small broom. Soft lime green (#ecf874) and lavender gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-11T14:30:45.470235+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10135,
+  "title": "feat: fully dynamic issue triage — Polly decides every action",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/10135",
+  "merged_at": "2026-04-11T15:15:05Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polly gets a promotion",
+    "blurb": "Our favorite bee just got a major promotion! Polly can now dynamically read, reply, label, and close GitHub issues all on her own.",
+    "summary": "Upgraded the repository's GitHub Actions workflow to give Polly full autonomy over issue triage, allowing dynamic combinations of commenting, labeling, and closing.",
+    "impact": "Contributors will experience faster, more context-aware support and issue resolution directly from our AI mascot.",
+    "keywords": [
+      "github",
+      "automation",
+      "triage",
+      "ai-agent",
+      "polly"
+    ],
+    "visual_concept": "Polly the bee acting as an autonomous triage manager. She wears a tiny headset or holds a clipboard, sorting through GitHub issue tickets. The Nomnom creature helps by eating the spam and duplicate tickets.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny headset and holding a clipboard, sorting through floating digital issue tickets. The round tan nomnom creature happily eats a stack of spam tickets nearby. A retro terminal glows with lime green (#ecf874) code. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-11/PR-10135.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny headset and holding a clipboard, sorting through floating digital issue tickets. The round tan nomnom creature happily eats a stack of spam tickets nearby. A retro terminal glows with lime green (#ecf874) code. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-04-11T15:15:54.711353+00:00"
+}

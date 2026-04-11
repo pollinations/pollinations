@@ -153,6 +153,18 @@ async function main() {
         { account },
     );
 
+    // Credit rows override: blue negatives instead of red. Credits are "money
+    // not paid", not "money owed" — they shouldn't look alarming.
+    // Applied AFTER the default so it wins on the targeted ranges.
+    for (const range of layout.creditRowRanges ?? []) {
+        await applyNumberFormat(
+            spreadsheetId,
+            range,
+            '#,##0 "€";[BLUE]-#,##0 "€"',
+            { account },
+        );
+    }
+
     for (const { col, width } of layout.columnWidths) {
         const letter = colLetter(col);
         await resizeColumn(spreadsheetId, `${letter}:${letter}`, width, {

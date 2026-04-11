@@ -164,13 +164,37 @@ The `gcloud billing` surface does NOT expose a cost-and-usage query — there's 
 
 ### 2. BigQuery billing export — SKU-level detail
 
-**Status as of 2026-04-11: ✅ ENABLED.** Table:
+**Status as of 2026-04-12: ⚠️ STALE.** Table exists:
 
 ```
 stellar-verve-465920-b7.billing_export.gcp_billing_export_resource_v1_0180E5_574541_B8F8FD
 ```
 
-DAY partitioned. At time of validation the table had 5,320 rows spanning 2026-02-01 to 2026-03-02, which means GCP was still backfilling historical data — expect full coverage within 24-48h of enabling. Use the same "wait and re-query" pattern when coverage is incomplete.
+But the latest `usage_start_time` in the table is **2026-03-04** — the pipeline silently stopped writing ~38 days ago. Total rows: 9,496 spanning 2026-02-01 to 2026-03-04. No April data at all.
+
+**How this was detected**: Query `MAX(DATE(usage_start_time))` to check freshness. If it's older than the current month, the export is broken.
+
+```sql
+SELECT
+  MIN(DATE(usage_start_time)) AS earliest,
+  MAX(DATE(usage_start_time)) AS latest,
+  COUNT(*) AS rows
+FROM `stellar-verve-465920-b7.billing_export.gcp_billing_export_resource_v1_0180E5_574541_B8F8FD`
+```
+
+**Common causes of silent export failure**:
+- Billing account was relinked/unlinked on the host project
+- Dataset-level permission revoked (service account lost write access)
+- Cloud Billing Export feature toggled off in Console
+- Storage billing not enabled on the host project
+
+**Fix**: go to https://console.cloud.google.com/billing/0180E5-574541-B8F8FD/export, click "Edit settings" under "Detailed usage cost", and re-enable. First data lands in ~6 hours; historical backfill of the gap may or may not happen depending on GCP's retention policy.
+
+**Implication for the finance runway app**: the `lib/providers/gcp.mjs` wrapper in `apps/operation/finance/` detects this staleness via the `MAX(usage_start_time)` check and sets `pool.mtd_stale = true` with `pool.mtd_data_as_of = '<last-date>'`. The wrapper still returns valid `mtd_*` fields (zeros), so the sheet renders GCP as a 3-row block with `0 €` for the current month. When the export is fixed, the next cron run will automatically pick up the real MTD — no code change.
+
+---
+
+DAY partitioned. At time of the first validation the table had 5,320 rows spanning 2026-02-01 to 2026-03-02, which suggested backfill was in progress. The continued accrual stopped at 2026-03-04 — see the staleness note above.
 
 **If you need to re-enable or set up on a different account**: do it in the Cloud Console, there is no `gcloud` command for this.
 

@@ -511,6 +511,30 @@ The difference between those two is **either** (a) a reseller discount Automat-I
 
 5. **Track monthly `UnblendedCost` month-over-month** as the authoritative number. This month's April MTD: $1,599. The Savings Plan is invisible to us but not hurting us. Treat this number as the real cost. Anything lower on the actual Automat-IT invoice is a gift.
 
+### Integration with the finance runway app
+
+`apps/operation/finance` tracks credit pools in `vendors.json._pools`. **AWS must be configured as `"kind": "payg"`** — not as a credit pool with a seed balance — because none of our "credit" figures are fetchable or visible from this account:
+
+```json
+"AWS": {
+  "provider": "aws",
+  "kind": "payg",
+  "vendor_canonical": "AWS",
+  "mtd_total_usd": 1598.87,
+  "mtd_credit_usd": 0,
+  "mtd_cash_usd": 1598.87,
+  "as_of": "2026-04-12"
+}
+```
+
+Hardcoding a `seed_balance_usd` (e.g. "we have $32k in AWS credits") is **wrong**:
+
+- The number isn't reachable from any AWS CLI call.
+- Every daily cron run validates "no credits applied" via `NetUnblendedCost == UnblendedCost` — so a hardcoded balance would never decrement, and would show forever as if untouched.
+- If Automat-IT ever starts flowing credits down to us, the effect will appear **programmatically** as `NetUnblendedCost < UnblendedCost`, and the finance app will pick it up automatically via `mtd_credit_usd = UnblendedCost − NetUnblendedCost`. No code change, no seed update.
+
+The rule for this account: **only trust numbers the CLI can verify**. Keep AWS as `payg` until credits actually start flowing through our view, and only then consider adding a seed.
+
 ---
 
 ## Region naming

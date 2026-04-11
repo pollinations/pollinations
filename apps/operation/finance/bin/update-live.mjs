@@ -116,7 +116,14 @@ async function main() {
             const r = await mod.fetchMtd(month, pool);
 
             let newBalance;
-            if (r.live_balance || pool.current_balance_usd !== priorBalance) {
+            if (pool.kind === "payg") {
+                // Pay-as-you-go providers (e.g. Alibaba) have no standing
+                // balance. Skip balance tracking entirely.
+                newBalance = null;
+            } else if (
+                r.live_balance ||
+                pool.current_balance_usd !== priorBalance
+            ) {
                 // Wrapper set current_balance_usd directly from a live API call.
                 // Trust the wrapper; don't recompute from seed.
                 newBalance = pool.current_balance_usd;
@@ -143,9 +150,15 @@ async function main() {
             console.log(
                 `  ${poolName.padEnd(14)} total=$${r.mtd_total_usd.toFixed(2)} credit=$${r.mtd_credit_usd.toFixed(2)} cash=$${r.mtd_cash_usd.toFixed(2)} records=${r.records}`,
             );
-            console.log(
-                `  ${" ".repeat(14)}   balance: $${(priorBalance ?? 0).toLocaleString()} → $${newBalance.toLocaleString()}`,
-            );
+            if (newBalance === null) {
+                console.log(
+                    `  ${" ".repeat(14)}   (payg — no balance tracked)`,
+                );
+            } else {
+                console.log(
+                    `  ${" ".repeat(14)}   balance: $${(priorBalance ?? 0).toLocaleString()} → $${newBalance.toLocaleString()}`,
+                );
+            }
             summary.push({ poolName, status: "ok", newBalance });
         } catch (e) {
             console.error(`  ${poolName.padEnd(14)} FAILED: ${e.message}`);

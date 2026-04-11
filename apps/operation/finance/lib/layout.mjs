@@ -274,18 +274,34 @@ export function buildLayout(
     // same numbers the vendor row held before the 3-row rewrite.
     const infoRowIdxs = new Set();
 
+    // Credit rows specifically — these get blue text instead of red so
+    // they're visually distinct from cash expense rows. Credits are "money
+    // we didn't pay" not "money we owe", so they shouldn't look alarming.
+    const creditRowIdxs = new Set();
+
     // Helper: render a pool vendor as 3 rows (balance / credit / cash).
     // Pool info rows (balance + credit) come from vendors.json._pools live data;
-    // cash row comes from the canonical matrix, identical to a non-pool vendor.
+    // cash row comes from the canonical matrix (Wise CSVs) with a live-API
+    // fallback for the current month when no CSV has been loaded yet.
+    //
+    // For PayAsYouGo "pools" (kind === "payg", e.g. Alibaba), balance remaining
+    // is always "—" because there's no standing credit pool to track.
     function renderPoolVendor(vendor, pool) {
         const history = poolHistory[pool.poolName] ?? {};
+        const isPayg = pool.pool.kind === "payg";
+        // Some providers (GCP) bill in native EUR; their mtd_*_usd fields
+        // actually hold EUR values. For those, skip FX conversion.
+        const poolFx = pool.pool.native_currency === "EUR" ? 1 : fx;
 
-        // Row 1: balance remaining (informational — only populated in currentMonth).
+        // Row 1: balance remaining (informational — only populated in currentMonth
+        // for real credit pools; always dash for PayAsYouGo).
         const balanceRow = ["", `    ${vendor} — balance remaining`];
         for (const m of months) {
-            if (m === currentMonth) {
+            if (isPayg) {
+                balanceRow.push("—");
+            } else if (m === currentMonth) {
                 const balUsd = pool.pool.current_balance_usd ?? 0;
-                balanceRow.push(Number((balUsd * fx).toFixed(2)));
+                balanceRow.push(Number((balUsd * poolFx).toFixed(2)));
             } else {
                 balanceRow.push("—");
             }
@@ -301,10 +317,10 @@ export function buildLayout(
             if (m === currentMonth) {
                 const usedUsd = pool.pool.mtd_credit_usd ?? 0;
                 // Consumption is displayed as a negative number (money out).
-                creditRow.push(Number((-usedUsd * fx).toFixed(2)));
+                creditRow.push(Number((-usedUsd * poolFx).toFixed(2)));
             } else if (history[m] !== undefined) {
                 // history values are already negative (money out)
-                creditRow.push(Number((history[m] * fx).toFixed(2)));
+                creditRow.push(Number((history[m] * poolFx).toFixed(2)));
             } else {
                 creditRow.push("—");
             }
@@ -312,18 +328,53 @@ export function buildLayout(
         creditRow.push(""); // Total actual — N/A for informational row
         cells.push(creditRow);
         infoRowIdxs.add(cells.length - 1);
+        creditRowIdxs.add(cells.length - 1);
 
-        // Row 3: consumed (cash) — the REAL vendor row, identical to what
-        // a non-pool vendor would emit. Pulled from matrix.data which comes
-        // from the Wise CSVs. This row contributes to subtotal/total/net.
+        // Row 3: consumed (cash) — the REAL vendor row that contributes to
+        // subtotal/total/net aggregation.
+        //
+        // Past months: pulled from matrix.data (Wise CSVs) — authoritative.
+        // Current month: no projection, no extrapolation — show exactly
+        //   what the provider API reports as MTD. Three cases:
+        //     (a) CSV has a non-zero value → use it (April CSV already landed)
+        //     (b) CSV empty AND wrapper set live mtd_cash_usd → use the live
+        //         MTD in EUR. This is the "what hit the meter so far" number.
+        //     (c) wrapper flagged mtd_stale (e.g. GCP BigQuery export lagging)
+        //         → render "—" so the cell is visibly unknown, not a false zero.
         const cashRow = ["", `    ${vendor} — consumed (cash)`];
         let totalActual = 0;
         for (let i = 0; i < months.length; i++) {
             const m = months[i];
-            const v = matrix.data[m][vendor] ?? 0;
-            cashRow.push(Number(v.toFixed(2)));
-            if (!matrix.forecastMonths.has(m) && m !== currentMonth)
+            let v = matrix.data[m][vendor] ?? 0;
+            let cellValue = v;
+            if (m === currentMonth && v === 0) {
+                const isStale = pool.pool.mtd_stale === true;
+                const liveCashUsd = pool.pool.mtd_cash_usd;
+                if (isStale) {
+                    // Unknown — dash, not zero
+                    cellValue = "—";
+                } else if (
+                    typeof liveCashUsd === "number" &&
+                    liveCashUsd !== 0
+                ) {
+                    cellValue = Number(
+                        (-Math.abs(liveCashUsd) * poolFx).toFixed(2),
+                    );
+                    v = cellValue;
+                }
+            }
+            if (typeof cellValue === "number") {
+                cashRow.push(Number(cellValue.toFixed(2)));
+            } else {
+                cashRow.push(cellValue);
+            }
+            if (
+                !matrix.forecastMonths.has(m) &&
+                m !== currentMonth &&
+                typeof v === "number"
+            ) {
                 totalActual += v;
+            }
         }
         cashRow.push(Number(totalActual.toFixed(2)));
         cells.push(cashRow);
@@ -395,6 +446,8 @@ export function buildLayout(
         // from the aggregatable cash row.
         for (let i = firstVendorRowIdx; i <= lastVendorRowIdx; i++) {
             if (!infoRowIdxs.has(i)) continue;
+            // Credit rows get blue foreground; balance rows get muted gray.
+            const isCreditRow = creditRowIdxs.has(i);
             formats.push({
                 label: `infoRow-${i}`,
                 range: sheetRange(i, 1, i, totalCol),
@@ -402,7 +455,9 @@ export function buildLayout(
                 format: {
                     textFormat: {
                         italic: true,
-                        foregroundColor: INK_MUTED,
+                        foregroundColor: isCreditRow
+                            ? { red: 0.2, green: 0.4, blue: 0.85 } // blue
+                            : INK_MUTED,
                     },
                 },
             });
@@ -595,10 +650,18 @@ export function buildLayout(
         columnWidths.push({ col: 2 + i, width: 110 });
     columnWidths.push({ col: totalCol, width: 120 });
 
+    // Convert creditRowIdxs into A1 ranges so rebuild-sheet.mjs can apply
+    // a [BLUE] number format override to just those rows (the default
+    // numeric range gets [RED] for negatives, which is wrong for credits).
+    const creditRowRanges = [...creditRowIdxs]
+        .sort((a, b) => a - b)
+        .map((row) => sheetRange(row, 2, row, totalCol));
+
     return {
         cells,
         formats,
         columnWidths,
         freezeRows: headerRowIdx + 1,
+        creditRowRanges,
     };
 }

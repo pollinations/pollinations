@@ -7,6 +7,10 @@ on:
   issues:
     types: [labeled]
 
+concurrency:
+  group: polly-auto-fix-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 jobs:
   auto-fix:
     if: github.event.label.name == 'polly'

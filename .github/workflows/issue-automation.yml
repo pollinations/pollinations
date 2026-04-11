@@ -34,10 +34,15 @@ jobs:
           script: |
             const issue = context.payload.issue;
 
-            // Skip TIER-labeled issues
+            // Skip TIER-labeled or already-polly-labeled issues
             const hasTierLabel = issue.labels?.some(l => l.name.startsWith('TIER-'));
             if (hasTierLabel) {
               console.log('Skipping: TIER-labeled issue');
+              return;
+            }
+            const hasPollyLabel = issue.labels?.some(l => l.name === 'polly');
+            if (hasPollyLabel) {
+              console.log('Skipping: already has polly label');
               return;
             }
 
@@ -65,13 +70,13 @@ jobs:
 
             // --- Few-shot examples ---
             const fewShot = [
-              { role: 'user', content: 'Title: grok-video ignoring image input\nBody: When I pass an image to grok-video it completely ignores it and generates from text only.' },
+              { role: 'user', content: 'Issue #9999:\nTitle: grok-video ignoring image input\nBody: When I pass an image to grok-video it completely ignores it and generates from text only.' },
               { role: 'assistant', content: '{"action":"duplicate","confidence":0.95,"reason":"find_similar returned #8262 which reports the same grok-video image input being ignored. code_search confirmed the image parameter pass-through is still missing in the airforce API handler.","similar_issue":"#8262","solution_reference":null,"comment":"This is a known issue! See #8262 for the ongoing discussion about grok-video ignoring image inputs. Closing as duplicate."}' },
-              { role: 'user', content: 'Title: Service is completely down, nothing works\nBody: All API endpoints returning 500 errors since 10 minutes ago.' },
+              { role: 'user', content: 'Issue #9998:\nTitle: Service is completely down, nothing works\nBody: All API endpoints returning 500 errors since 10 minutes ago.' },
               { role: 'assistant', content: '{"action":"skip","confidence":0.99,"reason":"Critical outage — requires immediate human investigation. find_similar found no matching open outage reports. code_search not applicable for live incidents.","similar_issue":null,"solution_reference":null,"comment":null}' },
-              { role: 'user', content: 'Title: Fix broken link in README contributing section\nBody: The link to CONTRIBUTING.md in the main README.md points to /docs/CONTRIBUTING.md but the file is at /CONTRIBUTING.md in the repo root.' },
+              { role: 'user', content: 'Issue #9997:\nTitle: Fix broken link in README contributing section\nBody: The link to CONTRIBUTING.md in the main README.md points to /docs/CONTRIBUTING.md but the file is at /CONTRIBUTING.md in the repo root.' },
               { role: 'assistant', content: '{"action":"auto_fix","confidence":0.90,"reason":"find_similar returned no duplicates. code_search confirmed README.md still contains the broken /docs/CONTRIBUTING.md link. Simple path fix.","similar_issue":null,"solution_reference":"README.md","comment":"Looks like a quick link fix! Polly will take care of this."}' },
-              { role: 'user', content: 'Title: Audio generation returns 500 error\nBody: Calling /audio/hello with voice=nova returns a 500 internal server error. Started happening after the last deploy.' },
+              { role: 'user', content: 'Issue #9996:\nTitle: Audio generation returns 500 error\nBody: Calling /audio/hello with voice=nova returns a 500 internal server error. Started happening after the last deploy.' },
               { role: 'assistant', content: '{"action":"resolved","confidence":0.92,"reason":"find_similar returned #7801 which reported the same audio 500 error. code_search found the fix was merged in enter.pollinations.ai/src/routes/audio.ts — the voice parameter validation was added and the ElevenLabs fallback was fixed in a recent commit.","similar_issue":"#7801","solution_reference":"enter.pollinations.ai/src/routes/audio.ts","comment":"This was fixed! The audio route had a missing voice parameter validation that caused 500s. The fix landed in enter.pollinations.ai/src/routes/audio.ts. Closing as resolved."}' },
             ];
 
@@ -139,7 +144,7 @@ jobs:
                 if (response.ok) {
                   const data = await response.json();
                   const content = data.choices?.[0]?.message?.content;
-                  console.log(`Attempt ${attempt + 1} raw response: ${content}`);
+                  console.log(`Attempt ${attempt + 1} raw response: ${content?.slice(0, 500)}`);
                   verdict = extractJSON(content);
                   if (verdict) break;
                 } else {

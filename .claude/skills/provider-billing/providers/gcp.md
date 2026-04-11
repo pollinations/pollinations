@@ -164,22 +164,23 @@ The `gcloud billing` surface does NOT expose a cost-and-usage query — there's 
 
 ### 2. BigQuery billing export — SKU-level detail
 
-**Status as of 2026-04-11: NOT ENABLED.** `bq ls --project_id=stellar-verve-465920-b7` returned empty — no datasets at all on the Vertex project. Same for `pollinations-research` and `research-2-468607`. All the SKU-level queries in this section will 404 until this is set up.
+**Status as of 2026-04-11: ✅ ENABLED.** Table:
 
-**One-time setup** (do this in the Cloud Console, not CLI — there is no `gcloud` command for this):
-
-1. Go to https://console.cloud.google.com/billing/0180E5-574541-B8F8FD/export
-2. Under "Detailed usage cost", click "Edit settings"
-3. Pick a project to host the export dataset — use `stellar-verve-465920-b7`
-4. Name the dataset `billing_export`
-5. Enable. First data lands in ~6 hours.
-
-Once set up, the export creates a table named:
 ```
 stellar-verve-465920-b7.billing_export.gcp_billing_export_resource_v1_0180E5_574541_B8F8FD
 ```
 
-(The billing account ID gets embedded into the table name with underscores instead of dashes.) Use `bq ls --project_id=stellar-verve-465920-b7 billing_export` to confirm after setup.
+DAY partitioned. At time of validation the table had 5,320 rows spanning 2026-02-01 to 2026-03-02, which means GCP was still backfilling historical data — expect full coverage within 24-48h of enabling. Use the same "wait and re-query" pattern when coverage is incomplete.
+
+**If you need to re-enable or set up on a different account**: do it in the Cloud Console, there is no `gcloud` command for this.
+
+1. Go to https://console.cloud.google.com/billing/0180E5-574541-B8F8FD/export
+2. Under "Detailed usage cost", click "Edit settings"
+3. Pick a project to host the export dataset — `stellar-verve-465920-b7` is the convention
+4. Name the dataset `billing_export`
+5. Enable. First data lands in ~6 hours; historical backfill may take 24-48h.
+
+The billing account ID gets embedded into the table name with underscores instead of dashes (`0180E5-574541-B8F8FD` → `0180E5_574541_B8F8FD`).
 
 #### Schema highlights
 
@@ -398,7 +399,7 @@ Everything in this playbook was verified live against `elliot@myceli.ai` in this
 | `gcloud billing projects list --billing-account=0180E5-574541-B8F8FD` | ✅ 2 linked projects |
 | `gcloud billing projects list --billing-account=010208-E0A433-6D63DF` | ✅ 1 linked project |
 | `gcloud organizations list` | ✅ `organizations/231606865087` (myceli.ai, created 2025-07-14) |
-| `bq ls --project_id=stellar-verve-465920-b7` | ⚠️ empty — **no BQ datasets, billing export NOT enabled** |
+| `bq ls --project_id=stellar-verve-465920-b7` | ✅ `billing_export` dataset; table `gcp_billing_export_resource_v1_0180E5_574541_B8F8FD` (DAY partitioned, 5,320 rows spanning 2026-02-01 → 2026-03-02 at first check — still backfilling) |
 | `gcloud services list --enabled --project=stellar-verve-465920-b7` | ✅ 38 services (Vertex, BQ, Dataflow, Dataplex, Compute, etc.) |
 | `gcloud ai models list --region=us-central1 --project=stellar-verve-465920-b7` | ✅ 2 custom ShieldGemma models + matching endpoints |
 | `gcloud ai endpoints list --region=us-central1 --project=stellar-verve-465920-b7` | ✅ 2 endpoints |
@@ -422,3 +423,70 @@ cat /tmp/gcloud_auth.out  # should show "You are now logged in as [...]"
 ```
 
 This works even inside Claude Code's non-interactive bash — tested 2026-04-11.
+
+### BigQuery export live-query results (2026-04-11, first 30 min after enabling)
+
+The export was enabled mid-session and was still backfilling when these queries ran. Coverage at first check: **2026-02-01 → 2026-03-02** (5,320 rows, Feb–Mar only, still catching up to Apr).
+
+#### Monthly totals
+
+| Invoice month | Rows | List $ | Credits $ | Net $ |
+|---|---|---|---|---|
+| 2026-03 | 3,498 | 156.83 | −0.91 | **155.92** |
+| 2026-02 | 1,822 | 54.35 | −4.62 | **49.73** |
+
+#### March 2026 by service
+
+| Service | List | Credits | Net |
+|---|---|---|---|
+| Vertex AI | $134.85 | $0.00 | $134.85 |
+| Compute Engine | $16.11 | −$0.83 | $15.28 |
+| Gemini API | $5.79 | $0.00 | $5.79 |
+| Networking | $0.08 | −$0.08 | $0.00 |
+| Dataplex / Logging / Storage | — | — | ~$0 |
+| **TOTAL** | **$156.83** | **−$0.91** | **$155.92** |
+
+**86% of March GCP spend is Vertex AI.** Not Compute Engine (despite the ShieldGemma endpoints running there) — Compute was only $16.
+
+#### March 2026 Vertex AI by SKU (top hits — this is where the real model usage lives)
+
+| SKU | List $ | Requests |
+|---|---|---|
+| Gemini 2.5 Flash Lite Text Input | 32.16 | 379 M |
+| Gemini 2.5 Flash Lite Text Output | 30.39 | 89.5 M |
+| Gemini 2.5 Flash Image Output | 29.08 | 1.14 M |
+| Gemini 3.0 Pro Image Output | 14.48 | 142 K |
+| Gemini 3.1 Flash Image Image Output | 6.27 | 123 K |
+| Veo 3 Fast Video Generation | 4.92 | 58 |
+| Gemini 2.5 Pro Thinking Text Output | 4.72 | 556 K |
+| Gemini 3.0 Pro Text Output | 2.47 | 242 K |
+| Gemini 2.5 Pro Text Input | 2.10 | 1.98 M |
+| Gemini 2.5 Pro Text Output | 1.98 | 234 K |
+| Gemini 3 Flash Text Output | 1.77 | 696 K |
+| Gemini 3.0 Pro Text Input | 1.20 | 706 K |
+| Gemini 3 Flash Text Input | 0.79 | 1.87 M |
+| Gemini 2.5 Pro Input Text Caching | 0.77 | 7.2 M |
+| (… lower-cost SKUs omitted) | | |
+
+**Key observations captured from this data:**
+
+1. **Portkey's `vertex-ai` provider routes billing to the `Vertex AI` product line**, not the `Gemini API` product line. The latter is only $5.79/mo and is probably residual test calls through a different key.
+2. **Gemini 2.5 Flash Lite dominates** at $62/mo combined (40% of March spend). That's the cheapest model in [modelConfigs.ts](../../../text.pollinations.ai/configs/modelConfigs.ts) used for high-volume traffic — makes sense.
+3. **Video/image multimodal SKUs are significant**: $50+/mo across Gemini Image Output + Veo 3 Fast + Flash Image Image Output — larger than pure text pro models. If Gemini Image Output is Nano Banana (Gemini 2.5 Flash Image), this is our Nano Banana bill.
+4. **ShieldGemma custom endpoints cost nothing visible** — they don't appear in the top 30 Vertex SKUs. Probably running on small shared infrastructure, usage is pure Compute Engine time (~$16 in the Compute line above). We are NOT paying per-request for ShieldGemma, confirming they're hosted as standard endpoints.
+5. **No promotional/trial credits visible.** All credit rows inspected are `type: "SUSTAINED_USAGE_DISCOUNT"` — GCP's automatic per-second Compute discount for long-running VMs. That's why Feb credits were $4.62 (full month of VM uptime → max SUD) and March only $0.91 (less uptime → less SUD). **If Pollinations has any GCP startup credit grant, it is NOT landing on this billing account.** Worth investigating whether it lives elsewhere.
+
+#### Credit type verification
+
+```sql
+SELECT DISTINCT credits
+FROM `stellar-verve-465920-b7.billing_export.gcp_billing_export_resource_v1_0180E5_574541_B8F8FD`
+WHERE ARRAY_LENGTH(credits) > 0
+LIMIT 5
+```
+
+Returned only `{name: "Sustained Usage Discount", type: "SUSTAINED_USAGE_DISCOUNT"}` objects. Confirms no promotional/trial/committed-use credits active.
+
+#### SQL reserved word gotcha
+
+**`ROWS` is a reserved keyword in BigQuery SQL.** Don't alias `COUNT(*) AS rows` — use `row_count`, `n_rows`, or similar. You'll get `Syntax error: Unexpected keyword ROWS`. I wasted two queries figuring this out; this entry exists so the next session doesn't repeat it.

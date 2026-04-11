@@ -168,7 +168,14 @@ jobs:
 
             console.log(`Verdict: ${JSON.stringify(verdict)}`);
 
-            // --- Validate action ---
+            // --- Guard: self-duplicate ---
+            if (verdict.action === 'duplicate' && verdict.similar_issue === `#${issue.number}`) {
+              console.log(`Self-duplicate detected for #${issue.number}, forcing skip.`);
+              verdict.action = 'skip';
+            }
+
+            // --- Validate and coerce fields ---
+            verdict.confidence = parseFloat(verdict.confidence) || 0;
             const validActions = ['duplicate', 'resolved', 'auto_fix', 'skip'];
             if (!validActions.includes(verdict.action)) {
               console.log(`Invalid action "${verdict.action}". Skipping.`);

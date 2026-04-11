@@ -16,6 +16,10 @@ on:
         type: number
         default: 5
 
+concurrency:
+  group: issue-automation-backfill
+  cancel-in-progress: true
+
 jobs:
   backfill:
     runs-on: ubuntu-latest
@@ -39,8 +43,10 @@ jobs:
           github-token: ${{ steps.token.outputs.token }}
           script: |
             const dryRun = process.env.DRY_RUN === 'true';
-            const maxIssues = process.env.MAX_ISSUES !== undefined ? parseInt(process.env.MAX_ISSUES) : 50;
-            const delaySec = process.env.DELAY_SECONDS !== undefined ? parseInt(process.env.DELAY_SECONDS) : 5;
+            const rawMax = parseInt(process.env.MAX_ISSUES);
+            const maxIssues = Number.isFinite(rawMax) ? rawMax : 50;
+            const rawDelay = parseInt(process.env.DELAY_SECONDS);
+            const delaySec = Number.isFinite(rawDelay) ? rawDelay : 5;
 
             console.log(`=== Issue Automation Backfill ===`);
             console.log(`Mode: ${dryRun ? 'DRY RUN' : 'LIVE'}`);
@@ -142,8 +148,11 @@ jobs:
                   if (response.ok) {
                     const data = await response.json();
                     const content = data.choices?.[0]?.message?.content;
+                    console.log(`  Attempt ${attempt + 1} response: ${content?.slice(0, 300)}`);
                     const verdict = extractJSON(content);
                     if (verdict) return verdict;
+                  } else {
+                    console.log(`  Attempt ${attempt + 1} HTTP ${response.status}`);
                   }
                 } catch (err) {
                   console.log(`  Attempt ${attempt + 1} error: ${err.message}`);
@@ -180,13 +189,14 @@ jobs:
 
             console.log(`Found ${allIssues.length} open issues`);
 
-            // Filter out bots and TIER-labeled
+            // Filter out bots, TIER-labeled, polly-labeled, and recently created (avoid racing with live workflow)
+            const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
             const eligible = allIssues.filter(issue => {
               const login = issue.user?.login || '';
               if (login.endsWith('[bot]') || login.includes('dependabot') || login.includes('renovate')) return false;
               if (issue.labels?.some(l => l.name.startsWith('TIER-'))) return false;
-              // Skip issues that already have the polly label
               if (issue.labels?.some(l => l.name === 'polly')) return false;
+              if (issue.created_at > fiveMinAgo) return false;
               return true;
             });
 
@@ -196,6 +206,8 @@ jobs:
 
             // --- Process each issue ---
             const stats = { duplicate: 0, resolved: 0, auto_fix: 0, skip: 0, error: 0 };
+            let consecutiveErrors = 0;
+            const MAX_CONSECUTIVE_ERRORS = 5;
             const validActions = ['duplicate', 'resolved', 'auto_fix', 'skip'];
             const thresholds = { duplicate: 0.85, resolved: 0.85, auto_fix: 0.70 };
 
@@ -203,15 +215,29 @@ jobs:
               const issue = toProcess[i];
               console.log(`[${i + 1}/${toProcess.length}] #${issue.number}: ${issue.title.slice(0, 80)}`);
 
+              // Circuit breaker
+              if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                console.log(`Aborting: ${MAX_CONSECUTIVE_ERRORS} consecutive errors. Polly API may be down.`);
+                break;
+              }
+
               const verdict = await triageIssue(issue);
+
+              // Guard: self-duplicate
+              if (verdict?.action === 'duplicate' && verdict.similar_issue === `#${issue.number}`) {
+                console.log(`  Self-duplicate detected, forcing skip.`);
+                verdict.action = 'skip';
+              }
 
               if (!verdict || !validActions.includes(verdict.action)) {
                 console.log(`  -> error (no valid verdict)`);
                 stats.error++;
+                consecutiveErrors++;
                 if (i < toProcess.length - 1) await new Promise(r => setTimeout(r, delaySec * 1000));
                 continue;
               }
 
+              verdict.confidence = parseFloat(verdict.confidence) || 0;
               const minConf = thresholds[verdict.action];
               if (minConf && verdict.confidence < minConf) {
                 console.log(`  -> skip (${verdict.action} confidence ${verdict.confidence} < ${minConf})`);
@@ -222,6 +248,7 @@ jobs:
 
               console.log(`  -> ${verdict.action} (confidence: ${verdict.confidence}) ${verdict.reason || ''}`);
               stats[verdict.action]++;
+              consecutiveErrors = 0;
 
               if (dryRun) {
                 if (i < toProcess.length - 1) await new Promise(r => setTimeout(r, delaySec * 1000));

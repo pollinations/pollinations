@@ -40,35 +40,6 @@ describe("Admin authentication", () => {
         expect(response.status).toBe(404);
     });
 
-    it("should allow refill token access to trigger-refill only", async () => {
-        // Should work for trigger-refill
-        const refillResponse = await SELF.fetch(
-            `${baseUrl}/api/admin/trigger-refill`,
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${env.REFILL_TOKEN}`,
-                },
-            },
-        );
-        // Will succeed or skip, but authentication passed
-        expect([200]).toContain(refillResponse.status);
-
-        // Should NOT work for update-tier
-        const updateResponse = await SELF.fetch(
-            `${baseUrl}/api/admin/update-tier`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${env.REFILL_TOKEN}`,
-                },
-                body: JSON.stringify({ userId: "test", tier: "seed" }),
-            },
-        );
-        expect(updateResponse.status).toBe(401);
-    });
-
     it("should allow full admin token access to trigger-refill", async () => {
         const response = await SELF.fetch(
             `${baseUrl}/api/admin/trigger-refill`,

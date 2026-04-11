@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import { basename } from "node:path";
 import { aggregate } from "../lib/aggregate.mjs";
+import { buildFleetLayout } from "../lib/fleet-layout.mjs";
 import { forecast } from "../lib/forecast.mjs";
 import {
     applyFormat,
     applyNumberFormat,
     clearSheet,
+    ensureTab,
     freeze,
     resizeColumn,
     updateValues,
@@ -159,6 +161,79 @@ async function main() {
     }
 
     await freeze(spreadsheetId, layout.freezeRows, { account });
+
+    // --- Fleet tab: live GPU instances grouped by provider ---
+    // Pulls from vendors._pools[*].instances which the provider wrappers
+    // populate on every update-live.mjs run. Always rewritten from scratch.
+    const hasInstances = Object.values(pools).some(
+        (p) => Array.isArray(p.instances) && p.instances.length > 0,
+    );
+    if (hasInstances) {
+        const fleet = buildFleetLayout(pools, config, { tab: "Fleet" });
+        console.log(
+            `Writing ${fleet.cells.length} rows to "${fleet.tab}" tab...`,
+        );
+
+        await ensureTab(spreadsheetId, fleet.tab, { account });
+
+        const fleetLastCol = colLetter(fleet.cells[0].length - 1);
+        const fleetCanvas = `${fleet.tab}!A1:${fleetLastCol}1000`;
+        await clearSheet(spreadsheetId, fleetCanvas, { account });
+
+        // Wipe lingering formats on the fleet canvas so rebuilds are idempotent.
+        await applyFormat(
+            spreadsheetId,
+            {
+                range: fleetCanvas,
+                fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.textFormat.fontSize,userEnteredFormat.backgroundColor,userEnteredFormat.borders,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment",
+                format: {
+                    textFormat: {
+                        bold: false,
+                        italic: false,
+                        fontSize: 10,
+                        foregroundColor: { red: 0.1, green: 0.1, blue: 0.12 },
+                    },
+                    backgroundColor: { red: 1, green: 1, blue: 1 },
+                    borders: {},
+                    horizontalAlignment: "LEFT",
+                    verticalAlignment: "MIDDLE",
+                },
+            },
+            { account },
+        );
+
+        await updateValues(spreadsheetId, `${fleet.tab}!A1`, fleet.cells, {
+            account,
+        });
+
+        for (const fmt of fleet.formats) {
+            await applyFormat(spreadsheetId, fmt, { account });
+        }
+
+        await applyNumberFormat(
+            spreadsheetId,
+            fleet.numericRange,
+            '#,##0.00 "€"',
+            { account },
+        );
+
+        for (const { col, width } of fleet.columnWidths) {
+            const letter = colLetter(col);
+            await resizeColumn(
+                spreadsheetId,
+                `${fleet.tab}!${letter}:${letter}`,
+                width,
+                {
+                    account,
+                },
+            );
+        }
+
+        await freeze(spreadsheetId, fleet.freezeRows, {
+            account,
+            sheet: fleet.tab,
+        });
+    }
 
     console.log("\nDone.");
     console.log(`Vendors: ${Object.keys(extended.vendors).length}`);

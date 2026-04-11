@@ -66,6 +66,23 @@ export async function fetchMtd(currentMonth, pool) {
     const burnPerHour = centsPerHour / 100;
     const nowIso = new Date().toISOString();
 
+    // Build normalized instances list for the fleet tab. Lambda's instance_type
+    // description is human-readable (e.g. "1x GH200 (96 GB)") which is exactly
+    // what we want in the "GPU" column — keep it as-is.
+    pool.instances = instances
+        .filter((inst) => inst.status === "active")
+        .map((inst) => ({
+            provider: "Lambda Labs",
+            name: inst.name ?? inst.id ?? "",
+            gpu:
+                inst.instance_type?.description ??
+                inst.instance_type?.name ??
+                "?",
+            status: inst.status ?? "",
+            cost_per_hour_usd:
+                (Number(inst.instance_type?.price_cents_per_hour) || 0) / 100,
+        }));
+
     // Integrate: increment mtd_credit_so_far by burn × (now - last_sample).
     // Three cases mirror the Runpod wrapper.
     let mtdCredit = Number(pool.mtd_credit_usd ?? 0);

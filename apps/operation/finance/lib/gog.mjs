@@ -151,8 +151,28 @@ export async function resizeColumn(
     );
 }
 
-export async function freeze(spreadsheetId, rows, { account }) {
-    await run(["sheets", "freeze", spreadsheetId, "--rows", String(rows)], {
+export async function freeze(spreadsheetId, rows, { account, sheet } = {}) {
+    const args = ["sheets", "freeze", spreadsheetId, "--rows", String(rows)];
+    if (sheet) args.push("--sheet", sheet);
+    await run(args, { account });
+}
+
+export async function listTabs(spreadsheetId, { account }) {
+    const meta = await run(["sheets", "metadata", spreadsheetId], {
         account,
+        json: true,
     });
+    const sheets = meta?.sheets ?? [];
+    return sheets.map((s) => s?.properties?.title).filter(Boolean);
+}
+
+export async function addTab(spreadsheetId, tabName, { account }) {
+    await run(["sheets", "add-tab", spreadsheetId, tabName], { account });
+}
+
+export async function ensureTab(spreadsheetId, tabName, { account }) {
+    const existing = await listTabs(spreadsheetId, { account });
+    if (existing.includes(tabName)) return false;
+    await addTab(spreadsheetId, tabName, { account });
+    return true;
 }

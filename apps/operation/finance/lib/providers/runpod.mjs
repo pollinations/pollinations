@@ -61,13 +61,39 @@ export async function fetchMtd(currentMonth, pool) {
 
     const data = await runpodQuery(
         apiKey,
-        "query { myself { clientBalance currentSpendPerHr } }",
+        `query {
+          myself {
+            clientBalance
+            currentSpendPerHr
+            pods {
+              id
+              name
+              desiredStatus
+              costPerHr
+              gpuCount
+              machine { gpuDisplayName }
+            }
+          }
+        }`,
     );
     const me = data?.myself;
     if (!me) throw new Error("Runpod: empty myself{} response");
 
     const currentBalance = Number(me.clientBalance ?? 0);
     const burnPerHour = Number(me.currentSpendPerHr ?? 0);
+
+    // Build a normalized instances list for the fleet tab.
+    // Keep only the fields fleet-layout needs, in a shape shared across providers.
+    const rawPods = Array.isArray(me.pods) ? me.pods : [];
+    pool.instances = rawPods
+        .filter((p) => p.desiredStatus === "RUNNING")
+        .map((p) => ({
+            provider: "Runpod",
+            name: p.name ?? p.id ?? "",
+            gpu: `${p.gpuCount ?? 1}× ${p.machine?.gpuDisplayName ?? "?"}`,
+            status: p.desiredStatus ?? "",
+            cost_per_hour_usd: Number(p.costPerHr ?? 0),
+        }));
 
     // Stateful tracking. Three cases:
     //   (a) First run this month → seed month_open to current balance

@@ -54,13 +54,14 @@ jobs:
             Schema: {"action":"duplicate|resolved|auto_fix|skip","confidence":0.0-1.0,"reason":"1-2 sentences referencing what you found in search results","similar_issue":"#number or null","solution_reference":"file/commit/PR or null","comment":"friendly comment to post on the issue, or null if skip"}
 
             Actions:
-            - "duplicate": find_similar returned a matching open issue. Reference it by number. High confidence only.
+            - "duplicate": find_similar returned a DIFFERENT matching open issue. Reference it by number. High confidence only.
             - "resolved": code_search found that the fix already exists in the codebase. Reference the file/PR. High confidence only.
             - "auto_fix": Issue is minor and well-defined (typo, small bug, config change, doc update). Not urgent. code_search confirmed it is NOT yet fixed.
             - "skip": Issue needs human attention, or searches were inconclusive.
             - For duplicates, reference the original issue number in the comment.
             - For resolved issues, reference the specific file/commit/PR in the comment.
-            - If code_search or find_similar return no results, default to "skip".`;
+            - If code_search or find_similar return no results, default to "skip".
+            - CRITICAL: The issue number being analyzed is provided in the user message. NEVER mark an issue as a duplicate of itself. If find_similar only returns the same issue number, that is NOT a duplicate.`;
 
             // --- Few-shot examples ---
             const fewShot = [
@@ -106,7 +107,7 @@ jobs:
 
             // --- Call Polly with retries ---
             const SEEDS = [42, 777, 1337];
-            const issueContent = `Title: ${issue.title}\nBody: ${(issue.body || '').slice(0, 3000)}`;
+            const issueContent = `Issue #${issue.number}:\nTitle: ${issue.title}\nBody: ${(issue.body || '').slice(0, 3000)}`;
             let verdict = null;
 
             for (let attempt = 0; attempt < 3; attempt++) {

@@ -25,7 +25,8 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | AWS | [providers/aws.md](providers/aws.md) | ✅ Production (list prices, no credits visible) | 2026-04-11 |
 | Umbrella Cost (Automat-IT reseller) | [providers/umbrella-cost.md](providers/umbrella-cost.md) | ⚠️ Auth validated, data plane blocked (API access gated at tenant). **Shows real invoiced AWS cost after reseller discount — supersedes `aws.md` for runway math once unblocked.** | 2026-04-11 |
 | GCP / Vertex AI | [providers/gcp.md](providers/gcp.md) | ✅ Production — auth + inventory validated live. BigQuery billing export needs one-time Console enable before SKU-level queries work. | 2026-04-11 |
-| Stripe + Polar (revenue side) | [providers/stripe-polar.md](providers/stripe-polar.md) | ✅ Production — Stripe live queries work, Polar `/metrics` works. ⚠️ Polar revenue = $0 since Feb 2026 while Stripe shows €7k+/month — reconciliation gap documented. | 2026-04-11 |
+| Stripe (revenue + fees) | [providers/stripe.md](providers/stripe.md) | ✅ Production — balance, balance_transactions, fees. March 2026: €7,303 gross / €6,627 net. | 2026-04-11 |
+| Polar.sh (subscriptions + MRR) | [providers/polar.md](providers/polar.md) | ✅ Production — `/metrics` endpoint, products, churn. ⚠️ `/metrics.revenue = 0` since Feb 2026 while Stripe shows €7k/mo — cross-check always. | 2026-04-11 |
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
 | GCP / Vertex AI | `providers/gcp.md` | ⏳ TODO | — |
 | Tinybird | `providers/tinybird.md` | ⏳ TODO (see also `tinybird-deploy` skill for deploys) | — |

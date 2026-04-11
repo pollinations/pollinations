@@ -47,6 +47,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-04-10** – **⚡ DeepSeek & Kimi Upgrades** Migrated DeepSeek and Kimi to new infrastructure. Expect significantly fewer dropped connections and faster response times when chatting in the [Playground](https://pollinations.ai/play).
+- **2026-04-10** – **🌍 Gemini Flash Lite Routing** Rerouted Gemini 2.5 Flash Lite to global endpoints to pool quota. It should now actually survive when everyone tries to hit the [Text API](https://gen.pollinations.ai/v1/chat/completions) at the exact same time.
 - **2026-04-09** – **🚀 Heavyweight models hit the free tier** GPT-5.4, Grok, and Qwen Coder are now free to use. We also wired up Mistral-Large-3 and Grok-4-20 to the [text endpoint](https://gen.pollinations.ai/v1/models).
 - **2026-04-09** – **🎨 Premium pixels, zero cost** `gptimage-large` and `FLUX.1 Kontext` have been moved off the paid tier. Send a prompt, get high-quality pixels back.
 - **2026-04-09** – **🛠️ Dreamframe** A zero-dependency, single-HTML-file playground for testing image, video, voice, and music generation. View source, learn, steal. [Try it](https://funniman23.github.io/Dreamframe/) <!-- app -->
@@ -55,8 +57,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-04-09** – **🌟 Community app explosion** The greenhouse is overflowing with 15+ new submissions this week, including emoji-to-image generators, botanical quizzes, and social video creators. [View apps](https://hello.pollinations.ai) <!-- app -->
 - **2026-04-05** – **🚀 Sana Sprint 1.6B** We've swapped out SDXL Turbo for Sana Sprint 1.6B on our workers, bringing you faster and more reliable [image generation](https://gen.pollinations.ai/image/models).
 - **2026-04-05** – **✨ URV AI Chat** A new community app just dropped in the showcase, featuring diverse LLM access, character creation, and image generation. [Try it](https://urv-ai.vercel.app) <!-- app -->
-- **2026-04-05** – **🤖 Smarter llm.txt** We've expanded our `llm.txt` endpoint so your AI agents can now automatically discover and use our complete set of account management and media storage APIs.
-- **2026-04-03** – **🚀 Gemini 3.1 Flash Lite** Google's lightweight multimodal model is now live on the [text API](https://gen.pollinations.ai/v1/models). Fast processing and a 1M token context window for when you have entirely too much to say.
 ---
 
 ## 🌱 Introduction

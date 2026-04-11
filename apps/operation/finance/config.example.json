@@ -1,0 +1,7 @@
+{
+  "spreadsheetId": "YOUR_SPREADSHEET_ID_HERE",
+  "gogAccount": "you@example.com",
+  "forecastMonths": 6,
+  "cashBalance": 0,
+  "cashBalanceAsOf": "2026-01-01"
+}

@@ -31,7 +31,6 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
-        TESTING_REFERRER: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         TINYBIRD_POLAR_INGEST_TOKEN: string;
@@ -39,7 +38,6 @@ declare namespace Cloudflare {
         STRIPE_SECRET_KEY: string;
         STRIPE_WEBHOOK_SECRET: string;
         TINYBIRD_STRIPE_INGEST_TOKEN: string;
-        REFILL_TOKEN: string;
         ELEVENLABS_API_KEY: string;
         OVHCLOUD_API_KEY: string;
         TINYBIRD_TIER_INGEST_TOKEN: string;
@@ -76,7 +74,6 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
-        TESTING_REFERRER: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         TINYBIRD_POLAR_INGEST_TOKEN: string;
@@ -84,7 +81,6 @@ declare namespace Cloudflare {
         STRIPE_SECRET_KEY: string;
         STRIPE_WEBHOOK_SECRET: string;
         TINYBIRD_STRIPE_INGEST_TOKEN: string;
-        REFILL_TOKEN: string;
         ELEVENLABS_API_KEY: string;
         OVHCLOUD_API_KEY: string;
         TINYBIRD_TIER_INGEST_TOKEN: string;
@@ -122,7 +118,6 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
-        TESTING_REFERRER: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         TINYBIRD_POLAR_INGEST_TOKEN: string;
@@ -130,7 +125,6 @@ declare namespace Cloudflare {
         STRIPE_SECRET_KEY: string;
         STRIPE_WEBHOOK_SECRET: string;
         TINYBIRD_STRIPE_INGEST_TOKEN: string;
-        REFILL_TOKEN: string;
         ELEVENLABS_API_KEY: string;
         OVHCLOUD_API_KEY: string;
         TINYBIRD_TIER_INGEST_TOKEN: string;
@@ -167,7 +161,6 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
-        TESTING_REFERRER: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         TINYBIRD_POLAR_INGEST_TOKEN: string;
@@ -175,7 +168,6 @@ declare namespace Cloudflare {
         STRIPE_SECRET_KEY: string;
         STRIPE_WEBHOOK_SECRET: string;
         TINYBIRD_STRIPE_INGEST_TOKEN: string;
-        REFILL_TOKEN: string;
         ELEVENLABS_API_KEY: string;
         OVHCLOUD_API_KEY: string;
         TINYBIRD_TIER_INGEST_TOKEN: string;
@@ -211,7 +203,6 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
-        TESTING_REFERRER: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         TINYBIRD_POLAR_INGEST_TOKEN: string;
@@ -219,7 +210,6 @@ declare namespace Cloudflare {
         STRIPE_SECRET_KEY: string;
         STRIPE_WEBHOOK_SECRET: string;
         TINYBIRD_STRIPE_INGEST_TOKEN: string;
-        REFILL_TOKEN: string;
         ELEVENLABS_API_KEY: string;
         OVHCLOUD_API_KEY: string;
         TINYBIRD_TIER_INGEST_TOKEN: string;
@@ -237,7 +227,6 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
-        TESTING_REFERRER: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         TINYBIRD_POLAR_INGEST_TOKEN: string;
@@ -245,7 +234,6 @@ declare namespace Cloudflare {
         STRIPE_SECRET_KEY: string;
         STRIPE_WEBHOOK_SECRET: string;
         TINYBIRD_STRIPE_INGEST_TOKEN: string;
-        REFILL_TOKEN: string;
         ELEVENLABS_API_KEY: string;
         OVHCLOUD_API_KEY: string;
         TINYBIRD_TIER_INGEST_TOKEN: string;
@@ -253,6 +241,7 @@ declare namespace Cloudflare {
         SERAPHYN_API_KEY: string;
         MUSIC_SERVICE_URL: string;
         MUSIC_SERVICE_TOKEN: string;
+        TINYBIRD_D1_SYNC_TOKEN?: string;
         KV: KVNamespace;
         IMAGE_BUCKET: R2Bucket;
         TEXT_BUCKET: R2Bucket;
@@ -340,7 +329,6 @@ declare namespace NodeJS {
                 | "POLAR_WEBHOOK_SECRET"
                 | "GITHUB_CLIENT_ID"
                 | "GITHUB_CLIENT_SECRET"
-                | "TESTING_REFERRER"
                 | "PLN_ENTER_TOKEN"
                 | "TINYBIRD_READ_TOKEN"
                 | "TINYBIRD_POLAR_INGEST_TOKEN"
@@ -348,7 +336,6 @@ declare namespace NodeJS {
                 | "STRIPE_SECRET_KEY"
                 | "STRIPE_WEBHOOK_SECRET"
                 | "TINYBIRD_STRIPE_INGEST_TOKEN"
-                | "REFILL_TOKEN"
                 | "ELEVENLABS_API_KEY"
                 | "OVHCLOUD_API_KEY"
                 | "TINYBIRD_TIER_INGEST_TOKEN"

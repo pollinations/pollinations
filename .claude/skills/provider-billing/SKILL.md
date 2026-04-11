@@ -30,6 +30,7 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | Wise (cash position) | [providers/wise.md](providers/wise.md) | ✅ Production — profiles + balances live. €58,594 in business EUR balance captured. ⚠️ Statement/transaction endpoints require SCA keypair (one-time openssl setup). | 2026-04-11 |
 | RunPod (GPU shadow cost) | [providers/runpod.md](providers/runpod.md) | ✅ Production — live burn rate + credit balance via GraphQL. $2,071 credit remaining, $1.648/hr burn, ~52 days runway. No historical ledger (poll to reconstruct). | 2026-04-11 |
 | Lambda Labs (GPU shadow cost) | [providers/lambda-labs.md](providers/lambda-labs.md) | ✅ Production — instances + price book live. $5.57/hr → ~$4,010/mo across 3 instances. ❌ Zero billing endpoints; shadow cost ONLY via polling + price book. | 2026-04-11 |
+| Alibaba Cloud (Model Studio / DashScope) | [providers/alibaba.md](providers/alibaba.md) | ✅ Production — full BSS query flow. March net $224 (after $1k coupon), April MTD $704 (coupon depleted), run rate ~$2,745/mo. Per-model breakdown via InstanceID parsing. | 2026-04-11 |
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
 | GCP / Vertex AI | `providers/gcp.md` | ⏳ TODO | — |
 | Tinybird | `providers/tinybird.md` | ⏳ TODO (see also `tinybird-deploy` skill for deploys) | — |

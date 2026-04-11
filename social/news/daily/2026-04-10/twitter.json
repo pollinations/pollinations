@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-10",
+  "period_start": "2026-04-10",
+  "period_end": "2026-04-10",
+  "generated_at": "2026-04-11T06:20:34.096177+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-10/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped a few updates:\n- pricing table now does the math for you, showing exactly how many requests your balance gets you\n- routed gemini-2.5-flash-lite to vertex global endpoint for better reliability\n- made the website headers big again"
+}

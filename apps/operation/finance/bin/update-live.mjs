@@ -24,6 +24,7 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadDotenv } from "../lib/io.mjs";
 
 const APP_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 const VENDORS_PATH = join(APP_DIR, "secrets", "vendors.json");
@@ -75,6 +76,10 @@ async function loadProviderModule(providerName) {
 }
 
 async function main() {
+    // Load secrets (RUNPOD_API_KEY, LAMBDA_LABS_API_KEY, etc.) from
+    // apps/operation/finance/secrets/.env into process.env.
+    await loadDotenv();
+
     const month = currentMonth();
     const vendors = await loadJson(VENDORS_PATH, {});
     const pools = vendors._pools ?? {};
@@ -104,16 +109,28 @@ async function main() {
         }
 
         try {
-            const r = await mod.fetchMtd(month);
-            const seedBalance =
-                pool.seed_balance_usd ?? pool.current_balance_usd;
-            const newBalance = Number(
-                (seedBalance - r.mtd_credit_usd).toFixed(2),
-            );
+            // Capture the balance the wrapper sees BEFORE calling it, so we
+            // can detect whether the wrapper set current_balance_usd itself
+            // (live API) or left it untouched (API reports MTD only, we derive).
+            const priorBalance = pool.current_balance_usd;
+            const r = await mod.fetchMtd(month, pool);
 
-            // Preserve the seed so balance calculations stay stable across reruns.
-            pool.seed_balance_usd = seedBalance;
-            pool.current_balance_usd = newBalance;
+            let newBalance;
+            if (r.live_balance || pool.current_balance_usd !== priorBalance) {
+                // Wrapper set current_balance_usd directly from a live API call.
+                // Trust the wrapper; don't recompute from seed.
+                newBalance = pool.current_balance_usd;
+            } else {
+                // Wrapper only returned MTD; derive balance from seed - mtd_credit.
+                const seedBalance =
+                    pool.seed_balance_usd ?? pool.current_balance_usd;
+                pool.seed_balance_usd = seedBalance;
+                newBalance = Number(
+                    (seedBalance - r.mtd_credit_usd).toFixed(2),
+                );
+                pool.current_balance_usd = newBalance;
+            }
+
             pool.as_of = r.as_of;
             pool.mtd_total_usd = r.mtd_total_usd;
             pool.mtd_credit_usd = r.mtd_credit_usd;
@@ -127,7 +144,7 @@ async function main() {
                 `  ${poolName.padEnd(14)} total=$${r.mtd_total_usd.toFixed(2)} credit=$${r.mtd_credit_usd.toFixed(2)} cash=$${r.mtd_cash_usd.toFixed(2)} records=${r.records}`,
             );
             console.log(
-                `  ${" ".repeat(14)}   balance: $${seedBalance.toLocaleString()} → $${newBalance.toLocaleString()}`,
+                `  ${" ".repeat(14)}   balance: $${(priorBalance ?? 0).toLocaleString()} → $${newBalance.toLocaleString()}`,
             );
             summary.push({ poolName, status: "ok", newBalance });
         } catch (e) {

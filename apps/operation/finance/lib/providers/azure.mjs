@@ -48,9 +48,12 @@ function azRest(url) {
 /**
  * Fetch MTD usage for a given month. currentMonth is "YYYY-MM".
  * Walks nextLink pagination until exhausted.
+ *
+ * The second argument (pool) is accepted for signature consistency with
+ * stateful wrappers like Runpod but is unused here. Azure exposes MTD
+ * directly so no state tracking is needed.
  */
-export async function fetchMtd(currentMonth) {
-    const [y, m] = currentMonth.split("-").map(Number);
+export async function fetchMtd(currentMonth, _pool) {
     const startDate = `${currentMonth}-01T00:00:00Z`;
     // End date = today (we only want records up to now, not full month)
     const today = new Date();

@@ -49,16 +49,14 @@ function awsCmd(args) {
     });
 }
 
-function lastDayOfMonth(currentMonth) {
-    const [y, m] = currentMonth.split("-").map(Number);
-    return new Date(Date.UTC(y, m, 0)).getUTCDate();
-}
-
 /**
  * Fetch MTD usage for a given month. currentMonth is "YYYY-MM".
  * Cost Explorer `End` is exclusive, so we pass today + 1 day to include today.
+ *
+ * The second argument (pool) is accepted for signature consistency with
+ * stateful wrappers like Runpod but is unused here.
  */
-export async function fetchMtd(currentMonth) {
+export async function fetchMtd(currentMonth, _pool) {
     const start = `${currentMonth}-01`;
     const today = new Date();
     const isSameMonth =

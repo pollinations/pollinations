@@ -131,16 +131,40 @@ async function main() {
     // `monthly_payouts`. Inject positive values for every month the API
     // returned. Overwrites the Wise CSV row in place because the API
     // payout value equals the Wise deposit value to the cent.
+    //
+    // Minimum-forecast floor: the most recent payout also becomes the
+    // conservative floor for every future month in the grid, rounded down
+    // to the nearest €100. Rationale: the business is growing, so "at
+    // minimum next month's payout will match last month's." The floor
+    // auto-updates as new payouts land.
     for (const pool of Object.values(pools)) {
         if (pool.role !== "revenue") continue;
         const canonical = pool.vendor_canonical;
         if (!canonical) continue;
         const payouts = pool.monthly_payouts;
         if (!payouts || typeof payouts !== "object") continue;
+
+        // Inject actual values month-by-month
         for (const [month, amountEur] of Object.entries(payouts)) {
             if (!extended.data[month]) continue; // skip months outside the grid
             if (typeof amountEur !== "number") continue;
             extended.data[month][canonical] = Number(amountEur.toFixed(2));
+        }
+
+        // Floor forecast for every month AFTER the latest payout month
+        const payoutMonths = Object.keys(payouts)
+            .filter((m) => typeof payouts[m] === "number" && payouts[m] > 0)
+            .sort();
+        const latestPayoutMonth = payoutMonths.at(-1);
+        if (latestPayoutMonth) {
+            const latestAmount = payouts[latestPayoutMonth];
+            // Round UP to nearest €100.
+            const floorEur = Math.ceil(latestAmount / 100) * 100;
+            for (const m of extended.months) {
+                if (m <= latestPayoutMonth) continue;
+                if (!extended.data[m]) continue;
+                extended.data[m][canonical] = floorEur;
+            }
         }
     }
 

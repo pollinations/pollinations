@@ -1,0 +1,34 @@
+{
+  "pr_number": 10127,
+  "title": "feat: issue automation pipeline with Polly triage",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/10127",
+  "merged_at": "2026-04-11T13:06:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Polly joins the triage team",
+    "blurb": "We've hooked up our very own Polly to auto-triage GitHub issues. She's now spotting duplicates, closing resolved tickets, and even triggering auto-fixes before a human even blinks.",
+    "summary": "Added an automated GitHub Actions pipeline that uses the Polly API to intelligently triage new issues, detect duplicates, and trigger auto-fixes.",
+    "impact": "Contributors will see faster issue responses and cleaner project boards as routine ticket management is now handled automatically.",
+    "keywords": [
+      "github-actions",
+      "automation",
+      "triage",
+      "polly",
+      "issues"
+    ],
+    "visual_concept": "Polly the bee acting as a project manager. She should be wearing a tiny detective hat or holding a clipboard, sorting through a stack of GitHub issue tickets (represented as pixelated paper documents). The Nomnom creature can be helping by eating the 'duplicate' tickets.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny detective hat and holding a clipboard, sorting through a stack of pixelated paper tickets. Nearby, the round Nomnom creature happily eats a ticket stamped 'DUPLICATE'. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-11/PR-10127.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny detective hat and holding a clipboard, sorting through a stack of pixelated paper tickets. Nearby, the round Nomnom creature happily eats a ticket stamped 'DUPLICATE'. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-04-11T13:07:00.387084+00:00"
+}

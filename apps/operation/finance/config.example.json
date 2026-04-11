@@ -3,5 +3,7 @@
   "gogAccount": "you@example.com",
   "forecastMonths": 6,
   "cashBalance": 0,
-  "cashBalanceAsOf": "2026-01-01"
+  "cashBalanceAsOf": "2026-01-01",
+  "usd_to_eur": 0.92,
+  "usd_to_eur_as_of": "2026-01-01"
 }

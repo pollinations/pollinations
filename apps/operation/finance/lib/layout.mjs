@@ -72,6 +72,20 @@ function sumRowForVendors(matrix, month, vendors) {
     return vendors.reduce((s, v) => s + (matrix.data[month][v] ?? 0), 0);
 }
 
+/**
+ * Build a lookup: canonical vendor name → pool entry.
+ * Used by the compute-section renderer to decide whether a vendor gets the
+ * 3-row (balance/credit/cash) treatment or stays as a single row.
+ */
+function indexPoolsByVendor(pools) {
+    const byVendor = new Map();
+    for (const [poolName, pool] of Object.entries(pools)) {
+        const canonical = pool.vendor_canonical;
+        if (canonical) byVendor.set(canonical, { poolName, pool });
+    }
+    return byVendor;
+}
+
 // ---------- runway KPIs ----------
 
 function computeKpis(matrix, config, { currentMonth }) {
@@ -93,10 +107,16 @@ function computeKpis(matrix, config, { currentMonth }) {
     const runwayMonths = burnAbs > 0 ? config.cashBalance / burnAbs : Infinity;
     const runwayText =
         runwayMonths === Infinity ? "∞" : runwayMonths.toFixed(1);
+    const fx = config.usd_to_eur;
+    const fxAsOf = config.usd_to_eur_as_of;
+    const fxText =
+        typeof fx === "number"
+            ? `  |  FX: 1 USD = €${fx.toFixed(2)}${fxAsOf ? ` (${fxAsOf})` : ""}`
+            : "";
     return {
         burn,
         runwayMonths,
-        text: `Cash: ${formatEuro(config.cashBalance)} | Burn (avg3): ${formatEuro(Math.round(burn))} | Runway: ${runwayText} months`,
+        text: `Cash: ${formatEuro(config.cashBalance)} | Burn (avg3): ${formatEuro(Math.round(burn))} | Runway: ${runwayText} months${fxText}`,
     };
 }
 
@@ -228,7 +248,101 @@ export function buildLayout(
     });
 
     // --- vendor rows grouped by category ---
-    const grouped = groupVendorsByCategory(matrix.vendors);
+    // Inject synthetic vendor entries for pool providers that have no Wise
+    // history yet (e.g. Lambda Labs where we've never paid cash). Without
+    // this injection, a pool-only provider would silently vanish from the
+    // compute section because matrix.vendors only contains vendors that
+    // appear in the CSVs. We do NOT inject data into matrix.data — those
+    // vendors' cash row stays at 0 for every historical month, which is
+    // correct (no CSV = no cash paid).
+    const matrixVendors = { ...matrix.vendors };
+    for (const pool of Object.values(pools)) {
+        const canonical = pool.vendor_canonical;
+        if (!canonical) continue;
+        if (matrixVendors[canonical]) continue;
+        matrixVendors[canonical] = "Compute";
+    }
+
+    const grouped = groupVendorsByCategory(matrixVendors);
+    const poolByVendor = indexPoolsByVendor(pools);
+    const fx = typeof config.usd_to_eur === "number" ? config.usd_to_eur : 1;
+
+    // Track the row indices of the two "info" sub-rows per pool vendor
+    // (balance remaining, consumed credits). These rows exist for display
+    // only and must be excluded from subtotal/total/net/cash aggregations.
+    // The "consumed cash" sub-row IS the aggregatable row — it holds the
+    // same numbers the vendor row held before the 3-row rewrite.
+    const infoRowIdxs = new Set();
+
+    // Helper: render a pool vendor as 3 rows (balance / credit / cash).
+    // Pool info rows (balance + credit) come from vendors.json._pools live data;
+    // cash row comes from the canonical matrix, identical to a non-pool vendor.
+    function renderPoolVendor(vendor, pool) {
+        const history = poolHistory[pool.poolName] ?? {};
+
+        // Row 1: balance remaining (informational — only populated in currentMonth).
+        const balanceRow = ["", `    ${vendor} — balance remaining`];
+        for (const m of months) {
+            if (m === currentMonth) {
+                const balUsd = pool.pool.current_balance_usd ?? 0;
+                balanceRow.push(Number((balUsd * fx).toFixed(2)));
+            } else {
+                balanceRow.push("—");
+            }
+        }
+        balanceRow.push(""); // Total actual — N/A for informational row
+        cells.push(balanceRow);
+        infoRowIdxs.add(cells.length - 1);
+
+        // Row 2: consumed (credits) (informational — pulled from live MTD +
+        // historical pool-history snapshots).
+        const creditRow = ["", `    ${vendor} — consumed (credits)`];
+        for (const m of months) {
+            if (m === currentMonth) {
+                const usedUsd = pool.pool.mtd_credit_usd ?? 0;
+                // Consumption is displayed as a negative number (money out).
+                creditRow.push(Number((-usedUsd * fx).toFixed(2)));
+            } else if (history[m] !== undefined) {
+                // history values are already negative (money out)
+                creditRow.push(Number((history[m] * fx).toFixed(2)));
+            } else {
+                creditRow.push("—");
+            }
+        }
+        creditRow.push(""); // Total actual — N/A for informational row
+        cells.push(creditRow);
+        infoRowIdxs.add(cells.length - 1);
+
+        // Row 3: consumed (cash) — the REAL vendor row, identical to what
+        // a non-pool vendor would emit. Pulled from matrix.data which comes
+        // from the Wise CSVs. This row contributes to subtotal/total/net.
+        const cashRow = ["", `    ${vendor} — consumed (cash)`];
+        let totalActual = 0;
+        for (let i = 0; i < months.length; i++) {
+            const m = months[i];
+            const v = matrix.data[m][vendor] ?? 0;
+            cashRow.push(Number(v.toFixed(2)));
+            if (!matrix.forecastMonths.has(m) && m !== currentMonth)
+                totalActual += v;
+        }
+        cashRow.push(Number(totalActual.toFixed(2)));
+        cells.push(cashRow);
+    }
+
+    // Helper: render a non-pool vendor as a single row (unchanged from v1.0).
+    function renderPlainVendor(vendor) {
+        const row = ["", vendor];
+        let totalActual = 0;
+        for (let i = 0; i < months.length; i++) {
+            const m = months[i];
+            const v = matrix.data[m][vendor] ?? 0;
+            row.push(Number(v.toFixed(2)));
+            if (!matrix.forecastMonths.has(m) && m !== currentMonth)
+                totalActual += v;
+        }
+        row.push(Number(totalActual.toFixed(2)));
+        cells.push(row);
+    }
 
     for (const [category, vendors] of grouped) {
         // Category header row
@@ -250,20 +364,15 @@ export function buildLayout(
             },
         });
 
-        // Vendor rows (all plain, consistent)
+        // Vendor rows
         const firstVendorRowIdx = cells.length;
         for (const vendor of vendors) {
-            const row = ["", vendor];
-            let totalActual = 0;
-            for (let i = 0; i < months.length; i++) {
-                const m = months[i];
-                const v = matrix.data[m][vendor] ?? 0;
-                row.push(Number(v.toFixed(2)));
-                if (!matrix.forecastMonths.has(m) && m !== currentMonth)
-                    totalActual += v;
+            const pool = poolByVendor.get(vendor);
+            if (pool) {
+                renderPoolVendor(vendor, pool);
+            } else {
+                renderPlainVendor(vendor);
             }
-            row.push(Number(totalActual.toFixed(2)));
-            cells.push(row);
         }
         const lastVendorRowIdx = cells.length - 1;
         // Uniform plain style across the whole vendor block.
@@ -281,6 +390,23 @@ export function buildLayout(
                 backgroundColor: WHITE,
             },
         });
+        // Apply a muted italic text style to the info rows within this block
+        // (balance remaining, consumed credits) so they're visually distinct
+        // from the aggregatable cash row.
+        for (let i = firstVendorRowIdx; i <= lastVendorRowIdx; i++) {
+            if (!infoRowIdxs.has(i)) continue;
+            formats.push({
+                label: `infoRow-${i}`,
+                range: sheetRange(i, 1, i, totalCol),
+                fields: "userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.foregroundColor",
+                format: {
+                    textFormat: {
+                        italic: true,
+                        foregroundColor: INK_MUTED,
+                    },
+                },
+            });
+        }
 
         // Subtotal row
         const subtotal = ["", `${category} subtotal`];
@@ -428,131 +554,6 @@ export function buildLayout(
         },
     });
 
-    // --- Credit pools section (no historical backfill) ---
-    // Shows live balance + monthly consumption for providers that have credit grants.
-    // Past-month cells are empty dashes — we never retroactively reconstruct.
-    // Current-month cell = latest balance from vendors.json._pools[pool].current_balance_usd.
-    // Historical consumption cells are populated from poolHistory (accumulates over time).
-    const poolNames = Object.keys(pools);
-    let poolSectionRange = null;
-    if (poolNames.length > 0) {
-        // Blank spacer
-        cells.push(Array(totalCol + 1).fill(""));
-
-        // Section header
-        const poolHeaderRow = [
-            "CREDIT POOLS (USD)",
-            ...Array(totalCol).fill(""),
-        ];
-        cells.push(poolHeaderRow);
-        const poolHeaderRowIdx = cells.length - 1;
-        formats.push({
-            label: "poolsHeader",
-            range: sheetRange(poolHeaderRowIdx, 0, poolHeaderRowIdx, totalCol),
-            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
-            format: {
-                textFormat: {
-                    bold: true,
-                    italic: false,
-                    fontSize: 11,
-                    foregroundColor: INK,
-                },
-                backgroundColor: BG_CATEGORY,
-                borders: {
-                    top: { style: "SOLID", color: INK },
-                },
-            },
-        });
-
-        // One row per pool: balance as of current month + historical consumption cells
-        for (const poolName of poolNames) {
-            const pool = pools[poolName];
-            const row = ["", poolName];
-            const history = poolHistory[poolName] ?? {};
-            for (const m of months) {
-                if (m === currentMonth) {
-                    // Current month: show live remaining balance from vendors.json
-                    row.push(Number(pool.current_balance_usd ?? 0));
-                } else if (history[m] !== undefined) {
-                    // Historical consumption (negative number, -$X used in that month)
-                    row.push(Number(history[m]));
-                } else {
-                    // No data — dash
-                    row.push("—");
-                }
-            }
-            row.push(""); // Total actual column
-            cells.push(row);
-        }
-        const firstPoolRowIdx = poolHeaderRowIdx + 1;
-        const lastPoolRowIdx = cells.length - 1;
-        formats.push({
-            label: "pools",
-            range: sheetRange(firstPoolRowIdx, 0, lastPoolRowIdx, totalCol),
-            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor",
-            format: {
-                textFormat: {
-                    bold: false,
-                    italic: false,
-                    fontSize: 10,
-                    foregroundColor: INK,
-                },
-                backgroundColor: WHITE,
-            },
-        });
-
-        // Pool total row
-        const totalPoolRow = ["", "Total credit pool"];
-        for (const m of months) {
-            if (m === currentMonth) {
-                const total = poolNames.reduce(
-                    (s, n) => s + (pools[n].current_balance_usd ?? 0),
-                    0,
-                );
-                totalPoolRow.push(Number(total));
-            } else {
-                // Sum historical consumption across pools (only if all have data)
-                let monthTotal = 0;
-                let anyData = false;
-                for (const n of poolNames) {
-                    const h = poolHistory[n]?.[m];
-                    if (h !== undefined) {
-                        monthTotal += h;
-                        anyData = true;
-                    }
-                }
-                totalPoolRow.push(anyData ? Number(monthTotal) : "—");
-            }
-        }
-        totalPoolRow.push("");
-        cells.push(totalPoolRow);
-        const totalPoolRowIdx = cells.length - 1;
-        formats.push({
-            label: "totalPool",
-            range: sheetRange(totalPoolRowIdx, 0, totalPoolRowIdx, totalCol),
-            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
-            format: {
-                textFormat: {
-                    bold: true,
-                    italic: false,
-                    fontSize: 11,
-                    foregroundColor: INK,
-                },
-                backgroundColor: BG_TOTAL,
-                borders: {
-                    top: { style: "SOLID", color: INK_MUTED },
-                    bottom: { style: "SOLID", color: INK_MUTED },
-                },
-            },
-        });
-
-        // Track the numeric range of the whole pool section so the caller
-        // can apply USD number formatting to it (default is EUR).
-        const poolSectionStartRow = firstPoolRowIdx;
-        const poolSectionEndRow = totalPoolRowIdx;
-        poolSectionRange = `Sheet1!${colLetter(2)}${poolSectionStartRow + 1}:${colLetter(totalCol)}${poolSectionEndRow + 1}`;
-    }
-
     // --- Column-level formats for current + forecast.
     // These apply AFTER row styles so they must not clobber bold/italic state.
     // Only the background color (and muted text color for forecast) changes.
@@ -599,6 +600,5 @@ export function buildLayout(
         formats,
         columnWidths,
         freezeRows: headerRowIdx + 1,
-        poolSectionRange,
     };
 }

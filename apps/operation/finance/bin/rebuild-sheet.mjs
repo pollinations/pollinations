@@ -151,16 +151,6 @@ async function main() {
         { account },
     );
 
-    // Pool section is USD-denominated; override EUR format for that range.
-    if (layout.poolSectionRange) {
-        await applyNumberFormat(
-            spreadsheetId,
-            layout.poolSectionRange,
-            '"$"#,##0;[RED]-"$"#,##0',
-            { account },
-        );
-    }
-
     for (const { col, width } of layout.columnWidths) {
         const letter = colLetter(col);
         await resizeColumn(spreadsheetId, `${letter}:${letter}`, width, {

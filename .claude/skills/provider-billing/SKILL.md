@@ -27,6 +27,7 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | GCP / Vertex AI | [providers/gcp.md](providers/gcp.md) | ✅ Production — auth + inventory validated live. BigQuery billing export needs one-time Console enable before SKU-level queries work. | 2026-04-11 |
 | Stripe (revenue + fees) | [providers/stripe.md](providers/stripe.md) | ✅ Production — balance, balance_transactions, fees. March 2026: €7,303 gross / €6,627 net. | 2026-04-11 |
 | Polar.sh (subscriptions + MRR) | [providers/polar.md](providers/polar.md) | ✅ Production — `/metrics` endpoint, products, churn. ⚠️ `/metrics.revenue = 0` since Feb 2026 while Stripe shows €7k/mo — cross-check always. | 2026-04-11 |
+| Wise (cash position) | [providers/wise.md](providers/wise.md) | ✅ Production — profiles + balances live. €58,594 in business EUR balance captured. ⚠️ Statement/transaction endpoints require SCA keypair (one-time openssl setup). | 2026-04-11 |
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
 | GCP / Vertex AI | `providers/gcp.md` | ⏳ TODO | — |
 | Tinybird | `providers/tinybird.md` | ⏳ TODO (see also `tinybird-deploy` skill for deploys) | — |

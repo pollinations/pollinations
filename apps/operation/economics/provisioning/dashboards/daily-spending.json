@@ -689,7 +689,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily paid GPU cost by provider/model (io.net/vast.ai).",
+      "description": "Daily paid GPU cost by provider/model (RunPod).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -775,7 +775,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('io.net', 'vast.ai')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('io.net', 'vast.ai', 'runpod')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
           "refId": "A"
         }
       ],

@@ -1,6 +1,6 @@
 ---
 name: monitor-services
-description: "Health check and auto-restart all Pollinations GPU services (Flux/Z-Image on RunPod, LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Vast.ai). Use with /loop for recurring checks."
+description: "Health check and auto-restart all Pollinations GPU services (Flux/Z-Image on RunPod, LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Oracle Cloud). Use with /loop for recurring checks."
 ---
 
 # Monitor Services
@@ -168,19 +168,17 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 
 ---
 
-### 6. Sana Sprint 1.6B Workers (Lambda Labs)
+### 6. Sana Sprint 1.6B Worker (GH200 - same host as LTX-2)
 
-Two workers registered as `sana` type with OVH legacy service via heartbeat (no SSH tunnels).
+One worker registered as `sana` type with OVH legacy service via heartbeat.
 
 | Instance | GPU | Host | Port | SSH |
 |----------|-----|------|------|-----|
-| Lambda A10 | A10 (24GB) | `150.136.85.48` | `8765` | `ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48` |
-| Lambda A100 | A100 (40GB) | `150.136.209.134` | `8765` | `ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134` |
+| Lambda GH200 | GH200 (96GB) | `192.222.51.105` | `8766` | `ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105` |
 
 **Health check:**
 ```bash
-curl -s --connect-timeout 5 --max-time 10 http://150.136.85.48:8765/health
-curl -s --connect-timeout 5 --max-time 10 http://150.136.209.134:8765/health
+curl -s --connect-timeout 5 --max-time 10 http://192.222.51.105:8766/health
 ```
 Expected: `{"status":"healthy","model":"Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers"}`
 
@@ -188,18 +186,19 @@ Expected: `{"status":"healthy","model":"Efficient-Large-Model/Sana_Sprint_1.6B_1
 ```bash
 ssh -i ~/.ssh/id_rsa_ovh -o ConnectTimeout=5 ubuntu@57.130.31.42 "curl -s http://localhost:16384/register"
 ```
-Expected: 2 workers with 0% error rate
+Expected: 1 worker with 0% error rate
 
 **Restart:**
 ```bash
-ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48 "sudo systemctl restart sana"
-ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134 "sudo systemctl restart sana"
+ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105 "sudo systemctl restart sana"
 ```
 
 **Notes:**
-- A10 generates at ~0.60s/img, A100 at ~0.25s/img
-- Replaced SDXL Turbo on Vast.ai (instance 34086100, now STOPPED)
+- GH200 generates at ~0.165s/img
+- Runs alongside LTX-2 (port 8765) and ACE-Step (port 8189) on the same host
+- Oracle A10/A100 instances decommissioned on 2026-04-12
 - Server code: `image.pollinations.ai/sana/server.py` (MAX_DIM=768, MAX_PIXELS=512*512)
+- Systemd service: `sana.service`
 
 ---
 
@@ -229,8 +228,8 @@ When invoked, run checks in this order:
 5. **ACE-Step health** - curl health endpoint on port 8189
 6. **Klein health** - curl RunPod proxy health endpoint
 7. **Legacy image service** - check systemctl status on OVH
-8. **Sana workers** - curl health on both Lambda instances (A10 + A100)
-9. **Sana registry** - check OVH legacy registry for 2 workers with 0% errors
+8. **Sana worker** - curl health on GH200 port 8766
+9. **Sana registry** - check OVH legacy registry for 1 worker with 0% errors
 10. **Disk space** - check OVH disk usage
 
 For each:
@@ -259,8 +258,7 @@ Report a brief status table:
 | ACE-Step | OK | 0.1s | |
 | Klein 4B | OK | 0.3s | RunPod |
 | Legacy image | OK | - | active |
-| Sana (Lambda A10) | OK | 0.2s | 1.6B, ~0.60s/img |
-| Sana (Lambda A100) | OK | 0.2s | 1.6B, ~0.25s/img |
-| Sana registry | OK | - | 2 workers, 0% errors |
+| Sana (GH200) | OK | 0.2s | 1.6B, ~0.165s/img |
+| Sana registry | OK | - | 1 worker, 0% errors |
 | OVH disk | OK | - | 45% used |
 ```

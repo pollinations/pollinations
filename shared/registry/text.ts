@@ -252,14 +252,14 @@ export const TEXT_SERVICES = {
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-v3.2", "deepseek-reasoning"],
-        modelId: "FW-DeepSeek-V3.2",
-        provider: "azure",
+        modelId: "accounts/fireworks/models/deepseek-v3p2",
+        provider: "fireworks",
         cost: [
             {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.62),
-                promptCachedTokens: perMillion(0.31),
-                completionTextTokens: perMillion(1.85),
+                date: new Date("2026-04-12").getTime(),
+                promptTextTokens: perMillion(0.56),
+                promptCachedTokens: perMillion(0.28),
+                completionTextTokens: perMillion(1.68),
             },
         ],
         description: "DeepSeek V3.2 - Efficient Reasoning & Agentic AI",
@@ -500,25 +500,31 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "kimi": {
-        aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
-        modelId: "moonshotai.kimi-k2.5",
-        provider: "bedrock",
+        aliases: [
+            "kimi-k2.5",
+            "kimi-k2p5",
+            "kimi-reasoning",
+            "kimi-large",
+            "kimi-k2-thinking",
+            "kimi-thinking",
+        ],
+        modelId: "accounts/fireworks/models/kimi-k2p5",
+        provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-01-28").getTime(),
+                date: new Date("2026-04-12").getTime(),
                 promptTextTokens: perMillion(0.6),
-                // Bedrock charges cached tokens at the same rate as regular input
-                promptCachedTokens: perMillion(0.6),
+                promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(3.0),
             },
         ],
         description:
-            "Moonshot Kimi K2.5 - Flagship Agentic Model with Vision & Multi-Agent",
+            "Moonshot Kimi K2.5 - Flagship Agentic Model with CoT Reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 256000,
+        contextLength: 262000,
         isSpecialized: false,
     },
     "gemini-large": {
@@ -608,19 +614,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm": {
-        aliases: ["glm-5", "glm-4.7", "glm-4p7"],
-        modelId: "zai.glm-5",
-        provider: "bedrock",
+        aliases: ["glm-5", "glm-5.1", "glm-5p1", "glm-4.7", "glm-4p7"],
+        modelId: "accounts/fireworks/models/glm-5p1",
+        provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-02-13").getTime(),
-                promptTextTokens: perMillion(0.6),
-                promptCachedTokens: perMillion(0.3),
-                completionTextTokens: perMillion(2.2),
+                date: new Date("2026-04-12").getTime(),
+                promptTextTokens: perMillion(1.0),
+                promptCachedTokens: perMillion(0.2),
+                completionTextTokens: perMillion(3.2),
             },
         ],
         description:
-            "Z.ai GLM-5 - 744B MoE, Long Context Reasoning & Agentic Workflows",
+            "Z.ai GLM-5.1 - 744B MoE, Long Context Reasoning & Agentic Workflows",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,

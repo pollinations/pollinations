@@ -54,7 +54,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["FW-DeepSeek-V3.2"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
     },
     {
         name: "grok",
@@ -143,7 +143,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi",
-        config: portkeyConfig["moonshotai.kimi-k2.5"],
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
     },
     {
         name: "gemini-large",
@@ -175,7 +175,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["glm-5"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5p1"],
     },
     {
         name: "minimax",

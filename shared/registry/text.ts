@@ -500,7 +500,14 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "kimi": {
-        aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
+        aliases: [
+            "kimi-k2.5",
+            "kimi-k2p5",
+            "kimi-reasoning",
+            "kimi-large",
+            "kimi-k2-thinking",
+            "kimi-thinking",
+        ],
         modelId: "accounts/fireworks/models/kimi-k2p5",
         provider: "fireworks",
         cost: [
@@ -607,7 +614,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm": {
-        aliases: ["glm-5", "glm-5.1", "glm-5p1"],
+        aliases: ["glm-5", "glm-5.1", "glm-5p1", "glm-4.7", "glm-4p7"],
         modelId: "accounts/fireworks/models/glm-5p1",
         provider: "fireworks",
         cost: [

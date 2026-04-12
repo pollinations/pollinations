@@ -14,8 +14,9 @@ Last updated: 2026-04-05
 | Z-Image (serverless) | 1-2 | ADA_32_PRO | RunPod | pay-per-use | Elliot |
 | Flux | 4 | 4x RTX 5090 | Vast.ai | $1.68 | running (not in registry) |
 | Z-Image + Sana | 4 | 4x RTX 5090 | Vast.ai | $1.66 | **STOPPED** |
-| Sana Sprint 1.6B | 1 | A10 | Lambda Labs | — | **ACTIVE** — sana registry |
-| Sana Sprint 1.6B | 1 | A100 | Lambda Labs | — | **ACTIVE** — sana registry |
+| Sana Sprint 1.6B | 1 | GH200 | Lambda Labs | — | **ACTIVE** — sana registry (port 8766) |
+| ~~Sana Sprint 1.6B~~ | ~~1~~ | ~~A10~~ | ~~Oracle Cloud~~ | — | **STOPPED** (2026-04-12) |
+| ~~Sana Sprint 1.6B~~ | ~~1~~ | ~~A100~~ | ~~Oracle Cloud~~ | — | **STOPPED** (2026-04-12) |
 | ~~SDXL Turbo (legacy sana)~~ | 1 | 1x RTX 4090 | Vast.ai | $0.36 | **STOPPED** — replaced by Lambda Labs |
 | Z-Image | 3 | 3x RTX 5090 | Vast.ai | $1.55 | running (not in registry) |
 | **Total active** | **~8** | | | **~$1.94/hr + serverless** |
@@ -161,23 +162,34 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 - **LTX-2**: port 8765, health at `/health`
 - **ACE-Step**: port 8189, systemd `acestep.service`
 
-### Sana Sprint 1.6B (A10)
+### Sana Sprint 1.6B (GH200 - colocated with LTX-2 + ACE-Step)
 
+- **Host**: `192.222.51.105`
+- **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105`
+- **Port**: 8766, health at `/health`
+- **Model**: `Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers`
+- **Speed**: ~0.165s/img
+- **Registry**: Registers as `sana` type with OVH legacy service
+- **Systemd**: `sana.service`
+- **Code**: `/home/ubuntu/sana/server.py`
+
+### Sana Sprint 1.6B (A10) — STOPPED
+
+- **Status**: **STOPPED** (2026-04-12) — instance turned off
 - **Host**: `150.136.85.48`
 - **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48`
 - **Port**: 8765, health at `/health`
 - **Model**: `Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers`
 - **Speed**: ~0.60s/img
-- **Registry**: Registers as `sana` type with OVH legacy service
 
-### Sana Sprint 1.6B (A100)
+### Sana Sprint 1.6B (A100) — STOPPED
 
+- **Status**: **STOPPED** (2026-04-12) — replaced by Sana on GH200
 - **Host**: `150.136.209.134`
 - **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134`
 - **Port**: 8765, health at `/health`
 - **Model**: `Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers`
 - **Speed**: ~0.25s/img
-- **Registry**: Registers as `sana` type with OVH legacy service
 
 ## Provider: EC2 (AWS)
 

@@ -182,10 +182,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["minimax-m2.5"],
     },
     {
-        name: "step",
-        config: portkeyConfig["step-3.5-flash"],
-    },
-    {
         name: "mistral-large",
         config: portkeyConfig["Mistral-Large-3"],
     },

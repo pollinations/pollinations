@@ -249,9 +249,17 @@ export function buildLayout(
     // --- row 2: blank spacer ---
     cells.push(Array(totalCol + 1).fill(""));
 
+    // Pre-compute expense/revenue vendor lists for summary rows.
+    const expenseVendors = Object.entries(matrix.vendors)
+        .filter(([, cat]) => !isRevenue(cat))
+        .map(([v]) => v);
+    const revenueVendors = Object.entries(matrix.vendors)
+        .filter(([, cat]) => isRevenue(cat))
+        .map(([v]) => v);
+
     // --- row 3: header ---
     const currentMonthIdx = months.indexOf(currentMonth); // may be -1
-    const headerRow = ["Category", "Vendor"];
+    const headerRow = ["", ""];
     for (const m of months) {
         headerRow.push(
             monthLabel(m, {
@@ -281,12 +289,83 @@ export function buildLayout(
             horizontalAlignment: "RIGHT",
         },
     });
-    // Force left alignment for the Category and Vendor header cells
+    // Force left alignment for the first two header cells
     formats.push({
         label: "headerLabels",
         range: sheetRange(headerRowIdx, 0, headerRowIdx, 1),
         fields: "userEnteredFormat.horizontalAlignment",
         format: { horizontalAlignment: "LEFT" },
+    });
+
+    // --- rows 4-6: summary rows (Total expenses, Net, Running cash) ---
+    // Placed right after header so they're frozen and always visible.
+    const totalExpRow = ["", "Total expenses"];
+    for (const m of months)
+        totalExpRow.push(
+            Number(sumRowForVendors(matrix, m, expenseVendors).toFixed(2)),
+        );
+    totalExpRow.push("");
+    cells.push(totalExpRow);
+    const totalExpRowIdx = cells.length - 1;
+    formats.push({
+        label: "totalExpenses",
+        range: sheetRange(totalExpRowIdx, 0, totalExpRowIdx, totalCol),
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
+        format: {
+            textFormat: {
+                bold: true,
+                italic: false,
+                fontSize: 11,
+                foregroundColor: INK,
+            },
+            backgroundColor: BG_TOTAL,
+        },
+    });
+
+    const netRow = ["", "Net (Revenue − Expenses)"];
+    for (const m of months) {
+        const net =
+            sumRowForVendors(matrix, m, revenueVendors) +
+            sumRowForVendors(matrix, m, expenseVendors);
+        netRow.push(Number(net.toFixed(2)));
+    }
+    netRow.push("");
+    cells.push(netRow);
+    const netRowIdx = cells.length - 1;
+    formats.push({
+        label: "net",
+        range: sheetRange(netRowIdx, 0, netRowIdx, totalCol),
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor",
+        format: {
+            textFormat: {
+                bold: true,
+                italic: false,
+                fontSize: 11,
+                foregroundColor: INK,
+            },
+            backgroundColor: BG_NET,
+        },
+    });
+
+    const cashRow2 = ["", "Running cash", ...runningCashValues, ""];
+    cells.push(cashRow2);
+    const cashRowIdx = cells.length - 1;
+    formats.push({
+        label: "runningCash",
+        range: sheetRange(cashRowIdx, 0, cashRowIdx, totalCol),
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
+        format: {
+            textFormat: {
+                bold: true,
+                italic: false,
+                fontSize: 11,
+                foregroundColor: INK,
+            },
+            backgroundColor: BG_CASH,
+            borders: {
+                bottom: { style: "SOLID", color: INK },
+            },
+        },
     });
 
     // --- vendor rows grouped by category ---
@@ -373,43 +452,15 @@ export function buildLayout(
         creditRowIdxs.add(cells.length - 1);
 
         // Row 3: consumed (cash) — the REAL vendor row that contributes to
-        // subtotal/total/net aggregation.
-        //
-        // Past months: pulled from matrix.data (Wise CSVs) — authoritative.
-        // Current month: no projection, no extrapolation — show exactly
-        //   what the provider API reports as MTD. Three cases:
-        //     (a) CSV has a non-zero value → use it (April CSV already landed)
-        //     (b) CSV empty AND wrapper set live mtd_cash_usd → use the live
-        //         MTD in EUR. This is the "what hit the meter so far" number.
-        //     (c) wrapper flagged mtd_stale (e.g. GCP BigQuery export lagging)
-        //         → render "—" so the cell is visibly unknown, not a false zero.
+        // subtotal/total/net aggregation. Values come from matrix.data which
+        // is populated by Wise (completed months) and rebuild-sheet.mjs
+        // (live payg cash injected into next month). No layout-level fallback.
         const cashRow = ["", `${vendor}: consumed cash`];
         let totalActual = 0;
         for (let i = 0; i < months.length; i++) {
             const m = months[i];
-            let v = matrix.data[m][vendor] ?? 0;
-            let cellValue = v;
-            if (m === currentMonth && v === 0) {
-                const isStale = pool.pool.mtd_stale === true;
-                const liveCashUsd = pool.pool.mtd_cash_usd;
-                if (isStale) {
-                    // Unknown — dash, not zero
-                    cellValue = "—";
-                } else if (
-                    typeof liveCashUsd === "number" &&
-                    liveCashUsd !== 0
-                ) {
-                    cellValue = Number(
-                        (-Math.abs(liveCashUsd) * poolFx).toFixed(2),
-                    );
-                    v = cellValue;
-                }
-            }
-            if (typeof cellValue === "number") {
-                cashRow.push(Number(cellValue.toFixed(2)));
-            } else {
-                cashRow.push(cellValue);
-            }
+            const v = matrix.data[m][vendor] ?? 0;
+            cashRow.push(Number(v.toFixed(2)));
             if (
                 !matrix.forecastMonths.has(m) &&
                 m !== currentMonth &&
@@ -541,98 +592,6 @@ export function buildLayout(
         });
     }
 
-    // --- TOTAL EXPENSES row ---
-    const expenseVendors = Object.entries(matrix.vendors)
-        .filter(([, cat]) => !isRevenue(cat))
-        .map(([v]) => v);
-    const revenueVendors = Object.entries(matrix.vendors)
-        .filter(([, cat]) => isRevenue(cat))
-        .map(([v]) => v);
-
-    // Blank spacer before totals
-    cells.push(Array(totalCol + 1).fill(""));
-
-    const totalExpRow = ["", "Total expenses"];
-    for (const m of months)
-        totalExpRow.push(
-            Number(sumRowForVendors(matrix, m, expenseVendors).toFixed(2)),
-        );
-    totalExpRow.push("");
-    cells.push(totalExpRow);
-    const totalExpRowIdx = cells.length - 1;
-    formats.push({
-        label: "totalExpenses",
-        range: sheetRange(totalExpRowIdx, 0, totalExpRowIdx, totalCol),
-        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
-        format: {
-            textFormat: {
-                bold: true,
-                italic: false,
-                fontSize: 11,
-                foregroundColor: INK,
-            },
-            backgroundColor: BG_TOTAL,
-            borders: {
-                top: { style: "SOLID", color: INK },
-            },
-        },
-    });
-
-    // --- NET row ---
-    const netRow = ["", "Net (Revenue − Expenses)"];
-    for (const m of months) {
-        const net =
-            sumRowForVendors(matrix, m, revenueVendors) +
-            sumRowForVendors(matrix, m, expenseVendors);
-        netRow.push(Number(net.toFixed(2)));
-    }
-    netRow.push("");
-    cells.push(netRow);
-    const netRowIdx = cells.length - 1;
-    formats.push({
-        label: "net",
-        range: sheetRange(netRowIdx, 0, netRowIdx, totalCol),
-        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
-        format: {
-            textFormat: {
-                bold: true,
-                italic: false,
-                fontSize: 11,
-                foregroundColor: INK,
-            },
-            backgroundColor: BG_NET,
-            borders: {
-                bottom: { style: "SOLID", color: INK },
-            },
-        },
-    });
-
-    // Blank spacer before running cash
-    cells.push(Array(totalCol + 1).fill(""));
-
-    // --- Running cash row (reuses pre-computed values from KPI) ---
-    const cashRow = ["", "Running cash", ...runningCashValues, ""];
-    cells.push(cashRow);
-    const cashRowIdx = cells.length - 1;
-    formats.push({
-        label: "runningCash",
-        range: sheetRange(cashRowIdx, 0, cashRowIdx, totalCol),
-        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
-        format: {
-            textFormat: {
-                bold: true,
-                italic: false,
-                fontSize: 11,
-                foregroundColor: INK,
-            },
-            backgroundColor: BG_CASH,
-            borders: {
-                top: { style: "SOLID", color: INK_MUTED },
-                bottom: { style: "SOLID", color: INK_MUTED },
-            },
-        },
-    });
-
     // --- Column-level formats for current + forecast.
     // These apply AFTER row styles so they must not clobber bold/italic state.
     // Only the background color (and muted text color for forecast) changes.
@@ -685,7 +644,7 @@ export function buildLayout(
         cells,
         formats,
         columnWidths,
-        freezeRows: headerRowIdx + 1,
+        freezeRows: cashRowIdx + 1,
         creditRowRanges,
     };
 }

@@ -162,13 +162,13 @@ async function main() {
         }
     }
 
-    // Revenue forecast: use last completed month's revenue (avg1) for
-    // all future months. Simple and tracks the most recent actual value.
+    // Revenue forecast: use the last actual month's revenue (including
+    // the current month if it has Wise data) for all future months.
     const revenueVendors = ["Stripe", "Polar.sh"];
-    const completedMonths = extended.months.filter(
-        (m) => !extended.forecastMonths.has(m) && m !== nowMonth,
+    const actualMonths = extended.months.filter(
+        (m) => !extended.forecastMonths.has(m),
     );
-    const latestRevenueMonth = completedMonths.at(-1);
+    const latestRevenueMonth = actualMonths.at(-1);
     if (latestRevenueMonth) {
         // Collect per-vendor revenue from the last completed month
         const lastRevenue = {};

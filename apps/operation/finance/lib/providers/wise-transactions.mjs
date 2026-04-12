@@ -162,7 +162,7 @@ export async function fetchCurrentMonthToDate() {
     // Until tomorrow to include today's transactions
     const tomorrow = new Date(now);
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-    const until = tomorrow.toISOString().slice(0, 10) + "T00:00:00.000Z";
+    const until = `${tomorrow.toISOString().slice(0, 10)}T00:00:00.000Z`;
 
     const activities = await fetchActivities(since, until);
     return activities.map(activityToRow);

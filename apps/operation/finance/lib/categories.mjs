@@ -5,11 +5,7 @@ export const CATEGORIES = [
     "Freelancer",
     "Office",
     "Productivity",
-    "Coding",
     "Infra",
-    "Accounting",
-    "Community",
-    "Food / Drink",
     "Banking",
     "Other",
 ];

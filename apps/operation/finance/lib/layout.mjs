@@ -94,25 +94,39 @@ function indexPoolsByVendor(pools) {
 
 // ---------- runway KPIs ----------
 
-function computeKpis(matrix, config, { currentMonth }) {
-    const actualMonths = matrix.months.filter(
-        (m) => !matrix.forecastMonths.has(m) && m !== currentMonth,
-    );
-    const lastThree = actualMonths.slice(-3);
-    let burn = 0;
-    if (lastThree.length > 0) {
-        const nets = lastThree.map((m) => {
-            let total = 0;
-            for (const v of Object.keys(matrix.vendors))
-                total += matrix.data[m][v] ?? 0;
-            return total;
-        });
-        burn = nets.reduce((a, b) => a + b, 0) / nets.length;
+/**
+ * Compute KPIs by reading the running-cash values that are already visible
+ * in the table. No hidden formulas — runway = how many months until cash
+ * goes negative, counted from the Running Cash row.
+ *
+ * @param {number[]} runningCashValues — one value per month column (from the Running Cash row)
+ * @param {string[]} months           — month labels matching the values
+ * @param {string}   currentMonth     — "YYYY-MM" of the current month
+ * @param {object}   config           — for FX display
+ */
+function computeKpis(runningCashValues, months, currentMonth, config) {
+    // Find the current cash position (current month or last filled value).
+    const currentIdx = months.indexOf(currentMonth);
+    let cashNow = 0;
+    if (currentIdx >= 0 && typeof runningCashValues[currentIdx] === "number") {
+        cashNow = runningCashValues[currentIdx];
     }
-    const burnAbs = Math.abs(burn);
-    const runwayMonths = burnAbs > 0 ? config.cashBalance / burnAbs : Infinity;
+
+    // Runway: count months from current month until running cash goes negative.
+    let runwayMonths = 0;
+    const startIdx = currentIdx >= 0 ? currentIdx : 0;
+    for (let i = startIdx; i < runningCashValues.length; i++) {
+        const v = runningCashValues[i];
+        if (typeof v !== "number") continue;
+        if (v <= 0) break;
+        runwayMonths++;
+    }
+    // If cash never goes negative in the grid, show as-is (count of remaining months).
     const runwayText =
-        runwayMonths === Infinity ? "∞" : runwayMonths.toFixed(1);
+        runwayMonths >= months.length - startIdx
+            ? `${runwayMonths}+`
+            : `${runwayMonths}`;
+
     const fx = config.usd_to_eur;
     const fxAsOf = config.usd_to_eur_as_of;
     const fxText =
@@ -120,9 +134,8 @@ function computeKpis(matrix, config, { currentMonth }) {
             ? `  |  FX: 1 USD = €${fx.toFixed(2)}${fxAsOf ? ` (${fxAsOf})` : ""}`
             : "";
     return {
-        burn,
         runwayMonths,
-        text: `Cash: ${formatEuro(config.cashBalance)} | Burn (avg3): ${formatEuro(Math.round(burn))} | Runway: ${runwayText} months${fxText}`,
+        text: `Cash: ${formatEuro(Math.round(cashNow))} | Runway: ${runwayText} months${fxText}`,
     };
 }
 
@@ -190,8 +203,31 @@ export function buildLayout(
         },
     });
 
-    // --- row 1: KPIs (no blank row above) ---
-    const kpi = computeKpis(matrix, config, { currentMonth });
+    // Pre-compute running cash values (used by both KPI and Running Cash row).
+    // This reads directly from matrix.data — same numbers visible in the table.
+    const allVendors = Object.keys(matrix.vendors);
+    const runningCashAsOfMonth = config.cashBalanceAsOf
+        ? config.cashBalanceAsOf.slice(0, 7)
+        : months[0];
+    const runningCashValues = [];
+    {
+        let running = config.cashBalance;
+        let started = false;
+        for (const m of months) {
+            if (m === runningCashAsOfMonth) started = true;
+            if (!started) {
+                runningCashValues.push("");
+                continue;
+            }
+            let net = 0;
+            for (const v of allVendors) net += matrix.data[m][v] ?? 0;
+            running += net;
+            runningCashValues.push(Number(running.toFixed(2)));
+        }
+    }
+
+    // --- row 1: KPIs (reads from running cash — no hidden formulas) ---
+    const kpi = computeKpis(runningCashValues, months, currentMonth, config);
     const kpiRow = [kpi.text, ...Array(totalCol).fill("")];
     cells.push(kpiRow);
     formats.push({
@@ -574,26 +610,8 @@ export function buildLayout(
     // Blank spacer before running cash
     cells.push(Array(totalCol + 1).fill(""));
 
-    // --- Running cash row ---
-    const cashRow = ["", "Running cash"];
-    const asOfMonth = config.cashBalanceAsOf
-        ? config.cashBalanceAsOf.slice(0, 7)
-        : months[0];
-    let running = config.cashBalance;
-    let started = false;
-    for (const m of months) {
-        if (m === asOfMonth) started = true;
-        if (!started) {
-            cashRow.push("");
-            continue;
-        }
-        const net =
-            sumRowForVendors(matrix, m, revenueVendors) +
-            sumRowForVendors(matrix, m, expenseVendors);
-        running += net;
-        cashRow.push(Number(running.toFixed(2)));
-    }
-    cashRow.push("");
+    // --- Running cash row (reuses pre-computed values from KPI) ---
+    const cashRow = ["", "Running cash", ...runningCashValues, ""];
     cells.push(cashRow);
     const cashRowIdx = cells.length - 1;
     formats.push({

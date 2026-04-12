@@ -500,25 +500,29 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "kimi": {
-        aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
-        modelId: "moonshotai.kimi-k2.5",
+        aliases: [
+            "kimi-k2-thinking",
+            "kimi-thinking",
+            "kimi-reasoning",
+            "kimi-large",
+        ],
+        modelId: "moonshot.kimi-k2-thinking",
         provider: "bedrock",
         cost: [
             {
-                date: new Date("2026-01-28").getTime(),
-                promptTextTokens: perMillion(0.6),
-                // Bedrock charges cached tokens at the same rate as regular input
-                promptCachedTokens: perMillion(0.6),
-                completionTextTokens: perMillion(3.0),
+                date: new Date("2026-04-12").getTime(),
+                promptTextTokens: perMillion(0.73),
+                promptCachedTokens: perMillion(0.73),
+                completionTextTokens: perMillion(3.03),
             },
         ],
         description:
-            "Moonshot Kimi K2.5 - Flagship Agentic Model with Vision & Multi-Agent",
-        inputModalities: ["text", "image"],
+            "Moonshot Kimi K2 Thinking - Reasoning model with extended thinking",
+        inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 256000,
+        contextLength: 128000,
         isSpecialized: false,
     },
     "gemini-large": {

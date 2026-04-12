@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import http from "node:http";
 import { parse } from "node:url";
 import debug from "debug";
-import { extractToken, getIp } from "../../shared/extractFromRequest.js";
+import { getIp } from "../../shared/extractFromRequest.js";
 import { logIp } from "../../shared/ipLogger.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import {
@@ -12,7 +12,6 @@ import {
     type ImageGenerationResult,
 } from "./createAndReturnImages.js";
 import { createAndReturnVideo, isVideoModel } from "./createAndReturnVideos.js";
-import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
 import { HttpError } from "./httpError.js";
 import { IMAGE_CONFIG } from "./models.js";
 import {
@@ -52,11 +51,6 @@ const preMiddleware = async (
     res: ServerResponse,
 ): Promise<boolean> => {
     logApi("requestListener", req.url);
-
-    if (pathname.startsWith("/feed")) {
-        registerFeedListener(req, res);
-        return false;
-    }
 
     if (!pathname.startsWith("/prompt")) {
         res.writeHead(404, { "Content-Type": "application/json" });
@@ -105,7 +99,7 @@ const imageGen = async ({
 
         // Prompt processing
         progress.updateBar(requestId, 20, "Prompt", "Normalizing...");
-        const { prompt, wasPimped, wasTransformedForBadDomain } =
+        const { prompt, wasTransformedForBadDomain } =
             await normalizeAndTranslatePrompt(
                 originalPrompt,
                 req,
@@ -177,31 +171,6 @@ const imageGen = async ({
 
         timingInfo.push({ step: "Image returned", timestamp: Date.now() });
 
-        const imageURL = `https://image.pollinations.ai${req.url}`;
-
-        // Cache and feed updates
-        progress.updateBar(requestId, 95, "Cache", "Updating feed...");
-        const feedData = {
-            ...safeParams,
-            concurrentRequests: countFluxJobs(),
-            imageURL,
-            prompt,
-            isChild: !!maturity.isChild,
-            isMature: !!maturity.isMature,
-            maturity,
-            timingInfo: relativeTiming(timingInfo),
-            status: "end_generating",
-            referrer,
-            wasPimped,
-            nsfw: !!(maturity.isChild || maturity.isMature),
-            private: !!safeParams.nofeed,
-            token: extractToken(req) && extractToken(req).slice(0, 2) + "...",
-        };
-
-        sendToFeedListeners(feedData, { saveAsLastState: true });
-        progress.updateBar(requestId, 100, "Cache", "Updated");
-
-        // Complete main progress
         progress.completeBar(requestId, "Image generation complete");
         progress.stop();
 

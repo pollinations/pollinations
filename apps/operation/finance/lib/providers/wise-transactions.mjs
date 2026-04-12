@@ -53,12 +53,21 @@ async function fetchActivities(since, until) {
 }
 
 /**
+ * Strip all HTML tags from a string, looping until none remain
+ * (handles malformed/nested tags that a single pass might miss).
+ */
+function stripHtml(str) {
+    let s = str;
+    while (/<[^>]+>/.test(s)) s = s.replace(/<[^>]+>/g, "");
+    return s;
+}
+
+/**
  * Parse a Wise display amount string like "1,234.56 EUR" or "+ 3,765.67 EUR"
  * into { value: number, currency: string }.
  */
 function parseAmount(raw) {
-    // Strip HTML tags (e.g. <positive>+ 35.62 EUR</positive>)
-    const clean = raw.replace(/<[^>]+>/g, "").trim();
+    const clean = stripHtml(raw).trim();
     const parts = clean.split(/\s+/);
     if (parts.length < 2) return { value: 0, currency: "EUR" };
 
@@ -75,7 +84,7 @@ function parseAmount(raw) {
  * @returns {{ counterparty: string, date: string, amount_eur: number }}
  */
 function activityToRow(activity) {
-    const counterparty = (activity.title ?? "").replace(/<[^>]+>/g, "").trim();
+    const counterparty = stripHtml(activity.title ?? "").trim();
     const date = (activity.createdOn ?? "").slice(0, 10);
 
     const isPositive = (activity.primaryAmount ?? "").includes("positive");

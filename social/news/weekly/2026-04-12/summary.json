@@ -1,0 +1,155 @@
+{
+  "date": "2026-04-12",
+  "period_start": "2026-04-05",
+  "period_end": "2026-04-11",
+  "title": "The free tier gets heavier",
+  "summary": "We moved heavy-hitting models to the free tier, stabilized backend routing, and welcomed a massive wave of new community apps.\n\nWe consolidated some backend providers and decided to just make a bunch of heavy hitters free. GPT-5.4, Grok-4-20, Qwen Coder, gptimage-large, and FLUX.1 Kontext are now available without a subscription.\n\nDeepSeek and Kimi got routed to Fireworks for better uptime, Gemini Flash Lite is now pooling quota on Vertex's global endpoint, and we fixed a nasty CUDA hang by swapping in Sana Sprint 1.6B on the Lambda workers.\n\nYou all shipped 20 new apps to the community directory this week. The greenhouse now includes native macOS clients, Android roleplay chats, philosophical analyzers, and botanical quiz games.\n\nWe handed the GitHub repository keys over to our AI mascot. Polly now autonomously triages issues, flags duplicates, and decides whether to comment, label, or close tickets.",
+  "pr_count": 36,
+  "prs": [
+    {
+      "number": 9965,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9967,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9973,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9977,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9979,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9980,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 10003,
+      "date": "2026-04-06"
+    },
+    {
+      "number": 10027,
+      "date": "2026-04-07"
+    },
+    {
+      "number": 10049,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10064,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10066,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10067,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10068,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10069,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10070,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10071,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10072,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10073,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10074,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10075,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10076,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10077,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10078,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10080,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10081,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10082,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10084,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10086,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10087,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10094,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10098,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10051,
+      "date": "2026-04-10"
+    },
+    {
+      "number": 10109,
+      "date": "2026-04-10"
+    },
+    {
+      "number": 10118,
+      "date": "2026-04-10"
+    },
+    {
+      "number": 10127,
+      "date": "2026-04-11"
+    },
+    {
+      "number": 10135,
+      "date": "2026-04-11"
+    }
+  ],
+  "generated_at": "2026-04-12T06:31:06.535848+00:00"
+}

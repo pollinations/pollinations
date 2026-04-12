@@ -1,0 +1,34 @@
+{
+  "pr_number": 10159,
+  "title": "feat: migrate Sana Sprint 1.6B to GH200",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10159",
+  "merged_at": "2026-04-12T12:49:55Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sana hits the turbo button",
+    "blurb": "We've upgraded our Sana model to the 1.6B version and moved it to blazing-fast GH200 hardware. Enjoy higher quality images generated in a fraction of a second!",
+    "summary": "Upgraded the default Sana image generation model to 1.6B and migrated its infrastructure to faster GH200 instances.",
+    "impact": "Users will notice higher quality image generation and significantly faster response times, dropping to just ~0.165s per image.",
+    "keywords": [
+      "sana",
+      "models",
+      "performance",
+      "gpu",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee as an engineer upgrading a server rack with a glowing new GPU. The monitor robot companion holding a stopwatch to represent the speed increase. A '1.6B' label on the server.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny engineer's hard hat, installing a glowing lime green (#ecf874) GPU into a retro server rack labeled '1.6B'. The chunky monitor-head robot stands nearby holding a pixelated stopwatch showing a very fast time. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-12/PR-10159.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny engineer's hard hat, installing a glowing lime green (#ecf874) GPU into a retro server rack labeled '1.6B'. The chunky monitor-head robot stands nearby holding a pixelated stopwatch showing a very fast time. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-12T12:50:45.256342+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10156,
+  "title": "feat: migrate kimi, deepseek, glm to Fireworks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10156",
+  "merged_at": "2026-04-12T11:16:55Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fireworks in the text engine",
+    "blurb": "We've migrated Kimi, DeepSeek, and GLM to Fireworks, bringing massive speed boosts and upgraded model versions. Expect up to 50x faster responses and sharper reasoning across the board.",
+    "summary": "Migrated Kimi, DeepSeek, and GLM text models to the Fireworks provider, upgrading them to newer versions and significantly reducing latency.",
+    "impact": "Users will experience up to 50x faster generation speeds and improved reasoning capabilities when using the kimi, deepseek, and glm endpoints.",
+    "keywords": [
+      "text",
+      "models",
+      "performance",
+      "fireworks",
+      "deepseek"
+    ],
+    "visual_concept": "The pollinations bee and the monitor robot watching a literal fireworks display made of glowing code and text blocks. The robot is holding a stopwatch showing a very fast time. Lime green and pastel night sky.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot watching a beautiful fireworks display made of glowing text and code blocks in the night sky. The robot holds a tiny stopwatch. Soft lime green (#ecf874) and deep lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-12/PR-10156.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot watching a beautiful fireworks display made of glowing text and code blocks in the night sky. The robot holds a tiny stopwatch. Soft lime green (#ecf874) and deep lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-12T11:17:46.029301+00:00"
+}

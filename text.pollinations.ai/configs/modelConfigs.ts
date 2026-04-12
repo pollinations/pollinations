@@ -86,7 +86,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4-20-reasoning",
         ),
 
-    // -- Fireworks AI (DeepSeek, Kimi) -------------------------------------------
+    // -- Fireworks AI (DeepSeek, Kimi, GLM, Qwen) --------------------------------
     "accounts/fireworks/models/deepseek-v3p2": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v3p2",
@@ -179,10 +179,23 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
+    // -- Fireworks AI (Qwen) -----------------------------------------------------
+    "accounts/fireworks/models/qwen3p6-plus": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3p6-plus",
+        }),
+    "accounts/fireworks/models/glm-5p1": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-5p1",
+        }),
+    "accounts/fireworks/models/minimax-m2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m2p5",
+        }),
+
     // -- Alibaba DashScope (Qwen) ---------------------------------------------
     "qwen3-coder-next": () =>
         createDashScopeModelConfig({ model: "qwen3-coder-next" }),
-    "qwen3.5-plus": () => createDashScopeModelConfig({ model: "qwen3.5-plus" }),
     "qwen3-vl-plus": () =>
         createDashScopeModelConfig({ model: "qwen3-vl-plus" }),
 
@@ -191,16 +204,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOVHcloudModelConfig({ model: "Qwen3-Coder-30B-A3B-Instruct" }),
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
-
-    // -- Fireworks AI (GLM) -------------------------------------------------------
-    "accounts/fireworks/models/glm-5p1": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5p1",
-        }),
-
-    // -- AWS Bedrock (MiniMax) ---------------------------------------------------
-    "minimax-m2.5": () =>
-        createBedrockNativeConfig({ model: "minimax.minimax-m2.5" }),
 
     // -- Community Models -----------------------------------------------------
     "polly": () =>

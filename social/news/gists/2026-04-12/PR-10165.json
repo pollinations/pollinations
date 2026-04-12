@@ -1,0 +1,34 @@
+{
+  "pr_number": 10165,
+  "title": "fix(enter): reflect CORS request headers so OpenAI SDKs work from browsers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10165",
+  "merged_at": "2026-04-12T21:56:42Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Opening the CORS gates",
+    "blurb": "We taught our API to play nice with OpenAI SDKs in the browser. No more pesky CORS errors blocking your web apps from buzzing along!",
+    "summary": "Updated CORS middleware to accept custom telemetry headers, enabling standard OpenAI SDKs to work directly from the browser.",
+    "impact": "Developers can now build client-side web apps using the OpenAI SDK without hitting preflight header restrictions.",
+    "keywords": [
+      "cors",
+      "api",
+      "openai-sdk",
+      "browser",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly gatekeeper, unlocking a digital gate or padlock for a browser/SDK robot. Represents removing the CORS barrier.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, happily unlocking a glowing lime green (#ecf874) padlock on a digital gate. A chunky pixel robot with a browser window for a face waits excitedly. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-12/PR-10165.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, happily unlocking a glowing lime green (#ecf874) padlock on a digital gate. A chunky pixel robot with a browser window for a face waits excitedly. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-12T21:58:04.785988+00:00"
+}

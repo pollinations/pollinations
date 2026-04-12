@@ -8,7 +8,6 @@ import {
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
-    createStepFunModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -202,10 +201,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     // -- AWS Bedrock (MiniMax) ---------------------------------------------------
     "minimax-m2.5": () =>
         createBedrockNativeConfig({ model: "minimax.minimax-m2.5" }),
-
-    // -- StepFun ----------------------------------------------------------------
-    "step-3.5-flash": () =>
-        createStepFunModelConfig({ model: "step-3.5-flash" }),
 
     // -- Community Models -----------------------------------------------------
     "polly": () =>

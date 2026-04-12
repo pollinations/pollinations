@@ -1,0 +1,34 @@
+{
+  "pr_number": 10147,
+  "title": "chore: update app metrics 2026-04-12",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10147",
+  "merged_at": "2026-04-12T05:06:30Z",
+  "labels": [
+    "API",
+    ".QUESTION"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Our automated bots just finished their daily rounds, watering the plants and updating the community app metrics.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse statistics.",
+    "impact": "Keeps the community app directory and README up-to-date with the latest usage statistics and health statuses.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "automated",
+      "health-check"
+    ],
+    "visual_concept": "The pollinations bee (Polly) and the Nomnom creature checking on a digital greenhouse. Polly holds a tiny clipboard checking off metrics, while Nomnom happily eats a stack of old metric reports. Lots of green code-plants and flowers.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny clipboard, checking on a digital greenhouse full of blooming code-plants. The round tan nomnom creature sits nearby, happily eating a stack of old metric reports. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-12/PR-10147.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny clipboard, checking on a digital greenhouse full of blooming code-plants. The round tan nomnom creature sits nearby, happily eating a stack of old metric reports. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-12T05:07:20.655722+00:00"
+}

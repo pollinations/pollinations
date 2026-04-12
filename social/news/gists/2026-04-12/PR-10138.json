@@ -1,0 +1,34 @@
+{
+  "pr_number": 10138,
+  "title": "feat(finance): runway tracker v1",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10138",
+  "merged_at": "2026-04-12T14:55:47Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Counting the pollen",
+    "blurb": "We built a shiny new internal tool to help us track our infrastructure costs and keep the hive running smoothly.",
+    "summary": "Added a new internal CLI tool for automated financial tracking and infrastructure cost forecasting.",
+    "impact": "This helps the core team monitor provider billing and manage resources more efficiently behind the scenes.",
+    "keywords": [
+      "finance",
+      "cli",
+      "infrastructure",
+      "billing",
+      "internal-tools"
+    ],
+    "visual_concept": "Polly the bee acting as an accountant, reviewing receipts and spreadsheets. Nomnom creature helping by eating the processed receipts. Represents financial tracking and processing.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, sitting at a wooden desk with a retro calculator and stacks of paper receipts. The round tan nomnom creature is happily eating a long paper receipt. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-12/PR-10138.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, sitting at a wooden desk with a retro calculator and stacks of paper receipts. The round tan nomnom creature is happily eating a long paper receipt. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-12T14:56:47.477017+00:00"
+}

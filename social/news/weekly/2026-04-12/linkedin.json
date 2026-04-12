@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-04-12",
+  "period_start": "2026-04-05",
+  "period_end": "2026-04-11",
+  "generated_at": "2026-04-12T06:31:06.535848+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-12/images/linkedin.jpg"
+    }
+  ],
+  "text": "36 PRs merged this week. We made larger models free, put our AI in charge of our GitHub issues, and added 21 community apps to the showcase.\n\n·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.42 — routing, robots & docs\n\n→ THE FREE TIER\ngptimage-large and FLUX.1 Kontext are now completely free.\n\n→ BACKEND ROULETTE\nRolled DeepSeek and Kimi from Azure back to Fireworks for stability. Routed Gemini-2.5-flash-lite to Vertex global. The endless API dance continues.\n\n→ REPO AUTOMATION\nPolly (our AI mascot) is now fully in charge of GitHub issue triage. She reads the incoming tickets and decides every action dynamically. \n\n→ DOCS & DX\nCompressed APIDOCS.md from 94KB down to 37KB. Added dynamic balance-based request estimates to the pricing table, so you know exactly how many generations your pollen gets you.\n\n→ COMMUNITY\nMerged 21 new apps into the showcase this week. Image generators, chat interfaces, and an Isekai Character Generator.\n\nInfrastructure is open source. Come build something weird: github.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools"
+}

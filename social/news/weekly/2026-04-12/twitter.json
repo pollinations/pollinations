@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-04-12",
+  "period_start": "2026-04-05",
+  "period_end": "2026-04-11",
+  "generated_at": "2026-04-12T06:31:06.535848+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-12/images/twitter.jpg"
+    }
+  ],
+  "text": "36 PRs merged this week.\n- gptimage-large and FLUX.1 Kontext are now fully free\n- backend musical chairs: moved deepseek & kimi to fireworks for stability\n- 18 new apps in the showcase\n- gave the bee full control of repo triage. she decides what happens now."
+}

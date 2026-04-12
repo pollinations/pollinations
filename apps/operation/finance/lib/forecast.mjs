@@ -42,8 +42,11 @@ function buildRuleIndexByCanonical(vendorRules) {
     return out;
 }
 
-function avg3(matrix, vendor) {
-    const lastThree = matrix.months.slice(-3);
+function avg3(matrix, vendor, excludeMonth) {
+    const months = excludeMonth
+        ? matrix.months.filter((m) => m !== excludeMonth)
+        : matrix.months;
+    const lastThree = months.slice(-3);
     if (lastThree.length === 0) return 0;
     const sum = lastThree.reduce(
         (s, m) => s + (matrix.data[m][vendor] ?? 0),
@@ -52,22 +55,33 @@ function avg3(matrix, vendor) {
     return sum / lastThree.length;
 }
 
-function lastMonthValue(matrix, vendor) {
-    const last = matrix.months.at(-1);
+function lastMonthValue(matrix, vendor, excludeMonth) {
+    const months = excludeMonth
+        ? matrix.months.filter((m) => m !== excludeMonth)
+        : matrix.months;
+    const last = months.at(-1);
     if (!last) return 0;
     return matrix.data[last][vendor] ?? 0;
 }
 
-function forecastValue(rule, matrix, vendor) {
+function forecastValue(rule, matrix, vendor, excludeMonth) {
     if (typeof rule === "number") return rule;
-    if (rule === "avg3") return avg3(matrix, vendor);
-    if (rule === "last") return lastMonthValue(matrix, vendor);
+    if (rule === "avg3") return avg3(matrix, vendor, excludeMonth);
+    if (rule === "last") return lastMonthValue(matrix, vendor, excludeMonth);
     if (rule === "none") return 0;
-    if (rule === "live") return avg3(matrix, vendor); // v1 fallback
+    if (rule === "live") return avg3(matrix, vendor, excludeMonth);
     return 0; // unknown rule → zero
 }
 
-export function forecast(matrix, vendorRules, forecastCount) {
+/**
+ * @param {object}  matrix        — { months, vendors, data } from aggregate()
+ * @param {object}  vendorRules   — raw vendors.json map
+ * @param {number}  forecastCount — number of future months to add
+ * @param {object}  [options]
+ * @param {string}  [options.currentMonth] — "YYYY-MM" to exclude from avg3/last calculations
+ */
+export function forecast(matrix, vendorRules, forecastCount, options = {}) {
+    const { currentMonth } = options;
     const ruleByCanonical = buildRuleIndexByCanonical(vendorRules);
     const months = [...matrix.months];
     const data = {};
@@ -85,7 +99,9 @@ export function forecast(matrix, vendorRules, forecastCount) {
         for (const vendor of Object.keys(matrix.vendors)) {
             const rule = ruleByCanonical[vendor];
             data[cursor][vendor] =
-                rule === undefined ? 0 : forecastValue(rule, matrix, vendor);
+                rule === undefined
+                    ? 0
+                    : forecastValue(rule, matrix, vendor, currentMonth);
             if (rule === "live") liveCells.add(`${cursor}|${vendor}`);
         }
     }

@@ -88,7 +88,9 @@ async function main() {
 
     // Aggregate → forecast → layout
     const matrix = aggregate(canonicalRows);
-    const extended = forecast(matrix, vendors, config.forecastMonths ?? 6);
+    const extended = forecast(matrix, vendors, config.forecastMonths ?? 6, {
+        currentMonth: nowMonth,
+    });
 
     // Current month backfill: for vendors with no Wise transaction yet this
     // month, apply their forecast rule so the sheet shows expected costs

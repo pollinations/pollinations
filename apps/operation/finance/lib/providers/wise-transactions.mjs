@@ -46,9 +46,11 @@ async function fetchActivities(since, until) {
     const data = await res.json();
     const activities = data.activities ?? [];
 
-    // Filter to completed only; skip CANCELLED, REQUIRES_ATTENTION, CARD_CHECK
+    // Include COMPLETED and IN_PROGRESS (initiated payments, money effectively gone).
+    // Skip CANCELLED, REQUIRES_ATTENTION, CARD_CHECK.
+    const validStatuses = new Set(["COMPLETED", "IN_PROGRESS"]);
     return activities.filter(
-        (a) => a.status === "COMPLETED" && a.type !== "CARD_CHECK",
+        (a) => validStatuses.has(a.status) && a.type !== "CARD_CHECK",
     );
 }
 

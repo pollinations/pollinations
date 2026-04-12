@@ -33,6 +33,7 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | Alibaba Cloud (Model Studio / DashScope) | [providers/alibaba.md](providers/alibaba.md) | ✅ Production — full BSS query flow. March net $224 (after $1k coupon), April MTD $704 (coupon depleted), run rate ~$2,745/mo. Per-model breakdown via InstanceID parsing. | 2026-04-11 |
 | BytePlus (Seedance + Seedream) | [providers/byteplus.md](providers/byteplus.md) | ✅ Production — Model Ark `/api/v3/models` works, ❌ zero billing endpoints on the international tenant. Shadow cost via Tinybird `generation_event`; credit pool balance Console-only. | 2026-04-12 |
 | Perplexity (Sonar web-search) | [providers/perplexity.md](providers/perplexity.md) | ✅ Production — `POST /chat/completions` is the only endpoint that exists. Every billing/usage/models path returns 404. Shadow cost via Tinybird; credit pool balance dashboard-only. | 2026-04-12 |
+| Fireworks AI | [providers/fireworks.md](providers/fireworks.md) | ✅ Production — `firectl account get` for live balance, `billing export-metrics` for per-model CSV. $10k credit pool on `pollinations` account. | 2026-04-12 |
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
 | Tinybird | `providers/tinybird.md` | ⏳ TODO (see also `tinybird-deploy` skill for deploys) | — |
 | Vercel | `providers/vercel.md` | ⏳ TODO | — |

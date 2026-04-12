@@ -93,9 +93,9 @@ export const portkeyConfig: PortkeyConfigMap = {
             "FW-DeepSeek-V3.2",
         ),
 
-    // -- AWS Bedrock (Kimi K2.5) — Azure FW-Kimi backend is unstable -----------
-    "moonshotai.kimi-k2.5": () =>
-        createBedrockNativeConfig({ model: "moonshotai.kimi-k2.5" }),
+    // -- AWS Bedrock (Kimi K2 Thinking) — Azure FW-Kimi backend is unstable ----
+    "moonshot.kimi-k2-thinking": () =>
+        createBedrockNativeConfig({ model: "moonshot.kimi-k2-thinking" }),
 
     // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
     "mistral-small-3.2-24b-instruct-2506": () =>

@@ -143,7 +143,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi",
-        config: portkeyConfig["moonshotai.kimi-k2.5"],
+        config: portkeyConfig["moonshot.kimi-k2-thinking"],
     },
     {
         name: "gemini-large",

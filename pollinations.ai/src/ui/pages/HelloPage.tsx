@@ -46,12 +46,6 @@ function HelloPage() {
             desc: pageCopy.tierFlowerDescription,
             grant: pageCopy.tierFlowerGrant,
         },
-        {
-            emoji: pageCopy.tierNectarEmoji,
-            title: pageCopy.tierNectarTitle,
-            desc: pageCopy.tierNectarDescription,
-            grant: pageCopy.tierNectarGrant,
-        },
     ];
 
     return (

@@ -1,6 +1,6 @@
 # AWS billing via `aws` CLI
 
-Validated: **2026-04-11**. Re-validate if a command returns unexpected results or if we change organization membership.
+Validated: **2026-04-12**. Re-validate if a command returns unexpected results or if we change organization membership.
 
 Captures the exact CLI calls needed to answer AWS questions like:
 
@@ -291,7 +291,55 @@ aws bedrock list-foundation-models --region us-east-1 \
 
 **Model ID format in Bedrock**: `<publisher>.<model>-<version>` (e.g. `anthropic.claude-opus-4-6`, `moonshotai.kimi-k2.5`). These map to the `USE1-<modelId>-{input,output}-tokens` usage types in Cost Explorer.
 
-### 6. Forecast (budget projection)
+### 6. Model rate limits (Service Quotas)
+
+Query per-model RPM and TPM limits via the Service Quotas API:
+
+```bash
+# All Bedrock quotas (1127+ entries):
+aws service-quotas list-service-quotas --service-code bedrock --region us-east-1
+
+# Filter to a specific model:
+aws service-quotas list-service-quotas --service-code bedrock --region us-east-1 \
+  --query "Quotas[?contains(QuotaName, 'Claude Sonnet 4.6')]"
+```
+
+**Key rate limits (validated 2026-04-12):**
+
+| Model | Type | RPM | TPM |
+|---|---|---:|---:|
+| Claude Opus 4.6 | Cross-region | 10,000 | 3,000,000 |
+| Claude Sonnet 4.6 | Cross-region | 10,000 | 6,000,000 |
+| Claude Opus 4.5 | Cross-region | 10,000 | 2,000,000 |
+| Claude Sonnet 4.5 | Cross-region | 10,000 | 200,000 |
+| Claude Sonnet 4.5 (1M ctx) | Cross-region | 1,000 | 1,000,000 |
+| Claude Haiku 4.5 | Cross-region | 10,000 | 5,000,000 |
+| Nova Micro | Cross-region | 4,000 | 8,000,000 |
+| Nova Lite | Cross-region | 4,000 | 8,000,000 |
+| Nova Pro | Cross-region | 500 | 2,000,000 |
+| Nova Premier | Cross-region | 500 | 2,000,000 |
+| Kimi K2.5 | Single-region | 10,000 | 100,000,000 |
+| Kimi K2 Thinking | Single-region | 10,000 | 100,000,000 |
+| DeepSeek V3.2 | Single-region | 10,000 | 100,000,000 |
+| MiniMax M2.5 | Single-region | 10,000 | 100,000,000 |
+| GLM 5 | Single-region | 10,000 | 100,000,000 |
+
+**Key patterns:**
+- Claude models use **cross-region** inference profiles (`us.anthropic.*`)
+- Third-party models (Kimi, DeepSeek, MiniMax, GLM) use **single-region** only, with very generous limits (100M TPM)
+- Older Claude models (3.x) have much lower limits than 4.x generation
+- 1M context length variants have separate, lower RPM quotas
+
+### 7. Inference profiles
+
+```bash
+# List all cross-region inference profiles:
+aws bedrock list-inference-profiles --region us-east-1
+```
+
+57 inference profiles available. These enable routing across regions for higher availability and throughput. Claude models use the `us.anthropic.*` prefix for cross-region inference.
+
+### 8. Forecast (budget projection)
 
 ```bash
 aws ce get-cost-forecast \
@@ -565,6 +613,9 @@ In Cost Explorer `USAGE_TYPE` strings, the region is prefixed as a short code:
 | What services are active this month? | `aws ce get-dimension-values --dimension SERVICE --time-period ...` |
 | Cost forecast to end of month | `aws ce get-cost-forecast --time-period Start=<today>,End=<1st of next>` |
 | What Bedrock models are enabled? | `aws bedrock list-foundation-models --region us-east-1` |
+| What's our RPM/TPM limit for a model? | `aws service-quotas list-service-quotas --service-code bedrock --query "Quotas[?contains(QuotaName, 'Claude Sonnet 4.6')]"` |
+| List all inference profiles | `aws bedrock list-inference-profiles --region us-east-1` |
+| Is a model available on our account? | `aws bedrock get-foundation-model-availability --model-id <id> --region us-east-1` |
 | Who is our AWS payer? | `aws organizations describe-organization` → `MasterAccountId` |
 
 ---

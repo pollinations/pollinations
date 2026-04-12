@@ -143,6 +143,16 @@ export function createOVHcloudMistralConfig(
     );
 }
 
+export function createStepFunModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.stepfun.ai/v1",
+        process.env.STEPFUN_API_KEY,
+        overrides,
+    );
+}
+
 /**
  * Creates a Polly model configuration (community model - Pollinations AI assistant).
  * Uses user's API key for billing passthrough - Polly calls Pollinations internally.

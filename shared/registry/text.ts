@@ -634,27 +634,6 @@ export const TEXT_SERVICES = {
         contextLength: 198000,
         isSpecialized: false,
     },
-    "step": {
-        aliases: ["step-3.5-flash", "step-3p5-flash", "stepfun"],
-        modelId: "step-3.5-flash",
-        provider: "stepfun",
-        cost: [
-            {
-                date: new Date("2026-04-12").getTime(),
-                promptTextTokens: perMillion(0.1),
-                completionTextTokens: perMillion(0.3),
-            },
-        ],
-        description:
-            "Step 3.5 Flash - 196B MoE Reasoning, Coding & Agentic Workflows",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
-        contextLength: 256000,
-        isSpecialized: false,
-        paidOnly: true,
-    },
     "minimax": {
         aliases: ["minimax-m2.5", "minimax-m2p5"],
         modelId: "minimax.minimax-m2.5",

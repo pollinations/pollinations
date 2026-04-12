@@ -41,7 +41,7 @@ function a1(row, col) {
 }
 
 function sheetRange(r1, c1, r2, c2) {
-    return `Sheet1!${a1(r1, c1)}:${a1(r2, c2)}`;
+    return `Runway!${a1(r1, c1)}:${a1(r2, c2)}`;
 }
 
 function formatEuro(n) {
@@ -181,10 +181,7 @@ export function buildLayout(
     const BG_FORECAST = { red: 0.97, green: 0.97, blue: 0.97 };
 
     // --- row 0: title ---
-    const titleRow = [
-        "Pollinations Finance — Runway Tracker",
-        ...Array(totalCol).fill(""),
-    ];
+    const titleRow = ["Runway 2026", ...Array(totalCol).fill("")];
     cells.push(titleRow);
     formats.push({
         label: "title",
@@ -600,7 +597,7 @@ export function buildLayout(
         const c = monthCol(currentMonthIdx);
         formats.push({
             label: "currentMonthColumn",
-            range: `Sheet1!${colLetter(c)}${headerRowIdx + 1}:${colLetter(c)}${lastRow + 1}`,
+            range: `Runway!${colLetter(c)}${headerRowIdx + 1}:${colLetter(c)}${lastRow + 1}`,
             fields: "userEnteredFormat.backgroundColor",
             format: { backgroundColor: BG_CURRENT },
         });
@@ -615,7 +612,7 @@ export function buildLayout(
         const last = monthCol(forecastIdxs.at(-1));
         formats.push({
             label: "forecastColumns",
-            range: `Sheet1!${colLetter(first)}${headerRowIdx + 1}:${colLetter(last)}${lastRow + 1}`,
+            range: `Runway!${colLetter(first)}${headerRowIdx + 1}:${colLetter(last)}${lastRow + 1}`,
             fields: "userEnteredFormat.backgroundColor,userEnteredFormat.textFormat.foregroundColor",
             format: {
                 backgroundColor: BG_FORECAST,

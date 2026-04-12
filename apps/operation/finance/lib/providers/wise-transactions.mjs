@@ -39,7 +39,9 @@ async function fetchActivities(since, until) {
         headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
-        throw new Error(`Wise Activities API HTTP ${res.status}: ${await res.text()}`);
+        throw new Error(
+            `Wise Activities API HTTP ${res.status}: ${await res.text()}`,
+        );
     }
     const data = await res.json();
     const activities = data.activities ?? [];
@@ -62,10 +64,7 @@ function parseAmount(raw) {
 
     const currency = parts[parts.length - 1];
     // Join everything before currency, strip non-numeric except . and -
-    const numStr = parts
-        .slice(0, -1)
-        .join("")
-        .replace(/[+,]/g, "");
+    const numStr = parts.slice(0, -1).join("").replace(/[+,]/g, "");
     return { value: Number(numStr) || 0, currency };
 }
 
@@ -76,9 +75,7 @@ function parseAmount(raw) {
  * @returns {{ counterparty: string, date: string, amount_eur: number }}
  */
 function activityToRow(activity) {
-    const counterparty = (activity.title ?? "")
-        .replace(/<[^>]+>/g, "")
-        .trim();
+    const counterparty = (activity.title ?? "").replace(/<[^>]+>/g, "").trim();
     const date = (activity.createdOn ?? "").slice(0, 10);
 
     const isPositive = (activity.primaryAmount ?? "").includes("positive");
@@ -118,7 +115,10 @@ export async function fetchMonth(month) {
     const since = `${month}-01T00:00:00.000Z`;
 
     // Calculate the first day of the next month
-    const nextMonth = mon === 12 ? `${year + 1}-01` : `${year}-${String(mon + 1).padStart(2, "0")}`;
+    const nextMonth =
+        mon === 12
+            ? `${year + 1}-01`
+            : `${year}-${String(mon + 1).padStart(2, "0")}`;
     const until = `${nextMonth}-01T00:00:00.000Z`;
 
     const activities = await fetchActivities(since, until);

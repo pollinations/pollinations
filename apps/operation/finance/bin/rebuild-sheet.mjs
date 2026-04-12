@@ -11,7 +11,12 @@ import {
     resizeColumn,
     updateValues,
 } from "../lib/gog.mjs";
-import { loadConfig, loadDotenv, loadVendors, saveVendors } from "../lib/io.mjs";
+import {
+    loadConfig,
+    loadDotenv,
+    loadVendors,
+    saveVendors,
+} from "../lib/io.mjs";
 import { buildLayout } from "../lib/layout.mjs";
 import { normalize } from "../lib/normalize.mjs";
 import { promptNewVendor } from "../lib/prompt.mjs";
@@ -198,7 +203,7 @@ async function main() {
         `Writing ${layout.cells.length} rows × ${layout.cells[0].length} cols to sheet...`,
     );
     const lastCol = colLetter(layout.cells[0].length - 1);
-    const fullCanvas = `Sheet1!A1:${lastCol}1000`;
+    const fullCanvas = `Runway!A1:${lastCol}1000`;
     await clearSheet(spreadsheetId, fullCanvas, { account });
 
     // Wipe any lingering formatting from previous rebuilds
@@ -223,7 +228,7 @@ async function main() {
         { account },
     );
 
-    await updateValues(spreadsheetId, "Sheet1!A1", layout.cells, { account });
+    await updateValues(spreadsheetId, "Runway!A1", layout.cells, { account });
 
     for (const fmt of layout.formats) {
         await applyFormat(spreadsheetId, fmt, { account });
@@ -232,7 +237,7 @@ async function main() {
     const firstMonthCol = colLetter(2);
     const totalCol = colLetter(2 + extended.months.length);
     const firstDataRow = layout.freezeRows + 1;
-    const numericRange = `Sheet1!${firstMonthCol}${firstDataRow}:${totalCol}${layout.cells.length}`;
+    const numericRange = `Runway!${firstMonthCol}${firstDataRow}:${totalCol}${layout.cells.length}`;
     await applyNumberFormat(
         spreadsheetId,
         numericRange,

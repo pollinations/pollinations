@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-04-12",
+  "period_start": "2026-04-05",
+  "period_end": "2026-04-11",
+  "generated_at": "2026-04-12T06:31:06.535848+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-12/images/discord.jpg"
+    }
+  ],
+  "text": "<@&1424461167883194418> another week, another 36 PRs merged. Here's what actually matters for your builds.\n\n## Weekly Update - 2026-04-12\n\n💸 **The free tier gets heavier**\n- `gptimage-large` and `FLUX.1 Kontext` are now completely free. Have at it.\n- We played backend musical chairs to keep things stable: DeepSeek and Kimi are back on Fireworks, and `gemini-2.5-flash-lite` is now routed to the Vertex global endpoint.\n\n🤖 **Polly manages the repo now**\n- We built a fully dynamic issue automation pipeline. Polly (the AI, not just the mascot) now decides every triage action on GitHub. Good luck reasoning with her.\n\n📚 **Developer Experience**\n- Compressed `APIDOCS.md` from 94KB down to 37KB. Less scrolling, more reading.\n- Added account and media endpoints to `llm.txt` for your AI agents.\n- The pricing table now gives dynamic request estimates based on your balance. No more mental math.\n\n🌸 **Showcase Overflow**\n- You all shipped 21 new apps to the showcase this week. Everything from AI wallpapers and video tools to isekai character generators. Keep them coming."
+}

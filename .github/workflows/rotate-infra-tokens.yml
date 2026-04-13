@@ -45,6 +45,66 @@ jobs:
           echo "wrangler $(wrangler --version)"
           echo "jq $(jq --version)"
 
+      # --- Pre-flight: verify SSH to GPU workers before rotating ---
+
+      - name: Verify GPU worker SSH connectivity
+        if: inputs.token == 'gpu' || inputs.token == 'both'
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          SOPS_SECRETS="enter.pollinations.ai/secrets/prod.vars.json"
+          TEMP_DIR=$(mktemp -d)
+          trap 'rm -rf "$TEMP_DIR"' EXIT
+          SSH_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes"
+
+          extract_key() {
+            local out="$TEMP_DIR/$1"
+            sops -d "$SOPS_SECRETS" | jq -r ".$1" > "$out"
+            chmod 600 "$out"
+            echo "$out"
+          }
+
+          FLUX_KEY=$(extract_key SSH_RUNPOD_FLUX_ZIMAGE)
+          KLEIN_KEY=$(extract_key SSH_RUNPOD_KLEIN)
+          LAMBDA_KEY=$(extract_key SSH_LAMBDA_SANA_LTX2_ACESTEP)
+
+          FAILED=0
+
+          echo "Checking RunPod Flux+Z-Image (38.65.239.17:19489)..."
+          if ssh $SSH_OPTS -p 19489 -i "$FLUX_KEY" root@38.65.239.17 "echo ok" 2>/dev/null; then
+            echo "  OK"
+          else
+            echo "  FAIL — port may have changed. Check RunPod dashboard."
+            FAILED=1
+          fi
+
+          echo "Checking RunPod Klein (213.144.200.243:10207)..."
+          if ssh $SSH_OPTS -p 10207 -i "$KLEIN_KEY" root@213.144.200.243 "echo ok" 2>/dev/null; then
+            echo "  OK"
+          else
+            echo "  FAIL — port may have changed. Check RunPod dashboard."
+            FAILED=1
+          fi
+
+          echo "Checking Lambda GH200 (192.222.51.105)..."
+          if ssh $SSH_OPTS -i "$LAMBDA_KEY" ubuntu@192.222.51.105 "echo ok" 2>/dev/null; then
+            echo "  OK"
+          else
+            echo "  FAIL — instance may be down."
+            FAILED=1
+          fi
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "SSH pre-flight failed. Fix connectivity before rotating GPU tokens."
+            echo "If a RunPod port changed, update the SSH target in SOPS and in rotate-infra-gpu-token.sh."
+            exit 1
+          fi
+
+          echo "All GPU workers reachable"
+
+      # --- Rotate tokens ---
+
       - name: Rotate PLN_ENTER_TOKEN
         if: inputs.token == 'enter' || inputs.token == 'both'
         env:

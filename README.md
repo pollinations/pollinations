@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎨 Polli-com](https://polli-com.vercel.app/) | Generate images on mobile with Polli-com, a client-side PWA built on Pollinations.ai with a Prompt Builder, optional local ComfyUI bridge, and role-based access control. | [@abhi5hek1979](https://github.com/abhi5hek1979) |
+| [🎬 AI video generator](https://www.tomdacat.com/ai-video-generator/) | Generate videos using the free Seedance model on Pollinations.ai with AI video generator. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎨 Pigment](https://pigment-web.vercel.app/) | Create AI-generated art in the browser with Pigment, a Flask + vanilla JS web app that wraps the Pollinations API with hundreds of art styles and a self-hostable option. | [@SmokePigDad](https://github.com/SmokePigDad) |
+| ✍️ PseudoWrite | Replicate a slice of SudoWrite with PseudoWrite, an open source AI story writer that builds a Story Bible and generates long-form fiction through the Pollinations text API. | [@SmokePigDad](https://github.com/SmokePigDad) |
+| [🤖 Tawer_bot](https://t.me/tawer_vivybot) | Run a multifunction Telegram bot with AI chat and image generation used by 5000+ people, backed by Pollinations text and image endpoints. | [@tawerrd](https://github.com/tawerrd) |
+| [💬 JFOAC](https://github.com/tawerrd/JFOAC) | Chat with AI virtual characters in the browser using JFOAC, a frontend that routes requests through the Pollinations text and image APIs. | [@tawerrd](https://github.com/tawerrd) |
+| [🏛️ The Institute of Everything](https://rizperdana.github.io/institute-ai/) | Generate a complete fake museum exhibit from any concept, absurd, niche, or mundane, presented with straight-faced academic seriousness using The Institute of Everything. | [@rizperdana](https://github.com/rizperdana) |
+| [🎨 StyleOps](https://styleops.co) | Generate cohesive brand assets from detailed style guides using StyleOps, an AI-powered brand visual generator powered by Pollinations.ai (Flux model). | [@soyoxymor0n](https://github.com/soyoxymor0n) |
+| 🤖 Overtli Studio Suite | OVERTLI STUDIO Suite is a collection of nodes for Comfy UI that makes local and cloud AI generation easier through a unified advanced router and specialized media nodes. It uses Pollinations.ai as its | [@OvertliDS](https://github.com/OvertliDS) |
 | 🧑‍🎨 Pollinations Avatar Gen - Reforged | Extends the local LLM frontend SillyTavern with Pollinations Avatar Gen - Reforged, an upgraded Reforged extension that builds on Nidelon pollinations-avatar-gen. | [@sunjichaocom](https://github.com/sunjichaocom) |
-| 🤖 AI LOGS | Track work habits, productivity, and wellbeing with AI LOGS, a privacy-first AI-powered desktop tool that records local activity and provides performance observability and usage insights. | [@staimoorulhassan](https://github.com/staimoorulhassan) |
-| 👁️ AI Vision | Analyze images with AI Vision using multiple AI models via the Pollinations.ai API. | [@UniverseKing4](https://github.com/UniverseKing4) |
-| [🎨 Splash Tool](https://n8n-image-generator.vercel.app) | Convert screenshots into editable layers with Splash Tool, extracting assets, colors, and layout details for design workflows. | [@Bzcasper](https://github.com/Bzcasper) |
-| [🎨 polimage](https://polimage.enjoyow.com) | Generate AI images in the browser with polimage, a lightweight image-generation workbench that supports Pollinations OAuth and one-click account connection. | [@qiao39gs](https://github.com/qiao39gs) |
-| [💬 T-Buddy CHAT](https://tbuddy-taupe.vercel.app/) | Suggests context and phrasing for complex social or professional chats using T-Buddy CHAT by analyzing chat text or screenshots. | [@phumchaidev-collab](https://github.com/phumchaidev-collab) |
-| [🌸 Guess the Flower](https://guess-the-flower.netlify.app/) | Identify flowers from photos using Guess the Flower, an AI-powered quiz that asks players to name flower species. | [@hongloc](https://github.com/hongloc) |
-| [🎬 Oasis AI](https://oasis-demo-brown.vercel.app/) | Convert long-form LinkedIn or Twitter posts into short vertical Instagram Reels with Oasis AI. | [@gyanshupathak](https://github.com/gyanshupathak) |
-| [🦸‍♂️ Isekai Character Generator](https://isekai-character-generator.pages.dev) | Generate fully realized multiversal heroes with Isekai Character Generator using Seeded Entropy Logic Mulberry32 PRNG to produce identity, stats, backstory, and visual appearance. | [@garciamoonshine](https://github.com/garciamoonshine) |
-| [🎛️ Dreamframe](https://funniman23.github.io/Dreamframe/) | Run Dreamframe as a zero-dependency single-HTML-file playground for the pollinations.ai API, accessing images, video, voice, TTS, and music from one interface. | [@funniman23](https://github.com/funniman23) |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
@@ -47,16 +47,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-04-12** – **🧠 Kimi gets a brain upgrade** The `kimi` text model now runs Moonshot's K2-thinking model under the hood. You get reasoning blocks and a massive 128K context window for your largest prompts.
+- **2026-04-12** – **⚡ 50x faster text generation** We migrated `deepseek`, `glm`, `minimax`, and `qwen-large` to Fireworks AI. Latency dropped off a cliff, and Qwen got bumped to its 396B flagship version. Try them in the [Unified API](https://gen.pollinations.ai).
+- **2026-04-12** – **🖼️ Sana hits 0.165s per image** The default Sana [image model](https://gen.pollinations.ai/image/models) was upgraded to 1.6B and moved to GH200 instances. Better pixels, delivered in a fraction of a second.
+- **2026-04-12** – **🌐 Client-side OpenAI SDK support** We adjusted our CORS headers so standard OpenAI SDKs now work directly from the browser. Build your frontend apps without fighting preflight errors.
 - **2026-04-10** – **⚡ DeepSeek & Kimi Upgrades** Migrated DeepSeek and Kimi to new infrastructure. Expect significantly fewer dropped connections and faster response times when chatting in the [Playground](https://pollinations.ai/play).
 - **2026-04-10** – **🌍 Gemini Flash Lite Routing** Rerouted Gemini 2.5 Flash Lite to global endpoints to pool quota. It should now actually survive when everyone tries to hit the [Text API](https://gen.pollinations.ai/v1/chat/completions) at the exact same time.
 - **2026-04-09** – **🚀 Heavyweight models hit the free tier** GPT-5.4, Grok, and Qwen Coder are now free to use. We also wired up Mistral-Large-3 and Grok-4-20 to the [text endpoint](https://gen.pollinations.ai/v1/models).
 - **2026-04-09** – **🎨 Premium pixels, zero cost** `gptimage-large` and `FLUX.1 Kontext` have been moved off the paid tier. Send a prompt, get high-quality pixels back.
 - **2026-04-09** – **🛠️ Dreamframe** A zero-dependency, single-HTML-file playground for testing image, video, voice, and music generation. View source, learn, steal. [Try it](https://funniman23.github.io/Dreamframe/) <!-- app -->
 - **2026-04-09** – **🎭 SillyTavern avatar generation** A new extension lets you generate and update character avatars via our image API directly inside your local LLM frontend. [View repo](https://github.com/sunjichaocom/pollinations-avatar-gen-reforged) <!-- app -->
-- **2026-04-09** – **🍏 Warden App** A lightweight, privacy-focused native SwiftUI client for Mac users who want to chat with our models without the Electron overhead. [View repo](https://github.com/SidhuK/WardenApp) <!-- app -->
-- **2026-04-09** – **🌟 Community app explosion** The greenhouse is overflowing with 15+ new submissions this week, including emoji-to-image generators, botanical quizzes, and social video creators. [View apps](https://hello.pollinations.ai) <!-- app -->
-- **2026-04-05** – **🚀 Sana Sprint 1.6B** We've swapped out SDXL Turbo for Sana Sprint 1.6B on our workers, bringing you faster and more reliable [image generation](https://gen.pollinations.ai/image/models).
-- **2026-04-05** – **✨ URV AI Chat** A new community app just dropped in the showcase, featuring diverse LLM access, character creation, and image generation. [Try it](https://urv-ai.vercel.app) <!-- app -->
 ---
 
 ## 🌱 Introduction

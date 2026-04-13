@@ -83,7 +83,7 @@ export const callFluxKleinAPI = async (
         const headers: Record<string, string> = {
             "Content-Type": "application/json",
         };
-        const backendToken = process.env.PLN_IMAGE_BACKEND_TOKEN;
+        const backendToken = process.env.PLN_GPU_TOKEN;
         if (backendToken) {
             headers["x-backend-token"] = backendToken;
         }

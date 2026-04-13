@@ -1,4 +1,4 @@
-import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
+import { type ModelId, resolveModelName } from "../shared/registry/registry.ts";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -204,9 +204,9 @@ export function findModelByName(modelName: string): ModelDefinition | null {
     if (directMatch) return directMatch;
 
     try {
-        const resolvedServiceId = resolveServiceId(modelName);
+        const resolvedModelName = resolveModelName(modelName);
         return (
-            availableModels.find((model) => model.name === resolvedServiceId) ||
+            availableModels.find((model) => model.name === resolvedModelName) ||
             null
         );
     } catch {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10192,
+  "title": "fix: correct PollGen owner to @XHyperDEVX",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10192",
+  "merged_at": "2026-04-13T18:07:43Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Restoring the Flower",
+    "blurb": "We fixed a typo in the app showcase that accidentally hid the true creator of PollGen. @XHyperDEVX has their rightful Flower status back!",
+    "summary": "Corrected the GitHub owner attribution for the PollGen app in the community showcase.",
+    "impact": "Ensures @XHyperDEVX receives proper credit and restores their Flower tier status for contributing to the ecosystem.",
+    "keywords": [
+      "community",
+      "showcase",
+      "pollgen",
+      "tiers",
+      "attribution"
+    ],
+    "visual_concept": "Polly the bee handing a glowing pink pixel flower (representing the Flower tier) to a happy little robot holding a 'PollGen' sign, symbolizing restoring credit and tier status.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot handing a glowing pink pixel flower to a happy little robot holding a sign that says 'PollGen'. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10192.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot handing a glowing pink pixel flower to a happy little robot holding a sign that says 'PollGen'. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-13T18:08:39.485553+00:00"
+}

@@ -56,6 +56,29 @@ describe("ElevenLabs TTS", () => {
     );
 
     test(
+        "GET /audio/:text denies non-permitted model for restricted API key",
+        { timeout: 30000 },
+        async ({ restrictedApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/audio/Hello%20world?voice=alloy",
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${restrictedApiKey}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(403);
+            const body = await response.json();
+            expect((body as { error: { message: string } }).error.message).toBe(
+                "Model 'elevenlabs' is not allowed for this API key",
+            );
+        },
+    );
+
+    test(
         "POST /v1/audio/speech returns audio",
         { timeout: 30000 },
         async ({ paidApiKey, mocks }) => {
@@ -277,6 +300,39 @@ describe("Whisper Transcription", () => {
 
             // Verify usage headers default to Whisper when model is omitted
             expect(response.headers.get("x-model-used")).toBe("whisper");
+        },
+    );
+
+    test(
+        "POST /v1/audio/transcriptions with exhausted budget returns 402",
+        { timeout: 30000 },
+        async ({ exhaustedBudgetApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const formData = new FormData();
+            formData.append(
+                "file",
+                new Blob(["test audio"], { type: "audio/wav" }),
+                "test.wav",
+            );
+            formData.append("model", "whisper-large-v3");
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/v1/audio/transcriptions",
+                {
+                    method: "POST",
+                    headers: {
+                        authorization: `Bearer ${exhaustedBudgetApiKey}`,
+                    },
+                    body: formData,
+                },
+            );
+
+            expect(response.status).toBe(402);
+            const body = await response.json();
+            expect(
+                (body as { error: { message: string } }).error.message,
+            ).toContain("budget exhausted");
         },
     );
 });

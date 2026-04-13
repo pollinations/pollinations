@@ -1,0 +1,76 @@
+name: Rotate internal auth tokens
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (preview without changes)"
+        required: false
+        default: "false"
+        type: boolean
+      commit_pr:
+        description: "Create PR with SOPS changes after rotation"
+        required: false
+        default: "true"
+        type: boolean
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install sops
+        uses: getsops/sops-installer@v1
+
+      - name: Configure sops age key
+        env:
+          SOPS_AGE_KEY_DATA: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          mkdir -p ~/.config/sops/age
+          echo "$SOPS_AGE_KEY_DATA" > ~/.config/sops/age/keys.txt
+
+      - name: Install SSH keys
+        env:
+          SSH_KEY_THOMASH: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY_THOMASH" > ~/.ssh/thomashkey
+          chmod 600 ~/.ssh/thomashkey
+          # RunPod Klein pod uses a separate key — add RUNPOD_SSH_KEY secret when available
+          # mkdir -p ~/.runpod/ssh
+          # echo "$RUNPOD_KEY" > ~/.runpod/ssh/RunPod-Key-Go
+          # chmod 600 ~/.runpod/ssh/RunPod-Key-Go
+
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Install enter dependencies
+        working-directory: enter.pollinations.ai
+        run: npm ci
+
+      - name: Rotate tokens
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
+          COMMIT_PR_INPUT: ${{ inputs.commit_pr }}
+        run: |
+          FLAGS=""
+          if [ "$DRY_RUN_INPUT" = "true" ]; then
+            FLAGS="$FLAGS --dry-run"
+          fi
+          if [ "$COMMIT_PR_INPUT" = "true" ]; then
+            FLAGS="$FLAGS --commit-pr"
+          fi
+
+          chmod +x tools/scripts/rotate-all-tokens.sh
+          chmod +x tools/scripts/rotate-enter-to-backend-token.sh
+          chmod +x tools/scripts/rotate-image-to-gpu-token.sh
+
+          ./tools/scripts/rotate-all-tokens.sh $FLAGS

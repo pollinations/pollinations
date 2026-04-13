@@ -11,24 +11,34 @@
 
 | Script | Token | What it does |
 |--------|-------|-------------|
+| `rotate-all-tokens.sh` | Both | Orchestrator — generates tokens, calls per-token scripts, health-checks, optionally opens PR |
 | `rotate-enter-to-backend-token.sh` | `PLN_ENTER_TOKEN` | Updates SOPS → GitHub secrets → Wrangler secrets |
 | `rotate-image-to-gpu-token.sh` | `PLN_IMAGE_BACKEND_TOKEN` | Updates SOPS → SSH to each GPU worker, updates `.env`, restarts services |
 
-Both scripts accept `--dry-run` to preview actions without making changes, and an optional `NEW_TOKEN` argument (otherwise generates one via `openssl rand -hex 32`).
+All scripts accept `--dry-run` to preview without making changes. Per-token scripts accept an optional `NEW_TOKEN` argument (otherwise generates one via `openssl rand -hex 32`).
 
-## Running manually
+## Running
+
+### Via GitHub Actions (recommended)
+
+Go to **Actions → "Rotate internal auth tokens" → Run workflow**. Options:
+- **dry_run**: preview without changes
+- **commit_pr**: auto-create PR with SOPS diffs after rotation
+
+### Locally
 
 ```bash
-# Dry run first
+# Rotate everything (orchestrator)
+./rotate-all-tokens.sh --dry-run          # preview
+./rotate-all-tokens.sh                    # real run
+./rotate-all-tokens.sh --commit-pr        # real run + auto-PR
+
+# Individual token rotation
 ./rotate-enter-to-backend-token.sh --dry-run
 ./rotate-image-to-gpu-token.sh --dry-run
 
-# Real run (generates new token automatically)
-./rotate-enter-to-backend-token.sh
-./rotate-image-to-gpu-token.sh
-
 # With a specific token
-./rotate-enter-to-backend-token.sh --dry-run abc123...
+./rotate-enter-to-backend-token.sh TOKEN_VALUE
 ```
 
 After running, commit the SOPS file changes and merge to trigger EC2 deploy.

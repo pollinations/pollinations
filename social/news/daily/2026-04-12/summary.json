@@ -1,0 +1,31 @@
+{
+  "date": "2026-04-12",
+  "period_start": "2026-04-12",
+  "period_end": "2026-04-12",
+  "title": "Text models get a massive speed and brain upgrade",
+  "summary": "A massive day for speed: text models migrated to Fireworks for 50x faster inference, Sana image generation drops to 165ms, and OpenAI SDKs now work directly in the browser.\n\nWe re-routed a huge chunk of our text models to faster infrastructure. Kimi, DeepSeek, GLM, Minimax, and Qwen-large are now running on Fireworks AI and Bedrock. The results? Up to 50x faster generation speeds. We also bumped Qwen to the 396B flagship and gave Kimi the K2-thinking model with a 128K context window.\n\nWe upgraded the default Sana model to 1.6B and moved the whole thing over to GH200 instances. It now spits out images in about 0.165 seconds. Blink and you'll miss the inference.\n\nBrowsers and CORS preflight checks are a notoriously annoying combination. We updated our CORS middleware to properly reflect custom telemetry headers, meaning you can now drop standard OpenAI SDKs directly into client-side web apps without the browser yelling at you.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 10155,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10156,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10159,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10160,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10165,
+      "date": "2026-04-12"
+    }
+  ],
+  "generated_at": "2026-04-13T06:40:41.248883+00:00"
+}

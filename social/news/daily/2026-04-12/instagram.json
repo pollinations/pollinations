@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-12",
+  "period_start": "2026-04-12",
+  "period_end": "2026-04-12",
+  "generated_at": "2026-04-13T06:40:41.248883+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-12/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-12/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-12/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Shipped a few things this week to make your HTTP calls a little happier. 🛠️ Moved some heavy lifters (kimi, deepseek, glm) over to Fireworks, so text generation is noticeably faster and smarter. Sana image generation is now sitting at a ridiculous 165ms. And for the frontend folks, we fixed the CORS headers — OpenAI SDKs now work directly in the browser. No more proxy gymnastics. \n\npollinations.ai\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #frontend #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

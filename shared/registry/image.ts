@@ -1,5 +1,5 @@
 import { COST_START_DATE, perMillion } from "./price-helpers";
-import type { ServiceDefinition } from "./registry";
+import type { ModelDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 
@@ -486,4 +486,4 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
-} as const satisfies Record<string, ServiceDefinition<string>>;
+} as const satisfies Record<string, ModelDefinition<string>>;

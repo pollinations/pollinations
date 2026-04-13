@@ -51,7 +51,7 @@ export type PriceDefinition = CostDefinition;
 export type ModelId = ImageModelId | TextModelId | AudioModelId;
 export type ModelName = ImageModelName | TextModelName | AudioModelName;
 
-export type ServiceDefinition<TModelId extends string = ModelId> = {
+export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
     provider: string;
@@ -104,7 +104,7 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-type ModelRegistryEntry = ServiceDefinition & {
+type ModelRegistryEntry = ModelDefinition & {
     price: PriceDefinition[];
 };
 

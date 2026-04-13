@@ -1,4 +1,4 @@
-import type { ServiceDefinition } from "./registry";
+import type { ModelDefinition } from "./registry";
 
 // Voice name to ElevenLabs voice ID mapping
 export const VOICE_MAPPING: Record<string, string> = {
@@ -134,7 +134,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         alpha: true,
     },
-} satisfies Record<string, ServiceDefinition<string>>;
+} satisfies Record<string, ModelDefinition<string>>;
 
 export function resolveElevenLabsVoiceId(voice: string): string {
     return VOICE_MAPPING[voice] ?? voice;

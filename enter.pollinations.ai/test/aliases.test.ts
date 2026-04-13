@@ -1,11 +1,11 @@
 import { IMAGE_SERVICES } from "@shared/registry/image";
-import type { ServiceDefinition } from "@shared/registry/registry.js";
+import type { ModelDefinition } from "@shared/registry/registry.js";
 import { calculateCost, resolveModelName } from "@shared/registry/registry.js";
 import { TEXT_SERVICES } from "@shared/registry/text";
 import { expect, test } from "vitest";
 
 function serviceAliasTestCases(
-    services: Record<string, ServiceDefinition>,
+    services: Record<string, ModelDefinition>,
 ): string[][] {
     return Object.entries(services).flatMap(([serviceId, serviceDefinition]) =>
         serviceDefinition.aliases.map((alias) => [alias, serviceId]),

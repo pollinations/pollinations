@@ -77,9 +77,10 @@ These require code changes or external coordination before automated rotation is
 |--------|-------------|
 | `BETTER_AUTH_SECRET` | Needs `secrets: []` multi-secret array in Better Auth config — rotating now would invalidate all user sessions |
 | `STRIPE_WEBHOOK_SECRET` | Needs dual-secret verifier in `stripe-webhooks.ts` |
-| `POLAR_WEBHOOK_SECRET` | Same — needs dual-secret verifier in `webhooks.ts` |
 | `MUSIC_SERVICE_TOKEN` | External ACE-Step service — needs coordination with service owner |
 | Provider API keys (Azure, AWS, etc.) | Issued by external providers, different rotation mechanisms |
+
+**Out of scope:** Polar keys (`POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`) — Polar is a third-party payment platform; key rotation is managed through their dashboard and not automated here.
 
 ## GPU worker details
 

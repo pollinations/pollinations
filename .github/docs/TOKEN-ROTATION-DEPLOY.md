@@ -82,7 +82,6 @@ Or revert the SOPS commit and redeploy.
 |--------|---------|
 | `BETTER_AUTH_SECRET` | Needs multi-secret array — rotating now kills all sessions |
 | `STRIPE_WEBHOOK_SECRET` | Needs dual-secret verifier |
-| `POLAR_WEBHOOK_SECRET` | Needs dual-secret verifier |
 | `MUSIC_SERVICE_TOKEN` | External service — needs coordination |
 | Provider API keys | Each provider has different rotation mechanisms (PR 2) |
 

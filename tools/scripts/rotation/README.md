@@ -11,23 +11,21 @@
 
 | Script | Token | What it does |
 |--------|-------|-------------|
-| `rotate-infra-tokens.sh` | Both | Orchestrator — generates tokens, calls per-token scripts, health-checks, optionally opens PR |
 | `rotate-pln-enter-token.sh` | `PLN_ENTER_TOKEN` | Updates SOPS → GitHub secrets → Wrangler secrets |
 | `rotate-pln-gpu-token.sh` | `PLN_GPU_TOKEN` | Updates SOPS → SSH to each GPU worker, updates `.env`, restarts services |
 
-All scripts accept `--dry-run` to preview without making changes. Per-token scripts accept an optional `NEW_TOKEN` argument (otherwise generates one via `openssl rand -hex 32`).
+Both scripts accept `--dry-run` to preview without making changes, and an optional `NEW_TOKEN` argument (otherwise generates one via `openssl rand -hex 32`).
 
 ## Running
 
 ```bash
-# Rotate everything (orchestrator)
-./rotate-infra-tokens.sh --dry-run          # preview
-./rotate-infra-tokens.sh                    # real run
-./rotate-infra-tokens.sh --commit-pr        # real run + auto-PR
-
-# Individual token rotation
+# Dry run first
 ./rotate-pln-enter-token.sh --dry-run
 ./rotate-pln-gpu-token.sh --dry-run
+
+# Real run (generates new token automatically)
+./rotate-pln-enter-token.sh
+./rotate-pln-gpu-token.sh
 
 # With a specific token
 ./rotate-pln-enter-token.sh TOKEN_VALUE

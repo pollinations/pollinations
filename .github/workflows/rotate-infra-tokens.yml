@@ -76,7 +76,18 @@ jobs:
           echo "wrangler $(wrangler --version)"
           echo "jq $(jq --version)"
 
-      # --- Pre-flight: verify SSH to GPU workers before rotating ---
+      # --- Pre-flight: verify SSH connectivity before rotating ---
+
+      - name: Verify EC2 SSH connectivity
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          script: |
+            echo "EC2 reachable"
+            sudo systemctl is-active text-pollinations.service || echo "text service not running"
+            sudo systemctl is-active image-pollinations.service || echo "image service not running"
 
       - name: Verify GPU worker SSH connectivity
         if: inputs.token == 'gpu' || inputs.token == 'both'

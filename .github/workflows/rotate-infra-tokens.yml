@@ -20,6 +20,7 @@ on:
 jobs:
   rotate:
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: write
     env:

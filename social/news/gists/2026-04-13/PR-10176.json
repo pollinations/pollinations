@@ -1,0 +1,34 @@
+{
+  "pr_number": 10176,
+  "title": "Add Overtli Studio Suite to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10176",
+  "merged_at": "2026-04-13T12:55:08Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Getting Comfy in the greenhouse",
+    "blurb": "Overtli Studio Suite just landed in the community showcase! It brings a sweet collection of ComfyUI nodes for seamless local and cloud AI generation, powered by our API.",
+    "summary": "Added Overtli Studio Suite, a collection of ComfyUI nodes for unified local and cloud AI generation, to the community showcase.",
+    "impact": "ComfyUI users can now easily integrate Pollinations.ai into their workflows using Overtli's specialized media nodes and advanced router.",
+    "keywords": [
+      "comfyui",
+      "community",
+      "app-showcase",
+      "nodes",
+      "integration"
+    ],
+    "visual_concept": "The PR adds a ComfyUI node suite. Visuals should focus on 'nodes' (boxes connected by wires) and 'comfy' (cozy, relaxing). The bee mascot connecting glowing nodes in a greenhouse setting fits perfectly.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot in a warm greenhouse, happily connecting glowing lime green (#ecf874) and pastel lavender nodes with tiny wires. A chunky retro monitor displays a node-based interface. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10176.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot in a warm greenhouse, happily connecting glowing lime green (#ecf874) and pastel lavender nodes with tiny wires. A chunky retro monitor displays a node-based interface. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-13T12:56:08.697598+00:00",
+  "app_name": "Overtli Studio Suite",
+  "app_url": "https://github.com/OvertliDS/overtli-studio-suite"
+}

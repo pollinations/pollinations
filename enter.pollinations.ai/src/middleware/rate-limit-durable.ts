@@ -63,11 +63,18 @@ export const frontendKeyRateLimit = createMiddleware<
         },
     );
 
+    const rateLimiter = c.env.POLLEN_RATE_LIMITER;
+    if (!rateLimiter) {
+        log.warn(
+            "Skipping rate limit for publishable key, POLLEN_RATE_LIMITER binding is missing",
+            { keyId: apiKey.id, ip, identifier },
+        );
+        return next();
+    }
+
     // Get Durable Object for this (key + IP) combination
-    const id = c.env.POLLEN_RATE_LIMITER.idFromName(identifier);
-    const stub = c.env.POLLEN_RATE_LIMITER.get(
-        id,
-    ) as DurableObjectStub<PollenRateLimiter>;
+    const id = rateLimiter.idFromName(identifier);
+    const stub = rateLimiter.get(id) as DurableObjectStub<PollenRateLimiter>;
 
     // Check pollen rate limit
     const result = await stub.checkRateLimit();

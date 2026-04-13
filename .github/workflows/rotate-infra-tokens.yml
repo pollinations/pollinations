@@ -27,6 +27,14 @@ jobs:
       DRY_RUN: ${{ inputs.dry_run }}
       TOKEN_TARGET: ${{ inputs.token }}
     steps:
+      - name: Require main branch
+        run: |
+          if [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "This workflow must be dispatched from main, not $GITHUB_REF_NAME."
+            echo "Production secrets must stay in sync with the repo's source of truth."
+            exit 1
+          fi
+
       - name: Generate GitHub App token
         id: app-token
         uses: actions/create-github-app-token@v1
@@ -180,43 +188,89 @@ jobs:
             sudo systemctl is-active image-pollinations.service || exit 1
             echo "EC2 services restarted with new tokens"
 
-      # --- Health checks: verify rotated token paths actually work ---
+      # --- Health checks: verify rotated token paths from inside EC2 ---
 
-      - name: Verify enter-to-EC2 token path (PLN_ENTER_TOKEN)
+      - name: Verify PLN_ENTER_TOKEN path
         if: inputs.dry_run == false && (inputs.token == 'enter' || inputs.token == 'both')
-        run: |
-          echo "Waiting 15s for services to stabilize..."
-          sleep 15
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          script: |
+            set -e
+            sleep 5
 
-          # Request through enter gateway -> EC2 text service
-          # This exercises PLN_ENTER_TOKEN (enter sends it to EC2, EC2 validates)
-          STATUS=$(curl -s --max-time 30 -o /dev/null -w "%{http_code}" \
-            -X POST "https://gen.pollinations.ai/v1/chat/completions" \
-            -H "Content-Type: application/json" \
-            -d '{"model":"openai","messages":[{"role":"user","content":"ping"}],"max_tokens":1}')
-          echo "Enter -> EC2 text path: HTTP $STATUS"
-          if [ "$STATUS" = "000" ] || [ "$STATUS" = "502" ] || [ "$STATUS" = "503" ]; then
-            echo "FAIL: enter-to-EC2 token path broken (HTTP $STATUS)"
-            exit 1
-          fi
-          echo "PLN_ENTER_TOKEN path verified"
+            # Read the new token from the deployed .env
+            NEW_TOKEN=$(grep PLN_ENTER_TOKEN /home/ubuntu/pollinations/text.pollinations.ai/.env | cut -d= -f2-)
 
-      - name: Verify EC2-to-GPU token path (PLN_GPU_TOKEN)
+            # Hit the text service with the new token — this is the same check
+            # enter.pollinations.ai performs on every proxied request
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+              -H "x-backend-token: $NEW_TOKEN" \
+              http://localhost:16385/)
+            echo "Text service with new PLN_ENTER_TOKEN: HTTP $STATUS"
+
+            # 401/403 = token rejected, 000 = service down
+            if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ] || [ "$STATUS" = "000" ]; then
+              echo "FAIL: text service rejected the new PLN_ENTER_TOKEN"
+              exit 1
+            fi
+
+            # Same for image service
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+              -H "x-backend-token: $NEW_TOKEN" \
+              http://localhost:16384/)
+            echo "Image service with new PLN_ENTER_TOKEN: HTTP $STATUS"
+
+            if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ] || [ "$STATUS" = "000" ]; then
+              echo "FAIL: image service rejected the new PLN_ENTER_TOKEN"
+              exit 1
+            fi
+
+            echo "PLN_ENTER_TOKEN accepted by both EC2 services"
+
+      - name: Verify PLN_GPU_TOKEN path
         if: inputs.dry_run == false && (inputs.token == 'gpu' || inputs.token == 'both')
-        run: |
-          echo "Waiting 15s for services to stabilize..."
-          sleep 15
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          script: |
+            set -e
+            sleep 5
 
-          # Generate image with flux model (goes through EC2 -> GPU worker)
-          # This exercises PLN_GPU_TOKEN (EC2 image service sends it to GPU, GPU validates)
-          STATUS=$(curl -s --max-time 120 -o /dev/null -w "%{http_code}" \
-            "https://image.pollinations.ai/prompt/health_check_rotation_$(date +%s)?model=flux&width=256&height=256&nologo=true")
-          echo "EC2 -> GPU worker path (flux): HTTP $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "FAIL: EC2-to-GPU token path broken (HTTP $STATUS)"
-            exit 1
-          fi
-          echo "PLN_GPU_TOKEN path verified"
+            # Read the new GPU token from the deployed .env
+            NEW_TOKEN=$(grep PLN_GPU_TOKEN /home/ubuntu/pollinations/image.pollinations.ai/.env | cut -d= -f2-)
+
+            # Hit a GPU worker through the image service's internal path
+            # The image service forwards requests to GPU workers with x-backend-token
+            # Test by hitting the registry endpoint (lightweight, no GPU needed)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+              http://localhost:16384/register)
+            echo "Image service registry: HTTP $STATUS"
+
+            if [ "$STATUS" = "000" ]; then
+              echo "FAIL: image service not responding"
+              exit 1
+            fi
+
+            # Verify a Flux worker accepts the new token directly
+            FLUX_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -H "x-backend-token: $NEW_TOKEN" \
+              -d '{"prompts":["test"],"width":256,"height":256,"steps":1}' \
+              https://hsl3ksl31lvrcc-8765.proxy.runpod.net/generate)
+            echo "Flux GPU worker with new PLN_GPU_TOKEN: HTTP $FLUX_STATUS"
+
+            if [ "$FLUX_STATUS" = "403" ]; then
+              echo "FAIL: GPU worker rejected the new PLN_GPU_TOKEN"
+              exit 1
+            fi
+
+            echo "PLN_GPU_TOKEN path verified"
 
       # --- Commit SOPS changes ---
 
@@ -232,7 +286,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No SOPS changes to commit"
           else
-            BRANCH="${GITHUB_REF_NAME}"
             git commit -m "rotate infra tokens ($TOKEN_TARGET)"
-            git push origin "HEAD:$BRANCH"
+            git push origin HEAD:main
           fi

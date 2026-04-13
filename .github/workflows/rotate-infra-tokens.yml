@@ -27,8 +27,17 @@ jobs:
       DRY_RUN: ${{ inputs.dry_run }}
       TOKEN_TARGET: ${{ inputs.token }}
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Setup SOPS
         uses: nhedger/setup-sops@v2
@@ -110,7 +119,7 @@ jobs:
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           cd tools/scripts/rotation
           if [ "$DRY_RUN" = "true" ]; then
@@ -171,38 +180,50 @@ jobs:
             sudo systemctl is-active image-pollinations.service || exit 1
             echo "EC2 services restarted with new tokens"
 
-      # --- Health checks ---
+      # --- Health checks: verify rotated token paths actually work ---
 
-      - name: Health check
-        if: inputs.dry_run == false
+      - name: Verify enter-to-EC2 token path (PLN_ENTER_TOKEN)
+        if: inputs.dry_run == false && (inputs.token == 'enter' || inputs.token == 'both')
         run: |
           echo "Waiting 15s for services to stabilize..."
           sleep 15
 
-          # Check models endpoint
-          MODELS=$(curl -s --max-time 30 -o /dev/null -w "%{http_code}" \
-            "https://gen.pollinations.ai/v1/models")
-          echo "Models endpoint: HTTP $MODELS"
-          if [ "$MODELS" != "200" ]; then
-            echo "FAIL: models endpoint returned $MODELS"
+          # Request through enter gateway -> EC2 text service
+          # This exercises PLN_ENTER_TOKEN (enter sends it to EC2, EC2 validates)
+          STATUS=$(curl -s --max-time 30 -o /dev/null -w "%{http_code}" \
+            -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+            -H "Content-Type: application/json" \
+            -d '{"model":"openai","messages":[{"role":"user","content":"ping"}],"max_tokens":1}')
+          echo "Enter -> EC2 text path: HTTP $STATUS"
+          if [ "$STATUS" = "000" ] || [ "$STATUS" = "502" ] || [ "$STATUS" = "503" ]; then
+            echo "FAIL: enter-to-EC2 token path broken (HTTP $STATUS)"
             exit 1
           fi
+          echo "PLN_ENTER_TOKEN path verified"
 
-          # Test image generation
-          IMAGE=$(curl -s --max-time 120 -o /dev/null -w "%{http_code}" \
-            "https://image.pollinations.ai/prompt/health_check_rotation_$(date +%s)?width=256&height=256&nologo=true")
-          echo "Image generation: HTTP $IMAGE"
-          if [ "$IMAGE" != "200" ]; then
-            echo "FAIL: image generation returned $IMAGE"
+      - name: Verify EC2-to-GPU token path (PLN_GPU_TOKEN)
+        if: inputs.dry_run == false && (inputs.token == 'gpu' || inputs.token == 'both')
+        run: |
+          echo "Waiting 15s for services to stabilize..."
+          sleep 15
+
+          # Generate image with flux model (goes through EC2 -> GPU worker)
+          # This exercises PLN_GPU_TOKEN (EC2 image service sends it to GPU, GPU validates)
+          STATUS=$(curl -s --max-time 120 -o /dev/null -w "%{http_code}" \
+            "https://image.pollinations.ai/prompt/health_check_rotation_$(date +%s)?model=flux&width=256&height=256&nologo=true")
+          echo "EC2 -> GPU worker path (flux): HTTP $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "FAIL: EC2-to-GPU token path broken (HTTP $STATUS)"
             exit 1
           fi
-
-          echo "All health checks passed"
+          echo "PLN_GPU_TOKEN path verified"
 
       # --- Commit SOPS changes ---
 
       - name: Commit and push SOPS changes
         if: inputs.dry_run == false
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -211,6 +232,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No SOPS changes to commit"
           else
+            BRANCH="${GITHUB_REF_NAME}"
             git commit -m "rotate infra tokens ($TOKEN_TARGET)"
-            git push origin main
+            git push origin "HEAD:$BRANCH"
           fi

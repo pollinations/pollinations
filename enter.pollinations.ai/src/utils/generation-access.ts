@@ -1,4 +1,4 @@
-import { getServiceDefinition } from "@shared/registry/registry.ts";
+import { getModelDefinition } from "@shared/registry/registry.ts";
 import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import {
@@ -21,7 +21,7 @@ export async function checkBalance(
     const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
-    const serviceDefinition = getServiceDefinition(model.resolved);
+    const serviceDefinition = getModelDefinition(model.resolved);
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
 
     const stats = await getModelStats(env.KV, log);

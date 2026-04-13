@@ -76,10 +76,26 @@ These require code changes or external coordination before automated rotation is
 
 `MUSIC_SERVICE_URL` is intentionally not rotated here. It is configuration, not an auth token, and enter still needs it for ACE-Step routing.
 
+## SSH keys
+
+SSH keys for GPU workers are stored in SOPS (`enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`):
+
+| SOPS key | Provider | Models | SSH target |
+|----------|----------|--------|------------|
+| `SSH_RUNPOD_FLUX_ZIMAGE` | RunPod | Flux + Z-Image | `root@38.65.239.17 -p 19489` |
+| `SSH_RUNPOD_KLEIN` | RunPod | Klein 4B | `root@213.144.200.243 -p 10207` |
+| `SSH_LAMBDA_SANA_LTX2_ACESTEP` | Lambda Labs | Sana + LTX-2 + ACE-Step | `ubuntu@192.222.51.105` |
+
+To extract a key for SSH use:
+```bash
+sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.SSH_RUNPOD_KLEIN' > /tmp/key && chmod 600 /tmp/key
+ssh -i /tmp/key root@213.144.200.243 -p 10207
+```
+
 ## GPU worker details
 
-| Worker | Pod/Host | SSH | Token location | Restart method |
-|--------|----------|-----|---------------|----------------|
-| Flux + Z-Image | RunPod `hsl3ksl31lvrcc` | `root@38.65.239.17 -p 28895 -i ~/.ssh/thomashkey` | `$HOME/.env` | Restart screen sessions |
-| Klein 4B | RunPod `pi90tfk3sa9t12` | `root@213.144.200.243 -p 10207 -i ~/.runpod/ssh/RunPod-Key-Go` | `/workspace/.env` | Restart handler.py |
-| LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `ubuntu@192.222.51.105 -i ~/.ssh/thomashkey` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |
+| Worker | Pod/Host | SSH key (SOPS) | Token location | Restart method |
+|--------|----------|---------------|---------------|----------------|
+| Flux + Z-Image | RunPod `hsl3ksl31lvrcc` | `SSH_RUNPOD_FLUX_ZIMAGE` | `$HOME/.env` | Restart screen sessions |
+| Klein 4B | RunPod `pi90tfk3sa9t12` | `SSH_RUNPOD_KLEIN` | `/workspace/.env` | `/workspace/restart.sh` |
+| LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |

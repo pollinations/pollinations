@@ -26,7 +26,7 @@ Or run once: `/monitor-services`
 | **Host** | `192.222.51.105` |
 | **Port** | `8765` |
 | **Provider** | Lambda Labs (NVIDIA GH200) |
-| **SSH** | `ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105` |
+| **SSH** | `ssh -i <SSH_LAMBDA_SANA_LTX2_ACESTEP from SOPS> ubuntu@192.222.51.105` |
 
 **Health check:**
 ```bash
@@ -45,7 +45,7 @@ Expected: HTTP 200, ~500-800KB, ~11-13s
 
 **Restart:**
 ```bash
-ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105 "bash /home/ubuntu/start_ltx2.sh"
+ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105 "bash /home/ubuntu/start_ltx2.sh"
 ```
 Wait ~60s after restart, then re-check health.
 
@@ -57,7 +57,7 @@ Wait ~60s after restart, then re-check health.
 |----------|-------|
 | **Host** | `192.222.51.105` |
 | **Port** | `8189` |
-| **SSH** | `ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105` |
+| **SSH** | `ssh -i <SSH_LAMBDA_SANA_LTX2_ACESTEP from SOPS> ubuntu@192.222.51.105` |
 | **Systemd** | `acestep.service` |
 | **Auth** | `ACESTEP_API_KEY` env var (Bearer token) |
 
@@ -69,7 +69,7 @@ Expected: `{"status":"ok","models_initialized":true}`
 
 **Restart:**
 ```bash
-ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105 "sudo systemctl restart acestep"
+ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105 "sudo systemctl restart acestep"
 ```
 Wait ~50s for model initialization, then re-check health.
 
@@ -109,7 +109,7 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo systemctl restart image-polli
 | **Host** | `pi90tfk3sa9t12-8000.proxy.runpod.net` |
 | **Port** | `8000` |
 | **Provider** | RunPod (RTX 3090, community cloud) |
-| **SSH** | `ssh -i ~/.runpod/ssh/RunPod-Key-Go root@213.144.200.243 -p 10207` |
+| **SSH** | `ssh -i <SOPS:SSH_RUNPOD_KLEIN> root@213.144.200.243 -p 10207` |
 | **Auth** | `x-backend-token` header with `PLN_GPU_TOKEN` |
 
 **Health check:**
@@ -120,7 +120,7 @@ Expected: `{"status":"ok","model":"black-forest-labs/FLUX.2-klein-4B"}`
 
 **Restart:**
 ```bash
-ssh -i ~/.runpod/ssh/RunPod-Key-Go root@213.144.200.243 -p 10207 "/workspace/restart.sh"
+ssh -i <SOPS:SSH_RUNPOD_KLEIN> root@213.144.200.243 -p 10207 "/workspace/restart.sh"
 ```
 Wait ~30s for model load, then re-check health.
 
@@ -132,7 +132,7 @@ Wait ~30s for model load, then re-check health.
 |----------|-------|
 | **Pod** | `hsl3ksl31lvrcc` |
 | **Provider** | RunPod (4x RTX 4090, community cloud) |
-| **SSH** | `ssh -i ~/.ssh/thomashkey -p 28895 root@38.65.239.17` |
+| **SSH** | `ssh -i <SOPS:SSH_RUNPOD_FLUX_ZIMAGE> -p 19489 root@38.65.239.17` |
 
 **Workers:**
 
@@ -159,7 +159,7 @@ Expected: 4 workers with 0% error rate, all `hsl3ksl31lvrcc-*.proxy.runpod.net`
 
 **Restart a worker:**
 ```bash
-ssh -i ~/.ssh/thomashkey -p 28895 root@38.65.239.17
+ssh -i <SOPS:SSH_RUNPOD_FLUX_ZIMAGE> -p 19489 root@38.65.239.17
 screen -S flux-gpu0 -X quit
 screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nunchaku/venv/bin/activate && \
   CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=hsl3ksl31lvrcc-8765.proxy.runpod.net PUBLIC_PORT=443 \
@@ -174,7 +174,7 @@ One worker registered as `sana` type with OVH legacy service via heartbeat.
 
 | Instance | GPU | Host | Port | SSH |
 |----------|-----|------|------|-----|
-| Lambda GH200 | GH200 (96GB) | `192.222.51.105` | `8766` | `ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105` |
+| Lambda GH200 | GH200 (96GB) | `192.222.51.105` | `8766` | `ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105` |
 
 **Health check:**
 ```bash
@@ -190,7 +190,7 @@ Expected: 1 worker with 0% error rate
 
 **Restart:**
 ```bash
-ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105 "sudo systemctl restart sana"
+ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105 "sudo systemctl restart sana"
 ```
 
 **Notes:**
@@ -239,7 +239,12 @@ For each:
 ## Auth
 
 - **Test token**: Read from `enter.pollinations.ai/.testingtokens` (ENTER_API_TOKEN_REMOTE)
-- **SSH keys**: `~/.ssh/thomashkey` (GH200), `~/.ssh/id_rsa_ovh` (OVH)
+- **SSH keys**: Stored in SOPS (`enter.pollinations.ai/secrets/prod.vars.json`):
+  - `SSH_RUNPOD_FLUX_ZIMAGE` — RunPod Flux+Z-Image pod
+  - `SSH_RUNPOD_KLEIN` — RunPod Klein pod
+  - `SSH_LAMBDA_SANA_LTX2_ACESTEP` — Lambda GH200 (LTX-2, ACE-Step, Sana)
+  - Extract: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.KEY_NAME' > /tmp/key && chmod 600 /tmp/key`
+- **OVH**: `~/.ssh/id_rsa_ovh` (not in SOPS)
 
 ## Output
 

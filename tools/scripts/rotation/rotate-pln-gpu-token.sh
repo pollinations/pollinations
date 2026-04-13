@@ -16,7 +16,7 @@
 #
 # Prerequisites:
 # - sops configured and working
-# - SSH access to GPU instances (keys in ~/.ssh/thomashkey, ~/.runpod/ssh/RunPod-Key-Go)
+# - SSH keys stored in SOPS (SSH_RUNPOD_FLUX_ZIMAGE, SSH_RUNPOD_KLEIN, SSH_LAMBDA_SANA_LTX2_ACESTEP)
 # - wrangler CLI authenticated
 
 set -e
@@ -74,10 +74,32 @@ if $DRY_RUN; then
     warn "DRY RUN — no changes will be made"
 fi
 
-# SSH configuration
+# SSH configuration — extract keys from SOPS into temp files
 SSH_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes"
-THOMASH_KEY="$HOME/.ssh/thomashkey"
-RUNPOD_KEY="$HOME/.runpod/ssh/RunPod-Key-Go"
+SOPS_SECRETS="$REPO_ROOT/enter.pollinations.ai/secrets/prod.vars.json"
+
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
+
+extract_ssh_key() {
+    local sops_key=$1
+    local out="$TEMP_DIR/$sops_key"
+    sops -d "$SOPS_SECRETS" | jq -r ".$sops_key" > "$out"
+    chmod 600 "$out"
+    echo "$out"
+}
+
+if ! $DRY_RUN; then
+    section "Extracting SSH keys from SOPS"
+    FLUX_ZIMAGE_KEY=$(extract_ssh_key SSH_RUNPOD_FLUX_ZIMAGE)
+    KLEIN_KEY=$(extract_ssh_key SSH_RUNPOD_KLEIN)
+    LAMBDA_KEY=$(extract_ssh_key SSH_LAMBDA_SANA_LTX2_ACESTEP)
+    log "Extracted 3 SSH keys to $TEMP_DIR"
+else
+    FLUX_ZIMAGE_KEY="/dev/null"
+    KLEIN_KEY="/dev/null"
+    LAMBDA_KEY="/dev/null"
+fi
 
 FAILURES=()
 
@@ -205,26 +227,26 @@ if [ $? -eq 0 ] || $DRY_RUN; then log "✅ staging"; else error "❌ staging"; F
 #######################################
 # 3. RunPod pod hsl3ksl31lvrcc
 #    Flux + Z-Image (4x RTX 4090)
-#    SSH: root@38.65.239.17:28895
+#    SSH: root@38.65.239.17:19489 (key: SSH_RUNPOD_FLUX_ZIMAGE from SOPS)
 #    Workers: screen sessions (flux-gpu0, flux-gpu1, zimage-gpu2, zimage-gpu3)
 #    Token: $HOME/.env → read by server.py at startup
 #######################################
 section "Updating RunPod pod hsl3ksl31lvrcc (Flux + Z-Image)"
 
 run "SSH to RunPod Flux+Z-Image pod — update .env + restart workers" \
-    "update_remote_env 'root@38.65.239.17' '28895' '$THOMASH_KEY' '\$HOME/.env' 'RunPod hsl3ksl31lvrcc (Flux+Z-Image)' 'flux_zimage_screen'"
+    "update_remote_env 'root@38.65.239.17' '19489' '$FLUX_ZIMAGE_KEY' '\$HOME/.env' 'RunPod hsl3ksl31lvrcc (Flux+Z-Image)' 'flux_zimage_screen'"
 
 #######################################
 # 4. RunPod pod pi90tfk3sa9t12
 #    Klein 4B (1x RTX 3090)
-#    SSH: root@213.144.200.243:10207
+#    SSH: root@213.144.200.243:10207 (key: SSH_RUNPOD_KLEIN from SOPS)
 #    Worker: FastAPI handler.py on port 8000
 #    Token: /workspace/.env → read by handler.py
 #######################################
 section "Updating RunPod pod pi90tfk3sa9t12 (Klein 4B)"
 
 run "SSH to RunPod Klein pod — update .env + restart worker" \
-    "update_remote_env 'root@213.144.200.243' '10207' '$RUNPOD_KEY' '/workspace/.env' 'RunPod pi90tfk3sa9t12 (Klein 4B)' 'klein_workspace'"
+    "update_remote_env 'root@213.144.200.243' '10207' '$KLEIN_KEY' '/workspace/.env' 'RunPod pi90tfk3sa9t12 (Klein 4B)' 'klein_workspace'"
 
 #######################################
 # 5. Lambda Labs GH200
@@ -235,7 +257,7 @@ run "SSH to RunPod Klein pod — update .env + restart worker" \
 section "Updating Lambda Labs GH200 (LTX-2 + ACE-Step + Sana)"
 
 run "SSH to Lambda Labs GH200 — update .env + restart services" \
-    "update_remote_env 'ubuntu@192.222.51.105' '' '$THOMASH_KEY' '\$HOME/.env' 'Lambda GH200 (LTX-2+ACE-Step+Sana)' 'gh200_systemd'"
+    "update_remote_env 'ubuntu@192.222.51.105' '' '$LAMBDA_KEY' '\$HOME/.env' 'Lambda GH200 (LTX-2+ACE-Step+Sana)' 'gh200_systemd'"
 
 #######################################
 # Summary

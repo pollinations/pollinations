@@ -25,7 +25,7 @@ runpodctl pod get <id>         # pod details
 ### Pod pi90tfk3sa9t12 — Klein 4B
 
 - **GPU**: 1x RTX 3090 (24GB) | **Cost**: $0.22/hr (community cloud)
-- **SSH**: `ssh -i ~/.runpod/ssh/RunPod-Key-Go root@213.144.200.243 -p 10207`
+- **SSH**: `ssh -i <SSH_RUNPOD_KLEIN from SOPS> root@213.144.200.243 -p 10207`
 - **HTTP**: `https://pi90tfk3sa9t12-8000.proxy.runpod.net`
 - **Service**: FLUX.2 Klein 4B (FastAPI on port 8000)
 - **Auth**: `x-backend-token` header with `PLN_GPU_TOKEN`
@@ -41,7 +41,7 @@ curl -s https://pi90tfk3sa9t12-8000.proxy.runpod.net/health
 ### Pod hsl3ksl31lvrcc — Flux + Z-Image (4x RTX 4090)
 
 - **GPU**: 4x RTX 4090 (24GB each) | **Cost**: $1.36/hr (community cloud)
-- **SSH**: `ssh -i ~/.ssh/thomashkey -p 28895 root@38.65.239.17`
+- **SSH**: `ssh -i <SSH_RUNPOD_FLUX_ZIMAGE from SOPS> -p 19489 root@38.65.239.17`
 - **Image**: `runpod/pytorch:1.0.3-cu1281-torch291-ubuntu2404`
 - **Storage**: 100GB container disk + 50GB persistent volume
 - **Repo**: `/opt/pollinations` (symlinked from `/workspace/pollinations`)
@@ -71,7 +71,7 @@ curl -s http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register | python
 
 **Restart a worker:**
 ```bash
-ssh -i ~/.ssh/thomashkey -p 28895 root@38.65.239.17
+ssh -i <SSH_RUNPOD_FLUX_ZIMAGE from SOPS> -p 19489 root@38.65.239.17
 screen -S flux-gpu0 -X quit
 screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nunchaku/venv/bin/activate && \
   CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=hsl3ksl31lvrcc-8765.proxy.runpod.net PUBLIC_PORT=443 \
@@ -88,7 +88,7 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 ### LTX-2.3 Video + ACE-Step Music + Sana (GH200)
 
 - **Host**: `192.222.51.105`
-- **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105`
+- **SSH**: `ssh -i <SSH_LAMBDA_SANA_LTX2_ACESTEP from SOPS> ubuntu@192.222.51.105`
 - **LTX-2**: port 8765, health at `/health`
 - **ACE-Step**: port 8189, systemd `acestep.service`
 - **Sana**: port 8766, systemd `sana.service`, ~0.165s/img
@@ -115,9 +115,19 @@ GPU workers send heartbeats to EC2 gateway:
 
 ## SSH Keys
 
+GPU worker SSH keys are stored in SOPS (`enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`).
+
+Extract for use: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.KEY_NAME' > /tmp/key && chmod 600 /tmp/key`
+
+| SOPS key | Provider | Instances |
+|----------|----------|-----------|
+| `SSH_RUNPOD_FLUX_ZIMAGE` | RunPod | Flux+Z-Image pod (`hsl3ksl31lvrcc`) |
+| `SSH_RUNPOD_KLEIN` | RunPod | Klein pod (`pi90tfk3sa9t12`) |
+| `SSH_LAMBDA_SANA_LTX2_ACESTEP` | Lambda Labs | GH200 (LTX-2, ACE-Step, Sana) |
+
+EC2 keys (not in SOPS):
+
 | Key | Provider | Location |
 |-----|----------|----------|
-| `~/.runpod/ssh/RunPod-Key-Go` | RunPod | All pods |
-| `~/.ssh/thomashkey` | Lambda Labs, RunPod | GH200, Flux+Z-Image pod |
 | `~/.ssh/enter-services-shared-key` | EC2 prod | enter services |
 | `~/.ssh/enter-services-staging-key` | EC2 staging | enter services |

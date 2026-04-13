@@ -1,0 +1,34 @@
+{
+  "pr_number": 10191,
+  "title": "fix: int4 model path for RTX 4090, https heartbeat for z-image",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10191",
+  "merged_at": "2026-04-13T17:25:49Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A healthy heartbeat",
+    "blurb": "Gave our image generation nodes a quick checkup. Fixed a heartbeat connection issue and made sure our RTX 4090s are loading the right model weights.",
+    "summary": "Corrected the Z-Image heartbeat protocol to use HTTPS and updated the Nunchaku model path to use INT4 for RTX 4090 compatibility.",
+    "impact": "Image generation nodes will maintain stable connections without proxy errors and properly load models on Ada Lovelace architecture.",
+    "keywords": [
+      "bug-fix",
+      "image-api",
+      "gpu",
+      "runpod",
+      "infrastructure"
+    ],
+    "visual_concept": "The bee mascot acting as a doctor checking the heartbeat of a chunky retro computer (representing the GPU/RunPod node) with a stethoscope. A lime green glowing heart on the monitor.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny doctor's headlamp, using a stethoscope to check the heartbeat of a chunky retro computer monitor. The monitor screen displays a glowing lime green (#ecf874) pixel heart. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10191.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny doctor's headlamp, using a stethoscope to check the heartbeat of a chunky retro computer monitor. The monitor screen displays a glowing lime green (#ecf874) pixel heart. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-13T17:26:43.975152+00:00"
+}

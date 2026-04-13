@@ -7,7 +7,7 @@ Reference for secret rotation across the Pollinations infrastructure.
 | Token | Trust boundary | Where it lives | Fan-out targets |
 |-------|---------------|----------------|-----------------|
 | `PLN_ENTER_TOKEN` | CF Worker (enter) → EC2 | SOPS (5 files), Wrangler, GitHub secrets | GitHub (`PLN_ENTER_TOKEN`, `ENTER_TOKEN`), Wrangler (prod, staging) |
-| `PLN_IMAGE_BACKEND_TOKEN` | EC2 image → GPU workers | SOPS (1 file), `$HOME/.env` on workers | RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 |
+| `PLN_GPU_TOKEN` | EC2 image → GPU workers | SOPS (1 file), `$HOME/.env` on workers | RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 |
 
 ## Rotation scripts
 
@@ -17,7 +17,7 @@ All scripts live in `tools/scripts/`. See `tools/scripts/ROTATION.md` for the fu
 # Rotate PLN_ENTER_TOKEN (enter → EC2)
 ./tools/scripts/rotate-enter-to-backend-token.sh [--dry-run] [TOKEN]
 
-# Rotate PLN_IMAGE_BACKEND_TOKEN (EC2 → GPU workers)
+# Rotate PLN_GPU_TOKEN (EC2 → GPU workers)
 ./tools/scripts/rotate-image-to-gpu-token.sh [--dry-run] [TOKEN]
 ```
 
@@ -31,7 +31,7 @@ Both scripts:
 ### PR 1 — Infra token rotation (`feat/infra-token-rotation`)
 
 Orchestrator + GitHub Actions workflow (`workflow_dispatch`, no cron yet):
-- Generates fresh `PLN_ENTER_TOKEN` + `PLN_IMAGE_BACKEND_TOKEN`
+- Generates fresh `PLN_ENTER_TOKEN` + `PLN_GPU_TOKEN`
 - Calls per-token scripts to fan out
 - Health-checks production after rotation
 - Opens a PR with SOPS diffs on success
@@ -50,8 +50,8 @@ Quarterly manual-trigger workflow to re-encrypt all SOPS files with a new age ma
 |----------|--------|
 | `PLN_ENTER_TOKEN` updated in Wrangler but not SOPS/EC2 | Enter sends new token → EC2 rejects → all API requests fail |
 | `PLN_ENTER_TOKEN` updated in SOPS/EC2 but not Wrangler | EC2 expects new token → enter sends old → all API requests fail |
-| `PLN_IMAGE_BACKEND_TOKEN` updated in SOPS but not GPU workers | EC2 sends new token → workers reject → image generation fails |
-| `PLN_IMAGE_BACKEND_TOKEN` updated on workers but not SOPS | Workers expect new token → EC2 sends old → image generation fails |
+| `PLN_GPU_TOKEN` updated in SOPS but not GPU workers | EC2 sends new token → workers reject → image generation fails |
+| `PLN_GPU_TOKEN` updated on workers but not SOPS | Workers expect new token → EC2 sends old → image generation fails |
 
 **Key rule:** both sides of each trust boundary must be updated together. The scripts handle this by updating SOPS (source of truth) first, then fanning out.
 
@@ -82,7 +82,6 @@ Or revert the SOPS commit and redeploy.
 |--------|---------|
 | `BETTER_AUTH_SECRET` | Needs multi-secret array — rotating now kills all sessions |
 | `STRIPE_WEBHOOK_SECRET` | Needs dual-secret verifier |
-| `MUSIC_SERVICE_TOKEN` | External service — needs coordination |
 | Provider API keys | Each provider has different rotation mechanisms (PR 2) |
 
 ## History

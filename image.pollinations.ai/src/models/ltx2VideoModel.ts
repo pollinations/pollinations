@@ -20,8 +20,8 @@ const DEFAULT_TIMEOUT_SECS = 300;
 
 // Backend auth headers
 const backendHeaders = (): Record<string, string> => ({
-    ...(process.env.PLN_IMAGE_BACKEND_TOKEN && {
-        "x-backend-token": process.env.PLN_IMAGE_BACKEND_TOKEN,
+    ...(process.env.PLN_GPU_TOKEN && {
+        "x-backend-token": process.env.PLN_GPU_TOKEN,
     }),
 });
 

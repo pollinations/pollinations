@@ -90,7 +90,7 @@ runpodctl pod get <id>         # pod details
 - **SSH**: `ssh -i ~/.runpod/ssh/RunPod-Key-Go root@213.144.200.243 -p 10207`
 - **HTTP**: `https://pi90tfk3sa9t12-8000.proxy.runpod.net`
 - **Service**: FLUX.2 Klein 4B (FastAPI on port 8000)
-- **Auth**: `x-backend-token` header with `PLN_IMAGE_BACKEND_TOKEN`
+- **Auth**: `x-backend-token` header with `PLN_GPU_TOKEN`
 - **Code**: `/workspace/handler.py`
 - **Logs**: `/workspace/handler.log`
 - **Restart**: `ssh ... "/workspace/restart.sh"`

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Rotate PLN_IMAGE_BACKEND_TOKEN — the token the EC2 image service uses to
+# Rotate PLN_GPU_TOKEN — the token the EC2 image service uses to
 # authenticate requests to GPU worker instances (Flux, Z-Image, Klein, LTX-2).
 #
 # Usage: ./rotate-image-to-gpu-token.sh [--dry-run] [NEW_TOKEN]
@@ -58,7 +58,7 @@ if [ -n "$1" ]; then
     section "Using provided token"
     NEW_TOKEN="$1"
 else
-    section "Generating new PLN_IMAGE_BACKEND_TOKEN"
+    section "Generating new PLN_GPU_TOKEN"
     NEW_TOKEN=$(openssl rand -hex 32)
 fi
 log "Token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
@@ -97,16 +97,16 @@ update_remote_env() {
     if $ssh_target "bash -s" <<REMOTE_EOF
         ENV_FILE="$env_path"
         if [ -f "\$ENV_FILE" ]; then
-            sed -i 's/^PLN_IMAGE_BACKEND_TOKEN=.*/PLN_IMAGE_BACKEND_TOKEN=${NEW_TOKEN}/' "\$ENV_FILE"
-            if ! grep -q PLN_IMAGE_BACKEND_TOKEN "\$ENV_FILE"; then
-                echo "PLN_IMAGE_BACKEND_TOKEN=${NEW_TOKEN}" >> "\$ENV_FILE"
+            sed -i 's/^PLN_GPU_TOKEN=.*/PLN_GPU_TOKEN=${NEW_TOKEN}/' "\$ENV_FILE"
+            if ! grep -q PLN_GPU_TOKEN "\$ENV_FILE"; then
+                echo "PLN_GPU_TOKEN=${NEW_TOKEN}" >> "\$ENV_FILE"
             fi
         else
-            echo "PLN_IMAGE_BACKEND_TOKEN=${NEW_TOKEN}" > "\$ENV_FILE"
+            echo "PLN_GPU_TOKEN=${NEW_TOKEN}" > "\$ENV_FILE"
         fi
         echo "Updated \$ENV_FILE"
-        VERIFY=\$(grep PLN_IMAGE_BACKEND_TOKEN "\$ENV_FILE" | cut -d= -f2)
-        echo "Verify: PLN_IMAGE_BACKEND_TOKEN=\${VERIFY:0:8}..."
+        VERIFY=\$(grep PLN_GPU_TOKEN "\$ENV_FILE" | cut -d= -f2)
+        echo "Verify: PLN_GPU_TOKEN=\${VERIFY:0:8}..."
         ${restart_cmd}
 REMOTE_EOF
     then
@@ -124,8 +124,8 @@ section "Updating SOPS-encrypted secrets"
 
 SOPS_FILE="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
 if [ -f "$SOPS_FILE" ]; then
-    run "sops --set PLN_IMAGE_BACKEND_TOKEN in image secrets" \
-        "sops --set '[\"PLN_IMAGE_BACKEND_TOKEN\"] \"$NEW_TOKEN\"' '$SOPS_FILE'"
+    run "sops --set PLN_GPU_TOKEN in image secrets" \
+        "sops --set '[\"PLN_GPU_TOKEN\"] \"$NEW_TOKEN\"' '$SOPS_FILE'"
     if [ $? -eq 0 ] || $DRY_RUN; then
         log "✅ image.pollinations.ai/secrets/env.json"
     else
@@ -174,7 +174,7 @@ run "SSH to Lambda Labs GH200 — update .env + restart services" \
 #######################################
 # Summary
 #######################################
-section "PLN_IMAGE_BACKEND_TOKEN Rotation Summary"
+section "PLN_GPU_TOKEN Rotation Summary"
 
 echo ""
 log "Token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"

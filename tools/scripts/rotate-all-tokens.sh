@@ -3,7 +3,7 @@
 #
 # Usage: ./rotate-all-tokens.sh [--dry-run] [--commit-pr]
 #
-# Generates fresh PLN_ENTER_TOKEN + PLN_IMAGE_BACKEND_TOKEN, calls the
+# Generates fresh PLN_ENTER_TOKEN + PLN_GPU_TOKEN, calls the
 # per-token scripts to fan out, health-checks production, and optionally
 # opens a PR with the SOPS diffs.
 #
@@ -52,7 +52,7 @@ ENTER_TOKEN=$(openssl rand -hex 32)
 BACKEND_TOKEN=$(openssl rand -hex 32)
 
 log "PLN_ENTER_TOKEN:          ${ENTER_TOKEN:0:8}...${ENTER_TOKEN: -4}"
-log "PLN_IMAGE_BACKEND_TOKEN:  ${BACKEND_TOKEN:0:8}...${BACKEND_TOKEN: -4}"
+log "PLN_GPU_TOKEN:  ${BACKEND_TOKEN:0:8}...${BACKEND_TOKEN: -4}"
 
 if $DRY_RUN; then
     warn "DRY RUN — no changes will be made"
@@ -74,15 +74,15 @@ else
 fi
 
 #######################################
-# Rotate PLN_IMAGE_BACKEND_TOKEN
+# Rotate PLN_GPU_TOKEN
 #######################################
-section "Rotating PLN_IMAGE_BACKEND_TOKEN (EC2 → GPU workers)"
+section "Rotating PLN_GPU_TOKEN (EC2 → GPU workers)"
 
 if "$SCRIPT_DIR/rotate-image-to-gpu-token.sh" $FLAGS "$BACKEND_TOKEN"; then
-    log "✅ PLN_IMAGE_BACKEND_TOKEN rotation completed"
+    log "✅ PLN_GPU_TOKEN rotation completed"
 else
-    error "❌ PLN_IMAGE_BACKEND_TOKEN rotation failed"
-    FAILURES+=("PLN_IMAGE_BACKEND_TOKEN")
+    error "❌ PLN_GPU_TOKEN rotation failed"
+    FAILURES+=("PLN_GPU_TOKEN")
 fi
 
 #######################################
@@ -148,7 +148,7 @@ if $COMMIT_PR && ! $DRY_RUN && [ ${#FAILURES[@]} -eq 0 ]; then
 
         gh pr create \
             --title "chore: rotate internal auth tokens $DATE" \
-            --body "Automated rotation of PLN_ENTER_TOKEN and PLN_IMAGE_BACKEND_TOKEN. Health checks passed." \
+            --body "Automated rotation of PLN_ENTER_TOKEN and PLN_GPU_TOKEN. Health checks passed." \
             --base main
 
         log "✅ PR created on branch $BRANCH"
@@ -162,7 +162,7 @@ section "Rotation Summary"
 
 echo ""
 log "PLN_ENTER_TOKEN:          ${ENTER_TOKEN:0:8}...${ENTER_TOKEN: -4}"
-log "PLN_IMAGE_BACKEND_TOKEN:  ${BACKEND_TOKEN:0:8}...${BACKEND_TOKEN: -4}"
+log "PLN_GPU_TOKEN:  ${BACKEND_TOKEN:0:8}...${BACKEND_TOKEN: -4}"
 echo ""
 
 if [ ${#FAILURES[@]} -eq 0 ]; then

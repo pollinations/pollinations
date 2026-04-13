@@ -14,7 +14,7 @@
 # After running, commit the SOPS file changes and deploy EC2 services
 # to pick up the new token from the decrypted env.
 #
-# GPU instances use a separate token (PLN_IMAGE_BACKEND_TOKEN).
+# GPU instances use a separate token (PLN_GPU_TOKEN).
 # Use ./rotate-image-to-gpu-token.sh for that.
 #
 # Prerequisites:

@@ -74,7 +74,7 @@ ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105 "sudo systemctl restart acestep"
 Wait ~50s for model initialization, then re-check health.
 
 **Notes:**
-- Token auth via `Authorization: Bearer <token>` — token stored in encrypted secrets as `MUSIC_SERVICE_TOKEN`
+- Token auth via `Authorization: Bearer <token>` — token stored in encrypted secrets as `PLN_GPU_TOKEN`
 - Server-side token set via `ACESTEP_API_KEY` env var in systemd unit
 - Runs on port 8189 (port 8188 is ComfyUI/LTX-2)
 
@@ -110,7 +110,7 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo systemctl restart image-polli
 | **Port** | `8000` |
 | **Provider** | RunPod (RTX 3090, community cloud) |
 | **SSH** | `ssh -i ~/.runpod/ssh/RunPod-Key-Go root@213.144.200.243 -p 10207` |
-| **Auth** | `x-backend-token` header with `PLN_IMAGE_BACKEND_TOKEN` |
+| **Auth** | `x-backend-token` header with `PLN_GPU_TOKEN` |
 
 **Health check:**
 ```bash

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10177,
+  "title": "Add StyleOps to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10177",
+  "merged_at": "2026-04-13T12:57:18Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Brand magic in the greenhouse",
+    "blurb": "StyleOps just sprouted in our app greenhouse! It's a clever new tool that uses our Flux models to generate cohesive brand assets from your style guides.",
+    "summary": "Added StyleOps, an AI-powered brand visual generator, to the community app showcase.",
+    "impact": "Creators can now discover StyleOps in our directory to easily generate cohesive brand assets using Pollinations' image models.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "flux",
+      "branding"
+    ],
+    "visual_concept": "StyleOps focuses on brand assets and style guides. Visual metaphor: Polly the bee as a designer/artist working on a brand identity. She can wear a tiny painter's beret and review a color palette or mood board with the Monitor Robot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, looking at a glowing digital mood board showing colorful brand assets. A chunky robot with a CRT monitor head stands nearby holding a pixelated color palette. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10177.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, looking at a glowing digital mood board showing colorful brand assets. A chunky robot with a CRT monitor head stands nearby holding a pixelated color palette. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-04-13T12:58:27.672782+00:00",
+  "app_name": "StyleOps",
+  "app_url": "https://styleops.co"
+}

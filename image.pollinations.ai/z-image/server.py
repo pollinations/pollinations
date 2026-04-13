@@ -276,11 +276,11 @@ def verify_backend_token(
 ):
     """Verify backend authentication token.
     
-    Requires x-backend-token header validated against PLN_IMAGE_BACKEND_TOKEN env var.
+    Requires x-backend-token header validated against PLN_GPU_TOKEN env var.
     """
-    expected_token = os.getenv("PLN_IMAGE_BACKEND_TOKEN")
+    expected_token = os.getenv("PLN_GPU_TOKEN")
     if not expected_token:
-        logger.warning("PLN_IMAGE_BACKEND_TOKEN not configured - allowing request")
+        logger.warning("PLN_GPU_TOKEN not configured - allowing request")
         return True
     
     if x_backend_token != expected_token:

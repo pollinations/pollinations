@@ -664,7 +664,7 @@ export const audioRoutes = new Hono<Env>()
                     style,
                     durationSeconds: duration,
                     serviceUrl: c.env.MUSIC_SERVICE_URL,
-                    serviceToken: c.env.MUSIC_SERVICE_TOKEN,
+                    serviceToken: c.env.PLN_GPU_TOKEN,
                     log,
                 });
             }

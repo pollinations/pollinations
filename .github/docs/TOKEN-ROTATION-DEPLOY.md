@@ -1,157 +1,17 @@
-# Token Rotation Deployment Checklist (PR #7807)
+# Token Rotation
 
-Security hardening following Jan 28-29 token compromise. This checklist tracks all deployment steps.
+Reference for secret rotation across the Pollinations infrastructure.
 
-## ⚠️ Downtime Risk Considerations
+## Token architecture
 
-| Component | Risk | Mitigation |
-|-----------|------|------------|
-| **GitHub CI** | CI will fail if `SOPS_AGE_KEY` not updated before merge | Update secret BEFORE merge |
-| **Modal Flux Klein** | Cold start required - existing containers won't have new token | Redeploy immediately after merge |
-| **io.net instances** | Manual SSH required - services will reject requests until updated | Update all 4 instances promptly |
-| **EC2 services** | Automatic via CI - brief restart during deploy | Monitor health endpoints |
+| Token | Trust boundary | Where it lives | Fan-out targets |
+|-------|---------------|----------------|-----------------|
+| `PLN_ENTER_TOKEN` | CF Worker (enter) → EC2 | SOPS (5 files), Wrangler, GitHub secrets | GitHub (`PLN_ENTER_TOKEN`, `ENTER_TOKEN`), Wrangler (prod, staging) |
+| `PLN_IMAGE_BACKEND_TOKEN` | EC2 image → GPU workers | SOPS (1 file), `$HOME/.env` on workers | RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 |
 
-**Recommended order**: Pre-merge secrets → Merge → Modal redeploy → io.net updates → Verify
+## Rotation scripts
 
----
-
-## Pre-Merge Requirements (CRITICAL - DO THESE FIRST)
-
-- [ ] **Update GitHub Secret `SOPS_AGE_KEY`**
-  ```bash
-  # Get new age private key from secure storage, then:
-  gh secret set SOPS_AGE_KEY --repo pollinations/pollinations
-  ```
-  New public key: `age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd`
-
-- [ ] **Create Modal `backend-token` secret**
-  ```bash
-  # Get PLN_IMAGE_BACKEND_TOKEN from SOPS secrets:
-  export SOPS_AGE_KEY=$(security find-generic-password -a "$USER" -s "sops-age-key" -w)
-  TOKEN=$(sops -d image.pollinations.ai/secrets/env.json | jq -r '.PLN_IMAGE_BACKEND_TOKEN')
-  
-  # Create Modal secret:
-  modal secret create backend-token PLN_IMAGE_BACKEND_TOKEN="$TOKEN"
-  ```
-
-## Merge & Deploy
-
-- [ ] **Merge PR #7807**
-  ```bash
-  gh pr merge 7807 --squash
-  ```
-
-- [ ] **Deploy to staging**
-  ```bash
-  git checkout staging && git merge main && git push
-  ```
-  Wait for CI to complete.
-
-- [ ] **Verify staging**
-  - [ ] Text service health: `curl https://staging-text.pollinations.ai/health`
-  - [ ] Image service health: `curl https://staging-image.pollinations.ai/health`
-
-- [ ] **Deploy to production**
-  ```bash
-  git checkout production && git merge main && git push
-  ```
-
-## Post-Merge: Modal Deployment (DO IMMEDIATELY)
-
-> ⚠️ **Flux Klein will be DOWN** until these are redeployed. Existing Modal containers have the old `enter-token` secret and won't accept the new `x-backend-token` header.
-
-- [ ] **Redeploy Flux Klein 4B**
-  ```bash
-  cd image.pollinations.ai/image_gen_flux_klein
-  modal deploy flux_klein.py
-  ```
-
-- [ ] **Redeploy Flux Klein 9B**
-  ```bash
-  modal deploy flux_klein_9b.py
-  ```
-
-- [ ] **Verify Modal endpoints respond**
-  ```bash
-  # Test direct Modal endpoint (should return image or auth error, not 500)
-  curl -I "https://myceli-ai--flux-klein-fluxklein-generate-web.modal.run?prompt=test"
-  ```
-
-## Post-Merge: io.net Instances (DO PROMPTLY)
-
-> ⚠️ **Z-Image and Flux on io.net will reject requests** until manually updated. These require SSH access.
-
-### Primary Instance (38.128.232.183) - 8x L40 GPUs
-
-This is the main production instance with 3x Z-Image + 5x Flux services.
-
-**Pre-staged items** (already done):
-- ✅ `.env` file created at `/home/ionet/.env` with `PLN_IMAGE_BACKEND_TOKEN`
-- ✅ PR branch fetched to instance
-- ✅ Switchover script created at `/home/ionet/switch-to-new-tokens.sh`
-
-- [ ] **Run switchover script** (after PR merged to main)
-  ```bash
-  ssh -i ~/.ssh/pollinations_services_2026 ionet@38.128.232.183
-  bash /home/ionet/switch-to-new-tokens.sh
-  ```
-
-  This script will:
-  1. Pull merged changes from main
-  2. Update Z-Image systemd services to use EnvironmentFile
-  3. Restart Z-Image services (GPU 0-2)
-  4. Recreate Flux Docker containers with new token (GPU 3-7)
-
-### Legacy Instances (if still active)
-
-These instances may be down. Check before attempting:
-
-- [ ] **Flux Worker 1** (3.21.229.114:23655) - ⚠️ Check if active
-  ```bash
-  ssh -p 23655 ionet@3.21.229.114
-  echo "PLN_IMAGE_BACKEND_TOKEN=xxx" > $HOME/.env
-  # Recreate Docker containers with new token
-  ```
-
-## Verification (Final Checks)
-
-- [ ] **EC2 services responding**
-  ```bash
-  curl -s https://text.pollinations.ai/health
-  curl -s https://image.pollinations.ai/health
-  ```
-
-- [ ] **Image generation works end-to-end**
-  ```bash
-  curl "https://image.pollinations.ai/prompt/test%20cat?model=flux" -o test.png
-  ```
-
-- [ ] **Flux Klein works (Modal)**
-  ```bash
-  curl "https://image.pollinations.ai/prompt/test%20dog?model=flux-klein" -o test-klein.png
-  ```
-
-- [ ] **Z-Image works (io.net)**
-  ```bash
-  curl "https://image.pollinations.ai/prompt/test%20bird?model=turbo" -o test-turbo.png
-  ```
-
-- [ ] **No auth errors in logs**
-  ```bash
-  # Check EC2 image service logs for "Invalid or missing backend token" errors
-  ssh ubuntu@<EC2_HOST> "sudo journalctl -u image-pollinations -n 50 | grep -i token"
-  ```
-
-## Token Architecture Reference
-
-| Flow | Token | Header | Location |
-|------|-------|--------|----------|
-| enter → EC2 | `PLN_ENTER_TOKEN` | `x-enter-token` | SOPS secrets, Wrangler |
-| EC2 → RunPod/Lambda | `PLN_IMAGE_BACKEND_TOKEN` | `x-backend-token` | `$HOME/.env` on GPU workers |
-
-## Rotation Scripts
-
-See `tools/scripts/ROTATION.md` for full reference.
+All scripts live in `tools/scripts/`. See `tools/scripts/ROTATION.md` for the full reference (token inventory, what-breaks-what matrix, rollback).
 
 ```bash
 # Rotate PLN_ENTER_TOKEN (enter → EC2)
@@ -161,7 +21,73 @@ See `tools/scripts/ROTATION.md` for full reference.
 ./tools/scripts/rotate-image-to-gpu-token.sh [--dry-run] [TOKEN]
 ```
 
----
+Both scripts:
+- Generate a new token via `openssl rand -hex 32` (or accept one as argument)
+- Write to SOPS before fanning out
+- Support `--dry-run` to preview without changes
 
-**PR**: https://github.com/pollinations/pollinations/pull/7807
-**Branch**: `security/token-rotation-clean`
+## Rotation automation (planned)
+
+### PR 1 — Infra token rotation (`feat/infra-token-rotation`)
+
+Orchestrator + GitHub Actions workflow (`workflow_dispatch`, no cron yet):
+- Generates fresh `PLN_ENTER_TOKEN` + `PLN_IMAGE_BACKEND_TOKEN`
+- Calls per-token scripts to fan out
+- Health-checks production after rotation
+- Opens a PR with SOPS diffs on success
+
+### PR 2 — External provider keys (`feat/provider-key-rotation`)
+
+Per-provider rotation for externally-issued API keys (Azure, AWS, GCP, etc.). Some providers have rotation APIs; others are dashboard-only with documented manual steps.
+
+### PR 3 — SOPS age key (`feat/sops-age-key-rotation`)
+
+Quarterly manual-trigger workflow to re-encrypt all SOPS files with a new age master key. Does NOT rotate plaintext values — orthogonal to token rotation.
+
+## What breaks what
+
+| Scenario | Impact |
+|----------|--------|
+| `PLN_ENTER_TOKEN` updated in Wrangler but not SOPS/EC2 | Enter sends new token → EC2 rejects → all API requests fail |
+| `PLN_ENTER_TOKEN` updated in SOPS/EC2 but not Wrangler | EC2 expects new token → enter sends old → all API requests fail |
+| `PLN_IMAGE_BACKEND_TOKEN` updated in SOPS but not GPU workers | EC2 sends new token → workers reject → image generation fails |
+| `PLN_IMAGE_BACKEND_TOKEN` updated on workers but not SOPS | Workers expect new token → EC2 sends old → image generation fails |
+
+**Key rule:** both sides of each trust boundary must be updated together. The scripts handle this by updating SOPS (source of truth) first, then fanning out.
+
+## Rollback
+
+```bash
+# Get old token from git history
+git log -p -- image.pollinations.ai/secrets/env.json | head -50
+
+# Re-run with the old token
+./tools/scripts/rotate-enter-to-backend-token.sh OLD_TOKEN
+./tools/scripts/rotate-image-to-gpu-token.sh OLD_TOKEN
+```
+
+Or revert the SOPS commit and redeploy.
+
+## GPU worker details
+
+| Worker | Pod/Host | SSH | Token location | Restart |
+|--------|----------|-----|---------------|---------|
+| Flux + Z-Image | RunPod `hsl3ksl31lvrcc` | `root@38.65.239.17 -p 28895 -i ~/.ssh/thomashkey` | `$HOME/.env` | Restart screen sessions |
+| Klein 4B | RunPod `pi90tfk3sa9t12` | `root@213.144.200.243 -p 10207 -i ~/.runpod/ssh/RunPod-Key-Go` | `/workspace/.env` | Restart handler.py |
+| LTX-2 + ACE-Step + Sana | Lambda GH200 | `ubuntu@192.222.51.105 -i ~/.ssh/thomashkey` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |
+
+## Secrets not yet automated
+
+| Secret | Blocker |
+|--------|---------|
+| `BETTER_AUTH_SECRET` | Needs multi-secret array — rotating now kills all sessions |
+| `STRIPE_WEBHOOK_SECRET` | Needs dual-secret verifier |
+| `POLAR_WEBHOOK_SECRET` | Needs dual-secret verifier |
+| `MUSIC_SERVICE_TOKEN` | External service — needs coordination |
+| Provider API keys | Each provider has different rotation mechanisms (PR 2) |
+
+## History
+
+- **PR #7807** (`security/token-rotation-clean`) — original token rotation after Jan 2025 compromise. Introduced SOPS encryption + per-token scripts.
+- **PR #10126** — renamed GPU providers from Vast.ai/io.net to RunPod.
+- **PR #10179** — renamed rotation scripts to describe trust boundaries, updated targets to RunPod/Lambda, removed Modal, added SOPS-write + dry-run.

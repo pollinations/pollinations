@@ -1,0 +1,33 @@
+{
+  "pr_number": 10180,
+  "title": "fix(apps): correct NetSim GitHub author to @smplstuff",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10180",
+  "merged_at": "2026-04-13T14:05:21Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Credit where credit is due",
+    "blurb": "Fixed a little mix-up in our app showcase to properly credit @smplstuff for building NetSim. We also polished up the featured apps table while we were at it!",
+    "summary": "Corrected the GitHub author attribution for the NetSim app in the community showcase and fixed rendering issues in the featured apps table.",
+    "impact": "Community developer @smplstuff now receives proper credit for their NetSim app on the main README and app list.",
+    "keywords": [
+      "community",
+      "apps",
+      "documentation",
+      "credits"
+    ],
+    "visual_concept": "The pollinations bee mascot fixing a name tag or painting a portrait of a community member. A cozy gallery wall of pixel art apps. The bee is carefully adjusting a label under a picture of a network simulation (NetSim).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully adjusting a name tag under a framed picture of a network simulation on a gallery wall. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10180.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully adjusting a name tag under a framed picture of a network simulation on a gallery wall. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-13T14:06:46.979312+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10201,
+  "title": "[codex] consolidate tinybird secrets and observability tokens",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10201",
+  "merged_at": "2026-04-13T23:28:35Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the vault",
+    "blurb": "We've tidied up our backend secrets and observability tokens so our infrastructure stays secure and easy to manage. Less clutter, more secure buzzing!",
+    "summary": "Consolidated Tinybird observability tokens and secrets across the repository to simplify key rotation and improve backend security.",
+    "impact": "This is an under-the-hood infrastructure update that makes our backend more maintainable without affecting any user-facing features.",
+    "keywords": [
+      "infrastructure",
+      "security",
+      "secrets",
+      "observability",
+      "tinybird"
+    ],
+    "visual_concept": "Polly the bee organizing glowing keys or tokens in a cozy vault or filing cabinet, representing the consolidation of backend secrets.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat, organizing glowing lime green (#ecf874) keys in a wooden filing cabinet. A chunky retro monitor nearby displays a padlock icon. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10201.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat, organizing glowing lime green (#ecf874) keys in a wooden filing cabinet. A chunky retro monitor nearby displays a padlock icon. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-13T23:29:26.196380+00:00"
+}

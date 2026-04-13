@@ -11,14 +11,14 @@ Reference for secret rotation across the Pollinations infrastructure.
 
 ## Rotation scripts
 
-All scripts live in `tools/scripts/`. See `tools/scripts/ROTATION.md` for the full reference (token inventory, what-breaks-what matrix, rollback).
+All scripts live in `tools/scripts/rotation/`. See `tools/scripts/rotation/README.md` for the full reference (token inventory, what-breaks-what matrix, rollback).
 
 ```bash
 # Rotate PLN_ENTER_TOKEN (enter → EC2)
-./tools/scripts/rotate-pln-enter-token.sh [--dry-run] [TOKEN]
+./tools/scripts/rotation/rotate-pln-enter-token.sh [--dry-run] [TOKEN]
 
 # Rotate PLN_GPU_TOKEN (EC2 → GPU workers)
-./tools/scripts/rotate-pln-gpu-token.sh [--dry-run] [TOKEN]
+./tools/scripts/rotation/rotate-pln-gpu-token.sh [--dry-run] [TOKEN]
 ```
 
 Both scripts:
@@ -44,8 +44,8 @@ Both scripts:
 git log -p -- image.pollinations.ai/secrets/env.json | head -50
 
 # Re-run with the old token
-./tools/scripts/rotate-pln-enter-token.sh OLD_TOKEN
-./tools/scripts/rotate-pln-gpu-token.sh OLD_TOKEN
+./tools/scripts/rotation/rotate-pln-enter-token.sh OLD_TOKEN
+./tools/scripts/rotation/rotate-pln-gpu-token.sh OLD_TOKEN
 ```
 
 Or revert the SOPS commit and redeploy.

@@ -7,8 +7,9 @@
 # Trust boundary: EC2 image service → GPU workers (RunPod, Lambda Labs)
 #
 # This script:
-# 1. Writes the new token into the SOPS-encrypted image secrets file
-# 2. Updates the token on each GPU worker via SSH ($HOME/.env + restart)
+# 1. Writes the new token into the SOPS-encrypted image + enter secrets files
+# 2. Updates Wrangler secrets used by enter.pollinations.ai (production, staging)
+# 3. Updates the token on each GPU worker via SSH ($HOME/.env + restart)
 #
 # GPU workers validate the token via the x-backend-token HTTP header.
 # After running, commit the SOPS change and deploy EC2 to pick up the new env.
@@ -16,11 +17,13 @@
 # Prerequisites:
 # - sops configured and working
 # - SSH access to GPU instances (keys in ~/.ssh/thomashkey, ~/.runpod/ssh/RunPod-Key-Go)
+# - wrangler CLI authenticated
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
+ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
 
 DRY_RUN=false
 
@@ -48,9 +51,13 @@ run() {
     if $DRY_RUN; then
         log "[dry-run] $1"
         return 0
-    else
-        eval "$2"
     fi
+
+    set +e
+    eval "$2"
+    local status=$?
+    set -e
+    return $status
 }
 
 # Get or generate token
@@ -83,7 +90,7 @@ update_remote_env() {
     local ssh_key=$3
     local env_path=$4  # e.g. $HOME/.env or /workspace/.env
     local label=$5
-    local restart_cmd=$6  # optional command to restart services
+    local restart_kind=$6
 
     log "Updating $label..."
 
@@ -96,6 +103,7 @@ update_remote_env() {
 
     if $ssh_target "bash -s" <<REMOTE_EOF
         ENV_FILE="$env_path"
+        RESTART_KIND="$restart_kind"
         if [ -f "\$ENV_FILE" ]; then
             sed -i 's/^PLN_GPU_TOKEN=.*/PLN_GPU_TOKEN=${NEW_TOKEN}/' "\$ENV_FILE"
             if ! grep -q PLN_GPU_TOKEN "\$ENV_FILE"; then
@@ -107,7 +115,43 @@ update_remote_env() {
         echo "Updated \$ENV_FILE"
         VERIFY=\$(grep PLN_GPU_TOKEN "\$ENV_FILE" | cut -d= -f2)
         echo "Verify: PLN_GPU_TOKEN=\${VERIFY:0:8}..."
-        ${restart_cmd}
+
+        start_screen_worker() {
+            local name=\$1
+            local workdir=\$2
+            local gpu=\$3
+            local port=\$4
+            local public_ip=\$5
+            local service_type=\$6
+            local log_file=\$7
+
+            screen -S "\$name" -X quit 2>/dev/null || true
+            screen -dmS "\$name" bash -lc "cd '\$workdir' && set -a && [ -f \$HOME/.env ] && source \$HOME/.env && set +a && source venv/bin/activate && CUDA_VISIBLE_DEVICES=\$gpu PORT=\$port PUBLIC_IP=\$public_ip PUBLIC_PORT=443 SERVICE_TYPE=\$service_type python server.py 2>&1 | tee \$log_file"
+        }
+
+        case "\$RESTART_KIND" in
+            flux_zimage_screen)
+                if ! command -v screen >/dev/null 2>&1; then
+                    echo "screen is required to restart Flux/Z-Image workers"
+                    exit 1
+                fi
+                start_screen_worker flux-gpu0 /opt/pollinations/image.pollinations.ai/nunchaku 0 8765 hsl3ksl31lvrcc-8765.proxy.runpod.net flux /tmp/flux-gpu0.log
+                start_screen_worker flux-gpu1 /opt/pollinations/image.pollinations.ai/nunchaku 1 8766 hsl3ksl31lvrcc-8766.proxy.runpod.net flux /tmp/flux-gpu1.log
+                start_screen_worker zimage-gpu2 /opt/pollinations/image.pollinations.ai/z-image 2 8767 hsl3ksl31lvrcc-8767.proxy.runpod.net zimage /tmp/zimage-gpu2.log
+                start_screen_worker zimage-gpu3 /opt/pollinations/image.pollinations.ai/z-image 3 8768 hsl3ksl31lvrcc-8768.proxy.runpod.net zimage /tmp/zimage-gpu3.log
+                screen -ls
+                ;;
+            klein_workspace)
+                if [ ! -f /workspace/restart.sh ]; then
+                    echo "Missing /workspace/restart.sh"
+                    exit 1
+                fi
+                bash /workspace/restart.sh
+                ;;
+            gh200_systemd)
+                sudo systemctl restart ltx2.service acestep.service sana.service
+                ;;
+        esac
 REMOTE_EOF
     then
         log "✅ $label"
@@ -146,7 +190,20 @@ for f in "${SOPS_FILES[@]}"; do
 done
 
 #######################################
-# 2. RunPod pod hsl3ksl31lvrcc
+# 2. Update Wrangler secrets used by enter.pollinations.ai
+#######################################
+section "Updating Wrangler Secrets (enter.pollinations.ai)"
+
+run "wrangler secret put PLN_GPU_TOKEN --env production" \
+    "echo '$NEW_TOKEN' | npx wrangler secret put PLN_GPU_TOKEN --env production --config '$ENTER_DIR/wrangler.toml'"
+if [ $? -eq 0 ] || $DRY_RUN; then log "✅ production"; else error "❌ production"; FAILURES+=("Wrangler: production"); fi
+
+run "wrangler secret put PLN_GPU_TOKEN --env staging" \
+    "echo '$NEW_TOKEN' | npx wrangler secret put PLN_GPU_TOKEN --env staging --config '$ENTER_DIR/wrangler.toml'"
+if [ $? -eq 0 ] || $DRY_RUN; then log "✅ staging"; else error "❌ staging"; FAILURES+=("Wrangler: staging"); fi
+
+#######################################
+# 3. RunPod pod hsl3ksl31lvrcc
 #    Flux + Z-Image (4x RTX 4090)
 #    SSH: root@38.65.239.17:28895
 #    Workers: screen sessions (flux-gpu0, flux-gpu1, zimage-gpu2, zimage-gpu3)
@@ -154,11 +211,11 @@ done
 #######################################
 section "Updating RunPod pod hsl3ksl31lvrcc (Flux + Z-Image)"
 
-run "SSH to RunPod Flux+Z-Image pod — update .env" \
-    "update_remote_env 'root@38.65.239.17' '28895' '$THOMASH_KEY' '\$HOME/.env' 'RunPod hsl3ksl31lvrcc (Flux+Z-Image)' 'echo \"Note: restart screen sessions to pick up new token\"'"
+run "SSH to RunPod Flux+Z-Image pod — update .env + restart workers" \
+    "update_remote_env 'root@38.65.239.17' '28895' '$THOMASH_KEY' '\$HOME/.env' 'RunPod hsl3ksl31lvrcc (Flux+Z-Image)' 'flux_zimage_screen'"
 
 #######################################
-# 3. RunPod pod pi90tfk3sa9t12
+# 4. RunPod pod pi90tfk3sa9t12
 #    Klein 4B (1x RTX 3090)
 #    SSH: root@213.144.200.243:10207
 #    Worker: FastAPI handler.py on port 8000
@@ -166,11 +223,11 @@ run "SSH to RunPod Flux+Z-Image pod — update .env" \
 #######################################
 section "Updating RunPod pod pi90tfk3sa9t12 (Klein 4B)"
 
-run "SSH to RunPod Klein pod — update .env" \
-    "update_remote_env 'root@213.144.200.243' '10207' '$RUNPOD_KEY' '/workspace/.env' 'RunPod pi90tfk3sa9t12 (Klein 4B)' ''"
+run "SSH to RunPod Klein pod — update .env + restart worker" \
+    "update_remote_env 'root@213.144.200.243' '10207' '$RUNPOD_KEY' '/workspace/.env' 'RunPod pi90tfk3sa9t12 (Klein 4B)' 'klein_workspace'"
 
 #######################################
-# 4. Lambda Labs GH200
+# 5. Lambda Labs GH200
 #    LTX-2 (port 8765) + ACE-Step (port 8189) + Sana (port 8766)
 #    SSH: ubuntu@192.222.51.105
 #    Token: $HOME/.env → systemd services
@@ -178,7 +235,7 @@ run "SSH to RunPod Klein pod — update .env" \
 section "Updating Lambda Labs GH200 (LTX-2 + ACE-Step + Sana)"
 
 run "SSH to Lambda Labs GH200 — update .env + restart services" \
-    "update_remote_env 'ubuntu@192.222.51.105' '' '$THOMASH_KEY' '\$HOME/.env' 'Lambda GH200 (LTX-2+ACE-Step+Sana)' 'sudo systemctl restart ltx2.service acestep.service sana.service 2>/dev/null || echo \"Some services not found — check manually\"'"
+    "update_remote_env 'ubuntu@192.222.51.105' '' '$THOMASH_KEY' '\$HOME/.env' 'Lambda GH200 (LTX-2+ACE-Step+Sana)' 'gh200_systemd'"
 
 #######################################
 # Summary
@@ -190,6 +247,7 @@ log "Token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
 echo ""
 echo "Fan-out targets:"
 echo "  - SOPS: image.pollinations.ai/secrets/env.json"
+echo "  - Wrangler: enter.pollinations.ai (production, staging)"
 echo "  - RunPod hsl3ksl31lvrcc (Flux + Z-Image, 4x RTX 4090)"
 echo "  - RunPod pi90tfk3sa9t12 (Klein 4B, RTX 3090)"
 echo "  - Lambda Labs GH200 (LTX-2 + ACE-Step + Sana)"
@@ -199,9 +257,9 @@ if [ ${#FAILURES[@]} -eq 0 ]; then
     log "✅ All updates completed successfully!"
     echo ""
     log "Next steps:"
-    echo "  1. Restart screen sessions on RunPod pods if not auto-restarted"
-    echo "  2. Commit the SOPS file change"
-    echo "  3. Deploy EC2 image service (CI handles this on merge)"
+    echo "  1. Commit the SOPS file changes"
+    echo "  2. Deploy EC2 image service so it picks up PLN_GPU_TOKEN from SOPS"
+    echo "  3. Verify image generation and ACE-Step after rollout"
 else
     error "The following updates failed:"
     for failure in "${FAILURES[@]}"; do

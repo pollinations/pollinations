@@ -11,8 +11,8 @@
 
 | Script | Token | What it does |
 |--------|-------|-------------|
-| `rotate-pln-enter-token.sh` | `PLN_ENTER_TOKEN` | Updates SOPS → GitHub secrets → Wrangler secrets |
-| `rotate-pln-gpu-token.sh` | `PLN_GPU_TOKEN` | Updates SOPS → Wrangler → SSH to each GPU worker, updates `.env`, restarts services |
+| `rotate-infra-enter-token.sh` | `PLN_ENTER_TOKEN` | Updates SOPS → GitHub secrets → Wrangler secrets |
+| `rotate-infra-gpu-token.sh` | `PLN_GPU_TOKEN` | Updates SOPS → Wrangler → SSH to each GPU worker, updates `.env`, restarts services |
 
 Both scripts accept `--dry-run` to preview without making changes, and an optional `NEW_TOKEN` argument (otherwise generates one via `openssl rand -hex 32`).
 
@@ -20,15 +20,15 @@ Both scripts accept `--dry-run` to preview without making changes, and an option
 
 ```bash
 # Dry run first
-./rotate-pln-enter-token.sh --dry-run
-./rotate-pln-gpu-token.sh --dry-run
+./rotate-infra-enter-token.sh --dry-run
+./rotate-infra-gpu-token.sh --dry-run
 
 # Real run (generates new token automatically)
-./rotate-pln-enter-token.sh
-./rotate-pln-gpu-token.sh
+./rotate-infra-enter-token.sh
+./rotate-infra-gpu-token.sh
 
 # With a specific token
-./rotate-pln-enter-token.sh TOKEN_VALUE
+./rotate-infra-enter-token.sh TOKEN_VALUE
 ```
 
 After running, commit the SOPS file changes and merge to trigger EC2 deploy.
@@ -56,8 +56,8 @@ If rotation breaks production, revert to the previous token value:
 git log -p -- image.pollinations.ai/secrets/env.json | head -50
 
 # 2. Re-run the script with the old token
-./rotate-pln-enter-token.sh OLD_TOKEN_VALUE
-./rotate-pln-gpu-token.sh OLD_TOKEN_VALUE
+./rotate-infra-enter-token.sh OLD_TOKEN_VALUE
+./rotate-infra-gpu-token.sh OLD_TOKEN_VALUE
 ```
 
 Or revert the SOPS commit and redeploy.

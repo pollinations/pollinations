@@ -3,6 +3,7 @@ DESCRIPTION >
     Only counts 5xx server errors as downtime (user errors like 4xx don't affect availability).
     Supports start_date param for single-week queries to avoid Tinybird timeouts.
 
+TOKEN model_usage READ
 TOKEN tinybird_read READ
 
 NODE weekly_health_stats_node

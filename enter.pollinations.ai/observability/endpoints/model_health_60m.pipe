@@ -1,3 +1,4 @@
+TOKEN model_health_read READ
 TOKEN tinybird_read READ
 
 DESCRIPTION >

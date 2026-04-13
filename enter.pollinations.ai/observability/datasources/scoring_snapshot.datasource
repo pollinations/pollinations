@@ -1,4 +1,5 @@
 TOKEN scoring_snapshot_append APPEND
+TOKEN grafana_generation_read READ
 TOKEN tinybird_read READ
 
 DESCRIPTION >

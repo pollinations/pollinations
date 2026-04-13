@@ -3,6 +3,7 @@ DESCRIPTION >
     Returns data for the last N weeks.
     Supports start_date param for single-week queries to avoid Tinybird timeouts.
 
+TOKEN model_usage READ
 TOKEN tinybird_read READ
 
 NODE weekly_active_users_node

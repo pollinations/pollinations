@@ -2,6 +2,8 @@ DESCRIPTION >
     Get request counts per GitHub username in the last 24 hours.
     Used by the app metrics script to show activity levels per app author.
 
+TOKEN app_metrics READ
+TOKEN model_usage READ
 TOKEN tinybird_read READ
 
 NODE app_request_counts_node

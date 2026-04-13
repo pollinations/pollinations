@@ -164,24 +164,30 @@ export async function callAzureFluxKontext(
                 throw error;
             }
 
-            // Determine file extension from Content-Type header
+            // Determine file extension and MIME type from Content-Type header
             const contentType = imageResponse.headers.get("content-type") || "";
             let extension = ".png"; // Default extension
+            let mimeType = "image/png"; // Default MIME type
 
             if (contentType.startsWith("image/")) {
                 const mimeExtension = contentType.split("/")[1].split(";")[0];
                 extension = `.${mimeExtension}`;
+                mimeType = `image/${mimeExtension}`;
             }
 
-            // Create a Blob and append to FormData
+            // Use the image[] array notation as required by Azure OpenAI API
+            // Create a Blob with explicit MIME type to avoid application/octet-stream
             const imageBlob = new Blob([imageArrayBuffer], {
-                type: contentType,
+                type: mimeType,
             });
-            formData.append("image", imageBlob, `image${extension}`);
+            formData.append("image[]", imageBlob, `image${extension}`);
         } catch (error) {
             logError("Error processing image for editing:", error);
             throw new Error(`Failed to process image: ${error.message}`);
         }
+
+        // Add required parameters
+        formData.append("n", "1");
 
         // Log the endpoint for debugging
         logCloudflare(`Sending edit request to endpoint: ${endpoint}`);

@@ -1,0 +1,32 @@
+{
+  "pr_number": 10182,
+  "title": "feat(apps): add Pigment, PseudoWrite, Tawer_bot, JFOAC to showcase",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10182",
+  "merged_at": "2026-04-13T15:45:59Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Four new apps bloom",
+    "blurb": "Four incredible new community apps just landed in the showcase, from AI art generators to a Telegram bot with over 5,000 users. Huge shoutout to @SmokePigDad and @tawerrd for building such cool tools!",
+    "summary": "Added Pigment, PseudoWrite, Tawer_bot, and JFOAC to the official community showcase.",
+    "impact": "Highlights new community creations, giving visibility to developers @SmokePigDad and @tawerrd while providing users with fresh AI tools to explore.",
+    "keywords": [
+      "showcase",
+      "community",
+      "apps",
+      "telegram",
+      "ai-art"
+    ],
+    "visual_concept": "Polly the bee acting as a curator, hanging up four new pieces of art/posters on a cozy wooden bulletin board to represent the four new community apps.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, hanging four new colorful pixel-art posters on a wooden bulletin board in a warm garden shed. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10182.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, hanging four new colorful pixel-art posters on a wooden bulletin board in a warm garden shed. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-13T15:46:51.164845+00:00"
+}

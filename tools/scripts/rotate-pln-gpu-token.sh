@@ -2,7 +2,7 @@
 # Rotate PLN_GPU_TOKEN — the token the EC2 image service uses to
 # authenticate requests to GPU worker instances (Flux, Z-Image, Klein, LTX-2).
 #
-# Usage: ./rotate-image-to-gpu-token.sh [--dry-run] [NEW_TOKEN]
+# Usage: ./rotate-pln-gpu-token.sh [--dry-run] [NEW_TOKEN]
 #
 # Trust boundary: EC2 image service → GPU workers (RunPod, Lambda Labs)
 #

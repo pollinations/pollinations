@@ -11,34 +11,26 @@
 
 | Script | Token | What it does |
 |--------|-------|-------------|
-| `rotate-all-tokens.sh` | Both | Orchestrator — generates tokens, calls per-token scripts, health-checks, optionally opens PR |
-| `rotate-enter-to-backend-token.sh` | `PLN_ENTER_TOKEN` | Updates SOPS → GitHub secrets → Wrangler secrets |
-| `rotate-image-to-gpu-token.sh` | `PLN_GPU_TOKEN` | Updates SOPS → SSH to each GPU worker, updates `.env`, restarts services |
+| `rotate-infra-tokens.sh` | Both | Orchestrator — generates tokens, calls per-token scripts, health-checks, optionally opens PR |
+| `rotate-pln-enter-token.sh` | `PLN_ENTER_TOKEN` | Updates SOPS → GitHub secrets → Wrangler secrets |
+| `rotate-pln-gpu-token.sh` | `PLN_GPU_TOKEN` | Updates SOPS → SSH to each GPU worker, updates `.env`, restarts services |
 
 All scripts accept `--dry-run` to preview without making changes. Per-token scripts accept an optional `NEW_TOKEN` argument (otherwise generates one via `openssl rand -hex 32`).
 
 ## Running
 
-### Via GitHub Actions (recommended)
-
-Go to **Actions → "Rotate internal auth tokens" → Run workflow**. Options:
-- **dry_run**: preview without changes
-- **commit_pr**: auto-create PR with SOPS diffs after rotation
-
-### Locally
-
 ```bash
 # Rotate everything (orchestrator)
-./rotate-all-tokens.sh --dry-run          # preview
-./rotate-all-tokens.sh                    # real run
-./rotate-all-tokens.sh --commit-pr        # real run + auto-PR
+./rotate-infra-tokens.sh --dry-run          # preview
+./rotate-infra-tokens.sh                    # real run
+./rotate-infra-tokens.sh --commit-pr        # real run + auto-PR
 
 # Individual token rotation
-./rotate-enter-to-backend-token.sh --dry-run
-./rotate-image-to-gpu-token.sh --dry-run
+./rotate-pln-enter-token.sh --dry-run
+./rotate-pln-gpu-token.sh --dry-run
 
 # With a specific token
-./rotate-enter-to-backend-token.sh TOKEN_VALUE
+./rotate-pln-enter-token.sh TOKEN_VALUE
 ```
 
 After running, commit the SOPS file changes and merge to trigger EC2 deploy.
@@ -63,8 +55,8 @@ If rotation breaks production, revert to the previous token value:
 git log -p -- image.pollinations.ai/secrets/env.json | head -50
 
 # 2. Re-run the script with the old token
-./rotate-enter-to-backend-token.sh OLD_TOKEN_VALUE
-./rotate-image-to-gpu-token.sh OLD_TOKEN_VALUE
+./rotate-pln-enter-token.sh OLD_TOKEN_VALUE
+./rotate-pln-gpu-token.sh OLD_TOKEN_VALUE
 ```
 
 Or revert the SOPS commit and redeploy.

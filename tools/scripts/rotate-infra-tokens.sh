@@ -1,7 +1,7 @@
 #!/bin/bash
 # Orchestrator: rotate all internal auth tokens in one pass.
 #
-# Usage: ./rotate-all-tokens.sh [--dry-run] [--commit-pr]
+# Usage: ./rotate-infra-tokens.sh [--dry-run] [--commit-pr]
 #
 # Generates fresh PLN_ENTER_TOKEN + PLN_GPU_TOKEN, calls the
 # per-token scripts to fan out, health-checks production, and optionally
@@ -66,7 +66,7 @@ section "Rotating PLN_ENTER_TOKEN (enter → EC2)"
 FLAGS=""
 if $DRY_RUN; then FLAGS="--dry-run"; fi
 
-if "$SCRIPT_DIR/rotate-enter-to-backend-token.sh" $FLAGS "$ENTER_TOKEN"; then
+if "$SCRIPT_DIR/rotate-pln-enter-token.sh" $FLAGS "$ENTER_TOKEN"; then
     log "✅ PLN_ENTER_TOKEN rotation completed"
 else
     error "❌ PLN_ENTER_TOKEN rotation failed"
@@ -78,7 +78,7 @@ fi
 #######################################
 section "Rotating PLN_GPU_TOKEN (EC2 → GPU workers)"
 
-if "$SCRIPT_DIR/rotate-image-to-gpu-token.sh" $FLAGS "$BACKEND_TOKEN"; then
+if "$SCRIPT_DIR/rotate-pln-gpu-token.sh" $FLAGS "$BACKEND_TOKEN"; then
     log "✅ PLN_GPU_TOKEN rotation completed"
 else
     error "❌ PLN_GPU_TOKEN rotation failed"

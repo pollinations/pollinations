@@ -15,10 +15,10 @@ All scripts live in `tools/scripts/`. See `tools/scripts/ROTATION.md` for the fu
 
 ```bash
 # Rotate PLN_ENTER_TOKEN (enter → EC2)
-./tools/scripts/rotate-enter-to-backend-token.sh [--dry-run] [TOKEN]
+./tools/scripts/rotate-pln-enter-token.sh [--dry-run] [TOKEN]
 
 # Rotate PLN_GPU_TOKEN (EC2 → GPU workers)
-./tools/scripts/rotate-image-to-gpu-token.sh [--dry-run] [TOKEN]
+./tools/scripts/rotate-pln-gpu-token.sh [--dry-run] [TOKEN]
 ```
 
 Both scripts:
@@ -28,13 +28,13 @@ Both scripts:
 
 ## Rotation automation (planned)
 
-### PR 1 — Infra token rotation (`feat/infra-token-rotation`)
+### Infra token rotation
 
-Orchestrator + GitHub Actions workflow (`workflow_dispatch`, no cron yet):
-- Generates fresh `PLN_ENTER_TOKEN` + `PLN_GPU_TOKEN`
+Run the orchestrator locally or in CI:
+- `rotate-infra-tokens.sh` generates fresh `PLN_ENTER_TOKEN` + `PLN_GPU_TOKEN`
 - Calls per-token scripts to fan out
 - Health-checks production after rotation
-- Opens a PR with SOPS diffs on success
+- Optionally opens a PR with SOPS diffs (`--commit-pr`)
 
 ### PR 2 — External provider keys (`feat/provider-key-rotation`)
 
@@ -62,8 +62,8 @@ Quarterly manual-trigger workflow to re-encrypt all SOPS files with a new age ma
 git log -p -- image.pollinations.ai/secrets/env.json | head -50
 
 # Re-run with the old token
-./tools/scripts/rotate-enter-to-backend-token.sh OLD_TOKEN
-./tools/scripts/rotate-image-to-gpu-token.sh OLD_TOKEN
+./tools/scripts/rotate-pln-enter-token.sh OLD_TOKEN
+./tools/scripts/rotate-pln-gpu-token.sh OLD_TOKEN
 ```
 
 Or revert the SOPS commit and redeploy.

@@ -147,19 +147,18 @@ These instances may be down. Check before attempting:
 | Flow | Token | Header | Location |
 |------|-------|--------|----------|
 | enter → EC2 | `PLN_ENTER_TOKEN` | `x-enter-token` | SOPS secrets, Wrangler |
-| EC2 → io.net | `PLN_IMAGE_BACKEND_TOKEN` | `x-backend-token` | `$HOME/.env` on io.net |
-| EC2 → Modal | `PLN_IMAGE_BACKEND_TOKEN` | `x-backend-token` | Modal `backend-token` secret |
+| EC2 → RunPod/Lambda | `PLN_IMAGE_BACKEND_TOKEN` | `x-backend-token` | `$HOME/.env` on GPU workers |
 
 ## Rotation Scripts
 
-For future token rotations:
+See `tools/scripts/ROTATION.md` for full reference.
 
 ```bash
 # Rotate PLN_ENTER_TOKEN (enter → EC2)
-./scripts/rotate-enter-token.sh
+./tools/scripts/rotate-enter-to-backend-token.sh [--dry-run] [TOKEN]
 
-# Rotate PLN_IMAGE_BACKEND_TOKEN (EC2 → backends)
-./scripts/rotate-backend-token.sh
+# Rotate PLN_IMAGE_BACKEND_TOKEN (EC2 → GPU workers)
+./tools/scripts/rotate-image-to-gpu-token.sh [--dry-run] [TOKEN]
 ```
 
 ---

@@ -118,23 +118,32 @@ REMOTE_EOF
 }
 
 #######################################
-# 1. Update SOPS file
+# 1. Update SOPS files
 #######################################
 section "Updating SOPS-encrypted secrets"
 
-SOPS_FILE="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-if [ -f "$SOPS_FILE" ]; then
-    run "sops --set PLN_GPU_TOKEN in image secrets" \
-        "sops --set '[\"PLN_GPU_TOKEN\"] \"$NEW_TOKEN\"' '$SOPS_FILE'"
-    if [ $? -eq 0 ] || $DRY_RUN; then
-        log "✅ image.pollinations.ai/secrets/env.json"
-    else
-        error "❌ image.pollinations.ai/secrets/env.json"
-        FAILURES+=("SOPS: image secrets")
+SOPS_FILES=(
+    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
+    "$REPO_ROOT/enter.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/enter.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/enter.pollinations.ai/secrets/prod.vars.json"
+)
+
+for f in "${SOPS_FILES[@]}"; do
+    fname=$(basename "$(dirname "$(dirname "$f")")")/$(basename "$f")
+    if [ ! -f "$f" ]; then
+        warn "Skipping $fname — file not found"
+        continue
     fi
-else
-    warn "SOPS file not found: $SOPS_FILE"
-fi
+    run "sops --set PLN_GPU_TOKEN in $fname" \
+        "sops --set '[\"PLN_GPU_TOKEN\"] \"$NEW_TOKEN\"' '$f'"
+    if [ $? -eq 0 ] || $DRY_RUN; then
+        log "✅ $fname"
+    else
+        error "❌ $fname"
+        FAILURES+=("SOPS: $fname")
+    fi
+done
 
 #######################################
 # 2. RunPod pod hsl3ksl31lvrcc

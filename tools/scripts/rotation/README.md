@@ -5,7 +5,7 @@
 | Token | Trust boundary | SOPS files | Fan-out targets |
 |-------|---------------|------------|-----------------|
 | `PLN_ENTER_TOKEN` | CF Worker (enter) → EC2 (image/text) | enter `{dev,staging,prod}.vars.json`, image `env.json`, text `env.json` | GitHub secrets (`PLN_ENTER_TOKEN`, `ENTER_TOKEN`), Wrangler (production, staging) |
-| `PLN_GPU_TOKEN` | EC2 image service → GPU workers | image `env.json` | RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
+| `PLN_GPU_TOKEN` | EC2 image + enter → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
 
 ## Scripts
 

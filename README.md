@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎨 StyleOps](https://styleops.co) | Generate cohesive brand assets from detailed style guides using StyleOps, an AI-powered brand visual generator powered by Pollinations.ai (Flux model). | [@web](https://github.com/web) |
 | [🤖 Overtli Studio Suite](188361908) | OVERTLI STUDIO Suite is a collection of nodes for Comfy UI that makes local and cloud AI generation easier through a unified advanced router and specialized media nodes. It uses Pollinations.ai as its | [@api](https://github.com/api) |
 | [🧑‍🎨 Pollinations Avatar Gen - Reforged](21169748) | Extends the local LLM frontend SillyTavern with Pollinations Avatar Gen - Reforged, an upgraded Reforged extension that builds on Nidelon pollinations-avatar-gen. | [@browser-ext](https://github.com/browser-ext) |
 | [🤖 AI LOGS](60020024) | Track work habits, productivity, and wellbeing with AI LOGS, a privacy-first AI-powered desktop tool that records local activity and provides performance observability and usage insights. | [@desktop](https://github.com/desktop) |
@@ -29,7 +30,6 @@
 | [💬 T-Buddy CHAT](https://tbuddy-taupe.vercel.app/) | Suggests context and phrasing for complex social or professional chats using T-Buddy CHAT by analyzing chat text or screenshots. | [@web](https://github.com/web) |
 | [🌸 Guess the Flower](https://guess-the-flower.netlify.app/) | Identify flowers from photos using Guess the Flower, an AI-powered quiz that asks players to name flower species. | [@web](https://github.com/web) |
 | [🎬 Oasis AI](https://oasis-demo-brown.vercel.app/) | Convert long-form LinkedIn or Twitter posts into short vertical Instagram Reels with Oasis AI. | [@web](https://github.com/web) |
-| [🦸‍♂️ Isekai Character Generator](https://isekai-character-generator.pages.dev) | Generate fully realized multiversal heroes with Isekai Character Generator using Seeded Entropy Logic Mulberry32 PRNG to produce identity, stats, backstory, and visual appearance. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

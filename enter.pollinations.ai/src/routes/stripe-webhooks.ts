@@ -29,7 +29,7 @@ async function sendStripeEventToTinybird(
 ): Promise<void> {
     const e = env as unknown as Record<string, string>;
     const tinybirdUrl = e.TINYBIRD_STRIPE_INGEST_URL;
-    const tinybirdToken = e.TINYBIRD_STRIPE_INGEST_TOKEN;
+    const tinybirdToken = e.TINYBIRD_INGEST_TOKEN;
 
     if (!tinybirdUrl || !tinybirdToken) {
         console.log("Tinybird Stripe ingest not configured, skipping");

@@ -5,6 +5,7 @@ DESCRIPTION >
 
 TOKEN app_metrics READ
 TOKEN model_usage READ
+TOKEN tinybird_read READ
 
 NODE app_byop_hostnames_node
 SQL >

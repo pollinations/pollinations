@@ -1,5 +1,7 @@
 TOKEN stripe_event_append APPEND
 TOKEN stripe_event_read READ
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
 
 DESCRIPTION >
 Stripe checkout webhook events (payments) with full JSON payload

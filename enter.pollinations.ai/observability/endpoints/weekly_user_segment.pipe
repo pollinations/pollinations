@@ -6,6 +6,7 @@ DESCRIPTION >
     outer node pivots back to the original column schema.
 
 TOKEN model_usage READ
+TOKEN tinybird_read READ
 
 NODE grouped_by_byop
 SQL >

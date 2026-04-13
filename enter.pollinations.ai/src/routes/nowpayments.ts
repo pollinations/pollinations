@@ -65,6 +65,10 @@ interface NowPaymentsInvoiceResponse {
     updated_at: string;
 }
 
+type NowPaymentsBindings = Cloudflare.Env & {
+    NOWPAYMENTS_API_KEY?: string;
+};
+
 function getNowPaymentsApiUrl(env: Cloudflare.Env): string {
     const mode =
         env.NOWPAYMENTS_ENV === "production" ? "production" : "sandbox";
@@ -94,8 +98,9 @@ export const nowpaymentsRoutes = new Hono<Env>()
             const { pack } = c.req.valid("param");
             const { redirect } = c.req.valid("query");
 
-            const apiKey = c.env.NOWPAYMENTS_API_KEY;
-            const baseUrl = getNowPaymentsApiUrl(c.env);
+            const env = c.env as NowPaymentsBindings;
+            const apiKey = env.NOWPAYMENTS_API_KEY ?? "";
+            const baseUrl = getNowPaymentsApiUrl(env);
 
             if (!apiKey) {
                 log.error("NOWPAYMENTS_API_KEY not configured");
@@ -103,6 +108,11 @@ export const nowpaymentsRoutes = new Hono<Env>()
                     message: "Crypto payments not configured",
                 });
             }
+
+            const headers = new Headers({
+                "Content-Type": "application/json",
+            });
+            headers.set("x-api-key", apiKey);
 
             const priceAmount = PACK_AMOUNTS[pack];
             const description = PACK_DESCRIPTIONS[pack];
@@ -129,10 +139,7 @@ export const nowpaymentsRoutes = new Hono<Env>()
             try {
                 const response = await fetch(`${baseUrl}/invoice`, {
                     method: "POST",
-                    headers: {
-                        "x-api-key": apiKey,
-                        "Content-Type": "application/json",
-                    },
+                    headers,
                     body: JSON.stringify({
                         price_amount: priceAmount,
                         price_currency: "usd",

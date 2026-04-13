@@ -1,0 +1,33 @@
+{
+  "pr_number": 10178,
+  "title": "Add The Institute of Everything to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10178",
+  "merged_at": "2026-04-13T13:00:30Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The Institute of Everything",
+    "blurb": "The Institute of Everything just joined our community showcase. It generates complete, straight-faced museum exhibits for literally any concept, no matter how absurd or mundane.",
+    "summary": "Added 'The Institute of Everything' to the community app showcase, a new writing tool that generates fake academic museum exhibits from any prompt.",
+    "impact": "Creators can now generate highly detailed, deadpan academic exhibits for niche, absurd, or mundane concepts.",
+    "keywords": [
+      "community",
+      "app-showcase",
+      "writing",
+      "generator"
+    ],
+    "visual_concept": "A cozy museum setting where Polly the bee acts as a serious academic curator inspecting a completely absurd object on a pedestal.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny academic glasses, inspecting a glowing pixelated half-eaten donut displayed on a fancy museum pedestal. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10178.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny academic glasses, inspecting a glowing pixelated half-eaten donut displayed on a fancy museum pedestal. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-13T13:01:32.379217+00:00",
+  "app_name": "The Institute of Everything",
+  "app_url": "https://rizperdana.github.io/institute-ai/"
+}

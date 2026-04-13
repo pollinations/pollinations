@@ -1,0 +1,34 @@
+{
+  "pr_number": 10179,
+  "title": "consolidate GPU tokens, rewrite rotation scripts, clean up stale infra docs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10179",
+  "merged_at": "2026-04-13T17:06:05Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One token to rule them all",
+    "blurb": "We've consolidated our GPU service tokens and swept out some dusty infrastructure docs. Keeping the backend tidy so the hive runs smoother than ever.",
+    "summary": "Consolidated various GPU service tokens into a single unified token and rewrote our internal rotation scripts for better security and maintainability.",
+    "impact": "This streamlines our internal deployment processes and makes managing our RunPod and Lambda Labs instances much easier.",
+    "keywords": [
+      "infrastructure",
+      "security",
+      "tokens",
+      "gpu",
+      "maintenance"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny toolbelt, organizing a server rack. The Monitor Robot helping by holding a single, shiny new token, representing the consolidated PLN_GPU_TOKEN.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny toolbelt, organizing a glowing server rack. A chunky pixel robot with a CRT monitor head holds up a single shiny lime green (#ecf874) token. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10179.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny toolbelt, organizing a glowing server rack. A chunky pixel robot with a CRT monitor head holds up a single shiny lime green (#ecf874) token. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-13T17:07:03.403745+00:00"
+}

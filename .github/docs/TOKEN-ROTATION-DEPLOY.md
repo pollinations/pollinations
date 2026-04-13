@@ -26,24 +26,6 @@ Both scripts:
 - Write to SOPS before fanning out
 - Support `--dry-run` to preview without changes
 
-## Rotation automation (planned)
-
-### Infra token rotation
-
-Run the orchestrator locally or in CI:
-- `rotate-infra-tokens.sh` generates fresh `PLN_ENTER_TOKEN` + `PLN_GPU_TOKEN`
-- Calls per-token scripts to fan out
-- Health-checks production after rotation
-- Optionally opens a PR with SOPS diffs (`--commit-pr`)
-
-### PR 2 — External provider keys (`feat/provider-key-rotation`)
-
-Per-provider rotation for externally-issued API keys (Azure, AWS, GCP, etc.). Some providers have rotation APIs; others are dashboard-only with documented manual steps.
-
-### PR 3 — SOPS age key (`feat/sops-age-key-rotation`)
-
-Quarterly manual-trigger workflow to re-encrypt all SOPS files with a new age master key. Does NOT rotate plaintext values — orthogonal to token rotation.
-
 ## What breaks what
 
 | Scenario | Impact |
@@ -82,10 +64,4 @@ Or revert the SOPS commit and redeploy.
 |--------|---------|
 | `BETTER_AUTH_SECRET` | Needs multi-secret array — rotating now kills all sessions |
 | `STRIPE_WEBHOOK_SECRET` | Needs dual-secret verifier |
-| Provider API keys | Each provider has different rotation mechanisms (PR 2) |
-
-## History
-
-- **PR #7807** (`security/token-rotation-clean`) — original token rotation after Jan 2025 compromise. Introduced SOPS encryption + per-token scripts.
-- **PR #10126** — renamed GPU providers from Vast.ai/io.net to RunPod.
-- **PR #10179** — renamed rotation scripts to describe trust boundaries, updated targets to RunPod/Lambda, removed Modal, added SOPS-write + dry-run.
+| Provider API keys | Each provider has different rotation mechanisms |

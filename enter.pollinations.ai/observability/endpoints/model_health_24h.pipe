@@ -1,4 +1,4 @@
-TOKEN model_health_read READ
+TOKEN tinybird_read READ
 
 DESCRIPTION >
 Model health statistics for the last 24 hours, grouped by model and event type.

@@ -118,7 +118,7 @@ export type TierEvent = {
 export async function sendTierEventToTinybird(
     event: Omit<TierEvent, "timestamp">,
     tinybirdTierIngestUrl: string | undefined,
-    tinybirdTierIngestToken: string | undefined,
+    tinybirdIngestToken: string | undefined,
     log?: Logger,
 ): Promise<void> {
     if (!tinybirdTierIngestUrl) {
@@ -127,10 +127,8 @@ export async function sendTierEventToTinybird(
         );
         return;
     }
-    if (!tinybirdTierIngestToken) {
-        log?.warn(
-            "TINYBIRD_TIER_INGEST_TOKEN not configured, skipping tier event",
-        );
+    if (!tinybirdIngestToken) {
+        log?.warn("TINYBIRD_INGEST_TOKEN not configured, skipping tier event");
         return;
     }
 
@@ -146,7 +144,7 @@ export async function sendTierEventToTinybird(
             const response = await fetch(tinybirdTierIngestUrl, {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${tinybirdTierIngestToken}`,
+                    Authorization: `Bearer ${tinybirdIngestToken}`,
                     "Content-Type": "application/x-ndjson",
                 },
                 body,

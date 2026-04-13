@@ -16,7 +16,7 @@ async function sendCryptoEventToTinybird(
 ): Promise<void> {
     const e = env as unknown as Record<string, string>;
     const tinybirdUrl = e.TINYBIRD_CRYPTO_INGEST_URL;
-    const tinybirdToken = e.TINYBIRD_CRYPTO_INGEST_TOKEN;
+    const tinybirdToken = e.TINYBIRD_INGEST_TOKEN;
 
     if (!tinybirdUrl || !tinybirdToken) {
         log.debug("Tinybird Crypto ingest not configured, skipping");

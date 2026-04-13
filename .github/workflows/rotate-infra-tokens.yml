@@ -35,6 +35,20 @@ jobs:
             exit 1
           fi
 
+      - name: Verify actor is authorized
+        env:
+          ACTOR: ${{ github.actor }}
+        run: |
+          ALLOWED="voodoohop ElliotEtag"
+          if echo "$ALLOWED" | grep -qw "$ACTOR"; then
+            echo "Actor $ACTOR is authorized"
+          else
+            echo "Actor $ACTOR is not in the rotation allowlist ($ALLOWED)."
+            echo "Add to the ALLOWED list in this workflow, or configure"
+            echo "production environment required reviewers in GitHub settings."
+            exit 1
+          fi
+
       - name: Generate GitHub App token
         id: app-token
         uses: actions/create-github-app-token@v1
@@ -207,7 +221,7 @@ jobs:
             # Hit the text service with the new token — this is the same check
             # enter.pollinations.ai performs on every proxied request
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
-              -H "x-backend-token: $NEW_TOKEN" \
+              -H "x-enter-token: $NEW_TOKEN" \
               http://localhost:16385/)
             echo "Text service with new PLN_ENTER_TOKEN: HTTP $STATUS"
 
@@ -219,7 +233,7 @@ jobs:
 
             # Same for image service
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
-              -H "x-backend-token: $NEW_TOKEN" \
+              -H "x-enter-token: $NEW_TOKEN" \
               http://localhost:16384/)
             echo "Image service with new PLN_ENTER_TOKEN: HTTP $STATUS"
 

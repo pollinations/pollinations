@@ -1,11 +1,11 @@
 import { z } from "zod";
 import {
     getActivePriceDefinition,
-    getServiceDefinition,
-    getVisibleAudioServices,
-    getVisibleImageServices,
-    getVisibleTextServices,
-    type ServiceId,
+    getModelDefinition,
+    getVisibleAudioModels,
+    getVisibleImageModels,
+    getVisibleTextModels,
+    type ModelName,
 } from "./registry";
 
 // Pricing uses registry field names directly, filtering out zero/undefined values
@@ -43,11 +43,11 @@ function toFixedPoint(n: number): string {
  * Get enriched model information for a service
  * Combines pricing from price definitions with metadata from service definition
  */
-export function getModelInfo(serviceId: ServiceId): ModelInfo {
-    const service = getServiceDefinition(serviceId);
-    const priceDefinition = getActivePriceDefinition(serviceId);
+export function getModelInfo(modelName: ModelName): ModelInfo {
+    const service = getModelDefinition(modelName);
+    const priceDefinition = getActivePriceDefinition(modelName);
     if (!priceDefinition) {
-        throw new Error(`No price definition found for service: ${serviceId}`);
+        throw new Error(`No price definition found for model: ${modelName}`);
     }
     // Filter out date, zero, and undefined values from price definition
     const { date: _date, ...priceFields } = priceDefinition;
@@ -61,7 +61,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
     }
 
     return {
-        name: serviceId as string,
+        name: modelName as string,
         aliases: service.aliases,
         pricing,
         // User-facing metadata from service definition
@@ -81,19 +81,19 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
  * Get all text models with enriched information
  */
 export function getTextModelsInfo(): ModelInfo[] {
-    return getVisibleTextServices().map(getModelInfo);
+    return getVisibleTextModels().map(getModelInfo);
 }
 
 /**
  * Get all image models with enriched information
  */
 export function getImageModelsInfo(): ModelInfo[] {
-    return getVisibleImageServices().map(getModelInfo);
+    return getVisibleImageModels().map(getModelInfo);
 }
 
 /**
  * Get all audio models with enriched information
  */
 export function getAudioModelsInfo(): ModelInfo[] {
-    return getVisibleAudioServices().map(getModelInfo);
+    return getVisibleAudioModels().map(getModelInfo);
 }

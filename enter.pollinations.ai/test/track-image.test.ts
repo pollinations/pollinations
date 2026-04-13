@@ -1,4 +1,4 @@
-import type { ModelId, Usage } from "@shared/registry/registry.ts";
+import type { ModelName, Usage } from "@shared/registry/registry.ts";
 import { calculateCost } from "@shared/registry/registry.ts";
 import { expect, test } from "vitest";
 
@@ -6,7 +6,7 @@ import { expect, test } from "vitest";
 // Tests cost calculation properties without hardcoding specific values
 
 test("Image models should calculate costs proportionally to token count", () => {
-    const models: ModelId[] = [
+    const models: ModelName[] = [
         "flux",
         "nanobanana",
         "kontext",
@@ -49,7 +49,7 @@ test("Models with API costs should have non-zero operational costs", () => {
 });
 
 test("Cost should be non-negative for all models", () => {
-    const models: ModelId[] = [
+    const models: ModelName[] = [
         "flux",
         "nanobanana",
         "kontext",

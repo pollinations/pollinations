@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
-import type { ServiceId } from "@shared/registry/registry.ts";
-import { getServiceDefinition } from "@shared/registry/registry.ts";
+import type { ModelName } from "@shared/registry/registry.ts";
+import { getModelDefinition } from "@shared/registry/registry.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apikeyTable } from "@/db/schema/better-auth.ts";
 import {
@@ -85,8 +85,7 @@ async function deductUserBalance(
 ): Promise<void> {
     try {
         const isPaidOnly = modelResolved
-            ? (getServiceDefinition(modelResolved as ServiceId).paidOnly ??
-              false)
+            ? (getModelDefinition(modelResolved as ModelName).paidOnly ?? false)
             : false;
 
         if (isPaidOnly) {

@@ -46,8 +46,8 @@ export const VOICE_MAPPING: Record<string, string> = {
 export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
-export type AudioServiceId = keyof typeof AUDIO_SERVICES;
-export type AudioModelId = (typeof AUDIO_SERVICES)[AudioServiceId]["modelId"];
+export type AudioModelName = keyof typeof AUDIO_SERVICES;
+export type AudioModelId = (typeof AUDIO_SERVICES)[AudioModelName]["modelId"];
 
 export const AUDIO_SERVICES = {
     elevenlabs: {

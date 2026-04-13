@@ -31,7 +31,7 @@ import {
     getImageModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
-import { getServiceDefinition } from "@shared/registry/registry.ts";
+import { getModelDefinition } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -979,7 +979,7 @@ async function checkBalance(
     const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
-    const serviceDefinition = getServiceDefinition(model.resolved);
+    const serviceDefinition = getModelDefinition(model.resolved);
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
 
     // Pre-check: reject if balance < estimated cost for this model

@@ -3,8 +3,8 @@ import type { ServiceDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 
-export type ImageServiceId = keyof typeof IMAGE_SERVICES;
-export type ImageModelId = (typeof IMAGE_SERVICES)[ImageServiceId]["modelId"];
+export type ImageModelName = keyof typeof IMAGE_SERVICES;
+export type ImageModelId = (typeof IMAGE_SERVICES)[ImageModelName]["modelId"];
 
 export const IMAGE_SERVICES = {
     "kontext": {

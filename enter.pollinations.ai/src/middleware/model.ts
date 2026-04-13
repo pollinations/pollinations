@@ -1,7 +1,7 @@
-import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
-import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/registry/types.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -19,6 +19,40 @@ export type ModelVariables = {
 type ResolveModelOptions = {
     defaultModel?: string;
 };
+
+const MODEL_REGISTRIES_BY_EVENT_TYPE = {
+    "generate.text": TEXT_SERVICES,
+    "generate.image": IMAGE_SERVICES,
+    "generate.audio": AUDIO_SERVICES,
+} as const;
+
+const EVENT_TYPE_FAMILY = {
+    "generate.text": "text",
+    "generate.image": "image",
+    "generate.audio": "audio",
+} as const;
+
+function isModelCompatibleWithEventType(
+    eventType: EventType,
+    model: ModelName,
+): boolean {
+    return Object.hasOwn(MODEL_REGISTRIES_BY_EVENT_TYPE[eventType], model);
+}
+
+function getRegisteredModelFamily(
+    model: ModelName,
+): "text" | "image" | "audio" {
+    if (Object.hasOwn(TEXT_SERVICES, model)) {
+        return "text";
+    }
+    if (Object.hasOwn(IMAGE_SERVICES, model)) {
+        return "image";
+    }
+    if (Object.hasOwn(AUDIO_SERVICES, model)) {
+        return "audio";
+    }
+    throw new Error(`Model "${model}" is missing from all registries`);
+}
 
 /**
  * Middleware that extracts, defaults, and resolves the model from the request.
@@ -76,6 +110,19 @@ export function resolveModel(
                     error instanceof Error
                         ? error.message
                         : `Invalid model: ${model}`,
+            });
+        }
+
+        if (!isModelCompatibleWithEventType(eventType, resolved)) {
+            const registeredFamily = getRegisteredModelFamily(resolved);
+            const requestedFamily = EVENT_TYPE_FAMILY[eventType];
+            const requestedModelLabel =
+                rawModel && rawModel !== resolved
+                    ? `"${rawModel}" (resolved to "${resolved}")`
+                    : `"${resolved}"`;
+
+            throw new HTTPException(400, {
+                message: `Model ${requestedModelLabel} is registered as ${registeredFamily} and cannot be used with ${requestedFamily} routes.`,
             });
         }
 

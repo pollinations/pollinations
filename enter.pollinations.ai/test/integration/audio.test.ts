@@ -79,6 +79,32 @@ describe("ElevenLabs TTS", () => {
     );
 
     test(
+        "GET /audio/:text rejects text-chat audio models",
+        { timeout: 30000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/audio/Hello%20world?model=openai-audio&voice=alloy",
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(400);
+            const body = (await response.json()) as {
+                error: { message: string };
+            };
+            expect(body.error.message).toBe(
+                'Model "openai-audio" is registered as text and cannot be used with audio routes.',
+            );
+            expect(mocks.tinybird.state.events).toHaveLength(0);
+        },
+    );
+
+    test(
         "POST /v1/audio/speech returns audio",
         { timeout: 30000 },
         async ({ paidApiKey, mocks }) => {
@@ -333,6 +359,42 @@ describe("Whisper Transcription", () => {
             expect(
                 (body as { error: { message: string } }).error.message,
             ).toContain("budget exhausted");
+        },
+    );
+
+    test(
+        "POST /v1/audio/transcriptions rejects text-chat audio models",
+        { timeout: 30000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const formData = new FormData();
+            formData.append(
+                "file",
+                new Blob(["test audio"], { type: "audio/wav" }),
+                "test.wav",
+            );
+            formData.append("model", "openai-audio");
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/v1/audio/transcriptions",
+                {
+                    method: "POST",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                    body: formData,
+                },
+            );
+
+            expect(response.status).toBe(400);
+            const body = (await response.json()) as {
+                error: { message: string };
+            };
+            expect(body.error.message).toBe(
+                'Model "openai-audio" is registered as text and cannot be used with audio routes.',
+            );
+            expect(mocks.tinybird.state.events).toHaveLength(0);
         },
     );
 });

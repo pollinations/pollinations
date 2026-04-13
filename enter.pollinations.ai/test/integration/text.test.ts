@@ -300,6 +300,43 @@ test(
 );
 
 test(
+    "POST /v1/chat/completions should reject image models",
+    { timeout: 30000 },
+    async ({ paidApiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird");
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/generate/v1/chat/completions",
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${paidApiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "gptimage",
+                    messages: [
+                        {
+                            role: "user",
+                            content: TEST_MESSAGE_CONTENT,
+                        },
+                    ],
+                    seed: testSeed(),
+                }),
+            },
+        );
+
+        expect(response.status).toBe(400);
+        const error = (await response.json()) as {
+            error: { message: string };
+        };
+        expect(error.error.message).toBe(
+            'Model "gptimage" is registered as image and cannot be used with text routes.',
+        );
+        expect(mocks.tinybird.state.events).toHaveLength(0);
+    },
+);
+
+test(
     "POST /v1/chat/completions should handle empty messages",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10198,
+  "title": "add EC2 SSH pre-flight check to rotation workflow",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10198",
+  "merged_at": "2026-04-13T21:07:49Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Knock knock, EC2 there?",
+    "blurb": "Added a pre-flight SSH check to our infrastructure rotation workflow. Now we make sure the EC2 instance is awake and ready before we start swapping out tokens.",
+    "summary": "Added an EC2 SSH connectivity pre-flight check to the infrastructure token rotation workflow.",
+    "impact": "Prevents token rotation failures by verifying EC2 instance reachability and service health before initiating the rotation process.",
+    "keywords": [
+      "infrastructure",
+      "github-actions",
+      "ci-cd",
+      "ec2",
+      "ssh"
+    ],
+    "visual_concept": "The PR is about checking if a server (EC2) is awake and reachable before doing work. Visual: The bee mascot checking on a server rack or terminal, ensuring it's online. The monitor robot can be assisting with a green checkmark.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, knocking on a retro server rack that glows with a soft lime green (#ecf874) light. A chunky monitor robot stands nearby giving a thumbs up. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10198.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, knocking on a retro server rack that glows with a soft lime green (#ecf874) light. A chunky monitor robot stands nearby giving a thumbs up. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-13T21:08:37.355669+00:00"
+}

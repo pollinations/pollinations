@@ -4,6 +4,7 @@ DESCRIPTION >
     Only includes models with at least 3 successful priced requests for reliable averages.
 
 TOKEN public_stats_read READ
+TOKEN tinybird_read_public READ
 
 NODE public_model_stats_node
 SQL >

@@ -2,6 +2,7 @@ DESCRIPTION >
     Tier distribution from d1_user snapshot.
 
 TOKEN model_usage READ
+TOKEN tinybird_read READ
 
 NODE tier_distribution
 SQL >

@@ -4,16 +4,17 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import type { ServiceId } from "@shared/registry/registry.ts";
+import type { ModelName } from "@shared/registry/registry.ts";
 import {
-    getServiceDefinition,
-    getTextServices,
+    getModelDefinition,
+    getTextModels,
 } from "@shared/registry/registry.ts";
 import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
 import { describe, expect } from "vitest";
 import worker from "@/index.ts";
 import { CompletionUsageSchema } from "@/schemas/openai.ts";
 import { test } from "../fixtures.ts";
+import { assertTrackedBillingEvent } from "../helpers/billing-assertions.ts";
 
 const TEST_DISABLE_CACHE = false;
 const TEST_ALL_SERVICES = true;
@@ -46,12 +47,12 @@ function buildChatBody(serviceId: string, extra: Record<string, unknown> = {}) {
     });
 }
 
-const servicesToTest = getTextServices().filter((serviceId) => {
+const servicesToTest = getTextModels().filter((serviceId) => {
     if (EXCLUDED_SERVICES.includes(serviceId)) return false;
     if (!TEST_ALL_SERVICES && !REQUIRED_SERVICES.includes(serviceId))
         return false;
     // Skip alpha models — they are unstable by definition and break tests
-    const def = getServiceDefinition(serviceId);
+    const def = getModelDefinition(serviceId);
     if (def.alpha) return false;
     return true;
 });
@@ -61,11 +62,11 @@ const anonymousTestCases = () => {
     return servicesToTest.map((serviceId) => [serviceId, 401]);
 };
 
-const authenticatedTestCases = (): [ServiceId, number][] => {
+const authenticatedTestCases = (): [ModelName, number][] => {
     return servicesToTest.map((serviceId) => [serviceId, 200]);
 };
 
-const nonAudioTestCases = (): [ServiceId, number][] => {
+const nonAudioTestCases = (): [ModelName, number][] => {
     return servicesToTest
         .filter((serviceId) => !AUDIO_SERVICES.includes(serviceId))
         .map((serviceId) => [serviceId, 200]);
@@ -139,12 +140,7 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
                         (event.tokenCountCompletionReasoning || 0) +
                         (event.tokenCountCompletionAudio || 0),
                 ).toBeGreaterThan(0);
-                expect(event.totalCost).toBeGreaterThan(0);
-                expect(event.totalPrice).toBeGreaterThanOrEqual(0);
-                // Regression test: selectedMeterSlug must be captured AFTER next()
-                // If this is null, balanceTracking was captured before the balance check middleware ran
-                expect(event.selectedMeterSlug).toBeDefined();
-                expect(event.selectedMeterSlug).not.toBeNull();
+                assertTrackedBillingEvent(event, serviceId);
             });
         },
     );
@@ -193,11 +189,7 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                         (event.tokenCountCompletionReasoning || 0) +
                         (event.tokenCountCompletionAudio || 0),
                 ).toBeGreaterThan(0);
-                expect(event.totalCost).toBeGreaterThan(0);
-                expect(event.totalPrice).toBeGreaterThanOrEqual(0);
-                // Regression test: selectedMeterSlug must be captured AFTER next()
-                expect(event.selectedMeterSlug).toBeDefined();
-                expect(event.selectedMeterSlug).not.toBeNull();
+                assertTrackedBillingEvent(event, serviceId);
             });
         },
     );
@@ -250,11 +242,7 @@ describe("GET /text/:prompt", async () => {
                         (event.tokenCountCompletionReasoning || 0) +
                         (event.tokenCountCompletionAudio || 0),
                 ).toBeGreaterThan(0);
-                expect(event.totalCost).toBeGreaterThan(0);
-                expect(event.totalPrice).toBeGreaterThanOrEqual(0);
-                // Regression test: selectedMeterSlug must be captured AFTER next()
-                expect(event.selectedMeterSlug).toBeDefined();
-                expect(event.selectedMeterSlug).not.toBeNull();
+                assertTrackedBillingEvent(event, serviceId);
             });
         },
     );
@@ -346,14 +334,14 @@ const TEST_IMAGE_DATA_URI =
 
 // gpt-5-nano (openai-fast) returns empty content for base64 vision via Azure
 // due to content safety filter consuming token budget — exclude from vision tests
-const VISION_EXCLUDED = ["openai-fast"] as ServiceId[];
+const VISION_EXCLUDED = ["openai-fast"] as ModelName[];
 
-const visionTestCases = (): [ServiceId, number][] => {
+const visionTestCases = (): [ModelName, number][] => {
     return servicesToTest
         .filter((serviceId) => {
             if (AUDIO_SERVICES.includes(serviceId)) return false;
             if (VISION_EXCLUDED.includes(serviceId)) return false;
-            const service = getServiceDefinition(serviceId);
+            const service = getModelDefinition(serviceId);
             return service?.inputModalities?.includes("image");
         })
         .map((serviceId) => [serviceId, 200]);
@@ -458,12 +446,12 @@ const TOOL_CALL_EXCLUDED = [
     ...AUDIO_SERVICES,
 ];
 
-const toolCallTestCases = (): [ServiceId, number][] => {
+const toolCallTestCases = (): [ModelName, number][] => {
     // Only test models that have tools: true in the registry
     return servicesToTest
         .filter((serviceId) => {
             if (TOOL_CALL_EXCLUDED.includes(serviceId)) return false;
-            const service = getServiceDefinition(serviceId);
+            const service = getModelDefinition(serviceId);
             return service?.tools === true;
         })
         .map((serviceId) => [serviceId, 200]);
@@ -1504,7 +1492,7 @@ describe("Streaming billing content-type handling", () => {
 
             const events = mocks.tinybird.state.events;
             expect(events).toHaveLength(1);
-            expect(events[0].isBilledUsage).toBe(true);
+            assertTrackedBillingEvent(events[0], "openai");
         },
     );
 
@@ -1547,10 +1535,9 @@ describe("Streaming billing content-type handling", () => {
 
             const events = mocks.tinybird.state.events;
             expect(events).toHaveLength(1);
-            expect(events[0].isBilledUsage).toBe(true);
             expect(events[0].tokenCountPromptText).toBeGreaterThan(0);
             expect(events[0].tokenCountCompletionText).toBeGreaterThan(0);
-            expect(events[0].totalCost).toBeGreaterThan(0);
+            assertTrackedBillingEvent(events[0], "openai");
         },
     );
 });

@@ -1,4 +1,5 @@
 TOKEN crypto_event_append APPEND
+TOKEN tinybird_ingest APPEND
 
 DESCRIPTION >
 NOWPayments crypto webhook events (payments) with full JSON payload

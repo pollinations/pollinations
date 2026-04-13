@@ -4,10 +4,9 @@ import {
     calculateCost,
     calculatePrice,
     getActivePriceDefinition,
-    getServiceDefinition,
-    type ModelId,
+    getModelDefinition,
+    type ModelName,
     type PriceDefinition,
-    type ServiceId,
     type UsageCost,
     type UsagePrice,
 } from "@shared/registry/registry.ts";
@@ -56,13 +55,13 @@ import type { ModelVariables } from "./model.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {
-    model: ModelId;
+    model: string;
     usage: Usage;
 };
 
 type RequestTrackingData = {
     modelRequested: string | null;
-    resolvedModelRequested: string;
+    resolvedModelRequested: ModelName;
     modelProvider?: string;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
@@ -84,7 +83,7 @@ type ResponseTrackingData = {
 export type TrackVariables = {
     track: {
         modelRequested: string | null;
-        resolvedModelRequested: string;
+        resolvedModelRequested: ModelName;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
     };
@@ -210,7 +209,7 @@ export const track = (eventType: EventType) =>
                 await sendToTinybird(
                     finalEvent,
                     c.env.TINYBIRD_INGEST_URL,
-                    c.env.TINYBIRD_GENERATION_INGEST_TOKEN,
+                    c.env.TINYBIRD_INGEST_TOKEN,
                     log,
                 );
 
@@ -236,7 +235,7 @@ async function trackRequest(
     const modelRequested = modelInfo.requested;
     const resolvedModelRequested = modelInfo.resolved;
 
-    const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
+    const modelProvider = getModelDefinition(resolvedModelRequested).provider;
     const modelPriceDefinition = getActivePriceDefinition(
         resolvedModelRequested,
     );
@@ -319,7 +318,7 @@ async function trackResponse(
         const isAudio = contentType.startsWith("audio/");
         const isSTT =
             contentType.startsWith("application/json") &&
-            getServiceDefinition(resolvedModelRequested as ServiceId)
+            getModelDefinition(resolvedModelRequested)
                 ?.outputModalities?.[0] === "text";
         if (!isAudio && !isSTT) {
             log.warn(
@@ -352,15 +351,8 @@ async function trackResponse(
             contentFilterResults,
         };
     }
-    // Use service's canonical modelId for cost (not the provider's model ID from response)
-    const serviceModelId = getServiceDefinition(
-        resolvedModelRequested as ServiceId,
-    ).modelId;
-    const cost = calculateCost(serviceModelId as ModelId, modelUsage.usage);
-    const price = calculatePrice(
-        resolvedModelRequested as ServiceId,
-        modelUsage.usage,
-    );
+    const cost = calculateCost(resolvedModelRequested, modelUsage.usage);
+    const price = calculatePrice(resolvedModelRequested, modelUsage.usage);
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -525,7 +517,7 @@ function extractUsageHeaders(response: Response): ModelUsage {
     }
     const usage = parseUsageHeaders(response.headers);
     return {
-        model: modelUsed as ModelId,
+        model: modelUsed,
         usage,
     };
 }
@@ -623,7 +615,7 @@ async function extractUsageAndContentFilterResultsStream(
 
     return {
         modelUsage: {
-            model: model as ModelId,
+            model,
             usage: openaiUsageToUsage(usage),
         },
         contentFilterResults,

@@ -9,7 +9,7 @@
  * Usage: node .github/scripts/tinybird-sync-apps.js
  *
  * Env vars:
- *   TINYBIRD_APP_SYNC_TOKEN  Required — Tinybird token with append+delete on app_directory
+ *   TINYBIRD_SYNC_TOKEN  Required — Tinybird token with append+delete on app_directory
  */
 
 const fs = require("node:fs");
@@ -20,9 +20,9 @@ const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "app_directory";
 const MAX_RETRIES = 3;
 
-const TOKEN = process.env.TINYBIRD_APP_SYNC_TOKEN;
+const TOKEN = process.env.TINYBIRD_SYNC_TOKEN;
 if (!TOKEN) {
-    console.error("Error: TINYBIRD_APP_SYNC_TOKEN env var is required");
+    console.error("Error: TINYBIRD_SYNC_TOKEN env var is required");
     process.exit(1);
 }
 

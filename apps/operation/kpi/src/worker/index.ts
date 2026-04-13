@@ -13,7 +13,7 @@ const DATA_START_TIMESTAMP_SEC = Math.floor(DATA_START_TIMESTAMP_MS / 1000);
 const MAX_WEEKS_BACK = 20;
 
 type Env = {
-    TINYBIRD_TOKEN: string;
+    TINYBIRD_READ_TOKEN: string;
     TINYBIRD_API: string;
     POLAR_ACCESS_TOKEN: string;
     POLAR_API: string;
@@ -55,7 +55,7 @@ async function fetchTinybird(
         return { data: json.data };
     }
 
-    const headers = { Authorization: `Bearer ${env.TINYBIRD_TOKEN}` };
+    const headers = { Authorization: `Bearer ${env.TINYBIRD_READ_TOKEN}` };
 
     for (let attempt = 0; attempt < 2; attempt++) {
         try {

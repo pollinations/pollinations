@@ -1,0 +1,34 @@
+{
+  "pr_number": 10173,
+  "title": "chore: remove 5 dead apps (2026-04-13)",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10173",
+  "merged_at": "2026-04-13T10:06:17Z",
+  "labels": [
+    "WEB",
+    ".QUESTION"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the garden",
+    "blurb": "We've pruned a few inactive projects from the community showcase to keep the garden fresh and ensure all links are working.",
+    "summary": "Automated cleanup removing 5 inactive community applications from the showcase that were returning 404 errors.",
+    "impact": "Users browsing the community showcase will enjoy a streamlined experience with only active, working projects.",
+    "keywords": [
+      "showcase",
+      "cleanup",
+      "community",
+      "maintenance"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener, pruning dead leaves or sweeping up around the digital garden. The Nomnom creature eating the dead links (404 signs).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, sweeping up fallen pixelated leaves around glowing lime green (#ecf874) code-plants. The round tan nomnom creature happily eats a broken link sign. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cozy pixel art, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10173.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, sweeping up fallen pixelated leaves around glowing lime green (#ecf874) code-plants. The round tan nomnom creature happily eats a broken link sign. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cozy pixel art, chunky sprites."
+  },
+  "generated_at": "2026-04-13T10:07:11.718096+00:00"
+}

@@ -23,11 +23,11 @@ WIDTH_HEIGHT_NODE = "177:131"
 FRAME_COUNT_NODE = "177:113"
 SEED_NODES = ["177:118", "177:123"]
 
-REGISTER_URL = os.environ.get("REGISTER_URL", "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register")
+REGISTER_URL = os.environ.get("REGISTER_URL", "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register")
 PUBLIC_IP = os.environ.get("PUBLIC_IP", "")
 PUBLIC_PORT = os.environ.get("PUBLIC_PORT", "")
 SERVICE_TYPE = os.environ.get("SERVICE_TYPE", "ltx2")
-PLN_TOKEN = os.environ.get("PLN_IMAGE_BACKEND_TOKEN", "")
+PLN_TOKEN = os.environ.get("PLN_GPU_TOKEN", "")
 PORT = int(os.environ.get("PORT", "8765"))
 
 comfy_proc = None
@@ -65,7 +65,7 @@ def watchdog_loop():
 
 def heartbeat_loop():
     if not PUBLIC_IP or not PLN_TOKEN:
-        log.warning("No PUBLIC_IP or PLN_IMAGE_BACKEND_TOKEN set, skipping heartbeat")
+        log.warning("No PUBLIC_IP or PLN_GPU_TOKEN set, skipping heartbeat")
         return
     port = PUBLIC_PORT or str(PORT)
     url = "%s?port=%s&ip=%s&type=%s&token=%s" % (REGISTER_URL, port, PUBLIC_IP, SERVICE_TYPE, PLN_TOKEN)
@@ -87,7 +87,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="LTX-2 Video Server (ComfyUI)", lifespan=lifespan)
 
-BACKEND_TOKEN = os.environ.get("PLN_IMAGE_BACKEND_TOKEN", "")
+BACKEND_TOKEN = os.environ.get("PLN_GPU_TOKEN", "")
 
 @app.middleware("http")
 async def verify_backend_token(request: Request, call_next):

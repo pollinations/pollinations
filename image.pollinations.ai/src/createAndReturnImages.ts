@@ -215,8 +215,8 @@ export const callSelfHostedServer = async (
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(process.env.PLN_IMAGE_BACKEND_TOKEN && {
-                        "x-backend-token": process.env.PLN_IMAGE_BACKEND_TOKEN,
+                    ...(process.env.PLN_GPU_TOKEN && {
+                        "x-backend-token": process.env.PLN_GPU_TOKEN,
                     }),
                 },
                 body: JSON.stringify(body),
@@ -557,10 +557,10 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
 
 /**
  * Configuration for Azure GPT Image endpoints
+ * All models use myceli-prod-swedencentral with a shared API key
  */
 interface AzureGPTImageConfig {
-    apiKeyEnvVar: string;
-    endpointEnvVar: string;
+    baseUrl: string;
     modelName: string;
 }
 
@@ -568,13 +568,13 @@ const AZURE_GPTIMAGE_API_VERSION = "2025-04-01-preview";
 
 const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
     gptimage: {
-        apiKeyEnvVar: "AZURE_GPTIMAGE_1_MINI_API_KEY",
-        endpointEnvVar: "AZURE_GPTIMAGE_1_MINI_ENDPOINT",
+        baseUrl:
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
         modelName: "gpt-image-1-mini",
     },
     "gptimage-large": {
-        apiKeyEnvVar: "AZURE_GPTIMAGE_15_API_KEY",
-        endpointEnvVar: "AZURE_GPTIMAGE_15_ENDPOINT",
+        baseUrl:
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
         modelName: "gpt-image-1.5",
     },
 };
@@ -593,26 +593,20 @@ const callAzureGPTImageWithEndpoint = async (
     userInfo: AuthResult,
     config: AzureGPTImageConfig = AZURE_GPTIMAGE_CONFIGS.gptimage,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env[config.apiKeyEnvVar];
-    const baseEndpoint = process.env[config.endpointEnvVar];
+    const apiKey = process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY;
 
-    if (!apiKey || !baseEndpoint) {
+    if (!apiKey) {
         throw new Error(
-            `Azure API key or endpoint 1 not found in environment variables`,
+            "AZURE_MYCELI_PROD_SWEDEN_API_KEY not found in environment variables",
         );
     }
-
-    // Strip any trailing path/query from the env var to get the base deployment URL
-    // Env may contain full URL (legacy) or just the base deployment path
-    const baseUrl = baseEndpoint.replace(/\/images\/.*$/, "");
 
     // Check if we have input images for edit mode
     const isEditMode = safeParams.image && safeParams.image.length > 0;
 
     // Construct the full endpoint URL based on mode
-    let endpoint: string;
     const path = isEditMode ? "images/edits" : "images/generations";
-    endpoint = `${baseUrl}/${path}?api-version=${AZURE_GPTIMAGE_API_VERSION}`;
+    const endpoint = `${config.baseUrl}/${path}?api-version=${AZURE_GPTIMAGE_API_VERSION}`;
     logCloudflare(
         `Using Azure ${config.modelName} in ${isEditMode ? "edit" : "generation"} mode`,
     );

@@ -689,7 +689,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily paid GPU cost by provider/model (io.net/vast.ai).",
+      "description": "Daily paid GPU cost by provider/model (legacy io.net/vast.ai).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -908,7 +908,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily free GPU cost by provider/model. Modal GPU models (klein, ltx-2) + OVH GPU models.",
+      "description": "Daily free GPU cost by provider/model. All RunPod and Lambda models (flux, zimage, klein, ltx-2, etc.), legacy Modal events for klein/ltx-2, and OVH GPU models.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -994,7 +994,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used = 'modal' AND (model_used IN ('klein', 'klein-large', 'ltx-2') OR model_used LIKE 'flux_klein%'))\n    OR (model_provider_used = 'ovhcloud' AND model_used NOT IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used IN ('runpod', 'lambda'))\n    OR (model_provider_used = 'modal' AND (model_used IN ('klein', 'klein-large', 'ltx-2') OR model_used LIKE 'flux_klein%'))\n    OR (model_provider_used = 'ovhcloud' AND model_used NOT IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
           "refId": "A"
         }
       ],

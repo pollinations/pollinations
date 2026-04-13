@@ -4,7 +4,6 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
-import { invalidateApiKeyCache } from "../auth.ts";
 import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
@@ -254,21 +253,16 @@ export const apiKeysRoutes = new Hono<Env>()
                     .where(eq(schema.apikey.id, id));
             }
 
-            // Always invalidate KV cache on any update
-            const keyForCache = await db.query.apikey.findFirst({
+            const updated = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, id),
             });
 
-            if (keyForCache) {
-                await invalidateApiKeyCache(c.env, keyForCache);
-            }
-
             return c.json({
-                id: keyForCache?.id ?? id,
-                name: keyForCache?.name,
-                permissions: keyForCache?.permissions,
-                pollenBalance: keyForCache?.pollenBalance ?? null,
-                expiresAt: keyForCache?.expiresAt ?? null,
+                id: updated?.id ?? id,
+                name: updated?.name,
+                permissions: updated?.permissions,
+                pollenBalance: updated?.pollenBalance ?? null,
+                expiresAt: updated?.expiresAt ?? null,
             });
         },
     )
@@ -312,8 +306,6 @@ export const apiKeysRoutes = new Hono<Env>()
                 metadataUpdate,
                 existingKey.metadata,
             );
-            await invalidateApiKeyCache(c.env, existingKey);
-
             return c.json({ id, metadata });
         },
     );

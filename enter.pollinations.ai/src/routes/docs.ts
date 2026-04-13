@@ -1,7 +1,7 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import type { ServiceDefinition } from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { Hono } from "hono";
 import { openAPIRouteHandler } from "hono-openapi";
@@ -243,7 +243,7 @@ function generateLLMDoc(): string {
     lines.push("## Text Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(TEXT_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
+        const svc = rawSvc as ModelDefinition<string>;
         if (svc.hidden) continue;
         const caps: string[] = [];
         if (svc.tools) caps.push("tools");
@@ -262,7 +262,7 @@ function generateLLMDoc(): string {
     lines.push("## Image Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(IMAGE_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
+        const svc = rawSvc as ModelDefinition<string>;
         if (svc.hidden) continue;
         if (svc.outputModalities?.includes("video")) continue;
         const flags: string[] = [];
@@ -276,7 +276,7 @@ function generateLLMDoc(): string {
     lines.push("## Video Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(IMAGE_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
+        const svc = rawSvc as ModelDefinition<string>;
         if (svc.hidden) continue;
         if (!svc.outputModalities?.includes("video")) continue;
         const flags: string[] = [];
@@ -289,7 +289,7 @@ function generateLLMDoc(): string {
     lines.push("## Audio Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(AUDIO_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
+        const svc = rawSvc as ModelDefinition<string>;
         if (svc.hidden) continue;
         const flags: string[] = [];
         if (svc.alpha) flags.push("alpha");
@@ -301,6 +301,125 @@ function generateLLMDoc(): string {
     lines.push("## Available Voices (TTS)");
     lines.push("");
     lines.push(ELEVENLABS_VOICES.join(", "));
+    lines.push("");
+
+    // Account
+    lines.push("## Account");
+    lines.push("");
+    lines.push(
+        "All account endpoints require authentication (API key or session). API keys need the relevant `account:<scope>` permission.",
+    );
+    lines.push("Base path: /api/account");
+    lines.push("");
+
+    lines.push("### GET /api/account/profile");
+    lines.push(
+        "Returns user profile: name, email, githubUsername, image, tier, createdAt, nextResetAt.",
+    );
+    lines.push("Requires `account:profile` permission.");
+    lines.push("");
+
+    lines.push("### GET /api/account/balance");
+    lines.push(
+        "Returns { balance } — remaining pollen (sum of tier + pack + crypto). If API key has a budget, returns key budget instead.",
+    );
+    lines.push("Requires `account:balance` permission.");
+    lines.push("");
+
+    lines.push("### GET /api/account/usage");
+    lines.push(
+        "Per-request usage history: model, token counts, cost, response time.",
+    );
+    lines.push(
+        "Query params: format (json|csv, default json), limit (1-50000, default 100), before (ISO timestamp cursor)",
+    );
+    lines.push("Requires `account:usage` permission.");
+    lines.push("");
+
+    lines.push("### GET /api/account/usage/daily");
+    lines.push(
+        "Daily aggregated usage (last 90 days) grouped by date and model: { date, model, meter_source, requests, cost_usd }.",
+    );
+    lines.push("Query params: format (json|csv, default json)");
+    lines.push("Requires `account:usage` permission. Cached 1 hour.");
+    lines.push("");
+
+    lines.push("### GET /api/account/keys");
+    lines.push(
+        "List all API keys for the current user. Requires secret key (sk_) with `account:keys` permission.",
+    );
+    lines.push("");
+
+    lines.push("### POST /api/account/keys");
+    lines.push(
+        "Create an API key. Requires secret key (sk_) with `account:keys` permission.",
+    );
+    lines.push("Body (JSON):");
+    lines.push("- name (string, required): Display name");
+    lines.push(
+        '- type ("secret"|"publishable", default "secret"): Key type (sk_ or pk_)',
+    );
+    lines.push("- expiresIn (int, optional): Seconds until expiry (max 365d)");
+    lines.push(
+        "- allowedModels (string[], optional): Restrict to specific models. null = all",
+    );
+    lines.push(
+        "- pollenBudget (number, optional): Pollen budget cap. null = unlimited",
+    );
+    lines.push(
+        '- accountPermissions (string[], optional): e.g. ["balance","usage"]. "keys" is auto-stripped',
+    );
+    lines.push(
+        "Returns full key value once: { id, key, name, type, prefix, start, expiresAt, permissions, pollenBudget }",
+    );
+    lines.push("");
+
+    lines.push("### DELETE /api/account/keys/:id");
+    lines.push(
+        "Revoke an API key by ID. Cannot revoke the key authenticating the request.",
+    );
+    lines.push("Requires secret key (sk_) with `account:keys` permission.");
+    lines.push("");
+
+    lines.push("### GET /api/account/key");
+    lines.push(
+        "Info about the current API key: { valid, type, name, expiresAt, expiresIn, permissions, pollenBudget, rateLimitEnabled }.",
+    );
+    lines.push("Requires API key authentication (any key type).");
+    lines.push("");
+
+    // Media Storage
+    lines.push("## Media Storage");
+    lines.push("");
+    lines.push("Base URL: https://media.pollinations.ai");
+    lines.push(
+        "Content-addressed file storage. Upload requires API key; retrieval is public.",
+    );
+    lines.push(
+        "Max file size: 10 MB. Files expire after 14 days; re-uploading resets the TTL.",
+    );
+    lines.push("");
+
+    lines.push("### POST /upload");
+    lines.push(
+        "Upload a file. Accepts multipart/form-data (field: `file`), raw binary, or JSON { data (base64), contentType?, name? }.",
+    );
+    lines.push("Auth: `Authorization: Bearer <key>` or `?key=<key>`");
+    lines.push(
+        "Returns { id (16-char hex hash), url, contentType, size, duplicate }.",
+    );
+    lines.push("");
+
+    lines.push("### GET /{hash}");
+    lines.push(
+        "Retrieve a file by its 16-char hex content hash. No auth required. Cached immutably.",
+    );
+    lines.push("");
+
+    lines.push("### HEAD /{hash}");
+    lines.push(
+        "Check if a file exists. Returns Content-Type, Content-Length, X-Content-Hash headers. No auth.",
+    );
     lines.push("");
 
     // Errors

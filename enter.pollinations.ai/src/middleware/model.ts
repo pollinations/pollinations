@@ -1,6 +1,6 @@
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
-import { resolveServiceId, type ServiceId } from "@shared/registry/registry.ts";
+import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/registry/types.ts";
 import { createMiddleware } from "hono/factory";
@@ -10,8 +10,8 @@ export type ModelVariables = {
     model: {
         /** The model string from the request (before resolution) */
         requested: string;
-        /** The resolved canonical service ID */
-        resolved: ServiceId;
+        /** The resolved canonical model name */
+        resolved: ModelName;
     };
     formData?: FormData;
 };
@@ -65,11 +65,11 @@ export function resolveModel(
                   : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
 
-        // Resolve alias to canonical service ID
+        // Resolve alias to canonical model name
         // If resolution fails, throw a 400 error with the original error message
-        let resolved: ServiceId;
+        let resolved: ModelName;
         try {
-            resolved = resolveServiceId(model);
+            resolved = resolveModelName(model);
         } catch (error) {
             throw new HTTPException(400, {
                 message:

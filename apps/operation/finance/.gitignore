@@ -1,0 +1,5 @@
+config.local.json
+secrets/
+node_modules/
+*.csv
+!test/fixtures/*.csv

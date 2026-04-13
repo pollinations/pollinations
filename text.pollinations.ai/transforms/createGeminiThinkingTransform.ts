@@ -4,9 +4,9 @@ import type { TransformFn } from "../types.js";
 const log = debug("pollinations:transforms:gemini-thinking");
 
 /**
- * - v2.5: Uses thinking.budget_tokens (0 to disable)
- * - v3-flash: Uses thinking.budget_tokens (0 to disable)
- * - v3-pro: Uses reasoning_effort ("low" for minimal thinking, can't fully disable)
+ * - v2.5-flash variants: Uses thinking.budget_tokens, including 0 to disable
+ * - v3-flash: Uses reasoning_effort ("none" to get as close as possible to disabled)
+ * - v3-pro: Uses reasoning_effort ("low" to minimize, can't fully disable)
  */
 export type GeminiModelType = "v2.5" | "v3-flash" | "v3-pro";
 
@@ -23,8 +23,9 @@ function budgetToReasoningEffort(budget: number): string {
  * Creates a transform that configures Gemini thinking mode.
  *
  * Portkey gateway expects OpenAI-compatible format:
- * - `thinking: { type: "enabled", budget_tokens: N }` for Gemini 2.5 / 3 Flash
- * - `reasoning_effort: "none"|"low"|"medium"|"high"` for Gemini 3 Pro
+ * - `thinking: { budget_tokens: N }` for Gemini 2.5 Flash budgets, including 0 to disable
+ * - `reasoning_effort: "none"` to minimize Gemini 3 Flash thinking
+ * - `reasoning_effort` for other Gemini 3 model levels
  */
 export function createGeminiThinkingTransform(
     modelType: GeminiModelType = "v2.5",
@@ -44,11 +45,16 @@ export function createGeminiThinkingTransform(
         );
 
         if (isDisabled) {
-            if (modelType === "v3-pro") {
-                // Gemini 3 Pro can't fully disable thinking; use "low" as minimum
-                updatedOptions.reasoning_effort = "low";
+            if (modelType === "v2.5") {
+                updatedOptions.thinking = {
+                    budget_tokens: 0,
+                };
+            } else if (modelType === "v3-flash") {
+                // Gemini 3 Flash can't fully disable thinking; "none" maps to the minimal level
+                updatedOptions.reasoning_effort = "none";
             } else {
-                updatedOptions.thinking = { type: "enabled", budget_tokens: 0 };
+                // Gemini 3 Pro can't fully disable thinking; use the lowest supported level
+                updatedOptions.reasoning_effort = "low";
             }
         } else if (modelType === "v2.5") {
             updatedOptions.thinking = {

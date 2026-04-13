@@ -51,10 +51,10 @@ async def send_heartbeat():
     if public_ip:
         try:
             port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10002")))
-            url = f"http://{public_ip}:{port}"
+            url = f"https://{public_ip}"
             service_type = os.getenv("SERVICE_TYPE", "zimage")
             # Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
-            register_url = os.getenv("REGISTER_URL", "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register")
+            register_url = os.getenv("REGISTER_URL", "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register")
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     register_url,
@@ -276,11 +276,11 @@ def verify_backend_token(
 ):
     """Verify backend authentication token.
     
-    Requires x-backend-token header validated against PLN_IMAGE_BACKEND_TOKEN env var.
+    Requires x-backend-token header validated against PLN_GPU_TOKEN env var.
     """
-    expected_token = os.getenv("PLN_IMAGE_BACKEND_TOKEN")
+    expected_token = os.getenv("PLN_GPU_TOKEN")
     if not expected_token:
-        logger.warning("PLN_IMAGE_BACKEND_TOKEN not configured - allowing request")
+        logger.warning("PLN_GPU_TOKEN not configured - allowing request")
         return True
     
     if x_backend_token != expected_token:

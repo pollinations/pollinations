@@ -3,7 +3,7 @@ import { proxy } from "hono/proxy";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
-import { imageCache } from "@/middleware/image-cache.ts";
+import { audioCache, imageCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -647,6 +647,7 @@ export const proxyRoutes = new Hono<Env>()
     )
     .get(
         "/audio/:text",
+        audioCache,
         describeRoute({
             tags: ["🔊 Audio Generation"],
             summary: "Generate Audio",
@@ -755,7 +756,7 @@ export const proxyRoutes = new Hono<Env>()
                     style,
                     durationSeconds: duration,
                     serviceUrl: c.env.MUSIC_SERVICE_URL,
-                    serviceToken: c.env.MUSIC_SERVICE_TOKEN,
+                    serviceToken: c.env.PLN_GPU_TOKEN,
                     log,
                 });
             }

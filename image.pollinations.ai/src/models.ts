@@ -198,14 +198,14 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Klein - Fast 4B parameter model on Modal (text-to-image + image editing)
+    // Klein - Fast 4B parameter model on RunPod (text-to-image + image editing)
     klein: {
-        type: "modal-klein",
+        type: "runpod-klein",
         enhance: false,
         defaultSideLength: 1024,
     },
 
-    // LTX-2 - Fast video generation on Vast.ai
+    // LTX-2 - Fast video generation on Lambda Labs GH200
     "ltx-2": {
         type: "vastai-ltx2",
         enhance: false,
@@ -252,7 +252,7 @@ export const IMAGE_CONFIG = {
         enhance: false,
         isVideo: true,
         defaultDuration: 6,
-        maxDuration: 30,
+        maxDuration: 60,
         defaultResolution: "720p",
     },
 } as const satisfies ImageModelsConfig;

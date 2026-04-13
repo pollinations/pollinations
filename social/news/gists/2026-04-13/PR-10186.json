@@ -1,0 +1,33 @@
+{
+  "pr_number": 10186,
+  "title": "fix(apps): restore tomdacatto AI video generator to APPS.md",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10186",
+  "merged_at": "2026-04-13T16:24:16Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Replanting a lost flower",
+    "blurb": "We accidentally pruned tomdacatto's AI video generator from the app showcase during some maintenance, but it's back! The app is restored, and so is their well-deserved Flower status.",
+    "summary": "Restored tomdacatto's AI video generator to the community app showcase after it was inadvertently dropped during a file rebuild.",
+    "impact": "The app is once again visible in the community directory, and the creator's contributor tier has been correctly restored to Flower.",
+    "keywords": [
+      "community",
+      "showcase",
+      "bug-fix",
+      "video-generator"
+    ],
+    "visual_concept": "Polly the bee replanting a flower (representing the Flower tier and the app) into a lime green pot, with a small video camera or film strip nearby to represent the video generator app.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot carefully replanting a glowing pink pixel flower into a lime green (#ecf874) pot. A tiny retro video camera sits next to the pot. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-10186.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot carefully replanting a glowing pink pixel flower into a lime green (#ecf874) pot. A tiny retro video camera sits next to the pot. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-13T16:25:12.935577+00:00"
+}

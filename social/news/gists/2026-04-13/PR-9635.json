@@ -1,0 +1,33 @@
+{
+  "pr_number": 9635,
+  "title": "fix: enforce audio route access parity",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/9635",
+  "merged_at": "2026-04-13T22:42:56Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sound check",
+    "blurb": "We've tuned up our audio routes to share the same reliable access and budget checks as our text and image models. Fairer usage means better stability for everyone making noise!",
+    "summary": "Unified the access controls and budget checks for audio generation routes to match the rest of the API.",
+    "impact": "Audio generation now correctly respects API key budgets, model permissions, and balance gating, ensuring fairer usage across the platform.",
+    "keywords": [
+      "audio",
+      "api",
+      "billing",
+      "auth"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly ticket-checker or conductor for audio requests, representing the new unified access and budget checks for the audio API.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones and holding a small clipboard, standing next to a glowing retro speaker and a small wooden gate. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-13/PR-9635.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones and holding a small clipboard, standing next to a glowing retro speaker and a small wooden gate. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-13T22:43:53.262505+00:00"
+}

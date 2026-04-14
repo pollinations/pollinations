@@ -2,7 +2,7 @@
 # Rotate PLN_ENTER_TOKEN — the token enter.pollinations.ai uses to authenticate
 # requests to the EC2 backend services (image.pollinations.ai, text.pollinations.ai).
 #
-# Usage: ./rotate-pln-enter-token.sh [--dry-run] [NEW_TOKEN]
+# Usage: ./rotate-infra-enter-token.sh [--dry-run] [NEW_TOKEN]
 #
 # Trust boundary: Cloudflare Worker (enter) → EC2 (image/text services)
 #
@@ -15,7 +15,7 @@
 # to pick up the new token from the decrypted env.
 #
 # GPU instances use a separate token (PLN_GPU_TOKEN).
-# Use ./rotate-pln-gpu-token.sh for that.
+# Use ./rotate-infra-gpu-token.sh for that.
 #
 # Prerequisites:
 # - sops configured and working

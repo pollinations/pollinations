@@ -16,7 +16,7 @@ async function sendCryptoEventToTinybird(
 ): Promise<void> {
     const e = env as unknown as Record<string, string>;
     const tinybirdUrl = e.TINYBIRD_CRYPTO_INGEST_URL;
-    const tinybirdToken = e.TINYBIRD_CRYPTO_INGEST_TOKEN;
+    const tinybirdToken = e.TINYBIRD_INGEST_TOKEN;
 
     if (!tinybirdUrl || !tinybirdToken) {
         log.debug("Tinybird Crypto ingest not configured, skipping");
@@ -91,6 +91,10 @@ interface NowPaymentsIpnPayload {
     outcome_currency?: string;
 }
 
+type NowPaymentsWebhookBindings = Cloudflare.Env & {
+    NOWPAYMENTS_IPN_SECRET?: string;
+};
+
 async function verifyIpnSignatureAsync(
     payload: Record<string, unknown>,
     signature: string,
@@ -148,7 +152,8 @@ function parseOrderId(
 export const webhooksCryptoRoutes = new Hono<Env>().post(
     "/nowpayments",
     async (c) => {
-        const ipnSecret = c.env.NOWPAYMENTS_IPN_SECRET;
+        const env = c.env as NowPaymentsWebhookBindings;
+        const ipnSecret = env.NOWPAYMENTS_IPN_SECRET;
 
         if (!ipnSecret) {
             log.warn("NOWPAYMENTS_IPN_SECRET not configured");

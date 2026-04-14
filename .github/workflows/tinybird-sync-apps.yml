@@ -17,5 +17,5 @@ jobs:
 
       - name: Sync APPS.md to Tinybird
         env:
-          TINYBIRD_APP_SYNC_TOKEN: ${{ secrets.TINYBIRD_APP_SYNC_TOKEN }}
+          TINYBIRD_SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
         run: node .github/scripts/tinybird-sync-apps.js

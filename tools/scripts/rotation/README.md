@@ -6,13 +6,18 @@
 |-------|---------------|------------|-----------------|
 | `PLN_ENTER_TOKEN` | CF Worker (enter) → EC2 (image/text) | enter `{dev,staging,prod}.vars.json`, image `env.json`, text `env.json` | GitHub secrets (`PLN_ENTER_TOKEN`, `ENTER_TOKEN`), Wrangler (production, staging) |
 | `PLN_GPU_TOKEN` | EC2 image + enter (ACE-Step) → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging), RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
+| `TINYBIRD_INGEST_TOKEN` | enter runtime → Tinybird current workspace append | enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging) |
+| `TINYBIRD_READ_TOKEN` | enter/KPI/economics/app metrics → Tinybird current workspace read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, economics `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
+| `TINYBIRD_SYNC_TOKEN` | GitHub Actions + enter admin route → Tinybird sync writes | enter `{dev,staging,prod}.vars.json` | GitHub secret `TINYBIRD_SYNC_TOKEN`, Wrangler (production, staging) |
+| `TINYBIRD_LEGACY_READ_TOKEN` | economics → Tinybird legacy workspace read | economics `secrets.vars.json` | none |
 
 ## Scripts
 
 | Script | Token | What it does |
 |--------|-------|-------------|
-| `rotate-pln-enter-token.sh` | `PLN_ENTER_TOKEN` | Updates SOPS → GitHub secrets → Wrangler secrets |
-| `rotate-pln-gpu-token.sh` | `PLN_GPU_TOKEN` | Updates SOPS → Wrangler → SSH to each GPU worker, updates `.env`, restarts services |
+| `rotate-infra-enter-token.sh` | `PLN_ENTER_TOKEN` | Updates SOPS → GitHub secrets → Wrangler secrets |
+| `rotate-infra-gpu-token.sh` | `PLN_GPU_TOKEN` | Updates SOPS → Wrangler → SSH to each GPU worker, updates `.env`, restarts services |
+| `rotate-ops-tinybird.sh` | Tinybird machine tokens | Refreshes Tinybird tokens via API, updates SOPS, GitHub secrets, and Wrangler secrets |
 
 Both scripts accept `--dry-run` to preview without making changes, and an optional `NEW_TOKEN` argument (otherwise generates one via `openssl rand -hex 32`).
 
@@ -20,19 +25,27 @@ Both scripts accept `--dry-run` to preview without making changes, and an option
 
 ```bash
 # Dry run first
-./rotate-pln-enter-token.sh --dry-run
-./rotate-pln-gpu-token.sh --dry-run
+./rotate-infra-enter-token.sh --dry-run
+./rotate-infra-gpu-token.sh --dry-run
+TINYBIRD_ADMIN_TOKEN=xxx ./rotate-ops-tinybird.sh --dry-run --all
 
 # Real run (generates new token automatically)
-./rotate-pln-enter-token.sh
-./rotate-pln-gpu-token.sh
+./rotate-infra-enter-token.sh
+./rotate-infra-gpu-token.sh
+TINYBIRD_ADMIN_TOKEN=xxx ./rotate-ops-tinybird.sh --all
 
 # With a specific token
-./rotate-pln-enter-token.sh TOKEN_VALUE
+./rotate-infra-enter-token.sh TOKEN_VALUE
+TINYBIRD_ADMIN_TOKEN=xxx ./rotate-ops-tinybird.sh --token tinybird_read
 ```
 
 After running, commit the SOPS file changes and merge to trigger EC2 deploy.
 `MUSIC_SERVICE_URL` is still required by ACE-Step and must remain configured in enter.
+
+Tinybird notes:
+- `tinybird_ingest` and `tinybird_read` are expected to be current-workspace consolidated tokens.
+- `tinybird_sync` is shared by the D1 sync and APPS.md sync GitHub workflows.
+- Public embedded Tinybird tokens are not rotated by this script.
 
 ## What breaks what
 
@@ -56,8 +69,8 @@ If rotation breaks production, revert to the previous token value:
 git log -p -- image.pollinations.ai/secrets/env.json | head -50
 
 # 2. Re-run the script with the old token
-./rotate-pln-enter-token.sh OLD_TOKEN_VALUE
-./rotate-pln-gpu-token.sh OLD_TOKEN_VALUE
+./rotate-infra-enter-token.sh OLD_TOKEN_VALUE
+./rotate-infra-gpu-token.sh OLD_TOKEN_VALUE
 ```
 
 Or revert the SOPS commit and redeploy.

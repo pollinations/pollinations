@@ -1,7 +1,15 @@
-import { SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import type { ModelName } from "@shared/registry/registry.ts";
 import { describe, expect } from "vitest";
+import worker from "@/index.ts";
 import { test } from "../fixtures.ts";
+import { assertTrackedBillingEvent } from "../helpers/billing-assertions.ts";
 
 // GPU-hosted models that need physical backends — skip in integration tests
 const GPU_MODELS = ["flux", "zimage", "klein"];
@@ -76,6 +84,48 @@ describe("Image text-to-image (all non-GPU models)", () => {
 
             const buffer = await response.arrayBuffer();
             expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+});
+
+describe("Image tracking", () => {
+    const trackedImageModel = imageModels[0]?.id ?? "gptimage";
+
+    test(
+        "should emit Tinybird billing fields that match the registry",
+        { timeout: 120000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/image/a%20red%20apple?model=${trackedImageModel}&width=512&height=512&seed=42`,
+                    {
+                        method: "GET",
+                        headers: {
+                            authorization: `Bearer ${paidApiKey}`,
+                        },
+                    },
+                ),
+                env,
+                ctx,
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toContain("image/");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+            await waitOnExecutionContext(ctx);
+
+            const events = mocks.tinybird.state.events;
+            expect(events).toHaveLength(1);
+            expect(events[0].tokenCountCompletionImage).toBeGreaterThan(0);
+            assertTrackedBillingEvent(
+                events[0],
+                trackedImageModel as ModelName,
+            );
         },
     );
 });

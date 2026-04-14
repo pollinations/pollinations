@@ -4,7 +4,6 @@ import { authCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
 import { createGenCommand } from "./commands/gen/index.js";
 import { keysCommand } from "./commands/keys.js";
-import { mcpCommand } from "./commands/mcp.js";
 import { modelsCommand } from "./commands/models.js";
 import { usageCommand } from "./commands/usage.js";
 
@@ -46,9 +45,6 @@ program.addCommand(createGenCommand());
 // Discovery
 program.addCommand(modelsCommand);
 program.addCommand(docsCommand);
-
-// MCP
-program.addCommand(mcpCommand);
 
 // Show help when run with no args
 if (process.argv.length <= 2) {

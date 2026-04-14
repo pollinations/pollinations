@@ -21,18 +21,15 @@
     "pollinations",
     "ai",
     "cli",
-    "mcp",
     "image-generation",
     "text-generation"
   ],
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.1",
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
     "open": "^11.0.0",
-    "ora": "^8.2.0",
-    "zod": "^3.24.3"
+    "ora": "^8.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

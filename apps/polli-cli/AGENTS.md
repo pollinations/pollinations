@@ -43,9 +43,6 @@ Auth required for most commands. Run `polli auth login` first.
 `polli stats` — model health & perf (`--type` `--window 5m|60m|24h|7d`)
 `polli docs [endpoint]` — print API docs to terminal (`--open` for browser)
 
-### MCP
-`polli mcp` — start MCP server (stdio) for AI agent tool use (`--list-tools`)
-
 ## Output
 Default: `key: value` pairs, tab-separated tables with header row.
 `--json`: full JSON to stdout, messages to stderr.

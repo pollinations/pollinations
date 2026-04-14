@@ -117,9 +117,7 @@ export const modelsCommand = new Command("models")
 
         try {
             if (type === "all" || type === "image" || type === "video") {
-                const imageModels = await gen<ModelEntry[]>("/image/models", {
-                    timeout: 15_000,
-                });
+                const imageModels = await gen<ModelEntry[]>("/image/models");
                 for (const m of imageModels) {
                     const mType = classifyType(m);
                     if (type !== "all" && mType !== type) continue;
@@ -128,18 +126,14 @@ export const modelsCommand = new Command("models")
             }
 
             if (type === "all" || type === "text") {
-                const textModels = await gen<ModelEntry[]>("/text/models", {
-                    timeout: 15_000,
-                });
+                const textModels = await gen<ModelEntry[]>("/text/models");
                 for (const m of textModels) {
                     rows.push(buildRow(m, "text", verbose));
                 }
             }
 
             if (type === "all" || type === "audio") {
-                const audioModels = await gen<ModelEntry[]>("/audio/models", {
-                    timeout: 15_000,
-                });
+                const audioModels = await gen<ModelEntry[]>("/audio/models");
                 for (const m of audioModels) {
                     rows.push(buildRow(m, "audio", verbose));
                 }

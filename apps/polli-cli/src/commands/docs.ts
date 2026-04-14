@@ -2,7 +2,12 @@ import chalk from "chalk";
 import { Command } from "commander";
 import open from "open";
 import { ENTER_URL } from "../lib/config.js";
-import { getOutputMode, printError, printInfo } from "../lib/output.js";
+import {
+    getOutputMode,
+    printError,
+    printInfo,
+    printResult,
+} from "../lib/output.js";
 
 const DOCS_URL = `${ENTER_URL}/api/docs`;
 const LLM_TXT_URL = `${ENTER_URL}/api/docs/llm.txt`;
@@ -39,11 +44,9 @@ export const docsCommand = new Command("docs")
         if (!opts.open) {
             try {
                 const doc = await fetchLlmTxt();
-                const stylize =
-                    getOutputMode() === "human"
-                        ? styleMarkdown
-                        : (s: string) => s;
+                const isJson = getOutputMode() === "json";
 
+                let content = doc;
                 if (endpoint) {
                     const sections = doc.split(/^(?=###? )/m);
                     const needle = endpoint.replace(/^\//, "").toLowerCase();
@@ -59,9 +62,13 @@ export const docsCommand = new Command("docs")
                         process.exit(1);
                     }
 
-                    process.stdout.write(stylize(matches.join("\n")));
+                    content = matches.join("\n");
+                }
+
+                if (isJson) {
+                    printResult({ endpoint: endpoint ?? null, content });
                 } else {
-                    process.stdout.write(stylize(doc));
+                    process.stdout.write(styleMarkdown(content));
                     process.stdout.write("\n");
                 }
             } catch (err) {

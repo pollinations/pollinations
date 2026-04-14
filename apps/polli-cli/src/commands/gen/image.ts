@@ -21,7 +21,7 @@ export function createImageCommand() {
             "--image <url...>",
             "Reference image URL(s) for editing/i2i (repeatable)",
         )
-        .option("--output <path>", "Save to file")
+        .option("--output <path>", "Save to file", "image.png")
         .action(async (prompt, opts) => {
             const key = requireKey();
             const isHuman = getOutputMode() === "human";
@@ -53,17 +53,11 @@ export function createImageCommand() {
                 }
 
                 const buffer = Buffer.from(await res.arrayBuffer());
-
-                if (opts.output) {
-                    writeFileSync(opts.output, buffer);
-                    spinner?.succeed(`Saved to ${opts.output}`);
-                } else {
-                    spinner?.succeed("Image generated");
-                }
+                writeFileSync(opts.output, buffer);
+                spinner?.succeed(`Saved to ${opts.output}`);
 
                 printResult({
-                    ...(opts.output && { path: opts.output }),
-                    url,
+                    path: opts.output,
                     size: buffer.length,
                     model: opts.model,
                 });

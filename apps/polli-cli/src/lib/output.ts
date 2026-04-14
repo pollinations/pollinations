@@ -33,13 +33,13 @@ export const printTable = (
     rows: Record<string, unknown>[],
     columns?: string[],
 ) => {
-    if (rows.length === 0) {
-        printInfo("No results.");
+    if (currentMode === "json") {
+        process.stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
         return;
     }
 
-    if (currentMode === "json") {
-        process.stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
+    if (rows.length === 0) {
+        printInfo("No results.");
         return;
     }
 

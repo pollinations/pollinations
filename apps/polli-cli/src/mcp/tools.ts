@@ -19,7 +19,6 @@ const authFetch = async (url: string, init?: RequestInit) => {
     return fetch(url, { ...init, headers });
 };
 
-// ── Tool: Platform Knowledge ──────────────────────────────────────
 const platformKnowledge = {
     name: "pollinations_knowledge",
     description:
@@ -43,7 +42,6 @@ const platformKnowledge = {
     },
 };
 
-// ── Tool: List Models ─────────────────────────────────────────────
 const listModels = {
     name: "pollinations_list_models",
     description:
@@ -56,21 +54,20 @@ const listModels = {
     },
     handler: async (params: { type: string }) => {
         const results: Record<string, unknown> = {};
-
         if (params.type === "all" || params.type === "image") {
-            const res = await authFetch(`${BASE_URL}/image/models`);
-            results.image = await res.json();
+            results.image = await authFetch(`${BASE_URL}/image/models`).then(
+                (r) => r.json(),
+            );
         }
         if (params.type === "all" || params.type === "text") {
-            const res = await authFetch(`${BASE_URL}/v1/models`);
-            results.text = await res.json();
+            results.text = await authFetch(`${BASE_URL}/v1/models`).then((r) =>
+                r.json(),
+            );
         }
-
         return textResult(results);
     },
 };
 
-// ── Tool: Generate Text ───────────────────────────────────────────
 const generateText = {
     name: "pollinations_generate_text",
     description:
@@ -102,7 +99,6 @@ const generateText = {
     },
 };
 
-// ── Tool: Generate Image URL ──────────────────────────────────────
 const generateImage = {
     name: "pollinations_generate_image",
     description:
@@ -132,7 +128,6 @@ const generateImage = {
     },
 };
 
-// ── Tool: Check Account ───────────────────────────────────────────
 const checkAccount = {
     name: "pollinations_account",
     description:
@@ -144,35 +139,31 @@ const checkAccount = {
             .describe("What account info to fetch"),
     },
     handler: async (params: { info: string }) => {
-        const key = resolveApiKey();
-        if (!key) {
+        if (!resolveApiKey()) {
             return textResult({
                 error: "No API key configured. Use polli auth login --token <key>",
             });
         }
 
-        const results: Record<string, unknown> = {};
+        const fetchJson = async (path: string) => {
+            const res = await authFetch(`${ENTER_URL}${path}`);
+            return res.ok ? await res.json() : undefined;
+        };
 
+        const results: Record<string, unknown> = {};
         if (params.info === "all" || params.info === "profile") {
-            const res = await authFetch(`${ENTER_URL}/api/account/profile`);
-            if (res.ok) results.profile = await res.json();
+            results.profile = await fetchJson("/api/account/profile");
         }
         if (params.info === "all" || params.info === "balance") {
-            const res = await authFetch(`${ENTER_URL}/api/account/balance`);
-            if (res.ok) results.balance = await res.json();
+            results.balance = await fetchJson("/api/account/balance");
         }
         if (params.info === "usage") {
-            const res = await authFetch(
-                `${ENTER_URL}/api/account/usage?limit=10`,
-            );
-            if (res.ok) results.usage = await res.json();
+            results.usage = await fetchJson("/api/account/usage?limit=10");
         }
-
         return textResult(results);
     },
 };
 
-// ── Tool: Search Web ──────────────────────────────────────────────
 const webSearch = {
     name: "pollinations_web_search",
     description:
@@ -199,7 +190,6 @@ const webSearch = {
     },
 };
 
-// ── Tool: API Key Info ────────────────────────────────────────────
 const keyInfo = {
     name: "pollinations_key_info",
     description:

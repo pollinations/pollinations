@@ -17,66 +17,6 @@ interface ChatResponse {
     usage?: { total_tokens: number };
 }
 
-function buildBody(
-    prompt: string,
-    opts: {
-        model?: string;
-        system?: string;
-        temperature?: string;
-        maxTokens?: string;
-        topP?: string;
-        frequencyPenalty?: string;
-        presencePenalty?: string;
-        seed?: string;
-        json?: boolean;
-        thinking?: boolean;
-    },
-    stream = false,
-): Record<string, unknown> {
-    const messages: Array<{ role: string; content: string }> = [];
-    if (opts.system) messages.push({ role: "system", content: opts.system });
-    messages.push({ role: "user", content: prompt });
-
-    const body: Record<string, unknown> = { messages };
-    if (opts.model) body.model = opts.model;
-    if (opts.temperature) body.temperature = Number(opts.temperature);
-    if (opts.maxTokens) body.max_tokens = Number(opts.maxTokens);
-    if (opts.topP) body.top_p = Number(opts.topP);
-    if (opts.frequencyPenalty)
-        body.frequency_penalty = Number(opts.frequencyPenalty);
-    if (opts.presencePenalty)
-        body.presence_penalty = Number(opts.presencePenalty);
-    if (opts.seed) body.seed = Number(opts.seed);
-    if (opts.json) body.response_format = { type: "json_object" };
-    if (opts.thinking) body.thinking = true;
-    if (stream) body.stream = true;
-
-    return body;
-}
-
-async function requestCompletion(
-    key: string,
-    body: Record<string, unknown>,
-): Promise<Response> {
-    const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${key}`,
-        },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(120_000),
-    });
-
-    if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`${res.status} ${res.statusText}: ${text}`);
-    }
-
-    return res;
-}
-
-/** Read all of stdin (non-blocking: returns empty string if stdin is a TTY with no data). */
 async function readStdin(): Promise<string> {
     if (process.stdin.isTTY) return "";
     const chunks: Buffer[] = [];
@@ -126,47 +66,76 @@ export function createTextCommand() {
             const isHuman = getOutputMode() === "human";
             const useStream = opts.stream !== false && !opts.output;
 
+            const messages: Array<{ role: string; content: string }> = [];
+            if (opts.system)
+                messages.push({ role: "system", content: opts.system });
+            messages.push({ role: "user", content: prompt });
+
+            const body: Record<string, unknown> = { messages };
+            if (opts.model) body.model = opts.model;
+            if (opts.temperature) body.temperature = Number(opts.temperature);
+            if (opts.maxTokens) body.max_tokens = Number(opts.maxTokens);
+            if (opts.topP) body.top_p = Number(opts.topP);
+            if (opts.frequencyPenalty)
+                body.frequency_penalty = Number(opts.frequencyPenalty);
+            if (opts.presencePenalty)
+                body.presence_penalty = Number(opts.presencePenalty);
+            if (opts.seed) body.seed = Number(opts.seed);
+            if (opts.json) body.response_format = { type: "json_object" };
+            if (opts.thinking) body.thinking = true;
+            if (useStream) body.stream = true;
+
+            const spinner =
+                isHuman && !useStream ? ora("Generating...").start() : null;
+
             try {
+                const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${key}`,
+                    },
+                    body: JSON.stringify(body),
+                    signal: AbortSignal.timeout(120_000),
+                });
+
+                if (!res.ok) {
+                    throw new Error(
+                        `${res.status} ${res.statusText}: ${await res.text().catch(() => "")}`,
+                    );
+                }
+
                 if (useStream) {
-                    const body = buildBody(prompt, opts, true);
-                    const res = await requestCompletion(key, body);
                     let content = "";
                     for await (const chunk of streamSSE(res)) {
                         content += chunk;
-                        if (isHuman) {
-                            process.stdout.write(chunk);
-                        }
+                        if (isHuman) process.stdout.write(chunk);
                     }
                     if (isHuman) process.stdout.write("\n");
-
                     if (getOutputMode() === "json") {
                         printResult({ content, model: opts.model ?? null });
                     }
+                    return;
+                }
+
+                const data = (await res.json()) as ChatResponse;
+                const content = data.choices[0]?.message?.content ?? "";
+                spinner?.stop();
+
+                if (opts.output) {
+                    writeFileSync(opts.output, content, "utf-8");
+                    printSuccess(`Saved to ${opts.output}`);
+                } else if (getOutputMode() === "json") {
+                    printResult({
+                        content,
+                        model: data.model,
+                        tokens: data.usage?.total_tokens ?? null,
+                    });
                 } else {
-                    const spinner = isHuman
-                        ? ora("Generating...").start()
-                        : null;
-                    const body = buildBody(prompt, opts);
-                    const res = await requestCompletion(key, body);
-                    const data = (await res.json()) as ChatResponse;
-                    const content = data.choices[0]?.message?.content ?? "";
-
-                    spinner?.stop();
-
-                    if (opts.output) {
-                        writeFileSync(opts.output, content, "utf-8");
-                        printSuccess(`Saved to ${opts.output}`);
-                    } else if (getOutputMode() === "json") {
-                        printResult({
-                            content,
-                            model: data.model,
-                            tokens: data.usage?.total_tokens ?? null,
-                        });
-                    } else {
-                        process.stdout.write(`${content}\n`);
-                    }
+                    process.stdout.write(`${content}\n`);
                 }
             } catch (err) {
+                spinner?.stop();
                 printError(
                     err instanceof Error ? err.message : "unknown error",
                 );

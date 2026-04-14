@@ -15,11 +15,7 @@ interface Message {
 interface ChatResponse {
     choices: Array<{ message: { content: string } }>;
     model: string;
-    usage?: {
-        prompt_tokens: number;
-        completion_tokens: number;
-        total_tokens: number;
-    };
+    usage?: { total_tokens: number };
 }
 
 export function createChatCommand() {
@@ -67,14 +63,11 @@ export function createChatCommand() {
                 const body: Record<string, unknown> = {
                     messages,
                     stream: !isJson,
-                    ...(opts.model && { model: opts.model }),
-                    ...(opts.temperature && {
-                        temperature: Number(opts.temperature),
-                    }),
-                    ...(opts.maxTokens && {
-                        max_tokens: Number(opts.maxTokens),
-                    }),
                 };
+                if (opts.model) body.model = opts.model;
+                if (opts.temperature)
+                    body.temperature = Number(opts.temperature);
+                if (opts.maxTokens) body.max_tokens = Number(opts.maxTokens);
 
                 try {
                     const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
@@ -88,36 +81,34 @@ export function createChatCommand() {
                     });
 
                     if (!res.ok) {
-                        const text = await res.text().catch(() => "");
-                        throw new Error(`${res.status}: ${text}`);
+                        throw new Error(
+                            `${res.status}: ${await res.text().catch(() => "")}`,
+                        );
                     }
 
-                    if (!isJson) {
-                        // Stream tokens to stderr as they arrive
-                        process.stderr.write(`${chalk.yellow("ai")} > `);
-                        let content = "";
-                        for await (const chunk of streamSSE(res)) {
-                            content += chunk;
-                            process.stderr.write(chunk);
-                        }
-                        process.stderr.write("\n\n");
-                        messages.push({ role: "assistant", content });
-                    } else {
+                    if (isJson) {
                         const data = (await res.json()) as ChatResponse;
                         const content = data.choices[0]?.message?.content ?? "";
                         messages.push({ role: "assistant", content });
-
                         if (data.usage) totalTokens += data.usage.total_tokens;
-
                         printResult({
                             role: "assistant",
                             content,
                             model: data.model,
                             tokens: data.usage?.total_tokens,
                         });
+                        return;
                     }
+
+                    process.stderr.write(`${chalk.yellow("ai")} > `);
+                    let content = "";
+                    for await (const chunk of streamSSE(res)) {
+                        content += chunk;
+                        process.stderr.write(chunk);
+                    }
+                    process.stderr.write("\n\n");
+                    messages.push({ role: "assistant", content });
                 } catch (err) {
-                    // Remove the failed user message
                     messages.pop();
                     printError(
                         err instanceof Error ? err.message : "Request failed",

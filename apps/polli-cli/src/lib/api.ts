@@ -11,7 +11,6 @@ export class ApiError extends Error {
     }
 }
 
-/** Resolve API key or exit with error if missing */
 export const requireKey = (): string => {
     const key = resolveApiKey();
     if (!key) {
@@ -22,39 +21,32 @@ export const requireKey = (): string => {
     return key;
 };
 
-const makeHeaders = (apiKey?: string): Record<string, string> => {
-    const key = resolveApiKey(apiKey);
-    const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-    };
-    if (key) {
-        headers.Authorization = `Bearer ${key}`;
-    }
-    return headers;
-};
+interface RequestOptions {
+    method?: string;
+    body?: unknown;
+    apiKey?: string;
+    timeout?: number;
+}
 
 const request = async <T>(
     baseUrl: string,
     path: string,
-    options: {
-        method?: string;
-        body?: unknown;
-        apiKey?: string;
-        timeout?: number;
-    } = {},
+    options: RequestOptions = {},
 ): Promise<T> => {
     const { method = "GET", body, apiKey, timeout = 30_000 } = options;
-    const url = `${baseUrl}${path}`;
+    const key = resolveApiKey(apiKey);
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeout);
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+    if (key) headers.Authorization = `Bearer ${key}`;
 
-    const res = await fetch(url, {
+    const res = await fetch(`${baseUrl}${path}`, {
         method,
-        headers: makeHeaders(apiKey),
+        headers,
         body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
-    }).finally(() => clearTimeout(timer));
+        signal: AbortSignal.timeout(timeout),
+    });
 
     if (!res.ok) {
         const text = await res.text().catch(() => "Unknown error");
@@ -67,24 +59,8 @@ const request = async <T>(
     return res.json() as Promise<T>;
 };
 
-/** Calls gen.pollinations.ai */
-export const gen = <T>(
-    path: string,
-    options?: {
-        method?: string;
-        body?: unknown;
-        apiKey?: string;
-        timeout?: number;
-    },
-) => request<T>(BASE_URL, path, options);
+export const gen = <T>(path: string, options?: RequestOptions) =>
+    request<T>(BASE_URL, path, options);
 
-/** Calls enter.pollinations.ai */
-export const enter = <T>(
-    path: string,
-    options?: {
-        method?: string;
-        body?: unknown;
-        apiKey?: string;
-        timeout?: number;
-    },
-) => request<T>(ENTER_URL, path, options);
+export const enter = <T>(path: string, options?: RequestOptions) =>
+    request<T>(ENTER_URL, path, options);

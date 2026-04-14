@@ -16,26 +16,21 @@ export interface PolliCredentials {
     keyType?: "pk" | "sk";
 }
 
-const ensureDir = () => {
+export const loadCredentials = (): PolliCredentials => {
+    if (!existsSync(CREDENTIALS_FILE)) return {};
+    try {
+        return JSON.parse(
+            readFileSync(CREDENTIALS_FILE, "utf-8"),
+        ) as PolliCredentials;
+    } catch {
+        return {};
+    }
+};
+
+export const saveCredentials = (creds: PolliCredentials) => {
     if (!existsSync(CONFIG_DIR)) {
         mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
     }
-};
-
-const readJson = <T>(path: string): T | null => {
-    if (!existsSync(path)) return null;
-    try {
-        return JSON.parse(readFileSync(path, "utf-8")) as T;
-    } catch {
-        return null;
-    }
-};
-
-export const loadCredentials = (): PolliCredentials =>
-    readJson(CREDENTIALS_FILE) ?? {};
-
-export const saveCredentials = (creds: PolliCredentials) => {
-    ensureDir();
     writeFileSync(CREDENTIALS_FILE, JSON.stringify(creds, null, 2), {
         encoding: "utf-8",
         mode: 0o600,
@@ -50,14 +45,12 @@ export const clearCredentials = () => {
     }
 };
 
-/** Module-level override set by --key flag (avoids leaking to process.env) */
 let _keyOverride: string | undefined;
 
 export const setKeyOverride = (key: string) => {
     _keyOverride = key;
 };
 
-/** Resolve the API key — flag override > stored credentials */
 export const resolveApiKey = (flagKey?: string): string | undefined =>
     flagKey ?? _keyOverride ?? loadCredentials().apiKey;
 

@@ -30,7 +30,6 @@ export function createTranscribeCommand() {
                     method: "POST",
                     headers: { Authorization: `Bearer ${key}` },
                     body: formData,
-                    signal: AbortSignal.timeout(120_000),
                 });
 
                 if (!res.ok) {

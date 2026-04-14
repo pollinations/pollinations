@@ -48,7 +48,6 @@ export function createVideoCommand() {
             try {
                 const res = await fetch(url, {
                     headers: { Authorization: `Bearer ${key}` },
-                    signal: AbortSignal.timeout(300_000), // 5 min — video gen is slow
                 });
                 if (!res.ok) {
                     const text = await res.text().catch(() => "");

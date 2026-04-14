@@ -46,7 +46,6 @@ export function createImageCommand() {
             try {
                 const res = await fetch(url, {
                     headers: { Authorization: `Bearer ${key}` },
-                    signal: AbortSignal.timeout(120_000),
                 });
                 if (!res.ok) {
                     const text = await res.text().catch(() => "");

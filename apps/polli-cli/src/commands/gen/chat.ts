@@ -77,7 +77,6 @@ export function createChatCommand() {
                             Authorization: `Bearer ${key}`,
                         },
                         body: JSON.stringify(body),
-                        signal: AbortSignal.timeout(120_000),
                     });
 
                     if (!res.ok) {

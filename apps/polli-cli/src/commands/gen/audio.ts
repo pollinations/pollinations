@@ -36,7 +36,6 @@ export function createAudioCommand() {
             try {
                 const res = await fetch(url, {
                     headers: { Authorization: `Bearer ${key}` },
-                    signal: AbortSignal.timeout(120_000),
                 });
                 if (!res.ok) {
                     const errText = await res.text().catch(() => "");

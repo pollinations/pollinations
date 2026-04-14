@@ -25,7 +25,6 @@ interface RequestOptions {
     method?: string;
     body?: unknown;
     apiKey?: string;
-    timeout?: number;
 }
 
 const request = async <T>(
@@ -33,7 +32,7 @@ const request = async <T>(
     path: string,
     options: RequestOptions = {},
 ): Promise<T> => {
-    const { method = "GET", body, apiKey, timeout = 30_000 } = options;
+    const { method = "GET", body, apiKey } = options;
     const key = resolveApiKey(apiKey);
 
     const headers: Record<string, string> = {
@@ -45,7 +44,6 @@ const request = async <T>(
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
-        signal: AbortSignal.timeout(timeout),
     });
 
     if (!res.ok) {

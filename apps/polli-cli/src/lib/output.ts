@@ -13,7 +13,7 @@ export const getOutputMode = (): OutputMode => currentMode;
 /** Print structured data — adapts to current output mode */
 export const printResult = (data: unknown) => {
     if (currentMode === "json") {
-        process.stdout.write(`${JSON.stringify(data)}\n`);
+        process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
         return;
     }
 
@@ -58,7 +58,7 @@ export const printTable = (
     }
 
     if (currentMode === "json") {
-        process.stdout.write(`${JSON.stringify(rows)}\n`);
+        process.stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
         return;
     }
 

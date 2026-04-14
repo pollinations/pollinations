@@ -1,7 +1,12 @@
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
-import { printError, printTable } from "../lib/output.js";
-import { showModelStats } from "./stats.js";
+import {
+    getOutputMode,
+    printError,
+    printResult,
+    printTable,
+} from "../lib/output.js";
+import { fetchModelStats } from "./stats.js";
 
 interface ModelEntry {
     name: string;
@@ -41,10 +46,16 @@ function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
         type: mType,
         capabilities: capabilities(m),
         description: m.description ?? "-",
+        pricing: m.pricing ?? null,
     };
     if (verbose) {
         row.context = m.context_length
             ? `${Math.round(m.context_length / 1000)}k`
+            : "-";
+        row.pricing = m.pricing
+            ? Object.entries(m.pricing)
+                  .map(([k, v]) => `${k}=${v}`)
+                  .join(" ")
             : "-";
     }
     return row;
@@ -54,12 +65,33 @@ export const modelsCommand = new Command("models")
     .description("List available models or show model health stats")
     .option("--type <type>", "Filter: text, image, audio, video, all", "all")
     .option("--verbose", "Show additional details (context length)")
-    .option("--stats", "Show model health and performance stats")
-    .option("--window <window>", "Stats time window: 5m, 60m, 24h, 7d", "60m")
+    .option("--stats", "Show model health and performance stats (60m window)")
     .action(async (opts) => {
         if (opts.stats) {
             try {
-                await showModelStats(opts.type, opts.window);
+                const rows = await fetchModelStats();
+                if (getOutputMode() === "json") {
+                    printResult(rows);
+                } else {
+                    const curated = rows
+                        .filter((r) => r.model !== "undefined")
+                        .map((r) => {
+                            const total = Number(r.total_requests ?? 0);
+                            const errs = Number(r.total_errors ?? 0);
+                            const errPct = total > 0 ? (errs / total) * 100 : 0;
+                            return {
+                                model: String(r.model ?? "-"),
+                                type: String(r.event_type ?? "").replace(
+                                    "generate.",
+                                    "",
+                                ),
+                                requests: total,
+                                "err%": `${errPct.toFixed(1)}%`,
+                                p95: `${r.latency_p95_ms ?? 0}ms`,
+                            };
+                        });
+                    printTable(curated);
+                }
             } catch (err) {
                 printError(
                     `Failed to fetch stats: ${err instanceof Error ? err.message : "unknown"}`,
@@ -105,7 +137,14 @@ export const modelsCommand = new Command("models")
             }
 
             const cols = verbose
-                ? ["name", "type", "capabilities", "context", "description"]
+                ? [
+                      "name",
+                      "type",
+                      "capabilities",
+                      "context",
+                      "pricing",
+                      "description",
+                  ]
                 : ["name", "type", "capabilities", "description"];
             printTable(rows, cols);
         } catch (err) {

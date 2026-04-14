@@ -19,7 +19,7 @@ program
     .description(
         "The Pollinations CLI — for humans, AI agents, and everything in between",
     )
-    .version(`0.1.0-alpha.0 — ${flavor.version}`)
+    .version(`0.1.0-alpha.1 — ${flavor.version}`)
     .option("--json", "Output as JSON")
     .option("--key <key>", "Override stored API key for this command")
     .hook("preAction", () => {

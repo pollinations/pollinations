@@ -52,7 +52,9 @@ const ALL_REGISTERED_MODELS = [
     ...registryServicesToModels(TEXT_SERVICES, "text"),
     ...registryServicesToModels(IMAGE_SERVICES, "image"),
     ...registryServicesToModels(AUDIO_SERVICES, "audio"),
-].sort((a, b) => a.name.localeCompare(b.name));
+]
+    .filter((m) => !m.hidden)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
 // Calculate total 4xx errors (user errors)
 function calcTotal4xx(stats) {

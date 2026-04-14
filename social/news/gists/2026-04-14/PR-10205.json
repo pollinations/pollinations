@@ -1,0 +1,34 @@
+{
+  "pr_number": 10205,
+  "title": "cleanup: retire legacy tinybird internal tokens",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10205",
+  "merged_at": "2026-04-14T00:47:35Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the birdcage",
+    "blurb": "Polly did some spring cleaning in the observability nest, sweeping out old Tinybird tokens. Just keeping our internal metrics tidy and secure!",
+    "summary": "Removed legacy internal Tinybird append and read tokens from our observability configuration to match the live deployment state.",
+    "impact": "This internal cleanup ensures our metrics pipeline remains secure and perfectly synced with our live infrastructure.",
+    "keywords": [
+      "observability",
+      "tinybird",
+      "cleanup",
+      "infrastructure",
+      "metrics"
+    ],
+    "visual_concept": "Polly the bee cleaning up a tiny birdhouse (Tinybird metaphor) next to some glowing server racks or monitors showing data pipes.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny bandana, using a small broom to sweep around a cute wooden birdhouse sitting on a retro server rack. The servers glow with soft lime green (#ecf874) lights. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-14/PR-10205.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny bandana, using a small broom to sweep around a cute wooden birdhouse sitting on a retro server rack. The servers glow with soft lime green (#ecf874) lights. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-14T00:48:36.748536+00:00"
+}

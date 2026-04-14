@@ -5,27 +5,27 @@ const SAFETY_FEATURES = [
     {
         id: "privacy",
         label: "🔒 Privacy",
-        description: "redacts emails · names · phones · IPs",
+        description: "redacts emails, names, phones, IPs",
     },
     {
         id: "secrets",
         label: "🔑 Secrets",
-        description: "redacts api keys · passwords · tokens",
+        description: "redacts api keys, passwords, tokens",
     },
     {
         id: "sexual",
         label: "🔞 Sexual",
-        description: "blocks nudity · sexual content",
+        description: "blocks nudity and sexual content",
     },
     {
         id: "violence",
         label: "⚔️ Violence",
-        description: "blocks gore · hate · insults",
+        description: "blocks gore, hate, insults",
     },
     // {
     //     id: "shield",
     //     label: "🛡️ Shield",
-    //     description: "blocks prompt injection · illegal instructions",
+    //     description: "blocks prompt injection, illegal instructions",
     // },
 ] as const;
 
@@ -76,24 +76,24 @@ export const SafetyInput: FC<SafetyInputProps> = ({
     }
 
     return (
-        <div className="space-y-2">
-            <div className="flex items-center justify-between">
+        <div>
+            <div className="flex items-center justify-between mb-4">
                 <span className="text-sm font-semibold">Safety</span>
                 <button
                     type="button"
                     onClick={toggleAll}
                     disabled={disabled}
                     className={cn(
-                        "text-xs px-2 py-0.5 rounded transition-colors cursor-pointer",
+                        "text-xs px-2 py-1 rounded-md transition-colors cursor-pointer",
                         anyActive
-                            ? "bg-green-100 text-green-700 hover:bg-green-200"
-                            : "bg-gray-100 text-gray-500 hover:bg-gray-200",
+                            ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                            : "bg-green-100 text-green-700 hover:bg-green-200",
                     )}
                 >
                     {anyActive ? "Clear all" : "Enable all"}
                 </button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
                 {SAFETY_FEATURES.map((feature) => {
                     const isActive = active.has(feature.id);
                     return (
@@ -103,19 +103,26 @@ export const SafetyInput: FC<SafetyInputProps> = ({
                             onClick={() => toggle(feature.id)}
                             disabled={disabled}
                             className={cn(
-                                "text-left px-3 py-2 rounded-lg text-xs transition-all cursor-pointer border",
+                                "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
                                 isActive
-                                    ? "bg-green-50 border-green-400 text-green-800"
-                                    : "bg-gray-50 border-gray-200 text-gray-400 hover:border-gray-300",
+                                    ? "border-green-400 bg-green-50"
+                                    : "border-gray-200 hover:border-gray-300",
+                                !disabled && "cursor-pointer",
+                                disabled && "opacity-50 cursor-not-allowed",
                             )}
                         >
-                            <div className="font-medium">
-                                {isActive && "✓ "}
-                                {feature.label}
+                            <div className="flex-1">
+                                <span className="text-sm font-medium">
+                                    {feature.label}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                    {" "}
+                                    {feature.description}
+                                </span>
                             </div>
-                            <div className="text-[10px] opacity-70">
-                                {feature.description}
-                            </div>
+                            <span className="text-gray-400 text-lg leading-none">
+                                {isActive ? "✕" : "+"}
+                            </span>
                         </button>
                     );
                 })}

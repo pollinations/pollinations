@@ -93,6 +93,16 @@
     .scrollbar-subtle {
         scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
     }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
 }
 
 /* NEW badge glow animation (green) */

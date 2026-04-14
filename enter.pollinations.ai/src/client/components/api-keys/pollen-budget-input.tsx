@@ -48,7 +48,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className="w-32"
+                    className="w-24"
                     placeholder="Unlimited"
                     disabled={disabled}
                 />

@@ -628,13 +628,17 @@ function AuthorizeComponent() {
                             )}
 
                             <div className="bg-amber-50 border-2 border-amber-300 rounded-lg flex-1 min-h-0 overflow-y-auto [&_input]:!bg-amber-100 [&_input]:!border-amber-400 [&_input:focus]:!ring-amber-500">
-                                <div className="p-4">
-                                    <p className="text-sm text-amber-900">
-                                        Signed in as{" "}
-                                        <strong className="text-gray-900">
-                                            {user.githubUsername || user.email}
-                                        </strong>
-                                    </p>
+                                <div className="p-4 flex items-center gap-2">
+                                    {user.image && (
+                                        <img
+                                            src={user.image}
+                                            alt=""
+                                            className="w-6 h-6 rounded-full"
+                                        />
+                                    )}
+                                    <span className="text-sm font-medium text-gray-900">
+                                        {user.githubUsername || user.email}
+                                    </span>
                                 </div>
 
                                 <div className="border-t border-amber-300 p-4">
@@ -661,14 +665,14 @@ function AuthorizeComponent() {
                                 </div>
 
                                 {!isDeviceMode && (
-                                    <ul className="border-t border-amber-300 p-4 text-sm text-amber-900 space-y-2">
-                                        <li className="flex items-center gap-2 flex-wrap">
+                                    <ul className="border-t border-amber-300 p-4 text-sm text-amber-900 space-y-3">
+                                        <li className="flex items-start gap-2">
                                             <span
-                                                className={
+                                                className={`w-4 shrink-0 ${
                                                     modalities.length === 0
                                                         ? "text-red-600"
                                                         : "text-amber-700"
-                                                }
+                                                }`}
                                             >
                                                 {modalities.length === 0
                                                     ? "\u2717"
@@ -680,21 +684,23 @@ function AuthorizeComponent() {
                                                     at least one in Advanced
                                                 </span>
                                             ) : (
-                                                <>
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     <span>Generate</span>
-                                                    {modalities.map((m) => (
-                                                        <span
-                                                            key={m}
-                                                            className={`px-2 py-0.5 rounded-full text-xs border ${MODALITY_PILL[m as keyof typeof MODALITY_PILL]}`}
-                                                        >
-                                                            {m}
-                                                        </span>
-                                                    ))}
-                                                </>
+                                                    <div className="flex items-center gap-1 flex-nowrap">
+                                                        {modalities.map((m) => (
+                                                            <span
+                                                                key={m}
+                                                                className={`px-2 py-0.5 rounded-full text-xs border shrink-0 ${MODALITY_PILL[m as keyof typeof MODALITY_PILL]}`}
+                                                            >
+                                                                {m}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             )}
                                         </li>
                                         <li className="flex items-start gap-2">
-                                            <span className="text-amber-800">
+                                            <span className="w-4 shrink-0 text-amber-800">
                                                 &#x231B;
                                             </span>
                                             <span>

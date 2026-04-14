@@ -450,13 +450,13 @@ const ModelChip: FC<{
             selected
                 ? theme === "amber"
                     ? "bg-amber-100 text-amber-900 border-amber-400"
-                    : "bg-blue-100 text-blue-700 border-blue-300"
+                    : "bg-green-50 text-gray-900 border-green-400"
                 : "bg-transparent text-gray-600 border-gray-300",
             !disabled &&
                 !selected &&
                 (theme === "amber"
-                    ? "hover:bg-amber-100/60 hover:text-gray-800"
-                    : "hover:bg-green-100/60 hover:text-gray-800"),
+                    ? "hover:bg-amber-50 hover:text-gray-800 hover:border-amber-300"
+                    : "hover:bg-green-50 hover:text-gray-800 hover:border-green-300"),
             !disabled && "cursor-pointer",
             disabled && "opacity-50 cursor-not-allowed",
         )}

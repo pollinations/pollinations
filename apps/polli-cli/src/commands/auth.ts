@@ -14,6 +14,7 @@ import {
     printResult,
     printSuccess,
 } from "../lib/output.js";
+import { flavor } from "../lib/quotes.js";
 
 interface ProfileResponse {
     name?: string;
@@ -121,6 +122,7 @@ const login = new Command("login")
                     "Key stored but could not verify. It may still be valid.";
                 spinner?.warn(msg) ?? printInfo(msg);
             }
+            printInfo(flavor.login);
             return;
         }
 
@@ -219,6 +221,7 @@ const login = new Command("login")
                 "Key stored. Could not fetch profile, but auth is complete.",
             );
         }
+        printInfo(flavor.login);
     });
 
 const logout = new Command("logout")
@@ -226,6 +229,7 @@ const logout = new Command("logout")
     .action(() => {
         clearCredentials();
         printSuccess("Logged out. Credentials cleared.");
+        printInfo(flavor.logout);
     });
 
 /** Shared action for `auth status` and the `whoami` alias. */

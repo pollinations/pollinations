@@ -1,6 +1,6 @@
 {
-  "name": "@pollinations_ai/cli",
-  "version": "0.1.0",
+  "name": "@pollinations/cli",
+  "version": "0.1.0-alpha.0",
   "description": "The Pollinations CLI — for humans, AI agents, and everything in between",
   "type": "module",
   "bin": {
@@ -14,8 +14,8 @@
     "prepublishOnly": "npm run build"
   },
   "files": [
-    "dist/",
-    "bin/"
+    "dist",
+    "bin"
   ],
   "keywords": [
     "pollinations",

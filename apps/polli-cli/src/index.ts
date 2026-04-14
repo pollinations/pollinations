@@ -10,6 +10,7 @@ import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
+import { flavor } from "./lib/quotes.js";
 
 const program = new Command();
 
@@ -18,7 +19,7 @@ program
     .description(
         "The Pollinations CLI — for humans, AI agents, and everything in between",
     )
-    .version("0.1.0")
+    .version(`0.1.0-alpha.0 — ${flavor.version}`)
     .option("--json", "Output as JSON")
     .option("--key <key>", "Override stored API key for this command")
     .hook("preAction", () => {

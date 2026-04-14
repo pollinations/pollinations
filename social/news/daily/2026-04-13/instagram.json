@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-13",
+  "period_start": "2026-04-13",
+  "period_end": "2026-04-13",
+  "generated_at": "2026-04-14T06:34:18.792227+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-13/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-13/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-13/images/instagram-3.jpg"
+    }
+  ],
+  "text": "9 PRs merged today. Mostly, it was a massive harvest for the app showcase—welcome to Overtli Studio Suite, StyleOps, Pigment, PseudoWrite, and a bunch of others. \n\nWe also spent some time restoring proper credits (attribution is the whole point of open source, sorry about the mixups) and doing some hardware registry cleanup behind the scenes to keep the RTX 4090s happy and the heartbeats steady.\n\nThe garden is growing. Check the showcase at pollinations.ai/apps to see what everyone's building.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #aiartcommunity #retroaesthetic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

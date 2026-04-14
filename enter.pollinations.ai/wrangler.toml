@@ -78,12 +78,15 @@ id = "aa0d0aceb6bd45de93032270c7adf4ab"
 [[env.local.r2_buckets]]
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
-remote = true
 
 [[env.local.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
-remote = true
+
+[[env.local.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+script_name = "pollinations-enter"
 
 [env.local.vars]
 ENVIRONMENT = "local"
@@ -99,6 +102,8 @@ TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?n
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 IMAGE_SERVICE_URL = "http://localhost:16384"
 TEXT_SERVICE_URL = "http://localhost:16385"
+# NOWPayments crypto payments (sandbox for local development)
+NOWPAYMENTS_ENV = "sandbox"
 # Stripe payments (sandbox for local development)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"

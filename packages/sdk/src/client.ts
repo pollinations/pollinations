@@ -7,6 +7,7 @@ import type {
     ChatOptions,
     ChatResponse,
     ChatStreamChunk,
+    DailyUsageOptions,
     DailyUsageResponse,
     ImageEditOptions,
     ImageGenerateOptions,
@@ -1608,6 +1609,7 @@ export class Pollinations {
     async accountUsage(options: UsageOptions = {}): Promise<UsageResponse> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
+        if (options.days) params.set("days", String(options.days));
         if (options.limit) params.set("limit", String(options.limit));
         if (options.before) params.set("before", options.before);
 
@@ -1634,10 +1636,11 @@ export class Pollinations {
      * ```
      */
     async accountUsageDaily(
-        options: { format?: "json" | "csv" } = {},
+        options: DailyUsageOptions = {},
     ): Promise<DailyUsageResponse> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
+        if (options.days) params.set("days", String(options.days));
 
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;

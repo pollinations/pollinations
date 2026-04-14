@@ -20,9 +20,18 @@ const TIER_PILL_CLASSES = {
     violet: "bg-violet-200 text-violet-950",
 } as const;
 
-export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
-    const [filters, setFilters] = useState<FilterState>({
-        timeRange: "7d",
+type UsageGraphProps = {
+    tier?: TierStatus;
+    timeRange: TimeRange;
+    onTimeRangeChange: (timeRange: TimeRange) => void;
+};
+
+export const UsageGraph: FC<UsageGraphProps> = ({
+    tier,
+    timeRange,
+    onTimeRangeChange,
+}) => {
+    const [filters, setFilters] = useState<Omit<FilterState, "timeRange">>({
         metric: "pollen",
         selectedKeys: [],
         selectedModels: [],
@@ -36,7 +45,10 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
         usedKeys,
         chartData,
         stats,
-    } = useUsageData(filters);
+    } = useUsageData({
+        ...filters,
+        timeRange,
+    });
 
     const keySelectOptions = usedKeys.map((name) => ({
         value: name,
@@ -65,14 +77,14 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
     useEffect(() => {
         const handleResize = () => {
             const isMobile = window.innerWidth < 640; // sm breakpoint
-            if (isMobile && filters.timeRange === "all") {
-                setFilters((f) => ({ ...f, timeRange: "30d" }));
+            if (isMobile && timeRange === "all") {
+                onTimeRangeChange("30d");
             }
         };
         handleResize(); // Check on mount
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
-    }, [filters.timeRange]);
+    }, [onTimeRangeChange, timeRange]);
 
     return (
         <div className="flex flex-col gap-2">
@@ -116,13 +128,8 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                                     (t) => (
                                         <FilterButton
                                             key={t}
-                                            active={filters.timeRange === t}
-                                            onClick={() =>
-                                                setFilters((f) => ({
-                                                    ...f,
-                                                    timeRange: t,
-                                                }))
-                                            }
+                                            active={timeRange === t}
+                                            onClick={() => onTimeRangeChange(t)}
                                             className={
                                                 t === "all"
                                                     ? "hidden sm:inline-flex"

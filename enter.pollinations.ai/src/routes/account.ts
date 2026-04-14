@@ -11,6 +11,7 @@ import {
 import type { ApiKeyType } from "@/db/schema/event.ts";
 import { getTierCadence, tierNames } from "@/tier-config.ts";
 import { invalidateApiKeyCache } from "../auth.ts";
+import type { Env } from "../env.ts";
 
 // Calculate next tier refill time (null for tiers with no refill)
 function getNextRefillAt(tier?: string | null): string | null {
@@ -23,15 +24,56 @@ function getNextRefillAt(tier?: string | null): string | null {
     return nextHour.toISOString();
 }
 
-import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 // Cache TTL in seconds
 const CACHE_TTL = 60 * 60; // 1 hour
+const DEFAULT_USAGE_DAYS = 30;
+const DEFAULT_DAILY_USAGE_DAYS = 90;
+const MAX_USAGE_DAYS = 90;
+const USAGE_CHUNK_DAYS = 30;
+const MAX_USAGE_EXPORT_ROWS = 50_000;
 
 const SECONDS_PER_DAY = 86400;
+
+type UsageDebugBindings = CloudflareBindings & {
+    USAGE_DEBUG_USER_ID?: string;
+};
+
+function resolveUsageTargetUserId(
+    env: CloudflareBindings,
+    currentUserId: string,
+    apiKey?: {
+        permissions?: Record<string, string[]>;
+        metadata?: Record<string, unknown>;
+    },
+): { userId: string; overridden: boolean } {
+    if (apiKey) {
+        return { userId: currentUserId, overridden: false };
+    }
+
+    const environment = String(env.ENVIRONMENT || "");
+    const allowDebugOverride =
+        environment === "local" ||
+        environment === "development" ||
+        environment === "dev";
+
+    if (!allowDebugOverride) {
+        return { userId: currentUserId, overridden: false };
+    }
+
+    const debugUserId = (env as UsageDebugBindings).USAGE_DEBUG_USER_ID?.trim();
+    if (!debugUserId) {
+        return { userId: currentUserId, overridden: false };
+    }
+
+    return {
+        userId: debugUserId,
+        overridden: debugUserId !== currentUserId,
+    };
+}
 
 /**
  * Require that the caller has `account:keys` permission and is using a secret key.
@@ -99,16 +141,120 @@ const escapeCSV = (val: string | number | boolean | null) => {
     return str;
 };
 
+function formatTinybirdDateTime(date: Date): string {
+    return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
+function startOfNextUtcDay(now = new Date()): Date {
+    const next = new Date(now);
+    next.setUTCHours(0, 0, 0, 0);
+    next.setUTCDate(next.getUTCDate() + 1);
+    return next;
+}
+
+function addUtcDays(date: Date, days: number): Date {
+    const next = new Date(date);
+    next.setUTCDate(next.getUTCDate() + days);
+    return next;
+}
+
+type UsageWindow = {
+    since: string;
+    until: string;
+};
+
+function buildUsageWindow(days: number): UsageWindow {
+    const untilDate = startOfNextUtcDay();
+    const sinceDate = addUtcDays(untilDate, -days);
+    return {
+        since: formatTinybirdDateTime(sinceDate),
+        until: formatTinybirdDateTime(untilDate),
+    };
+}
+
+function buildUsageWindows(
+    days: number,
+    chunkDays = USAGE_CHUNK_DAYS,
+    newestFirst = false,
+): UsageWindow[] {
+    const overallWindow = buildUsageWindow(days);
+    const windows: UsageWindow[] = [];
+    let cursor = new Date(`${overallWindow.since.replace(" ", "T")}Z`);
+    const end = new Date(`${overallWindow.until.replace(" ", "T")}Z`);
+
+    while (cursor < end) {
+        const next = addUtcDays(cursor, chunkDays);
+        const boundedNext = next < end ? next : end;
+        windows.push({
+            since: formatTinybirdDateTime(cursor),
+            until: formatTinybirdDateTime(boundedNext),
+        });
+        cursor = boundedNext;
+    }
+
+    return newestFirst ? windows.reverse() : windows;
+}
+
+async function fetchTinybirdRows<T>(
+    origin: string,
+    path: string,
+    token: string,
+    params: Record<string, string | undefined>,
+): Promise<T[]> {
+    const url = new URL(path, origin);
+    for (const [key, value] of Object.entries(params)) {
+        if (value) {
+            url.searchParams.set(key, value);
+        }
+    }
+
+    const response = await fetch(url.toString(), {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+            `Tinybird error: ${response.status} ${errorText || "(empty response)"}`,
+        );
+    }
+
+    const data = (await response.json()) as { data: T[] };
+    return data.data;
+}
+
 // Query params schema for usage
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
-    limit: z.coerce.number().min(1).max(50000).optional().default(100),
+    limit: z.coerce
+        .number()
+        .min(1)
+        .max(MAX_USAGE_EXPORT_ROWS)
+        .optional()
+        .default(100),
     before: z.string().optional(), // ISO timestamp cursor for pagination
+    days: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_USAGE_DAYS)
+        .optional()
+        .default(DEFAULT_USAGE_DAYS),
 });
 
 // Query params schema for daily usage
 const usageDailyQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
+    days: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_USAGE_DAYS)
+        .optional()
+        .default(DEFAULT_DAILY_USAGE_DAYS),
+    granularity: z.enum(["summary", "api_key"]).optional().default("summary"),
 });
 
 type DailyUsageRecord = {
@@ -117,6 +263,34 @@ type DailyUsageRecord = {
     meter_source: string | null;
     requests: number;
     cost_usd: number;
+    api_key_names?: string[];
+};
+
+type KeyedDailyUsageRecord = Omit<DailyUsageRecord, "api_key_names"> & {
+    api_key_name: string | null;
+};
+
+type UsageRecord = {
+    timestamp: string;
+    type: string;
+    model: string | null;
+    api_key: string | null;
+    api_key_type: string | null;
+    meter_source: string | null;
+    input_text_tokens: number;
+    input_cached_tokens: number;
+    input_audio_tokens: number;
+    input_image_tokens: number;
+    output_text_tokens: number;
+    output_reasoning_tokens: number;
+    output_audio_tokens: number;
+    output_image_tokens: number;
+    cost_usd: number;
+    response_time_ms: number | null;
+};
+
+type UsageRecordWithCursor = UsageRecord & {
+    cursor_event_id: string;
 };
 
 // Response schema for daily usage OpenAPI documentation
@@ -129,6 +303,12 @@ const dailyUsageRecordSchema = z.object({
         .describe("Billing source ('tier', 'pack', 'crypto')"),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
+    api_key_names: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "API key names included in this bucket. Present for dashboard usage data.",
+        ),
 });
 
 const dailyUsageResponseSchema = z.object({
@@ -137,6 +317,90 @@ const dailyUsageResponseSchema = z.object({
         .describe("Array of daily usage records"),
     count: z.number().describe("Number of records returned"),
 });
+
+function normalizeKeyedDailyUsage(
+    usage: KeyedDailyUsageRecord[],
+): DailyUsageRecord[] {
+    return usage.map((row) => ({
+        date: row.date,
+        model: row.model,
+        meter_source: row.meter_source,
+        requests: row.requests,
+        cost_usd: row.cost_usd,
+        api_key_names:
+            row.api_key_name && row.api_key_name !== "undefined"
+                ? [row.api_key_name]
+                : [],
+    }));
+}
+
+function sortDailyUsageRecords(
+    usage: DailyUsageRecord[],
+    granularity: "summary" | "api_key",
+): DailyUsageRecord[] {
+    return usage.toSorted((left, right) => {
+        if (left.date !== right.date) {
+            return right.date.localeCompare(left.date);
+        }
+        if (right.requests !== left.requests) {
+            return right.requests - left.requests;
+        }
+        if ((left.model || "") !== (right.model || "")) {
+            return (left.model || "").localeCompare(right.model || "");
+        }
+        if ((left.meter_source || "") !== (right.meter_source || "")) {
+            return (left.meter_source || "").localeCompare(
+                right.meter_source || "",
+            );
+        }
+        if (granularity === "api_key") {
+            return (left.api_key_names?.[0] || "").localeCompare(
+                right.api_key_names?.[0] || "",
+            );
+        }
+        return 0;
+    });
+}
+
+function usageRecordToCsvRow(row: UsageRecord): string {
+    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_image_tokens},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
+}
+
+function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
+    return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
+}
+
+async function fetchDetailedUsagePage(
+    origin: string,
+    token: string,
+    params: {
+        userId: string;
+        limit: number;
+        since: string;
+        until: string;
+        before?: string;
+        beforeEventId?: string;
+    },
+): Promise<UsageRecordWithCursor[]> {
+    return fetchTinybirdRows<UsageRecordWithCursor>(
+        origin,
+        "/v0/pipes/user_usage.json",
+        token,
+        {
+            user_id: params.userId,
+            limit: params.limit.toString(),
+            since: params.since,
+            until: params.until,
+            before: params.before,
+            before_event_id: params.beforeEventId,
+        },
+    );
+}
+
+function stripUsageCursor(row: UsageRecordWithCursor): UsageRecord {
+    const { cursor_event_id: _, ...usage } = row;
+    return usage;
+}
 
 // Response schemas for OpenAPI documentation
 const profileResponseSchema = z.object({
@@ -359,7 +623,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Usage History",
             description:
-                "Returns your request history with per-request details: model used, token counts, cost, and response time. Supports JSON and CSV export. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.",
+                "Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, and supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Usage records",
@@ -394,87 +658,42 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            const { format, limit, before } = c.req.valid("query");
+            const { format, limit, before, days } = c.req.valid("query");
+            const { userId: usageUserId, overridden: usageUserOverridden } =
+                resolveUsageTargetUserId(c.env, user.id, apiKey);
+            const usageWindow = buildUsageWindow(days);
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const header =
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
 
             log.debug(
-                "Fetching usage: userId={userId} format={format} limit={limit} before={before}",
+                "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} days={days}",
                 {
-                    userId: user.id,
+                    requesterUserId: user.id,
+                    targetUserId: usageUserId,
+                    override: usageUserOverridden,
                     format,
                     limit,
                     before,
+                    days,
                 },
             );
 
-            // Build Tinybird API URL from ingest URL origin
-            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdUrl = new URL(
-                "/v0/pipes/user_usage.json",
-                tinybirdOrigin,
-            );
-            tinybirdUrl.searchParams.set("user_id", user.id);
-            tinybirdUrl.searchParams.set("limit", limit.toString());
-            if (before) {
-                tinybirdUrl.searchParams.set("before", before);
-            }
-
-            log.debug("Querying Tinybird: {url}", {
-                url: tinybirdUrl.toString(),
-            });
-
             try {
-                const response = await fetch(tinybirdUrl.toString(), {
-                    headers: {
-                        Authorization: `Bearer ${c.env.TINYBIRD_READ_TOKEN}`,
-                    },
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    log.error(
-                        "Tinybird error: url={url} status={status} error={error}",
+                const usage = (
+                    await fetchDetailedUsagePage(
+                        tinybirdOrigin,
+                        tinybirdToken,
                         {
-                            url: tinybirdUrl.toString(),
-                            status: response.status,
-                            error: errorText,
+                            userId: usageUserId,
+                            limit,
+                            since: usageWindow.since,
+                            until: usageWindow.until,
+                            before,
                         },
-                    );
-
-                    const status = response.status >= 500 ? 503 : 500;
-                    return c.json(
-                        {
-                            error: "Failed to fetch usage data",
-                            details:
-                                response.status === 401
-                                    ? "Unauthorized"
-                                    : "Service Unavailable",
-                        },
-                        status,
-                    );
-                }
-
-                const data = (await response.json()) as {
-                    data: Array<{
-                        timestamp: string;
-                        type: string;
-                        model: string | null;
-                        api_key: string | null;
-                        api_key_type: string | null;
-                        meter_source: string | null;
-                        input_text_tokens: number;
-                        input_cached_tokens: number;
-                        input_audio_tokens: number;
-                        input_image_tokens: number;
-                        output_text_tokens: number;
-                        output_reasoning_tokens: number;
-                        output_audio_tokens: number;
-                        output_image_tokens: number;
-                        cost_usd: number;
-                        response_time_ms: number | null;
-                    }>;
-                };
-
-                const usage = data.data;
+                    )
+                ).map(stripUsageCursor);
 
                 log.debug("Fetched {count} usage records", {
                     count: usage.length,
@@ -482,18 +701,13 @@ export const accountRoutes = new Hono<Env>()
 
                 // Return CSV if requested
                 if (format === "csv") {
-                    const header =
-                        "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
-                    const rows = usage.map(
-                        (row) =>
-                            `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_image_tokens},${row.cost_usd},${row.response_time_ms || ""}`,
-                    );
+                    const rows = usage.map(usageRecordToCsvRow);
                     const csv = [header, ...rows].join("\n");
 
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-usage-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-usage-latest-${usage.length}-rows-${days}d-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }
@@ -514,7 +728,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
-                "Returns daily aggregated usage for the last 90 days, grouped by date and model. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns daily aggregated usage for the requested time window (max 90 days), grouped by date and model. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Daily usage records aggregated by date/model",
@@ -548,10 +762,17 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
+            const { format, days, granularity } = c.req.valid("query");
+            const { userId: usageUserId, overridden: usageUserOverridden } =
+                resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
             const kv = c.env.KV;
-            const cacheKey = `usage:daily:${user.id}`;
+            const cacheKeyPrefix = usageUserOverridden
+                ? `usage:daily:debug:${usageUserId}`
+                : `usage:daily:${usageUserId}`;
+            const cacheKey = `${cacheKeyPrefix}:${granularity}:${days}`;
+            const windows = buildUsageWindows(days);
 
             try {
                 let usage: DailyUsageRecord[] | null = null;
@@ -568,32 +789,29 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 if (!usage) {
-                    const ninetyDaysAgo = new Date(
-                        Date.now() - 90 * 24 * 60 * 60 * 1000,
+                    const endpointPath =
+                        granularity === "api_key"
+                            ? "/v0/pipes/user_usage_daily_by_api_key.json"
+                            : "/v0/pipes/user_usage_daily.json";
+                    const chunkResults = await Promise.all(
+                        windows.map((window) =>
+                            fetchTinybirdRows<
+                                DailyUsageRecord | KeyedDailyUsageRecord
+                            >(tinybirdOrigin, endpointPath, tinybirdToken, {
+                                user_id: usageUserId,
+                                since: window.since,
+                                until: window.until,
+                            }),
+                        ),
                     );
-                    const since = `${ninetyDaysAgo.toISOString().split("T")[0]} 00:00:00`;
-
-                    const url = new URL(
-                        "/v0/pipes/user_usage_daily.json",
-                        tinybirdOrigin,
-                    );
-                    url.searchParams.set("user_id", user.id);
-                    url.searchParams.set("since", since);
-
-                    const response = await fetch(url.toString(), {
-                        headers: {
-                            Authorization: `Bearer ${tinybirdToken}`,
-                        },
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Tinybird error: ${response.status}`);
-                    }
-
-                    const data = (await response.json()) as {
-                        data: DailyUsageRecord[];
-                    };
-                    usage = data.data;
+                    const rows = chunkResults.flat();
+                    usage =
+                        granularity === "api_key"
+                            ? normalizeKeyedDailyUsage(
+                                  rows as KeyedDailyUsageRecord[],
+                              )
+                            : (rows as DailyUsageRecord[]);
+                    usage = sortDailyUsageRecords(usage, granularity);
 
                     try {
                         await kv.put(cacheKey, JSON.stringify(usage), {
@@ -605,27 +823,34 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 log.debug(
-                    "Fetched daily usage: count={count} cached={cached}",
+                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} granularity={granularity} count={count} cached={cached}",
                     {
+                        requesterUserId: user.id,
+                        targetUserId: usageUserId,
+                        override: usageUserOverridden,
+                        days,
+                        granularity,
                         count: usage.length,
                         cached,
                     },
                 );
 
-                const { format } = c.req.valid("query");
-
                 if (format === "csv") {
-                    const header = "date,model,meter_source,requests,cost_usd";
-                    const rows = usage.map(
-                        (row) =>
-                            `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`,
+                    const header =
+                        granularity === "api_key"
+                            ? "date,model,meter_source,api_key_names,requests,cost_usd"
+                            : "date,model,meter_source,requests,cost_usd";
+                    const rows = usage.map((row) =>
+                        granularity === "api_key"
+                            ? `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${escapeCSV(row.api_key_names?.join("|") || "")},${row.requests},${row.cost_usd}`
+                            : dailyUsageRecordToCsvRow(row),
                     );
                     const csv = [header, ...rows].join("\n");
 
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${days}d-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }

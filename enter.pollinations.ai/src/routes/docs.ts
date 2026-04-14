@@ -334,16 +334,18 @@ function generateLLMDoc(): string {
         "Per-request usage history: model, token counts, cost, response time.",
     );
     lines.push(
-        "Query params: format (json|csv, default json), limit (1-50000, default 100), before (ISO timestamp cursor)",
+        "Query params: format (json|csv, default json), days (1-90, default 30), limit (1-50000, default 100), before (ISO timestamp cursor). Each response is capped by limit; dashboard detailed CSV uses the latest 50,000 rows within the selected period.",
     );
     lines.push("Requires `account:usage` permission.");
     lines.push("");
 
     lines.push("### GET /api/account/usage/daily");
     lines.push(
-        "Daily aggregated usage (last 90 days) grouped by date and model: { date, model, meter_source, requests, cost_usd }.",
+        "Daily aggregated usage for the requested time window (max 90 days) grouped by date and model: { date, model, meter_source, requests, cost_usd }.",
     );
-    lines.push("Query params: format (json|csv, default json)");
+    lines.push(
+        "Query params: format (json|csv, default json), days (1-90, default 90)",
+    );
     lines.push("Requires `account:usage` permission. Cached 1 hour.");
     lines.push("");
 
@@ -896,8 +898,8 @@ models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
 curl "https://gen.pollinations.ai/account/usage?limit=10" \\
   -H "Authorization: Bearer YOUR_API_KEY"
 
-# Export as CSV
-curl "https://gen.pollinations.ai/account/usage?format=csv&limit=100" \\
+# Export the latest 50,000 rows from the last 30 days as CSV
+curl "https://gen.pollinations.ai/account/usage?format=csv&days=30&limit=50000" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o usage.csv`,
         },
         {
@@ -907,11 +909,11 @@ curl "https://gen.pollinations.ai/account/usage?format=csv&limit=100" \\
 
 response = requests.get(
     "https://gen.pollinations.ai/account/usage",
-    params={"limit": 10},
+    params={"limit": 10, "days": 30},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
-for record in response.json()["data"]:
-    print(f"{record['model']}: {record['cost']} pollen")`,
+for record in response.json()["usage"]:
+    print(f"{record['model']}: {record['cost_usd']} pollen")`,
         },
     ],
     "get /account/usage/daily": [

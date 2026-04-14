@@ -1,0 +1,35 @@
+{
+  "pr_number": 10196,
+  "title": "feat(image): add reasoning flag for gemini image models",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/10196",
+  "merged_at": "2026-04-14T09:31:49Z",
+  "labels": [
+    "IMAGE",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Deep thoughts, pretty pixels",
+    "blurb": "We've added a `reasoning` flag to the image API for Gemini models. Now you can ask the model to think a little harder before it paints, which is especially handy for getting text rendering right.",
+    "summary": "Introduced a `reasoning` query parameter to the image API that activates native thinking modes for Gemini models via Vertex AI.",
+    "impact": "Developers can append `?reasoning=true` to Gemini image requests to enable advanced reasoning for complex prompts, without affecting other models.",
+    "keywords": [
+      "image-generation",
+      "gemini",
+      "reasoning",
+      "api",
+      "vertex-ai"
+    ],
+    "visual_concept": "The PR is about adding a 'thinking/reasoning' mode to image generation. Visual symbols: Polly the bee wearing a thinking cap, a glowing brain or lightbulb, a canvas or picture frame. The robot companion holding the 'idea' while Polly paints.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard thinking cap, painting on a digital canvas that glows with soft pastel light. A chunky retro robot companion with a monitor head stands nearby holding a glowing brain-shaped lightbulb. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-14/PR-10196.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard thinking cap, painting on a digital canvas that glows with soft pastel light. A chunky retro robot companion with a monitor head stands nearby holding a glowing brain-shaped lightbulb. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-14T09:32:44.480355+00:00"
+}

@@ -1,0 +1,47 @@
+{
+  "date": "2026-04-13",
+  "period_start": "2026-04-13",
+  "period_end": "2026-04-13",
+  "title": "A massive harvest for the app showcase",
+  "summary": "A huge day for the community showcase with seven new apps added, plus some essential hardware and registry tuning under the hood.\n\nThe community directory is overflowing today. We merged in a huge batch of new tools built on our infrastructure, including ComfyUI nodes (Overtli Studio), a brand visual generator (StyleOps), a deadpan fake museum exhibit creator (The Institute of Everything), and a handful of Telegram bots and art apps. The ecosystem is buzzing.\n\nWe accidentally dropped a few apps during a recent file rebuild. Today we restored tomdacatto's video generator and @abhi5hek1979's Polli-com to the directory, and fixed the attribution for PollGen so @XHyperDEVX gets proper credit. Everyone's Flower tier status is back where it belongs.\n\nOn the backend, we fixed an INT4 model path issue for RTX 4090s, swapped the Z-Image heartbeat to HTTPS to stop proxy errors, and ripped out a complex ServiceId lookup layer in the model registry. Simpler internal architecture, stabler image generation.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 10176,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10177,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10178,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10182,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10186,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10187,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10191,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10192,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10194,
+      "date": "2026-04-13"
+    }
+  ],
+  "generated_at": "2026-04-14T06:34:18.792227+00:00"
+}

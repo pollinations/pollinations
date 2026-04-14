@@ -1,0 +1,34 @@
+{
+  "pr_number": 10214,
+  "title": "fix: align tinybird read tokens and soften churn timeout",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10214",
+  "merged_at": "2026-04-14T10:37:42Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tuning the birdhouse",
+    "blurb": "Aligned our internal Tinybird analytics tokens and smoothed out some dashboard timeouts. The data keeps flowing!",
+    "summary": "Aligned Tinybird read tokens across internal services and added soft-fail handling for KPI dashboard timeouts.",
+    "impact": "Internal analytics and KPI dashboards will load more reliably without failing on slow queries.",
+    "keywords": [
+      "tinybird",
+      "analytics",
+      "infrastructure",
+      "kpi",
+      "tokens"
+    ],
+    "visual_concept": "A cute pixel bird (representing Tinybird analytics) and the bee mascot organizing shiny keys (tokens) in front of a glowing dashboard.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a tiny blue pixel bird organizing shiny golden keys on a wooden desk. A retro computer monitor in the background shows a glowing lime green (#ecf874) analytics dashboard. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-14/PR-10214.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a tiny blue pixel bird organizing shiny golden keys on a wooden desk. A retro computer monitor in the background shows a glowing lime green (#ecf874) analytics dashboard. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-14T10:38:39.644006+00:00"
+}

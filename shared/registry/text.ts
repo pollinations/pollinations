@@ -351,7 +351,8 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(1.2), // per 1M tokens, matches gemini-fast
             },
         ],
-        description: "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
+        description:
+            "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,

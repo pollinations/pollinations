@@ -1,0 +1,34 @@
+{
+  "pr_number": 10203,
+  "title": "[codex] consolidate tinybird public tokens",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10203",
+  "merged_at": "2026-04-14T00:27:44Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidying the Tinybird nest",
+    "blurb": "We're doing some spring cleaning in our observability stack, consolidating our Tinybird public tokens to keep the backend neat and tidy.",
+    "summary": "Consolidated Tinybird public tokens for model stats and health monitoring into a single access token.",
+    "impact": "Simplifies our internal observability infrastructure and prepares for the safe removal of legacy workspace tokens.",
+    "keywords": [
+      "infrastructure",
+      "tinybird",
+      "observability",
+      "tokens",
+      "cleanup"
+    ],
+    "visual_concept": "A cute pixel art bird (representing Tinybird) sitting in a nest made of glowing data streams or tokens. The pollinations bee is helping the bird organize glowing tokens into a single neat pile.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot helping a tiny blue bird organize glowing digital tokens into a neat nest. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-14/PR-10203.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot helping a tiny blue bird organize glowing digital tokens into a neat nest. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-14T00:28:32.235868+00:00"
+}

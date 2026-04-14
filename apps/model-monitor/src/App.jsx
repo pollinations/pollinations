@@ -63,7 +63,7 @@ function getLatencyColor(latencySec) {
 function computeHealthStatus(stats) {
     if (!stats || !stats.total_requests) return "on";
     const success = stats.status_2xx || 0;
-    const total5xx = stats.total_5xx || 0;
+    const total5xx = stats.errors_5xx || 0;
     const modelRequests = success + total5xx;
     if (modelRequests < 3) return "on";
     const pct5xx = (total5xx / modelRequests) * 100;
@@ -86,7 +86,7 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
             const stats = m.stats;
             if (!stats) continue;
             total2xx += stats.status_2xx || 0;
-            total5xx += stats.total_5xx || 0;
+            total5xx += stats.errors_5xx || 0;
             const status = computeHealthStatus(stats);
             if (status === "on") countOn++;
             else if (status === "degraded") countDegraded++;
@@ -284,95 +284,6 @@ function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
     );
 }
 
-// ── Gateway health ───────────────────────────────────────────────────
-
-function GatewayHealth({ stats }) {
-    if (!stats || stats.length === 0) return null;
-
-    const totals = stats.reduce(
-        (acc, s) => ({
-            requests: acc.requests + (s.total_requests || 0),
-            err400: acc.err400 + (s.errors_400 || 0),
-            err401: acc.err401 + (s.errors_401 || 0),
-            err402: acc.err402 + (s.errors_402 || 0),
-            err403: acc.err403 + (s.errors_403 || 0),
-            err429: acc.err429 + (s.errors_429 || 0),
-            err4xxOther: acc.err4xxOther + (s.errors_4xx_other || 0),
-        }),
-        {
-            requests: 0,
-            err400: 0,
-            err401: 0,
-            err402: 0,
-            err403: 0,
-            err429: 0,
-            err4xxOther: 0,
-        },
-    );
-
-    if (totals.requests === 0) return null;
-
-    const total4xx =
-        totals.err400 +
-        totals.err401 +
-        totals.err402 +
-        totals.err403 +
-        totals.err429 +
-        totals.err4xxOther;
-    if (total4xx === 0) return null;
-
-    const fmtPct = (n) => {
-        const p = totals.requests > 0 ? (n / totals.requests) * 100 : 0;
-        if (p === 0) return "0%";
-        return p < 1 ? `${p.toFixed(1)}%` : `${Math.round(p)}%`;
-    };
-
-    const errors = [
-        { code: "400", count: totals.err400, label: "Bad Request" },
-        { code: "401", count: totals.err401, label: "No API Key" },
-        { code: "402", count: totals.err402, label: "Billing" },
-        { code: "403", count: totals.err403, label: "Access Denied" },
-        { code: "429", count: totals.err429, label: "Rate Limited" },
-        { code: "4xx", count: totals.err4xxOther, label: "Other" },
-    ].filter((e) => e.count > 0);
-
-    return (
-        <div className="bg-tan border-r-4 border-b-4 border-border overflow-hidden">
-            <div className="px-4 py-2 bg-border/50 border-b border-border">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-dark">
-                            Auth & Validation
-                        </span>
-                        <span className="text-[10px] text-dark bg-cream px-1.5 py-0.5 border border-dark font-bold">
-                            {fmtPct(total4xx)} rejected
-                        </span>
-                    </div>
-                    <span className="text-xs text-muted">
-                        {totals.requests} unresolved
-                    </span>
-                </div>
-            </div>
-            <div className="px-4 py-2 flex flex-wrap gap-3">
-                {errors.map(({ code, count, label }) => (
-                    <div
-                        key={code}
-                        className="flex items-center gap-2 bg-cream border border-border px-2 py-1"
-                    >
-                        <span className="text-xs font-mono font-bold text-dark">
-                            {code}
-                        </span>
-                        <span className="text-xs font-bold text-muted">
-                            {fmtPct(count)}
-                        </span>
-                        <span className="text-[10px] text-subtle">{label}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
 // ── Main app ─────────────────────────────────────────────────────────
 
 function App() {
@@ -386,7 +297,6 @@ function App() {
     ];
     const {
         models,
-        gatewayStats,
         lastUpdated,
         error,
         tinybirdConfigured,
@@ -422,9 +332,9 @@ function App() {
             case "requests":
             case "share": {
                 const aReqs =
-                    (a.stats?.total_requests || 0) - (a.stats?.total_4xx || 0);
+                    (a.stats?.total_requests || 0) - (a.stats?.errors_4xx || 0);
                 const bReqs =
-                    (b.stats?.total_requests || 0) - (b.stats?.total_4xx || 0);
+                    (b.stats?.total_requests || 0) - (b.stats?.errors_4xx || 0);
                 // Tiebreak: if both have 0 non-4xx, rank by total requests
                 if (aReqs === bReqs) {
                     return (
@@ -437,9 +347,9 @@ function App() {
             }
             case "ok2xx": {
                 const aTotal2 =
-                    (a.stats?.total_requests || 0) - (a.stats?.total_4xx || 0);
+                    (a.stats?.total_requests || 0) - (a.stats?.errors_4xx || 0);
                 const bTotal2 =
-                    (b.stats?.total_requests || 0) - (b.stats?.total_4xx || 0);
+                    (b.stats?.total_requests || 0) - (b.stats?.errors_4xx || 0);
                 const aHasModelHealth = aTotal2 > 0;
                 const bHasModelHealth = bTotal2 > 0;
 
@@ -468,7 +378,7 @@ function App() {
             case "errors":
                 return (
                     dir *
-                    ((a.stats?.total_5xx || 0) - (b.stats?.total_5xx || 0))
+                    ((a.stats?.errors_5xx || 0) - (b.stats?.errors_5xx || 0))
                 );
             case "lastError": {
                 const aTime =
@@ -504,8 +414,8 @@ function App() {
             case "user4xx": {
                 const aTotal = a.stats?.total_requests || 1;
                 const bTotal = b.stats?.total_requests || 1;
-                const aPct = (a.stats?.total_4xx || 0) / aTotal;
-                const bPct = (b.stats?.total_4xx || 0) / bTotal;
+                const aPct = (a.stats?.errors_4xx || 0) / aTotal;
+                const bPct = (b.stats?.errors_4xx || 0) / bTotal;
                 return dir * (aPct - bPct);
             }
             default:
@@ -697,9 +607,6 @@ function App() {
                     onTypeFilter={setTypeFilter}
                 />
 
-                {/* Gateway Health (pre-model errors) */}
-                <GatewayHealth stats={gatewayStats} />
-
                 {/* Model Table */}
                 <div className="border border-dark bg-white border-r-4 border-b-4 overflow-x-auto shadow-sm">
                     <table className="w-full text-sm">
@@ -771,8 +678,8 @@ function App() {
                                 filteredModels.map((model) => {
                                     const stats = model.stats;
                                     const total = stats?.total_requests || 0;
-                                    const total5xx = stats?.total_5xx || 0;
-                                    const total4xx = stats?.total_4xx || 0;
+                                    const total5xx = stats?.errors_5xx || 0;
+                                    const total4xx = stats?.errors_4xx || 0;
                                     const pct4xx =
                                         total > 0
                                             ? (total4xx / total) * 100

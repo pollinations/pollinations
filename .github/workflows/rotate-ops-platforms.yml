@@ -77,7 +77,7 @@ jobs:
       - name: Rotate platform token
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_MANAGEMENT_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           TINYBIRD_ADMIN_TOKEN: ${{ secrets.TINYBIRD_ADMIN_TOKEN }}
           PORTKEY_ADMIN_KEY: ${{ secrets.PORTKEY_ADMIN_KEY }}

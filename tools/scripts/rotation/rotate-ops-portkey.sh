@@ -72,16 +72,17 @@ OLD_KEY=$(echo "$SOPS_CONTENT" | jq -r '.PORTKEY_API_KEY // empty')
 SOPS_KEY_NAME="PORTKEY_API_KEY"
 
 if [ -z "$OLD_KEY" ]; then
-    warn "PORTKEY_API_KEY not found in SOPS, checking PORTKEY_GATEWAY_URL"
+    error "PORTKEY_API_KEY not found in SOPS"
     GATEWAY_URL=$(echo "$SOPS_CONTENT" | jq -r '.PORTKEY_GATEWAY_URL // empty')
     if [ -z "$GATEWAY_URL" ]; then
         error "Neither PORTKEY_API_KEY nor PORTKEY_GATEWAY_URL found in SOPS"
         exit 1
     fi
     log "Gateway URL: $GATEWAY_URL"
-    warn "PORTKEY_GATEWAY_URL may contain an embedded key — manual rotation recommended"
-    warn "This script rotates PORTKEY_API_KEY. For gateway URL changes, update SOPS manually."
-    exit 0
+    warn "PORTKEY_GATEWAY_URL alone is not enough for this script."
+    warn "The runtime and rotation flow still expect PORTKEY_API_KEY."
+    warn "If Portkey moved to gateway-url-only auth, update the runtime code and this script together."
+    exit 1
 fi
 
 AUTH_KEY="${PORTKEY_ADMIN_KEY:-$OLD_KEY}"

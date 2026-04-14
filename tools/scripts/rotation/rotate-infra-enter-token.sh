@@ -2,7 +2,7 @@
 # Rotate PLN_ENTER_TOKEN — the token enter.pollinations.ai uses to authenticate
 # requests to the EC2 backend services (image.pollinations.ai, text.pollinations.ai).
 #
-# Usage: ./rotate-infra-enter-token.sh [--dry-run] [NEW_TOKEN]
+# Usage: ./rotate-infra-enter-token.sh [--dry-run] [--verify] [NEW_TOKEN]
 #
 # Trust boundary: Cloudflare Worker (enter) → EC2 (image/text services)
 #
@@ -28,11 +28,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 DRY_RUN=false
+VERIFY_ONLY=false
+ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
+SOPS_FILES=(
+    "$REPO_ROOT/enter.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/enter.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/enter.pollinations.ai/secrets/prod.vars.json"
+    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
+    "$REPO_ROOT/text.pollinations.ai/secrets/env.json"
+)
+FAILURES=()
 
 # Parse flags
 while [[ "$1" == --* ]]; do
     case "$1" in
         --dry-run) DRY_RUN=true; shift ;;
+        --verify) VERIFY_ONLY=true; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -49,6 +60,35 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; }
 section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
+wrangler_cmd() {
+    if [ -x "$REPO_ROOT/node_modules/.bin/wrangler" ]; then
+        "$REPO_ROOT/node_modules/.bin/wrangler" "$@"
+    else
+        npx wrangler "$@"
+    fi
+}
+
+check_sops_key() {
+    local file=$1
+    local key=$2
+    local fname
+    fname=$(basename "$(dirname "$(dirname "$file")")")/$(basename "$file")
+
+    if [ ! -f "$file" ]; then
+        error "Missing file: $fname"
+        FAILURES+=("Missing file: $fname")
+        return 1
+    fi
+
+    if sops -d "$file" | jq -e --arg key "$key" 'has($key)' >/dev/null; then
+        log "SOPS contains $key in $fname"
+    else
+        error "Missing $key in $fname"
+        FAILURES+=("Missing $key: $fname")
+        return 1
+    fi
+}
+
 run() {
     if $DRY_RUN; then
         log "[dry-run] $1"
@@ -56,6 +96,39 @@ run() {
         eval "$2"
     fi
 }
+
+if $VERIFY_ONLY; then
+    section "Verifying PLN_ENTER_TOKEN prerequisites"
+
+    for f in "${SOPS_FILES[@]}"; do
+        check_sops_key "$f" "PLN_ENTER_TOKEN"
+    done
+
+    if gh auth status >/dev/null 2>&1; then
+        log "GitHub CLI authenticated"
+    else
+        error "GitHub CLI not authenticated"
+        FAILURES+=("GitHub CLI auth")
+    fi
+
+    if wrangler_cmd whoami >/dev/null 2>&1; then
+        log "Wrangler authenticated"
+    else
+        error "Wrangler not authenticated"
+        FAILURES+=("Wrangler auth")
+    fi
+
+    if [ ${#FAILURES[@]} -eq 0 ]; then
+        log "PLN_ENTER_TOKEN verification passed"
+        exit 0
+    fi
+
+    error "PLN_ENTER_TOKEN verification failed"
+    for failure in "${FAILURES[@]}"; do
+        echo "  - $failure"
+    done
+    exit 1
+fi
 
 # Get or generate token
 if [ -n "$1" ]; then
@@ -71,20 +144,10 @@ if $DRY_RUN; then
     warn "DRY RUN — no changes will be made"
 fi
 
-FAILURES=()
-
 #######################################
 # 1. Update SOPS files
 #######################################
 section "Updating SOPS-encrypted files"
-
-SOPS_FILES=(
-    "$REPO_ROOT/enter.pollinations.ai/secrets/dev.vars.json"
-    "$REPO_ROOT/enter.pollinations.ai/secrets/staging.vars.json"
-    "$REPO_ROOT/enter.pollinations.ai/secrets/prod.vars.json"
-    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-    "$REPO_ROOT/text.pollinations.ai/secrets/env.json"
-)
 
 for f in "${SOPS_FILES[@]}"; do
     fname=$(basename "$(dirname "$(dirname "$f")")")/$(basename "$f")
@@ -120,14 +183,12 @@ if [ $? -eq 0 ] || $DRY_RUN; then log "✅ ENTER_TOKEN"; else error "❌ ENTER_T
 #######################################
 section "Updating Wrangler Secrets (enter.pollinations.ai)"
 
-ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
-
 run "wrangler secret put PLN_ENTER_TOKEN --env production" \
-    "echo '$NEW_TOKEN' | npx wrangler secret put PLN_ENTER_TOKEN --env production --config '$ENTER_DIR/wrangler.toml'"
+    "echo '$NEW_TOKEN' | wrangler_cmd secret put PLN_ENTER_TOKEN --env production --config '$ENTER_DIR/wrangler.toml'"
 if [ $? -eq 0 ] || $DRY_RUN; then log "✅ production"; else error "❌ production"; FAILURES+=("Wrangler: production"); fi
 
 run "wrangler secret put PLN_ENTER_TOKEN --env staging" \
-    "echo '$NEW_TOKEN' | npx wrangler secret put PLN_ENTER_TOKEN --env staging --config '$ENTER_DIR/wrangler.toml'"
+    "echo '$NEW_TOKEN' | wrangler_cmd secret put PLN_ENTER_TOKEN --env staging --config '$ENTER_DIR/wrangler.toml'"
 if [ $? -eq 0 ] || $DRY_RUN; then log "✅ staging"; else error "❌ staging"; FAILURES+=("Wrangler: staging"); fi
 
 #######################################

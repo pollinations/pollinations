@@ -21,6 +21,7 @@
 #   CF_MANAGEMENT_TOKEN — a Cloudflare token with "API Tokens: Edit" permission
 #     (if not set, the script tries to use the token being rotated to roll itself,
 #     which works if it has the "API Tokens: Edit" permission)
+#   CLOUDFLARE_API_TOKEN — legacy alias for the management token in CI
 #
 # Prerequisites:
 # - sops, jq, curl installed
@@ -68,38 +69,56 @@ if $DRY_RUN; then
     warn "DRY RUN — no changes will be made"
 fi
 
-if $VERIFY_ONLY; then
-    section "Verifying Cloudflare API tokens"
-    # Verify CLOUDFLARE_API_TOKEN from image SOPS
-    CF_TOKEN=$(sops -d "$IMAGE_SOPS" | jq -r '.CLOUDFLARE_API_TOKEN')
-    VERIFY=$(curl -s --max-time 15 \
+verify_token_status() {
+    local label=$1
+    local token=$2
+    local response
+    local success
+    local status
+    local message
+
+    response=$(curl -s --max-time 15 \
         "$CF_API/user/tokens/verify" \
-        -H "Authorization: Bearer $CF_TOKEN")
-    STATUS=$(echo "$VERIFY" | jq -r '.result.status // "unknown"')
-    if [ "$STATUS" = "active" ]; then
-        log "CLOUDFLARE_API_TOKEN valid (status: active)"
-    else
-        error "CLOUDFLARE_API_TOKEN invalid (status: $STATUS)"
-        exit 1
+        -H "Authorization: Bearer $token")
+    success=$(echo "$response" | jq -r '.success // false')
+    status=$(echo "$response" | jq -r '.result.status // empty')
+    message=$(echo "$response" | jq -r '.errors[0].message // .messages[0].message // "unknown response"')
+
+    if [ "$success" = "true" ] && [ "$status" = "active" ]; then
+        log "$label valid (status: active)"
+        return 0
     fi
 
-    # Verify CLOUDFLARE_OBSERVABILITY_TOKEN from enter SOPS
-    if [ -f "$ENTER_SOPS" ]; then
-        OBS_TOKEN=$(sops -d "$ENTER_SOPS" | jq -r '.CLOUDFLARE_OBSERVABILITY_TOKEN // empty')
-        if [ -n "$OBS_TOKEN" ]; then
-            VERIFY2=$(curl -s --max-time 15 \
-                "$CF_API/user/tokens/verify" \
-                -H "Authorization: Bearer $OBS_TOKEN")
-            STATUS2=$(echo "$VERIFY2" | jq -r '.result.status // "unknown"')
-            if [ "$STATUS2" = "active" ]; then
-                log "CLOUDFLARE_OBSERVABILITY_TOKEN valid (status: active)"
-            else
-                error "CLOUDFLARE_OBSERVABILITY_TOKEN invalid (status: $STATUS2)"
-                exit 1
+    error "$label invalid (status: ${status:-unknown}; message: $message)"
+    FAILURES+=("$label")
+    return 1
+}
+
+if $VERIFY_ONLY; then
+    section "Verifying Cloudflare API tokens"
+
+    if [ "$TARGET" = "all" ] || [ "$TARGET" = "api" ]; then
+        CF_TOKEN=$(sops -d "$IMAGE_SOPS" | jq -r '.CLOUDFLARE_API_TOKEN')
+        if ! verify_token_status "CLOUDFLARE_API_TOKEN" "$CF_TOKEN"; then
+            :
+        fi
+    fi
+
+    if [ "$TARGET" = "all" ] || [ "$TARGET" = "observability" ]; then
+        if [ -f "$ENTER_SOPS" ]; then
+            OBS_TOKEN=$(sops -d "$ENTER_SOPS" | jq -r '.CLOUDFLARE_OBSERVABILITY_TOKEN // empty')
+            if [ -n "$OBS_TOKEN" ]; then
+                if ! verify_token_status "CLOUDFLARE_OBSERVABILITY_TOKEN" "$OBS_TOKEN"; then
+                    :
+                fi
             fi
         fi
     fi
-    exit 0
+
+    if [ ${#FAILURES[@]} -eq 0 ]; then
+        exit 0
+    fi
+    exit 1
 fi
 
 #######################################
@@ -130,7 +149,7 @@ roll_token() {
     log "Current token: ${current_token:0:8}..."
 
     # Use management token or the token itself
-    local auth_token="${CF_MANAGEMENT_TOKEN:-$current_token}"
+    local auth_token="${CF_MANAGEMENT_TOKEN:-${CLOUDFLARE_API_TOKEN:-$current_token}}"
 
     # Verify and get token ID
     if ! $DRY_RUN; then

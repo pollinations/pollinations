@@ -2,7 +2,7 @@
 # Rotate PLN_GPU_TOKEN — the token the EC2 image service uses to
 # authenticate requests to GPU worker instances (Flux, Z-Image, Klein, LTX-2).
 #
-# Usage: ./rotate-infra-gpu-token.sh [--dry-run] [NEW_TOKEN]
+# Usage: ./rotate-infra-gpu-token.sh [--dry-run] [--verify] [NEW_TOKEN]
 #
 # Trust boundary: EC2 image service → GPU workers (RunPod, Lambda Labs)
 #
@@ -26,11 +26,20 @@ REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
 
 DRY_RUN=false
+VERIFY_ONLY=false
+SOPS_FILES=(
+    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
+    "$REPO_ROOT/enter.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/enter.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/enter.pollinations.ai/secrets/prod.vars.json"
+)
+FAILURES=()
 
 # Parse flags
 while [[ "$1" == --* ]]; do
     case "$1" in
         --dry-run) DRY_RUN=true; shift ;;
+        --verify) VERIFY_ONLY=true; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -47,6 +56,35 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; }
 section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
+wrangler_cmd() {
+    if [ -x "$REPO_ROOT/node_modules/.bin/wrangler" ]; then
+        "$REPO_ROOT/node_modules/.bin/wrangler" "$@"
+    else
+        npx wrangler "$@"
+    fi
+}
+
+check_sops_key() {
+    local file=$1
+    local key=$2
+    local fname
+    fname=$(basename "$(dirname "$(dirname "$file")")")/$(basename "$file")
+
+    if [ ! -f "$file" ]; then
+        error "Missing file: $fname"
+        FAILURES+=("Missing file: $fname")
+        return 1
+    fi
+
+    if sops -d "$file" | jq -e --arg key "$key" 'has($key)' >/dev/null; then
+        log "SOPS contains $key in $fname"
+    else
+        error "Missing $key in $fname"
+        FAILURES+=("Missing $key: $fname")
+        return 1
+    fi
+}
+
 run() {
     if $DRY_RUN; then
         log "[dry-run] $1"
@@ -59,6 +97,102 @@ run() {
     set -e
     return $status
 }
+
+# SSH configuration — extract keys from SOPS into temp files
+SSH_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes"
+SOPS_SECRETS="$REPO_ROOT/enter.pollinations.ai/secrets/prod.vars.json"
+
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
+
+extract_ssh_key() {
+    local sops_key=$1
+    local out="$TEMP_DIR/$sops_key"
+    if ! sops -d "$SOPS_SECRETS" | jq -e -r --arg key "$sops_key" '.[$key] | select(. != null and . != "")' > "$out"; then
+        return 1
+    fi
+    chmod 600 "$out"
+    echo "$out"
+}
+
+verify_ssh_host() {
+    local label=$1
+    local host=$2
+    local port=$3
+    local ssh_key=$4
+    local output
+    local status
+
+    set +e
+    if [ -n "$port" ]; then
+        output=$(ssh $SSH_OPTS -p "$port" -i "$ssh_key" "$host" "echo ok" 2>&1)
+    else
+        output=$(ssh $SSH_OPTS -i "$ssh_key" "$host" "echo ok" 2>&1)
+    fi
+    status=$?
+    set -e
+
+    if [ $status -eq 0 ]; then
+        log "SSH OK: $label"
+    else
+        error "SSH failed: $label"
+        echo "  $output"
+        FAILURES+=("SSH: $label")
+    fi
+}
+
+if ! $DRY_RUN || $VERIFY_ONLY; then
+    section "Extracting SSH keys from SOPS"
+    FLUX_ZIMAGE_KEY=$(extract_ssh_key SSH_RUNPOD_FLUX_ZIMAGE) || {
+        error "Missing SSH_RUNPOD_FLUX_ZIMAGE in SOPS"
+        FAILURES+=("Missing SSH_RUNPOD_FLUX_ZIMAGE")
+    }
+    KLEIN_KEY=$(extract_ssh_key SSH_RUNPOD_KLEIN) || {
+        error "Missing SSH_RUNPOD_KLEIN in SOPS"
+        FAILURES+=("Missing SSH_RUNPOD_KLEIN")
+    }
+    LAMBDA_KEY=$(extract_ssh_key SSH_LAMBDA_SANA_LTX2_ACESTEP) || {
+        error "Missing SSH_LAMBDA_SANA_LTX2_ACESTEP in SOPS"
+        FAILURES+=("Missing SSH_LAMBDA_SANA_LTX2_ACESTEP")
+    }
+    log "Extracted 3 SSH keys to $TEMP_DIR"
+else
+    FLUX_ZIMAGE_KEY="/dev/null"
+    KLEIN_KEY="/dev/null"
+    LAMBDA_KEY="/dev/null"
+fi
+
+if $VERIFY_ONLY; then
+    section "Verifying PLN_GPU_TOKEN prerequisites"
+
+    for f in "${SOPS_FILES[@]}"; do
+        check_sops_key "$f" "PLN_GPU_TOKEN"
+    done
+
+    if wrangler_cmd whoami >/dev/null 2>&1; then
+        log "Wrangler authenticated"
+    else
+        error "Wrangler not authenticated"
+        FAILURES+=("Wrangler auth")
+    fi
+
+    if [ -n "$FLUX_ZIMAGE_KEY" ] && [ -n "$KLEIN_KEY" ] && [ -n "$LAMBDA_KEY" ]; then
+        verify_ssh_host "RunPod Flux+Z-Image" "root@38.65.239.17" "19489" "$FLUX_ZIMAGE_KEY"
+        verify_ssh_host "RunPod Klein" "root@213.144.200.243" "10207" "$KLEIN_KEY"
+        verify_ssh_host "Lambda GH200" "ubuntu@192.222.51.105" "" "$LAMBDA_KEY"
+    fi
+
+    if [ ${#FAILURES[@]} -eq 0 ]; then
+        log "PLN_GPU_TOKEN verification passed"
+        exit 0
+    fi
+
+    error "PLN_GPU_TOKEN verification failed"
+    for failure in "${FAILURES[@]}"; do
+        echo "  - $failure"
+    done
+    exit 1
+fi
 
 # Get or generate token
 if [ -n "$1" ]; then
@@ -73,35 +207,6 @@ log "Token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
 if $DRY_RUN; then
     warn "DRY RUN — no changes will be made"
 fi
-
-# SSH configuration — extract keys from SOPS into temp files
-SSH_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes"
-SOPS_SECRETS="$REPO_ROOT/enter.pollinations.ai/secrets/prod.vars.json"
-
-TEMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TEMP_DIR"' EXIT
-
-extract_ssh_key() {
-    local sops_key=$1
-    local out="$TEMP_DIR/$sops_key"
-    sops -d "$SOPS_SECRETS" | jq -r ".$sops_key" > "$out"
-    chmod 600 "$out"
-    echo "$out"
-}
-
-if ! $DRY_RUN; then
-    section "Extracting SSH keys from SOPS"
-    FLUX_ZIMAGE_KEY=$(extract_ssh_key SSH_RUNPOD_FLUX_ZIMAGE)
-    KLEIN_KEY=$(extract_ssh_key SSH_RUNPOD_KLEIN)
-    LAMBDA_KEY=$(extract_ssh_key SSH_LAMBDA_SANA_LTX2_ACESTEP)
-    log "Extracted 3 SSH keys to $TEMP_DIR"
-else
-    FLUX_ZIMAGE_KEY="/dev/null"
-    KLEIN_KEY="/dev/null"
-    LAMBDA_KEY="/dev/null"
-fi
-
-FAILURES=()
 
 #######################################
 # Helper: update .env on a remote host
@@ -188,13 +293,6 @@ REMOTE_EOF
 #######################################
 section "Updating SOPS-encrypted secrets"
 
-SOPS_FILES=(
-    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-    "$REPO_ROOT/enter.pollinations.ai/secrets/dev.vars.json"
-    "$REPO_ROOT/enter.pollinations.ai/secrets/staging.vars.json"
-    "$REPO_ROOT/enter.pollinations.ai/secrets/prod.vars.json"
-)
-
 for f in "${SOPS_FILES[@]}"; do
     fname=$(basename "$(dirname "$(dirname "$f")")")/$(basename "$f")
     if [ ! -f "$f" ]; then
@@ -217,11 +315,11 @@ done
 section "Updating Wrangler Secrets (enter.pollinations.ai)"
 
 run "wrangler secret put PLN_GPU_TOKEN --env production" \
-    "echo '$NEW_TOKEN' | npx wrangler secret put PLN_GPU_TOKEN --env production --config '$ENTER_DIR/wrangler.toml'"
+    "echo '$NEW_TOKEN' | wrangler_cmd secret put PLN_GPU_TOKEN --env production --config '$ENTER_DIR/wrangler.toml'"
 if [ $? -eq 0 ] || $DRY_RUN; then log "✅ production"; else error "❌ production"; FAILURES+=("Wrangler: production"); fi
 
 run "wrangler secret put PLN_GPU_TOKEN --env staging" \
-    "echo '$NEW_TOKEN' | npx wrangler secret put PLN_GPU_TOKEN --env staging --config '$ENTER_DIR/wrangler.toml'"
+    "echo '$NEW_TOKEN' | wrangler_cmd secret put PLN_GPU_TOKEN --env staging --config '$ENTER_DIR/wrangler.toml'"
 if [ $? -eq 0 ] || $DRY_RUN; then log "✅ staging"; else error "❌ staging"; FAILURES+=("Wrangler: staging"); fi
 
 #######################################

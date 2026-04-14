@@ -215,8 +215,8 @@ export const callSelfHostedServer = async (
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(process.env.PLN_IMAGE_BACKEND_TOKEN && {
-                        "x-backend-token": process.env.PLN_IMAGE_BACKEND_TOKEN,
+                    ...(process.env.PLN_GPU_TOKEN && {
+                        "x-backend-token": process.env.PLN_GPU_TOKEN,
                     }),
                 },
                 body: JSON.stringify(body),

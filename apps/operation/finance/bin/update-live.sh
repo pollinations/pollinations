@@ -25,7 +25,7 @@ fi
 
 # PATH: nvm default node first, then Homebrew, then system.
 # nvm.sh already prepends nvm's current node, so just add Homebrew.
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:$PATH"
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:$HOME/google-cloud-sdk/bin:$PATH"
 
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$APP_DIR"

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10219,
+  "title": "[codex] remove dead text validate script",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10219",
+  "merged_at": "2026-04-14T12:18:58Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the package",
+    "blurb": "Swept away an old, unused validation script from the text service. Keeping the codebase tidy and our local dev environment confusion-free.",
+    "summary": "Removed the deprecated validate-configs script from the text service's package.json.",
+    "impact": "Developers will no longer be confused by a broken, obsolete validation command when working locally.",
+    "keywords": [
+      "chore",
+      "cleanup",
+      "package.json",
+      "text-service",
+      "developer-experience"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature cleaning up the codebase. Nomnom eating an old script/paper to dispose of it.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a crumpled piece of paper labeled 'OLD SCRIPT' while the cute bee mascot watches amused, holding a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-14/PR-10219.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature happily eating a crumpled piece of paper labeled 'OLD SCRIPT' while the cute bee mascot watches amused, holding a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-14T12:19:49.324794+00:00"
+}

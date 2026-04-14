@@ -26,34 +26,6 @@ const MODEL_REGISTRIES_BY_EVENT_TYPE = {
     "generate.audio": AUDIO_SERVICES,
 } as const;
 
-const EVENT_TYPE_FAMILY = {
-    "generate.text": "text",
-    "generate.image": "image",
-    "generate.audio": "audio",
-} as const;
-
-function isModelCompatibleWithEventType(
-    eventType: EventType,
-    model: ModelName,
-): boolean {
-    return Object.hasOwn(MODEL_REGISTRIES_BY_EVENT_TYPE[eventType], model);
-}
-
-function getRegisteredModelFamily(
-    model: ModelName,
-): "text" | "image" | "audio" {
-    if (Object.hasOwn(TEXT_SERVICES, model)) {
-        return "text";
-    }
-    if (Object.hasOwn(IMAGE_SERVICES, model)) {
-        return "image";
-    }
-    if (Object.hasOwn(AUDIO_SERVICES, model)) {
-        return "audio";
-    }
-    throw new Error(`Model "${model}" is missing from all registries`);
-}
-
 /**
  * Middleware that extracts, defaults, and resolves the model from the request.
  * Must run before auth and track middlewares.
@@ -113,16 +85,11 @@ export function resolveModel(
             });
         }
 
-        if (!isModelCompatibleWithEventType(eventType, resolved)) {
-            const registeredFamily = getRegisteredModelFamily(resolved);
-            const requestedFamily = EVENT_TYPE_FAMILY[eventType];
-            const requestedModelLabel =
-                rawModel && rawModel !== resolved
-                    ? `"${rawModel}" (resolved to "${resolved}")`
-                    : `"${resolved}"`;
-
+        if (
+            !Object.hasOwn(MODEL_REGISTRIES_BY_EVENT_TYPE[eventType], resolved)
+        ) {
             throw new HTTPException(400, {
-                message: `Model ${requestedModelLabel} is registered as ${registeredFamily} and cannot be used with ${requestedFamily} routes.`,
+                message: `Model "${resolved}" is not valid for this endpoint.`,
             });
         }
 

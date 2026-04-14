@@ -330,7 +330,7 @@ test(
             error: { message: string };
         };
         expect(error.error.message).toBe(
-            'Model "gptimage" is registered as image and cannot be used with text routes.',
+            'Model "gptimage" is not valid for this endpoint.',
         );
         expect(mocks.tinybird.state.events).toHaveLength(0);
     },

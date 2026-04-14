@@ -9,13 +9,6 @@ const TINYBIRD_HOST = "https://api.europe-west2.gcp.tinybird.co";
 const TINYBIRD_PUBLIC_READ_TOKEN =
     "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 
-// Model list endpoints
-const MODEL_ENDPOINTS = {
-    image: "https://gen.pollinations.ai/image/models",
-    text: "https://gen.pollinations.ai/text/models",
-    audio: "https://gen.pollinations.ai/audio/models",
-};
-
 // Tinybird pipes for different aggregation windows
 const TINYBIRD_PIPES = {
     "7d": "model_health_7d",
@@ -44,17 +37,14 @@ function resolveDisplayType(model, endpointType) {
 function registryServicesToModels(services, endpointType) {
     return Object.entries(services).map(([name, service]) => ({
         name,
-        aliases: service.aliases,
         description: service.description,
-        input_modalities: service.inputModalities,
-        output_modalities: service.outputModalities,
-        paid_only: service.paidOnly,
         hidden: Boolean(service.hidden),
         type: resolveDisplayType(
             { output_modalities: service.outputModalities },
             endpointType,
         ),
         endpointType,
+        catalogStatus: service.hidden ? "hidden" : "visible",
     }));
 }
 
@@ -62,48 +52,7 @@ const ALL_REGISTERED_MODELS = [
     ...registryServicesToModels(TEXT_SERVICES, "text"),
     ...registryServicesToModels(IMAGE_SERVICES, "image"),
     ...registryServicesToModels(AUDIO_SERVICES, "audio"),
-];
-
-const VISIBLE_REGISTERED_MODELS = ALL_REGISTERED_MODELS.filter(
-    (m) => !m.hidden,
-);
-
-const VISIBLE_REGISTERED_MODELS_BY_ENDPOINT = VISIBLE_REGISTERED_MODELS.reduce(
-    (acc, model) => {
-        if (!acc[model.endpointType]) acc[model.endpointType] = [];
-        acc[model.endpointType].push(model);
-        return acc;
-    },
-    {},
-);
-
-const REGISTERED_MODELS_BY_SIGNATURE = new Map(
-    ALL_REGISTERED_MODELS.map((m) => [`${m.endpointType}:${m.name}`, m]),
-);
-
-const REGISTERED_MODELS_BY_NAME = ALL_REGISTERED_MODELS.reduce((acc, model) => {
-    if (!acc[model.name]) acc[model.name] = [];
-    acc[model.name].push(model);
-    return acc;
-}, {});
-
-function normalizeModelEntry(model, endpointType, source = "endpoint") {
-    const registryMatch = REGISTERED_MODELS_BY_SIGNATURE.get(
-        `${endpointType}:${model.name}`,
-    );
-    const merged = {
-        ...registryMatch,
-        ...model,
-        endpointType,
-    };
-
-    return {
-        ...merged,
-        type: resolveDisplayType(merged, endpointType),
-        hidden: registryMatch?.hidden ?? Boolean(model.hidden),
-        catalogStatus: source,
-    };
-}
+].sort((a, b) => a.name.localeCompare(b.name));
 
 // Calculate total 4xx errors (user errors)
 function calcTotal4xx(stats) {
@@ -174,73 +123,20 @@ function computeTrend(currentMetrics, samples) {
 export function useModelMonitor(aggregationWindow = "60m") {
     const pollInterval =
         POLL_INTERVALS[aggregationWindow] || POLL_INTERVALS["60m"];
-    const [models, setModels] = useState([]);
     const [healthStats, setHealthStats] = useState([]);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [error, setError] = useState(null);
-    const [endpointStatus, setEndpointStatus] = useState({
-        image: null,
-        text: null,
-        audio: null,
-    });
     const tinybirdConfigured = !!TINYBIRD_PUBLIC_READ_TOKEN;
     const intervalRef = useRef(null);
+
+    // Static model list comes straight from the bundled registry — there is
+    // no value in re-fetching /image/models, /text/models, /audio/models since
+    // we only display name/type/description, all of which the registry has.
+    const models = ALL_REGISTERED_MODELS;
 
     // History for trends and sparklines
     const historyRef = useRef({}); // { modelKey: { prev: stats, sparkline: [{p95, err5xx, volume}, ...] } }
     const lastFetchRef = useRef(null); // Track when we last processed data
-
-    // Fetch model list from gen.pollinations.ai
-    const fetchModels = useCallback(async () => {
-        const entries = await Promise.all(
-            Object.entries(MODEL_ENDPOINTS).map(async ([type, url]) => {
-                try {
-                    const res = await fetch(url);
-                    return [
-                        type,
-                        {
-                            ok: res.ok,
-                            models: res.ok ? await res.json() : [],
-                        },
-                    ];
-                } catch (err) {
-                    console.error(`Failed to fetch ${type} models:`, err);
-                    return [type, { ok: false, models: [] }];
-                }
-            }),
-        );
-
-        const results = Object.fromEntries(entries);
-
-        setEndpointStatus({
-            image: results.image?.ok ?? null,
-            text: results.text?.ok ?? null,
-            audio: results.audio?.ok ?? null,
-        });
-
-        const allModels = Object.entries(results)
-            .flatMap(([type, { ok, models }]) =>
-                (ok
-                    ? models
-                    : VISIBLE_REGISTERED_MODELS_BY_ENDPOINT[type] || []
-                ).map((m) =>
-                    normalizeModelEntry(
-                        m,
-                        type,
-                        ok ? "visible" : "endpoint-fallback",
-                    ),
-                ),
-            )
-            .sort((a, b) => a.name.localeCompare(b.name));
-
-        setModels(allModels);
-
-        if (Object.values(results).every((r) => !r.ok)) {
-            setError("Failed to fetch model list");
-        } else {
-            setError(null);
-        }
-    }, []);
 
     // Fetch health stats from Tinybird
     const fetchHealthStats = useCallback(async () => {
@@ -325,92 +221,45 @@ export function useModelMonitor(aggregationWindow = "60m") {
         });
     }, [healthStats, lastUpdated]);
 
-    // Merge models with health stats, trends, and sparklines.
-    // Use endpointType (original API endpoint) for Tinybird matching since
-    // Tinybird reports e.g. generate.image for video models served from /image/models.
+    // Merge models with health stats by canonical model name.
+    // The gateway resolves aliases and validates model family before tracking,
+    // so each Tinybird row maps to exactly one registered model by name.
+    const statsByModel = new Map(modelStats.map((s) => [s.model, s]));
+
     const mergedModels = models.map((model) => {
-        const statsType = model.endpointType || model.type;
-        const modelKey = `${statsType}-${model.name}`;
-        const rawStats = modelStats.find(
-            (s) =>
-                s.model === model.name &&
-                s.event_type === `generate.${statsType}`,
-        );
-        const stats = enrichStats(rawStats);
+        const modelKey = `${model.endpointType || model.type}-${model.name}`;
+        const stats = enrichStats(statsByModel.get(model.name));
         const { trend, sparkline } = getModelTrend(modelKey, stats);
         return { ...model, stats, trend, sparkline };
     });
 
-    // Add models from health stats that aren't in the visible model list (but not "undefined")
-    const unmatchedStats = modelStats.filter(
-        (s) =>
-            !models.some(
-                (m) =>
-                    m.name === s.model &&
-                    `generate.${m.endpointType || m.type}` === s.event_type,
-            ),
-    );
-    const extraModels = unmatchedStats.map((s) => {
-        const statsType = s.event_type?.replace("generate.", "") || "unknown";
-        const modelKey = `${statsType}-${s.model}`;
-        const stats = enrichStats(s);
-        const { trend, sparkline } = getModelTrend(modelKey, stats);
-        const registeredExact = REGISTERED_MODELS_BY_SIGNATURE.get(
-            `${statsType}:${s.model}`,
-        );
-        const sameNameMatches = REGISTERED_MODELS_BY_NAME[s.model] || [];
-
-        let modelMeta;
-        if (registeredExact) {
-            modelMeta = {
-                ...registeredExact,
-                catalogStatus: registeredExact.hidden
-                    ? "hidden"
-                    : "registry-only",
-            };
-        } else if (sameNameMatches.length > 0) {
-            const registeredTypes = [
-                ...new Set(sameNameMatches.map((m) => m.type)),
-            ].sort();
-            modelMeta = {
-                name: s.model || "(unknown)",
-                type: statsType,
-                endpointType: statsType,
-                description: `Unexpected ${statsType} traffic; registered as ${registeredTypes.join("/")}`,
-                catalogStatus: "anomaly",
-            };
-        } else if (endpointStatus[statsType] === false) {
-            modelMeta = {
-                name: s.model || "(unknown)",
-                type: statsType,
-                endpointType: statsType,
-                description: `Unknown ${statsType} model while catalog endpoint is unavailable`,
-                catalogStatus: "catalog-unavailable",
-            };
-        } else {
-            modelMeta = {
+    // Surface any Tinybird rows that don't match a registered model.
+    const knownNames = new Set(models.map((m) => m.name));
+    const extraModels = modelStats
+        .filter((s) => !knownNames.has(s.model))
+        .map((s) => {
+            const statsType =
+                s.event_type?.replace("generate.", "") || "unknown";
+            const modelKey = `${statsType}-${s.model}`;
+            const stats = enrichStats(s);
+            const { trend, sparkline } = getModelTrend(modelKey, stats);
+            return {
                 name: s.model || "(unknown)",
                 type: statsType,
                 endpointType: statsType,
                 description: "Unregistered model",
                 catalogStatus: "unregistered",
+                stats,
+                trend,
+                sparkline,
             };
-        }
-
-        return {
-            ...modelMeta,
-            stats,
-            trend,
-            sparkline,
-        };
-    });
+        });
 
     const allModels = [...mergedModels, ...extraModels];
 
     const refresh = useCallback(() => {
-        fetchModels();
         fetchHealthStats();
-    }, [fetchModels, fetchHealthStats]);
+    }, [fetchHealthStats]);
 
     // Initial fetch
     useEffect(() => {
@@ -445,7 +294,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
         lastUpdated,
         error,
         tinybirdConfigured,
-        endpointStatus,
         aggregationWindow, // Current window for UI display
     };
 }

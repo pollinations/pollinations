@@ -230,22 +230,10 @@ function CatalogStatusBadge({ status }) {
             label: "hidden",
             className: "bg-tan text-dark border-border",
         },
-        anomaly: {
-            label: "anomaly",
-            className: "bg-accent-light text-dark border-accent-strong",
-        },
         unregistered: {
             label: "unknown",
             className:
                 "bg-status-degraded-light text-dark border-status-degraded",
-        },
-        "catalog-unavailable": {
-            label: "unverified",
-            className: "bg-secondary-light text-dark border-secondary-strong",
-        },
-        "registry-only": {
-            label: "registry",
-            className: "bg-primary-light text-dark border-primary-strong",
         },
     };
 
@@ -384,20 +372,11 @@ function App() {
         { key: "60m", label: "1h" },
         { key: "5m", label: "5m" },
     ];
-    const {
-        models,
-        gatewayStats,
-        lastUpdated,
-        error,
-        tinybirdConfigured,
-        endpointStatus,
-    } = useModelMonitor(aggregationWindow);
+    const { models, gatewayStats, lastUpdated, error, tinybirdConfigured } =
+        useModelMonitor(aggregationWindow);
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
     const [typeFilter, setTypeFilter] = useState(null);
-    const failedCatalogEndpoints = Object.entries(endpointStatus)
-        .filter(([, ok]) => ok === false)
-        .map(([name]) => name);
 
     const handleSort = (key) => {
         setSort((prev) => ({
@@ -676,17 +655,6 @@ function App() {
                 {error && (
                     <div className="px-3 py-2 bg-cream border-r-4 border-b-4 border-dark text-xs text-dark font-bold">
                         {error}
-                    </div>
-                )}
-
-                {failedCatalogEndpoints.length > 0 && (
-                    <div className="px-3 py-2 bg-secondary-light border-r-4 border-b-4 border-secondary-strong text-xs text-dark font-bold">
-                        Catalog fallback active for{" "}
-                        {failedCatalogEndpoints.join(", ")} model
-                        {failedCatalogEndpoints.length > 1
-                            ? " endpoints"
-                            : " endpoint"}
-                        ; using bundled registry metadata.
                     </div>
                 )}
 

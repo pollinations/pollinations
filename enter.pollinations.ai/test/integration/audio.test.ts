@@ -98,7 +98,7 @@ describe("ElevenLabs TTS", () => {
                 error: { message: string };
             };
             expect(body.error.message).toBe(
-                'Model "openai-audio" is registered as text and cannot be used with audio routes.',
+                'Model "openai-audio" is not valid for this endpoint.',
             );
             expect(mocks.tinybird.state.events).toHaveLength(0);
         },
@@ -392,7 +392,7 @@ describe("Whisper Transcription", () => {
                 error: { message: string };
             };
             expect(body.error.message).toBe(
-                'Model "openai-audio" is registered as text and cannot be used with audio routes.',
+                'Model "openai-audio" is not valid for this endpoint.',
             );
             expect(mocks.tinybird.state.events).toHaveLength(0);
         },

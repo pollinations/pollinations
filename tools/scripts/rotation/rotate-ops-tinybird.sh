@@ -106,7 +106,7 @@ FAILURES=()
 
 TOKENS=(
     "tinybird_ingest|TINYBIRD_INGEST_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json|wrangler:TINYBIRD_INGEST_TOKEN"
-    "tinybird_read|TINYBIRD_READ_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json,apps/operation/kpi/secrets/env.json,apps/operation/economics/secrets/secrets.vars.json|github:TINYBIRD_READ_TOKEN"
+    "tinybird_read|TINYBIRD_READ_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json,apps/operation/kpi/secrets/env.json,apps/operation/economics/secrets/secrets.vars.json|github:TINYBIRD_READ_TOKEN wrangler:TINYBIRD_READ_TOKEN"
     "tinybird_sync|TINYBIRD_SYNC_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json|github:TINYBIRD_SYNC_TOKEN wrangler:TINYBIRD_SYNC_TOKEN"
     "tinybird_legacy_read|TINYBIRD_LEGACY_READ_TOKEN|apps/operation/economics/secrets/secrets.vars.json|"
 )

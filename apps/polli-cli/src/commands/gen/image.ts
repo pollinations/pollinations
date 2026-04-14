@@ -3,6 +3,7 @@ import { Command } from "commander";
 import ora from "ora";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
+import { budgetHint } from "../../lib/errors.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
 
 export function createImageCommand() {
@@ -49,6 +50,12 @@ export function createImageCommand() {
                 });
                 if (!res.ok) {
                     const text = await res.text().catch(() => "");
+                    const hint = await budgetHint(res.status, text);
+                    if (hint) {
+                        spinner?.fail("Generation failed");
+                        printError(hint);
+                        process.exit(1);
+                    }
                     throw new Error(`${res.status} ${res.statusText}: ${text}`);
                 }
 

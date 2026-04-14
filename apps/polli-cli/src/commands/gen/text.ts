@@ -3,6 +3,7 @@ import { Command } from "commander";
 import ora from "ora";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
+import { budgetHint } from "../../lib/errors.js";
 import {
     getOutputMode,
     printError,
@@ -99,8 +100,15 @@ export function createTextCommand() {
                 });
 
                 if (!res.ok) {
+                    const errText = await res.text().catch(() => "");
+                    const hint = await budgetHint(res.status, errText);
+                    if (hint) {
+                        spinner?.stop();
+                        printError(hint);
+                        process.exit(1);
+                    }
                     throw new Error(
-                        `${res.status} ${res.statusText}: ${await res.text().catch(() => "")}`,
+                        `${res.status} ${res.statusText}: ${errText}`,
                     );
                 }
 

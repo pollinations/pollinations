@@ -3,6 +3,7 @@ import { Command } from "commander";
 import ora from "ora";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
+import { budgetHint } from "../../lib/errors.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
 
 export function createAudioCommand() {
@@ -39,6 +40,12 @@ export function createAudioCommand() {
                 });
                 if (!res.ok) {
                     const errText = await res.text().catch(() => "");
+                    const hint = await budgetHint(res.status, errText);
+                    if (hint) {
+                        spinner?.fail("Generation failed");
+                        printError(hint);
+                        process.exit(1);
+                    }
                     throw new Error(
                         `${res.status} ${res.statusText}: ${errText}`,
                     );

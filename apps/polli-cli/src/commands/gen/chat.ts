@@ -4,6 +4,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
+import { budgetHint } from "../../lib/errors.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
 import { streamSSE } from "../../lib/stream.js";
 
@@ -80,9 +81,14 @@ export function createChatCommand() {
                     });
 
                     if (!res.ok) {
-                        throw new Error(
-                            `${res.status}: ${await res.text().catch(() => "")}`,
-                        );
+                        const errText = await res.text().catch(() => "");
+                        const hint = await budgetHint(res.status, errText);
+                        if (hint) {
+                            printError(hint);
+                            rl.close();
+                            process.exit(1);
+                        }
+                        throw new Error(`${res.status}: ${errText}`);
                     }
 
                     if (isJson) {

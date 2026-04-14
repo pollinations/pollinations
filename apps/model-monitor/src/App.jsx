@@ -386,7 +386,12 @@ function App() {
         }));
     };
 
-    const sortedModels = [...models].sort((a, b) => {
+    // Hide registry-only entries flagged hidden unless they have real traffic.
+    const visibleModels = models.filter(
+        (m) => !m.hidden || (m.stats?.total_requests || 0) > 0,
+    );
+
+    const sortedModels = [...visibleModels].sort((a, b) => {
         // Models with no traffic at all always sink to the bottom
         const aHasData = (a.stats?.total_requests || 0) > 0;
         const bHasData = (b.stats?.total_requests || 0) > 0;
@@ -660,7 +665,7 @@ function App() {
 
                 {/* Global Health Summary */}
                 <GlobalHealthSummary
-                    models={models}
+                    models={visibleModels}
                     typeFilter={typeFilter}
                     onTypeFilter={setTypeFilter}
                 />

@@ -52,9 +52,12 @@ const ALL_REGISTERED_MODELS = [
     ...registryServicesToModels(TEXT_SERVICES, "text"),
     ...registryServicesToModels(IMAGE_SERVICES, "image"),
     ...registryServicesToModels(AUDIO_SERVICES, "audio"),
-]
-    .filter((m) => !m.hidden)
-    .sort((a, b) => a.name.localeCompare(b.name));
+].sort((a, b) => a.name.localeCompare(b.name));
+
+// Tinybird groups by (resolved_model_requested, event_type), so we join on
+// the same composite key to keep historical rows from before the family
+// validation landed (same name on multiple event_types) from colliding.
+const statsKey = (eventType, model) => `${eventType}:${model}`;
 
 // Calculate total 4xx errors (user errors)
 function calcTotal4xx(stats) {
@@ -223,22 +226,32 @@ export function useModelMonitor(aggregationWindow = "60m") {
         });
     }, [healthStats, lastUpdated]);
 
-    // Merge models with health stats by canonical model name.
-    // The gateway resolves aliases and validates model family before tracking,
-    // so each Tinybird row maps to exactly one registered model by name.
-    const statsByModel = new Map(modelStats.map((s) => [s.model, s]));
+    // Merge models with health stats keyed by (event_type, model). Keying by
+    // model name alone would collapse pre-fix historical rows where the same
+    // canonical name exists under multiple event_types (e.g. openai-audio
+    // traffic recorded under both generate.text and generate.audio).
+    const statsByKey = new Map(
+        modelStats.map((s) => [statsKey(s.event_type, s.model), s]),
+    );
 
     const mergedModels = models.map((model) => {
-        const modelKey = `${model.endpointType || model.type}-${model.name}`;
-        const stats = enrichStats(statsByModel.get(model.name));
+        const endpointType = model.endpointType || model.type;
+        const modelKey = `${endpointType}-${model.name}`;
+        const stats = enrichStats(
+            statsByKey.get(statsKey(`generate.${endpointType}`, model.name)),
+        );
         const { trend, sparkline } = getModelTrend(modelKey, stats);
         return { ...model, stats, trend, sparkline };
     });
 
-    // Surface any Tinybird rows that don't match a registered model.
-    const knownNames = new Set(models.map((m) => m.name));
+    // Surface any Tinybird rows that don't match a registered (name, family).
+    const knownKeys = new Set(
+        models.map((m) =>
+            statsKey(`generate.${m.endpointType || m.type}`, m.name),
+        ),
+    );
     const extraModels = modelStats
-        .filter((s) => !knownNames.has(s.model))
+        .filter((s) => !knownKeys.has(statsKey(s.event_type, s.model)))
         .map((s) => {
             const statsType =
                 s.event_type?.replace("generate.", "") || "unknown";

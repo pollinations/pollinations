@@ -1,0 +1,34 @@
+{
+  "pr_number": 10216,
+  "title": "[codex] remove dead cloudflare image path",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10216",
+  "merged_at": "2026-04-14T12:03:07Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the hive",
+    "blurb": "We did some spring cleaning in the image backend, removing old Cloudflare code that was no longer being used. A lighter codebase means a happier hive!",
+    "summary": "Removed unused Cloudflare image-generation helpers and stale secrets from the image backend.",
+    "impact": "This internal cleanup reduces technical debt and keeps the image service codebase lean and maintainable.",
+    "keywords": [
+      "cleanup",
+      "cloudflare",
+      "image-generation",
+      "tech-debt",
+      "refactor"
+    ],
+    "visual_concept": "The bee mascot (Polly) sweeping up dead leaves or old code blocks in a cozy garden setting, with the Nomnom creature eating old deprecated code snippets.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating deprecated code snippets from a dusty box, while the cute bee mascot sweeps the floor with a tiny broom. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-14/PR-10216.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature happily eating deprecated code snippets from a dusty box, while the cute bee mascot sweeps the floor with a tiny broom. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-14T12:03:57.649436+00:00"
+}

@@ -1,4 +1,4 @@
-import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
+import { type ModelId, resolveModelName } from "../shared/registry/registry.ts";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -20,7 +20,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-mini"],
+        config: portkeyConfig["gpt-5.4-nano"],
     },
     {
         name: "openai-fast",
@@ -28,7 +28,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-large",
-        config: portkeyConfig["gpt-5.2-2025-12-11"],
+        config: portkeyConfig["gpt-5.4"],
     },
     {
         name: "qwen-coder",
@@ -42,7 +42,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-large",
-        config: portkeyConfig["qwen3.5-plus"],
+        config: portkeyConfig["accounts/fireworks/models/qwen3p6-plus"],
     },
     {
         name: "qwen-vision",
@@ -61,12 +61,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4-1-fast-non-reasoning"],
     },
     {
-        name: "grok-reasoning",
-        config: portkeyConfig["grok-4-1-fast-reasoning"],
-    },
-    {
-        name: "grok-legacy",
-        config: portkeyConfig["grok-4-fast-non-reasoning-legacy"],
+        name: "grok-large",
+        config: portkeyConfig["grok-4-20-reasoning"],
     },
     {
         name: "openai-audio",
@@ -74,7 +70,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-audio-large",
-        config: portkeyConfig["gpt-audio-2025-12-15"],
+        config: portkeyConfig["gpt-audio-1.5"],
     },
     {
         name: "claude-fast",
@@ -160,16 +156,6 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-3-pro-legacy",
-        config: portkeyConfig["gemini-3-pro-legacy"],
-        transform: pipe(
-            sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution"]),
-            removeToolsForJsonResponse,
-            createGeminiThinkingTransform("v3-pro"),
-        ),
-    },
-    {
         name: "gemini-legacy",
         config: portkeyConfig["gemini-2.5-pro"],
         transform: pipe(
@@ -189,11 +175,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["accounts/fireworks/models/glm-5"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5p1"],
     },
     {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
+    },
+    {
+        name: "mistral-large",
+        config: portkeyConfig["Mistral-Large-3"],
     },
     {
         name: "polly",
@@ -214,9 +204,9 @@ export function findModelByName(modelName: string): ModelDefinition | null {
     if (directMatch) return directMatch;
 
     try {
-        const resolvedServiceId = resolveServiceId(modelName);
+        const resolvedModelName = resolveModelName(modelName);
         return (
-            availableModels.find((model) => model.name === resolvedServiceId) ||
+            availableModels.find((model) => model.name === resolvedModelName) ||
             null
         );
     } catch {

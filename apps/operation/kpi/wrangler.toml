@@ -18,6 +18,6 @@ POLAR_API = "https://api.polar.sh"
 GITHUB_REPO = "pollinations/pollinations"
 
 # Secrets (set via: wrangler secret put <NAME>)
-# - TINYBIRD_TOKEN (read-only)
+# - TINYBIRD_READ_TOKEN (read-only)
 # - POLAR_ACCESS_TOKEN (read-only)
 # - GITHUB_TOKEN (optional, for higher rate limits)

@@ -364,3 +364,11 @@ agent-communication.md
 .claude/settings.json
 enter.pollinations.ai/src/tier-progression/spore-to-microbe-report-enriched.csv
 enter.pollinations.ai/src/tier-progression/spore-to-microbe-report-reviewed.csv
+enter.pollinations.ai/src/tier-progression/abuse-ledger.csv
+apps/operation/finance/secrets/vendors.json
+apps/operation/finance/secrets/update-live.err
+apps/operation/finance/secrets/pool-history.json
+apps/operation/finance/secrets/input/2026-03.csv
+apps/operation/finance/secrets/input/2026-02.csv
+apps/operation/finance/secrets/input/2026-01.csv
+apps/operation/finance/config.local.json

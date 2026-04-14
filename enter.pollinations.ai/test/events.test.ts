@@ -51,7 +51,7 @@ test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
     await sendToTinybird(
         event,
         env.TINYBIRD_INGEST_URL,
-        env.TINYBIRD_GENERATION_INGEST_TOKEN,
+        env.TINYBIRD_INGEST_TOKEN,
         log,
     );
 
@@ -107,7 +107,7 @@ test("sendToTinybird handles API errors gracefully", async ({ log, mocks }) => {
     await sendToTinybird(
         event,
         env.TINYBIRD_INGEST_URL,
-        env.TINYBIRD_GENERATION_INGEST_TOKEN,
+        env.TINYBIRD_INGEST_TOKEN,
         log,
     );
 

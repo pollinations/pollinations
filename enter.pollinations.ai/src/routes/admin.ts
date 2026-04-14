@@ -211,7 +211,7 @@ export async function runTierRefill(
             timestamp,
             env.ENVIRONMENT || "unknown",
             env.TINYBIRD_TIER_INGEST_URL,
-            env.TINYBIRD_TIER_INGEST_TOKEN,
+            env.TINYBIRD_INGEST_TOKEN,
             log,
         ),
     );
@@ -246,16 +246,8 @@ export const adminRoutes = new Hono<Env>()
             return await next();
         }
 
-        // Refill token only has access to /trigger-refill endpoint
-        if (
-            providedKey === c.env.REFILL_TOKEN &&
-            c.req.path.endsWith("/trigger-refill")
-        ) {
-            return await next();
-        }
-
         // Tinybird sync token: authenticates the GH Action AND is used for Tinybird API calls
-        const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
+        const syncToken = c.env.TINYBIRD_SYNC_TOKEN;
         if (
             syncToken &&
             providedKey === syncToken &&
@@ -319,7 +311,7 @@ export const adminRoutes = new Hono<Env>()
                     pollen_amount: tierBalance,
                 },
                 c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_TIER_INGEST_TOKEN,
+                c.env.TINYBIRD_INGEST_TOKEN,
             ),
         );
 
@@ -346,10 +338,10 @@ export const adminRoutes = new Hono<Env>()
         return c.json(result);
     })
     .post("/trigger-d1-sync", async (c) => {
-        const syncToken = c.env.TINYBIRD_D1_SYNC_TOKEN;
+        const syncToken = c.env.TINYBIRD_SYNC_TOKEN;
         if (!syncToken) {
             throw new HTTPException(500, {
-                message: "TINYBIRD_D1_SYNC_TOKEN not configured",
+                message: "TINYBIRD_SYNC_TOKEN not configured",
             });
         }
 

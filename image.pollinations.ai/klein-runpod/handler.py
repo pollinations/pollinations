@@ -47,9 +47,9 @@ app = FastAPI()
 def verify_backend_token(
     x_backend_token: str = Header(None, alias="x-backend-token"),
 ):
-    expected_token = os.getenv("PLN_IMAGE_BACKEND_TOKEN")
+    expected_token = os.getenv("PLN_GPU_TOKEN")
     if not expected_token:
-        logger.warning("PLN_IMAGE_BACKEND_TOKEN not configured - allowing request")
+        logger.warning("PLN_GPU_TOKEN not configured - allowing request")
         return True
     if x_backend_token != expected_token:
         logger.warning("Invalid or missing backend token")

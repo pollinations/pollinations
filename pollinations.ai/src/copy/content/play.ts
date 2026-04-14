@@ -15,7 +15,9 @@ export const PLAY_PAGE = {
     pageDescription: "playground for poking at models",
     // Page titles and navigation
     createTitle: "Create",
-    createDescription: "playground for poking at models.",
+    subtitlePrefix: "🎛️ A",
+    subtitleBold: "playground",
+    subtitleSuffix: " for poking at models. 🧪",
     pricingLinkText: "See pricing",
 
     // PlayGenerator UI labels

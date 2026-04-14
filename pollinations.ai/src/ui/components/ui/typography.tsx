@@ -15,7 +15,7 @@ import { cn } from "../../../utils";
 // - PlayPage: "Create" / "Watch" (spacing="none" for custom)
 // ============================================
 const titleVariants = cva(
-    "font-title text-xl md:text-2xl font-black text-dark leading-tight pt-1 pb-1",
+    "font-title text-4xl md:text-5xl font-black text-dark leading-tight pt-1 pb-1",
     {
         variants: {
             spacing: {
@@ -65,9 +65,9 @@ const headingVariants = cva("font-headline font-black text-dark uppercase", {
         variant: {
             // Section headings with border-left accent (H2 - major sections)
             section:
-                "text-base md:text-lg tracking-widest border-l-4 border-dark pl-4",
+                "text-2xl md:text-3xl tracking-widest border-l-4 border-dark pl-4",
             // Subsection headings (H3 - card titles, nested sections)
-            subsection: "text-sm md:text-base tracking-wider text-dark",
+            subsection: "text-lg md:text-xl tracking-wider text-dark",
         },
         spacing: {
             default: "mb-4", // Standard spacing

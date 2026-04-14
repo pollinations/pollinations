@@ -1,6 +1,10 @@
 import { env } from "cloudflare:test";
 import crypto from "node:crypto";
 import { getLogger } from "@logtape/logtape";
+import {
+    getModelDefinition,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 import { Hono } from "hono";
 import { expect, inject } from "vitest";
 import { createHonoMockHandler, type MockAPI } from "./fetch";
@@ -60,6 +64,15 @@ async function getSnapshotHash(request: Request): Promise<string> {
         hash.update(`${body.model}` || "");
         hash.update(`${body.stream}` || "");
         hash.update(`${body.tool_choice}` || "");
+        // Include provider + modelId so snapshots auto-invalidate when a model
+        // migrates to a different backend (e.g. fireworks → azure).
+        try {
+            const modelName = resolveModelName(body.model);
+            const def = getModelDefinition(modelName);
+            hash.update(`${def.provider}:${def.modelId}`);
+        } catch {
+            // Unknown model — hash stays request-only
+        }
         hash.update(`${JSON.stringify(body.messages)}`);
     } catch (error) {
         log.warn("Failed to parse request body: {error}", { error });

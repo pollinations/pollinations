@@ -65,10 +65,6 @@ export async function genericOpenAIClient(
     let modelName = "unknown";
 
     try {
-        if (!authHeaderValue()) {
-            throw new Error("Generic OpenAI API key is not set");
-        }
-
         normalizedOptions = normalizeOptions(options, defaultOptions);
         modelName = normalizedOptions.model;
 
@@ -91,8 +87,11 @@ export async function genericOpenAIClient(
                 ? endpoint(modelName, normalizedOptions)
                 : endpoint;
 
+        const resolvedAuthHeaderValue = authHeaderValue?.();
         const headers = {
-            [authHeaderName]: authHeaderValue(),
+            ...(resolvedAuthHeaderValue
+                ? { [authHeaderName]: resolvedAuthHeaderValue }
+                : {}),
             "Content-Type": "application/json",
             ...additionalHeaders,
         };

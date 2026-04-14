@@ -23,29 +23,29 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "1331",
+      "content-length": "860",
       "content-type": "application/json",
-      "date": "Sat, 04 Apr 2026 13:13:23 GMT",
+      "date": "Thu, 09 Apr 2026 11:56:15 GMT",
       "keep-alive": "timeout=5",
       "x-model-used": "accounts/fireworks/models/kimi-k2p5",
-      "x-usage-completion-text-tokens": "173",
-      "x-usage-prompt-cached-tokens": "3",
-      "x-usage-prompt-text-tokens": "17"
+      "x-usage-completion-text-tokens": "73",
+      "x-usage-prompt-cached-tokens": "9",
+      "x-usage-prompt-text-tokens": "11"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_b56581b024a5cb18e0e5379040401e0e",
+        "id": "pllns_ca2ccabab7e74eec286164ea604b1c4b",
         "object": "chat.completion",
-        "created": 1775308401,
+        "created": 1775735772,
         "model": "accounts/fireworks/models/kimi-k2p5",
         "choices": [
           {
             "index": 0,
             "message": {
               "role": "assistant",
-              "content": "Yes",
-              "reasoning_content": "The user is asking a simple factual question: \"Is Berlin the capital of Germany?\" and wants a \"yes\" or \"no\" answer.\n\n This is a straightforward factual query. Berlin is indeed the capital of Germany. It has been the capital since German reunification in 1990, and it was also the capital of Germany before 1945 (though during the Cold War period, Bonn served as the capital of West Germany while East Berlin was the capital of East Germany).\n\n The user specifically requested a reply of \"yes\" or \"no\", so I should provide exactly that - just \"yes\" without additional elaboration, as per their instruction.\n\n Wait, let me check if there are any nuances or recent changes. No, Berlin remains the capital of Germany as of my knowledge cutoff and current date.\n\n So the answer is simply: yes."
+              "content": "Yes.",
+              "reasoning_content": "The user is asking a simple factual question: \"Is Berlin the capital of Germany? Reply yes or no.\"\n\n This is a straightforward question. Berlin is indeed the capital of Germany. I should answer \"yes\" as requested.\n\n The user specifically asked to reply \"yes or no\", so I should provide a concise one-word answer.\n\n Answer: Yes"
             },
             "finish_reason": "stop",
             "token_ids": null
@@ -53,10 +53,10 @@
         ],
         "usage": {
           "prompt_tokens": 20,
-          "total_tokens": 193,
-          "completion_tokens": 173,
+          "total_tokens": 93,
+          "completion_tokens": 73,
           "prompt_tokens_details": {
-            "cached_tokens": 3
+            "cached_tokens": 9
           }
         },
         "prompt_token_ids": [

@@ -14,9 +14,13 @@ const VALID_IMAGE_MODELS = [
 export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
     model: z
-        .enum(VALID_IMAGE_MODELS as unknown as [string, ...string[]])
-        .optional()
-        .default(DEFAULT_IMAGE_MODEL)
+        .preprocess(
+            (val) => (val === "" ? undefined : val),
+            z
+                .enum(VALID_IMAGE_MODELS as unknown as [string, ...string[]])
+                .optional()
+                .default(DEFAULT_IMAGE_MODEL),
+        )
         .meta({
             description:
                 "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan. See /image/models for full list.",

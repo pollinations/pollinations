@@ -24,6 +24,13 @@ const THEME_SELECTED = {
     amber: "border-amber-400 bg-amber-100",
 } as const;
 
+const CATEGORY_PILL: Record<string, string> = {
+    Text: "bg-blue-100 text-blue-800 border-blue-300",
+    Image: "bg-pink-100 text-pink-800 border-pink-300",
+    Video: "bg-teal-100 text-teal-800 border-teal-300",
+    Audio: "bg-violet-100 text-violet-800 border-violet-300",
+};
+
 const ACCOUNT_PERMISSIONS = [
     {
         id: "profile",
@@ -390,7 +397,9 @@ const ModelCategory: FC<{
 }) => (
     <div>
         <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-gray-500 tracking-wide">
+            <span
+                className={`px-2 py-0.5 rounded-full text-xs border ${CATEGORY_PILL[label] ?? ""}`}
+            >
                 {label}
             </span>
             <button

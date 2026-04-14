@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { Command } from "commander";
 import { enter, requireKey } from "../lib/api.js";
 import {
@@ -17,7 +18,11 @@ interface KeyInfo {
     createdAt: string;
     expiresAt: string | null;
     lastRequest: string | null;
-    permissions: { models?: string[]; account?: string[] } | null;
+    permissions: {
+        tier?: string[];
+        models?: string[];
+        account?: string[];
+    } | null;
     metadata: Record<string, unknown> | null;
     pollenBalance: number | null;
     enabled: boolean;
@@ -47,7 +52,11 @@ interface SingleKeyInfo {
 
 const list = new Command("list")
     .description("List all API keys for your account")
-    .action(async () => {
+    .option(
+        "--verbose",
+        "Show id, created, last_used, enabled columns (use --json for full raw data)",
+    )
+    .action(async (opts) => {
         const key = requireKey();
 
         try {
@@ -60,18 +69,52 @@ const list = new Command("list")
                 return;
             }
 
-            printTable(
-                res.data.map((k) => ({
-                    id: k.id.slice(0, 8),
-                    name: k.name,
-                    prefix: k.prefix,
-                    start: k.start,
-                    created: k.createdAt?.slice(0, 10) ?? "-",
-                    expires: k.expiresAt?.slice(0, 10) ?? "never",
-                    last_used: k.lastRequest?.slice(0, 10) ?? "never",
-                    enabled: k.enabled ? "yes" : "no",
-                })),
-            );
+            if (getOutputMode() === "json") {
+                printResult(res.data);
+                return;
+            }
+
+            const formatPerms = (p: KeyInfo["permissions"]) => {
+                if (!p) return "-";
+                const parts = Object.entries(p)
+                    .filter(([, v]) => v?.length)
+                    .map(([key, v]) =>
+                        (v?.length ?? 0) <= 2
+                            ? `${key}:${v?.join("|")}`
+                            : `${key}:${v?.length}`,
+                    );
+                return parts.join(" ") || "-";
+            };
+
+            const check = process.platform === "win32" ? "yes" : "✓";
+            const cross = process.platform === "win32" ? "no" : "✗";
+            const rows = res.data.map((k) => ({
+                id: chalk.dim(k.id.slice(0, 8)),
+                name: k.name,
+                prefix: chalk.dim(k.prefix),
+                balance:
+                    k.pollenBalance != null ? k.pollenBalance.toFixed(2) : "-",
+                expires: k.expiresAt?.slice(0, 10) ?? "never",
+                permissions: formatPerms(k.permissions),
+                created: chalk.dim(k.createdAt?.slice(0, 10) ?? "-"),
+                last_used: chalk.dim(k.lastRequest?.slice(0, 10) ?? "never"),
+                enabled: k.enabled ? chalk.green(check) : chalk.red(cross),
+            }));
+
+            const cols = opts.verbose
+                ? [
+                      "id",
+                      "name",
+                      "prefix",
+                      "balance",
+                      "expires",
+                      "permissions",
+                      "created",
+                      "last_used",
+                      "enabled",
+                  ]
+                : ["name", "prefix", "balance", "expires", "permissions"];
+            printTable(rows, cols);
         } catch (err) {
             printError(
                 `Failed to list keys: ${err instanceof Error ? err.message : "unknown"}`,

@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
 import {
@@ -36,7 +37,7 @@ function capabilities(m: ModelEntry): string {
     if (m.reasoning) caps.push("reasoning");
     if (m.input_modalities?.includes("image")) caps.push("vision");
     if (m.voices && m.voices.length > 0) caps.push("voices");
-    if (m.paid_only) caps.push("paid");
+    if (m.paid_only) caps.push(chalk.dim("paid"));
     return caps.join(",") || "-";
 }
 
@@ -79,6 +80,9 @@ export const modelsCommand = new Command("models")
                             const total = Number(r.total_requests ?? 0);
                             const errs = Number(r.total_errors ?? 0);
                             const errPct = total > 0 ? (errs / total) * 100 : 0;
+                            const p95 = Number(r.latency_p95_ms ?? 0);
+                            const errStr = `${errPct.toFixed(1)}%`;
+                            const p95Str = `${p95}ms`;
                             return {
                                 model: String(r.model ?? "-"),
                                 type: String(r.event_type ?? "").replace(
@@ -86,8 +90,18 @@ export const modelsCommand = new Command("models")
                                     "",
                                 ),
                                 requests: total,
-                                "err%": `${errPct.toFixed(1)}%`,
-                                p95: `${r.latency_p95_ms ?? 0}ms`,
+                                "err%":
+                                    errPct > 5
+                                        ? chalk.red(errStr)
+                                        : errPct > 1
+                                          ? chalk.yellow(errStr)
+                                          : errStr,
+                                p95:
+                                    p95 > 10000
+                                        ? chalk.red(p95Str)
+                                        : p95 > 5000
+                                          ? chalk.yellow(p95Str)
+                                          : p95Str,
                             };
                         });
                     printTable(curated);

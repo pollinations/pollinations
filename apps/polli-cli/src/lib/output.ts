@@ -43,7 +43,7 @@ export const printResult = (data: unknown) => {
     // key: value pairs, one per line
     for (const [key, value] of Object.entries(obj)) {
         if (value === null || value === undefined) continue;
-        process.stdout.write(`${key}: ${value}\n`);
+        process.stdout.write(`${chalk.bold(key)}: ${value}\n`);
     }
 };
 
@@ -62,12 +62,23 @@ export const printTable = (
         return;
     }
 
-    // Tab-separated with header
+    // Space-padded columns. Visible width = string length minus ANSI escapes.
     const cols = columns ?? Object.keys(rows[0]);
-    process.stdout.write(`${cols.join("\t")}\n`);
-    for (const row of rows) {
-        const vals = cols.map((c) => String(row[c] ?? ""));
-        process.stdout.write(`${vals.join("\t")}\n`);
+    const stringRows = rows.map((row) => cols.map((c) => String(row[c] ?? "")));
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape stripping for width calculation
+    const visibleLen = (s: string) => s.replace(/\u001b\[[0-9;]*m/g, "").length;
+    const widths = cols.map((c, i) =>
+        Math.max(c.length, ...stringRows.map((r) => visibleLen(r[i]))),
+    );
+    const lastIdx = cols.length - 1;
+    const pad = (s: string, w: number, i: number) =>
+        i === lastIdx ? s : s + " ".repeat(w - visibleLen(s));
+    const brand = chalk.hex("#a78bfa").bold;
+    const header = cols.map((c, i) => brand(pad(c, widths[i], i))).join("  ");
+    process.stdout.write(`${header}\n`);
+    for (const vals of stringRows) {
+        const line = vals.map((v, i) => pad(v, widths[i], i)).join("  ");
+        process.stdout.write(`${line}\n`);
     }
 };
 
@@ -85,10 +96,12 @@ export const printSuccess = (msg: string) => {
 
 /** Error message — always shown, always stderr */
 export const printError = (msg: string) => {
-    process.stderr.write(`${chalk.red(`error: ${msg}`)}\n`);
+    process.stderr.write(`${chalk.red.bold("error:")} ${chalk.red(msg)}\n`);
 };
 
 /** Warning message — always shown, always stderr */
 export const printWarn = (msg: string) => {
-    process.stderr.write(`${chalk.yellow(`warn: ${msg}`)}\n`);
+    process.stderr.write(
+        `${chalk.yellow.bold("warn:")} ${chalk.yellow(msg)}\n`,
+    );
 };

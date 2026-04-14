@@ -1,6 +1,12 @@
+import chalk from "chalk";
 import { Command } from "commander";
 import { enter, requireKey } from "../lib/api.js";
-import { printError, printResult, printTable } from "../lib/output.js";
+import {
+    getOutputMode,
+    printError,
+    printResult,
+    printTable,
+} from "../lib/output.js";
 
 interface UsageRecord {
     timestamp: string;
@@ -49,7 +55,18 @@ export const usageCommand = new Command("usage")
                     "/api/account/balance",
                     { apiKey: key },
                 );
-                printResult({ pollen: data.balance });
+                if (getOutputMode() === "human") {
+                    const bal = data.balance;
+                    const color =
+                        bal <= 0
+                            ? chalk.red
+                            : bal < 1
+                              ? chalk.yellow
+                              : chalk.green;
+                    printResult({ pollen: color(String(bal)) });
+                } else {
+                    printResult({ pollen: data.balance });
+                }
                 return;
             }
 

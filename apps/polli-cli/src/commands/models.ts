@@ -78,12 +78,7 @@ export const modelsCommand = new Command("models")
                         .filter((r) => r.model !== "undefined")
                         .map((r) => {
                             const total = Number(r.total_requests ?? 0);
-                            const errs5xx =
-                                Number(r.errors_500 ?? 0) +
-                                Number(r.errors_502 ?? 0) +
-                                Number(r.errors_503 ?? 0) +
-                                Number(r.errors_504 ?? 0) +
-                                Number(r.errors_5xx_other ?? 0);
+                            const errs5xx = Number(r.errors_5xx ?? 0);
                             const errPct =
                                 total > 0 ? (errs5xx / total) * 100 : 0;
                             const p95 = Number(r.latency_p95_ms ?? 0);

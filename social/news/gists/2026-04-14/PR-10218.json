@@ -1,0 +1,34 @@
+{
+  "pr_number": 10218,
+  "title": "[codex] remove stale image tunnel bootstrap files",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10218",
+  "merged_at": "2026-04-14T12:15:51Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the tunnels",
+    "blurb": "We did some spring cleaning in our infrastructure scripts, removing outdated Cloudflare tunnel setups to keep our codebase tidy and reliable.",
+    "summary": "Removed stale and duplicate Cloudflare tunnel bootstrap scripts from the image generation backend to prevent configuration drift.",
+    "impact": "Developers setting up local or new environments will now use a single, reliable setup script without conflicting configurations.",
+    "keywords": [
+      "infrastructure",
+      "cleanup",
+      "cloudflare",
+      "tunnels",
+      "chore"
+    ],
+    "visual_concept": "The PR is about removing old, stale tunnel files (Cloudflare tunnels). Visual metaphor: Polly the bee sweeping or cleaning up old dusty tunnels or pipes, while the Nomnom creature eats the old deprecated code files.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping dust out of a small lime green (#ecf874) pipe, while the round tan nomnom creature happily eats a stack of old dusty code documents. Soft pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-14/PR-10218.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping dust out of a small lime green (#ecf874) pipe, while the round tan nomnom creature happily eats a stack of old dusty code documents. Soft pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-14T12:16:50.012788+00:00"
+}

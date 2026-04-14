@@ -75,19 +75,19 @@ export const modelsCommand = new Command("models")
                     printResult(rows);
                 } else {
                     const curated = rows
-                        .filter((r) => r.model !== "undefined")
+                        .filter(
+                            (r) =>
+                                r.model !== "undefined" &&
+                                Number(r.total_requests ?? 0) > 1,
+                        )
                         .map((r) => {
                             const total = Number(r.total_requests ?? 0);
                             const errs5xx = Number(r.errors_5xx ?? 0);
-                            const errPct =
-                                total > 0 ? (errs5xx / total) * 100 : 0;
-                            const p95 = Number(r.latency_p95_ms ?? 0);
+                            const errPct = (errs5xx / total) * 100;
+                            const avg = Number(r.avg_latency_ms ?? 0);
                             let errStr = `${errPct.toFixed(1)}%`;
                             if (errPct > 5) errStr = chalk.red(errStr);
                             else if (errPct > 1) errStr = chalk.yellow(errStr);
-                            let p95Str = `${p95}ms`;
-                            if (p95 > 10000) p95Str = chalk.red(p95Str);
-                            else if (p95 > 5000) p95Str = chalk.yellow(p95Str);
                             return {
                                 model: String(r.model ?? "-"),
                                 type: String(r.event_type ?? "").replace(
@@ -96,7 +96,7 @@ export const modelsCommand = new Command("models")
                                 ),
                                 requests: total,
                                 "err%": errStr,
-                                p95: p95Str,
+                                avg: `${(avg / 1000).toFixed(1)}s`,
                             };
                         });
                     printTable(curated);

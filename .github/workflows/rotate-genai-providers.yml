@@ -1,0 +1,212 @@
+name: Rotate GenAI Provider Keys
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "Which provider to rotate"
+        required: true
+        type: choice
+        options:
+          - aws
+          - azure
+          - gcp
+          - perplexity
+          - fireworks
+          - xai
+          - elevenlabs
+      dry_run:
+        description: "Dry run (preview without changes)"
+        required: false
+        type: boolean
+        default: true
+      fireworks_account_id:
+        description: "Fireworks account ID (required for fireworks)"
+        required: false
+        type: string
+      fireworks_user_id:
+        description: "Fireworks user ID (required for fireworks)"
+        required: false
+        type: string
+      xai_team_id:
+        description: "xAI team ID (required for xai)"
+        required: false
+        type: string
+      elevenlabs_service_account_id:
+        description: "ElevenLabs service account ID (required for elevenlabs)"
+        required: false
+        type: string
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+    env:
+      DRY_RUN: ${{ inputs.dry_run }}
+      PROVIDER: ${{ inputs.provider }}
+    steps:
+      - name: Require main branch
+        run: |
+          if [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "This workflow must be dispatched from main, not $GITHUB_REF_NAME."
+            exit 1
+          fi
+
+      - name: Verify actor is authorized
+        env:
+          ACTOR: ${{ github.actor }}
+        run: |
+          ALLOWED="voodoohop ElliotEtag"
+          if echo "$ALLOWED" | grep -qw "$ACTOR"; then
+            echo "Actor $ACTOR is authorized"
+          else
+            echo "Actor $ACTOR is not in the rotation allowlist ($ALLOWED)."
+            exit 1
+          fi
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install tools
+        run: |
+          npm install -g wrangler
+          echo "sops $(sops --version)"
+          echo "jq $(jq --version)"
+
+      # --- Rotate the selected provider ---
+
+      - name: Rotate provider key
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          FIREWORKS_ACCOUNT_ID: ${{ inputs.fireworks_account_id }}
+          FIREWORKS_USER_ID: ${{ inputs.fireworks_user_id }}
+          XAI_MANAGEMENT_KEY: ${{ secrets.XAI_MANAGEMENT_KEY }}
+          XAI_TEAM_ID: ${{ inputs.xai_team_id }}
+          ELEVENLABS_SERVICE_ACCOUNT_ID: ${{ inputs.elevenlabs_service_account_id }}
+        run: |
+          cd tools/scripts/rotation
+          SCRIPT="rotate-genai-$PROVIDER.sh"
+
+          if [ ! -f "$SCRIPT" ]; then
+            echo "Script not found: $SCRIPT"
+            exit 1
+          fi
+
+          if [ "$DRY_RUN" = "true" ]; then
+            bash "$SCRIPT" --verify
+          else
+            bash "$SCRIPT"
+          fi
+
+      # --- Deploy EC2 services to pick up new SOPS values ---
+
+      - name: Decrypt .env files
+        if: inputs.dry_run == false
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          sops --output-type dotenv -d text.pollinations.ai/secrets/env.json > text.pollinations.ai/.env
+          sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > image.pollinations.ai/.env
+          echo "Decrypted .env files with new values"
+
+      - name: Copy .env files to EC2
+        if: inputs.dry_run == false
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
+          target: "/home/ubuntu/pollinations/"
+          strip_components: 0
+
+      - name: Restart EC2 services
+        if: inputs.dry_run == false
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          script: |
+            set -e
+            chmod 600 /home/ubuntu/pollinations/text.pollinations.ai/.env
+            chmod 600 /home/ubuntu/pollinations/image.pollinations.ai/.env
+            sudo systemctl restart text-pollinations.service image-pollinations.service
+            sleep 10
+            sudo systemctl is-active text-pollinations.service || exit 1
+            sudo systemctl is-active image-pollinations.service || exit 1
+            echo "EC2 services restarted with new keys"
+
+      # --- Health check: verify EC2 services still respond ---
+
+      - name: Verify provider health
+        if: inputs.dry_run == false
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          script: |
+            set -e
+            sleep 5
+
+            ENTER_TOKEN=$(grep PLN_ENTER_TOKEN /home/ubuntu/pollinations/image.pollinations.ai/.env | cut -d= -f2-)
+
+            echo "Verifying image service responds..."
+            IMG_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+              -H "x-enter-token: $ENTER_TOKEN" \
+              http://localhost:16384/)
+            echo "Image service: HTTP $IMG_STATUS"
+            if [ "$IMG_STATUS" = "000" ]; then
+              echo "FAIL: image service not responding"
+              exit 1
+            fi
+
+            echo "Verifying text service responds..."
+            TXT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+              -H "x-enter-token: $ENTER_TOKEN" \
+              http://localhost:16385/)
+            echo "Text service: HTTP $TXT_STATUS"
+            if [ "$TXT_STATUS" = "000" ]; then
+              echo "FAIL: text service not responding"
+              exit 1
+            fi
+
+            echo "EC2 services healthy after key rotation"
+
+      # --- Commit SOPS changes ---
+
+      - name: Commit and push SOPS changes
+        if: inputs.dry_run == false
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A '*.json'
+          if git diff --cached --quiet; then
+            echo "No SOPS changes to commit"
+          else
+            git commit -m "rotate genai provider key ($PROVIDER)"
+            git push origin HEAD:main
+          fi

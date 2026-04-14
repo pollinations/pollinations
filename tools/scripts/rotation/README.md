@@ -13,31 +13,65 @@
 
 ## Scripts
 
+### Infra tokens (internal)
+
 | Script | Token | What it does |
 |--------|-------|-------------|
 | `rotate-infra-enter-token.sh` | `PLN_ENTER_TOKEN` | Updates SOPS → GitHub secrets → Wrangler secrets |
 | `rotate-infra-gpu-token.sh` | `PLN_GPU_TOKEN` | Updates SOPS → Wrangler → SSH to each GPU worker, updates `.env`, restarts services |
-| `rotate-ops-tinybird.sh` | Tinybird machine tokens | Refreshes Tinybird tokens via API, updates SOPS, GitHub secrets, and Wrangler secrets |
 
-Both scripts accept `--dry-run` to preview without making changes, and an optional `NEW_TOKEN` argument (otherwise generates one via `openssl rand -hex 32`).
+### GenAI provider keys (external)
+
+| Script | Provider | Mechanism |
+|--------|----------|-----------|
+| `rotate-genai-aws.sh` | AWS | IAM `create-access-key` → verify → delete old |
+| `rotate-genai-azure.sh` | Azure | `az cognitiveservices account keys regenerate` (East US, Sweden, Content Safety) |
+| `rotate-genai-gcp.sh` | GCP | `gcloud iam service-accounts keys create` → delete old |
+| `rotate-genai-perplexity.sh` | Perplexity | API `generate_auth_token` → `revoke_auth_token` |
+| `rotate-genai-fireworks.sh` | Fireworks | REST API create/delete |
+| `rotate-genai-xai.sh` | xAI | Management API `/rotate` endpoint |
+| `rotate-genai-elevenlabs.sh` | ElevenLabs | Service account API (multi-seat plans only) |
+
+### Ops platform tokens
+
+| Script | Platform | Mechanism |
+|--------|----------|-----------|
+| `rotate-ops-tinybird.sh` | Tinybird | Refresh tokens via API, update SOPS + GitHub + Wrangler |
+| `rotate-ops-cloudflare.sh` | Cloudflare | Roll token via `PUT /tokens/{id}/value` |
+| `rotate-ops-portkey.sh` | Portkey | Admin API create/delete |
+
+All scripts accept `--dry-run` (preview) and `--verify` (read-only API call to confirm connectivity without mutating).
 
 ## Running
 
 ```bash
-# Dry run first
+# Verify connectivity first (read-only)
+./rotate-infra-enter-token.sh --verify
+./rotate-genai-aws.sh --verify
+./rotate-ops-cloudflare.sh --verify
+
+# Dry run (prints what would change)
 ./rotate-infra-enter-token.sh --dry-run
-./rotate-infra-gpu-token.sh --dry-run
-TINYBIRD_ADMIN_TOKEN=xxx ./rotate-ops-tinybird.sh --dry-run --all
+./rotate-genai-aws.sh --dry-run
 
-# Real run (generates new token automatically)
+# Real rotation
 ./rotate-infra-enter-token.sh
-./rotate-infra-gpu-token.sh
+./rotate-genai-aws.sh
+./rotate-ops-cloudflare.sh --token api
 TINYBIRD_ADMIN_TOKEN=xxx ./rotate-ops-tinybird.sh --all
-
-# With a specific token
-./rotate-infra-enter-token.sh TOKEN_VALUE
-TINYBIRD_ADMIN_TOKEN=xxx ./rotate-ops-tinybird.sh --token tinybird_read
 ```
+
+## CI workflows
+
+Three `workflow_dispatch` workflows mirror the script categories. All require `main` branch, actor allowlist (voodoohop + ElliotEtag), and `production` environment.
+
+| Workflow | Covers |
+|----------|--------|
+| `.github/workflows/rotate-infra-tokens.yml` | `enter`, `gpu`, `both` |
+| `.github/workflows/rotate-genai-providers.yml` | aws, azure, gcp, perplexity, fireworks, xai, elevenlabs |
+| `.github/workflows/rotate-ops-platforms.yml` | tinybird, cloudflare, portkey |
+
+All default to dry-run. After rotation, the workflow SCPs decrypted `.env` files to EC2, restarts systemd services, and runs health checks before committing SOPS changes to main.
 
 After running, commit the SOPS file changes and merge to trigger EC2 deploy.
 `MUSIC_SERVICE_URL` is still required by ACE-Step and must remain configured in enter.

@@ -32,10 +32,7 @@ function buildBody(
         thinking?: boolean;
     },
     stream = false,
-): {
-    messages: Array<{ role: string; content: string }>;
-    body: Record<string, unknown>;
-} {
+): Record<string, unknown> {
     const messages: Array<{ role: string; content: string }> = [];
     if (opts.system) messages.push({ role: "system", content: opts.system });
     messages.push({ role: "user", content: prompt });
@@ -54,7 +51,7 @@ function buildBody(
     if (opts.thinking) body.thinking = true;
     if (stream) body.stream = true;
 
-    return { messages, body };
+    return body;
 }
 
 async function requestCompletion(
@@ -131,7 +128,7 @@ export function createTextCommand() {
 
             try {
                 if (useStream) {
-                    const { body } = buildBody(prompt, opts, true);
+                    const body = buildBody(prompt, opts, true);
                     const res = await requestCompletion(key, body);
                     let content = "";
                     for await (const chunk of streamSSE(res)) {
@@ -149,7 +146,7 @@ export function createTextCommand() {
                     const spinner = isHuman
                         ? ora("Generating...").start()
                         : null;
-                    const { body } = buildBody(prompt, opts);
+                    const body = buildBody(prompt, opts);
                     const res = await requestCompletion(key, body);
                     const data = (await res.json()) as ChatResponse;
                     const content = data.choices[0]?.message?.content ?? "";

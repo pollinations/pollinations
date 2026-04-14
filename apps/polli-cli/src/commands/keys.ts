@@ -34,7 +34,6 @@ interface CreateKeyResponse {
     name: string;
     type: string;
     prefix: string;
-    start: string;
     expiresAt: string | null;
     permissions: { models?: string[]; account?: string[] } | null;
     pollenBudget: number | null;
@@ -76,13 +75,15 @@ const list = new Command("list")
 
             const formatPerms = (p: KeyInfo["permissions"]) => {
                 if (!p) return "-";
-                const parts = Object.entries(p)
-                    .filter(([, v]) => v?.length)
-                    .map(([key, v]) =>
-                        (v?.length ?? 0) <= 2
-                            ? `${key}:${v?.join("|")}`
-                            : `${key}:${v?.length}`,
+                const parts: string[] = [];
+                for (const [key, v] of Object.entries(p)) {
+                    if (!v?.length) continue;
+                    parts.push(
+                        v.length <= 2
+                            ? `${key}:${v.join("|")}`
+                            : `${key}:${v.length}`,
                     );
+                }
                 return parts.join(" ") || "-";
             };
 
@@ -187,8 +188,7 @@ const create = new Command("create")
                 },
             );
 
-            const isHuman = getOutputMode() === "human";
-            if (isHuman) {
+            if (getOutputMode() === "human") {
                 printSuccess(`Key created: ${created.name}`);
                 printInfo("Save this key — it won't be shown again:\n");
                 console.log(`  ${created.key}\n`);

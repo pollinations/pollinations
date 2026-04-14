@@ -11,37 +11,18 @@ export const setOutputMode = (mode: OutputMode) => {
 export const getOutputMode = (): OutputMode => currentMode;
 
 /** Print structured data — adapts to current output mode */
-export const printResult = (data: unknown) => {
+export const printResult = (data: Record<string, unknown> | unknown[]) => {
     if (currentMode === "json") {
         process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
         return;
     }
 
-    // Arrays: delegate to printTable or print each item
     if (Array.isArray(data)) {
-        if (
-            data.length > 0 &&
-            typeof data[0] === "object" &&
-            data[0] !== null
-        ) {
-            printTable(data as Record<string, unknown>[]);
-        } else {
-            for (const item of data) {
-                process.stdout.write(`${item}\n`);
-            }
-        }
+        printTable(data as Record<string, unknown>[]);
         return;
     }
 
-    if (typeof data !== "object" || data === null) {
-        process.stdout.write(`${data}\n`);
-        return;
-    }
-
-    const obj = data as Record<string, unknown>;
-
-    // key: value pairs, one per line
-    for (const [key, value] of Object.entries(obj)) {
+    for (const [key, value] of Object.entries(data)) {
         if (value === null || value === undefined) continue;
         process.stdout.write(`${chalk.bold(key)}: ${value}\n`);
     }

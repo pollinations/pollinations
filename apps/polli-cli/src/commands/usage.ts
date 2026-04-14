@@ -55,18 +55,15 @@ export const usageCommand = new Command("usage")
                     "/api/account/balance",
                     { apiKey: key },
                 );
-                if (getOutputMode() === "human") {
-                    const bal = data.balance;
-                    const color =
-                        bal <= 0
-                            ? chalk.red
-                            : bal < 1
-                              ? chalk.yellow
-                              : chalk.green;
-                    printResult({ pollen: color(String(bal)) });
-                } else {
+                if (getOutputMode() !== "human") {
                     printResult({ pollen: data.balance });
+                    return;
                 }
+                const bal = data.balance;
+                let color = chalk.green;
+                if (bal <= 0) color = chalk.red;
+                else if (bal < 1) color = chalk.yellow;
+                printResult({ pollen: color(String(bal)) });
                 return;
             }
 
@@ -87,29 +84,28 @@ export const usageCommand = new Command("usage")
                         source: r.meter_source,
                     })),
                 );
-            } else if (opts.history) {
-                const limit = Number.parseInt(opts.limit, 10);
-                if (Number.isNaN(limit) || limit < 1) {
-                    printError("--limit must be a positive integer");
-                    process.exit(1);
-                }
-                const data = await enter<UsageResponse>(
-                    `/api/account/usage?limit=${limit}`,
-                    { apiKey: key },
-                );
-                printTable(
-                    data.usage.map((r) => ({
-                        time: r.timestamp,
-                        type: r.type,
-                        model: r.model,
-                        cost:
-                            r.cost_usd != null
-                                ? `$${r.cost_usd.toFixed(4)}`
-                                : "-",
-                        source: r.meter_source,
-                    })),
-                );
+                return;
             }
+
+            const limit = Number.parseInt(opts.limit, 10);
+            if (Number.isNaN(limit) || limit < 1) {
+                printError("--limit must be a positive integer");
+                process.exit(1);
+            }
+            const data = await enter<UsageResponse>(
+                `/api/account/usage?limit=${limit}`,
+                { apiKey: key },
+            );
+            printTable(
+                data.usage.map((r) => ({
+                    time: r.timestamp,
+                    type: r.type,
+                    model: r.model,
+                    cost:
+                        r.cost_usd != null ? `$${r.cost_usd.toFixed(4)}` : "-",
+                    source: r.meter_source,
+                })),
+            );
         } catch (err) {
             printError(
                 `Failed to fetch usage: ${err instanceof Error ? err.message : "unknown"}`,

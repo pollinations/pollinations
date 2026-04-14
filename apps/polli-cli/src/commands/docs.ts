@@ -2,7 +2,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 import open from "open";
 import { ENTER_URL } from "../lib/config.js";
-import { printError, printInfo } from "../lib/output.js";
+import { getOutputMode, printError, printInfo } from "../lib/output.js";
 
 const DOCS_URL = `${ENTER_URL}/api/docs`;
 const LLM_TXT_URL = `${ENTER_URL}/api/docs/llm.txt`;
@@ -17,6 +17,16 @@ async function fetchLlmTxt(): Promise<string> {
     return res.text();
 }
 
+// Light markdown polish for human terminals. Agents get raw text via --json or piped output.
+function styleMarkdown(md: string): string {
+    return md
+        .replace(/^(#{1,6}) (.+)$/gm, (_, hashes: string, text: string) =>
+            chalk.hex("#a78bfa").bold(`${hashes} ${text}`),
+        )
+        .replace(/```([\s\S]*?)```/g, (block) => chalk.dim(block))
+        .replace(/`([^`\n]+)`/g, (_, code: string) => chalk.cyan(code));
+}
+
 export const docsCommand = new Command("docs")
     .description("Show Pollinations API documentation")
     .argument(
@@ -29,15 +39,17 @@ export const docsCommand = new Command("docs")
         if (!opts.open) {
             try {
                 const doc = await fetchLlmTxt();
+                const stylize =
+                    getOutputMode() === "human"
+                        ? styleMarkdown
+                        : (s: string) => s;
 
                 if (endpoint) {
-                    // Filter to lines relevant to the endpoint
                     const sections = doc.split(/^(?=###? )/m);
                     const needle = endpoint.replace(/^\//, "").toLowerCase();
-                    const matches = sections.filter((s) => {
-                        const header = s.split("\n")[0].toLowerCase();
-                        return header.includes(needle);
-                    });
+                    const matches = sections.filter((s) =>
+                        s.split("\n")[0].toLowerCase().includes(needle),
+                    );
 
                     if (matches.length === 0) {
                         printError(`No docs found matching "${endpoint}"`);
@@ -47,9 +59,9 @@ export const docsCommand = new Command("docs")
                         process.exit(1);
                     }
 
-                    process.stdout.write(matches.join("\n"));
+                    process.stdout.write(stylize(matches.join("\n")));
                 } else {
-                    process.stdout.write(doc);
+                    process.stdout.write(stylize(doc));
                     process.stdout.write("\n");
                 }
             } catch (err) {

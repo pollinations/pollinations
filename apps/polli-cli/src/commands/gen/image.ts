@@ -27,10 +27,10 @@ export function createImageCommand() {
             const isHuman = getOutputMode() === "human";
 
             const params = new URLSearchParams({
+                model: opts.model,
                 width: opts.width,
                 height: opts.height,
             });
-            if (opts.model) params.set("model", opts.model);
             if (opts.seed) params.set("seed", opts.seed);
             if (opts.enhance) params.set("enhance", "true");
             if (opts.negative) params.set("negative_prompt", opts.negative);
@@ -66,7 +66,7 @@ export function createImageCommand() {
                     ...(opts.output && { path: opts.output }),
                     url,
                     size: buffer.length,
-                    ...(opts.model && { model: opts.model }),
+                    model: opts.model,
                 });
             } catch (err) {
                 spinner?.fail("Generation failed");

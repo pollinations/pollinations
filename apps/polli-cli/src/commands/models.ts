@@ -36,7 +36,7 @@ function capabilities(m: ModelEntry): string {
     if (m.tools) caps.push("tools");
     if (m.reasoning) caps.push("reasoning");
     if (m.input_modalities?.includes("image")) caps.push("vision");
-    if (m.voices && m.voices.length > 0) caps.push("voices");
+    if (m.voices?.length) caps.push("voices");
     if (m.paid_only) caps.push(chalk.dim("paid"));
     return caps.join(",") || "-";
 }
@@ -81,8 +81,12 @@ export const modelsCommand = new Command("models")
                             const errs = Number(r.total_errors ?? 0);
                             const errPct = total > 0 ? (errs / total) * 100 : 0;
                             const p95 = Number(r.latency_p95_ms ?? 0);
-                            const errStr = `${errPct.toFixed(1)}%`;
-                            const p95Str = `${p95}ms`;
+                            let errStr = `${errPct.toFixed(1)}%`;
+                            if (errPct > 5) errStr = chalk.red(errStr);
+                            else if (errPct > 1) errStr = chalk.yellow(errStr);
+                            let p95Str = `${p95}ms`;
+                            if (p95 > 10000) p95Str = chalk.red(p95Str);
+                            else if (p95 > 5000) p95Str = chalk.yellow(p95Str);
                             return {
                                 model: String(r.model ?? "-"),
                                 type: String(r.event_type ?? "").replace(
@@ -90,18 +94,8 @@ export const modelsCommand = new Command("models")
                                     "",
                                 ),
                                 requests: total,
-                                "err%":
-                                    errPct > 5
-                                        ? chalk.red(errStr)
-                                        : errPct > 1
-                                          ? chalk.yellow(errStr)
-                                          : errStr,
-                                p95:
-                                    p95 > 10000
-                                        ? chalk.red(p95Str)
-                                        : p95 > 5000
-                                          ? chalk.yellow(p95Str)
-                                          : p95Str,
+                                "err%": errStr,
+                                p95: p95Str,
                             };
                         });
                     printTable(curated);

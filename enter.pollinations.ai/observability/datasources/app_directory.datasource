@@ -1,5 +1,3 @@
-TOKEN app_directory_append APPEND
-TOKEN grafana_generation_read READ
 TOKEN tinybird_read READ
 
 DESCRIPTION >

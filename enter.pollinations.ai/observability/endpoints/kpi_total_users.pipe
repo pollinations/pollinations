@@ -1,7 +1,6 @@
 DESCRIPTION >
     Total user count from d1_user snapshot.
 
-TOKEN model_usage READ
 TOKEN tinybird_read READ
 
 NODE total_users

@@ -3,8 +3,6 @@ DESCRIPTION >
     Priority: api_key_created_for_app (explicit app attribution) > api_key_name (hostname heuristic).
     Both signals kept so BYOP stats don't drop as app key adoption ramps up.
 
-TOKEN app_metrics READ
-TOKEN model_usage READ
 TOKEN tinybird_read READ
 
 NODE app_byop_hostnames_node

@@ -3,7 +3,6 @@ DESCRIPTION >
     of registration, grouped by registration week. Joins d1_user with
     generation_event to replace the previous hybrid D1+Tinybird+JS approach.
 
-TOKEN model_usage READ
 TOKEN tinybird_read READ
 
 NODE registrations

@@ -234,10 +234,19 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.3), // Google rate: $0.10 — marked up for margin
+                promptTextTokens: perMillion(0.1),
+                promptCachedTokens: perMillion(0.01),
+                promptAudioTokens: perMillion(0.3),
+                completionTextTokens: perMillion(0.4),
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.3),
                 promptCachedTokens: perMillion(0.03),
-                promptAudioTokens: perMillion(0.3), // Audio billed at same rate as text
-                completionTextTokens: perMillion(1.2), // Google rate: $0.40 — marked up for margin
+                promptAudioTokens: perMillion(0.3),
+                completionTextTokens: perMillion(1.2),
             },
         ],
         description:

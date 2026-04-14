@@ -1,6 +1,11 @@
 import { IMAGE_SERVICES } from "@shared/registry/image";
 import type { ModelDefinition } from "@shared/registry/registry.js";
-import { calculateCost, resolveModelName } from "@shared/registry/registry.js";
+import {
+    calculateCost,
+    calculatePrice,
+    getActivePriceDefinition,
+    resolveModelName,
+} from "@shared/registry/registry.js";
 import { TEXT_SERVICES } from "@shared/registry/text";
 import { expect, test } from "vitest";
 
@@ -35,4 +40,26 @@ test("cost lookup uses the public model name instead of collapsing shared provid
     const geminiSearchCost = calculateCost("gemini-search", usage);
 
     expect(geminiFastCost.totalCost).not.toBe(geminiSearchCost.totalCost);
+});
+
+test("gemini-fast can expose a higher public price than provider cost", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        promptCachedTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const priceDefinition = getActivePriceDefinition("gemini-fast");
+    const geminiFastCost = calculateCost("gemini-fast", usage);
+    const geminiFastPrice = calculatePrice("gemini-fast", usage);
+
+    expect(priceDefinition).toMatchObject({
+        promptTextTokens: 0.0000003,
+        promptCachedTokens: 0.00000003,
+        completionTextTokens: 0.0000012,
+    });
+    expect(geminiFastCost.totalCost).toBeCloseTo(0.51, 8);
+    expect(geminiFastPrice.totalPrice).toBeCloseTo(1.53, 8);
+    expect(geminiFastPrice.totalPrice).toBeGreaterThan(
+        geminiFastCost.totalCost,
+    );
 });

@@ -35,7 +35,7 @@ export type UsageCost = Usage & {
     totalCost: number;
 };
 
-// UsagePrice is Usage with dollar amounts and a total (currently same as cost)
+// UsagePrice is Usage with dollar amounts and a total
 export type UsagePrice = Usage & {
     totalPrice: number;
 };
@@ -45,7 +45,7 @@ export type CostDefinition = {
     date: number;
 } & { [K in UsageType]?: number };
 
-// PriceDefinition defines conversion rates for pricing (currently same as cost)
+// PriceDefinition defines conversion rates for user-facing pricing
 export type PriceDefinition = CostDefinition;
 
 export type ModelId = ImageModelId | TextModelId | AudioModelId;
@@ -56,6 +56,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     modelId: TModelId;
     provider: string;
     cost: CostDefinition[];
+    price?: PriceDefinition[];
     // User-facing metadata
     description?: string;
     inputModalities?: string[];
@@ -117,7 +118,8 @@ const MODEL_REGISTRY = Object.fromEntries(
         name,
         {
             ...service,
-            price: sortDefinitions([...service.cost]),
+            cost: sortDefinitions([...service.cost]),
+            price: sortDefinitions([...(service.price ?? service.cost)]),
         } as ModelRegistryEntry,
     ]),
 ) as Record<ModelName, ModelRegistryEntry>;

@@ -80,6 +80,7 @@ export const ImageParamsSchema = z
             })
             .catch([]),
         transparent: sanitizedBoolean.catch(false),
+        reasoning: sanitizedBoolean.catch(false),
         guidance_scale: z.coerce.number().optional().catch(undefined),
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),

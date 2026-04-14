@@ -179,6 +179,9 @@ function generateLLMDoc(): string {
     lines.push(
         "- transparent (boolean, default: false): gptimage, gptimage-large",
     );
+    lines.push(
+        "- reasoning (boolean, default: false): Enable thinking for improved text/layout. nanobanana, nanobanana-2, nanobanana-pro",
+    );
     lines.push("- duration (int, 1-10): Video duration in seconds");
     lines.push('- aspectRatio ("16:9"|"9:16"): Video only');
     lines.push(

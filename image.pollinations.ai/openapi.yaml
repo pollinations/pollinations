@@ -128,6 +128,12 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: reasoning
+          in: query
+          description: Enable thinking/reasoning for improved text rendering and layout (nanobanana models only)
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: Successfully generated image

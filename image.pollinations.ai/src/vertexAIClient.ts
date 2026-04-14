@@ -24,6 +24,7 @@ export interface VertexAIImageRequest {
     model?: string; // Model ID: gemini-2.5-flash-image (default) or gemini-3-pro-image-preview
     imageSize?: string; // "1K", "2K", "4K" - supported by gemini-3-pro-image-preview and gemini-3.1-flash-image-preview
     safe?: boolean; // When true, use stricter safety settings; when false, use BLOCK_ONLY_HIGH
+    reasoning?: boolean; // When true, enable thinking/reasoning for improved text rendering
 }
 
 export interface VertexAIPart {
@@ -183,6 +184,13 @@ export async function generateImageWithVertexAI(
             },
         ];
 
+        // Build thinking config when reasoning is enabled
+        const thinkingConfig = request.reasoning
+            ? modelId.includes("3.1") || modelId.includes("3-pro")
+                ? { thinkingConfig: { thinkingLevel: "HIGH" } }
+                : { thinkingConfig: { thinkingBudget: 1024 } }
+            : {};
+
         // Build the request body in Vertex AI format
         const requestBody: {
             contents: Array<{
@@ -196,6 +204,10 @@ export async function generateImageWithVertexAI(
                 max_output_tokens: number;
                 seed?: number;
                 imageConfig?: { aspectRatio?: string; imageSize?: string };
+                thinkingConfig?: {
+                    thinkingLevel?: string;
+                    thinkingBudget?: number;
+                };
             };
             safetySettings: Array<{
                 category: string;
@@ -219,6 +231,7 @@ export async function generateImageWithVertexAI(
                 max_output_tokens: 2048,
                 ...(request.seed !== undefined && { seed: request.seed }),
                 ...(Object.keys(imageConfig).length > 0 && { imageConfig }),
+                ...thinkingConfig,
             },
             safetySettings,
         };

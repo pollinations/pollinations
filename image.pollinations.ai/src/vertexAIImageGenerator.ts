@@ -240,6 +240,7 @@ export async function callVertexAIGemini(
             referenceImages: processedImages,
             model: vertexModel,
             safe: safeParams.safe as boolean,
+            reasoning: safeParams.reasoning as boolean,
             ...(processedParams.seed !== undefined && {
                 seed: processedParams.seed as number,
             }),

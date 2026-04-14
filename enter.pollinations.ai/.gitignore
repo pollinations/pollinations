@@ -4,6 +4,7 @@ dist/
 .wrangler/
 .dev.vars
 .dev.vars.local
+.dev.vars.override
 .dev.vars.prod
 .env
 *.log

@@ -1,6 +1,7 @@
 DESCRIPTION >
-    Get billed usage history for a specific user (last 30 days). Only returns billed requests.
-    Use 'before' param with ISO timestamp for cursor pagination (e.g. before=2024-12-10T00:00:00).
+    Get billed usage history for a specific user. Only returns billed requests.
+    Defaults to the last 30 days. Use 'since' and 'until' to override the date window.
+    Use 'before' and 'before_event_id' for stable cursor pagination.
 
 TOKEN tinybird_read READ
 
@@ -9,6 +10,7 @@ SQL >
     %
     SELECT
         start_time as timestamp,
+        event_id as cursor_event_id,
         event_type as type,
         model_used as model,
         api_key_name as api_key,
@@ -27,11 +29,26 @@ SQL >
     FROM generation_event
     WHERE user_id = {{String(user_id, '')}}
     AND total_price > 0
+    {% if defined(since) %}
+    AND start_time >= {{DateTime(since)}}
+    {% else %}
     AND start_time >= now() - INTERVAL 30 DAY
-    {% if defined(before) %}
+    {% end %}
+    {% if defined(until) %}
+    AND start_time < {{DateTime(until)}}
+    {% end %}
+    {% if defined(before) and defined(before_event_id) %}
+    AND (
+        start_time < {{DateTime(before)}}
+        OR (
+            start_time = {{DateTime(before)}}
+            AND event_id < {{String(before_event_id)}}
+        )
+    )
+    {% elif defined(before) %}
     AND start_time < {{DateTime(before)}}
     {% end %}
-    ORDER BY start_time DESC
+    ORDER BY start_time DESC, event_id DESC
     LIMIT {{Int32(limit, 100)}}
 
 TYPE endpoint

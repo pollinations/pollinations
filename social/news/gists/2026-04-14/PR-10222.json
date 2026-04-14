@@ -1,0 +1,34 @@
+{
+  "pr_number": 10222,
+  "title": "[codex] fix enter usage exports for power users",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10222",
+  "merged_at": "2026-04-14T16:19:00Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Crunching the numbers",
+    "blurb": "We've tuned up the usage dashboard so our heaviest pollen collectors can export their stats without a hitch. Your daily summaries and detailed logs now load lightning fast and perfectly match your selected time windows.",
+    "summary": "Optimized the usage dashboard and Tinybird data pipes to prevent timeouts and accurately reflect selected time windows for heavy API users.",
+    "impact": "Power users can now reliably view and export their detailed usage logs and daily summaries without experiencing silent truncations or timeouts.",
+    "keywords": [
+      "dashboard",
+      "analytics",
+      "exports",
+      "performance",
+      "api"
+    ],
+    "visual_concept": "Identify the project/tool: Usage dashboard, data exports, Tinybird analytics. Key visual symbols: charts, graphs, data logs, speed. Scene concept: Polly the bee and the Nomnom creature (who loves eating data) interacting with a fast, glowing retro dashboard showing usage stats.",
+    "image_prompt": "Cozy pixel art scene of a retro computer monitor displaying neat bar charts, while the round Nomnom creature happily eats a stack of data logs and the cute bee mascot watches with a tiny clipboard. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. The bee and Nomnom feature chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text on screen in pixel font: 'STATS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-14/PR-10222.jpg",
+    "prompt": "Cozy pixel art scene of a retro computer monitor displaying neat bar charts, while the round Nomnom creature happily eats a stack of data logs and the cute bee mascot watches with a tiny clipboard. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. The bee and Nomnom feature chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text on screen in pixel font: 'STATS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-14T16:20:04.863550+00:00"
+}

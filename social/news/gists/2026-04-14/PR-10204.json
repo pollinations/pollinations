@@ -1,0 +1,34 @@
+{
+  "pr_number": 10204,
+  "title": "[codex] retire legacy tinybird public tokens",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10204",
+  "merged_at": "2026-04-14T00:36:13Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidying the birdhouse",
+    "blurb": "We've swept away the last of the legacy Tinybird public tokens, keeping our observability pipelines neat and tidy with a single unified token.",
+    "summary": "Removed legacy public Tinybird token directives from observability endpoints to align the repository with the live workspace cleanup.",
+    "impact": "This internal cleanup prevents repository drift and consolidates public endpoint access under a single unified token.",
+    "keywords": [
+      "tinybird",
+      "observability",
+      "cleanup",
+      "tokens",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee sweeping up old, dusty golden tokens or tickets into a dustpan, while a single shiny new token glows on a pedestal. A tiny bird (representing Tinybird) watches happily from a perch.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot sweeping up dusty golden tokens with a tiny broom, while a single glowing token rests on a pedestal. A small blue bird watches happily from a nearby retro monitor. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-14/PR-10204.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot sweeping up dusty golden tokens with a tiny broom, while a single glowing token rests on a pedestal. A small blue bird watches happily from a nearby retro monitor. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-14T00:37:06.747531+00:00"
+}

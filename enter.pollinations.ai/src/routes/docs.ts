@@ -434,6 +434,10 @@ function generateLLMDoc(): string {
     lines.push("- 402: Insufficient balance");
     lines.push("- 403: Permission denied");
     lines.push("- 500: Server error");
+    lines.push("");
+
+    // BYOP content carries its own `# Bring Your Own Pollen` H1 heading.
+    lines.push(BYOP_DOCS);
 
     return lines.join("\n");
 }

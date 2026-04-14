@@ -427,6 +427,7 @@ const ModelCategory: FC<{
                     disabled={disabled}
                     showApiName={showApiName}
                     theme={theme}
+                    category={label}
                 />
             ))}
         </div>
@@ -441,6 +442,7 @@ const ModelChip: FC<{
     disabled?: boolean;
     showApiName?: boolean;
     theme?: "green" | "amber";
+    category?: string;
 }> = ({
     apiName,
     officialName,
@@ -449,6 +451,7 @@ const ModelChip: FC<{
     disabled,
     showApiName = true,
     theme = "green",
+    category,
 }) => (
     <button
         type="button"
@@ -457,9 +460,8 @@ const ModelChip: FC<{
         className={cn(
             "px-2.5 py-1 rounded-lg text-xs transition-colors text-left border",
             selected
-                ? theme === "amber"
-                    ? "bg-amber-100 text-amber-900 border-amber-400"
-                    : "bg-green-50 text-gray-900 border-green-400"
+                ? (CATEGORY_PILL[category ?? ""] ??
+                      "bg-gray-100 text-gray-800 border-gray-400")
                 : "bg-transparent text-gray-600 border-gray-300",
             !disabled &&
                 !selected &&

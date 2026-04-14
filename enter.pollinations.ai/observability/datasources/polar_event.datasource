@@ -1,4 +1,3 @@
-TOKEN polar_event_append APPEND
 TOKEN tinybird_ingest APPEND
 
 DESCRIPTION >

@@ -9,6 +9,7 @@ type ExpiryDaysInputProps = {
     disabled?: boolean;
     compact?: boolean;
     inline?: boolean;
+    tone?: "pink" | "amber";
 };
 
 /**
@@ -22,6 +23,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     disabled = false,
     compact = false,
     inline = false,
+    tone,
 }) => {
     return (
         <Field.Root className={inline ? "flex items-center gap-3" : ""}>
@@ -33,6 +35,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                     <InfoTip
                         text="Key expires after this many days. Leave empty for no expiry."
                         label="Expiry information"
+                        tone={tone}
                     />
                 </Field.Label>
             )}

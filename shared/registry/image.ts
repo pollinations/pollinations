@@ -467,7 +467,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.04, // $0.04 per image
             },
         ],
-        description: "Amazon Nova Canvas - Bedrock Image Generation & Editing",
+        description: "Nova Canvas - Bedrock Image Generation & Editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -481,8 +481,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.08, // $0.08 per second of video
             },
         ],
-        description:
-            "Amazon Nova Reel - Bedrock Video Generation (6-60s, 720p)",
+        description: "Nova Reel - Bedrock Video Generation (6-60s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

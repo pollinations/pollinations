@@ -1,12 +1,16 @@
+import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import {
-    KeyPermissionsInputs,
-    useKeyPermissions,
-} from "../components/api-keys";
+import { AccountPermissionsInput } from "../components/api-keys/account-permissions-input.tsx";
+import { ExpiryDaysInput } from "../components/api-keys/expiry-days-input.tsx";
+import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
+import { PollenBudgetInput } from "../components/api-keys/pollen-budget-input.tsx";
 import { SCOPE_LABELS } from "../components/auth/scope-labels.ts";
 import { Button } from "../components/button.tsx";
+import { InfoTip } from "../components/ui/info-tip.tsx";
 import { config } from "../config.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 
@@ -43,6 +47,31 @@ function safeParseUrl(url: string): URL | null {
         return null;
     }
 }
+
+const ALL_MODALITIES = ["text", "images", "audio", "video"] as const;
+
+function computeModalities(allowedModels: string[] | null): string[] {
+    if (allowedModels === null) return [...ALL_MODALITIES];
+    const has = { text: false, images: false, audio: false, video: false };
+    for (const id of allowedModels) {
+        if (id in TEXT_SERVICES) has.text = true;
+        const img = IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES];
+        if (img) {
+            const outputs = img.outputModalities as readonly string[];
+            if (outputs.includes("image")) has.images = true;
+            if (outputs.includes("video")) has.video = true;
+        }
+        if (id in AUDIO_SERVICES) has.audio = true;
+    }
+    return ALL_MODALITIES.filter((m) => has[m]);
+}
+
+const MODALITY_PILL = {
+    text: "bg-blue-100 text-blue-800 border-blue-300",
+    images: "bg-pink-100 text-pink-800 border-pink-300",
+    audio: "bg-violet-100 text-violet-800 border-violet-300",
+    video: "bg-teal-100 text-teal-800 border-teal-300",
+} as const;
 
 export const Route = createFileRoute("/authorize")({
     component: AuthorizeComponent,
@@ -118,14 +147,22 @@ function AuthorizeComponent() {
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
-    const canAuthorize = isDeviceMode || parsedRedirectUrl !== null;
 
     const keyPermissions = useKeyPermissions({
         allowedModels: models,
-        pollenBudget: budget,
-        expiryDays: expiry ?? 30,
-        accountPermissions: urlPermissions ?? ["profile"],
+        pollenBudget: budget ?? 5,
+        expiryDays: expiry ?? 7,
+        accountPermissions: urlPermissions ?? ["profile", "balance"],
     });
+
+    const hasBudget = keyPermissions.permissions.pollenBudget !== null;
+    const modalities = computeModalities(
+        keyPermissions.permissions.allowedModels,
+    );
+    const canAuthorize =
+        (isDeviceMode || parsedRedirectUrl !== null) &&
+        hasBudget &&
+        modalities.length > 0;
 
     useScrollLock();
 
@@ -475,13 +512,13 @@ function AuthorizeComponent() {
 
     return (
         <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-            <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg max-h-[85vh] max-w-lg w-full flex flex-col">
-                <div className="shrink-0 p-6 pb-4">
+            <div className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-h-[85vh] max-w-lg w-full flex flex-col">
+                <div className="shrink-0 px-6 pt-6 pb-2">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-semibold">
                             {isDeviceMode
                                 ? "Authorize Device"
-                                : "Authorize Application"}
+                                : "Authorize App"}
                         </h2>
                         <img
                             src="/logo_text_black.svg"
@@ -489,45 +526,35 @@ function AuthorizeComponent() {
                             className="h-8 object-contain"
                         />
                     </div>
-                    <p className="text-sm text-green-800 mt-1">
-                        Signed in as{" "}
-                        <strong>{user.githubUsername || user.email}</strong>
-                    </p>
                 </div>
 
-                <div
-                    className="flex-1 overflow-y-auto px-6 py-2 space-y-4 scrollbar-subtle"
-                    style={{
-                        scrollbarWidth: "thin",
-                        overscrollBehavior: "contain",
-                    }}
-                >
+                <div className="flex-1 min-h-0 flex flex-col px-6 py-2 space-y-4">
                     {error ? (
                         <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
                             <p className="text-red-800 text-sm">{error}</p>
                         </div>
                     ) : (
                         <>
-                            <div className="bg-green-200 rounded-lg p-4">
+                            <div className="bg-amber-100 border-2 border-amber-300 rounded-lg p-4 shrink-0">
                                 {isDeviceMode ? (
                                     <>
                                         {attribution?.appName ? (
                                             <>
-                                                <p className="text-xs text-green-700 mb-1">
+                                                <p className="text-xs text-amber-800 mb-1">
                                                     A device is requesting
                                                     access via
                                                 </p>
-                                                <p className="font-bold text-green-950 text-lg">
+                                                <p className="font-bold text-gray-900 text-lg">
                                                     {attribution.appName}
                                                 </p>
                                                 {attribution.githubUsername && (
-                                                    <p className="text-sm text-green-700 mt-0.5">
+                                                    <p className="text-sm text-amber-900 mt-0.5">
                                                         by{" "}
                                                         <a
                                                             href={`https://github.com/${attribution.githubUsername}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="font-medium underline hover:text-green-950"
+                                                            className="font-medium underline hover:text-gray-900"
                                                         >
                                                             @
                                                             {
@@ -538,53 +565,41 @@ function AuthorizeComponent() {
                                                 )}
                                             </>
                                         ) : (
-                                            <p className="text-sm text-green-950 font-medium">
+                                            <p className="text-sm text-gray-900 font-medium">
                                                 A device is requesting access to
                                                 your account
                                             </p>
                                         )}
-                                        <p className="text-xs text-green-800 mt-1 font-mono">
+                                        <p className="text-xs text-amber-900 mt-1 font-mono">
                                             Code: {user_code}
                                         </p>
                                     </>
                                 ) : attribution?.appName ? (
                                     <>
-                                        <p className="text-xs text-green-700 mb-1">
-                                            Share your API key with
-                                        </p>
-                                        <p className="font-bold text-green-950 text-lg">
+                                        <p className="font-bold text-gray-900 text-lg">
                                             {attribution.appName}
                                         </p>
                                         {attribution.githubUsername && (
-                                            <p className="text-sm text-green-700 mt-0.5">
+                                            <p className="text-sm text-amber-900 mt-0.5">
                                                 by{" "}
                                                 <a
                                                     href={`https://github.com/${attribution.githubUsername}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="font-medium underline hover:text-green-950"
+                                                    className="font-medium underline hover:text-gray-900"
                                                 >
                                                     @
                                                     {attribution.githubUsername}
                                                 </a>
                                             </p>
                                         )}
-                                        <p className="text-xs text-green-800 font-mono mt-1">
+                                        <p className="text-xs text-amber-900 font-mono mt-1">
                                             {redirectHostname}
                                         </p>
                                     </>
                                 ) : (
-                                    <p className="font-semibold text-green-950 mb-1">
-                                        Create and share my API key with{" "}
-                                        <span className="font-mono bg-green-300 rounded px-1.5 py-0.5 text-green-950">
-                                            {redirectHostname}
-                                        </span>
-                                    </p>
-                                )}
-                                {!isDeviceMode && (
-                                    <p className="text-xs text-green-800 mt-2">
-                                        Same as copy-pasting your key into their
-                                        app. Only share with apps you trust.
+                                    <p className="font-bold text-gray-900 text-lg font-mono">
+                                        {redirectHostname}
                                     </p>
                                 )}
                             </div>
@@ -612,56 +627,142 @@ function AuthorizeComponent() {
                                 </div>
                             )}
 
-                            {!isDeviceMode && (
-                                <ul className="text-sm text-green-900 space-y-2">
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-green-600">
-                                            &#x2713;
-                                        </span>
-                                        <span>
-                                            Generate text, images, audio & video
-                                        </span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-green-600">
-                                            &#x2713;
-                                        </span>
-                                        <span>Use your pollen balance</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-green-800">
-                                            &#x23F1;
-                                        </span>
-                                        <span>
-                                            Revoke anytime from{" "}
-                                            <a
-                                                href="https://enter.pollinations.ai"
-                                                className="text-green-950 font-medium underline"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                enter.pollinations.ai
-                                            </a>
-                                        </span>
-                                    </li>
-                                </ul>
-                            )}
-
-                            <KeyPermissionsInputs
-                                value={keyPermissions}
-                                inline
-                            />
-
-                            {!isDeviceMode && (
-                                <div className="bg-green-200 rounded-lg p-3">
-                                    <p className="text-green-900 text-xs mb-1 font-medium">
-                                        You will be redirected to:
-                                    </p>
-                                    <p className="text-green-950 text-sm font-mono break-all">
-                                        {redirect_url}
+                            <div className="bg-amber-50 border-2 border-amber-300 rounded-lg flex-1 min-h-0 overflow-y-auto [&_input]:!bg-amber-100 [&_input]:!border-amber-400 [&_input:focus]:!ring-amber-500">
+                                <div className="p-4">
+                                    <p className="text-sm text-amber-900">
+                                        Signed in as{" "}
+                                        <strong className="text-gray-900">
+                                            {user.githubUsername || user.email}
+                                        </strong>
                                     </p>
                                 </div>
-                            )}
+
+                                <div className="border-t border-amber-300 p-4">
+                                    <div className="flex items-center gap-3">
+                                        <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 mb-0 shrink-0">
+                                            Spending limit
+                                            <InfoTip
+                                                text="This app can only spend this amount from your pollen balance."
+                                                label="Spending limit information"
+                                                tone="amber"
+                                            />
+                                        </p>
+                                        <PollenBudgetInput
+                                            value={
+                                                keyPermissions.permissions
+                                                    .pollenBudget
+                                            }
+                                            onChange={
+                                                keyPermissions.setPollenBudget
+                                            }
+                                            compact
+                                        />
+                                    </div>
+                                </div>
+
+                                {!isDeviceMode && (
+                                    <ul className="border-t border-amber-300 p-4 text-sm text-amber-900 space-y-2">
+                                        <li className="flex items-center gap-2 flex-wrap">
+                                            <span
+                                                className={
+                                                    modalities.length === 0
+                                                        ? "text-red-600"
+                                                        : "text-amber-700"
+                                                }
+                                            >
+                                                {modalities.length === 0
+                                                    ? "\u2717"
+                                                    : "\u2713"}
+                                            </span>
+                                            {modalities.length === 0 ? (
+                                                <span>
+                                                    No models allowed — select
+                                                    at least one in Advanced
+                                                </span>
+                                            ) : (
+                                                <>
+                                                    <span>Generate</span>
+                                                    {modalities.map((m) => (
+                                                        <span
+                                                            key={m}
+                                                            className={`px-2 py-0.5 rounded-full text-xs border ${MODALITY_PILL[m as keyof typeof MODALITY_PILL]}`}
+                                                        >
+                                                            {m}
+                                                        </span>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span className="text-amber-800">
+                                                &#x231B;
+                                            </span>
+                                            <span>
+                                                {keyPermissions.permissions
+                                                    .expiryDays === null
+                                                    ? "Never expires"
+                                                    : `Expires in ${keyPermissions.permissions.expiryDays} day${keyPermissions.permissions.expiryDays === 1 ? "" : "s"}`}
+                                                {" — revoke anytime at "}
+                                                <a
+                                                    href="https://enter.pollinations.ai"
+                                                    className="text-gray-900 font-medium underline"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    enter.pollinations.ai
+                                                </a>
+                                            </span>
+                                        </li>
+                                    </ul>
+                                )}
+
+                                <details className="group border-t border-amber-300">
+                                    <summary className="cursor-pointer list-none px-3 py-3 group-open:py-1 text-sm font-medium text-gray-900 flex items-center justify-between select-none transition-all">
+                                        <span className="group-open:hidden">
+                                            Advanced
+                                        </span>
+                                        <span className="text-amber-700 transition-transform group-open:rotate-180 ml-auto">
+                                            &#x25BE;
+                                        </span>
+                                    </summary>
+                                    <div className="px-3 pb-3 pt-1 space-y-6">
+                                        <ExpiryDaysInput
+                                            value={
+                                                keyPermissions.permissions
+                                                    .expiryDays
+                                            }
+                                            onChange={
+                                                keyPermissions.setExpiryDays
+                                            }
+                                            inline
+                                            tone="amber"
+                                        />
+                                        <AccountPermissionsInput
+                                            value={
+                                                keyPermissions.permissions
+                                                    .accountPermissions
+                                            }
+                                            onChange={
+                                                keyPermissions.setAccountPermissions
+                                            }
+                                            allowedModels={
+                                                keyPermissions.permissions
+                                                    .allowedModels
+                                            }
+                                            onModelsChange={
+                                                keyPermissions.setAllowedModels
+                                            }
+                                            hiddenPermissions={[
+                                                "profile",
+                                                "balance",
+                                                "keys",
+                                            ]}
+                                            theme="amber"
+                                            showApiName={false}
+                                        />
+                                    </div>
+                                </details>
+                            </div>
                         </>
                     )}
                 </div>
@@ -669,7 +770,7 @@ function AuthorizeComponent() {
                 <div className="flex items-center justify-between p-6 pt-4 shrink-0">
                     <a
                         href="/terms"
-                        className="text-xs text-green-700 hover:text-green-950 hover:underline"
+                        className="text-xs text-amber-800 hover:text-gray-900 hover:underline"
                     >
                         Terms & Conditions
                     </a>
@@ -678,6 +779,7 @@ function AuthorizeComponent() {
                             as="button"
                             onClick={handleDeny}
                             weight="outline"
+                            color="dark"
                             disabled={isAuthorizing}
                         >
                             {isDeviceMode ? "Deny" : "Cancel"}
@@ -686,9 +788,9 @@ function AuthorizeComponent() {
                             as="button"
                             onClick={handleAuthorize}
                             disabled={!canAuthorize || isAuthorizing || !!error}
-                            color="green"
+                            color="dark"
                         >
-                            {isAuthorizing ? "Authorizing..." : "Allow"}
+                            {isAuthorizing ? "Authorizing..." : "Authorize"}
                         </Button>
                     </div>
                 </div>
